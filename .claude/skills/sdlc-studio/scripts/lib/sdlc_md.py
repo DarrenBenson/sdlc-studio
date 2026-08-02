@@ -2911,14 +2911,43 @@ def affects_files(text: str) -> list[str]:
     return files
 
 
+def loaded_skill_dir() -> Path:
+    """The skill directory THIS process is running from.
+
+    `sdlc_md.py` lives at `<skill>/scripts/lib/`, so the skill root is two parents up. Derived
+    rather than assumed, because the skill is loaded from an INSTALLED copy in every consuming
+    project and from the repo tree only here - and a path that resolves only under the second
+    is a path that resolves nowhere for the projects the skill ships to.
+    """
+    return Path(__file__).resolve().parent.parent.parent
+
+
 def resolve_affects(root, p: str):
-    """Resolve an Affects path against the repo root or the installed skill dir.
-    Returns the resolved Path, or None for a not-yet-existing (greenfield) path."""
+    """Resolve an Affects path against the repo root, a vendored skill dir, or the LOADED one.
+
+    The third base is the one the docstring already promised and the code did not have. A
+    shipped-payload path such as `.claude/skills/sdlc-studio/templates/audit-profiles/x.md`
+    resolved only in a project that VENDORS the skill into its own tree; everywhere else - which
+    is every consuming project - it silently resolved to nothing, and an Affects that resolves
+    to nothing is read as an ungroomed unit.
+
+    Returns the resolved Path, or None for a not-yet-existing (greenfield) path.
+    """
     root = Path(root)
-    for base in (root, root / ".claude" / "skills" / "sdlc-studio"):
-        cand = base / p
-        if cand.exists():
-            return cand
+    skill = loaded_skill_dir()
+    bases = [root, root / ".claude" / "skills" / "sdlc-studio", skill]
+    # A path already written relative to the skill root resolves against it directly; one
+    # written repo-relative needs its `.claude/skills/sdlc-studio/` prefix stripped first, which
+    # is the spelling the corpus overwhelmingly uses.
+    prefix = ".claude/skills/sdlc-studio/"
+    candidates = [p]
+    if p.startswith(prefix):
+        candidates.append(p[len(prefix):])
+    for base in bases:
+        for cand_rel in candidates:
+            cand = base / cand_rel
+            if cand.exists():
+                return cand
     return None
 
 

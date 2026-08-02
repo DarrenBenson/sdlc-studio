@@ -1,6 +1,7 @@
 # BG0436: resolve_affects never resolves against the installed skill dir, so detector-owed --file tracebacks on every default install
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (resolved from an EMPTY fixture root, so only the loaded skill dir can satisfy it; absent-path control and the derivation both pinned)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_detector_owed.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py
@@ -26,8 +27,29 @@ Resolve an Affects path against the loaded `SKILL_DIR` as the docstring already 
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `resolve_affects` resolves a declared path against `root` and `root/.claude/skills/sdlc-studio` only - never the skill dir the run is actually loaded from -...
-- [ ] The proposed fix lands, pinned by a test: Resolve an Affects path against the loaded `SKILL_DIR` as the docstring already promises, and make the shipped-payload path declaration relative to that.
+### AC1: a shipped-payload path resolves without vendoring
+
+- **Given** a project that does NOT vendor the skill into its tree
+- **When** an Affects naming shipped payload is resolved
+- **Then** it resolves against the LOADED skill dir, as the docstring already promised - because everywhere but this repo it silently resolved to nothing, and an Affects that resolves to nothing reads as an ungroomed unit
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::ResolveAffectsSkillDirTests::test_a_shipped_payload_path_resolves_without_vendoring
+- **Verified:** yes (2026-08-02)
+
+### AC2: a genuinely absent path still resolves to nothing
+
+- **Given** a path that exists nowhere
+- **When** it is resolved
+- **Then** it is None, so greenfield paths keep reading as absent and the grooming gate still catches a declared file nobody has written
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::ResolveAffectsSkillDirTests::test_a_genuinely_absent_path_still_resolves_to_nothing
+- **Verified:** yes (2026-08-02)
+
+### AC3: the loaded skill dir is derived, not assumed
+
+- **Given** the module's own location
+- **When** the skill dir is taken
+- **Then** it is derived from there, because the skill runs from an INSTALLED copy in every consuming project and a hardcoded repo path would resolve only here
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::ResolveAffectsSkillDirTests::test_the_loaded_skill_dir_is_derived_not_assumed
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

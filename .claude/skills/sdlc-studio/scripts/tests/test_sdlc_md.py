@@ -1113,5 +1113,49 @@ class RootResolverTests(unittest.TestCase):
         self.assertIn("resolve_root", bp)
 
 
+class ResolveAffectsSkillDirTests(unittest.TestCase):
+    """An Affects path naming shipped payload resolves in a project that does NOT vendor it.
+
+    The docstring already promised "or the installed skill dir" and the code never looked
+    there, so a declared path such as
+    `.claude/skills/sdlc-studio/templates/audit-profiles/<x>.md` resolved only where the skill
+    is vendored into the tree - which is this repo and nowhere else. In every consuming project
+    it silently resolved to nothing, and an Affects that resolves to nothing reads as an
+    ungroomed unit.
+    """
+
+    def test_a_shipped_payload_path_resolves_without_vendoring(self) -> None:
+        """MUTANT: drop the loaded skill dir from the base list.
+
+        The fixture root is EMPTY - no `.claude/` at all - so the assertion can only be
+        satisfied by looking where the skill is actually loaded from.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            got = sdlc_md.resolve_affects(
+                Path(d), ".claude/skills/sdlc-studio/templates/audit-profiles/repo.md")
+        self.assertIsNotNone(got, "a shipped-payload path resolved to nothing in a project "
+                                  "that does not vendor the skill")
+
+    def test_a_genuinely_absent_path_still_resolves_to_nothing(self) -> None:
+        """The control. MUTANT: return a Path whether or not it exists.
+
+        Greenfield paths must keep reading as absent, or the grooming gate stops catching a
+        declared file nobody has written.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            got = sdlc_md.resolve_affects(Path(d), "src/never/written.py")
+        self.assertIsNone(got, "a path that exists nowhere was resolved")
+
+    def test_the_loaded_skill_dir_is_derived_not_assumed(self) -> None:
+        """MUTANT: hardcode the repo's own skill path.
+
+        The skill runs from an INSTALLED copy in every consuming project, so the location has
+        to come from where this module actually sits.
+        """
+        skill = sdlc_md.loaded_skill_dir()
+        self.assertTrue((skill / "scripts" / "lib" / "sdlc_md.py").is_file(),
+                        f"the derived skill dir {skill} does not contain this module")
+
+
 if __name__ == "__main__":
     unittest.main()
