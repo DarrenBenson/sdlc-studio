@@ -106,6 +106,30 @@ class LensSignatureLaneTests(unittest.TestCase):
         pkg = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
         self.assertIn("profile --validate", pkg["scripts"]["lint:lens-signatures"])
 
+    def test_the_ratchet_lane_carries_its_flags_at_both_invocation_sites(self) -> None:
+        """MUTANT: drop `--ratchet` or `--bugs` from either the hook or package.json.
+
+        The sibling lane above pins its flags at both sites; this one pinned neither, and it is
+        the lane that ALREADY lost `--bugs` once with the whole suite still green. Without
+        `--ratchet` the lint reports and never refuses; without `--bugs` it judges stories only,
+        so half the corpus is silently exempt - both leave the lane present, green and inert.
+        """
+        hook = HOOK.read_text(encoding="utf-8")
+        i = hook.find('run "verify-ratchet"')
+        self.assertNotEqual(-1, i, "the hook has no verify-ratchet lane")
+        block = hook[i:i + 700]
+        for flag in ("--ratchet", "--bugs"):
+            with self.subTest(site="hook", flag=flag):
+                self.assertIn(flag, block,
+                              f"the hook lane does not pass {flag}, so it is inert")
+        pkg = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
+        script = pkg["scripts"]["lint:verify-ratchet"]
+        for flag in ("--ratchet", "--bugs"):
+            with self.subTest(site="package.json", flag=flag):
+                self.assertIn(flag, script,
+                              f"the npm lane does not pass {flag}, so `npm run lint` checks "
+                              f"less than the hook does")
+
 
 class LaneOrderTests(unittest.TestCase):
     def test_markdown_lanes_run_before_the_unit_suites(self) -> None:

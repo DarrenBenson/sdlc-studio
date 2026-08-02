@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 12 |
 | In Progress | 0 |
-| Fixed | 390 |
+| Fixed | 391 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **485** |
+| **Total** | **486** |
 
 ## All Bugs
 
@@ -150,7 +150,7 @@
 | [BG0430](BG0430-a-namespace-held-in-a-module-global-is.md) | a namespace held in a module global is invisible to the dead-flag detector, so a live flag is reported dead with no cannot-judge reason | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0431](BG0431-one-unresolvable-namespace-escape-demotes-every-flag-in.md) | one unresolvable namespace escape demotes every flag in the module to cannot-judge, and nothing bounds how far that spreads | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0432](BG0432-test-selection-still-misses-eleven-scripts-whose-tests.md) | test selection still misses eleven scripts whose tests load them under a different name | Fixed | High | 2026-07-30 | 2026-07-30 |
-| [BG0433](BG0433-the-duplicate-verifier-ratchet-is-not-enforced-as.md) | the duplicate-verifier ratchet is not enforced as a ratchet, groups on a weaker key than the command it runs, and cannot notice its own flag going away | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0433](BG0433-the-duplicate-verifier-ratchet-is-not-enforced-as.md) | the duplicate-verifier ratchet is not enforced as a ratchet, groups on a weaker key than the command it runs, and cannot notice its own flag going away | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0434](BG0434-two-of-the-four-signature-detector-shapes-are.md) | two of the four signature detector shapes are exercised only by a synthetic fixture, and the one real row's path resolves anywhere | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0435](BG0435-the-loading-guide-path-checker-skips-a-whole.md) | the loading-guide path checker skips a whole table whose first column is the path, and nine of twelve broken-path shapes escape it | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0436](BG0436-resolve-affects-never-resolves-against-the-installed-skill.md) | resolve_affects never resolves against the installed skill dir, so detector-owed --file tracebacks on every default install | Fixed | High | 2026-07-30 | 2026-07-30 |
@@ -203,6 +203,7 @@
 | [BG0483](BG0483-claim-drift-reads-append-only-ledgers-as-prose.md) | claim-drift reads append-only ledgers as prose, so verdict rows are matched against the code they name | Fixed | Medium | 2026-08-01 | 2026-08-01 |
 | [BG0484](BG0484-ep0194-shipped-a-false-claim-about-its-own.md) | EP0194 shipped a false claim about its own feature: critic.py brief never emitted the fingerprint the gate demands | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0485](BG0485-the-goal-review-panel-maps-a-seat-s.md) | the goal-review panel maps a seat's no to partial, and fans a whole-goal answer across every clause | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0486](BG0486-duplicate-verifiers-are-grouped-on-a-normalised-string.md) | duplicate verifiers are grouped on a normalised string, so two ACs running the same command can read as distinct | Open | Medium | 2026-08-02 | 2026-08-02 |
 
 ## Archived Releases
 
