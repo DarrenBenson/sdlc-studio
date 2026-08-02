@@ -4050,6 +4050,13 @@ class CloseReportReachesTheOperatorTests(_CloseReportBase):
             self.assertIn("CLOSE REPORT", printed,
                           "the close never told the operator what it did")
             self.assertIn("US0101", printed, "the report names no unit from the batch")
+            # AC1's four sections, asserted HERE rather than only against the renderer, so the
+            # criterion's oracle is the close rather than the function the close forgot to
+            # reach. A report missing the cost is not 75% of a report - it is one the operator
+            # has to go and look something up for, which is the behaviour being removed.
+            for heading in ("SHIPPED", "CARRIED", "COST", "FINDINGS"):
+                self.assertIn(heading, printed.upper(),
+                              f"the close's report has no {heading} section")
 
 
 class CloseReportDisabledTests(_CloseReportBase):

@@ -23,7 +23,7 @@
 - **Given** a completed close
 - **When** it finishes
 - **Then** it emits a report naming what shipped, what is carried, what it cost and what the reviews found, because a report nobody is told about is the same as no report
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CloseReportTests::test_the_close_reports_all_four
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseReportReachesTheOperatorTests::test_the_close_prints_the_report_for_a_non_empty_batch
 - **Verified:** yes (2026-08-02)
 
 ### AC2: an absent figure is named absent, never omitted
