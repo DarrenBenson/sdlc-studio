@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-02
+**Last Updated:** 2026-08-03
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 22 |
 | In Progress | 0 |
 | Fixed | 396 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **498** |
+| **Total** | **501** |
 
 ## All Bugs
 
@@ -216,6 +216,9 @@
 | [BG0496](BG0496-critic-signoff-reported-14-units-written-over-a.md) | critic signoff reported 14 units written over a record holding zero | Fixed | High | 2026-08-02 | 2026-08-02 |
 | [BG0497](BG0497-three-units-ship-a-check-whose-own-criterion.md) | three units ship a check whose own criterion names the mechanism that was not implemented | Open | High | 2026-08-02 | 2026-08-02 |
 | [BG0498](BG0498-a-duplicate-test-class-name-silently-removed-eleven.md) | a duplicate test class name silently removed eleven tests from the suite | Fixed | High | 2026-08-02 | 2026-08-02 |
+| [BG0499](BG0499-panel-escalation-reads-a-different-ledger-from-the.md) | panel escalation reads a different ledger from the one review-batch writes, so two REJECT rounds through the CLI notify nobody | Open | High | 2026-08-03 | 2026-08-03 |
+| [BG0500](BG0500-the-runbook-guard-runs-in-no-gate-lane.md) | the runbook guard runs in no gate lane, so the runbook can rot between tool-suite runs | Open | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0501](BG0501-batch-add-epic-and-batch-swap-price-stories.md) | batch add-epic and batch swap price stories at zero because they hand-roll the points reader instead of using the shared one | Open | Medium | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 
