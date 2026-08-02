@@ -1,7 +1,7 @@
 # US0604: The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered
 
 > **Status:** Done
-> **Closed with findings in:** repaired in 307ce91d - close_report is emitted from the close
+> **Closed with findings in:** repaired in 5638b18f - the report is emitted from the close's own success path. 307ce91d added a caller the close does not reach, and the line naming it was written by another unit's close commit
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

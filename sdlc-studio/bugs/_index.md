@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
+| Open | 23 |
 | In Progress | 0 |
 | Fixed | 396 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **501** |
+| **Total** | **502** |
 
 ## All Bugs
 
@@ -219,6 +219,7 @@
 | [BG0499](BG0499-panel-escalation-reads-a-different-ledger-from-the.md) | panel escalation reads a different ledger from the one review-batch writes, so two REJECT rounds through the CLI notify nobody | Open | High | 2026-08-03 | 2026-08-03 |
 | [BG0500](BG0500-the-runbook-guard-runs-in-no-gate-lane.md) | the runbook guard runs in no gate lane, so the runbook can rot between tool-suite runs | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0501](BG0501-batch-add-epic-and-batch-swap-price-stories.md) | batch add-epic and batch swap price stories at zero because they hand-roll the points reader instead of using the shared one | Open | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0502](BG0502-a-close-sealed-by-file-and-close-tells.md) | a close sealed by --file-and-close tells the operator nothing, because cmd_close returns before the report | Open | Medium | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 
