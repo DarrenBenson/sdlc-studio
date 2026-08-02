@@ -75,5 +75,38 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(check_budgets.main(["--root", str(repo)]), 0)
 
 
+class ReferenceSprintCeilingTests(unittest.TestCase):
+    """The line ceiling admits the shipped file exactly, with no slack.
+
+    A ceiling raised with headroom stops noticing growth: the next few hundred lines land
+    silently, and the budget becomes a number nobody has looked at. Raised deliberately, in the
+    same commit as the prose it admits, and set to the file's actual length.
+    """
+
+    def test_the_recorded_ceiling_admits_the_shipped_file_without_tolerance(self) -> None:
+        """MUTANT: raise the ceiling to a round number above the file's length."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "check_budgets", Path(__file__).resolve().parents[1] / "check_budgets.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["check_budgets"] = mod
+        spec.loader.exec_module(mod)
+        repo = Path(__file__).resolve().parents[2]
+        target = repo / ".claude" / "skills" / "sdlc-studio" / "reference-sprint.md"
+        actual = len(target.read_text(encoding="utf-8").splitlines())
+        ceiling = None
+        for name, value in vars(mod).items():
+            if isinstance(value, dict) and "reference-sprint.md" in value:
+                ceiling = value["reference-sprint.md"]
+                break
+        self.assertIsNotNone(ceiling, "no recorded ceiling for reference-sprint.md")
+        self.assertGreaterEqual(ceiling, actual,
+                                f"the ceiling {ceiling} refuses the shipped file ({actual})")
+        self.assertEqual(ceiling, actual,
+                         f"the ceiling {ceiling} carries {ceiling - actual} lines of slack "
+                         f"over the shipped {actual} - headroom is how a budget stops noticing "
+                         f"growth")
+
+
 if __name__ == "__main__":
     unittest.main()

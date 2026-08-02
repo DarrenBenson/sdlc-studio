@@ -770,6 +770,25 @@ in loop step 5; per-tier escape/escalation rates accumulate in telemetry
 | `scripts/ledger.py` | append-only per-tranche decisions ledger (survives compaction) |
 | `reconcile` / `review` / `verify_ac` | the closing gate + per-unit oracle (reused) |
 
+## In-flight controls {#in-flight-controls}
+
+The run is mutable, and every mutation is recorded. These are the same invocations
+`help/sprint.md` lists; they are repeated here because a reader working through the reference
+should not have to leave it to find out how to change a run that is already open.
+
+```bash
+python3 <skill>/scripts/sprint.py goal-review record --goal "<goal>" --seat "engineering|yes|what done means|one increment?"
+python3 <skill>/scripts/sprint.py batch swap --out US0001 --in US0002 --reason "<why>"
+python3 <skill>/scripts/sprint.py batch drop US0001 --reason "<why>"
+python3 <skill>/scripts/sprint.py batch add US0004
+python3 <skill>/scripts/sprint.py stop --reason "<why>"
+python3 <skill>/scripts/sprint.py reopen --reason "<why>"
+```
+
+A control with no recorded reason is a change the close cannot explain. `stop` ends a run that
+will not reach its goal and writes the handoff; `reopen` resumes it rather than minting a fresh
+run over the same work, which would re-attribute the delivery.
+
 ## See Also
 
 - `reference-project.md` - the wave engine sprint wraps

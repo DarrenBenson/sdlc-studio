@@ -15,7 +15,7 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Do a sprint to deliver all the open bugs" | `/sdlc-studio sprint --bugs Open --goal done` |
 | "Plan and break down the next sprint, but don't write code" | `/sdlc-studio sprint --crs Proposed --goal design` |
 | "Build out epic 7 from end to end" | `/sdlc-studio sprint --epic EP0007 --goal done` |
-| "Turn this PRD into epics and stories" | `/sdlc-studio sprint prd.md --goal design` |
+| "Turn this PRD into epics and stories" | `/sdlc-studio sprint plan --prd prd.md --goal design` |
 | "Select and estimate a sprint, then stop for my sign-off" | `/sdlc-studio sprint --crs Proposed --goal plan` |
 | "Run the whole thing unattended" | `/sdlc-studio sprint --bugs Open --autonomous` |
 
@@ -37,7 +37,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint --epic EP0007 --goal done       # deliver an epic
 /sdlc-studio sprint --crs Proposed --goal design    # just the backlog (no code)
 /sdlc-studio sprint --crs Proposed --goal plan       # select+sequence+estimate a sprint, stop
-/sdlc-studio sprint prd.md --goal design             # greenfield: PRD -> epics -> stories
+/sdlc-studio sprint plan --prd prd.md --goal design  # greenfield: PRD -> epics -> stories
 /sdlc-studio sprint <worklist.md> --order wsjf       # a tranche file, WSJF order
 /sdlc-studio sprint --bugs Open --autonomous         # unattended: deterministic guardrails on
 /sdlc-studio sprint decision defer --unit US0001 --question "..." --option "a|..." --option "b|..."  # set the unit aside, batch continues
@@ -50,7 +50,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint plan --cycles 3 --goal done      # a standing policy: roll 3 cycles, regenerating the plan each time
 /sdlc-studio sprint boundary --retro RETRO0001       # close this cycle down and open the next from the live backlog
 /sdlc-studio sprint report --id RETRO0001             # the end-of-sprint report (the close draws it too)
-/sdlc-studio sprint checklist --id RETRO0001          # the compulsory checklist alone; non-zero while an item is outstanding
+python3 <skill>/scripts/sprint_report.py checklist --id RETRO0001   # the compulsory checklist alone; non-zero while an item is outstanding
 ```
 
 **`/sdlc-studio sprint report --id RETROxxxx`** composes the end-of-sprint report - delivered units
@@ -235,6 +235,54 @@ artefact says so rather than being attributed to the last one.
 
 `sprint close` refuses a batch carrying units no independent pass covered, and names them:
 **the close asserts that coverage exists, it does not perform the review.**
+
+## In-flight controls: changing a run without lying about it
+
+A run is a controllable object, not a train you either ride or abandon. Each control below is
+RECORDED, so the close can say what the delivered batch was and why it differs from the plan.
+
+```bash
+# the goal, reviewed by the seats BEFORE the run opens (plan refuses an unreviewed goal)
+python3 <skill>/scripts/sprint.py goal-review record \
+  --goal "<the sprint goal>" \
+  --seat "engineering|yes|what done means|one increment?|optional note"
+
+# trade units: one recorded decision, not a drop that happens to sit beside an add
+python3 <skill>/scripts/sprint.py batch swap --out US0001,US0002 --in US0003 \
+  --reason "the blocking one first"
+
+# pull a unit from the batch the done-gate reads (NOT Deferred, which leaves it gated)
+python3 <skill>/scripts/sprint.py batch drop US0001 --reason "premise unbuilt"
+
+# put one in, under the same gates as the rest
+python3 <skill>/scripts/sprint.py batch add US0004
+
+# end a run that will not reach its goal - the handoff records what is carried
+python3 <skill>/scripts/sprint.py stop --reason "the dependency slipped"
+
+# resume a stopped run rather than minting a fresh one over the same work
+python3 <skill>/scripts/sprint.py reopen --reason "the dependency landed"
+```
+
+The read-only verbs, which change nothing and are safe to run at any point:
+
+```bash
+# the census the planner reads: how many units, how many ungroomed, which share files
+python3 <skill>/scripts/sprint.py breakdown --stories Ready --bugs Open
+
+# every refusal the close would raise, in one pass, writing nothing
+python3 <skill>/scripts/sprint.py preflight
+
+# record the Sprint Goal judgement at the close (achieved | partial | missed)
+python3 <skill>/scripts/sprint.py goal-verdict --verdict achieved --note "<why it holds>"
+
+# brief a delegated lane over the run's own batch, or over named units
+python3 <skill>/scripts/sprint.py lane brief --units US0001,US0002
+```
+
+Every one takes a `--reason` that is stored, not printed. A change nobody recorded is a change
+the close cannot explain, and the difference between the planned batch and the delivered one is
+the thing a retro is actually for.
 
 ## Prerequisites
 

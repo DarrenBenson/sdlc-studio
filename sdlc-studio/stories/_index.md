@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 17 |
-| Ready | 17 |
+| Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 20 |
+| Review | 21 |
 | Done | 558 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -384,7 +384,7 @@
 | [US0470](US0470-sprint-batch-swap-trades-units-in-one-recorded.md) | sprint batch swap trades units in one recorded call, in the house id grammar, reporting whether the points balanced | Review | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0471](US0471-sprint-batch-add-epic-adds-an-epic-s.md) | sprint batch add-epic adds an epic's stories at a named status as one set, priced through the shared renderer | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0472](US0472-the-appetite-can-be-resized-on-an-open.md) | The appetite can be resized on an open run with a recorded reason, and the standing capacity it is measured against survives the resize | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
-| [US0473](US0473-the-in-flight-sprint-controls-are-documented-as.md) | The in-flight sprint controls are documented as runnable invocations, with coverage derived from the parser and the reference section pinned structurally | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0473](US0473-the-in-flight-sprint-controls-are-documented-as.md) | The in-flight sprint controls are documented as runnable invocations, with coverage derived from the parser and the reference section pinned structurally | Review | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0474](US0474-review-prep-derives-the-rv-record-and-stamps.md) | review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0476](US0476-rfc0009-records-its-partial-supersession-by-rfc0038-to.md) | RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element | Done | EP0172 | 2026-07-27 | 2026-07-27 |

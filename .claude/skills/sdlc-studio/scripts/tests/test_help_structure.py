@@ -140,5 +140,79 @@ class HelpLeverPrecedenceTests(unittest.TestCase):
                 self.assertIn(lever, listed, f"`{lever}` is not listed under `### Levers`")
 
 
+class SprintInFlightControlDocsTests(unittest.TestCase):
+    """Every sprint verb is documented as an INVOCATION somebody can run.
+
+    A verb whose name merely appears in prose is not documented: the reader still cannot run
+    it, and a page that mentions every word while showing no command passes a word-search while
+    teaching nothing.
+    """
+
+    SKILL = Path(__file__).resolve().parents[1].parent
+
+    def _parser_verbs(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "sprint", self.SKILL / "scripts" / "sprint.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["sprint"] = mod
+        spec.loader.exec_module(mod)
+        parser = mod.build_parser()
+        for action in parser._actions:
+            if hasattr(action, "choices") and action.choices and action.dest == "cmd":
+                return sorted(action.choices), mod
+        self.fail("the sprint parser exposes no subcommand choices")
+
+    def test_every_parser_verb_appears_as_an_invocation_and_a_prose_only_page_fails(self) -> None:
+        """MUTANT: document a verb by naming it in a sentence.
+
+        Derived from the PARSER, so a verb added tomorrow is covered without editing this - and
+        matched as `sprint.py <verb>`, which prose mentioning the word does not satisfy.
+        """
+        verbs, _mod = self._parser_verbs()
+        page = (self.SKILL / "help" / "sprint.md").read_text(encoding="utf-8")
+        # EITHER invocation form counts: the script path a script-level reader runs, and the
+        # `/sdlc-studio sprint <verb>` slash form a skill user types. Both are real commands, so
+        # requiring one spelling would fail a page that documents the other perfectly well.
+        missing = [v for v in verbs
+                   if f"sprint.py {v}" not in page and f"/sdlc-studio sprint {v}" not in page]
+        self.assertEqual([], missing,
+                         f"these verbs are not shown as a runnable invocation: {missing}")
+
+    def test_every_extracted_invocation_parses_and_the_extraction_is_not_empty(self) -> None:
+        """MUTANT: extract nothing, or document a command the parser rejects.
+
+        The EMPTINESS check is half the test: an extractor that matches nothing reports every
+        invocation valid, which is the vacuous-pass shape this project keeps meeting.
+        """
+        import re as _re
+        verbs, mod = self._parser_verbs()
+        page = (self.SKILL / "help" / "sprint.md").read_text(encoding="utf-8")
+        # FENCED blocks only. A verb named in a sentence is prose, not an invocation, and
+        # scraping prose pulls in flags and ordinary words - which would make this assert that
+        # the English around a command parses.
+        fenced = "\n".join(_re.findall(r"```[a-z]*\n(.*?)```", page, _re.S))
+        self.assertTrue(fenced.strip(), "the page shows no fenced commands at all")
+        found = _re.findall(r"(?:sprint\.py|/sdlc-studio sprint)\s+([a-z][a-z-]*)", fenced)
+        self.assertTrue(found, "the extraction matched no invocations at all")
+        unknown = sorted({v for v in found if v not in verbs})
+        self.assertEqual([], unknown,
+                         f"the page shows invocations the parser does not accept: {unknown}")
+
+    def test_reference_sprint_carries_a_named_in_flight_control_section_with_the_invocations(self) -> None:
+        """MUTANT: document the controls in help only.
+
+        A reader working through the reference should not have to leave it to learn how to
+        change a run that is already open.
+        """
+        ref = (self.SKILL / "reference-sprint.md").read_text(encoding="utf-8")
+        self.assertIn("{#in-flight-controls}", ref,
+                      "the reference has no named in-flight-control section to link to")
+        for verb in ("batch swap", "batch drop", "stop", "reopen", "goal-review"):
+            with self.subTest(verb=verb):
+                self.assertIn(f"sprint.py {verb}", ref,
+                              f"the reference section does not carry `{verb}`")
+
+
 if __name__ == "__main__":
     unittest.main()
