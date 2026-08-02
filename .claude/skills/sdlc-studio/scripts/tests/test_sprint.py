@@ -4020,42 +4020,38 @@ class CloseReportReachesTheOperatorTests(_CloseReportBase):
     """
 
     def test_the_close_prints_the_report_for_a_non_empty_batch(self) -> None:
-        """MUTANT: drop `import critic` from `_tell_the_operator`.
+        """MUTANT: drop `import critic` from `_tell_the_operator`; or move the call back onto
+        `_finalise_outcome`; or delete the call.
 
-        Driven through `_finalise_outcome`, the PRODUCTION caller, rather than through
-        `close_report` itself. The batch is non-empty (`_close_state` carries US0101), which
-        is the whole point: an empty batch takes no lap of the `unit_review_rounds` loop, so
-        an empty-batch fixture passes against the broken code and pins nothing.
+        Driven through `main(["close", ...])` - the SHIPPED entry point - because everything
+        short of it has now been wrong twice. The first repair fixed a NameError inside a
+        function the close does not reach; a test entering at `_finalise_outcome` killed every
+        mutant while a real close printed nothing, because its fixture set `outcome="running"`
+        and a real close has already been stamped `goal-reached` by the handoff step.
 
-        Note it cannot ride on `_CloseReportBase._close`: that helper patches every chain
-        step, including the one whose success path reaches this report.
+        A fixture the production caller is never presented with is not a lane test, however
+        many mutants it kills.
+
+        The batch is non-empty (`_close_state` carries US0101), which is the other half: an
+        empty batch takes no lap of the `unit_review_rounds` loop, so an empty-batch fixture
+        passes against the NameError too.
         """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            # NOT `_fixture`: that stamps the outcome goal-reached already, and
-            # `_finalise_outcome` returns before the report on an already-stamped run. This is
-            # the state a real close arrives with - judged achieved, not yet stamped.
-            state = _close_state(root, outcome="running",
-                                 sprint_goal_verdict={"verdict": "achieved",
-                                                      "note": "chain ran"})
-            _close_story(root)
-            _close_retro(root, batch="US0101")
+            self._fixture(root)
             mod = _load()
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                mod._finalise_outcome(root, state)
-            printed, errored = out.getvalue(), err.getvalue()
+            rc, printed, errored = self._close(mod, root)
+            self.assertEqual(rc, 0, errored)
             self.assertNotIn("close report not emitted", errored,
                              "the report step raised and was swallowed as advisory")
             self.assertIn("CLOSE REPORT", printed,
-                          "the close never told the operator what it did")
+                          "a completed close told the operator nothing")
             self.assertIn("US0101", printed, "the report names no unit from the batch")
-            # AC1's four sections, asserted HERE rather than only against the renderer, so the
-            # criterion's oracle is the close rather than the function the close forgot to
-            # reach. A report missing the cost is not 75% of a report - it is one the operator
-            # has to go and look something up for, which is the behaviour being removed.
+            # AC1's four sections, asserted against the CLOSE's output rather than against the
+            # renderer called with a hand-built dict.
+            report = printed.split("CLOSE REPORT", 1)[1]
             for heading in ("SHIPPED", "CARRIED", "COST", "FINDINGS"):
-                self.assertIn(heading, printed.upper(),
+                self.assertIn(heading, report.upper(),
                               f"the close's report has no {heading} section")
 
 

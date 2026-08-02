@@ -5514,6 +5514,10 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         print(f"apply-signoff: the review anchor could not be re-stamped ({exc}) - it still "
               f"says sign-off is owed", file=sys.stderr)
     _finalise_outcome(root, state)
+    # `--apply-signoff` returns before `cmd_close`'s own success path, so the report is emitted
+    # here too - it is the end of that route, and the operator is owed the same account of the
+    # close whichever way it completed.
+    _tell_the_operator(root)
     return 0
 
 
@@ -5592,7 +5596,6 @@ def _finalise_outcome(root, state) -> None:
             print(f"outcome stamped goal-reached, but `ended_at` was left at the re-stamped "
                   f"time ({exc}) - the archived elapsed span reads long", file=sys.stderr)
     print("close: run outcome recorded goal-reached")
-    _tell_the_operator(root)
 
 
 def _tell_the_operator(root) -> None:
@@ -7321,6 +7324,13 @@ def cmd_close(args: argparse.Namespace) -> int:
                               getattr(args, "author", None),
                               retro_arg=getattr(args, "retro", None))
     _draw_report(root, args.retro)
+    # Emitted from the close's OWN success path, which is the only place every completed close
+    # passes through. It hung off `_finalise_outcome` before, and that function is reached on a
+    # plain close only via `_close_handoff`'s "already generated" skip branch - which a first
+    # close never takes - and then returns early anyway, because step [8/10] has by that point
+    # already stamped the run goal-reached. So a completed close told the operator nothing.
+    # Twice over: the first repair fixed a NameError inside a function the close does not call.
+    _tell_the_operator(root)
     import critic  # noqa: PLC0415 - the brief composer
     gate_note = f"gate --require-retro {args.retro} --require-review: PASS; {_mutation_note(root)}"
     batch = state.get("batch") or []
