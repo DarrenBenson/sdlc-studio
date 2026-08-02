@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 17 |
+| Open | 19 |
 | In Progress | 0 |
-| Fixed | 394 |
+| Fixed | 395 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **494** |
+| **Total** | **497** |
 
 ## All Bugs
 
@@ -212,6 +212,9 @@
 | [BG0492](BG0492-the-suite-verdict-binds-to-head-rather-than.md) | the suite verdict binds to HEAD rather than the tree, and --check ignores which suite ran | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0493](BG0493-four-more-verifiers-pass-on-a-delivery-that.md) | four more verifiers pass on a delivery that has been made inert | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0494](BG0494-resolve-affects-tries-the-prefix-stripped-candidate-against.md) | resolve_affects tries the prefix-stripped candidate against the repo root first, so a consuming project's own file wins | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0495](BG0495-the-velocity-row-understates-twice-it-counts-only.md) | the velocity row understates twice - it counts only accepted points, over a wall-clock with no idle deducted | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0496](BG0496-critic-signoff-reported-14-units-written-over-a.md) | critic signoff reported 14 units written over a record holding zero | Fixed | High | 2026-08-02 | 2026-08-02 |
+| [BG0497](BG0497-three-units-ship-a-check-whose-own-criterion.md) | three units ship a check whose own criterion names the mechanism that was not implemented | Open | High | 2026-08-02 | 2026-08-02 |
 
 ## Archived Releases
 

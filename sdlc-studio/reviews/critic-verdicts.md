@@ -611,6 +611,11 @@ One row has been removed since adoption.
 | US0607 | REJECT | qa-seat-ep0199 | claude-opus-5-author | 2026-08-02 | 6021951b16c0 | [new] a shipped best-practice file stated a yield figure the command contradicts, and the guard returns 0 when the file is absent |
 | US0608 | REJECT | qa-seat-ep0200 | claude-opus-5-author | 2026-08-02 | 9c481f56b1a2 | [new] reverting the feature outright survives all 390 tests, and no AC asserts the lane's blocking flag or runs a close |
 | US0609 | REJECT | qa-seat-ep0200 | claude-opus-5-author | 2026-08-02 | 99edc9177929 | [new] the marker the feature keys on is produced nowhere reachable, and deleting its only call site survives all 701 tests |
+| US0466 | REJECT | qa-seat-ep0171 | claude-opus-5-author | 2026-08-02 | fbd92b4d977e | [new] help\_page\_findings has no caller - doc\_coverage.check never invokes it, so deleting a help page leaves the lane green and only a unit test red |
+| US0470 | REJECT | qa-seat-ep0171 | claude-opus-5-author | 2026-08-02 | 877878dafc34 | [new] AC5's verifier never invokes batch swap and survives returning 99 from the dispatch, and two of the three named grammar forms do not exist in the parser |
+| US0471 | REJECT | qa-seat-ep0171 | claude-opus-5-author | 2026-08-02 | 6c308f0e0bdb | [new] the selection hand-rolled an exact-string Epic compare instead of select\_batch, so the link form used by 33 stories was invisible and EP0005 reported zero of its 13 |
+| US0472 | APPROVE | qa-seat-ep0171 | claude-opus-5-author | 2026-08-02 | 19fb0260385f | [pre-existing] none blocking - every AC exercised through the CLI, the standing pair holds across a raise and a lowering, and both critical mutants killed |
+| US0473 | REJECT | qa-seat-ep0171 | claude-opus-5-author | 2026-08-02 | d97ad0e5089f | [new] AC2's verifier extracts a bare verb word rather than parsing, so a nonexistent flag survives, and the prose claimed every control stores a reason when several reject it and batch add dropped it |
 
 ## Supersessions
 

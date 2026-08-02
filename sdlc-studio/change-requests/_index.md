@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 14 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 42 |
 | Complete | 446 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **525** |
+| **Total** | **526** |
 
 ## All Changes
 
@@ -347,6 +347,7 @@
 | [CR-0523](CR0523-the-unreviewed-span-is-reported-during-the-run.md) | the unreviewed span is reported DURING the run, not discovered at the close | Proposed | High | Improvement | 2026-08-02 | -- |
 | [CR-0524](CR0524-a-review-verdict-separates-a-broken-feature-from.md) | a review verdict separates a broken feature from evidence that cannot fail | Proposed | High | Improvement | 2026-08-02 | -- |
 | [CR-0525](CR0525-a-unit-s-test-plan-is-written-and.md) | a unit's test plan is written and reviewed BEFORE its code, because reviewing the test is cheaper than reviewing the code | Proposed | Critical | Improvement | 2026-08-02 | -- |
+| [CR-0526](CR0526-a-sprint-ends-with-nothing-open-a-non.md) | a sprint ends with nothing open - a non-stop-ship finding becomes a bug and its story closes | Proposed | Critical | Improvement | 2026-08-02 | -- |
 
 ## Archived Releases
 

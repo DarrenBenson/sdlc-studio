@@ -1,6 +1,7 @@
 # US0473: The in-flight sprint controls are documented as runnable invocations, with coverage derived from the parser and the reference section pinned structurally
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** false reason claim and batch add's dropped flag repaired here; the non-parsing verifier in BG0497
 > **Delivers:** CR0441
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

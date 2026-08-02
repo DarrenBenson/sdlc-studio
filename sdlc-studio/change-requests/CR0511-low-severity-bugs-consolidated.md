@@ -33,6 +33,9 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 - **the suite-claim lane fires on a message that QUOTES a greenness claim rather than making one**: The commit-msg suite-claim lane matches the phrase anywhere in the message, so a commit DESCRIBING the defect refuses itself. Hit while filing BG0492, whose body reads: a scripts-only verdict satisfies a claim of "both suites green". The lane matched the quoted phrase and blocked the commit, though the message makes no claim about this commit's suite at all.
 
   Self-demonstrating, and the second time this repo has hit the shape - BG0301 was the shell-hazard detector firing on the artefact that documented it. A guard that cannot tell a claim from a quotation of a claim will refuse precisely the commits that write about it.
+- **US0613's criterion names `sprint run`, which is not on the shipped command surface**: US0613 AC1 requires that `sprint plan` and `sprint run` print the toolchain runbook, and its story title asserts the same. There is no `run` verb: `sprint.py`'s parser offers plan, breakdown, close, boundary, report, preflight, goal-verdict, goal-review, reopen, stop, decision, batch, add-epic, appetite, review-batch and lane. The unit's own changelog fragment is more accurate than its criterion - it claims only `sprint plan`.
+
+  So the criterion demanded behaviour of a command that does not exist, and passed anyway because its verifier was a source grep. The grep is repaired in 307ce91d and now drives `sprint plan` and reads its output; the criterion text is not, and it still promises a second command nobody can invoke.
 
 ## Revision History
 

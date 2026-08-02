@@ -287,9 +287,18 @@ python3 <skill>/scripts/sprint.py goal-verdict --verdict achieved --note "<why i
 python3 <skill>/scripts/sprint.py lane brief --units US0001,US0002
 ```
 
-Every one takes a `--reason` that is stored, not printed. A change nobody recorded is a change
-the close cannot explain, and the difference between the planned batch and the delivered one is
-the thing a retro is actually for.
+Each control that CHANGES the batch or the ceiling takes a `--reason` and stores it in the run
+record: `batch drop`, `batch swap`, `batch add`, `appetite resize`, `stop` and `reopen`. It is
+required on the ones where a silent change would be unexplainable - drop, swap, resize, stop -
+and optional on `add`. `goal-review record` takes no reason: its seat verdicts ARE the reasons.
+
+An earlier version of this line claimed every control took a stored reason. It did not: several
+verbs rejected the flag outright, and `batch add` accepted it and discarded it silently. Both
+are corrected - a flag that is accepted and dropped is worse than one that refuses, because
+nothing tells you it went nowhere.
+
+A change nobody recorded is a change the close cannot explain, and the difference between the
+planned batch and the delivered one is the thing a retro is actually for.
 
 ## Prerequisites
 

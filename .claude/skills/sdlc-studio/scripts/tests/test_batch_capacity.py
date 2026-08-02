@@ -19,6 +19,11 @@ from pathlib import Path
 SCRIPT = Path(__file__).resolve().parent.parent / "sprint.py"
 
 
+def sdlc_md_norm(rec):
+    from lib import sdlc_md
+    return sdlc_md.norm_id(rec)
+
+
 def _load():
     spec = importlib.util.spec_from_file_location("sprint", SCRIPT)
     mod = importlib.util.module_from_spec(spec)
@@ -172,6 +177,52 @@ class AddEpicTests(unittest.TestCase):
         return json.loads(
             (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")
         ).get("batch") or []
+
+    def test_the_link_form_of_the_epic_field_is_selected(self) -> None:
+        """MUTANT: compare the Epic field with an exact string equality, as shipped.
+
+        This corpus writes the field two ways - `EP0010`, and the link form
+        `[EP0010: A Title](../epics/EP0010-a-title.md)`. The first version compared exactly and
+        so could not see the second: 33 real stories were invisible to it, including all 13 on
+        EP0005, and the command reported the epic as empty. My own front-door check missed it
+        because the fixture I built used only the bare form - so the fixture, not the code, is
+        what this test fixes.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, batch=[])
+            # the LINK form, which is what a third of this repo's stories carry
+            (root / "sdlc-studio" / "stories" / "US0007-linked.md").write_text(
+                "# US0007: a linked unit\n\n> **Status:** Ready\n"
+                "> **Epic:** [EP0010: A Title](../epics/EP0010-a-title.md)\n"
+                "> **Points:** 8\n> **Affects:** src/a.py\n", encoding="utf-8")
+            rc, out = self._run(root, "add-epic", "--epic", "EP0010", "--status", "Ready",
+                                "--format", "json")
+            rec = json.loads(out)
+        self.assertEqual(0, rc, out)
+        self.assertIn("US0007", rec["added"],
+                      "a story whose Epic field is written in the LINK form was not selected - "
+                      "an exact-string compare cannot see it, and a third of this corpus uses it")
+
+    def test_the_selection_agrees_with_select_batch(self) -> None:
+        """MUTANT: hand-roll the walk again instead of delegating.
+
+        The criterion names `select_batch` as law precisely because a second selector is a
+        second answer to the same question. Asserted as EQUALITY with the shared selector over
+        a mixed-form fixture, so any future divergence reddens rather than being reasoned about.
+        """
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, batch=[])
+            (root / "sdlc-studio" / "stories" / "US0007-linked.md").write_text(
+                "# US0007: a linked unit\n\n> **Status:** Ready\n"
+                "> **Epic:** [EP0010: A Title](../epics/EP0010-a-title.md)\n"
+                "> **Points:** 8\n> **Affects:** src/a.py\n", encoding="utf-8")
+            mine = sprint._epic_units(root, "EP0010", "Ready")
+            canon = [sdlc_md_norm(u["id"]) for u in
+                     sprint.select_batch(root, "story", "Ready", epics={"EP0010"})]
+        self.assertEqual(sorted(canon), sorted(mine),
+                         "the add-epic selection disagrees with `select_batch`, which the "
+                         "criterion names as the selector")
 
     def test_the_epic_stories_at_the_named_status_are_added_as_a_priced_set(self) -> None:
         """MUTANT: add them without reporting the points, or report a constant.

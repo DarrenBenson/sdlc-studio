@@ -15,7 +15,7 @@ Decomposed from CR0519. Delivers the work CR0519 requested.
 ## Story Breakdown
 
 - [x] [US0610: tools/run-suite.sh runs a suite and writes exit_code, counts, duration and head_sha to sdlc-studio/.local/suite-verdict.json, printing only the verdict line](../stories/US0610-tools-run-suite-sh-runs-a-suite-and.md)
-- [ ] [US0611: A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate](../stories/US0611-a-greenness-claim-whose-verdict-file-is-absent.md)
+- [x] [US0611: A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate](../stories/US0611-a-greenness-claim-whose-verdict-file-is-absent.md)
 
 ## Acceptance Criteria (Epic Level)
 

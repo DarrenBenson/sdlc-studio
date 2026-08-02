@@ -1,6 +1,7 @@
 # US0466: The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** BG0497 - the doc_coverage lane never calls the check, so deleting a help page leaves it green
 > **Delivers:** CR0439
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

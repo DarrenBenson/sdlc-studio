@@ -14,8 +14,8 @@ Decomposed from CR0522. Delivers the work CR0522 requested.
 
 ## Story Breakdown
 
-- [ ] [US0608: A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead](../stories/US0608-a-stale-repo-wide-unified-review-no-longer.md)
-- [ ] [US0609: file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run](../stories/US0609-file-and-close-accepts-a-stale-periodic-review.md)
+- [x] [US0608: A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead](../stories/US0608-a-stale-repo-wide-unified-review-no-longer.md)
+- [x] [US0609: file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run](../stories/US0609-file-and-close-accepts-a-stale-periodic-review.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -756,7 +756,7 @@ def drop_from_batch(repo_root: Path | str, unit_id: str, reason: str) -> dict:
     return _mutate(repo_root, apply)
 
 
-def add_to_batch(repo_root: Path | str, unit_id: str) -> dict:
+def add_to_batch(repo_root: Path | str, unit_id: str, reason: str = "") -> dict:
     """Add a unit to the OPEN run's approved batch and record the change.
 
     The added unit is then held to the same gates as the rest - the done-gate reads `batch`, so
@@ -775,6 +775,11 @@ def add_to_batch(repo_root: Path | str, unit_id: str) -> dict:
             batch.append(norm)
         state["batch"] = batch
         entry = {"action": "add", "id": norm, "at": sdlc_md.now_iso8601()}
+        # STORED, not dropped. The flag was accepted and silently discarded, so an operator who
+        # recorded a reason got a ledger entry that did not carry it - a flag that lies is worse
+        # than one that refuses, because nothing tells you it went nowhere.
+        if (reason or "").strip():
+            entry["reason"] = reason.strip()
         if already:
             entry["note"] = "already in batch"
         state["batch_changes"] = list(state.get("batch_changes") or []) + [entry]

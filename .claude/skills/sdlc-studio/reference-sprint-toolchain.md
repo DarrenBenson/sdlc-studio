@@ -57,8 +57,32 @@ Read this at plan time. `sprint plan` prints it.
 | Scaffold the retro | `artifact.py new --type retro` | hand-mirroring the template |
 | Check the retro is complete | `retro.py validate --id <id>` | reading it over |
 | Record estimate versus actual | `retro.py accuracy --id <id> --write` | leaving the cost unmeasured |
+| Lift the retro's lessons | `retro.py extract --id <id>` | letting a lesson die in one document |
+| Refresh what the next sprint reads | `lessons.py summary` | a digest that no longer matches the log |
+| Record the adversarial pass | `critic.py evidence --unit <id> --reviewer <seat>` | a review that exists only in a transcript |
+| Record the reviewer of record | `critic.py signoff --units <ids> --principal <who>` | claiming a unit is signed |
+| Say where a closed unit's work went | `transition.py annotate --id <id> --field "Closed with findings in"` | leaving the reader to hunt the retro |
 | Close | `sprint.py close --retro <id> --apply-signoff --principal <who>` | transitioning units by hand |
+| End a run that will not reach its goal | `sprint.py stop --reason <why>` | abandoning it and opening a fresh one |
+| Write the handoff | `handoff.py generate --title <t>` | prose about what is left |
+| Discharge the close-owed ledger | `gate.py --require-retro <id>` | an advisory nobody clears |
+| Re-baseline what a retro accounts for | `close_owed.py baseline --note <why>` | a ledger that never returns to zero |
+| Take the backlog census | `status.py points` | counting artefacts by hand |
 | Mirror to the installed copy | `bash tools/forward-port.sh --yes` | `install.sh`, which clobbers the tree |
+
+## In-flight: changing a run that is already open
+
+| Do | Command | Instead of |
+| --- | --- | --- |
+| Trade units | `sprint.py batch swap --out <ids> --in <ids> --reason <why>` | a drop that happens to sit beside an add |
+| Pull a unit from the batch | `sprint.py batch drop <id> --reason <why>` | `Deferred`, which leaves it gated |
+| Add an epic's stories as one priced set | `sprint.py batch add-epic --epic <id> --status Ready` | adding them one at a time |
+| Raise the ceiling on the record | `sprint.py appetite resize --units <n> --reason <why>` | overrunning silently |
+| Review at the batch boundary | `sprint.py review-batch --open <ids>` | queueing every review to the close |
+
+Review at the BOUNDARY, not at the close. A batch reviewed where it was built makes a finding
+delivery work in the batch that caused it; the same finding found at the close is close
+overhead, and by then the repair means reopening work believed finished.
 
 ## When a command is missing
 

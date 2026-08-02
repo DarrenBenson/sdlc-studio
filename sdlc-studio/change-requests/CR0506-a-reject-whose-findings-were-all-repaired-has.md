@@ -26,6 +26,18 @@ Who: anyone reading a coverage figure to decide whether a run can close, and the
 - [ ] A finding closed by FILING it as an artefact rather than by fixing it is recorded as such, with the artefact id, because 'fixed' and 'filed as a known issue' are different dispositions and the operator's rule is that both are legitimate - what is not legitimate is being unable to tell them apart afterwards.
 - [ ] The close preflight's coverage line states the three counts separately. A single 'N covered by no independent review' figure was wrong by 18 out of 19 on the run that motivated this, and the reason it was wrong is that one number cannot carry three states.
 
+## Third occurrence (2026-08-02)
+
+RUN-01KYZKY5 hit this a third time. Eighteen units closed carrying recorded REJECTs from five
+independent passes, every finding either repaired in-run with the reviewer's own mutant re-run
+and killed, or filed as `BG0488`, `BG0492`, `BG0493`, `BG0497` or `CR0511`. Conformance reported
+all eighteen as `missing critiqued (independent APPROVE verdict)` - the same words it uses for a
+unit nobody opened - so the close needed another waiver sweep.
+
+Running total on this one rule: **41 units** across three batches in four days - D0077-D0087,
+D0092-D0103, and this run's 18. The operator's close rule is raised as `CR0526`, which supplies
+the rule and the gate this CR's missing state would make satisfiable.
+
 ## Recommendation
 
 The repair record belongs beside the verdict in `critic.py`, not in a new ledger - the whole value is that a reader of the verdict sees the disposition without knowing to look elsewhere. Sequence it BEFORE the next close rather than after: the gap has now cost two consecutive runs, and the second time it produced a report that would have sent an operator to waive 18 units whose findings were already fixed and mutation-verified. Check during refine whether this subsumes the waiver route for this case entirely - a waiver records that a gate was knowingly bypassed, and a repaired rejection is not a bypass, so reaching for `decisions.py waive` here (as D0077-D0087 did) writes a weaker and less accurate record than the facts support.

@@ -1,6 +1,7 @@
 # US0472: The appetite can be resized on an open run with a recorded reason, and the standing capacity it is measured against survives the resize
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** no findings - approved by an independent pass, every AC exercised through the CLI
 > **Delivers:** CR0441
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

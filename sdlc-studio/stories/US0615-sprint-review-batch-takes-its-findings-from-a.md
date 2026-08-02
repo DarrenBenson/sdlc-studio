@@ -1,6 +1,7 @@
 # US0615: sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** repaired in 307ce91d - the verifier drives review-batch --fields-file
 > **Delivers:** CR0516
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

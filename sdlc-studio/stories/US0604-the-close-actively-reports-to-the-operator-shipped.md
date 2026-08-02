@@ -1,6 +1,7 @@
 # US0604: The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** repaired in 307ce91d - close_report is emitted from the close
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

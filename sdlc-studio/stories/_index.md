@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 17 |
-| Ready | 33 |
+| Ready | 14 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 562 |
+| Done | 581 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -377,14 +377,14 @@
 | [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0464](US0464-every-lens-pack-on-disk-names-its-detector.md) | Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0465](US0465-no-artefact-reaches-a-terminal-status-carrying-unchecked.md) | No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept | Done | EP0169 | 2026-07-27 | 2026-07-27 |
-| [US0466](US0466-the-ungroomed-ac-marker-routes-to-the-shape.md) | The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
+| [US0466](US0466-the-ungroomed-ac-marker-routes-to-the-shape.md) | The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane | Done | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0467](US0467-status-names-the-open-run-id-rung-sprint.md) | status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0468](US0468-help-sprint-md-documents-the-run-lifecycle-batch.md) | help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0469](US0469-every-sprint-batch-change-reports-its-capacity-effect.md) | Every sprint batch change reports its capacity effect through the plan-time renderer: points and token forecast against capacity.tokens, unit count against the appetite | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
-| [US0470](US0470-sprint-batch-swap-trades-units-in-one-recorded.md) | sprint batch swap trades units in one recorded call, in the house id grammar, reporting whether the points balanced | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
-| [US0471](US0471-sprint-batch-add-epic-adds-an-epic-s.md) | sprint batch add-epic adds an epic's stories at a named status as one set, priced through the shared renderer | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
-| [US0472](US0472-the-appetite-can-be-resized-on-an-open.md) | The appetite can be resized on an open run with a recorded reason, and the standing capacity it is measured against survives the resize | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
-| [US0473](US0473-the-in-flight-sprint-controls-are-documented-as.md) | The in-flight sprint controls are documented as runnable invocations, with coverage derived from the parser and the reference section pinned structurally | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0470](US0470-sprint-batch-swap-trades-units-in-one-recorded.md) | sprint batch swap trades units in one recorded call, in the house id grammar, reporting whether the points balanced | Done | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0471](US0471-sprint-batch-add-epic-adds-an-epic-s.md) | sprint batch add-epic adds an epic's stories at a named status as one set, priced through the shared renderer | Done | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0472](US0472-the-appetite-can-be-resized-on-an-open.md) | The appetite can be resized on an open run with a recorded reason, and the standing capacity it is measured against survives the resize | Done | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0473](US0473-the-in-flight-sprint-controls-are-documented-as.md) | The in-flight sprint controls are documented as runnable invocations, with coverage derived from the parser and the reference section pinned structurally | Done | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0474](US0474-review-prep-derives-the-rv-record-and-stamps.md) | review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0476](US0476-rfc0009-records-its-partial-supersession-by-rfc0038-to.md) | RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element | Done | EP0172 | 2026-07-27 | 2026-07-27 |
@@ -509,24 +509,24 @@
 | [US0595](US0595-a-waiver-records-whether-it-was-deliberate-or.md) | A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0597](US0597-the-premise-is-replayed-and-measured-the-blocking.md) | The premise is replayed and measured: the blocking-finding count before and after, and the lane run over the three diffs that motivated it | Done | EP0195 | 2026-08-01 | 2026-08-01 |
-| [US0598](US0598-persona-resolve-panel-assigns-the-adversarial-seats-and.md) | persona_resolve panel assigns the adversarial seats and the SIGNING seat disjointly, and the assignment is recorded on the run | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
-| [US0599](US0599-a-panel-may-sign-a-unit-only-when.md) | A panel may sign a unit only when every adversarial verdict on it carries brief provenance, and missing provenance STOPS the run and notifies rather than parking it | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
-| [US0600](US0600-the-review-repair-loop-declares-a-round-cap.md) | The review-repair loop declares a round cap and the growing-set detector GATES rather than reports, so a diverging loop stops and hands off | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
-| [US0601](US0601-review-signoff-is-operator-by-default-and-panel.md) | review.signoff is operator by default and panel only by explicit config, so no consuming project silently loses its human | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0598](US0598-persona-resolve-panel-assigns-the-adversarial-seats-and.md) | persona_resolve panel assigns the adversarial seats and the SIGNING seat disjointly, and the assignment is recorded on the run | Done | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0599](US0599-a-panel-may-sign-a-unit-only-when.md) | A panel may sign a unit only when every adversarial verdict on it carries brief provenance, and missing provenance STOPS the run and notifies rather than parking it | Done | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0600](US0600-the-review-repair-loop-declares-a-round-cap.md) | The review-repair loop declares a round cap and the growing-set detector GATES rather than reports, so a diverging loop stops and hands off | Done | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0601](US0601-review-signoff-is-operator-by-default-and-panel.md) | review.signoff is operator by default and panel only by explicit config, so no consuming project silently loses its human | Done | EP0198 | 2026-08-01 | 2026-08-01 |
 | [US0602](US0602-a-panel-signed-unit-is-distinguishable-from-an.md) | A panel-signed unit is distinguishable from an operator-signed one forever, in the signoff record and in the sprint report | Done | EP0198 | 2026-08-01 | 2026-08-01 |
-| [US0603](US0603-a-unit-the-panel-rejects-twice-or-whose.md) | A unit the panel rejects twice, or whose seats disagree, escalates to the operator by NOTIFYING rather than waiting | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
-| [US0604](US0604-the-close-actively-reports-to-the-operator-shipped.md) | The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0603](US0603-a-unit-the-panel-rejects-twice-or-whose.md) | A unit the panel rejects twice, or whose seats disagree, escalates to the operator by NOTIFYING rather than waiting | Done | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0604](US0604-the-close-actively-reports-to-the-operator-shipped.md) | The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered | Done | EP0198 | 2026-08-01 | 2026-08-01 |
 | [US0605](US0605-verify-ac-lane-check-reports-criteria-whose-verifiers.md) | verify_ac lane-check reports criteria whose verifiers never enter the shipped entry point, for units whose Affects names a CLI-bearing script | Done | EP0199 | 2026-08-01 | 2026-08-01 |
-| [US0606](US0606-the-lane-check-runs-in-the-gate-that.md) | The lane-check runs in the gate that already runs verify_ac, reporting only, with its yield accumulated where a blocking decision can read it | Ready | EP0199 | 2026-08-01 | 2026-08-01 |
-| [US0607](US0607-best-practices-testing-md-states-the-entry-point.md) | best-practices/testing.md states the entry-point rule beside name-the-mutant-first | Ready | EP0199 | 2026-08-01 | 2026-08-01 |
-| [US0608](US0608-a-stale-repo-wide-unified-review-no-longer.md) | A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead | Ready | EP0200 | 2026-08-01 | 2026-08-01 |
-| [US0609](US0609-file-and-close-accepts-a-stale-periodic-review.md) | file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run | Ready | EP0200 | 2026-08-01 | 2026-08-01 |
+| [US0606](US0606-the-lane-check-runs-in-the-gate-that.md) | The lane-check runs in the gate that already runs verify_ac, reporting only, with its yield accumulated where a blocking decision can read it | Done | EP0199 | 2026-08-01 | 2026-08-01 |
+| [US0607](US0607-best-practices-testing-md-states-the-entry-point.md) | best-practices/testing.md states the entry-point rule beside name-the-mutant-first | Done | EP0199 | 2026-08-01 | 2026-08-01 |
+| [US0608](US0608-a-stale-repo-wide-unified-review-no-longer.md) | A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead | Done | EP0200 | 2026-08-01 | 2026-08-01 |
+| [US0609](US0609-file-and-close-accepts-a-stale-periodic-review.md) | file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run | Done | EP0200 | 2026-08-01 | 2026-08-01 |
 | [US0610](US0610-tools-run-suite-sh-runs-a-suite-and.md) | tools/run-suite.sh runs a suite and writes exit_code, counts, duration and head_sha to sdlc-studio/.local/suite-verdict.json, printing only the verdict line | Done | EP0201 | 2026-08-01 | 2026-08-01 |
-| [US0611](US0611-a-greenness-claim-whose-verdict-file-is-absent.md) | A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate | Ready | EP0201 | 2026-08-01 | 2026-08-01 |
-| [US0612](US0612-a-runbook-ordered-by-sprint-step-names-the.md) | A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces | Ready | EP0202 | 2026-08-01 | 2026-08-01 |
-| [US0613](US0613-sprint-plan-and-sprint-run-print-the-runbook.md) | sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists | Ready | EP0202 | 2026-08-01 | 2026-08-01 |
+| [US0611](US0611-a-greenness-claim-whose-verdict-file-is-absent.md) | A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate | Done | EP0201 | 2026-08-01 | 2026-08-01 |
+| [US0612](US0612-a-runbook-ordered-by-sprint-step-names-the.md) | A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces | Done | EP0202 | 2026-08-01 | 2026-08-01 |
+| [US0613](US0613-sprint-plan-and-sprint-run-print-the-runbook.md) | sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists | Done | EP0202 | 2026-08-01 | 2026-08-01 |
 | [US0614](US0614-a-points-census-answers-how-much-is-left.md) | A points census answers how much is left by status and by type, so the routine question is not answered by a script written on the spot | Done | EP0203 | 2026-08-01 | 2026-08-01 |
-| [US0615](US0615-sprint-review-batch-takes-its-findings-from-a.md) | sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed | Ready | EP0203 | 2026-08-01 | 2026-08-01 |
+| [US0615](US0615-sprint-review-batch-takes-its-findings-from-a.md) | sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed | Done | EP0203 | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 

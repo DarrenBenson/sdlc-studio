@@ -1,6 +1,7 @@
 # US0608: A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** BG0488 - needs a design decision on whether US0608 and US0609 are coherent as a pair
 > **Delivers:** CR0522
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

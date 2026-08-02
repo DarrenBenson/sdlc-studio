@@ -89,6 +89,19 @@ base ref. Only a regression or a newly introduced defect blocks; anything alread
 the tree, or already recorded in an open Bug or CR, is reported with its id and does not
 hold the gate. Decide which by execution (`git log -S`), not by impression.
 
+**Always look for a tool before doing anything by hand.** The
+[toolchain runbook](.claude/skills/sdlc-studio/reference-sprint-toolchain.md) is ordered by
+SPRINT STEP - plan, groom, batch, deliver, review, in-flight, close - and each row names the one
+command that performs the step beside the hand-rolled shape it replaces. Read the row for the
+step you are on BEFORE you start it, not after. If a step there has no command, that is a
+finding to file, not permission to hand-roll it.
+
+RUN-01KYZKY5 paid for this line: the close was hand-authored first, and running the shipped
+commands afterwards caught four defects the hand version had missed - example scaffold rows left
+in a retro, a Batch field that parsed to zero units, a header claiming a delivered count the
+batch contradicted, and a lessons digest that no longer matched its log. The runbook already
+named the command that would have caught them.
+
 **Use the deterministic tooling; never hand-roll what it wires.** Create artefacts with
 `artifact.py new` / `batch`, allocate ids with `next_id.py`, file findings with
 `file_finding.py`, change status with `transition.py`. Never hand-author `_index.md` - it is

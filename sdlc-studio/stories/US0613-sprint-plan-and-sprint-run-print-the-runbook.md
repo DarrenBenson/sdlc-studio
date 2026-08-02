@@ -1,6 +1,7 @@
 # US0613: sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** repaired in 307ce91d (guard + verifier); the criterion naming a non-existent sprint verb is consolidated into CR0511
 > **Delivers:** CR0518
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

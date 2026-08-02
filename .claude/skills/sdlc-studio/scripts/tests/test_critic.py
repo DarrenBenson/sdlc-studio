@@ -3777,6 +3777,70 @@ class PanelInterlockTests(unittest.TestCase):
                             "an operator sign-off was blocked by the panel interlock")
 
 
+
+class SkippedCountTests(unittest.TestCase):
+    """BG0496: the printed count must equal what the RECORD holds.
+
+    `signoff` over units in a non-signable status printed `14 unit(s) SKIPPED and NOT written`
+    on stderr and `14 unit(s) written` on stdout, over a record holding zero rows. The skip path
+    returns rather than raising, so the batch runner counted it as written. Exit code and stderr
+    were already right, which is worse than both being wrong - the reader who trusts the
+    headline is told the opposite of what happened (LL0008).
+    """
+
+    def _root(self, d, status="Ready"):
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / "reviews").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+            f"# US0001: a unit\n\n> **Status:** {status}\n> **Points:** 3\n"
+            f"> **Affects:** src/a.py\n", encoding="utf-8")
+        return root
+
+    def test_the_printed_count_matches_the_record(self) -> None:
+        """MUTANT: count a skipped unit as written (the shipped behaviour).
+
+        Asserted against the RECORD, not against another number this test computes: the defect
+        was precisely that two numbers in one output disagreed, so the file is the arbiter.
+        """
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)                       # Ready: neither terminal nor awaiting
+            buf, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+                rc = critic.main(["signoff", "--units", "US0001",
+                                  "--principal", "Darren Benson", "--author", "an-author",
+                                  "--note", "n", "--root", str(root)])
+            out = buf.getvalue()
+            record = root / "sdlc-studio" / "reviews" / "signoff-record.md"
+            rows = record.read_text(encoding="utf-8").count("| US0001 |") if record.exists() else 0
+        self.assertNotEqual(0, rc, "a wholly skipped batch reported success")
+        self.assertEqual(0, rows, "control: the row should not have been written")
+        self.assertIn("0 unit(s) written", out,
+                      f"the printed count disagrees with the record, which holds {rows} row(s):"
+                      f"\n{out}")
+
+    def test_a_signable_unit_is_still_counted(self) -> None:
+        """The control. MUTANT: subtract every unit, or report zero unconditionally.
+
+        A count that always says zero agrees with an empty record and with nothing else.
+        """
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, status="Review")      # awaiting the reviewer of record
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+                rc = critic.main(["signoff", "--units", "US0001",
+                                  "--principal", "Darren Benson", "--author", "an-author",
+                                  "--note", "n", "--root", str(root)])
+            out = buf.getvalue()
+            record = root / "sdlc-studio" / "reviews" / "signoff-record.md"
+            rows = record.read_text(encoding="utf-8").count("| US0001 |")
+        self.assertEqual(0, rc, f"a signable unit was refused:\n{out}")
+        self.assertEqual(1, rows, "the sign-off row was not written")
+        self.assertIn("1 unit(s) written", out, f"the count does not match the record:\n{out}")
+
+
 if __name__ == "__main__":
     unittest.main()
 

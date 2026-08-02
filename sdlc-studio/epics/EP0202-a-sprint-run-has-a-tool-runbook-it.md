@@ -14,8 +14,8 @@ Decomposed from CR0518. Delivers the work CR0518 requested.
 
 ## Story Breakdown
 
-- [ ] [US0612: A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces](../stories/US0612-a-runbook-ordered-by-sprint-step-names-the.md)
-- [ ] [US0613: sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists](../stories/US0613-sprint-plan-and-sprint-run-print-the-runbook.md)
+- [x] [US0612: A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces](../stories/US0612-a-runbook-ordered-by-sprint-step-names-the.md)
+- [x] [US0613: sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists](../stories/US0613-sprint-plan-and-sprint-run-print-the-runbook.md)
 
 ## Acceptance Criteria (Epic Level)
 

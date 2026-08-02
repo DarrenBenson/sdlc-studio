@@ -14,13 +14,13 @@ Decomposed from CR0514. Delivers the work CR0514 requested.
 
 ## Story Breakdown
 
-- [ ] [US0598: persona_resolve panel assigns the adversarial seats and the SIGNING seat disjointly, and the assignment is recorded on the run](../stories/US0598-persona-resolve-panel-assigns-the-adversarial-seats-and.md)
-- [ ] [US0599: A panel may sign a unit only when every adversarial verdict on it carries brief provenance, and missing provenance STOPS the run and notifies rather than parking it](../stories/US0599-a-panel-may-sign-a-unit-only-when.md)
-- [ ] [US0600: The review-repair loop declares a round cap and the growing-set detector GATES rather than reports, so a diverging loop stops and hands off](../stories/US0600-the-review-repair-loop-declares-a-round-cap.md)
-- [ ] [US0601: review.signoff is operator by default and panel only by explicit config, so no consuming project silently loses its human](../stories/US0601-review-signoff-is-operator-by-default-and-panel.md)
+- [x] [US0598: persona_resolve panel assigns the adversarial seats and the SIGNING seat disjointly, and the assignment is recorded on the run](../stories/US0598-persona-resolve-panel-assigns-the-adversarial-seats-and.md)
+- [x] [US0599: A panel may sign a unit only when every adversarial verdict on it carries brief provenance, and missing provenance STOPS the run and notifies rather than parking it](../stories/US0599-a-panel-may-sign-a-unit-only-when.md)
+- [x] [US0600: The review-repair loop declares a round cap and the growing-set detector GATES rather than reports, so a diverging loop stops and hands off](../stories/US0600-the-review-repair-loop-declares-a-round-cap.md)
+- [x] [US0601: review.signoff is operator by default and panel only by explicit config, so no consuming project silently loses its human](../stories/US0601-review-signoff-is-operator-by-default-and-panel.md)
 - [x] [US0602: A panel-signed unit is distinguishable from an operator-signed one forever, in the signoff record and in the sprint report](../stories/US0602-a-panel-signed-unit-is-distinguishable-from-an.md)
-- [ ] [US0603: A unit the panel rejects twice, or whose seats disagree, escalates to the operator by NOTIFYING rather than waiting](../stories/US0603-a-unit-the-panel-rejects-twice-or-whose.md)
-- [ ] [US0604: The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered](../stories/US0604-the-close-actively-reports-to-the-operator-shipped.md)
+- [x] [US0603: A unit the panel rejects twice, or whose seats disagree, escalates to the operator by NOTIFYING rather than waiting](../stories/US0603-a-unit-the-panel-rejects-twice-or-whose.md)
+- [x] [US0604: The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered](../stories/US0604-the-close-actively-reports-to-the-operator-shipped.md)
 
 ## Acceptance Criteria (Epic Level)
 

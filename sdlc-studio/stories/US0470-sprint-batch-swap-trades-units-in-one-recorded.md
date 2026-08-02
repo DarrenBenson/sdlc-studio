@@ -1,6 +1,7 @@
 # US0470: sprint batch swap trades units in one recorded call, in the house id grammar, reporting whether the points balanced
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** BG0497 - AC5's verifier never invokes batch swap; two named grammar forms do not exist
 > **Delivers:** CR0441
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

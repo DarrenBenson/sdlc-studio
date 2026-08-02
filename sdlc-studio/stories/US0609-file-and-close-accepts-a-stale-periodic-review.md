@@ -1,6 +1,7 @@
 # US0609: file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** BG0488 - the marker is produced nowhere reachable; 25 blockers, zero carrying it
 > **Delivers:** CR0522
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

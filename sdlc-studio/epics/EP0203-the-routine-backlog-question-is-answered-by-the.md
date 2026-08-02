@@ -15,7 +15,7 @@ Decomposed from CR0516. Delivers the work CR0516 requested.
 ## Story Breakdown
 
 - [x] [US0614: A points census answers how much is left by status and by type, so the routine question is not answered by a script written on the spot](../stories/US0614-a-points-census-answers-how-much-is-left.md)
-- [ ] [US0615: sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed](../stories/US0615-sprint-review-batch-takes-its-findings-from-a.md)
+- [x] [US0615: sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed](../stories/US0615-sprint-review-batch-takes-its-findings-from-a.md)
 
 ## Acceptance Criteria (Epic Level)
 

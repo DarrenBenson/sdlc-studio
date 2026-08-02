@@ -1,6 +1,7 @@
 # US0598: persona_resolve panel assigns the adversarial seats and the SIGNING seat disjointly, and the assignment is recorded on the run
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** repaired in 307ce91d - signoff --panel reads the recorded assignment
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

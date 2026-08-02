@@ -6497,24 +6497,23 @@ def _swap_points(root: Path, ids) -> int:
 
 
 def _epic_units(root: Path, epic: str, status: str) -> list[str]:
-    """The epic's stories at `status`, read from the TREE at call time.
+    """The epic's stories at `status`, through `select_batch` - the shared selector.
 
-    Read fresh rather than from a list the caller passes, so a story added to the epic between
-    two calls is picked up and one at a different status is not. A snapshot would make this
-    command mean "the stories that were there when somebody last looked".
+    Read fresh at call time, so a story added to the epic between two calls is picked up and one
+    at a different status is not. A snapshot would make this command mean "the stories that were
+    there when somebody last looked".
+
+    The first version hand-rolled the walk and compared the Epic field with an exact string
+    equality. This corpus writes that field two ways - `EP0005`, and the link form
+    `[EP0005: Quality & Drift Control](../epics/EP0005-quality-drift.md)` - and the second form
+    failed the compare silently. 33 stories were invisible to it, including all 13 on EP0005,
+    and the command then reported the epic as having nothing at that status. `select_batch`
+    resolves the id out of the field with `ID_SEARCH_RE`, which is why the criterion named it:
+    a second selector is a second answer to the same question, and this one was wrong.
     """
-    want = str(status).strip().lower()
-    out = []
-    for path in sorted((root / "sdlc-studio" / "stories").glob("US*.md")):
-        text = sdlc_md.read_text_safe(path)
-        if not text:
-            continue
-        if (sdlc_md.extract_field(text, "Epic") or "").strip().upper() != epic.upper():
-            continue
-        if (sdlc_md.extract_field(text, "Status") or "").strip().lower() != want:
-            continue
-        out.append(sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or path.stem))
-    return out
+    return [sdlc_md.norm_id(u["id"])
+            for u in select_batch(root, "story", str(status).strip(),
+                                  epics={sdlc_md.norm_id(epic)})]
 
 
 def cmd_appetite(args: argparse.Namespace) -> int:
@@ -6522,8 +6521,8 @@ def cmd_appetite(args: argparse.Namespace) -> int:
 
     A run that turns out bigger than planned has two honest endings - stop at the planned
     ceiling, or raise it deliberately - and one dishonest one, where the appetite is quietly
-    rewritten so the close reports a run that fitted. The standing pair is what forecloses the
-    third: raising the accepted number MAKES the overage true rather than hiding it.
+    rewritten so the close reports a run that fitted. The standing pair forecloses the third:
+    raising the accepted number MAKES the overage true rather than hiding it.
     """
     root = Path(args.root)
     if args.action != "resize":
@@ -6684,7 +6683,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
         if action == "drop":
             state = run_state.drop_from_batch(root, args.id, reason=args.reason)
         else:
-            state = run_state.add_to_batch(root, args.id)
+            state = run_state.add_to_batch(root, args.id, reason=args.reason or "")
     except run_state.RunStateError as exc:
         print(f"sprint batch {action}: {exc}", file=sys.stderr)
         return 1

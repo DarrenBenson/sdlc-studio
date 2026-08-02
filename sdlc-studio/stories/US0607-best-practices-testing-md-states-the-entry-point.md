@@ -1,6 +1,7 @@
 # US0607: best-practices/testing.md states the entry-point rule beside name-the-mutant-first
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** repaired in 307ce91d (stale yield figure); residue in BG0493
 > **Delivers:** CR0520
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

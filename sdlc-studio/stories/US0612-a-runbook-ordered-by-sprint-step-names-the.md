@@ -1,6 +1,7 @@
 # US0612: A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces
 
-> **Status:** Ready
+> **Status:** Done
+> **Closed with findings in:** repaired in 307ce91d - 4 guard holes closed, 3 vacuous assertions replaced
 > **Delivers:** CR0518
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

@@ -2626,7 +2626,7 @@ def missing_arguments(args: argparse.Namespace, verb: str) -> list[str]:
             if not str(getattr(args, attr, "") or "").strip()]
 
 
-def _run_batch(args: argparse.Namespace, verb: str, write) -> int:
+def _run_batch(args: argparse.Namespace, verb: str, write, skipped=None) -> int:
     """Resolve the batch, refuse ONCE for anything missing, then write every unit.
 
     Both refusals happen before the first write, so a bad invocation costs one message rather
@@ -2672,6 +2672,14 @@ def _run_batch(args: argparse.Namespace, verb: str, write) -> int:
             print(f"{verb} refused for {unit}: {exc}", file=sys.stderr)
         else:
             written.append(unit)
+    # A unit the writer SKIPPED raised nothing, so it landed in `written` and was counted -
+    # the record held zero rows while the line said 14. The exit code and the stderr list were
+    # already right, which is worse than both being wrong: a reader who trusts the headline
+    # number is told the opposite of what happened (LL0008).
+    if skipped:
+        skipped_ids = {str(s).split(" ", 1)[0] for s in skipped}
+        written = [u for u in written if sdlc_md.norm_id(u) not in
+                   {sdlc_md.norm_id(s) for s in skipped_ids}]
     print(f"{verb}: {len(written)} unit(s) written"
           + (f" ({', '.join(written)})" if written else "")
           + (f"; {len(failed)} REFUSED ({', '.join(failed)})" if failed else ""))
@@ -2850,7 +2858,7 @@ def cmd_signoff(args: argparse.Namespace) -> int:
             print(f"  PANEL sign-off in force (review.signoff: panel) - adversarial seats "
                   f"{', '.join(panel)}, signed by {args.principal}.")
 
-    rc = _run_batch(args, "signoff", write)
+    rc = _run_batch(args, "signoff", write, skipped=skipped)
     if skipped:
         # The COUNT and the EXIT CODE must agree with the record. The first version named the
         # skip on stderr and still printed "N unit(s) written" with rc 0 over a record holding
