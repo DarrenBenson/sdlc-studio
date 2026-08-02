@@ -5412,5 +5412,71 @@ class ADeclaredIdMustNameARealArtefactTests(unittest.TestCase):
             self.assertIn("sdlc-studio", notes, "the declaration is not named")
 
 
+class LaneCheckLaneTests(unittest.TestCase):
+    """The lane-check must run in the gate, advisorily, with its yield recorded.
+
+    A detector nobody runs finds nothing, and a yield nobody accumulates cannot support the
+    decision to make it block. Both halves are pinned because the first version of the
+    claim-drift accumulator wrote to a TRACKED path and dirtied the tree on every commit
+    (BG0481).
+    """
+
+    # scripts/tests -> scripts -> sdlc-studio -> skills -> .claude -> REPO ROOT
+    HOOK = Path(__file__).resolve().parents[5] / ".githooks" / "pre-commit"
+
+    def test_the_lane_runs_and_does_not_block(self) -> None:
+        """MUTANT: delete the lane from the hook, or let its exit code reach the gate."""
+        text = self.HOOK.read_text(encoding="utf-8")
+        self.assertIn("lane-check", text,
+                      "the pre-commit hook never runs lane-check, so the detector finds "
+                      "nothing on any real commit")
+        self.assertIn("verify_ac.py", text,
+                      "the hook mentions lane-check but never invokes verify_ac")
+        block = text.split("lane-check")[1][:600]
+        self.assertIn("|| true", block,
+                      "the lane can fail the commit - it ships ADVISORY until its yield is "
+                      "measured")
+
+    def test_the_pass_runs_through_its_own_command(self) -> None:
+        """MUTANT: break the `lane-check` subcommand wiring in verify_ac's parser.
+
+        Added because the lane-check REPORTED THIS UNIT: its other two verifiers assert on the
+        hook's text and never enter verify_ac at all, so a broken subcommand would leave them
+        both green. The detector caught its own author, which is the strongest evidence it
+        discriminates.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "verify_ac", Path(__file__).resolve().parent.parent / "verify_ac.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["verify_ac"] = mod
+        spec.loader.exec_module(mod)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            buf_out, buf_err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+                rc = mod.main(["lane-check", "--root", str(root)])
+        self.assertEqual(0, rc, "the lane-check command is not advisory - it failed the gate")
+        self.assertIn("lane-check", buf_out.getvalue() + buf_err.getvalue(),
+                      "the command produced no report at all")
+
+    def test_the_yield_accumulates_under_local(self) -> None:
+        """MUTANT: point the accumulator at a tracked path, as BG0481 did.
+
+        A hook-written record under a tracked path dirties the working tree on every commit
+        with a file the author never touched and the hook never stages.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "verify_ac", Path(__file__).resolve().parent.parent / "verify_ac.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["verify_ac"] = mod
+        spec.loader.exec_module(mod)
+        self.assertIn("/.local/", mod._LANE_YIELD_REL,
+                      f"the yield is written to {mod._LANE_YIELD_REL}, which is not under "
+                      f".local/ - it would dirty the tree on every commit")
+
+
 if __name__ == "__main__":
     unittest.main()

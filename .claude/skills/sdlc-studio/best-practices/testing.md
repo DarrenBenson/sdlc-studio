@@ -63,6 +63,32 @@ check passes for an input the sentence does not describe, so a clause reworded t
 verdict beside it - while keeping the word the assertion pinned - stays green. Driving both
 over one battery fails on the input where they disagree, and names it.
 
+## Name the ENTRY POINT before writing the test {#name-the-entry-point}
+
+Beside naming the mutant, name the door the test goes in through - and write it down before
+the first assertion.
+
+**If the criterion describes a COMMAND, the test must enter that command.** A library import
+standing in for a command is not evidence for a claim about the command, however green it is.
+The wiring between an entry point and the function it calls is exactly the part an in-process
+test does not exercise, and that is where this defect class lives.
+
+Measured, not asserted. One sprint shipped `brief_fingerprint` with a passing acceptance test
+and a feature that did not work: the test computed `brief_fingerprint(brief(...))` in-process
+while the command that issues a brief never called it at all. The changelog and the commit
+message both said the command emitted it. Three of five findings in that batch were the same
+shape, and it cost a second review round - which is verification handed to the reviewer.
+
+`verify_ac.py lane-check` reports a unit that changes a command where none of its verifiers
+enters the entry point. Over this repository it reports 178 of 615 units, so the size of the
+class is a number rather than an impression.
+
+The question to ask, in this order:
+
+1. What does the criterion claim - a library behaviour, or a command's?
+2. Which door does my test go in through?
+3. If those differ, the test is not evidence for the claim. Fix the test, or fix the claim.
+
 ## Name the mutant BEFORE writing the test {#name-the-mutant-first}
 
 A mutation run proves a test can fail. This is the habit that makes it pass first time.

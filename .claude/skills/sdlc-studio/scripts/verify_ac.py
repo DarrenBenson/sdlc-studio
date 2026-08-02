@@ -806,6 +806,145 @@ def unresolvable_stamps(path: Path, cwd=None) -> list[dict]:
     return out
 
 
+#: A script is CLI-BEARING when it exposes an entry point a user runs. Both markers, because
+#: a module with `main()` and no parser is a library with a convenience runner, and one with a
+#: parser and no `main()` is not reachable as a command either.
+_CLI_MARKERS = ("def main(", "argparse")
+
+#: What entering the front door LOOKS LIKE in a test's source. Deliberately about execution -
+#: calling the entry point, or running the script as a process - never about naming. A
+#: convention is satisfied by a rename; this must not be.
+_LANE_MARKERS = ("main(", "subprocess.run", "subprocess.check", "runpy", "check_output")
+
+
+def _lane_test_paths(expr: str) -> list[str]:
+    """The test FILES a runner expression names.
+
+    Separate from `_verifier_targets`, which reads the `grep`/`file` DSL operands and returns
+    nothing for a runner selector. A pytest node id carries the path before `::`; jest, vitest
+    and go all name the file plainly. Extensions rather than a runner table, so a runner added
+    tomorrow is covered instead of silently exempt (LL0013).
+    """
+    out = []
+    for token in expr.replace("'", " ").replace('"', " ").split():
+        path = token.split("::", 1)[0]
+        if path.endswith((".py", ".js", ".ts", ".tsx", ".go")) and "/" in path:
+            out.append(path)
+    return out
+
+
+def _is_cli_bearing(path: Path) -> bool:
+    text = sdlc_md.read_text_safe(path)
+    return bool(text) and all(m in text for m in _CLI_MARKERS)
+
+
+def _node_source(text: str, node: str) -> str | None:
+    """The source of ONE test function, by name, or None when it cannot be isolated.
+
+    Whole-file matching is what made the first version of this detector useless: these test
+    modules are thousands of lines, so a single `main([...])` call anywhere marked every
+    criterion in the file clean. Measured over 615 units it reported ZERO findings - a
+    detector that never fires. The verifier names a node; judge that node.
+    """
+    if not node:
+        return None
+    lines = text.splitlines()
+    start = None
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith(("def ", "async def ")) and f" {node}(" in f" {stripped[4:]}":
+            start = i
+            break
+        if stripped.startswith(f"def {node}(") or stripped.startswith(f"async def {node}("):
+            start = i
+            break
+    if start is None:
+        return None
+    indent = len(lines[start]) - len(lines[start].lstrip())
+    body = [lines[start]]
+    for line in lines[start + 1:]:
+        if line.strip() and (len(line) - len(line.lstrip())) <= indent:
+            break
+        body.append(line)
+    return "\n".join(body)
+
+
+def _enters_the_lane(test_path: Path, node: str = "") -> bool:
+    """Whether the verifier's own test SOURCE shows it entering the shipped entry point.
+
+    Scoped to the named node where the selector gives one. Falls back to the whole file only
+    when the node cannot be isolated - and that fallback is deliberately permissive, because
+    reporting a criterion whose test could not even be located would be noise about the
+    detector rather than about the code.
+    """
+    text = sdlc_md.read_text_safe(test_path)
+    if not text:
+        return False
+    scoped = _node_source(text, node) if node else None
+    return any(m in (scoped if scoped is not None else text) for m in _LANE_MARKERS)
+
+
+def lane_check(root, unit_paths) -> list[dict]:
+    """Criteria whose verifiers never enter the shipped entry point.
+
+    US0577 shipped `brief_fingerprint` with a passing acceptance test and a feature that did
+    not work: the test computed it IN-PROCESS while the CLI never called it. A library test
+    cannot see a missing lane, because the wiring between entry point and function is exactly
+    the part it does not exercise - and that is where this defect class lives.
+
+    Reported, never failed. The yield is measured before the check is allowed to block, on the
+    same terms the claim-drift lane shipped under.
+    """
+    root = Path(root)
+    out: list[dict] = []
+    for path in unit_paths:
+        path = Path(path)
+        text = sdlc_md.read_text_safe(path)
+        if not text:
+            continue
+        declared = [f.strip().strip("`") for f in sdlc_md.affects_files(text)]
+        cli = [d for d in declared
+               if d.endswith(".py") and _is_cli_bearing(root / d)]
+        if not cli:
+            continue  # nothing here is reachable as a command; the question does not arise
+        # PER UNIT, not per criterion. Judged per AC this flagged 563 of 615 units, because
+        # most individual tests legitimately exercise a library function and not every
+        # criterion is about the command. The defect being caught is narrower and precise:
+        # a unit that ships a CLI change where NOTHING in its own verifiers ever enters the
+        # entry point. That is exactly US0577 - `brief_fingerprint` had a passing acceptance
+        # test computing it in-process while no command called it at all.
+        checked, entered, first = [], False, None
+        for block in parse_story(text):
+            expr = (block.verifier or "").strip()
+            if not expr or expr.lower().startswith("manual"):
+                continue
+            node = ""
+            for token in expr.split():
+                if "::" in token:
+                    node = token.rsplit("::", 1)[-1]
+                    break
+            targets = [root / tgt for tgt in _lane_test_paths(expr)]
+            targets = [t for t in targets if t.exists()]
+            if not targets:
+                continue
+            checked.append(expr)
+            first = first or (block.title or expr[:60])
+            if any(_enters_the_lane(t, node) for t in targets):
+                entered = True
+                break
+        if checked and not entered:
+            out.append({
+                "unit": sdlc_md.extract_record_id(path.stem) or path.stem,
+                "ac": first or "",
+                "cli": cli,
+                "verifier": checked[0],
+                "why": f"this unit changes a command ({', '.join(cli)}) and NONE of its "
+                       f"{len(checked)} verifier(s) enters the shipped entry point - the "
+                       f"wiring is the part a library test does not exercise",
+            })
+    return out
+
+
 def duplicate_verifiers(paths) -> list[dict]:
     """Verify commands that appear byte-identically under more than one AC.
 
@@ -1933,6 +2072,47 @@ def scaffold_ac_matrix(repo_root: Path | str, epic_id: str) -> str:
     return "### AC Coverage Matrix\n\n" + "\n".join(rows) + "\n"
 
 
+#: Where the lane's measured yield accumulates, under `.local/` like every other hook-written
+#: record. An earlier accumulator in this project wrote to a TRACKED path and dirtied the tree
+#: on every commit with a file the author never touched; this follows the fix for that.
+_LANE_YIELD_REL = "sdlc-studio/.local/lane-check-yield.json"
+
+
+def cmd_lane_check(args: argparse.Namespace) -> int:
+    """Report criteria verified only through the library. REPORTS, never fails.
+
+    Ships advisory while its yield is measured, on the same terms the claim-drift lane shipped
+    under: a new blocking check on a gate already over its ceiling earns its place on a number
+    rather than on assertion.
+    """
+    root = Path(args.root)
+    stories = sorted((root / "sdlc-studio" / "stories").glob("US*.md"))
+    if getattr(args, "ids", None):
+        wanted = {i.strip().upper() for i in args.ids.split(",") if i.strip()}
+        stories = [s for s in stories
+                   if (sdlc_md.extract_record_id(s.stem) or "").upper() in wanted]
+    findings = lane_check(root, stories)
+    for f in findings:
+        print(f"LANE-CHECK: {f['unit']} {f['ac']} -> {f['why']}", file=sys.stderr)
+    try:
+        import json as _json  # noqa: PLC0415
+        path = root / _LANE_YIELD_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            raw = path.read_text(encoding="utf-8")  # bare-read-ok: own JSON accumulator
+            rec = _json.loads(raw)
+        except (OSError, ValueError):
+            rec = {"runs": 0, "findings": 0}
+        rec["runs"] = int(rec.get("runs", 0)) + 1
+        rec["findings"] = int(rec.get("findings", 0)) + len(findings)
+        path.write_text(_json.dumps(rec, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+    if not findings:
+        print(f"lane-check: {len(stories)} unit(s), no library-only verifiers")
+    return 0  # ADVISORY - the exit code is never the finding
+
+
 def cmd_scaffold(args: argparse.Namespace) -> int:
     """Emit the pre-filled AC Coverage Matrix for an epic to stdout (or a file)."""
     repo_root = resolve_root(args)
@@ -2521,6 +2701,13 @@ def build_parser() -> argparse.ArgumentParser:
     sc.add_argument("--root", default=".")
     sc.add_argument("--out", help="Write the matrix here instead of stdout")
     sc.set_defaults(func=cmd_scaffold)
+
+    lc = sub.add_parser("lane-check",
+                        help="Advisory: criteria whose verifiers never enter the shipped "
+                             "entry point")
+    lc.add_argument("--ids", help="scope to these unit ids (comma-separated)")
+    lc.add_argument("--root", default=".")
+    lc.set_defaults(func=cmd_lane_check)
 
     rep = sub.add_parser("report", help="Print the latest verification report")
     rep.add_argument(

@@ -3627,5 +3627,96 @@ class BaselineSchemaTests(unittest.TestCase):
                              "the stamp invented a reason no human wrote")
 
 
+class LaneCheckTests(unittest.TestCase):
+    """A criterion verified only through the library is not evidence the feature ships.
+
+    US0577 shipped `brief_fingerprint` with a passing acceptance test and a feature that did
+    not work: the test computed it in-process while the CLI never called it. The wiring is
+    exactly what a library test does not exercise, and it is where this defect class lives.
+    """
+
+    def _fixture(self, d, verifier_body: str, verify_line: str):
+        root = Path(d)
+        (root / "scripts").mkdir(parents=True, exist_ok=True)
+        (root / "tests").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+        # A CLI-BEARING script: both markers, so a library with a convenience runner and a
+        # parser with no entry point are both excluded.
+        (root / "scripts" / "thing.py").write_text(
+            "import argparse\n\ndef fingerprint(x):\n    return x\n\n"
+            "def main(argv=None):\n    argparse.ArgumentParser().parse_args(argv)\n    return 0\n",
+            encoding="utf-8")
+        (root / "tests" / "test_thing.py").write_text(verifier_body, encoding="utf-8")
+        story = root / "sdlc-studio" / "stories" / "US0001-x.md"
+        story.write_text(
+            "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+            "> **Affects:** scripts/thing.py, tests/test_thing.py\n\n"
+            "## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+            "- **Then** it behaves\n"
+            f"- **Verify:** {verify_line}\n", encoding="utf-8")
+        return root, story
+
+    def test_a_library_only_verifier_is_reported(self) -> None:
+        """MUTANT: return [] from lane_check, or drop the `_enters_the_lane` test."""
+        mod = verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            root, story = self._fixture(
+                d,
+                "import thing\n\ndef test_it():\n    assert thing.fingerprint('a') == 'a'\n",
+                "pytest tests/test_thing.py")
+            found = mod.lane_check(root, [story])
+        self.assertEqual(1, len(found), f"the library-only verifier was not reported: {found}")
+        self.assertIn("scripts/thing.py", found[0]["cli"])
+
+    def test_a_cli_verifier_is_clean(self) -> None:
+        """The control. MUTANT: report every criterion.
+
+        A check that flags everything discriminates no better than one that flags nothing, and
+        would be switched off on a gate already over its ceiling.
+        """
+        mod = verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            root, story = self._fixture(
+                d,
+                "import thing\n\ndef test_it():\n    assert thing.main([]) == 0\n",
+                "pytest tests/test_thing.py")
+            found = mod.lane_check(root, [story])
+        self.assertEqual([], found, f"a verifier that enters the entry point was reported: {found}")
+
+    def test_detection_is_by_execution_not_by_name(self) -> None:
+        """MUTANT: decide from the test's NAME rather than its source.
+
+        A naming convention is satisfied by a rename. This test's name says `cli` while its
+        body never enters the lane, so a name-based detector reports it clean and this fails.
+        """
+        mod = verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            root, story = self._fixture(
+                d,
+                "import thing\n\ndef test_the_cli_entry_point_works():\n"
+                "    assert thing.fingerprint('a') == 'a'\n",
+                "pytest tests/test_thing.py")
+            found = mod.lane_check(root, [story])
+        self.assertEqual(1, len(found),
+                         "a test named for the CLI but never entering it was reported clean")
+
+    def test_a_unit_touching_no_cli_is_not_reported(self) -> None:
+        """MUTANT: report every unit regardless of what it touches.
+
+        A pure-library or docs unit has no entry point to enter, so the question does not
+        arise - flagging it would be noise on units that cannot act on it.
+        """
+        mod = verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            root, story = self._fixture(
+                d,
+                "import thing\n\ndef test_it():\n    assert thing.fingerprint('a') == 'a'\n",
+                "pytest tests/test_thing.py")
+            (root / "scripts" / "thing.py").write_text(
+                "def fingerprint(x):\n    return x\n", encoding="utf-8")  # no CLI now
+            found = mod.lane_check(root, [story])
+        self.assertEqual([], found, "a unit touching no CLI-bearing script was reported")
+
+
 if __name__ == "__main__":
     unittest.main()

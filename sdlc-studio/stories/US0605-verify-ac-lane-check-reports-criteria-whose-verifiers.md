@@ -1,6 +1,6 @@
 # US0605: verify_ac lane-check reports criteria whose verifiers never enter the shipped entry point, for units whose Affects names a CLI-bearing script
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0520
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** `verify_ac.py lane-check` runs
 - **Then** those criteria are reported, because the wiring between entry point and function is the part a library test does not exercise
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::LaneCheckTests::test_a_library_only_verifier_is_reported
+- **Verified:** yes (2026-08-02)
 
 ### AC2: a criterion verified through the CLI is reported clean
 
@@ -30,6 +31,7 @@
 - **When** the same pass runs
 - **Then** it reports nothing, so the check discriminates rather than flagging every unit
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::LaneCheckTests::test_a_cli_verifier_is_clean
+- **Verified:** yes (2026-08-02)
 
 ### AC3: detection is by execution over the verifier's source, not by naming convention
 
@@ -37,6 +39,15 @@
 - **When** the pass runs
 - **Then** it is reported, because a convention is satisfied by a rename and this must not be
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::LaneCheckTests::test_detection_is_by_execution_not_by_name
+- **Verified:** yes (2026-08-02)
+
+### AC4: a unit touching no command is not reported
+
+- **Given** a unit whose Affects names no CLI-bearing script
+- **When** the pass runs
+- **Then** it is not reported, because there is no entry point to enter and flagging it would be noise on a unit that cannot act on it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::LaneCheckTests::test_a_unit_touching_no_cli_is_not_reported
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 
