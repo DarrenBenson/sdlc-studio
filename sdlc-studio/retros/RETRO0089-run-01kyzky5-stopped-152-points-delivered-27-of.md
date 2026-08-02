@@ -248,6 +248,8 @@ Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-for
 | A REJECT whose findings were repaired has no route back to covered - 41 units now waived on this rule | filed: CR0506 |
 | A sprint may end with units open, and the rule was written nowhere | filed: CR0526 |
 | The toolchain runbook lacked eight commands this close needed | fixed-in: ebac5054 |
+| A duplicate test class name silently removed eleven tests from the suite | fixed-in: 12c8f13 |
+| The close has NO FIXED POINT - a repair made during a close creates a unit the retro has not accounted for, re-opening the ledger | declined: filed as the Phase 2 work agreed with the operator; NOT fixed here, because fixing it during a close is the very behaviour it describes |
 | sprint stop stamps the outcome but writes no handoff document | declined: out of scope for this close - recorded here so the next run does not rediscover it, and the stop reason carries the detail a handoff would have |
 
 ## Close loop (gated)

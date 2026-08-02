@@ -474,6 +474,7 @@
     "BG0484",
     "BG0487",
     "BG0496",
+    "BG0498",
     "EP0001",
     "EP0002",
     "EP0003",
@@ -1234,5 +1235,5 @@
     "US0615"
   ],
   "stamped": "2026-08-02",
-  "note": "RETRO0089 now also accounts for BG0496, found and fixed during the close of RUN-01KYZKY5 itself, along with the seven other close-time findings recorded in its Actions raised table (29 findings, all dispositioned)."
+  "note": "RETRO0089 accounts for RUN-01KYZKY5 in full, including BG0498 and the close fixed-point defect. FINAL stamp for this run: under the rule adopted 2026-08-02, nothing further is fixed during this close, so nothing further can reach terminal inside it and the account holds."
 }

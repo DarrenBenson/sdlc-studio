@@ -1,6 +1,7 @@
 # CR-0526: a sprint ends with nothing open - a non-stop-ship finding becomes a bug and its story closes
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0206
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** human

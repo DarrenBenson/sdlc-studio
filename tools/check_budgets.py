@@ -52,7 +52,7 @@ ALLOWLIST = {
     # 797: +the in-flight controls section (US0473). Raised DELIBERATELY, in the same commit
     # as the prose it admits, and set to the file's actual length rather than a round number
     # with headroom - a ceiling with slack in it is one that stops noticing growth.
-    "reference-sprint.md": 803,  # +the compulsory checklist as loop step 9 (EP0192): the one place
+    "reference-sprint.md": 819,  # +the compulsory checklist as loop step 9 (EP0192): the one place
                                  # the whole cycle is stated as a checkable set. Raised 724 -> 740
                                  # deliberately - the file was AT its +5% tolerance, so the step
                                  # could not land without saying so here.

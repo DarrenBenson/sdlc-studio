@@ -796,6 +796,22 @@ A control with no recorded reason is a change the close cannot explain. `stop` e
 will not reach its goal and writes the handoff; `reopen` resumes it rather than minting a fresh
 run over the same work, which would re-attribute the delivery.
 
+## Nothing is fixed during a close {#close-fixed-point}
+
+A finding surfaced during a close is FILED and deferred to the next run. It is not repaired
+inline, however small or tempting.
+
+The reason is mechanical, not stylistic. A close writes a retro accounting for its batch and
+then stamps the close-owed baseline. A repair made after that stamp is a unit the retro does not
+account for, so the ledger re-opens and the close is owed again. RUN-01KYZKY5 went round that
+loop twice in one close - each repair invalidated the account written moments before, while
+every other check reported the run closed.
+
+So a close that keeps finding things is not a thorough close, it is a close that cannot
+converge. Deferring is what gives it a fixed point.
+
+`CR0527` gates this; until it lands, read this as a known-weak rule and follow it anyway.
+
 ## See Also
 
 - `reference-project.md` - the wave engine sprint wraps

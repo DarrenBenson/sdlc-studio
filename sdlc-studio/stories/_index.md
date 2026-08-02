@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-08-01
+**Last Updated:** 2026-08-02
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 17 |
+| Draft | 36 |
 | Ready | 14 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 1 |
-| **Total** | **615** |
+| **Total** | **634** |
 
 ## All Stories
 
@@ -527,6 +527,25 @@
 | [US0613](US0613-sprint-plan-and-sprint-run-print-the-runbook.md) | sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists | Done | EP0202 | 2026-08-01 | 2026-08-01 |
 | [US0614](US0614-a-points-census-answers-how-much-is-left.md) | A points census answers how much is left by status and by type, so the routine question is not answered by a script written on the spot | Done | EP0203 | 2026-08-01 | 2026-08-01 |
 | [US0615](US0615-sprint-review-batch-takes-its-findings-from-a.md) | sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed | Done | EP0203 | 2026-08-01 | 2026-08-01 |
+| [US0616](US0616-sprint-close-and-sprint-stop-refuse-while-the.md) | sprint close and sprint stop refuse while the tree carries a repair to a batch unit | Draft | EP0204 | 2026-08-02 | 2026-08-02 |
+| [US0617](US0617-the-close-owed-ledger-distinguishes-a-close-time.md) | the close-owed ledger distinguishes a close-time repair from an unaccounted unit | Draft | EP0204 | 2026-08-02 | 2026-08-02 |
+| [US0618](US0618-an-unavoidable-close-time-repair-is-recorded-as.md) | an unavoidable close-time repair is recorded as an explicit override with its reason | Draft | EP0204 | 2026-08-02 | 2026-08-02 |
+| [US0619](US0619-re-running-a-completed-close-over-an-unchanged.md) | re-running a completed close over an unchanged tree is a no-op that says so | Draft | EP0204 | 2026-08-02 | 2026-08-02 |
+| [US0620](US0620-a-reject-can-be-answered-by-a-recorded.md) | a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0621](US0621-the-coverage-predicate-distinguishes-approved-repaired-and-unreviewed.md) | the coverage predicate distinguishes approved, repaired and unreviewed rather than two states | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0622](US0622-a-repair-closing-fewer-findings-than-the-reject.md) | a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0623](US0623-a-finding-closed-by-filing-is-recorded-distinctly.md) | a finding closed by FILING is recorded distinctly from one closed by fixing | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0624](US0624-the-close-preflight-states-the-three-coverage-counts.md) | the close preflight states the three coverage counts separately | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0625](US0625-the-doctrine-states-the-rule-and-the-stop.md) | the doctrine states the rule and the stop-ship judgement is recorded per finding at review time | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0626](US0626-sprint-close-and-sprint-stop-refuse-while-any.md) | sprint close and sprint stop refuse while any batch unit is non-terminal, naming each and where its findings went | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0627](US0627-closing-a-story-over-a-recorded-reject-requires.md) | closing a story over a recorded REJECT requires a filed artefact id or an explicit stop-ship ruling | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0628](US0628-a-story-closed-this-way-names-the-bug.md) | a story closed this way names the bug in its own record | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0629](US0629-a-test-plan-is-derived-from-the-unit.md) | a test plan is DERIVED from the unit's criteria by the tooling, naming per criterion the production change the test must fail on | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0630](US0630-a-unit-reaching-delivery-without-a-reviewed-test.md) | a unit reaching delivery without a reviewed test plan is REFUSED by the command that starts the work | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0631](US0631-the-test-plan-is-reviewed-by-an-independent.md) | the test plan is reviewed by an independent seat before the code, and that review is recorded like a code review | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0632](US0632-at-delivery-each-planned-mutant-is-executed-against.md) | at delivery each planned mutant is EXECUTED against the shipped test and its death recorded | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0633](US0633-a-criterion-whose-mutant-cannot-be-named-is.md) | a criterion whose mutant cannot be named is refused at grooming | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0634](US0634-the-cost-is-measured-over-one-run-and.md) | the cost is measured over one run and reported: passes spent on test-plan review versus on code review | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
 
 ## Archived Releases
 
