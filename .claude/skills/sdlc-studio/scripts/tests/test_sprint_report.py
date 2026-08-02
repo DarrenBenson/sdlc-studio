@@ -1808,11 +1808,18 @@ class CloseReportTests(unittest.TestCase):
         mod = self._mod()
         out = mod.close_report({"run_id": "RUN-X", "shipped": [], "carried": [],
                                 "cost": {}, "findings": []})
-        low = out.lower()
-        self.assertTrue("not attributable" in low or "not captured" in low or "none" in low,
-                        f"an absent cost was silently dropped:\n{out}")
         self.assertIn("COST", out.upper(),
                       "the cost section vanished entirely when the figure was missing")
+        # Anchored to the COST SECTION, not to the whole report. Scanning the document for
+        # "none" was satisfied by the SHIPPED, CARRIED and FINDINGS empty-listings, so blanking
+        # the cost line left this green while the section rendered empty - which is exactly the
+        # omission this criterion forbids. A verifier a neighbouring section can satisfy is not
+        # checking its own subject.
+        section = out.split("  COST", 1)[1].split("  FINDINGS", 1)[0].strip().lower()
+        self.assertTrue(section, "the COST section is empty - the absent figure was dropped")
+        self.assertTrue("not attributable" in section or "not captured" in section
+                        or "none" in section,
+                        f"an absent cost was silently dropped:\n{out}")
 
 
 if __name__ == "__main__":

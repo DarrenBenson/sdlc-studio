@@ -337,8 +337,16 @@ class SuiteVerdictFailOpenTests(unittest.TestCase):
         text = self.HOOK.read_text(encoding="utf-8")
         self.assertIn("gate-suite-last.log", text,
                       "a blocked commit leaves no record of what failed")
-        idx = text.index("gate-suite-last.log")
-        self.assertIn('if [ "$fail" -ne 0 ]', text[:idx].rsplit("\n\n", 1)[-1],
+        # Bounded to the SKILL lane's own capture. There are two now, one per lane, and a bare
+        # `index()` fell through to the tool lane's copy when this one was deleted - whose
+        # guard contains this guard as a substring, so the assertion passed while a commit
+        # blocked on the skill lane left no log at all. A verifier its own sibling can satisfy
+        # is not checking its own subject.
+        skill_lane = text[:text.index('run "tool-tests"')]
+        self.assertIn("gate-suite-last.log", skill_lane,
+                      "a commit blocked on the skill-tests lane leaves no record of what failed")
+        idx = skill_lane.index("gate-suite-last.log")
+        self.assertIn('if [ "$fail" -ne 0 ]', skill_lane[:idx].rsplit("\n\n", 1)[-1],
                       "the log is written unconditionally rather than on a failure")
 
 
