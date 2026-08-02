@@ -659,23 +659,56 @@ class HandCopiedMirrorTests(unittest.TestCase):
     #: How a file declares that its list IS the assertion rather than a mirror of one.
     _INVENTORY_MARKER = "HAND-MAINTAINED ON PURPOSE"
 
+    #: BOTH suite directories. Resolving the scan from `__file__` looked right and searched the
+    #: one directory that had almost nothing to find: `tools/tests` held a single declared
+    #: inventory, while the directory this guard's own bug named held SIX mirrors it could not
+    #: see. A guard aimed at the wrong tree passes for the same reason an empty one does.
+    _SUITE_DIRS = ("tools/tests", ".claude/skills/sdlc-studio/scripts/tests")
+
+    #: The mirrors already in the tree when the scan was widened. SHRINK-ONLY: a name may leave
+    #: this set, never join it. Failing on six pre-existing files would get the guard switched
+    #: off, and a switched-off guard catches nothing; refusing the SEVENTH is what it is for.
+    _KNOWN_MIRRORS = frozenset({
+        "test_artifact.py", "test_confinement.py", "test_gate.py", "test_refine.py",
+        "test_repo_hygiene.py", "test_repo_map.py",
+    })
+
+    def _mirrors(self) -> list[str]:
+        found = []
+        for rel in self._SUITE_DIRS:
+            for path in sorted((REPO / rel).glob("test_*.py")):
+                text = path.read_text(encoding="utf-8")
+                if self._INVENTORY_MARKER in text:
+                    continue                  # a declared inventory, not a mirror
+                if self._SCRIPT_LITERAL.search(text):
+                    found.append(path.name)
+        return found
+
     def test_no_new_hand_copied_script_list(self) -> None:
         """MUTANT: paste a third copy of the hook's script set into a test file.
 
         The declared inventory is exempt; anything else with the same shape is the seventh copy
-        this guard exists to refuse.
+        this guard exists to refuse. Scans BOTH suite directories - the first version resolved
+        its directory from `__file__` and never looked at the tree its own bug named.
         """
-        offenders = []
-        for path in sorted(TESTS_DIR.glob("test_*.py")):
-            text = path.read_text(encoding="utf-8")
-            if self._INVENTORY_MARKER in text:
-                continue                      # a declared inventory, not a mirror
-            if self._SCRIPT_LITERAL.search(text):
-                offenders.append(path.name)
+        offenders = [n for n in self._mirrors() if n not in self._KNOWN_MIRRORS]
         self.assertEqual(
             [], offenders,
             f"these test files hand-list shipped scripts instead of deriving them from the "
             f"thing that owns them (see hookutil.py): {offenders}")
+
+    def test_the_known_mirror_set_only_shrinks(self) -> None:
+        """MUTANT: leave a repaired file in the baseline, or widen the baseline to pass.
+
+        A baseline that may grow is not a ratchet, it is a suppression list. Every name in it
+        must still be a real mirror; one that has been fixed has to leave, or the set silently
+        re-exempts a file that could offend again.
+        """
+        stale = sorted(self._KNOWN_MIRRORS - set(self._mirrors()))
+        self.assertEqual(
+            [], stale,
+            f"these files are no longer hand-copied mirrors, so they must leave the baseline - "
+            f"a set that only ever grows exempts what it forgot: {stale}")
 
     def test_the_declared_inventory_is_still_recognised(self) -> None:
         """The control. MUTANT: drop the exemption, or the marker.

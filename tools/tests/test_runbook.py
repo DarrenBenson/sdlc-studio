@@ -29,8 +29,17 @@ class RunbookTests(unittest.TestCase):
                          "the runbook has no section for a step of the cycle")
         self.assertEqual([], runbook.missing(REPO, text),
                          "the runbook names a command that does not exist")
-        self.assertGreaterEqual(len(runbook.commands(text)), 15,
-                                "the runbook names too few commands to be a toolchain")
+        # PER STEP, not a global total. `len(commands(text)) >= 15` is satisfied by one rich
+        # step carrying the tally for an empty one - and the empty step is precisely the one an
+        # agent answers from memory. Blanking a whole step's table left the old assertion green.
+        self.assertEqual([], runbook.steps_without_a_command(text),
+                         "a step of the cycle names no command of its own")
+        # ORDER, which membership cannot see. The runbook's whole claim over `reference-scripts`
+        # is that it is ordered by step; reversing every section passed the old test.
+        self.assertEqual([], runbook.out_of_order_steps(text),
+                         "the steps are not in sprint order, which is the runbook's only claim")
+        self.assertEqual([], runbook.missing_verbs(REPO, text),
+                         "the runbook names a subcommand its script no longer offers")
 
     def test_each_step_names_what_it_replaces(self) -> None:
         """MUTANT: drop the `Instead of` column.
@@ -40,8 +49,18 @@ class RunbookTests(unittest.TestCase):
         exists, which is not who needs it.
         """
         text = RUNBOOK.read_text(encoding="utf-8")
-        self.assertGreaterEqual(text.count("| Instead of |"), 5,
-                                "not every step table says what its command replaces")
+        # The CELLS, not the header rows. `count("| Instead of |")` counts headers, so blanking
+        # every "Instead of" cell in the shipped runbook - deleting the entire feature the
+        # criterion is about - left this green.
+        rows = [ln for ln in text.splitlines()
+                if ln.startswith("|") and ln.count("|") >= 4
+                and "Instead of" not in ln and not set(ln) <= set("|- :")]
+        filled = [ln for ln in rows if ln.split("|")[-2].strip() not in ("", "-")]
+        self.assertGreaterEqual(
+            len(filled), 5,
+            f"the `Instead of` column is empty on every row - the entry can then only be found "
+            f"by somebody who already knows the tool exists, which is not who needs it "
+            f"({len(filled)} filled of {len(rows)} rows)")
 
     def test_a_missing_command_fails_the_guard(self) -> None:
         """MUTANT: report a rotted runbook without failing.

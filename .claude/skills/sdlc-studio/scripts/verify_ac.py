@@ -816,6 +816,10 @@ _CLI_MARKERS = ("def main(", "argparse")
 #: convention is satisfied by a rename; this must not be.
 _LANE_MARKERS = ("main(", "subprocess.run", "subprocess.check", "runpy", "check_output")
 
+# Helpers a scoped node calls, for the one-level resolution in `_enters_the_lane`. `self.x(` and
+# a bare `x(` both, because these suites use module-level helpers as often as methods.
+_HELPER_CALL_RE = re.compile(r"(?:self\.)?\b(_[A-Za-z0-9_]+)\s*\(")
+
 
 def _lane_test_paths(expr: str) -> list[str]:
     """The test FILES a runner expression names.
@@ -881,7 +885,20 @@ def _enters_the_lane(test_path: Path, node: str = "") -> bool:
     if not text:
         return False
     scoped = _node_source(text, node) if node else None
-    return any(m in (scoped if scoped is not None else text) for m in _LANE_MARKERS)
+    if scoped is None:
+        return any(m in text for m in _LANE_MARKERS)
+    if any(m in scoped for m in _LANE_MARKERS):
+        return True
+    # ONE level of same-file helper. A class that shells the CLI once in a `_run` helper and
+    # calls `self._run(...)` from every method is a correct and common shape, and scoping to the
+    # node alone reports it as never entering the lane - which is a detector telling tested work
+    # it is untested. One level only: resolving a call graph would restore the whole-file
+    # permissiveness that made the first version report 0/615.
+    for name in set(_HELPER_CALL_RE.findall(scoped)):
+        helper = _node_source(text, name)
+        if helper and any(m in helper for m in _LANE_MARKERS):
+            return True
+    return False
 
 
 def lane_check(root, unit_paths) -> list[dict]:

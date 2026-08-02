@@ -53,9 +53,11 @@ _RUN_ID = re.compile(r"wf_[a-z0-9]+(?:-[a-z0-9]+)*", re.IGNORECASE)
 #: `run <id>` names the run that FILED the finding.
 _FILED_BY = re.compile(r"\brun\s+(wf_[a-z0-9]+(?:-[a-z0-9]+)*)", re.IGNORECASE)
 #: `<id> carry-over` names an EARLIER run the finding was carried over from.
-#: BOTH word orders, and case-folded. `carry-over wf_x` is how half this corpus writes it, and
-#: an id in any other case simply did not match - a pattern that silently matches nothing is
-#: how the disambiguation quietly stopped happening.
+#: BOTH word orders, and case-folded. Measured over the 1438 `Raised-by` lines in this corpus:
+#: 13 write `<id> carry-over` and NONE writes `carry-over from <id>` - so the second order is
+#: defensive, not observed, and this comment previously claimed the opposite. The case-fold is
+#: the half that was earning its place: an id in any other case simply did not match, and a
+#: pattern that silently matches nothing is how the disambiguation quietly stopped happening.
 _CARRIED = re.compile(
     r"(wf_[a-z0-9]+(?:-[a-z0-9]+)*)\s+carry-over|carry-over\s+(?:from\s+)?(wf_[a-z0-9]+(?:-[a-z0-9]+)*)",
     re.IGNORECASE)

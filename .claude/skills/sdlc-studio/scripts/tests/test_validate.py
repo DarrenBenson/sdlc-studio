@@ -2536,6 +2536,37 @@ class FreshArtefactPlaceholderTests(unittest.TestCase):
         d.mkdir(parents=True, exist_ok=True)
         (d / name).write_text(body, encoding="utf-8")
 
+    def test_the_warning_is_printed_by_the_shipped_command(self) -> None:
+        """MUTANT: make the NOT FINISHED print unreachable.
+
+        Driven through `artifact.py new` and asserted on its OUTPUT. AC3's first verifier was
+        `grep -q "NOT FINISHED" artifact.py`, which a dead branch satisfies: making the
+        condition `if False:` left the grep at exit 0 and 145 tests green. A grep over source
+        text is not a test of what the source does.
+        """
+        import importlib.util, io, contextlib, sys  # noqa: PLC0415
+        spec = importlib.util.spec_from_file_location(
+            "artifact", Path(__file__).resolve().parent.parent / "artifact.py")
+        artifact = importlib.util.module_from_spec(spec)
+        sys.modules["artifact"] = artifact
+        spec.loader.exec_module(artifact)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "change-requests").mkdir(parents=True)
+            (root / "src").mkdir()
+            (root / "src" / "a.py").write_text("x = 1\n", encoding="utf-8")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+                rc = artifact.main(["new", "--type", "cr", "--title", "a fresh request",
+                                    "--summary", "a summary", "--impact", "an impact",
+                                    "--priority", "High", "--size", "S",
+                                    "--affects", "src/a.py", "--root", str(root)])
+            out = buf.getvalue()
+        self.assertEqual(0, rc, f"artifact.py new did not run:\n{out}")
+        self.assertIn("NOT FINISHED", out,
+                      "the shipped command reported plain success over an artefact whose "
+                      "criteria are still the scaffold placeholder")
+
     def test_a_fresh_request_placeholder_is_a_warning(self) -> None:
         """MUTANT: restore the story-only condition.
 

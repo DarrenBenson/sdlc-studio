@@ -822,7 +822,7 @@ DERIVED, RECORDED = "derived", "recorded"
 #: somebody adds it. The list can over-report, never under-report - which is the opposite of
 #: an enumerated list that silently exempts what it forgot.
 NON_CEREMONY_VERBS = {
-    "sprint": ("close", "boundary", "report", "checklist", "preflight",
+    "sprint": ("appetite", "close", "boundary", "report", "checklist", "preflight",
                "reopen", "stop", "decision", "batch", "lane"),
     "critic": ("brief", "caller-check", "correct", "evidence", "show",
                "signoff-brief", "supersede"),

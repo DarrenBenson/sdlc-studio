@@ -80,7 +80,7 @@ message both said the command emitted it. Three of five findings in that batch w
 shape, and it cost a second review round - which is verification handed to the reviewer.
 
 `verify_ac.py lane-check` reports a unit that changes a command where none of its verifiers
-enters the entry point. Over this repository it reports 178 of 615 units, so the size of the
+enters the entry point. Over this repository it reports 167 of 615 units, so the size of the
 class is a number rather than an impression.
 
 The question to ask, in this order:

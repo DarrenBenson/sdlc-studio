@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 10 |
 | In Progress | 0 |
-| Fixed | 393 |
+| Fixed | 394 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **486** |
+| **Total** | **487** |
 
 ## All Bugs
 
@@ -204,6 +204,7 @@
 | [BG0484](BG0484-ep0194-shipped-a-false-claim-about-its-own.md) | EP0194 shipped a false claim about its own feature: critic.py brief never emitted the fingerprint the gate demands | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0485](BG0485-the-goal-review-panel-maps-a-seat-s.md) | the goal-review panel maps a seat's no to partial, and fans a whole-goal answer across every clause | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0486](BG0486-duplicate-verifiers-are-grouped-on-a-normalised-string.md) | duplicate verifiers are grouped on a normalised string, so two ACs running the same command can read as distinct | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0487](BG0487-lane-check-misses-lane-entry-made-through-a.md) | lane-check misses lane entry made through a shared test helper | Fixed | Medium | 2026-08-02 | 2026-08-02 |
 
 ## Archived Releases
 

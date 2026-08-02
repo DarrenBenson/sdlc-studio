@@ -274,7 +274,7 @@ fi
 
 # lane-check: criteria whose verifiers never enter the shipped entry point. ADVISORY, on the
 # same terms as claim-drift above and for the same reason - measured over this repo it reports
-# 178 of 615 units, which is a number a blocking decision can be taken on, not an assertion.
+# 167 of 615 units, which is a number a blocking decision can be taken on, not an assertion.
 # Scoped to the units this commit touches, so it costs nothing on a commit that touches none.
 if command -v python3 >/dev/null 2>&1 && [ -f "$skill/verify_ac.py" ]; then
   lane_ids="$(git diff --cached --name-only 2>/dev/null \

@@ -275,6 +275,53 @@ class PathAwareBandTests(unittest.TestCase):
         self.assertEqual([], check_spec_claims.path_band_errors(repo, "trd.md", text))
 
 
+
+class LedgerExemptionTests(unittest.TestCase):
+    """What claim-drift is allowed to STOP reading, and what it must keep reading.
+
+    A ledger row states that somebody judged something on a date - no diff can contradict it.
+    A review document, or `LATEST.md`, is prose making claims about the change, which is
+    exactly what this lane exists to read. The exemption once matched the whole
+    `sdlc-studio/reviews/` path and silently took both with it.
+    """
+
+    def test_the_append_only_ledgers_are_exempt(self) -> None:
+        """The control. MUTANT: exempt nothing.
+
+        A lane that reads the verdict log as prose fires on every recorded review, which is
+        noise on rows that cannot make a claim - and noise is how a lane gets switched off.
+        """
+        for name in ("critic-verdicts.md", "signoff-record.md", "sprint-review-record.md"):
+            self.assertTrue(check_spec_claims._is_ledger(f"sdlc-studio/reviews/{name}"),
+                            f"{name} is an append-only ledger and should be exempt")
+
+    def test_prose_under_reviews_is_not_exempt(self) -> None:
+        """MUTANT: exempt by DIRECTORY (`_LEDGER_DIRS = ("sdlc-studio/reviews/",)`).
+
+        That was the shipped defect and it is invisible to a test that only checks the
+        ledgers: `critic-verdicts.md` is exempt by name too, so the directory clause could be
+        removed OR added without either existing criterion noticing. These two files are the
+        ones a directory prefix takes with it.
+        """
+        for path in ("sdlc-studio/reviews/LATEST.md",
+                     "sdlc-studio/reviews/RV0025-the-review-learned-to-discriminate.md"):
+            self.assertFalse(
+                check_spec_claims._is_ledger(path),
+                f"{path} is prose making claims, not an append-only ledger - a directory-wide "
+                f"exemption removed the whole reviews tree from the lane")
+
+    def test_the_exemption_is_by_name_not_by_path_segment(self) -> None:
+        """MUTANT: match on `in norm` rather than on the file name.
+
+        A substring match exempts `notes/critic-verdicts.md.bak` and anything whose path merely
+        CONTAINS a ledger name. The exemption is a statement about one file, so it is decided
+        on the file name.
+        """
+        self.assertFalse(check_spec_claims._is_ledger("docs/about-critic-verdicts.md"),
+                         "a file whose name merely contains a ledger name was exempted")
+        self.assertTrue(check_spec_claims._is_ledger("anywhere/else/critic-verdicts.md"),
+                        "the ledger is exempt wherever it lives - the name is the fact")
+
 if __name__ == "__main__":
     unittest.main()
 

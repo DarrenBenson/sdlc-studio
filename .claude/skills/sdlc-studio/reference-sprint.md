@@ -781,9 +781,16 @@ python3 <skill>/scripts/sprint.py goal-review record --goal "<goal>" --seat "eng
 python3 <skill>/scripts/sprint.py batch swap --out US0001 --in US0002 --reason "<why>"
 python3 <skill>/scripts/sprint.py batch drop US0001 --reason "<why>"
 python3 <skill>/scripts/sprint.py batch add US0004
+python3 <skill>/scripts/sprint.py batch add-epic --epic EP0010 --status Ready
+python3 <skill>/scripts/sprint.py appetite resize --units 16 --reason "<why>"
 python3 <skill>/scripts/sprint.py stop --reason "<why>"
 python3 <skill>/scripts/sprint.py reopen --reason "<why>"
 ```
+
+`add-epic` adds an epic's stories at a named status as one priced set, printing the points the
+batch grew by - the number the appetite is judged against. `appetite resize` moves the accepted
+ceiling and leaves the standing pair alone, so a raise registers as an over-commitment in the
+close rather than producing a run that appears to have fitted.
 
 A control with no recorded reason is a change the close cannot explain. `stop` ends a run that
 will not reach its goal and writes the handoff; `reopen` resumes it rather than minting a fresh

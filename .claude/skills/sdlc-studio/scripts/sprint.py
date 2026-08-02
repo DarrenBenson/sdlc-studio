@@ -5592,6 +5592,69 @@ def _finalise_outcome(root, state) -> None:
             print(f"outcome stamped goal-reached, but `ended_at` was left at the re-stamped "
                   f"time ({exc}) - the archived elapsed span reads long", file=sys.stderr)
     print("close: run outcome recorded goal-reached")
+    _tell_the_operator(root)
+
+
+def _tell_the_operator(root) -> None:
+    """Emit the close report: shipped, carried, cost, findings.
+
+    Being informed is the operator's half of human-in-the-lead. A report that exists only as a
+    function nobody calls tells nobody anything - which is what shipped, and what US0604 asked
+    for. Advisory like `_draw_report`: a missing report must never lose a completed ceremony.
+    """
+    import sprint_report  # noqa: PLC0415 - deferred, like the chain's sibling imports
+    try:
+        state = run_state.read(root) or {}
+        batch = [sdlc_md.norm_id(u) for u in (state.get("batch") or [])]
+        shipped, carried = [], []
+        for uid in batch:
+            found = sdlc_md.find_by_id(root, uid)
+            text = sdlc_md.read_text_safe(found[0]) if found else ""
+            status = (sdlc_md.extract_field(text or "", "Status") or "").strip()
+            # Terminal per the unit's OWN type, which `find_by_id` already returns - a story's
+            # terminal set is not a bug's, and either hardcoded here misreports the other. No
+            # `hasattr` guard: a renamed accessor must break loudly, not silently report every
+            # unit carried.
+            terminal = sdlc_md.terminal_statuses(found[1]) if found else set()
+            (shipped if status in terminal else carried).append(
+                f"{uid} ({status or 'unresolved'})")
+        findings = []
+        for uid in batch:
+            for row in critic.unit_review_rounds(root, uid):
+                if str(row.get("verdict", "")).upper() == "REJECT":
+                    findings.append(f"{uid}: REJECT by {row.get('reviewer') or 'unknown'}")
+        print()
+        print(sprint_report.close_report({
+            "run_id": state.get("run_id"),
+            "shipped": shipped, "carried": carried, "findings": findings,
+            "cost": _close_cost(root, state, shipped),
+        }))
+    except Exception as exc:  # noqa: BLE001 - advisory: the close outranks its own report
+        print(f"close: close report not emitted ({type(exc).__name__}: {exc}) - the close is "
+              f"unaffected", file=sys.stderr)
+
+
+def _close_cost(root, state: dict, shipped: list) -> dict:
+    """Tokens and points for the close report. An unavailable figure is left ABSENT rather than
+    zeroed - `close_report` names an absent cost absent, and "not attributable" and "nothing
+    spent" are different facts."""
+    cost: dict = {}
+    tokens = (state.get("token_forecast") or {}).get("actual")
+    if isinstance(tokens, int):
+        cost["tokens"] = tokens
+    points = 0
+    for entry in shipped:
+        found = sdlc_md.find_by_id(root, entry.split()[0])
+        if not found:
+            continue
+        raw = (sdlc_md.extract_field(sdlc_md.read_text_safe(found[0]) or "", "Points") or "")
+        try:
+            points += int(raw.strip())
+        except (TypeError, ValueError):
+            continue
+    if points:
+        cost["points"] = points
+    return cost
 
 
 def _draw_report(root, retro_id) -> None:
@@ -6405,6 +6468,15 @@ def cmd_review_batch(args: argparse.Namespace) -> int:
     if verdict == "REJECT":
         print("  REJECT: the batch was reviewed and rejected. It clears no unit's gate - fix "
               "the findings and record a fresh pass.")
+    # ESCALATION, at the point a verdict is recorded. A unit the panel keeps rejecting is not
+    # converging, and the operator learns that here rather than at the close - which is the
+    # difference between a decision they can act on and a fact they are told afterwards. It
+    # NOTIFIES; nothing waits on a reply.
+    for uid in sorted(reviewed_units):
+        rounds = [str(r.get("verdict") or "") for r in critic.unit_review_rounds(root, uid)]
+        escalate, why = panel_escalation(rounds, critic.seat_verdicts(root, uid))
+        if escalate:
+            print(f"  ESCALATED to the operator - {uid}: {why}")
     return 0
 
 
@@ -6422,6 +6494,107 @@ def _swap_points(root: Path, ids) -> int:
         except (TypeError, ValueError):
             continue
     return total
+
+
+def _epic_units(root: Path, epic: str, status: str) -> list[str]:
+    """The epic's stories at `status`, read from the TREE at call time.
+
+    Read fresh rather than from a list the caller passes, so a story added to the epic between
+    two calls is picked up and one at a different status is not. A snapshot would make this
+    command mean "the stories that were there when somebody last looked".
+    """
+    want = str(status).strip().lower()
+    out = []
+    for path in sorted((root / "sdlc-studio" / "stories").glob("US*.md")):
+        text = sdlc_md.read_text_safe(path)
+        if not text:
+            continue
+        if (sdlc_md.extract_field(text, "Epic") or "").strip().upper() != epic.upper():
+            continue
+        if (sdlc_md.extract_field(text, "Status") or "").strip().lower() != want:
+            continue
+        out.append(sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or path.stem))
+    return out
+
+
+def cmd_appetite(args: argparse.Namespace) -> int:
+    """Resize the ACCEPTED appetite on an open run, on the record.
+
+    A run that turns out bigger than planned has two honest endings - stop at the planned
+    ceiling, or raise it deliberately - and one dishonest one, where the appetite is quietly
+    rewritten so the close reports a run that fitted. The standing pair is what forecloses the
+    third: raising the accepted number MAKES the overage true rather than hiding it.
+    """
+    root = Path(args.root)
+    if args.action != "resize":
+        print(f"sprint appetite: unknown action {args.action}", file=sys.stderr)
+        return 2
+    try:
+        state = run_state.resize_appetite(
+            root, units=args.units, minutes=args.minutes, reason=args.reason or "")
+    except run_state.RunStateError as exc:
+        print(f"sprint appetite resize REFUSED: {exc}", file=sys.stderr)
+        return 2
+    ap = state.get("appetite") or {}
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"appetite": ap,
+                          "changes": state.get("appetite_changes") or []}, indent=2))
+        return 0
+    print(f"appetite resized to {ap.get('minutes'):g}min/{ap.get('units')}units "
+          f"(standing: {ap.get('standing_minutes'):g}min/{ap.get('standing_units')}units).")
+    over = appetite_overage_line(root)
+    if over:
+        # The raise is reported AS an over-commitment straight away, not discovered at the
+        # close. The number moved because somebody decided it should; the record says so.
+        print(f"  {over}")
+    return 0
+
+
+def _cmd_batch_add_epic(args: argparse.Namespace, root: Path) -> int:
+    """Add an epic's stories at a named status as ONE priced set.
+
+    Adding them one at a time is the same batch and a worse record: the ledger reads as several
+    unrelated decisions, and nobody sees the POINTS the batch just grew by - which is the number
+    that decides whether the appetite still holds.
+    """
+    epic = sdlc_md.norm_id(getattr(args, "epic", "") or "")
+    status = (getattr(args, "status", None) or "Ready").strip()
+    if not epic:
+        print("sprint batch add-epic: --epic EPxxxx is required", file=sys.stderr)
+        return 2
+    try:
+        state = run_state.read(root) or {}
+    except run_state.RunStateError as exc:
+        print(f"sprint batch add-epic: {exc}", file=sys.stderr)
+        return 1
+    if not state.get("run_id"):
+        print("sprint batch add-epic: no run is open to add to", file=sys.stderr)
+        return 2
+    units = _epic_units(root, epic, status)
+    if not units:
+        # LOUD, and nothing written. Silently adding nothing reads exactly like adding
+        # everything, and the operator would only find out at the close.
+        print(f"sprint batch add-epic: {epic} has no stories at status {status!r} - nothing "
+              f"was added. Check the status, or the epic id.", file=sys.stderr)
+        return 2
+    already = [u for u in units if u in {sdlc_md.norm_id(b) for b in (state.get("batch") or [])}]
+    fresh = [u for u in units if u not in already]
+    for uid in fresh:
+        state = run_state.add_to_batch(root, uid)
+    points = _swap_points(root, fresh)
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"epic": epic, "status": status, "added": fresh,
+                          "already": already, "points": points,
+                          "batch": state.get("batch") or []}, indent=2))
+        return 0
+    print(f"added {len(fresh)} unit(s) from {epic} at {status} ({points}pts): "
+          f"{', '.join(fresh) or 'none'}; batch is now "
+          f"{len(state.get('batch') or [])} unit(s).")
+    if already:
+        # NAMED, not silently skipped - and their points are not counted again, or the number
+        # the appetite is judged against would grow without the batch growing.
+        print(f"  already in the batch, not added again: {', '.join(already)}")
+    return 0
 
 
 def _cmd_batch_swap(args: argparse.Namespace, root: Path) -> int:
@@ -6501,6 +6674,8 @@ def cmd_batch(args: argparse.Namespace) -> int:
     action = args.action
     if action == "swap":
         return _cmd_batch_swap(args, root)
+    if action == "add-epic":
+        return _cmd_batch_add_epic(args, root)
     if action == "drop" and not (getattr(args, "reason", None) or "").strip():
         print("sprint batch drop: --reason is required - a drop is recorded, not silent",
               file=sys.stderr)
@@ -7015,6 +7190,16 @@ def cmd_close(args: argparse.Namespace) -> int:
     trend = _record_close_attempt(root, pre)
     if trend:
         print(f"close: {trend}")
+    if trend and trend.startswith("LOOP STOPPED"):
+        # ACTED ON, not narrated. A close that reports it is diverging and then runs every
+        # remaining stage has reported nothing - the whole value of the detector is that the
+        # next round does not start. The run is left open deliberately: stopping the loop is
+        # not the same as closing the run, and the operator decides which.
+        print("close: the review-repair loop is NOT converging, so this close stops here "
+              "rather than starting another round.\n"
+              "  Take it to the operator, or raise the cap deliberately with "
+              "`review.max_rounds` in .config.yaml.", file=sys.stderr)
+        return 2
     # An OVER-APPETITE batch is reported as the over-commitment it was, not as the raised ceiling
     # Placed above every refusal so a close that stops later still states it.
     overage = appetite_overage_line(root)
@@ -8781,7 +8966,7 @@ def build_parser() -> argparse.ArgumentParser:
              "done-gate and sign-off lanes stop demanding it) or `add <id>` puts one in under "
              "the same gates. Drop judges THIS BATCH and is recorded - distinct from Deferred, a "
              "status on the WORK that leaves the unit gated. Every change lands in batch_changes.")
-    bt.add_argument("action", choices=("drop", "add", "swap"))
+    bt.add_argument("action", choices=("drop", "add", "swap", "add-epic"))
     bt.add_argument("id", nargs="?", help="the unit id, e.g. US0123 (drop/add)")
     bt.add_argument("--reason", default=None,
                     help="(drop/swap) why the batch is changing - recorded, and required")
@@ -8791,9 +8976,27 @@ def build_parser() -> argparse.ArgumentParser:
                     help="(swap) unit(s) leaving the batch; repeat or pass a comma list")
     bt.add_argument("--in", action="append", dest="in_units", metavar="ID",
                     help="(swap) unit(s) joining the batch; repeat or pass a comma list")
+    bt.add_argument("--epic", help="(add-epic) the epic whose stories join the batch")
+    bt.add_argument("--status", default="Ready",
+                    help="(add-epic) the story status to add (default: Ready)")
     bt.add_argument("--format", choices=("text", "json"), default="text")
     bt.add_argument("--root", default=".", help="Repo root (default: .)")
     bt.set_defaults(func=cmd_batch)
+
+    ap_ = sub.add_parser(
+        "appetite",
+        help="Resize the ACCEPTED appetite on an OPEN run: `resize --units N --reason <why>`. "
+             "The STANDING pair the batch was sized against is untouched, so raising the "
+             "ceiling registers as an over-commitment in the close rather than hiding one. A "
+             "reason is required - a ceiling that moved with no stated why cannot be audited.")
+    ap_.add_argument("action", choices=("resize",))
+    ap_.add_argument("--units", type=int, default=None, help="the new accepted unit ceiling")
+    ap_.add_argument("--minutes", type=float, default=None,
+                     help="the new accepted wall-clock ceiling, in minutes")
+    ap_.add_argument("--reason", default=None, help="why the ceiling is moving - required")
+    ap_.add_argument("--format", choices=("text", "json"), default="text")
+    ap_.add_argument("--root", default=".", help="Repo root (default: .)")
+    ap_.set_defaults(func=cmd_appetite)
 
     rb = sub.add_parser(
         "review-batch",

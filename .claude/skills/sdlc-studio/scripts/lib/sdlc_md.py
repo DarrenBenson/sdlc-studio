@@ -2954,6 +2954,24 @@ def resolve_affects(root, p: str):
 _AC_CHECKBOX_RE = re.compile(r"^\s*- \[[ xX]\] ")
 
 
+def criteria_section(text: str) -> str:
+    """Just the `## Acceptance Criteria` section, or "" when there is none.
+
+    Shared, because a gate that asks a question ABOUT the criteria must not be answerable by
+    anything outside them. Scanning the whole artefact let a `- [x]` in Steps to Reproduce, and
+    a `Verify:` line in Proposed Fix, satisfy an oracle gate whose own refusal says "every
+    acceptance criterion is unticked".
+    """
+    out, in_ac = [], False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_ac = "acceptance criteria" in line.lower()
+            continue
+        if in_ac:
+            out.append(line)
+    return "\n".join(out)
+
+
 def count_acs(text: str) -> int:
     """Checkable AC items inside the Acceptance Criteria section (checkbox lines,
     `### ACn` headings, or `**ACn**` bullets). The same recognition set readiness.py's

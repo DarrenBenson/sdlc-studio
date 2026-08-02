@@ -812,6 +812,52 @@ def record_appetite(repo_root: Path | str, *, accepted_units: int, accepted_minu
         standing_units=standing_units, standing_minutes=standing_minutes))
 
 
+def resize_appetite(repo_root: Path | str, *, units: int | None = None,
+                    minutes: float | None = None, reason: str = "") -> dict:
+    """Resize the ACCEPTED appetite on an open run, keeping the STANDING pair untouched.
+
+    A run that turns out bigger than planned has two honest endings and one dishonest one. It can
+    stop at the planned ceiling, or the ceiling can be raised on the record - and the third, an
+    appetite quietly rewritten so the close reports a run that fitted, is the one this must not
+    allow. So the standing pair the batch was measured against is preserved and `over_appetite` is
+    recomputed against it: raising the accepted number MAKES the overage true rather than hiding it.
+
+    A reason is compulsory. The number alone says a ceiling moved and not why, and the why is the
+    whole content of the decision.
+    """
+    if units is None and minutes is None:
+        raise RunStateError("resize needs --units or --minutes - a resize that changes neither "
+                            "number is not a decision")
+    if not (reason or "").strip():
+        raise RunStateError("resize needs --reason - a ceiling that moved with no stated why is "
+                            "a number nobody can audit at the close")
+
+    def apply(state: dict) -> dict:
+        if (state or {}).get("outcome") != RUNNING:
+            raise RunStateError(
+                "no open run to resize - `sprint appetite resize` needs a running sprint")
+        ap = dict(state.get("appetite") or {})
+        before = {"units": int(ap.get("units") or 0), "minutes": float(ap.get("minutes") or 0)}
+        # The STANDING pair is what the batch was sized against. Where a run never recorded one -
+        # an older run, or a plan that declared no appetite - the pre-resize accepted pair becomes
+        # the standing one, so the first raise is still measured against something real rather
+        # than against zero, which would report every run as over.
+        std_u = int(ap.get("standing_units") or before["units"])
+        std_m = float(ap.get("standing_minutes") or before["minutes"])
+        new = appetite_record(
+            accepted_units=before["units"] if units is None else int(units),
+            accepted_minutes=before["minutes"] if minutes is None else float(minutes),
+            standing_units=std_u, standing_minutes=std_m)
+        state["appetite"] = new
+        state["appetite_changes"] = list(state.get("appetite_changes") or []) + [{
+            "action": "resize", "at": sdlc_md.now_iso8601(), "reason": reason.strip(),
+            "from": before, "to": {"units": new["units"], "minutes": new["minutes"]},
+        }]
+        return state
+
+    return _mutate(repo_root, apply)
+
+
 def appetite_overage(repo_root: Path | str) -> dict | None:
     """The recorded over-appetite as `{units, minutes}` of `{accepted, standing}`, or None for an
     ordinary run. None is the signal that DISTINGUISHES an accepted overage from a run that simply

@@ -2755,6 +2755,46 @@ class TerminalOracleTests(unittest.TestCase):
         self.assertTrue(any("nothing speaks for this fix" in b for b in blocks),
                         f"an unticked, unverified bug reached Fixed: {blocks}")
 
+    def test_a_tick_outside_the_criteria_does_not_satisfy_it(self) -> None:
+        """MUTANT: search the whole artefact, as shipped.
+
+        The gate's own refusal says "every acceptance criterion is unticked", but it searched
+        the WHOLE document - so `- [x] I reproduced it on my machine` in Steps to Reproduce
+        answered a question about the criteria. Reproduced through the CLI before this was
+        written: the bug reached Fixed.
+        """
+        mod = tr
+        body = ("# BG0001: a defect\n\n> **Status:** Open\n> **Points:** 3\n"
+                "> **Severity:** High\n> **Affects:** src/a.py\n"
+                "> **Verification depth:** functional (checked)\n\n"
+                "## Summary\n\ns\n\n"
+                "## Steps to Reproduce\n\n- [x] I reproduced it on my machine\n\n"
+                "## Acceptance Criteria\n\n- [ ] the defect is corrected\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d), body)
+            blocks = mod.requirements(root, "BG0001", "Fixed")
+        self.assertTrue(any("nothing speaks for this fix" in b for b in blocks),
+                        f"a ticked box OUTSIDE the criteria satisfied the oracle: {blocks}")
+
+    def test_a_verify_line_outside_the_criteria_does_not_satisfy_it(self) -> None:
+        """MUTANT: search the whole artefact, as shipped.
+
+        The second half of the same hole, and the worse one: the `Verify:` line named a test
+        file that does not exist, so nothing could have run it. It still cleared the gate.
+        """
+        mod = tr
+        body = ("# BG0001: a defect\n\n> **Status:** Open\n> **Points:** 3\n"
+                "> **Severity:** High\n> **Affects:** src/a.py\n"
+                "> **Verification depth:** functional (checked)\n\n"
+                "## Summary\n\ns\n\n"
+                "## Proposed Fix\n\n- **Verify:** pytest tests/test_nothing.py::nope\n\n"
+                "## Acceptance Criteria\n\n- [ ] the defect is corrected\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d), body)
+            blocks = mod.requirements(root, "BG0001", "Fixed")
+        self.assertTrue(any("nothing speaks for this fix" in b for b in blocks),
+                        f"a `Verify:` line OUTSIDE the criteria satisfied the oracle: {blocks}")
+
     def test_a_ticked_criterion_satisfies_it(self) -> None:
         """The human oracle. MUTANT: require a Verify line as well.
 

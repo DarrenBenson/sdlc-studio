@@ -5618,10 +5618,24 @@ class LoaderRouteTests(unittest.TestCase):
                 '# a resolvable read, so this module is NOT unattributable:\n'
                 'DOC = "sdlc-studio/trd.md"\n', encoding="utf-8")
             index = mod.loader_index(str(root))
+            # THROUGH `select_tests`, which is what the docstring's mutant names. The first
+            # version asserted only on `loader_index`, so deleting the two lines the fix added
+            # to `select_tests` left all 391 tests of this module green - the repair was
+            # unpinned by its own criterion.
+            selected = mod.select_tests(
+                str(root), [".claude/skills/sdlc-studio/scripts/subject.py"])
         self.assertIn("subject", index,
                       "the loader index does not resolve a script loaded under another name")
         self.assertTrue(any(m.endswith("test_unrelated_name.py") for m in index["subject"]),
                         "the module that loads it was not attributed to it")
+        self.assertTrue(
+            selected.get("resolved"),
+            f"the selection did not resolve, so it falls back to running everything and the "
+            f"loader route proves nothing: {selected.get('reason')}")
+        self.assertTrue(
+            any("test_unrelated_name.py" in s for s in selected.get("selectors") or []),
+            f"`select_tests` did not select the module that LOADS the changed script - the "
+            f"loader route is not wired into the selection: {selected.get('selectors')}")
 
 
 if __name__ == "__main__":

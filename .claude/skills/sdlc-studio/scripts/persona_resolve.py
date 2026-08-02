@@ -388,6 +388,26 @@ def record_consult(path: Path | str, result: dict, today: str) -> bool:
 
 
 def cmd_panel(args: argparse.Namespace) -> int:
+    if args.ceremony == "signoff":
+        # The sign-off panel is a DIFFERENT shape from a consult - two roles, held disjoint -
+        # so it gets its own branch rather than being squeezed into the consult renderer. This
+        # is the only command that assigns one; without it the assignment could only be made
+        # from a library call, which is no assignment anybody can make.
+        try:
+            result = signoff_panel(args.root, skip_personas=args.skip_personas,
+                                   record=not args.dry_run)
+        except (RenderError, ValueError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        if getattr(args, "format", "text") == "json":
+            print(json.dumps(result, indent=2))
+            return 0
+        adv = ", ".join(f"{p['seat']} ({p['role']})" for p in result["adversarial"])
+        sig = result["signer"]
+        print(f"sign-off panel: adversarial {adv}; signing {sig['seat']} ({sig['role']})")
+        print("  recorded on the run" if not args.dry_run else
+              "  NOT recorded (--dry-run) - `critic.py signoff --panel` needs the assignment")
+        return 0
     roles = {"refine": REFINE_PANEL, "triage": TRIAGE_PANEL}[args.ceremony]
     try:
         result = consult(args.root, roles, args.question or [], skip_personas=args.skip_personas)
@@ -439,8 +459,13 @@ def main(argv: list[str] | None = None) -> int:
     c.set_defaults(func=cmd_resolve_consult)
     pn = sub.add_parser("panel",
                         help="Resolve the Three-Amigos panel for a ceremony (refine/triage) and "
-                             "the seats questions go to (lead named first).")
-    pn.add_argument("--ceremony", required=True, choices=("refine", "triage"))
+                             "the seats questions go to (lead named first). `--ceremony signoff` "
+                             "assigns the sign-off panel - adversarial seats and a disjoint "
+                             "signing seat - and RECORDS it on the run, which is what "
+                             "`critic.py signoff --panel` later reads.")
+    pn.add_argument("--ceremony", required=True, choices=("refine", "triage", "signoff"))
+    pn.add_argument("--dry-run", action="store_true",
+                    help="(signoff) show the assignment without recording it on the run")
     pn.add_argument("--question", action="append", metavar="TEXT",
                     help="an open question for the panel. Repeatable.")
     pn.add_argument("--root", default=".", help="project root")

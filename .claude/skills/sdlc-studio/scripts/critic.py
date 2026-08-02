@@ -259,6 +259,34 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
     return _annotate_superseded(out, read_supersessions(repo_root, phase))
 
 
+def unit_review_rounds(repo_root: Path | str, unit: str, phase: str = "delivery") -> list[dict]:
+    """Every LIVE recorded verdict for one unit, oldest first - the unit's review ROUNDS.
+
+    `verdict_for` answers "where does this unit stand", which is one row. Escalation asks a
+    different question: how many times has this been round, and did it converge? That needs the
+    sequence, so a superseded row is dropped (a named authoriser ruled it did not happen) while
+    every surviving round is kept.
+    """
+    want = sdlc_md.norm_id(unit)
+    return [r for r in read_verdicts(repo_root, phase)
+            if sdlc_md.norm_id(r.get("unit", "")) == want and not is_superseded(r)]
+
+
+def seat_verdicts(repo_root: Path | str, unit: str, phase: str = "delivery") -> dict:
+    """The LATEST verdict each reviewing seat gave on a unit, as `{reviewer: VERDICT}`.
+
+    A split panel is a different escalation from a repeatedly-rejecting one: seats that
+    disagree need the operator to break the tie, not another repair round. Latest per seat,
+    because a seat that rejected and then approved has resolved its own objection.
+    """
+    out: dict = {}
+    for row in unit_review_rounds(repo_root, unit, phase):
+        who = str(row.get("reviewer") or "").strip()
+        if who:
+            out[who] = str(row.get("verdict") or "").strip().upper()
+    return out
+
+
 def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
     """The latest LIVE recorded verdict for a unit in `phase`, or None. Defaults to the
     delivery log, so the conformance `critiqued` gate is unaffected by plan-review rows.
@@ -677,6 +705,35 @@ def is_panel_signoff(row: dict | None) -> bool:
     return bool(row) and str(row.get("chain", "")).lstrip().startswith(f"{PANEL_MARKER}(")
 
 
+def _is_the_assigned_signer(root, principal: str, role: str) -> bool:
+    """Whether `principal` IS the seat the run assigned, by either spelling.
+
+    The assignment records a ROLE (`product`); an operator signs with whatever they call that
+    seat - the role, or the human name on its card. Comparing the two raw made a correct
+    sign-off look like a re-roll attempt, which is the guard firing on the honest case.
+    """
+    if _seat_role(principal) == _id(role):
+        return True
+    try:
+        import persona_resolve  # noqa: PLC0415
+        for entry in persona_resolve.amigo_panel(root, (role,)):
+            if _id(entry.get("seat", "")) == _id(principal):
+                return True
+    except Exception:  # noqa: BLE001 - an unresolvable card must not authorise the signer
+        return False
+    return False
+
+
+def _seat_role(who: str) -> str:
+    """The SEAT ROLE behind a principal string, so `Lena Marsh (product)` and `product` compare
+    equal. A name and a role are two spellings of one seat; comparing them raw let a signer
+    drawn from the reviewing panel through under its human name."""
+    raw = str(who or "").strip()
+    if "(" in raw and raw.rstrip().endswith(")"):
+        raw = raw[raw.rfind("(") + 1:-1]
+    return _id(raw)
+
+
 def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str,
                    delegate: str | None = None, boundary: str | None = None,
                    note: str = "", panel: list | None = None) -> Path:
@@ -708,7 +765,10 @@ def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str
         seats = [str(s).strip() for s in panel if str(s).strip()]
         if not seats:
             raise ValueError("a panel sign-off needs the adversarial seats it rests on")
-        if _id(principal) in {_id(s) for s in seats}:
+        # Compared on the ROLE, not the spelling. `principal="Lena Marsh (product)"` against a
+        # panel holding `product` is the same seat wearing a name, and comparing raw ids let it
+        # through - the guard was checking two different namespaces.
+        if _seat_role(principal) in {_seat_role(s) for s in seats}:
             raise ValueError(f"the signing seat {principal!r} is also one of the adversarial "
                              f"seats - a seat cannot ratify evidence it filed")
         # THE INTERLOCK. A panel may not ratify a review nobody can prove was properly briefed:
@@ -2764,10 +2824,31 @@ def cmd_signoff(args: argparse.Namespace) -> int:
             skipped.append(f"{sdlc_md.norm_id(unit)} ({why})")
             print(f"sign-off SKIPPED for {sdlc_md.norm_id(unit)}: {why}", file=sys.stderr)
             return
+        panel = None
+        if getattr(args, "panel", False):
+            # READ from the run, never taken from the caller. A --panel that accepted seats on
+            # the command line would put the re-roll back: a caller could name whichever seats
+            # suited the answer and the record would show nothing amiss. The assignment is a
+            # fact about the run, so it is looked up, not supplied.
+            import persona_resolve  # noqa: PLC0415
+            rec = persona_resolve.recorded_signoff_panel(args.root)
+            panel = list(rec.get("adversarial") or [])
+            signer = str(rec.get("signer") or "").strip()
+            if signer and not _is_the_assigned_signer(args.root, args.principal, signer):
+                raise ValueError(
+                    f"the run assigned the {signer!r} seat as signer, but the sign-off names "
+                    f"{args.principal!r}. Sign as the assigned seat - by its role or by the "
+                    f"name on its card - or re-assign it on the record. A signer chosen at "
+                    f"signing time is the re-roll this reads the run to prevent.")
         path = record_signoff(args.root, unit, args.principal, args.author,
                               delegate=args.delegate, boundary=args.boundary,
-                              note=fields.get("note", ""))
+                              note=fields.get("note", ""), panel=panel)
         print(f"sign-off recorded for {sdlc_md.norm_id(unit)} -> {path}")
+        if panel:
+            # US0601 AC2: the output SAYS panel sign-off is in force. A policy that changes who
+            # may sign and prints nothing different is indistinguishable from the default.
+            print(f"  PANEL sign-off in force (review.signoff: panel) - adversarial seats "
+                  f"{', '.join(panel)}, signed by {args.principal}.")
 
     rc = _run_batch(args, "signoff", write)
     if skipped:
@@ -3010,6 +3091,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="a named delegate signing on the principal's behalf")
     so.add_argument("--boundary", default=None,
                     help="the delegate's separate trust boundary (required with --delegate)")
+    so.add_argument("--panel", action="store_true",
+                    help="sign as the PANEL assigned to this run (requires `review.signoff: "
+                         "panel`). The seats are READ from the run's recorded assignment, never "
+                         "supplied here - a caller-named panel is the re-roll the record exists "
+                         "to prevent.")
     so.add_argument("--note", default="")
     so.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
                     help="read the sign-off note from a JSON object ({\"note\": \"...\"}) instead "

@@ -11889,12 +11889,31 @@ class LoopTerminationTests(unittest.TestCase):
         this project a review round last sprint.
         """
         sprint = _load()
-        src = (Path(__file__).resolve().parent.parent / "sprint.py").read_text(encoding="utf-8")
-        recorder = src.split("def _record_close_attempt")[1][:1600]
-        self.assertIn("loop_termination(", recorder,
-                      "the close attempt recorder never consults the termination rule")
-        self.assertIn("LOOP STOPPED", recorder,
-                      "the recorder consults the rule but does not act on it")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+                "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+                "> **Affects:** src/a.py\n", encoding="utf-8")
+            (root / "sdlc-studio" / "retros" / "RETRO0001-r.md").write_text(
+                "# RETRO0001: r\n\n> **Status:** Draft\n", encoding="utf-8")
+            # FOUR attempts: the declared cap is reached, so the rule says stop.
+            attempts = [{"at": f"2026-08-02T00:0{i}:00Z", "outstanding": n, "stages": ["gate"]}
+                        for i, n in enumerate([3, 4, 5, 6])]
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+                {"run_id": "RUN-T", "batch": ["US0001"], "outcome": "running",
+                 "close_attempts": attempts}), encoding="utf-8")
+            buf, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+                rc = sprint.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            out = buf.getvalue() + err.getvalue()
+        self.assertNotEqual(0, rc, "a close over a non-converging loop reported success")
+        self.assertIn("LOOP STOPPED", out, "the close never consulted the termination rule")
+        self.assertIn("stops here", out,
+                      "the close REPORTED the divergence and carried on - a loop that announces "
+                      "it is diverging and then runs the next round has reported nothing")
 
     def test_a_shrinking_set_runs_on(self) -> None:
         """The control. MUTANT: stop unconditionally.
@@ -12025,18 +12044,35 @@ class ReviewBatchFieldsFileTests(unittest.TestCase):
         The value carries the exact shapes that break: a backtick span and a `$(` sequence.
         """
         sprint = _load()
-        import json
         hazard = ("the check ran `git log -S` and $(pwd) was wrong; "
                   "`grep -c BG0348` returned 0")
         with tempfile.TemporaryDirectory() as d:
-            doc = Path(d) / "findings.json"
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+                "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+                "> **Affects:** src/a.py\n", encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps({"run_id": "RUN-T", "batch": ["US0001"], "outcome": "running"}),
+                encoding="utf-8")
+            doc = root / "findings.json"
             doc.write_text(json.dumps({"findings": hazard}), encoding="utf-8")
-            args = argparse.Namespace(findings="", fields_file=str(doc))
-            import file_finding
-            fields = file_finding.resolve_prose_fields(
-                args.fields_file, {"findings": args.findings}, allowed=("findings",))
-        self.assertEqual(hazard, fields["findings"],
-                         "the findings text was altered on the way in")
+            # THROUGH `--fields-file`, which is what the criterion says. The first version called
+            # `resolve_prose_fields` directly and never passed the flag, so deleting the whole
+            # fields-file branch from `cmd_review_batch` left it green.
+            buf, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+                rc = sprint.main(["review-batch", "--units", "US0001", "--reviewer", "qa",
+                                  "--author", "me", "--verdict", "APPROVE",
+                                  "--fields-file", str(doc), "--root", str(root)])
+            out = buf.getvalue() + err.getvalue()
+            record = (root / "sdlc-studio" / "reviews" / "sprint-review-record.md")
+            stored = record.read_text(encoding="utf-8") if record.exists() else ""
+        self.assertEqual(0, rc, f"review-batch --fields-file did not run:\n{out}")
+        self.assertIn(hazard, stored,
+                      "the findings text did not reach the record verbatim through "
+                      "`--fields-file` - the flag the criterion names")
 
     def test_the_flag_path_is_unchanged(self) -> None:
         """The control. MUTANT: require a fields-file always.
@@ -12063,15 +12099,35 @@ class RunbookTests(unittest.TestCase):
     def test_plan_and_run_print_the_runbook(self) -> None:
         """MUTANT: delete the render call from the plan's print path.
 
-        Pinned on the PRINT PATH, not on the renderer: a renderer no command calls is the
-        lane-not-library defect, and it is exactly how a document meant to be read stays
-        unread.
+        Drives `sprint plan` and reads its OUTPUT. The first version greped `sprint.py` for the
+        renderer's name, which a dead reference satisfies: replacing the call site with
+        `_unused = render_runbook_pointer` left it green. A grep over source text is not a test
+        of what the source does, and this is the file where that lesson was filed.
         """
         sprint = _load()
-        src = (Path(__file__).resolve().parent.parent / "sprint.py").read_text(encoding="utf-8")
-        printer = src.split("def _render_carried_lessons")[1][:900]
-        self.assertIn("render_runbook_pointer", printer,
-                      "the plan never prints the toolchain runbook")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+            (root / "src").mkdir()
+            (root / "src" / "a.py").write_text("x = 1\n", encoding="utf-8")
+            skill = root / ".claude" / "skills" / "sdlc-studio"
+            skill.mkdir(parents=True)
+            (skill / "reference-sprint-toolchain.md").write_text(
+                "# Toolchain\n\n## Orient\n\n`status.py`\n", encoding="utf-8")
+            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+                "# US0001: a unit\n\n> **Status:** Ready\n> **Points:** 3\n"
+                "> **Affects:** src/a.py\n\n## Acceptance Criteria\n\n"
+                "### AC1: it behaves\n\n- **Then** it behaves\n- **Verify:** shell true\n",
+                encoding="utf-8")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+                rc = sprint.main(["plan", "--stories", "Ready", "--root", str(root)])
+            out = buf.getvalue()
+        self.assertEqual(0, rc, f"the plan did not run:\n{out}")
+        self.assertIn("reference-sprint-toolchain.md", out,
+                      "`sprint plan` printed no pointer to the toolchain runbook, so the "
+                      "document meant to be read at the step boundary is never mentioned")
 
     def test_an_absent_runbook_is_reported_not_omitted(self) -> None:
         """MUTANT: return [] when the runbook is missing.

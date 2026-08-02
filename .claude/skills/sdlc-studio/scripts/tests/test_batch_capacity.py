@@ -135,5 +135,120 @@ class SwapTests(unittest.TestCase):
                          "the repeated and comma forms are not read identically")
 
 
+
+class AddEpicTests(unittest.TestCase):
+    """Adding an epic's stories one at a time reaches the same batch and a WORSE record.
+
+    The ledger then reads as several unrelated decisions, and nobody sees the points the batch
+    grew by in one step - which is the number that decides whether the appetite still holds.
+    """
+
+    def _run(self, root, *argv):
+        sprint = _load()
+        buf_out, buf_err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+            rc = sprint.main(["batch", *argv, "--root", str(root)])
+        return rc, buf_out.getvalue() + buf_err.getvalue()
+
+    def _story(self, root, uid, epic, status, pts):
+        (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
+            f"# {uid}: a unit\n\n> **Status:** {status}\n> **Epic:** {epic}\n"
+            f"> **Points:** {pts}\n> **Affects:** src/a.py\n", encoding="utf-8")
+
+    def _root(self, d, batch=("US0001",)):
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        self._story(root, "US0001", "EP0010", "Ready", 5)
+        self._story(root, "US0002", "EP0010", "Ready", 3)
+        self._story(root, "US0003", "EP0010", "Draft", 8)     # right epic, WRONG status
+        self._story(root, "US0004", "EP0011", "Ready", 13)    # right status, WRONG epic
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps({"run_id": "RUN-T", "batch": list(batch), "outcome": "running"}),
+            encoding="utf-8")
+        return root
+
+    def _batch(self, root):
+        return json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")
+        ).get("batch") or []
+
+    def test_the_epic_stories_at_the_named_status_are_added_as_a_priced_set(self) -> None:
+        """MUTANT: add them without reporting the points, or report a constant.
+
+        The POINTS are asserted as a number, not merely present: the count of units says
+        nothing about whether the appetite still holds, and 8 is the only right answer here
+        (US0002 alone is fresh - US0001 is already in the batch and must not be repriced).
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, batch=[])
+            rc, out = self._run(root, "add-epic", "--epic", "EP0010", "--status", "Ready",
+                                "--format", "json")
+            rec = json.loads(out)
+            batch = self._batch(root)
+        self.assertEqual(0, rc, out)
+        self.assertEqual(["US0001", "US0002"], sorted(rec["added"]))
+        self.assertEqual(8, rec["points"],
+                         "the set was added without its price, so the appetite cannot be judged")
+        self.assertEqual(["US0001", "US0002"], sorted(batch))
+
+    def test_a_story_added_to_the_epic_between_calls_is_picked_up_and_a_wrong_status_one_is_not(
+            self) -> None:
+        """MUTANT: resolve the epic's stories from a snapshot rather than reading the tree.
+
+        Proven against a MUTATED fixture, not a second identical call: repeating the same call
+        passes under a cached list too, so it would not discriminate. A story appearing in the
+        epic afterwards must be seen, and the Draft one must stay out both times.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, batch=[])
+            self._run(root, "add-epic", "--epic", "EP0010", "--status", "Ready")
+            self._story(root, "US0009", "EP0010", "Ready", 2)   # appears AFTER the first call
+            rc, out = self._run(root, "add-epic", "--epic", "EP0010", "--status", "Ready",
+                                "--format", "json")
+            rec = json.loads(out)
+            batch = self._batch(root)
+        self.assertEqual(0, rc, out)
+        self.assertEqual(["US0009"], rec["added"],
+                         "a story added to the epic between calls was not picked up, so the "
+                         "selection is a snapshot rather than the tree")
+        self.assertNotIn("US0003", batch, "a Draft story was added at status Ready")
+        self.assertNotIn("US0004", batch, "a story from another epic was added")
+
+    def test_already_present_units_are_named_and_not_double_counted(self) -> None:
+        """MUTANT: silently skip the duplicates, or count their points again.
+
+        Both halves are asserted. Naming them is what tells the operator the set was partly
+        there already; not repricing them is what keeps the appetite number honest.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, batch=["US0001"])
+            rc, out = self._run(root, "add-epic", "--epic", "EP0010", "--status", "Ready",
+                                "--format", "json")
+            rec = json.loads(out)
+            batch = self._batch(root)
+        self.assertEqual(0, rc, out)
+        self.assertEqual(["US0001"], rec["already"], "the duplicate was not named")
+        self.assertEqual(["US0002"], rec["added"])
+        self.assertEqual(3, rec["points"],
+                         "a unit already in the batch was priced again, inflating the growth")
+        self.assertEqual(["US0001", "US0002"], sorted(batch))
+
+    def test_an_epic_with_nothing_at_that_status_fails_loud_and_changes_nothing(self) -> None:
+        """MUTANT: return 0 on an empty selection.
+
+        Adding nothing silently reads exactly like adding everything, and the operator would
+        only discover the batch never grew at the close.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, batch=["US0001"])
+            before = self._batch(root)
+            rc, out = self._run(root, "add-epic", "--epic", "EP0011", "--status", "Done")
+            after = self._batch(root)
+        self.assertNotEqual(0, rc, "an empty selection was reported as a successful add")
+        self.assertIn("nothing was added", out.lower())
+        self.assertEqual(before, after, "a refused add still changed the batch")
+
+
 if __name__ == "__main__":
     unittest.main()

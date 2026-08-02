@@ -1,7 +1,7 @@
 # BG0432: test selection still misses eleven scripts whose tests load them under a different name
 
 > **Status:** Fixed
-> **Verification depth:** functional (before/after measured on the real repo - delta is 1 module, and the fix is pinned on a fixture whose test module has real reads so the unattributable sweep cannot mask it)
+> **Verification depth:** functional (the fix is pinned on a fixture whose test module has real reads so the unattributable sweep cannot mask it; the SIZE of the selection delta is not established - three measurements disagree, and the claim of "1 module" is withdrawn rather than restated)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -46,7 +46,7 @@ Derive the reverse index from the loader calls the test modules actually make (`
 > **Measured before claiming a win.** `test_two_backlogs.py` was ALREADY selected for a change
 > to `refine.py` before this fix - but only because it measures empty and is swept in as
 > unattributable, not because any route reached it. The immediate selection delta is therefore
-> near zero (one module, for `status.py`). What this closes is the LATENT failure the bug's own
+> not established (see the Verification depth line). What this closes is the LATENT failure the bug's own
 > summary names: the moment such a module gains resolvable reads it stops being unattributable
 > and would be dropped for changes to the very script it tests.
 

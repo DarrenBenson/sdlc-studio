@@ -3718,5 +3718,70 @@ class LaneCheckTests(unittest.TestCase):
         self.assertEqual([], found, "a unit touching no CLI-bearing script was reported")
 
 
+    def test_entry_made_through_a_shared_test_helper_is_credited(self) -> None:
+        """BG0487. MUTANT: judge the scoped node's own source only.
+
+        A class that shells the CLI once in a `_run` helper and calls `self._run(...)` from
+        every method is a correct and common shape - it is the shape used by this repo's own
+        `SwapTests` and `AddEpicTests`. Scoping to the node alone reports it as never entering
+        the lane, which is a detector telling tested work it is untested. It fired on three
+        units the sprint that shipped it had delivered.
+        """
+        mod = verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            root, story = self._fixture(
+                d,
+                "import thing\n\n\nclass T:\n"
+                "    def _run(self, *a):\n        return thing.main(list(a))\n\n"
+                "    def test_it(self):\n        assert self._run() == 0\n",
+                "pytest tests/test_thing.py::T::test_it")
+            found = mod.lane_check(root, [story])
+        self.assertEqual([], found,
+                         f"entry made through a shared helper was reported as no entry: {found}")
+
+    def test_helper_resolution_is_one_level_and_does_not_credit_the_whole_file(self) -> None:
+        """MUTANT: fall back to whole-file matching when the node shows no entry.
+
+        This is the failure the scoping fixed in the first place - whole-file matching reported
+        0 findings over 615 units, because one `main([...])` anywhere in a thousand-line module
+        marked every criterion in it clean. The helper the node calls must enter the lane; a
+        DIFFERENT helper elsewhere in the file entering it must not count.
+        """
+        mod = verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            root, story = self._fixture(
+                d,
+                "import thing\n\n\nclass T:\n"
+                "    def _unrelated(self, *a):\n        return thing.main(list(a))\n\n"
+                "    def _lib(self, x):\n        return thing.fingerprint(x)\n\n"
+                "    def test_it(self):\n        assert self._lib('a') == 'a'\n",
+                "pytest tests/test_thing.py::T::test_it")
+            found = mod.lane_check(root, [story])
+        self.assertEqual(1, len(found),
+                         "an unrelated helper elsewhere in the file credited a library-only "
+                         "verifier - the fix restored whole-file permissiveness")
+
+    def test_a_library_only_method_beside_lane_entering_ones_is_still_reported(self) -> None:
+        """The shape the BG0487 repair could plausibly have hidden. MUTANT: credit the class.
+
+        Distinct from the plain library-only case: here the class DOES enter the lane, from a
+        sibling test method, and only the criterion's own node does not. A repair that widened
+        from the node to the class would report this clean, and that is the original US0577
+        defect walking back in through the fix for its detector.
+        """
+        mod = verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            root, story = self._fixture(
+                d,
+                "import thing\n\n\nclass T:\n"
+                "    def test_other(self):\n        assert thing.main([]) == 0\n\n"
+                "    def test_it(self):\n        assert thing.fingerprint('a') == 'a'\n",
+                "pytest tests/test_thing.py::T::test_it")
+            found = mod.lane_check(root, [story])
+        self.assertEqual(1, len(found),
+                         "a library-only criterion was cleared by a SIBLING method entering the "
+                         "lane - the original defect shape is no longer reported")
+
+
 if __name__ == "__main__":
     unittest.main()

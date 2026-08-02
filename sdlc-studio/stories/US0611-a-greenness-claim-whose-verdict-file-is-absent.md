@@ -5,7 +5,7 @@
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/run-suite.sh, .githooks/pre-commit, tools/tests/test_run_suite.py
+> **Affects:** tools/run-suite.sh, .githooks/commit-msg, tools/tests/test_run_suite.py
 > **Epic:** EP0201
 > **Points:** 3
 

@@ -902,8 +902,14 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             # EXECUTES its criteria - a stronger oracle than either of these, and applying this
             # on top would refuse stories the stronger gate accepts while talking about "this
             # fix". The hole this closes is the one bugs had: `Fixed` with no equivalent.
-            ticked = bool(_TICKED_RE.search(text))
-            executable = bool(_VERIFY_RE.search(text))
+            # SCOPED to the criteria. Searching the whole artefact made the gate answerable
+            # by prose it never asked about: a `- [x] I reproduced it` in Steps to Reproduce,
+            # or a `Verify:` line in Proposed Fix naming a file that does not exist, each let a
+            # bug reach Fixed while the refusal text still said "every acceptance criterion is
+            # unticked". Both reproduced through the CLI.
+            criteria = sdlc_md.criteria_section(text)
+            ticked = bool(_TICKED_RE.search(criteria))
+            executable = bool(_VERIFY_RE.search(criteria))
             if type_ == "bug" and not ticked and not executable:
                 blocks.append(
                     f"every acceptance criterion is unticked and none carries a `Verify:` "

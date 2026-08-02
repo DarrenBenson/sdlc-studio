@@ -306,9 +306,13 @@ def check(root: Path) -> list[str]:
 _PROSE_SUFFIXES = (".md", ".rst", ".txt")
 
 #: Append-only RECORD files: tables of events, not prose about behaviour. A row states that
-#: somebody judged something on a date; it makes no claim a diff could contradict. Matched on
-#: the path so a new ledger under `reviews/` is covered without editing a second list.
-_LEDGER_DIRS = ("sdlc-studio/reviews/",)
+#: somebody judged something on a date; it makes no claim a diff could contradict.
+#:
+#: Named ONE BY ONE, never by directory. A `sdlc-studio/reviews/` prefix looked like the
+#: economical version of this list and quietly took the whole directory with it - `LATEST.md`,
+#: which is step 1 of the session checklist, and every `RV####` review document. Those are
+#: prose making claims, which is exactly what this lane reads. A new ledger costs one line
+#: here; exempting a directory costs every prose file that ever lands in it.
 _LEDGER_NAMES = ("critic-verdicts.md", "signoff-record.md", "evidence-record.md",
                  "sprint-review-record.md", "plan-review-verdicts.md")
 
@@ -316,8 +320,7 @@ _LEDGER_NAMES = ("critic-verdicts.md", "signoff-record.md", "evidence-record.md"
 def _is_ledger(path: str) -> bool:
     """Whether `path` is an append-only record rather than prose making claims."""
     norm = str(path).replace("\\", "/")
-    return (any(seg in norm for seg in _LEDGER_DIRS)
-            or norm.rsplit("/", 1)[-1] in _LEDGER_NAMES)
+    return norm.rsplit("/", 1)[-1] in _LEDGER_NAMES
 
 #: A bare integer, the only claim shape decided mechanically here. A full natural-language claim
 #: check is not mechanisable; a changed literal contradicted by its own prose is, and it covers

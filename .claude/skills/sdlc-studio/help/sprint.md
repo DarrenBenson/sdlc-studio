@@ -257,6 +257,13 @@ python3 <skill>/scripts/sprint.py batch drop US0001 --reason "premise unbuilt"
 # put one in, under the same gates as the rest
 python3 <skill>/scripts/sprint.py batch add US0004
 
+# put an EPIC's stories in as one priced set - the growth is one number, not five entries
+python3 <skill>/scripts/sprint.py batch add-epic --epic EP0010 --status Ready
+
+# raise the ceiling ON THE RECORD - the standing pair stays, so the close still reports the
+# overage rather than a run that fitted
+python3 <skill>/scripts/sprint.py appetite resize --units 16 --reason "an epic joined the batch"
+
 # end a run that will not reach its goal - the handoff records what is carried
 python3 <skill>/scripts/sprint.py stop --reason "the dependency slipped"
 

@@ -51,7 +51,7 @@ Either `new` refuses to leave a placeholder that validate treats as an error (pr
 - **Given** `artifact.py new` minting an artefact whose criteria are still the scaffold
 - **When** it reports
 - **Then** it states the criteria are unwritten, rather than reporting unqualified success and sending the author away from a document that still needs writing
-- **Verify:** grep -q "NOT FINISHED" .claude/skills/sdlc-studio/scripts/artifact.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::FreshArtefactPlaceholderTests::test_the_warning_is_printed_by_the_shipped_command
 - **Verified:** yes (2026-08-02)
 
 ## Revision History

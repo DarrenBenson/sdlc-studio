@@ -4,7 +4,7 @@
 > **Verification depth:** functional (a seventh copy written into the suite on purpose and KILLED, then removed; the declared-inventory control asserted beside it)
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_rolling.py, .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py, tools/tests/hookutil.py
+> **Affects:** tools/tests/test_test_census.py, tools/tests/test_precommit_lane_order.py, tools/tests/test_trd_freshness.py
 > **Evidence:** RUN-01KYPZ1G hit this six times. Adding one close-chain step reddened 17 tests in test_sprint.py, then 27 more across test_autosprint.py and test_sprint_rolling.py - each file held its own copy of the chain, and all three copies had ALREADY drifted (every one omitted `review-anchor`). Adding one gate lane then reddened 41 tests across four tools/tests files, each carrying a hand-copied list of the tools the hook invokes. Seven copies of two real lists, none of them derived, none of them in the file that owns the list.
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio file

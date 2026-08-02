@@ -4,7 +4,7 @@
 > **Verification depth:** functional + mutation (all five re-run: 2 already KILLED, 2 SURVIVED and now killed, 1 caught at runtime by a writer refusal with the gap stated)
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_init.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Independent review of RUN-01KYNKDP applied 39 mutants; 8 SURVIVED. Reverting BG0368, BG0385, BG0392's CLI half or BG0395 reddens nothing.
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio file

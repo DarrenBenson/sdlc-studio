@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 11 |
+| Proposed | 12 |
 | Approved | 0 |
 | In Progress | 42 |
 | Complete | 446 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **522** |
+| **Total** | **523** |
 
 ## All Changes
 
@@ -344,6 +344,7 @@
 | [CR-0520](CR0520-a-criterion-verified-only-through-the-library-is.md) | a criterion verified only through the library is not evidence the feature ships | In Progress | High | Improvement | 2026-08-01 | EP0199 |
 | [CR-0521](CR0521-a-sprint-closes-on-an-amigo-panel-s.md) | a sprint closes on an amigo panel's sign-off, so the operator is informed rather than in the loop | Superseded | High | Feature | 2026-08-01 | -- |
 | [CR-0522](CR0522-the-repo-wide-periodic-review-must-not-block.md) | the repo-wide periodic review must not block a sprint close whose own work is fully reviewed | In Progress | High | Improvement | 2026-08-01 | EP0200 |
+| [CR-0523](CR0523-the-unreviewed-span-is-reported-during-the-run.md) | the unreviewed span is reported DURING the run, not discovered at the close | Proposed | High | Improvement | 2026-08-02 | -- |
 
 ## Archived Releases
 

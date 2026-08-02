@@ -3412,17 +3412,30 @@ class KillerScalarTests(unittest.TestCase):
         row = mod.attribute_kill({"verdict": "survived"}, "FAILED tests/x.py::T::t")
         self.assertNotIn("test", row, "a SURVIVING mutant was given a killing test")
 
-    def test_the_assignment_is_reachable_in_the_shipped_source(self) -> None:
-        """The lane half. MUTANT: delete the assignment entirely.
+    def test_run_gate_calls_the_attribution_seam(self) -> None:
+        """The lane half. MUTANT: `row = attribute_kill({...})` -> `row = {**m, ...}`.
 
-        Kept alongside the value assertion rather than instead of it: this one catches removal,
-        the one above catches the assignment being made inert - and the original guard could
-        only ever catch the first.
+        Parsed, not grepped. `assertIn("attribute_kill(", src)` is satisfied by the DEFINITION
+        line, so unwiring the seam from `run_gate` - restoring the exact original defect - left
+        the whole class green. An AST walk asks a different question: is the name CALLED inside
+        this function? A dead reference is a Name node, not a Call.
+
+        What this does and does not prove, stated plainly: it proves the production path invokes
+        the seam, which the grep did not. It does not prove the returned row is used - that is
+        what the value assertions above cover, and the two together are the pair.
         """
+        import ast  # noqa: PLC0415
         src = (Path(__file__).resolve().parent.parent / "mutation.py").read_text(encoding="utf-8")
-        self.assertIn("attribute_kill(", src,
-                      "run_gate no longer routes its attribution through the seam, so the "
-                      "value assertions above no longer cover the production path")
+        tree = ast.parse(src)
+        gate = next((n for n in ast.walk(tree)
+                     if isinstance(n, ast.FunctionDef) and n.name == "run_gate"), None)
+        self.assertIsNotNone(gate, "run_gate is gone - the production path this covers moved")
+        calls = [n for n in ast.walk(gate)
+                 if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "attribute_kill"]
+        self.assertTrue(
+            calls,
+            "run_gate does not CALL attribute_kill - the attribution seam is unwired, so the "
+            "value assertions above cover a function no production path reaches")
 
 
 if __name__ == "__main__":

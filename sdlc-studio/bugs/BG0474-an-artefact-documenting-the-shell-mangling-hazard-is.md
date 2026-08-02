@@ -4,7 +4,7 @@
 > **Verification depth:** functional (the same prose declared and undeclared, plus the empty-declaration case, each asserted separately)
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
