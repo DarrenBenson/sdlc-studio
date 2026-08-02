@@ -1,60 +1,72 @@
+> **Run of record:** RUN-01KYZKY5 - closing review [`RV0026`](RV0026-run-01kyzky5-closing-review-thirty-eight-passes-three.md).
+> 152 of 152 points delivered across 44 units. Every unit is terminal and independently
+> reviewed. Three stop-ship defects were found, repaired and re-reviewed.
 
-<!-- close-status:begin -->
-> **RUN-01KYY52D closed goal-reached.** 9 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
-> Stamped by `sprint close` - edit the prose below, not this block.
-<!-- close-status:end -->
-> **Run of record:** RUN-01KYZKY5 - **STOPPED, not closed.** 152 of 152 points delivered;
-> 27 REJECT / 11 APPROVE over 38 units in five independent passes. Closing it would have
-> recorded an approval the review withheld.
+## Landed: RUN-01KYZKY5 - the batch delivered in full, and the review finally happened
 
-## Landed: RUN-01KYZKY5 - the batch delivered in full and did not pass review
+The run had been STOPPED rather than closed, and the reason was not the code.
 
-Every planned unit shipped: 45 units, 152 points, 24 commits, two dropped with recorded reasons.
-Then five independent adversarial passes returned **27 REJECT and 11 APPROVE**, and the run was
-stopped rather than closed.
+**The review had not happened in the record.** Of 44 units: six were covered by an independent
+pass, eighteen carried a live REJECT from an earlier round, and **twenty had no recorded
+verdict at all** - almost all of them the bug fixes. The run's own account claimed "27 REJECT
+and 11 APPROVE over 38 units", but only twenty-three verdicts had ever reached
+`critic.py record`. The rest lived in a transcript, and the close cannot read a transcript.
 
-The rejections are not one batch being bad at everything. They split cleanly:
+So the close was right to refuse, and what it was refusing was real.
 
-| | Count | What was wrong |
-| --- | ---: | --- |
-| Feature broken or unreachable | ~13 | zero-caller functions, a bypassable gate, a guard aimed at the wrong tree, `Fixed` with the title still true of the tree |
-| Feature correct, evidence cannot fail | ~14 | the command works through the front door; the verifier greps source text |
+`RV0026` is the review that batch never got: 38 briefs from `critic.py brief`, six independent
+contexts in their own git worktrees, scope bounded to each unit's `Affects` against
+`4e7d5e6c`. Eighteen rejoinders carrying the prior verdict verbatim, twenty first passes.
 
-**The defect worth carrying forward is the second one.** A verifier that asserts the SHAPE of a
-change - is the symbol present, does the string appear - stays green when the feature is
-deleted. Reviewers demonstrated it by mutation ten-plus times; twice by removing the whole
-feature. `BG0401` shipped this defect inside the bug whose own title is "a grep over source
-text is not a test of what the source does".
+### What the review found
+
+Three stop-ship defects, each reproduced by execution before it was believed:
+
+| Unit | Defect |
+| --- | --- |
+| `BG0423` | the fix for a fail-open left the verdict write BETWEEN the two suite lanes, so a failing `tool-tests` lane still recorded `status green` and the identical retry ran no tests |
+| `US0604` | the close report called `critic` without importing it, so every non-empty batch raised `NameError` into an advisory `except` - it printed only for an empty batch |
+| `BG0437` | a criterion testing disambiguation whose fixtures needed no disambiguating - deleting the feature outright left the module green at 21 passed |
+
+All three share one shape: **the feature did not work through the entry point, and the
+verifier could not see it.** Each was repaired, mutation-verified, and re-reviewed by a pass
+judging the repair rather than the claim about it.
+
+Round two then found a fourth of the same class on a different criterion, and a fifth that
+this run's own repair had introduced - a bare `index()` in a neighbouring test falling through
+to the second occurrence a new log capture had created. Both fixed. A repair that quietly
+weakens the test beside it is exactly what round two exists to catch.
+
+### The finding that outranks all of them
+
+**Twenty units shipped with no independent review, and nothing in the system said so.** The
+units were `Done` and `Fixed`, the gate was green, the paperwork complete. A batch can pass
+every check this repo has while nobody has looked at half of it, and the first moment that
+becomes visible is the close refusing after 152 points have landed.
+
+`sprint.py review-batch --open` exists to review at the boundary where work lands. It was
+never called once across 44 units, because nothing prompts it and nothing refuses without it.
+That is `CR0523`, unbuilt.
+
+The second-order version is sharper: **a review that happened but was not recorded did not
+happen.** Fifteen verdicts were reported and never written down.
 
 ### What is owed
 
-`BG0488`-`BG0494` carry every unrepaired finding with the pass's executed reproduction.
-`CR0523`, `CR0524`, `CR0525` carry the process repairs. 23 delivered units sit in `Review`,
-held by findings rather than by unfinished work - they return cheaply, because most need a
-verifier that can fail rather than a feature.
+| Item | Where |
+| --- | --- |
+| Unrepaired findings from the earlier rounds | `BG0488`-`BG0494`, open |
+| Review at the boundary, not at the close | `CR0523` |
+| `lane-check` made blocking (165 findings over 634 stories, advisory today) | `CR0520` |
+| The close's fixed point | `CR0527` / `EP0204` |
+| The four structural repairs | `EP0204`-`EP0207`, 67 points, all skeletons |
 
-### Repaired in-run (307ce91d, baec2b42)
+`US0604` is still named by the advisory lane-check: its criterion enters `_finalise_outcome`,
+the production caller, not `main()`. Round two confirmed the criterion is pinned regardless,
+killing every mutant including deletion of the emitter's body. Disclosed, not papered over.
 
-The `BG0448` terminal oracle was BYPASSABLE - its regexes scanned the whole artefact while the
-refusal said "every acceptance criterion is unticked", so a tick in Steps to Reproduce cleared
-it. EP0198's panel sign-off was hollow at the lane and is now reachable end to end. `BG0420`'s
-guard scanned the one directory with nothing to find. `BG0483` had exempted every review
-document from claim-drift. Eight verifiers now exercise what they claim, each proven to kill
-the mutant its predecessor survived. Three false measured claims corrected, one WITHDRAWN
-rather than replaced because three measurements disagreed.
+### Sprint Goal: partial
 
-### Decisions taken
-
-1. **Stop, do not close.** The units stay in `Review` as real backlog with their evidence.
-2. **`lane-check` becomes blocking**, once `BG0491` widens its corpus to bug units. It flagged
-   all nine of the units later confirmed hollow, before any reviewer looked, and shipped
-   advisory - so it changed nothing.
-3. **Test plans move before the code** (`CR0525`, Critical). Reviewing the test is cheaper than
-   reviewing the code: this run spent five passes to learn that ~14 verifiers could not fail.
-   The `test-spec` type and the name-the-mutant-first rule already ship; the repo holds two
-   test specs and this run wrote none.
-
-### Backlog after the run
-
-**296 points across 72 units** (`status.py points`): 226 story, 70 bug. 90 of those points are
-this run's units held in `Review`.
+The loop does now stop when it stops converging, and the gates landed in the commands people
+run. But the close still needed the operator in it, because the amigo panel could not satisfy
+the reviewer-of-record half - which was the goal's headline.
