@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 11 |
+| Open | 10 |
 | In Progress | 0 |
-| Fixed | 392 |
+| Fixed | 393 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -137,7 +137,7 @@
 | [BG0417](BG0417-transition-done-never-checks-the-two-role-rule.md) | transition -> Done never checks the two-role rule: the verb that writes the status the Definition of Done defines a bar for does not consult that bar, and only a later gate run reports it | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0418](BG0418-the-close-swallows-the-retro-validator-s-own.md) | The close swallows the retro validator's own warning, so a scaffold with six unreplaced demonstration rows reports as 'valid' to the operator | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Open | High | 2026-07-29 | 2026-07-29 |
-| [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0422](BG0422-the-code-is-mostly-right-and-the-evidence.md) | The code is mostly right and the EVIDENCE is what fails: five consecutive REJECTs, and four fifths of the findings were the author's own tests unable to fail | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0423](BG0423-the-commit-gate-s-unit-suite-lane-fails.md) | The commit gate's unit-suite lane fails on the first attempt and passes on an identical retry, twice in one session, costing a full 8-minute gate run each time | Fixed | High | 2026-07-30 | 2026-07-30 |

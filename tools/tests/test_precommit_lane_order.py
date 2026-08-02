@@ -60,6 +60,13 @@ def _lane_keys(hook: Path = HOOK) -> list[str]:
 #: that drops a lane would otherwise pass every ordering assertion below while silently
 #: reducing coverage.
 #: `gate` is deliberately absent: it is an inline if/else block, not a `run "..."` lane.
+#:
+#: HAND-MAINTAINED ON PURPOSE - do not "fix" this by deriving it from the hook. This list IS
+#: the assertion: derived from the thing it checks, it would agree with any hook including one
+#: that lost a lane, which is the exact failure it exists to catch. Every OTHER mirror of a
+#: production list in this suite should be derived (see `hookutil.py`); this one is the
+#: deliberate exception, and the guard below refuses a new hand-copied list so the distinction
+#: stays a decision rather than a habit.
 EXPECTED_LANES = {
     "style", "links", "skill-spec", "versions", "verify-ratchet", "lens-signatures",
     "spec-claims",

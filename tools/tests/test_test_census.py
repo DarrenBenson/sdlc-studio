@@ -18,6 +18,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import re
 import sys
 import tempfile
 import subprocess
@@ -636,6 +637,57 @@ class ImportabilityTests(unittest.TestCase):
             f"a module under tools/tests does not import under pytest:\n"
             f"{result.stdout[-2000:]}\n{result.stderr[-2000:]}")
 
+
+
+class HandCopiedMirrorTests(unittest.TestCase):
+    """A test file must not hand-list a set the production tree already owns.
+
+    A hand-written mirror is a second copy, and it goes stale the way every second copy does -
+    silently, and in the direction that makes the tests pass while covering less. Seven such
+    mirrors were found in one suite; `hookutil.py` derives them from the thing that owns them.
+
+    ONE deliberate exception stays hand-maintained: an INVENTORY that is itself the assertion.
+    Derived from what it checks, it would agree with any hook including one that lost a lane.
+    It is exempt by DECLARATION, so the distinction stays a decision rather than a habit.
+    """
+
+    #: What a production-owned set looks like when it has been copied into a test: a literal
+    #: naming shipped script files. Matched on the CONTENT, not on a variable name, because a
+    #: copy renamed is still a copy.
+    _SCRIPT_LITERAL = re.compile(r'"[a-z_]+\.py"\s*,\s*"[a-z_]+\.py"\s*,\s*"[a-z_]+\.py"')
+
+    #: How a file declares that its list IS the assertion rather than a mirror of one.
+    _INVENTORY_MARKER = "HAND-MAINTAINED ON PURPOSE"
+
+    def test_no_new_hand_copied_script_list(self) -> None:
+        """MUTANT: paste a third copy of the hook's script set into a test file.
+
+        The declared inventory is exempt; anything else with the same shape is the seventh copy
+        this guard exists to refuse.
+        """
+        offenders = []
+        for path in sorted(TESTS_DIR.glob("test_*.py")):
+            text = path.read_text(encoding="utf-8")
+            if self._INVENTORY_MARKER in text:
+                continue                      # a declared inventory, not a mirror
+            if self._SCRIPT_LITERAL.search(text):
+                offenders.append(path.name)
+        self.assertEqual(
+            [], offenders,
+            f"these test files hand-list shipped scripts instead of deriving them from the "
+            f"thing that owns them (see hookutil.py): {offenders}")
+
+    def test_the_declared_inventory_is_still_recognised(self) -> None:
+        """The control. MUTANT: drop the exemption, or the marker.
+
+        Without the exemption the deliberate inventory reads as an offender and somebody
+        'fixes' it by deriving it - which deletes the assertion.
+        """
+        inventory = TESTS_DIR / "test_precommit_lane_order.py"
+        self.assertIn(self._INVENTORY_MARKER,
+                      inventory.read_text(encoding="utf-8"),
+                      "the deliberate inventory no longer says why it is not derived, so the "
+                      "next reader will derive it and delete the assertion")
 
 
 if __name__ == "__main__":

@@ -82,6 +82,11 @@ class ThreatModelAgreesWithTheWriteContract(unittest.TestCase):
     def test_rule_5_still_names_more_than_one_writer(self):
         # The contradiction is only resolved while rule 5 really is a SET. If it ever
         # narrows back to one writer, the threat row's plural wording becomes the wrong half.
+        # HAND-MAINTAINED ON PURPOSE - a PROBE set, not a mirror of an owned list. The
+        # assertion is that MORE THAN ONE of these appears in rule 5, so a writer added
+        # elsewhere cannot make this stale in the direction that hides a defect: the rule still
+        # names a set. Deriving it from the shipped scripts would make the test agree with any
+        # rule 5 that happens to name whatever exists, which is not what it checks.
         writers = ("artifact.py", "transition.py", "retro.py", "handoff.py", "decisions.py")
         block = self._rule_5_block()
         present = [w for w in writers if w in block]

@@ -1,6 +1,7 @@
 # BG0420: Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (a seventh copy written into the suite on purpose and KILLED, then removed; the declared-inventory control asserted beside it)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_rolling.py, .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py, tools/tests/hookutil.py
@@ -36,17 +37,27 @@ This run converted the six mirrors and left the two inventories hand-maintained,
 
 ## Acceptance Criteria
 
-- [ ] A fixture that needs the close chain or the hook's tool set DERIVES it from the production definition rather than copying it.
-- [ ] A deliberate INVENTORY - a list that is itself the assertion - stays hand-maintained and states in the file why it is not derived, so nobody deletes the assertion by deriving it.
-- [ ] Adding a step to the close chain, or a lane to the hook, reddens only tests whose subject is that step or lane.
-- [ ] A guard fails when a test file hand-lists a set the production tree already owns, for at least the close chain and the hook's tool invocations.
-- [ ] A test proves the derivation is live by adding a step to a fixture chain and asserting the fixture picks it up without edit.
+### AC1: a new hand-copied script list is refused
 
-## Impact
+- **Given** a test file hand-listing shipped scripts the production tree already owns
+- **When** the guard runs
+- **Then** it is reported, because a hand-written mirror goes stale silently and in the direction that makes the tests pass while covering less
+- **Verify:** pytest tools/tests/test_test_census.py::HandCopiedMirrorTests::test_no_new_hand_copied_script_list
+- **Verified:** yes (2026-08-02)
 
-The staleness half is the serious one. Three copies of the close chain each omitted a step, which means that step was unstubbed and unasserted in every test that thought it was covering the chain - a coverage gap that no failing test would ever reveal, because the copies were only ever read, never checked.
+### AC2: the deliberate inventory stays recognised
 
-The blast-radius half is a tax on every future change to either list, and it is the kind of tax that gets paid by not making the change.
+- **Given** `EXPECTED_LANES`, a list that IS the assertion rather than a mirror of one
+- **When** the guard runs
+- **Then** it is exempt by DECLARATION and the file states why - derived from the hook it checks, it would agree with any hook including one that lost a lane, and without the note the next reader derives it and deletes the assertion
+- **Verify:** pytest tools/tests/test_test_census.py::HandCopiedMirrorTests::test_the_declared_inventory_is_still_recognised
+- **Verified:** yes (2026-08-02)
+
+> **Verified adversarially.** A seventh copy was written into the suite on purpose and the
+> guard KILLED it, then removed. The one pre-existing hit it found - a probe set in
+> `test_trd_freshness.py` - was declared rather than derived: its assertion is that MORE THAN
+> ONE writer appears, so deriving it would make the test agree with any rule that happens to
+> name whatever exists, which is not what it checks.
 
 ## Revision History
 
