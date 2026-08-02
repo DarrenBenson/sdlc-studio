@@ -40,6 +40,21 @@ Add a `verify_ac.py lane-check` pass, wired into the same gate that already runs
 
 Separately, `best-practices/testing.md` should name this beside 'name the mutant first': state the ENTRY POINT the test enters through before writing it, and if that is a Python import while the feature is a command, the test is not evidence for the claim being made.
 
+## Operator decision (2026-08-02)
+
+**`lane-check` becomes BLOCKING**, once `BG0491` widens its corpus to bug units so the yield
+figure covers the whole tree rather than 615 stories.
+
+The yield question this CR posed is answered with a labelled example rather than a bare count.
+Over RUN-01KYZKY5 the lane flagged all seven EP0198 units and both EP0200 units BEFORE any
+reviewer looked. Five independent passes then confirmed six of the seven EP0198 units are
+genuinely hollow - `close_report`, `panel_escalation` and `recorded_signoff_panel` had zero
+production callers - and both EP0200 units survive deletion of the feature they implement.
+
+It shipped advisory and was read as noise by its own author, who then shipped past it. That is
+LL0027 with the measurement already in hand: an advisory detector that fires correctly and
+changes no behaviour is a detector that is not doing its job.
+
 ## Revision History
 
 | Date | Author | Change |
