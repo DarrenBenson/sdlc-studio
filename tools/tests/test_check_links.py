@@ -595,5 +595,54 @@ class LoadingGuideTests(unittest.TestCase):
                       "does not perform it")
 
 
+class LoadingGuideColumnTests(unittest.TestCase):
+    """Which column holds a label is decided by the table's own header, not assumed.
+
+    The sweep skipped column 0 unconditionally - true of the guide's first table, false of its
+    second, which is headed `| Path | Purpose |`. Its path cells sat in column 0 and were never
+    examined, by a check whose entire purpose is to examine them.
+    """
+
+    def _cells(self, skill_md: str):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "check_links", Path(__file__).resolve().parents[2] / "tools" / "check_links.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["check_links"] = mod
+        spec.loader.exec_module(mod)
+        with tempfile.TemporaryDirectory() as d:
+            skill = Path(d)
+            (skill / "SKILL.md").write_text(skill_md, encoding="utf-8")
+            return mod.loading_guide_cells(skill)
+
+    def test_a_path_column_zero_is_examined(self) -> None:
+        """MUTANT: restore the unconditional `cells[1:]`.
+
+        The table is headed `| Path | Purpose |`, so the thing being checked IS column 0.
+        """
+        cells = self._cells(
+            "## Progressive Loading Guide\n\n"
+            "| Path | Purpose |\n| --- | --- |\n"
+            "| `reference-doctrine.md` | the doctrine |\n")
+        paths = [c["path"] for c in cells if c["kind"] in ("anchored", "bare")]
+        self.assertIn("reference-doctrine.md", paths,
+                      "a path in column 0 of a Path-headed table was never examined")
+
+    def test_a_label_column_zero_is_still_skipped(self) -> None:
+        """The control. MUTANT: examine every column unconditionally.
+
+        A task label is not a path, and reading it as one would report a broken link for every
+        row of the guide's first table.
+        """
+        cells = self._cells(
+            "## Progressive Loading Guide\n\n"
+            "| Task | Read |\n| --- | --- |\n"
+            "| Write a PRD | `reference-prd.md` |\n")
+        paths = [c["path"] for c in cells if c["kind"] in ("anchored", "bare")]
+        self.assertIn("reference-prd.md", paths, "the real path column was not read")
+        self.assertNotIn("Write a PRD", [c["cell"] for c in cells],
+                         "a task label was read as a path cell")
+
+
 if __name__ == "__main__":
     unittest.main()

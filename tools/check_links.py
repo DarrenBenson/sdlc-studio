@@ -388,11 +388,27 @@ def loading_guide_cells(skill_root: Path) -> list[dict]:
         raise ValueError("the Progressive Loading Guide section is empty - refusing to report "
                          "clean over nothing")
     out: list[dict] = []
+    # Which columns hold LABELS rather than paths, decided per table from its own header. The
+    # sweep skipped column 0 unconditionally on the premise that it is always a task or flag
+    # label - true of the guide's first table, false of its second, which is headed
+    # `| Path | Purpose |`. Six path cells sat in column 0 and were never examined, by a check
+    # whose entire purpose is to examine them. Read the header instead of assuming it.
+    label_cols: set[int] = {0}
     for line in block.splitlines():
         if not line.startswith("|") or re.match(r"^\|[\s:|-]+\|$", line):
             continue
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        for cell in cells[1:]:                      # column 0 is the task/flag label
+        heads = [c.lower().strip("* ") for c in cells]
+        if heads and heads[0] in ("path", "file", "read"):
+            # A header row naming its first column as a path: nothing here is a label.
+            label_cols = set()
+            continue
+        if heads and heads[0] in ("task", "flag", "when", "command", "goal", "type"):
+            label_cols = {0}
+            continue
+        for i, cell in enumerate(cells):
+            if i in label_cols:
+                continue
             if not cell or cell == "-":
                 continue
             bare = cell.strip("`").strip()

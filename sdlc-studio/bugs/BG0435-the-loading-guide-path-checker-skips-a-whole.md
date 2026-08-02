@@ -1,6 +1,7 @@
 # BG0435: the loading-guide path checker skips a whole table whose first column is the path, and nine of twelve broken-path shapes escape it
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (before/after run over the shipped guide: 126 -> 127 path-bearing cells; both the path-column and label-column cases pinned)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** tools/check_links.py, tools/tests/test_check_links.py
@@ -26,8 +27,21 @@ Classify a cell by whether it presents a path, not by its column index; anchor t
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `loading_guide_cells` iterates `cells[1:]` on the premise that column 0 is a task or flag label.
-- [ ] The proposed fix lands, pinned by a test: Classify a cell by whether it presents a path, not by its column index; anchor the invocation pattern to the start of the cell; widen the extension set or drop...
+### AC1: a path in column 0 is examined
+
+- **Given** a Progressive Loading Guide table headed `| Path | Purpose |`
+- **When** the sweep runs
+- **Then** its column-0 paths are classified and checked, because the sweep skipped column 0 unconditionally and those cells are precisely what it exists to examine
+- **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideColumnTests::test_a_path_column_zero_is_examined
+- **Verified:** yes (2026-08-02)
+
+### AC2: a label in column 0 is still skipped
+
+- **Given** a table headed `| Task | Read |`
+- **When** the sweep runs
+- **Then** the task label is not read as a path, so the fix cannot be satisfied by examining every column and reporting a broken link for every row
+- **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideColumnTests::test_a_label_column_zero_is_still_skipped
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

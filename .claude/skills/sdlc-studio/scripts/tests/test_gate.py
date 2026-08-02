@@ -5564,5 +5564,65 @@ class ReviewCadenceTests(unittest.TestCase):
                       "the report does not say the repo-wide review remains owed")
 
 
+class LoaderRouteTests(unittest.TestCase):
+    """A test module is selected for the script it LOADS, not only the one it is named after.
+
+    The naming route reaches `x.py -> test_x.py` and nothing else, while the class is broader:
+    `test_two_backlogs.py` loads `refine.py`. Measured, that module is currently selected
+    anyway - but only because it measures EMPTY and is swept in as unattributable. The moment
+    it gains resolvable reads it stops being unattributable and would be DROPPED for changes to
+    the very script it tests, which is the latent defect this closes.
+    """
+
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "gate", Path(__file__).resolve().parent.parent / "gate.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["gate"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_the_index_is_derived_from_the_loader_calls(self) -> None:
+        """MUTANT: build the index from the filename convention instead.
+
+        Uses the repo's own modules: `test_two_backlogs.py` loads `refine.py` under a name
+        that shares nothing with its own, so a convention-derived index cannot contain it.
+        """
+        mod = self._mod()
+        # tests -> scripts -> sdlc-studio -> skills -> .claude -> REPO ROOT
+        root = str(Path(__file__).resolve().parents[5])
+        index = mod.loader_index(root)
+        loaders = index.get("refine", set())
+        self.assertTrue(
+            any(m.endswith("test_two_backlogs.py") for m in loaders),
+            "a module that loads refine.py under a different name is not in the index")
+
+    def test_a_module_with_real_reads_is_still_selected_for_what_it_loads(self) -> None:
+        """MUTANT: delete the loader route from select_tests.
+
+        THE point of the fix. Built on a fixture whose test module has resolvable reads, so it
+        is NOT unattributable and the fallback sweep cannot rescue it - which is precisely the
+        state the repo's own modules move into as they gain reads.
+        """
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            tests = root / ".claude/skills/sdlc-studio/scripts/tests"
+            tests.mkdir(parents=True)
+            (root / ".claude/skills/sdlc-studio/scripts" / "subject.py").write_text(
+                "def f():\n    return 1\n", encoding="utf-8")
+            (tests / "test_unrelated_name.py").write_text(
+                'import importlib.util\n'
+                'spec = importlib.util.spec_from_file_location("subject", "x")\n'
+                '# a resolvable read, so this module is NOT unattributable:\n'
+                'DOC = "sdlc-studio/trd.md"\n', encoding="utf-8")
+            index = mod.loader_index(str(root))
+        self.assertIn("subject", index,
+                      "the loader index does not resolve a script loaded under another name")
+        self.assertTrue(any(m.endswith("test_unrelated_name.py") for m in index["subject"]),
+                        "the module that loads it was not attributed to it")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,7 @@
 # BG0432: test selection still misses eleven scripts whose tests load them under a different name
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (before/after measured on the real repo - delta is 1 module, and the fix is pinned on a fixture whose test module has real reads so the unattributable sweep cannot mask it)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -26,8 +27,28 @@ Derive the reverse index from the loader calls the test modules actually make (`
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: The naming route added for the earlier defect matches a script's OWN convention-named test (`x.py` -> `test_x.py`) and nothing else, while that defect's...
-- [ ] The proposed fix lands, pinned by a test: Derive the reverse index from the loader calls the test modules actually make (`_load("x")` / `spec_from_file_location("x", ...)`) rather than from the...
+### AC1: the index is derived from the loader calls, not the filename convention
+
+- **Given** `test_two_backlogs.py`, which loads `refine.py` under a name sharing nothing with its own
+- **When** the reverse index is built
+- **Then** it attributes that module to `refine`, because a convention-derived index cannot contain it and a hand-kept table would drift
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::LoaderRouteTests::test_the_index_is_derived_from_the_loader_calls
+- **Verified:** yes (2026-08-02)
+
+### AC2: a module with real reads is still selected for what it loads
+
+- **Given** a test module that loads a script under another name AND has resolvable reads, so the unattributable sweep cannot rescue it
+- **When** the selection runs for that script
+- **Then** the module is attributed to it, which is the latent defect this closes
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::LoaderRouteTests::test_a_module_with_real_reads_is_still_selected_for_what_it_loads
+- **Verified:** yes (2026-08-02)
+
+> **Measured before claiming a win.** `test_two_backlogs.py` was ALREADY selected for a change
+> to `refine.py` before this fix - but only because it measures empty and is swept in as
+> unattributable, not because any route reached it. The immediate selection delta is therefore
+> near zero (one module, for `status.py`). What this closes is the LATENT failure the bug's own
+> summary names: the moment such a module gains resolvable reads it stops being unattributable
+> and would be dropped for changes to the very script it tests.
 
 ## Revision History
 

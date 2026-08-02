@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import functools
 import os
 import re
 import sys
@@ -2946,6 +2947,46 @@ def _normalise(paths) -> list[str]:
     return out
 
 
+#: How a test module NAMES the script it loads, when it loads it dynamically. These modules
+#: mostly do not import their subject - they build it with `spec_from_file_location`, so there
+#: is no import edge and often no resolvable read either.
+_LOADER_NAME = re.compile(
+    r"""spec_from_file_location\(\s*["']([a-z_][a-z0-9_]*)["']"""
+    r"""|_load\(\s*["']([a-z_][a-z0-9_]*)["']"""
+    r"""|SCRIPTS\s*/\s*["']([a-z_][a-z0-9_]*)\.py["']""",
+    re.IGNORECASE)
+
+
+@functools.lru_cache(maxsize=8)
+def loader_index(root: str) -> dict:
+    """`{script stem: {test modules that load it}}`, read from the loader calls themselves.
+
+    The naming route only matches a script's OWN convention-named test (`x.py` ->
+    `test_x.py`), while the class is broader: `test_two_backlogs.py` loads `refine.py`, and no
+    route reached it. Such a change fell back to the whole suite, which is the cost this
+    selection exists to avoid - and worse, a test module that gained resolvable reads could be
+    silently DROPPED from the selection for the very script it tests.
+
+    Derived from what the modules actually do, never from a hand-kept table: a second list
+    would drift from the first and silently exempt whatever it forgot.
+    """
+    out: dict = {}
+    base = Path(root)
+    for tests_dir in (base / ".claude/skills/sdlc-studio/scripts/tests",
+                      base / "tools" / "tests"):
+        if not tests_dir.is_dir():
+            continue
+        for module in sorted(tests_dir.glob("test_*.py")):
+            text = sdlc_md.read_text_safe(module)
+            if not text:
+                continue
+            rel = os.path.relpath(module, base)
+            for match in _LOADER_NAME.finditer(text):
+                name = next(g for g in match.groups() if g)
+                out.setdefault(name.lower(), set()).add(rel)
+    return out
+
+
 def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
     """The test modules `changed` can reach, or an unresolved verdict meaning "run all".
 
@@ -3012,6 +3053,12 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
         # then quietly dropped it from the selection for changes to the very script it tests.
         hits |= {m for m in module_set
                  if os.path.basename(m) == f"test_{os.path.basename(path)}"}
+        # FOURTH route: what the test modules actually LOAD. The naming route above reaches a
+        # script's own conventionally-named test and nothing else, while the class is broader -
+        # `test_two_backlogs.py` loads `refine.py`, and no route reached it, so any change to
+        # refine.py widened to the whole suite.
+        stem = os.path.splitext(os.path.basename(path))[0].lower()
+        hits |= (loader_index(root).get(stem, set()) & module_set)
         if hits:
             selected |= hits
             continue
