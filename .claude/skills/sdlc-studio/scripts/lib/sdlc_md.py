@@ -66,9 +66,15 @@ VERIFIED_RE = re.compile(
 # is visible on the backlog instead of being met at plan time. Kept here (not in either script)
 # so the writer (`refine`) and the counter (`conformance`) read the ONE token and cannot drift.
 UNGROOMED_AC_TOKEN = "Ungroomed - acceptance criteria are a grooming placeholder"
+#: The marker ROUTES as well as reports. An author meeting it needs two things the token alone
+#: does not give them: the SHAPE a criterion takes, and how to write a `Verify:` that runs.
+#: Naming both here means the answer arrives with the problem, instead of the author guessing
+#: at a shape and a reviewer correcting it afterwards - which is the grooming cost this project
+#: keeps paying unpriced.
 UNGROOMED_AC_MARKER = (
     f"> **{UNGROOMED_AC_TOKEN}** - author each criterion and its Verify check against this "
-    "story's slice while grooming, before it is planned to Done."
+    "story's slice while grooming, before it is planned to Done. "
+    "Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`."
 )
 
 _SLUG_RE = re.compile(r"[^a-z0-9]+")

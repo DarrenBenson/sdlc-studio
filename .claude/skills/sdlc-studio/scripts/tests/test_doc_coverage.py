@@ -99,5 +99,96 @@ class DocCoverageTests(unittest.TestCase):
             self.assertFalse(r["applicable"])
 
 
+class HelpPageCoverageTests(unittest.TestCase):
+    """A Type Reference command with no help page is a gap, and a waiver is CHECKED.
+
+    Derived from the Type Reference rather than a hand-kept list of pages: a command added
+    there without a page is exactly the gap this catches, and a second list would drift.
+    """
+
+    SKILL = Path(__file__).resolve().parents[1].parent
+
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "doc_coverage", Path(__file__).resolve().parent.parent / "doc_coverage.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["doc_coverage"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_refine_page_ships_in_invocation_form_and_is_not_waived(self) -> None:
+        """MUTANT: delete help/refine.md, or waive it instead of writing it.
+
+        `refine` is the command that MINTS ungroomed work, so the page an author lands on when
+        they meet a grooming marker is the one that must exist.
+        """
+        mod = self._mod()
+        page = self.SKILL / "help" / "refine.md"
+        self.assertTrue(page.is_file(), "help/refine.md does not ship")
+        self.assertNotIn("refine", mod.HELP_PAGE_WAIVERS,
+                         "refine is waived rather than documented")
+        body = page.read_text(encoding="utf-8")
+        self.assertIn("/sdlc-studio refine", body,
+                      "the page never states its invocation form")
+        self.assertIn("not** priced by the story's points", body.replace("*", "*"),
+                      "the page does not state that grooming is unpriced work")
+
+    def test_missing_page_stale_waiver_and_unreadable_tree_all_fail_loud(self) -> None:
+        """MUTANT: return [] on any of the three.
+
+        All three are asserted, because each is a different way for the check to report clean
+        over nothing - and a silent pass is what let a missing page ship in the first place.
+        """
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            skill = Path(d) / "skill"
+            (skill / "help").mkdir(parents=True)
+            (skill / "SKILL.md").write_text(
+                "## Type Reference\n\n| `ghost` | a command |\n\n## Full Reference\n",
+                encoding="utf-8")
+            missing = mod.help_page_findings(skill)
+            self.assertTrue(missing, "a command with no page reported clean")
+            self.assertIn("ghost", missing[0]["detail"])
+
+            # A STALE waiver: the page exists, so the waiver hides nothing.
+            (skill / "help" / "ghost.md").write_text("# ghost\n", encoding="utf-8")
+            mod.HELP_PAGE_WAIVERS["ghost"] = "temporarily"
+            try:
+                stale = mod.help_page_findings(skill)
+            finally:
+                del mod.HELP_PAGE_WAIVERS["ghost"]
+            self.assertTrue(any("STALE" in f["detail"] for f in stale),
+                            "a waiver for a command that now has a page reported clean")
+
+        # An UNREADABLE tree must report the failure, never a clean pass.
+        gone = mod.help_page_findings(Path("/nonexistent-skill-tree"))
+        self.assertTrue(gone, "an unreadable tree reported clean")
+
+
+class ProgressiveLoadingGuideTests(unittest.TestCase):
+    """The guide routes a grooming author to files that exist."""
+
+    SKILL = Path(__file__).resolve().parents[1].parent
+
+    def test_grooming_row_exists_and_its_paths_resolve(self) -> None:
+        """MUTANT: drop the grooming row, or point it at a file that is not there.
+
+        An author meets the ungroomed marker and needs the SHAPE and the verifier guidance; a
+        row naming a missing file sends them nowhere, which is worse than no row.
+        """
+        text = (self.SKILL / "SKILL.md").read_text(encoding="utf-8")
+        rows = [ln for ln in text.splitlines()
+                if ln.startswith("|") and "rooming a refined story" in ln]
+        self.assertEqual(1, len(rows), "the guide has no grooming row")
+        cells = [c.strip().strip("`") for c in rows[0].strip("|").split("|")]
+        targets = [c for c in cells[1:] if c and c != "-"]
+        self.assertTrue(targets, "the grooming row names no files")
+        for target in targets:
+            with self.subTest(target=target):
+                self.assertTrue((self.SKILL / target).is_file(),
+                                f"the grooming row routes to {target}, which does not exist")
+
+
 if __name__ == "__main__":
     unittest.main()

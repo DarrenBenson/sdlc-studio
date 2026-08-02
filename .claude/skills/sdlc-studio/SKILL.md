@@ -133,6 +133,7 @@ lines, honour its Reading Guide instead of a whole-file read:
 | Creating artifacts | scripts/artifact.py (`new`/`batch` allocates id + index row) | templates/core/{type}.md | reference-outputs.md |
 | Filing a finding as Bug/CR/RFC | scripts/file_finding.py | templates/core/{type}.md | reference-audit.md |
 | Loading modules | templates/modules/{domain}/*.md | - | - |
+| Grooming a refined story (authoring its criteria) | templates/core/story.md | reference-verify.md | help/refine.md |
 | Planning code | reference-code.md#code-plan-workflow | reference-decisions.md#story-ready | best-practices/{language}.md |
 | Choosing TDD/Test-After | reference-decisions.md#tdd-decision-tree | reference-test-best-practices.md | - |
 | Validating Ready status | reference-decisions.md#{type}-ready | reference-outputs.md | - |

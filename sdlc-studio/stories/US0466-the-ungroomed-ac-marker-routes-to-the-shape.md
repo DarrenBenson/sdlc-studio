@@ -1,6 +1,6 @@
 # US0466: The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0439
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the marker text is read and every skill-relative path it names is extracted and resolved on disk
 - **Then** it names templates/core/story.md (the Given/When/Then/Verify block) and reference-verify.md (what makes a Verify line discriminating), and both resolve, so a rename or move breaks the test rather than the groomer; the test asserts the extracted path set is non-empty, so an over-tight extractor cannot report a pass over zero paths (LL0008)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::UngroomedMarkerTests::test_marker_names_the_story_template_and_reference_verify
+- **Verified:** yes (2026-08-02)
 
 ### AC2: help/refine.md ships and the page lane is derived from the Type Reference
 
@@ -30,6 +31,7 @@
 - **When** the lane runs against the real skill tree
 - **Then** it passes; refine resolves to a shipped help/refine.md covering the decompose-then-groom flow, whose coverage is asserted in `/sdlc-studio refine <action>` invocation form rather than a prose backtick - the same false-pass doc_coverage.py:80 already guards against for help/help.md; the waiver set is exactly {decisions, repo, migrate} (the commands that lack a page after refine lands) and refine is absent from it, so deleting the page turns the lane red
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py::HelpPageCoverageTests::test_refine_page_ships_in_invocation_form_and_is_not_waived
+- **Verified:** yes (2026-08-02)
 
 ### AC3: a missing page, a stale waiver and an unreadable tree all fail loud
 
@@ -37,6 +39,7 @@
 - **When** the lane runs over each
 - **Then** the first fails naming that command, the second fails naming the stale waiver so an exemption cannot outlive its gap (LL0015), and the third fails naming the unreadable tree rather than reporting zero gaps from a directory it never read (LL0008); each case asserts a non-zero finding count and the expected name in the detail
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py::HelpPageCoverageTests::test_missing_page_stale_waiver_and_unreadable_tree_all_fail_loud
+- **Verified:** yes (2026-08-02)
 
 ### AC4: the Progressive Loading Guide carries a grooming row that routes to real files
 
@@ -44,6 +47,7 @@
 - **When** that table is parsed, the row whose Task Type names grooming a refine-minted skeleton is located, and the literal paths in its cells are resolved against the skill tree
 - **Then** the row exists and names templates/core/story.md and reference-verify.md, and both resolve; the test asserts the row was FOUND before asserting anything about it, so an absent row fails rather than passing over an empty cell set
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py::ProgressiveLoadingGuideTests::test_grooming_row_exists_and_its_paths_resolve
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

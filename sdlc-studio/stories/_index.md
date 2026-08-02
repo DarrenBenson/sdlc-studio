@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 17 |
-| Ready | 19 |
+| Ready | 18 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 18 |
+| Review | 19 |
 | Done | 558 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -377,7 +377,7 @@
 | [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0464](US0464-every-lens-pack-on-disk-names-its-detector.md) | Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0465](US0465-no-artefact-reaches-a-terminal-status-carrying-unchecked.md) | No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept | Done | EP0169 | 2026-07-27 | 2026-07-27 |
-| [US0466](US0466-the-ungroomed-ac-marker-routes-to-the-shape.md) | The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
+| [US0466](US0466-the-ungroomed-ac-marker-routes-to-the-shape.md) | The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane | Review | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0467](US0467-status-names-the-open-run-id-rung-sprint.md) | status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0468](US0468-help-sprint-md-documents-the-run-lifecycle-batch.md) | help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0469](US0469-every-sprint-batch-change-reports-its-capacity-effect.md) | Every sprint batch change reports its capacity effect through the plan-time renderer: points and token forecast against capacity.tokens, unit count against the appetite | Ready | EP0171 | 2026-07-27 | 2026-07-27 |

@@ -46,6 +46,57 @@ def _scripts(skill_dir: Path) -> list[str]:
                   if p.stem not in _NON_SCRIPTS and not p.stem.startswith("test"))
 
 
+#: Commands with no `help/<cmd>.md` page, each with the reason it is legitimate. A waiver is
+#: on the page rather than in somebody's memory, and it is CHECKED: a waiver naming a command
+#: that now has a page is stale and reported, so the list can only shrink.
+HELP_PAGE_WAIVERS: dict = {
+    "decisions": "a log verb, documented where the decisions themselves are - not a workflow "
+                 "a reader arrives at needing a page (known debt, 2026-08-02)",
+    "repo": "the repo-map builder, whose surface is `repo map build` and is covered by "
+            "reference-scripts.md (known debt, 2026-08-02)",
+    "migrate": "the upgrade orchestrator, documented in reference-upgrade.md which a migration "
+               "reads first (known debt, 2026-08-02)",
+}
+
+
+def help_page_findings(skill_dir: Path) -> list[dict]:
+    """Every Type Reference command with no help page, and every stale waiver.
+
+    Derived from the Type Reference rather than a hand-kept list of pages: a command added
+    there without a page is the gap this catches, and a second list would drift from the first.
+
+    Fails LOUD on an unreadable tree. Returning "no findings" when the directory cannot be read
+    is indistinguishable from a clean result, and this check exists precisely because a silent
+    pass is what let a missing page ship.
+    """
+    out: list[dict] = []
+    try:
+        commands = _type_ref_commands(skill_dir)
+        pages = {p.stem for p in (skill_dir / "help").glob("*.md")}
+    except OSError as exc:
+        return [{"kind": "help-page", "severity": "error",
+                 "detail": f"the skill tree could not be read ({exc.__class__.__name__}) - "
+                           f"reporting the failure rather than a clean pass"}]
+    if not commands:
+        return [{"kind": "help-page", "severity": "error",
+                 "detail": "SKILL.md names no Type Reference commands - a check that reads "
+                           "nothing reports clean, which is the failure it exists to remove"}]
+    for cmd in commands:
+        if cmd in pages:
+            continue
+        if cmd in HELP_PAGE_WAIVERS:
+            continue
+        out.append({"kind": "help-page", "severity": "error",
+                    "detail": f"command `{cmd}` is in the Type Reference and has no "
+                              f"`help/{cmd}.md` page"})
+    for waived in sorted(HELP_PAGE_WAIVERS):
+        if waived in pages:
+            out.append({"kind": "help-page", "severity": "error",
+                        "detail": f"the waiver for `{waived}` is STALE - the page now exists, "
+                                  f"so the waiver hides nothing and must be dropped"})
+    return out
+
+
 def _changelog_unreleased_empty(repo_root: Path) -> bool | None:
     # A pending fragment IS the entry (the changelog.d convention): work whose
     # entry awaits compose is documented, not missing.

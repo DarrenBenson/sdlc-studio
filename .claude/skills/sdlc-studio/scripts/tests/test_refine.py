@@ -911,6 +911,22 @@ class UngroomedMarkerTests(unittest.TestCase):
                 self.assertIn(sdlc_md.UNGROOMED_AC_TOKEN, ac)   # the explicit marker
                 self.assertNotIn("{{", ac)                      # no bare placeholder as content
 
+    def test_marker_names_the_story_template_and_reference_verify(self) -> None:
+        """MUTANT: revert the marker to the bare instruction.
+
+        An author meeting it needs two things the token alone does not give them: the SHAPE a
+        criterion takes and how to write a `Verify:` that runs. Both targets are asserted to
+        EXIST as well as be named - a marker routing to a missing file sends the author nowhere,
+        which is worse than not routing at all.
+        """
+        skill = Path(__file__).resolve().parents[1].parent
+        for target in ("templates/core/story.md", "reference-verify.md"):
+            with self.subTest(target=target):
+                self.assertIn(target, sdlc_md.UNGROOMED_AC_MARKER,
+                              f"the marker does not route to {target}")
+                self.assertTrue((skill / target).is_file(),
+                                f"the marker routes to {target}, which does not exist")
+
     def test_the_ungroomed_marker_keeps_a_blank_line_before_the_next_heading(self) -> None:
         # The closing review caught this: the marker was glued to `## Revision History` (single
         # newline), failing markdownlint MD022 on every ungroomed mint.
