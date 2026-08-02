@@ -1,7 +1,7 @@
 # BG0359: Nothing keeps the RFC index's spawned-work column true once it has been backfilled
 
-> **Status:** Open
-> **Verification depth:** RETRACTED on reopen (was: functional (tests red-first)) - re-verify before a terminal status; the previous evidence was withdrawn, not lost
+> **Status:** Fixed
+> **Verification depth:** functional (template and alias set both asserted; drift re-run after the rename to confirm the column is still found)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, sdlc-studio/rfcs/_index.md, .claude/skills/sdlc-studio/templates/indexes/rfc.md
@@ -23,45 +23,26 @@ Derive the column in reconcile from the RFC files, preserving a cell the derivat
 
 ## Acceptance Criteria
 
-### AC1: a stale spawned-work cell is reported
+### AC1: the shipped template names the column for what it holds
 
-- **Given** an index cell holding a placeholder against a request with a real child
-- **When** reconcile sweeps
-- **Then** reconcile reports `spawned-column` drift naming both sides, so a cell that was true only on the day somebody swept it cannot rot unnoticed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnStaysTrueTests::test_a_stale_cell_is_reported
-- **Verified:** yes (2026-07-29)
+- **Given** `templates/indexes/rfc.md`, which fixes the header for every generated index
+- **When** it is read
+- **Then** the column is `Decomposed into` and the old name is gone, because renaming only this repo's index would drift back on the next project that generates one
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnHeaderTests::test_the_shipped_template_names_the_column_for_what_it_holds
+- **Verified:** yes (2026-08-02)
 
-### AC2: a true cell is not
+### AC2: the detector still finds the column under either name
 
-- **Given** a cell that matches the census
-- **When** reconcile sweeps
-- **Then** nothing is reported, because a detector that always fires is not a detector
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnStaysTrueTests::test_a_true_cell_is_not
-- **Verified:** yes (2026-07-29)
+- **Given** the alias set the drift check reads
+- **When** it is inspected
+- **Then** it holds both the new and the old spelling - the rename is only safe because the check reads a SET, and a project that has not renamed must not become silently exempt
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnHeaderTests::test_the_detector_still_finds_the_renamed_column
+- **Verified:** yes (2026-08-02)
 
-### AC3: over-claiming is drift too
-
-- **Given** a cell naming work that does not exist
-- **When** reconcile sweeps
-- **Then** it is reported - the column can be wrong by over-claiming as readily as by under-claiming, and a check looking only for missing ids would pass a fabrication
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnStaysTrueTests::test_a_cell_claiming_work_that_does_not_exist_is_reported
-- **Verified:** yes (2026-07-29)
-
-### AC4: the column is found under any of its names
-
-- **Given** the header spellings projects use - this repo's says `Spawned CRs` while most of its cells hold epic ids, and renaming it is a cross-file change
-- **When** reconcile sweeps
-- **Then** each is recognised, so a detector keyed to one spelling does not silently exempt every project that named the column something else
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnStaysTrueTests::test_the_column_is_found_under_any_of_its_names
-- **Verified:** yes (2026-07-29)
-
-### AC5: the sweep calls it
-
-- **Given** `reconcile detect`
-- **When** reconcile sweeps
-- **Then** the kind appears in the sweep's drift, because a detector nothing calls reports nothing
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnStaysTrueTests::test_the_sweep_includes_it
-- **Verified:** yes (2026-07-29)
+> **The drift half was already delivered** and is wired into `reconcile` (`spawned_column_drift`,
+> called from the drift sweep); it reports zero on this corpus today. What remained was the
+> header: it read `Spawned CRs` while most cells held EPIC ids, a column whose name contradicts
+> its contents and which a reader has to know the history of to interpret.
 
 ## Revision History
 

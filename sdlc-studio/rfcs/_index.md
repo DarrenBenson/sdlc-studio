@@ -15,7 +15,7 @@
 
 ## All RFCs
 
-| ID | Title | Priority | Status | Author | Date | Spawned CRs |
+| ID | Title | Priority | Status | Author | Date | Decomposed into |
 | --- | --- | --- | --- | --- | --- | --- |
 | [RFC-0001](RFC0001-autonomous-delivery-loop.md) | Autonomous Delivery Loop for SDLC Studio | High | Accepted | Darren Benson | 2026-06-20 | -- |
 | [RFC-0002](RFC0002-adversarial-audit.md) | Adversarial Audit (`/sdlc-studio audit`) as a first-class capability | High | Accepted | Darren Benson | 2026-06-20 | CR0036, CR0037, CR0035, CR0039 |

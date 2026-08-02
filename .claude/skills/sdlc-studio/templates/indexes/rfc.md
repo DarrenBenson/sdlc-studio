@@ -22,7 +22,7 @@ Related: help/rfc.md, reference-rfc.md
 
 ## All RFCs
 
-| ID | Title | Priority | Status | Author | Date | Spawned CRs |
+| ID | Title | Priority | Status | Author | Date | Decomposed into |
 | --- | --- | --- | --- | --- | --- | --- |
 | [RFC-{{rfc_id}}](RFC{{rfc_id}}-{{slug}}.md) | {{title}} | {{priority}} | {{status}} | {{author}} | {{date}} | {{spawned_crs}} |
 

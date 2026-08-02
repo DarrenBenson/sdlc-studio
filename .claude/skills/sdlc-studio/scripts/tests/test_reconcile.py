@@ -4595,5 +4595,41 @@ class SupersessionLiveCorpusTests(unittest.TestCase):
                       "the hint must name where a legitimate asymmetry is recorded")
 
 
+class SpawnedColumnHeaderTests(unittest.TestCase):
+    """The column header says what its cells hold, and the detector still finds it.
+
+    The header read `Spawned CRs` while most cells held EPIC ids - a column whose name
+    contradicts its contents, which a reader has to know the history of to interpret. Renaming
+    it is only safe because the detector reads a SET of aliases: keyed to one spelling, the
+    rename would have silently exempted the column it exists to check.
+    """
+
+    def test_the_shipped_template_names_the_column_for_what_it_holds(self) -> None:
+        """MUTANT: rename only this repo's index and leave the template.
+
+        The header is fixed BY the template, so a project generating a fresh index would get
+        the old name back - the rename would drift out on the next project rather than this one.
+        """
+        skill = Path(__file__).resolve().parents[1].parent
+        tpl = (skill / "templates" / "indexes" / "rfc.md").read_text(encoding="utf-8")
+        self.assertIn("| Decomposed into |", tpl,
+                      "the shipped index template still names the column `Spawned CRs`")
+        self.assertNotIn("Spawned CRs", tpl,
+                         "the old header survives in the template a fresh index is built from")
+
+    def test_the_detector_still_finds_the_renamed_column(self) -> None:
+        """MUTANT: key the detector to a single header spelling.
+
+        A rename that silently exempted the column would be worse than the wrong name: the
+        cells would go unchecked and read as correct.
+        """
+        mod = reconcile
+        self.assertIn("decomposed into", mod.SPAWNED_COLUMN_ALIASES,
+                      "the new header is not in the alias set, so the column is unchecked")
+        self.assertIn("spawned crs", mod.SPAWNED_COLUMN_ALIASES,
+                      "the old header was dropped, so a project that has not renamed is "
+                      "silently exempt")
+
+
 if __name__ == "__main__":
     unittest.main()
