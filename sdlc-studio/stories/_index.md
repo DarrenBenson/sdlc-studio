@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 17 |
-| Ready | 32 |
+| Ready | 28 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 5 |
+| Review | 9 |
 | Done | 558 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -510,12 +510,12 @@
 | [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0597](US0597-the-premise-is-replayed-and-measured-the-blocking.md) | The premise is replayed and measured: the blocking-finding count before and after, and the lane run over the three diffs that motivated it | Done | EP0195 | 2026-08-01 | 2026-08-01 |
 | [US0598](US0598-persona-resolve-panel-assigns-the-adversarial-seats-and.md) | persona_resolve panel assigns the adversarial seats and the SIGNING seat disjointly, and the assignment is recorded on the run | Review | EP0198 | 2026-08-01 | 2026-08-01 |
-| [US0599](US0599-a-panel-may-sign-a-unit-only-when.md) | A panel may sign a unit only when every adversarial verdict on it carries brief provenance, and missing provenance STOPS the run and notifies rather than parking it | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
-| [US0600](US0600-the-review-repair-loop-declares-a-round-cap.md) | The review-repair loop declares a round cap and the growing-set detector GATES rather than reports, so a diverging loop stops and hands off | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0599](US0599-a-panel-may-sign-a-unit-only-when.md) | A panel may sign a unit only when every adversarial verdict on it carries brief provenance, and missing provenance STOPS the run and notifies rather than parking it | Review | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0600](US0600-the-review-repair-loop-declares-a-round-cap.md) | The review-repair loop declares a round cap and the growing-set detector GATES rather than reports, so a diverging loop stops and hands off | Review | EP0198 | 2026-08-01 | 2026-08-01 |
 | [US0601](US0601-review-signoff-is-operator-by-default-and-panel.md) | review.signoff is operator by default and panel only by explicit config, so no consuming project silently loses its human | Review | EP0198 | 2026-08-01 | 2026-08-01 |
 | [US0602](US0602-a-panel-signed-unit-is-distinguishable-from-an.md) | A panel-signed unit is distinguishable from an operator-signed one forever, in the signoff record and in the sprint report | Review | EP0198 | 2026-08-01 | 2026-08-01 |
-| [US0603](US0603-a-unit-the-panel-rejects-twice-or-whose.md) | A unit the panel rejects twice, or whose seats disagree, escalates to the operator by NOTIFYING rather than waiting | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
-| [US0604](US0604-the-close-actively-reports-to-the-operator-shipped.md) | The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0603](US0603-a-unit-the-panel-rejects-twice-or-whose.md) | A unit the panel rejects twice, or whose seats disagree, escalates to the operator by NOTIFYING rather than waiting | Review | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0604](US0604-the-close-actively-reports-to-the-operator-shipped.md) | The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered | Review | EP0198 | 2026-08-01 | 2026-08-01 |
 | [US0605](US0605-verify-ac-lane-check-reports-criteria-whose-verifiers.md) | verify_ac lane-check reports criteria whose verifiers never enter the shipped entry point, for units whose Affects names a CLI-bearing script | Ready | EP0199 | 2026-08-01 | 2026-08-01 |
 | [US0606](US0606-the-lane-check-runs-in-the-gate-that.md) | The lane-check runs in the gate that already runs verify_ac, reporting only, with its yield accumulated where a blocking decision can read it | Ready | EP0199 | 2026-08-01 | 2026-08-01 |
 | [US0607](US0607-best-practices-testing-md-states-the-entry-point.md) | best-practices/testing.md states the entry-point rule beside name-the-mutant-first | Ready | EP0199 | 2026-08-01 | 2026-08-01 |

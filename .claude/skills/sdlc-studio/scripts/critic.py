@@ -711,6 +711,25 @@ def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str
         if _id(principal) in {_id(s) for s in seats}:
             raise ValueError(f"the signing seat {principal!r} is also one of the adversarial "
                              f"seats - a seat cannot ratify evidence it filed")
+        # THE INTERLOCK. A panel may not ratify a review nobody can prove was properly briefed:
+        # without this the panel LAUNDERS the missing provenance instead of catching it, and
+        # the sign-off half would rest on a hand-written prompt carrying neither the seat
+        # charter, the bounded diff scope, nor the criteria as law.
+        #
+        # Scoped to the PANEL path on purpose. A human principal reads the evidence themselves
+        # and can see it is unbriefed; applying this to them would block the operator from
+        # signing exactly the units most worth their attention, which is the opposite of
+        # human-in-the-lead.
+        verdict = verdict_for(repo_root, unit)
+        if not (verdict or {}).get("brief", "").strip(" -"):
+            raise ValueError(
+                f"the adversarial verdict on {sdlc_md.norm_id(unit)} carries no brief "
+                f"provenance, so a panel cannot ratify it - nothing distinguishes that review "
+                f"from one run off a hand-written prompt.\n"
+                f"  Re-run it briefed:  critic.py brief --unit {sdlc_md.norm_id(unit)} "
+                f"--seat <seat>\n"
+                f"  This is a TOOLING failure, not a judgement call: fix the provenance and "
+                f"the panel signs.")
         # Into the CHAIN, not a note: a panel sign-off that reads as an ordinary one destroys
         # the only thing recording it buys, exactly as the delegated marker does above.
         chain = f"{PANEL_MARKER}({', '.join(seats)}) -> {principal}"

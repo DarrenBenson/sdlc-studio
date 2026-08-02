@@ -1,6 +1,6 @@
 # US0604: The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** it finishes
 - **Then** it emits a report naming what shipped, what is carried, what it cost and what the reviews found, because a report nobody is told about is the same as no report
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CloseReportTests::test_the_close_reports_all_four
+- **Verified:** yes (2026-08-02)
 
 ### AC2: an absent figure is named absent, never omitted
 
@@ -30,6 +31,7 @@
 - **When** the report renders
 - **Then** it states that it could not, rather than dropping the line, because a missing line reads as nothing to report
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CloseReportTests::test_an_absent_figure_is_named_absent
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

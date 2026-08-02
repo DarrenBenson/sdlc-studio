@@ -11843,5 +11843,131 @@ class BlockingScopeTests(unittest.TestCase):
                       "the non-blocking set does not state WHY those findings do not block")
 
 
+class LoopTerminationTests(unittest.TestCase):
+    """A review-repair loop that has stopped converging must STOP, not keep going.
+
+    The existing growing-set detector reported divergence and carried on. A loop that announces
+    it is diverging and then runs another round has reported nothing - and unattended, it burns
+    a night going backwards.
+    """
+
+    def test_the_round_cap_ends_the_loop(self) -> None:
+        """MUTANT: raise the cap to infinity, or compare with `>` instead of `>=`.
+
+        Asserted at the boundary rather than well past it, because an off-by-one here is a
+        whole extra round of the most expensive thing the sprint does.
+        """
+        sprint = _load()
+        stop, why = sprint.loop_termination([{"outstanding": 3}] * 4, cap=4)
+        self.assertTrue(stop, "the loop ran past its declared round cap")
+        self.assertIn("cap", why.lower(), "the reason does not name the cap")
+
+    def test_a_growing_set_stops_the_loop(self) -> None:
+        """MUTANT: report the growth without stopping, as the detector did before."""
+        sprint = _load()
+        stop, why = sprint.loop_termination(
+            [{"outstanding": 2}, {"outstanding": 4}, {"outstanding": 6}], cap=10)
+        self.assertTrue(stop, "an outstanding set growing twice in a row did not stop the loop")
+        self.assertIn("grew", why.lower(), "the reason does not name the divergence")
+
+    def test_one_growth_alone_does_not_stop_the_loop(self) -> None:
+        """MUTANT: stop on a single growth.
+
+        One round can legitimately surface more than it fixed - a repair exposing a neighbour
+        is normal. TWO consecutive is the signal that the loop is chasing a moving target.
+        """
+        sprint = _load()
+        stop, _why = sprint.loop_termination(
+            [{"outstanding": 2}, {"outstanding": 5}, {"outstanding": 3}], cap=10)
+        self.assertFalse(stop, "a single round of growth stopped a loop that then converged")
+
+    def test_the_rule_is_wired_into_the_close_not_only_the_library(self) -> None:
+        """MUTANT: delete the `loop_termination` call from `_record_close_attempt`.
+
+        `loop_termination` passing in isolation says nothing about whether any close consults
+        it. A rule reachable only from Python is the lane-not-library defect (LL0040) that cost
+        this project a review round last sprint.
+        """
+        sprint = _load()
+        src = (Path(__file__).resolve().parent.parent / "sprint.py").read_text(encoding="utf-8")
+        recorder = src.split("def _record_close_attempt")[1][:1600]
+        self.assertIn("loop_termination(", recorder,
+                      "the close attempt recorder never consults the termination rule")
+        self.assertIn("LOOP STOPPED", recorder,
+                      "the recorder consults the rule but does not act on it")
+
+    def test_a_shrinking_set_runs_on(self) -> None:
+        """The control. MUTANT: stop unconditionally.
+
+        A gate that ends every loop discriminates no better than one that ends none.
+        """
+        sprint = _load()
+        stop, _why = sprint.loop_termination(
+            [{"outstanding": 9}, {"outstanding": 5}, {"outstanding": 2}], cap=10)
+        self.assertFalse(stop, "a converging loop was stopped")
+
+
+class EscalationTests(unittest.TestCase):
+    """A stuck unit reaches the operator immediately, rather than waiting silently.
+
+    Human-in-the-LEAD means the decision reaches them; it does not mean the machine blocks on
+    input that will not arrive. An escalation that waits is indistinguishable from a hang.
+    """
+
+    def test_a_twice_rejected_unit_escalates(self) -> None:
+        """MUTANT: escalate only on the third rejection, or never.
+
+        Two is the boundary because a first REJECT is the loop working - the finding gets
+        repaired. A second on the same unit says the repair is not converging.
+        """
+        sprint = _load()
+        esc, why = sprint.panel_escalation(["REJECT", "REJECT"], {})
+        self.assertTrue(esc, "a unit rejected twice by the panel did not escalate")
+        self.assertIn("twice", why.lower(), "the reason does not say why it escalated")
+
+    def test_one_rejection_does_not_escalate(self) -> None:
+        """The control for the count. MUTANT: escalate on the first REJECT.
+
+        That would escalate every ordinary finding and train the operator to ignore it, which
+        is how a notification channel stops working.
+        """
+        sprint = _load()
+        esc, _why = sprint.panel_escalation(["REJECT"], {})
+        self.assertFalse(esc, "a single rejection escalated - the loop had not failed yet")
+
+    def test_disagreeing_seats_escalate(self) -> None:
+        """MUTANT: resolve disagreement by majority.
+
+        The disagreement IS the signal. Auto-resolving it discards exactly the information the
+        panel was convened to produce, and does so silently.
+        """
+        sprint = _load()
+        esc, why = sprint.panel_escalation(
+            [], {"qa": "REJECT", "engineering": "APPROVE", "product": "APPROVE"})
+        self.assertTrue(esc, "a split panel was resolved instead of escalated")
+        self.assertIn("qa", why, "the reason does not name who dissented")
+
+    def test_a_unanimous_panel_does_not_escalate(self) -> None:
+        """The control. MUTANT: escalate on every panel result."""
+        sprint = _load()
+        esc, _why = sprint.panel_escalation(
+            [], {"qa": "APPROVE", "engineering": "APPROVE", "product": "APPROVE"})
+        self.assertFalse(esc, "a unanimous panel escalated")
+
+    def test_escalation_notifies_rather_than_waits(self) -> None:
+        """MUTANT: return a reason that asks the operator to respond before continuing.
+
+        Pinned on the CONTRACT the reason states, because the difference between notifying and
+        waiting is invisible in a return value otherwise - and getting it wrong turns an
+        unattended run into a silent hang.
+        """
+        sprint = _load()
+        _esc, why = sprint.panel_escalation(["REJECT", "REJECT"], {})
+        self.assertIn("notified", why.lower(),
+                      "the escalation does not state that the operator is NOTIFIED")
+        self.assertNotIn("waiting for", why.lower(),
+                         "the escalation blocks on operator input, which unattended is a hang")
+
+
 if __name__ == "__main__":
     unittest.main()

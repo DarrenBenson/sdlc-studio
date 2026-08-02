@@ -1069,6 +1069,49 @@ def _ck_lessons(ctx: dict) -> tuple:
     return (RAN, f"{len(lessons)} recorded", "")
 
 
+def close_report(summary: dict) -> str:
+    """What the close TELLS the operator: shipped, carried, cost, findings.
+
+    Being informed is the operator's half of human-in-the-lead. If they are not a step in the
+    machine, the machine has to reach them - so the close says what happened rather than
+    leaving a file to be discovered.
+
+    An absent figure is NAMED absent, never dropped. A missing line reads as nothing to
+    report, and "not attributable" and "nothing happened" are different facts - only one of
+    them means somebody should go and look.
+    """
+    def _listing(items, empty: str) -> str:
+        items = [str(i) for i in (items or []) if str(i).strip()]
+        return "\n".join(f"    - {i}" for i in items) if items else f"    {empty}"
+
+    cost = summary.get("cost") or {}
+    tokens = cost.get("tokens")
+    points = cost.get("points")
+    if isinstance(tokens, int):
+        cost_line = f"    {tokens:,} tokens"
+        if isinstance(points, int) and points:
+            cost_line += f" over {points} points ({tokens // points:,}/point)"
+    else:
+        cost_line = "    not attributable - no per-run figure was captured for this close"
+
+    run = summary.get("run_id") or "this run"
+    return "\n".join([
+        f"CLOSE REPORT - {run}",
+        "",
+        "  SHIPPED",
+        _listing(summary.get("shipped"), "none - this close shipped no units"),
+        "",
+        "  CARRIED",
+        _listing(summary.get("carried"), "none carried"),
+        "",
+        "  COST",
+        cost_line,
+        "",
+        "  FINDINGS",
+        _listing(summary.get("findings"), "none raised by the reviews"),
+    ])
+
+
 def _ck_signoff(ctx: dict) -> tuple:
     units = ctx["units"]
     if not units:

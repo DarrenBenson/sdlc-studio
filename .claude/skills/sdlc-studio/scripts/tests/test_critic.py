@@ -3630,6 +3630,10 @@ class SignoffPolicyTests(unittest.TestCase):
         (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
             "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
             "> **Affects:** src/a.py\n", encoding="utf-8")
+        # A BRIEFED adversarial verdict: the panel interlock refuses to ratify a review with
+        # no provenance, so a fixture without one would be testing the interlock instead.
+        _load().record_verdict(root, "US0001", "APPROVE", "qa seat", "author",
+                               issues="none blocking", brief="abcdef123456")
         return root
 
     def test_the_default_is_operator(self) -> None:
@@ -3688,6 +3692,9 @@ class SignoffProvenanceTests(unittest.TestCase):
             "> **Affects:** src/b.py\n", encoding="utf-8")
         (root / "sdlc-studio" / ".config.yaml").write_text(
             "review:\n  signoff: panel\n", encoding="utf-8")
+        for uid in ("US0001", "US0002"):
+            _load().record_verdict(root, uid, "APPROVE", "qa seat", "author",
+                                   issues="none blocking", brief="abcdef123456")
         return root
 
     def test_panel_and_operator_rows_are_distinguishable(self) -> None:
@@ -3710,6 +3717,64 @@ class SignoffProvenanceTests(unittest.TestCase):
                          "an operator sign-off is being read as a panel one")
         self.assertIn("qa", panel_row["chain"],
                       "the panel row does not name the seats that reviewed it")
+
+
+class PanelInterlockTests(unittest.TestCase):
+    """A panel may not ratify a review nobody can prove was properly briefed.
+
+    Without this the panel LAUNDERS missing provenance instead of catching it: the sign-off
+    half would be satisfied by seats whose adversarial half rested on a hand-written prompt
+    carrying neither the charter, the bounded scope, nor the criteria as law.
+    """
+
+    def _root(self, d, brief="abcdef123456"):
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+            "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+            "> **Affects:** src/a.py\n", encoding="utf-8")
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  signoff: panel\n", encoding="utf-8")
+        critic = _load()
+        critic.record_verdict(root, "US0001", "APPROVE", "qa seat", "author",
+                              issues="none blocking", brief=brief)
+        return root
+
+    def test_an_unbriefed_verdict_blocks_the_panel(self) -> None:
+        """MUTANT: drop the provenance check from the panel path."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, brief="")
+            with self.assertRaises(ValueError) as caught:
+                critic.record_signoff(root, "US0001", "Lena Marsh", "author",
+                                      panel=["qa", "engineering"])
+            msg = str(caught.exception)
+        self.assertIn("provenance", msg.lower(),
+                      "the refusal does not say what is missing")
+        self.assertIn("US0001", msg, "the refusal does not name the unit")
+
+    def test_a_briefed_unit_signs_cleanly(self) -> None:
+        """The control. MUTANT: refuse every panel sign-off regardless of provenance."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            path = critic.record_signoff(root, "US0001", "Lena Marsh", "author",
+                                         panel=["qa", "engineering"])
+            self.assertTrue(path.exists(), "a fully briefed unit was refused")
+
+    def test_an_operator_signoff_is_not_subject_to_the_interlock(self) -> None:
+        """A human principal reads the evidence themselves and can see it is unbriefed.
+
+        MUTANT: apply the interlock to every sign-off. That would block the operator from
+        signing off exactly the units they most need to look at, which is the opposite of
+        human-in-the-lead.
+        """
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, brief="")
+            path = critic.record_signoff(root, "US0001", "Darren Benson", "author")
+            self.assertTrue(path.exists(),
+                            "an operator sign-off was blocked by the panel interlock")
 
 
 if __name__ == "__main__":

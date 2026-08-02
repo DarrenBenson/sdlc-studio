@@ -1749,6 +1749,11 @@ class SignoffProvenanceTests(unittest.TestCase):
             (root / "sdlc-studio" / ".config.yaml").write_text(
                 "review:\n  signoff: panel\n", encoding="utf-8")
             import critic
+            # Briefed verdicts first: the panel interlock refuses to ratify a review carrying
+            # no provenance, so a fixture without them tests the interlock, not the report.
+            for uid in ("US0001", "US0002"):
+                critic.record_verdict(root, uid, "APPROVE", "qa seat", "auth",
+                                      issues="none blocking", brief="abcdef123456")
             critic.record_signoff(root, "US0001", "Lena Marsh", "auth",
                                   panel=["qa", "engineering"])
             critic.record_signoff(root, "US0002", "Darren Benson", "auth")
@@ -1757,6 +1762,57 @@ class SignoffProvenanceTests(unittest.TestCase):
         self.assertEqual("ran", state)
         self.assertIn("1 panel", value, f"the row does not report the panel count: {value}")
         self.assertIn("1 operator", value, f"the row does not report the operator count: {value}")
+
+
+class CloseReportTests(unittest.TestCase):
+    """Being informed is the operator's half of the contract.
+
+    A report nobody is told about is the same as no report. If the operator is not a step in
+    the machine, the machine has to reach them - which means the close SAYS what happened
+    rather than leaving a file to be discovered.
+    """
+
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "sprint_report", Path(__file__).resolve().parent.parent / "sprint_report.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["sprint_report"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_the_close_reports_all_four(self) -> None:
+        """MUTANT: drop any one of shipped / carried / cost / findings.
+
+        Each is asserted separately. A report missing the cost is not 75% of a report - it is
+        one the operator has to go and look something up for, which is the behaviour being
+        removed.
+        """
+        mod = self._mod()
+        out = mod.close_report({
+            "run_id": "RUN-X", "shipped": ["US0001", "US0002"], "carried": ["BG0009"],
+            "cost": {"tokens": 1234, "points": 8},
+            "findings": ["BG0010 filed from the boundary review"],
+        })
+        for want in ("US0001", "BG0009", "1,234", "BG0010"):
+            self.assertIn(want, out, f"the close report never mentions {want}")
+        for heading in ("SHIPPED", "CARRIED", "COST", "FINDINGS"):
+            self.assertIn(heading, out.upper(), f"the report has no {heading} section")
+
+    def test_an_absent_figure_is_named_absent(self) -> None:
+        """MUTANT: omit the line when the value is missing.
+
+        A dropped line reads as nothing to report. 'Not attributable' and 'nothing happened'
+        are different facts, and only one of them means somebody should look.
+        """
+        mod = self._mod()
+        out = mod.close_report({"run_id": "RUN-X", "shipped": [], "carried": [],
+                                "cost": {}, "findings": []})
+        low = out.lower()
+        self.assertTrue("not attributable" in low or "not captured" in low or "none" in low,
+                        f"an absent cost was silently dropped:\n{out}")
+        self.assertIn("COST", out.upper(),
+                      "the cost section vanished entirely when the figure was missing")
 
 
 if __name__ == "__main__":

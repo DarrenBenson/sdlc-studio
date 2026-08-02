@@ -1,6 +1,6 @@
 # US0603: A unit the panel rejects twice, or whose seats disagree, escalates to the operator by NOTIFYING rather than waiting
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the loop next runs
 - **Then** it escalates to the operator rather than attempting a third round
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EscalationTests::test_a_twice_rejected_unit_escalates
+- **Verified:** yes (2026-08-02)
 
 ### AC2: disagreeing seats escalate rather than auto-resolve
 
@@ -30,13 +31,31 @@
 - **When** the result is read
 - **Then** it escalates with the disagreement named, and is never resolved by majority silently, because the disagreement is the signal
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EscalationTests::test_disagreeing_seats_escalate
+- **Verified:** yes (2026-08-02)
 
 ### AC3: escalation NOTIFIES rather than waits
 
 - **Given** an escalation during an unattended run
 - **When** it fires
-- **Then** the run reports it immediately and stops, rather than blocking on input that will not arrive
+- **Then** the reason states the operator is notified and nothing waits on a reply, because an escalation that blocks on input that will not arrive is indistinguishable from a hang
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EscalationTests::test_escalation_notifies_rather_than_waits
+- **Verified:** yes (2026-08-02)
+
+### AC4: a single rejection does not escalate
+
+- **Given** one REJECT on a unit
+- **When** the rule runs
+- **Then** it does not escalate, because a first REJECT is the loop working and escalating on it would fire on every ordinary finding until the operator stopped reading the channel
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EscalationTests::test_one_rejection_does_not_escalate
+- **Verified:** yes (2026-08-02)
+
+### AC5: a unanimous panel does not escalate
+
+- **Given** a panel whose seats all returned the same verdict
+- **When** the rule runs
+- **Then** it does not escalate, so the rule cannot be satisfied by one that escalates everything
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EscalationTests::test_a_unanimous_panel_does_not_escalate
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

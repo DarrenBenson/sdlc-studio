@@ -6004,6 +6004,76 @@ def cmd_preflight(args: argparse.Namespace) -> int:
 _DEFERRABLE_CLOSE_STAGES = ("goal-verdict", "retro", "sign-off")
 
 
+#: The declared ceiling on review-repair rounds. Read from config so a project can set its own;
+#: the default is deliberately low, because rounds past three have historically found repairs
+#: of repairs rather than defects.
+DEFAULT_LOOP_CAP = 4
+
+#: How many CONSECUTIVE growing rounds mean the loop is chasing a moving target. One round can
+#: legitimately surface more than it fixed - a repair exposing its neighbour is ordinary, and
+#: LL0052 says to expect it. Two in a row is the signal.
+_DIVERGENCE_RUN = 2
+
+
+#: A unit rejected this many times by the panel goes to the operator. TWO, not one: a first
+#: REJECT is the loop working - the finding gets repaired. Escalating on the first would fire
+#: on every ordinary finding and train the operator to ignore the channel, which is how a
+#: notification stops meaning anything.
+_PANEL_REJECT_LIMIT = 2
+
+
+def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
+    """Whether a unit must go to the operator, and why.
+
+    NOTIFIES, never waits. Human-in-the-lead means the decision reaches the operator; it does
+    not mean the machine blocks on input that will not arrive. An escalation that waits is
+    indistinguishable from a hang, and unattended that is exactly what it becomes.
+    """
+    verdicts = [str(v).upper() for v in (rounds or [])]
+    rejects = sum(1 for v in verdicts if v == "REJECT")
+    if rejects >= _PANEL_REJECT_LIMIT:
+        return (True, f"the panel rejected this unit twice ({rejects} REJECTs) - the repair is "
+                      f"not converging. The operator is NOTIFIED and the run continues to its "
+                      f"handoff; nothing waits on a reply.")
+    seats = {k: str(v).upper() for k, v in (seat_verdicts or {}).items() if v}
+    if len(set(seats.values())) > 1:
+        # The disagreement IS the signal. Resolving it by majority discards precisely the
+        # information the panel was convened to produce, and does so where nobody sees it.
+        dissent = sorted(k for k, v in seats.items() if v == "REJECT")
+        agree = sorted(k for k, v in seats.items() if v != "REJECT")
+        return (True, f"the panel split: {', '.join(dissent) or 'some seats'} rejected while "
+                      f"{', '.join(agree) or 'others'} approved. The disagreement is the "
+                      f"finding, so it is not resolved by majority - the operator is NOTIFIED "
+                      f"with both sides named.")
+    return (False, "")
+
+
+def loop_termination(attempts: list, *, cap: int = DEFAULT_LOOP_CAP) -> tuple[bool, str]:
+    """Whether the review-repair loop must STOP, and why.
+
+    The growing-set detector already existed and only REPORTED: a loop that announces it is
+    diverging and then runs another round has reported nothing, and unattended it burns a night
+    going backwards. This is the same signal made into a decision.
+
+    Pure and total: it takes the recorded attempts and returns an answer, so the rule can be
+    tested at its boundaries without driving a whole close.
+    """
+    counts = [a.get("outstanding") for a in (attempts or [])
+              if isinstance(a.get("outstanding"), int)]
+    if len(attempts or []) >= cap:
+        return (True, f"the declared round cap of {cap} is reached - a cap nobody enforces is "
+                      f"a comment. Hand off with the outstanding set named.")
+    growth = 0
+    for prev, now in zip(counts, counts[1:]):
+        growth = growth + 1 if now > prev else 0
+        if growth >= _DIVERGENCE_RUN:
+            return (True, f"the outstanding set grew {_DIVERGENCE_RUN} rounds running "
+                          f"({' -> '.join(str(c) for c in counts)}) - each round is re-breaking "
+                          f"what the last one cleared. Stop and hand off; another round chases "
+                          f"a moving target.")
+    return (False, "")
+
+
 def _record_close_attempt(root, pre: dict) -> str | None:
     """Append this close attempt's outstanding count to the run state; return the trend line.
 
@@ -6017,6 +6087,14 @@ def _record_close_attempt(root, pre: dict) -> str | None:
     attempts.append({"at": sdlc_md.now_iso8601(), "outstanding": n,
                      "stages": sorted({b["stage"] for b in pre["blockers"]})})
     run_state.update(root, close_attempts=attempts)
+    # The DECISION, not just the narration below. A detector that reports divergence and lets
+    # the next round start has reported nothing; this is the half that ends the loop. Wired
+    # here rather than left as a library function, because a rule reachable only from Python
+    # is the lane-not-library defect this sprint exists to remove (LL0040).
+    cap = sdlc_md.project_override(root, "review.max_rounds", DEFAULT_LOOP_CAP)
+    stop, why = loop_termination(attempts, cap=int(cap or DEFAULT_LOOP_CAP))
+    if stop:
+        return f"LOOP STOPPED: {why}"
     if prev is None:
         return None
     if n < prev:
