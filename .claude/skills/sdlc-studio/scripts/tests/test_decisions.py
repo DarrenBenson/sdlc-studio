@@ -409,5 +409,53 @@ class WaiverScopeTailTests(unittest.TestCase):
                                  f"{scope!r}: refused={refused} but covers_any={covers_any}")
 
 
+class TableCellTests(unittest.TestCase):
+    """A rationale is prose; a row is a table. The writer reconciles them, not the caller.
+
+    A multi-paragraph rationale pasted straight into a cell splits the row, and the table stops
+    being a table (markdownlint MD055/MD056). It happened to this project's own decision log and
+    had to be repaired by hand.
+    """
+
+    def test_a_multi_paragraph_rationale_stays_on_one_row(self) -> None:
+        """MUTANT: paste the rationale in unchanged.
+
+        The fixture is the shape that actually broke the log - two paragraphs separated by a
+        blank line - and the assertion is on the TABLE's integrity, not on the text, because a
+        cell that merely looks tidy can still have split the row above it.
+        """
+        mod = _load("decisions")
+        rationale = ("The first paragraph explains the decision.\n\n"
+                     "The second adds the evidence it rests on.\nAnd a third line.")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            mod.add(root, "a decision", rationale)
+            text = (root / "sdlc-studio" / "decisions.md").read_text(encoding="utf-8")
+        rows = [ln for ln in text.splitlines() if ln.startswith("|")]
+        widths = {ln.count("|") for ln in rows}
+        self.assertEqual(1, len(widths),
+                         f"the table has rows of differing cell counts {widths} - the rationale "
+                         f"split the row")
+        self.assertIn("The second adds the evidence", text,
+                      "the rationale's content was lost rather than collapsed")
+
+    def test_a_pipe_in_the_rationale_is_still_escaped(self) -> None:
+        """The other half of cell safety. MUTANT: collapse newlines but stop escaping pipes.
+
+        An unescaped pipe adds a column to that row alone, which is the same defect by another
+        route.
+        """
+        mod = _load("decisions")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            mod.add(root, "a decision", "uses `a | b` as a separator")
+            text = (root / "sdlc-studio" / "decisions.md").read_text(encoding="utf-8")
+        rows = [ln for ln in text.splitlines() if ln.startswith("|")]
+        self.assertEqual(1, len({ln.count("|") - ln.count("\\|") for ln in rows}),
+                         "an unescaped pipe added a column to one row")
+
+
 if __name__ == "__main__":
     unittest.main()

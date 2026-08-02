@@ -1,6 +1,7 @@
 # BG0483: claim-drift reads append-only ledgers as prose, so verdict rows are matched against the code they name
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (the defect's own shape as the fixture, with a positive control beside it)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/check_spec_claims.py, tools/tests/test_precommit_claim_drift.py, tools/tests/test_check_spec_claims.py
@@ -29,8 +30,21 @@ Exclude append-only ledgers from the prose corpus - the verdict logs, evidence l
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `_PROSE_SUFFIXES` admits any .md file, so append-only LEDGERS are read as prose making claims about the change.
-- [ ] The proposed fix lands, pinned by a test: Exclude append-only ledgers from the prose corpus - the verdict logs, evidence logs and signoff records under sdlc-studio/reviews/, and any file whose body is...
+### AC1: an append-only ledger is not read as prose
+
+- **Given** a diff touching `critic.py` alongside a row appended to the verdict log
+- **When** the drift lane runs
+- **Then** nothing is reported from the ledger, because a verdict row records a judgement somebody made and asserts nothing a diff could contradict
+- **Verify:** pytest tools/tests/test_precommit_claim_drift.py::LedgerExclusionTests::test_a_verdict_ledger_is_not_read_as_prose
+- **Verified:** yes (2026-08-02)
+
+### AC2: ordinary paperwork in the same diff still fires
+
+- **Given** a changelog fragment in that same diff stating a replaced value
+- **When** the lane runs
+- **Then** it is still reported, so excluding ledgers does not become excluding paperwork - which is the whole point of the lane
+- **Verify:** pytest tools/tests/test_precommit_claim_drift.py::LedgerExclusionTests::test_ordinary_prose_in_the_same_diff_still_fires
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

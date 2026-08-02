@@ -305,6 +305,20 @@ def check(root: Path) -> list[str]:
 #: Files whose ADDED lines are read as prose making claims about the change.
 _PROSE_SUFFIXES = (".md", ".rst", ".txt")
 
+#: Append-only RECORD files: tables of events, not prose about behaviour. A row states that
+#: somebody judged something on a date; it makes no claim a diff could contradict. Matched on
+#: the path so a new ledger under `reviews/` is covered without editing a second list.
+_LEDGER_DIRS = ("sdlc-studio/reviews/",)
+_LEDGER_NAMES = ("critic-verdicts.md", "signoff-record.md", "evidence-record.md",
+                 "sprint-review-record.md", "plan-review-verdicts.md")
+
+
+def _is_ledger(path: str) -> bool:
+    """Whether `path` is an append-only record rather than prose making claims."""
+    norm = str(path).replace("\\", "/")
+    return (any(seg in norm for seg in _LEDGER_DIRS)
+            or norm.rsplit("/", 1)[-1] in _LEDGER_NAMES)
+
 #: A bare integer, the only claim shape decided mechanically here. A full natural-language claim
 #: check is not mechanisable; a changed literal contradicted by its own prose is, and it covers
 #: every finding the corrected review loop returned.
@@ -466,6 +480,13 @@ def claim_drift(diff: str, root=None) -> list[dict]:
     """
     replaced, prose_added = {}, []
     for path, hunks in _diff_hunks(diff):
+        if _is_ledger(path):
+            # An append-only LEDGER is not prose making claims about the code. A verdict row
+            # records a judgement somebody made; it asserts nothing about how anything behaves,
+            # so it cannot be in drift with a diff by construction. Reading it as prose fired on
+            # the verdict log every time a diff touched `critic.py`, because every row carries
+            # a reviewer id containing the word `critic`.
+            continue
         if path.endswith(_PROSE_SUFFIXES):
             prose_added.extend(
                 (path, line) for _h, added, _r, _c in hunks for line in added)

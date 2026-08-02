@@ -1,6 +1,7 @@
 # BG0475: decisions.py writes a multi-paragraph rationale straight into a markdown table cell, breaking the row
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (the defect's own shape as the fixture, with a positive control beside it)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_decisions.py
@@ -28,8 +29,21 @@ Collapse newlines to spaces when writing the cell, or escape them as `<br>`, at 
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `decisions.py add` and `waive` store the rationale as one cell of a pipe table.
-- [ ] The proposed fix lands, pinned by a test: Collapse newlines to spaces when writing the cell, or escape them as `<br>`, at the point the row is composed.
+### AC1: a multi-paragraph rationale stays on one row
+
+- **Given** a rationale carrying blank lines and newlines
+- **When** the decision row is written
+- **Then** every row of the table has the same cell count, because a pasted multi-paragraph rationale splits the row and the table stops being a table
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_decisions.py::TableCellTests::test_a_multi_paragraph_rationale_stays_on_one_row
+- **Verified:** yes (2026-08-02)
+
+### AC2: a pipe in the rationale is still escaped
+
+- **Given** a rationale containing a literal pipe
+- **When** the row is written
+- **Then** it is escaped, so the fix cannot trade one cell defect for another
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_decisions.py::TableCellTests::test_a_pipe_in_the_rationale_is_still_escaped
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

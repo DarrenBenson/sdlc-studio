@@ -93,6 +93,22 @@ def _flip_to_superseded(lines: list[str], target: str) -> str | None:
     return None
 
 
+def _cell(value: str) -> str:
+    """One markdown TABLE CELL from arbitrary prose.
+
+    A rationale is written as prose and can carry newlines and blank lines; pasted straight in,
+    a multi-paragraph one splits the row and the table stops being a table (markdownlint MD055
+    and MD056, and a reader sees a broken document). It happened to this project's own decision
+    log and had to be repaired by hand.
+
+    Collapsed HERE, where the row is composed, rather than asked of every caller: this function
+    knows it is building a cell and the callers do not, so a rule stated at the call sites is
+    one each new caller has to be told. Refusing a multi-line rationale would be worse - the
+    rationale is the valuable part, and a writer would shorten it to satisfy the tool.
+    """
+    return " ".join(str(value or "").split()).replace("|", "\\|")
+
+
 def add(root: Path | str, decision: str, rationale: str, status: str = "accepted",
         supersedes: str = "", today: str | None = None) -> dict:
     root = Path(root)
@@ -117,7 +133,7 @@ def add(root: Path | str, decision: str, rationale: str, status: str = "accepted
                     "dangling supersession (a typo would otherwise be silently accepted)")
         did = _next_id("\n".join(lines))
         when = today or date.today().isoformat()
-        cells = [did, decision.replace("|", "\\|"), rationale.replace("|", "\\|"),
+        cells = [did, _cell(decision), _cell(rationale),
                  status, sup_did or "--", when]
         row = "| " + " | ".join(cells) + " |"
         # insert after the data-table header+separator (the row carrying the ID column)

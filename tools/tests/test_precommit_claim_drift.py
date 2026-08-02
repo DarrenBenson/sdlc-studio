@@ -209,5 +209,55 @@ class DiscriminationTests(unittest.TestCase):
             "prose asserting the old value of the changed symbol stopped being reported")
 
 
+class LedgerExclusionTests(unittest.TestCase):
+    """An append-only ledger is a record of events, not prose making claims about code.
+
+    A verdict row states that somebody judged something on a date. It asserts nothing about how
+    anything behaves, so it cannot be in drift with a diff by construction - yet the lane fired
+    on the verdict log every time a diff touched `critic.py`, because every row carries a
+    reviewer id containing the word `critic`.
+    """
+
+    def _drift(self, diff: str):
+        sys.path.insert(0, str(REPO / "tools"))
+        import check_spec_claims as csc
+        return csc.claim_drift(diff)
+
+    LEDGER_DIFF = (
+        "diff --git a/scripts/critic.py b/scripts/critic.py\n"
+        "--- a/scripts/critic.py\n+++ b/scripts/critic.py\n@@ -1,2 +1,2 @@\n"
+        " def read_rows(cells):\n"
+        "-        if len(cells) == 6:\n+        if len(cells) == 7:\n"
+        "diff --git a/sdlc-studio/reviews/critic-verdicts.md b/sdlc-studio/reviews/critic-verdicts.md\n"
+        "--- a/sdlc-studio/reviews/critic-verdicts.md\n"
+        "+++ b/sdlc-studio/reviews/critic-verdicts.md\n@@ -0,0 +1,1 @@\n"
+        "+| US0560 | REJECT | critic seat | author | 2026-07-31 | - | 6 cells were wrong |\n")
+
+    def test_a_verdict_ledger_is_not_read_as_prose(self) -> None:
+        """MUTANT: delete the `_is_ledger` skip.
+
+        The fixture is the shape that actually fired: a verdict row naming `critic` beside a
+        diff to `critic.py`, sharing both a subject token and a digit.
+        """
+        findings = self._drift(self.LEDGER_DIFF)
+        from_ledger = [f for f in findings if "reviews/" in f["prose_file"]]
+        self.assertEqual([], from_ledger,
+                         f"a verdict ledger was read as prose making claims: {from_ledger}")
+
+    def test_ordinary_prose_in_the_same_diff_still_fires(self) -> None:
+        """The control. MUTANT: skip every markdown file.
+
+        Excluding ledgers must not become excluding paperwork - the changelog fragment is the
+        whole point of the lane.
+        """
+        diff = self.LEDGER_DIFF + (
+            "diff --git a/changelog.d/BG0001.md b/changelog.d/BG0001.md\n"
+            "--- a/changelog.d/BG0001.md\n+++ b/changelog.d/BG0001.md\n@@ -0,0 +1,1 @@\n"
+            "+- a verdict row carries 6 cells\n")
+        findings = self._drift(diff)
+        self.assertTrue([f for f in findings if "changelog.d" in f["prose_file"]],
+                        "ordinary paperwork stopped being checked")
+
+
 if __name__ == "__main__":
     unittest.main()
