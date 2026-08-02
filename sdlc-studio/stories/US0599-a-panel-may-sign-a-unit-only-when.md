@@ -1,6 +1,6 @@
 # US0599: A panel may sign a unit only when every adversarial verdict on it carries brief provenance, and missing provenance STOPS the run and notifies rather than parking it
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

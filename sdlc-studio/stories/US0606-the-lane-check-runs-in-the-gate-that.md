@@ -1,6 +1,6 @@
 # US0606: The lane-check runs in the gate that already runs verify_ac, reporting only, with its yield accumulated where a blocking decision can read it
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0520
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

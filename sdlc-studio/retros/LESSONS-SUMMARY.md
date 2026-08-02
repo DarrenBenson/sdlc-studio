@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0282: **An advisory detector that fires on the author changes nothing.** `lane-check`'s yield is no longer a question: 7 flagged, 6 independently...**
+- **L-0281: **"Broken" and "unproven" are different facts and want different words.** Roughly 13 of the 27 rejections were a feature that does not...**
+- **L-0280: **Reviewing the test is cheaper than reviewing the code.** This run spent five adversarial passes and roughly 800k tokens to discover...**
+- **L-0279: **A test that asserts the shape of a change cannot fail when the change is deleted.** The weakness was not random: it clustered at the end...**
 - **L-0278: Two copies of a rule drift apart: the coverage rule was restated in three modules and this diff falsified all three at once.**
 - **L-0277: Reading a command's verdict through a pipe reports the pipe's status.**
 - **L-0276: A premise measured on one instance is an anecdote.**

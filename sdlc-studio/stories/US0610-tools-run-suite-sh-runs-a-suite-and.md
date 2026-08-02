@@ -1,6 +1,6 @@
 # US0610: tools/run-suite.sh runs a suite and writes exit_code, counts, duration and head_sha to sdlc-studio/.local/suite-verdict.json, printing only the verdict line
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0519
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0473: The in-flight sprint controls are documented as runnable invocations, with coverage derived from the parser and the reference section pinned structurally
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0441
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

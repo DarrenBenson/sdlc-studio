@@ -1,6 +1,6 @@
 # US0603: A unit the panel rejects twice, or whose seats disagree, escalates to the operator by NOTIFYING rather than waiting
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0607: best-practices/testing.md states the entry-point rule beside name-the-mutant-first
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0520
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

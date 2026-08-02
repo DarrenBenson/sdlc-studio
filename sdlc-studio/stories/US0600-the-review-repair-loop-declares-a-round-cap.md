@@ -1,6 +1,6 @@
 # US0600: The review-repair loop declares a round cap and the growing-set detector GATES rather than reports, so a diverging loop stops and hands off
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

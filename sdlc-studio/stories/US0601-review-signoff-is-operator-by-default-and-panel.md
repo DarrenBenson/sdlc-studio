@@ -1,6 +1,6 @@
 # US0601: review.signoff is operator by default and panel only by explicit config, so no consuming project silently loses its human
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

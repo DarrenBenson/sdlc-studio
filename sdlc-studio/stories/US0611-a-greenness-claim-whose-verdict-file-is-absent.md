@@ -1,6 +1,6 @@
 # US0611: A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0519
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

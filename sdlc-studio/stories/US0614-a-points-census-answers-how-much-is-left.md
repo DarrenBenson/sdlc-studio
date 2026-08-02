@@ -1,6 +1,6 @@
 # US0614: A points census answers how much is left by status and by type, so the routine question is not answered by a script written on the spot
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0516
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

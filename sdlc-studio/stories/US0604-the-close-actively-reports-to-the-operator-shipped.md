@@ -1,6 +1,6 @@
 # US0604: The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

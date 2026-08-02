@@ -1,6 +1,6 @@
 # US0466: The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0439
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

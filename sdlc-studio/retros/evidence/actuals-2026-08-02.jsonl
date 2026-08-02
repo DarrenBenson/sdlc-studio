@@ -19,3 +19,7 @@
 {"id": "BG0401", "type": "bug", "project": "sdlc-studio"}
 {"id": "BG0420", "type": "bug", "project": "sdlc-studio"}
 {"id": "BG0487", "type": "bug", "project": "sdlc-studio"}
+{"id": "US0602", "type": "story", "project": "sdlc-studio"}
+{"id": "US0605", "type": "story", "project": "sdlc-studio"}
+{"id": "US0610", "type": "story", "project": "sdlc-studio"}
+{"id": "US0614", "type": "story", "project": "sdlc-studio"}

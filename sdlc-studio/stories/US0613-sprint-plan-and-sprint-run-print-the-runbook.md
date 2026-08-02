@@ -1,6 +1,6 @@
 # US0613: sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0518
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

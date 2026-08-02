@@ -1,6 +1,6 @@
 # US0471: sprint batch add-epic adds an epic's stories at a named status as one set, priced through the shared renderer
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0441
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

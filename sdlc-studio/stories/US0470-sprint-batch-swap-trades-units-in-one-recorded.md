@@ -1,6 +1,6 @@
 # US0470: sprint batch swap trades units in one recorded call, in the house id grammar, reporting whether the points balanced
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0441
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

@@ -14,7 +14,7 @@ Decomposed from CR0520. Delivers the work CR0520 requested.
 
 ## Story Breakdown
 
-- [ ] [US0605: verify_ac lane-check reports criteria whose verifiers never enter the shipped entry point, for units whose Affects names a CLI-bearing script](../stories/US0605-verify-ac-lane-check-reports-criteria-whose-verifiers.md)
+- [x] [US0605: verify_ac lane-check reports criteria whose verifiers never enter the shipped entry point, for units whose Affects names a CLI-bearing script](../stories/US0605-verify-ac-lane-check-reports-criteria-whose-verifiers.md)
 - [ ] [US0606: The lane-check runs in the gate that already runs verify_ac, reporting only, with its yield accumulated where a blocking decision can read it](../stories/US0606-the-lane-check-runs-in-the-gate-that.md)
 - [ ] [US0607: best-practices/testing.md states the entry-point rule beside name-the-mutant-first](../stories/US0607-best-practices-testing-md-states-the-entry-point.md)
 

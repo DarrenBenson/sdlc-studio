@@ -593,6 +593,24 @@ One row has been removed since adoption.
 | US0583 | APPROVE | independent-critic:confirmation:ada67ca4 | Claude Opus 5 (authoring session) | 2026-08-01 | ada67ca41c5b | none blocking |
 | US0585 | APPROVE | independent-critic:confirmation:ada67ca4 | Claude Opus 5 (authoring session) | 2026-08-01 | ada67ca41c5b | none blocking |
 | US0597 | APPROVE | independent-critic:confirmation:ada67ca4 | Claude Opus 5 (authoring session) | 2026-08-01 | ada67ca41c5b | none blocking |
+| US0598 | REJECT | engineering-seat-ep0198 | claude-opus-5-author | 2026-08-02 | 0a037d3a75ed | [new] recorded\_signoff\_panel has no caller outside its test, so the sign-off never reads the recorded assignment |
+| US0599 | REJECT | engineering-seat-ep0198 | claude-opus-5-author | 2026-08-02 | 66647584fdf8 | [new] the brief interlock is correct but no shipped command could convene a panel, so it guards nothing |
+| US0601 | REJECT | engineering-seat-ep0198 | claude-opus-5-author | 2026-08-02 | 3a293900ed48 | [new] the output never stated panel sign-off was in force, and AC1's Given was unreachable via any CLI path |
+| US0602 | APPROVE | engineering-seat-ep0198 | claude-opus-5-author | 2026-08-02 | 62a0233f8efb | [pre-existing] none blocking - \_ck\_signoff is genuinely wired and the shipped checklist command printed the row |
+| US0603 | REJECT | engineering-seat-ep0198 | claude-opus-5-author | 2026-08-02 | 5ebd6ee3d544 | [new] panel\_escalation has zero production callers, so all five ACs assert on an orphan |
+| US0604 | REJECT | engineering-seat-ep0198 | claude-opus-5-author | 2026-08-02 | 5ee51a3cdf7d | [new] close\_report has zero production callers and CLOSE REPORT appears in no output |
+| US0611 | REJECT | engineering-seat-ep0201 | claude-opus-5-author | 2026-08-02 | 385ff70a98b1 | [new] Affects named .githooks/pre-commit though the diff touched commit-msg, steering the brief away from AC4 |
+| US0612 | REJECT | engineering-seat-ep0201 | claude-opus-5-author | 2026-08-02 | 06014b0161db | [new] step ordering unenforced, and the per-step command and Instead-of assertions were satisfied by header rows |
+| US0613 | REJECT | engineering-seat-ep0201 | claude-opus-5-author | 2026-08-02 | 7c6f54749d59 | [new] AC1 names sprint run, which is not on the shipped surface, and its verifier is a source grep a dead reference satisfies |
+| US0614 | APPROVE | engineering-seat-ep0201 | claude-opus-5-author | 2026-08-02 | b8ec1a2e1d49 | [pre-existing] none blocking - the census re-derived from status.py points matched the claim exactly |
+| US0615 | REJECT | engineering-seat-ep0201 | claude-opus-5-author | 2026-08-02 | 9bce52a841aa | [new] the AC1 verifier survived deleting the entire --fields-file block from cmd\_review\_batch |
+| US0600 | REJECT | engineering-seat-ep0198 | claude-opus-5-author | 2026-08-02 | 774804da04fd | [new] the close reported divergence and continued, and the mutant replacing the decision with \_ = trend SURVIVED all five tests |
+| US0610 | APPROVE | engineering-seat-ep0201 | claude-opus-5-author | 2026-08-02 | f98182651291 | [pre-existing] none blocking - the verdict resisted every attack, and --check refuses absent, stale and red alike |
+| US0605 | APPROVE | qa-seat-ep0199 | claude-opus-5-author | 2026-08-02 | 68bd8dffb2f7 | [pre-existing] none blocking - all four ACs verified through the CLI and four mutants killed |
+| US0606 | REJECT | qa-seat-ep0199 | claude-opus-5-author | 2026-08-02 | 84624b2b1351 | [new] the hook stated a yield figure the shipped command contradicts, and AC1's window lands inside a comment block |
+| US0607 | REJECT | qa-seat-ep0199 | claude-opus-5-author | 2026-08-02 | 6021951b16c0 | [new] a shipped best-practice file stated a yield figure the command contradicts, and the guard returns 0 when the file is absent |
+| US0608 | REJECT | qa-seat-ep0200 | claude-opus-5-author | 2026-08-02 | 9c481f56b1a2 | [new] reverting the feature outright survives all 390 tests, and no AC asserts the lane's blocking flag or runs a close |
+| US0609 | REJECT | qa-seat-ep0200 | claude-opus-5-author | 2026-08-02 | 99edc9177929 | [new] the marker the feature keys on is produced nowhere reachable, and deleting its only call site survives all 701 tests |
 
 ## Supersessions
 

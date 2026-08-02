@@ -1,6 +1,6 @@
 # US0609: file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run
 
-> **Status:** Review
+> **Status:** Ready
 > **Delivers:** CR0522
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

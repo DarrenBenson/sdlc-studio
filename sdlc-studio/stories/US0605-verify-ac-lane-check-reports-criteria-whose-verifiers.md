@@ -1,6 +1,6 @@
 # US0605: verify_ac lane-check reports criteria whose verifiers never enter the shipped entry point, for units whose Affects names a CLI-bearing script
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0520
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

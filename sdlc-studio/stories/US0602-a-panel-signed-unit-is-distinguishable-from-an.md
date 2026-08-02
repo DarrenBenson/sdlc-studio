@@ -1,6 +1,6 @@
 # US0602: A panel-signed unit is distinguishable from an operator-signed one forever, in the signoff record and in the sprint report
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
