@@ -239,14 +239,27 @@ class FilingRunDisambiguationTests(unittest.TestCase):
         self.assertIn("wf_bbb2", msg, "the refusal does not name the candidates")
 
     def test_a_carry_over_disambiguates_in_both_word_orders(self) -> None:
-        """MUTANT: match only `<id> carry-over`.
+        """MUTANT: match only `<id> carry-over`; or drop the carry-over lookup entirely.
 
-        Half this corpus writes `carry-over from <id>`, and a pattern that silently matches
-        nothing is how the disambiguation quietly stopped happening.
+        Every fixture here names TWO `run <id>` mentions, and that is the whole point. The
+        earlier version used lines carrying one `run <id>` beside a bare carried id, so
+        `candidates` had length one however the carry-over matched - and the criterion stayed
+        green while the branch it exists to check was deleted outright. A disambiguation test
+        whose input needs no disambiguating tests nothing.
+
+        The second word order is DEFENSIVE, not observed: measured over this corpus's
+        `Raised-by` lines, some write `<id> carry-over` and none writes `carry-over from <id>`.
+        The criterion covers it so that the day one appears it is already handled.
         """
         mod = bf
-        self.assertEqual("wf_new1", mod.filing_run("run wf_new1 (wf_old2 carry-over)"))
-        self.assertEqual("wf_new1", mod.filing_run("run wf_new1 (carry-over from wf_old2)"))
+        self.assertEqual("wf_new1",
+                         mod.filing_run("wf_old2 carry-over, run wf_new1 and run wf_old2"))
+        self.assertEqual("wf_new1",
+                         mod.filing_run("carry-over from wf_old2, run wf_new1 and run wf_old2"))
+        # The positive control: with the carried id NOT named as such, the same two filing
+        # runs are ambiguous. Without this, a mutant that returns the first candidate passes.
+        with self.assertRaises(mod.Ambiguous):
+            mod.filing_run("run wf_new1 and run wf_old2")
 
     def test_a_single_id_is_still_the_answer(self) -> None:
         """The control. MUTANT: refuse whenever more than zero ids appear."""

@@ -287,6 +287,46 @@ class SuiteVerdictFailOpenTests(unittest.TestCase):
         self.assertIn('if [ "$fail" -eq 0 ]; then', preceding.rsplit("\n\n", 1)[-1],
                       "the green verdict is recorded without checking whether the lane passed")
 
+    def test_the_green_verdict_is_written_below_both_suite_lanes(self) -> None:
+        """MUTANT: move the verdict write back between the skill and tool lanes.
+
+        Guarding the write on `$fail` is only half of it - PLACEMENT is the other half. Sitting
+        between the lanes, `$fail` carried the skill lane's verdict alone, so a green skill lane
+        beside a failing tool lane still wrote `status green`, and the byte-identical retry then
+        reused it and ran no tests. That is the same fail-open the guard was added to close,
+        reached through the other lane.
+
+        Both existing criteria assert the hook's TEXT and are green on the misplaced version,
+        which is why this asserts ORDER instead.
+        """
+        text = self.HOOK.read_text(encoding="utf-8")
+        tool_lane = text.index('run "tool-tests"')
+        verdict = text.index("--record-suite-verdict")
+        self.assertGreater(
+            verdict, tool_lane,
+            "the green suite verdict is recorded before the tool-tests lane has run, so a "
+            "failing tool lane still writes `status green` and the retry reuses it")
+
+    def test_a_failing_tool_lane_also_leaves_its_output_behind(self) -> None:
+        """MUTANT: drop the tool lane's log capture.
+
+        AC2's Given is "a commit blocked on a suite lane", and tool-tests is a suite lane. It
+        left no log at all, so a commit blocked there had the same undiagnosable failure the
+        criterion exists to prevent - the defect was narrowed to one lane, not fixed.
+        """
+        text = self.HOOK.read_text(encoding="utf-8")
+        tool_lane = text.index('run "tool-tests"')
+        after = text[tool_lane:]
+        self.assertIn("gate-suite-last.log", after,
+                      "a commit blocked on the tool-tests lane leaves no record of what failed")
+        # Guarded on the tool lane's own failure, and only when the skill lane passed - its
+        # log is already on disk and is the one worth keeping.
+        idx = after.index("gate-suite-last.log")
+        self.assertIn('if [ "$fail" -ne 0 ] && [ "${skill_fail:-0}" -eq 0 ]',
+                      after[:idx].rsplit("\n\n", 1)[-1],
+                      "the tool lane's log is written unconditionally, or overwrites the "
+                      "skill lane's")
+
     def test_a_blocked_commit_leaves_its_suite_output_behind(self) -> None:
         """MUTANT: drop the tee.
 

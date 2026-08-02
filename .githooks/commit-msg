@@ -252,27 +252,19 @@ run "skill-tests" \
   "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
   -- bash tools/skill-tests.sh "$skill" $skill_sel
 python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
-# Record the green so a later commit over an unchanged surface can reuse it. Without this call
-# no verdict is ever written, read_suite_verdict is always None, and the skip branch is
-# unreachable in production however well it is tested.
-#
-# ONLY when the lane actually passed. This ran unconditionally, so a FAILING skill-tests lane
-# still wrote `status green` - and the next attempt over an unchanged surface then trusted a
-# verdict recorded beside a failure. That is the fail-open behind a gate that blocked a commit
-# and passed the byte-identical retry: the retry was reading the first attempt's false green.
-# Recorded after the lane's verdict is known, never before it.
-if [ "$fail" -eq 0 ]; then
-  python3 "$skill/gate.py" --root . --record-suite-verdict "$(git rev-parse HEAD 2>/dev/null || echo pending)" \
-    --status green --verdict-mode "$([ -n "$selectors" ] && echo selected || echo full)" 2>/dev/null || true
-fi
 # The failure has to SURVIVE the retry. The lane prints into the hook's own output, so by the
 # time a retry succeeded the evidence of what failed was gone - twice, and neither failing test
 # was ever identified. A blocked commit now leaves the output behind to be read.
+#
+# Captured HERE, per lane, rather than once below both: `last_run_out` holds only the most
+# recent lane's output, so a single capture after the second lane would overwrite a failing
+# skill lane's evidence with the passing tool lane's. The first lane to fail owns the log.
 if [ "$fail" -ne 0 ]; then
   mkdir -p sdlc-studio/.local 2>/dev/null
   printf '%s\n' "$last_run_out" > sdlc-studio/.local/gate-suite-last.log 2>/dev/null || true
   printf '  %ssuite output saved to sdlc-studio/.local/gate-suite-last.log%s\n' "$Y" "$N" >&2
 fi
+skill_fail=$fail
 suite_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
 printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
 t0=$SECONDS
@@ -304,6 +296,27 @@ run "tool-tests" \
      -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
      -u GIT_PREFIX "PYTHONPATH=tools/tests${PYTHONPATH:+:$PYTHONPATH}" "$@"
 python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
+# The tool lane is a suite lane too, so a failure here also has to survive the retry. Only when
+# the skill lane passed - otherwise its log is already on disk and is the one worth keeping.
+if [ "$fail" -ne 0 ] && [ "${skill_fail:-0}" -eq 0 ]; then
+  mkdir -p sdlc-studio/.local 2>/dev/null
+  printf '%s\n' "$last_run_out" > sdlc-studio/.local/gate-suite-last.log 2>/dev/null || true
+  printf '  %ssuite output saved to sdlc-studio/.local/gate-suite-last.log%s\n' "$Y" "$N" >&2
+fi
+# Record the green so a later commit over an unchanged surface can reuse it. Without this call
+# no verdict is ever written, read_suite_verdict is always None, and the skip branch is
+# unreachable in production however well it is tested.
+#
+# ONLY when BOTH lanes passed, and therefore only HERE, below both. This ran unconditionally
+# once, so a FAILING skill lane still wrote `status green`; moving it under `$fail` fixed that
+# half but left it sitting BETWEEN the lanes, where `fail` still carried only the skill lane's
+# verdict - so a green skill lane beside a failing tool lane wrote `status green` just the same,
+# and the byte-identical retry reused it and ran no tests. That is the fail-open this guard
+# exists to close, and it is closed by the placement as much as by the condition.
+if [ "$fail" -eq 0 ]; then
+  python3 "$skill/gate.py" --root . --record-suite-verdict "$(git rev-parse HEAD 2>/dev/null || echo pending)" \
+    --status green --verdict-mode "$([ -n "$selectors" ] && echo selected || echo full)" 2>/dev/null || true
+fi
 tool_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
 printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
 # Both lanes together are what a code commit pays for, so the scope check reads their sum.

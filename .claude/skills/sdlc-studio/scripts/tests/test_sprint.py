@@ -4008,6 +4008,50 @@ class CloseDrawsReportTests(_CloseReportBase):
             self.assertEqual(before, after, "the report step wrote a file on the re-run")
 
 
+class CloseReportReachesTheOperatorTests(_CloseReportBase):
+    """US0604 at the LANE, not the library.
+
+    Both of US0604's criteria call `sprint_report.close_report()` directly, so they were green
+    for a whole sprint while the caller raised NameError on `critic` and its own advisory
+    `except` ate it. The report printed only for an EMPTY batch - a batch size no real close
+    has - so the one input the feature exists to serve was exactly the one it failed on.
+
+    A library test cannot see a missing import in its caller. This drives the close.
+    """
+
+    def test_the_close_prints_the_report_for_a_non_empty_batch(self) -> None:
+        """MUTANT: drop `import critic` from `_tell_the_operator`.
+
+        Driven through `_finalise_outcome`, the PRODUCTION caller, rather than through
+        `close_report` itself. The batch is non-empty (`_close_state` carries US0101), which
+        is the whole point: an empty batch takes no lap of the `unit_review_rounds` loop, so
+        an empty-batch fixture passes against the broken code and pins nothing.
+
+        Note it cannot ride on `_CloseReportBase._close`: that helper patches every chain
+        step, including the one whose success path reaches this report.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # NOT `_fixture`: that stamps the outcome goal-reached already, and
+            # `_finalise_outcome` returns before the report on an already-stamped run. This is
+            # the state a real close arrives with - judged achieved, not yet stamped.
+            state = _close_state(root, outcome="running",
+                                 sprint_goal_verdict={"verdict": "achieved",
+                                                      "note": "chain ran"})
+            _close_story(root)
+            _close_retro(root, batch="US0101")
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                mod._finalise_outcome(root, state)
+            printed, errored = out.getvalue(), err.getvalue()
+            self.assertNotIn("close report not emitted", errored,
+                             "the report step raised and was swallowed as advisory")
+            self.assertIn("CLOSE REPORT", printed,
+                          "the close never told the operator what it did")
+            self.assertIn("US0101", printed, "the report names no unit from the batch")
+
+
 class CloseReportDisabledTests(_CloseReportBase):
     """US0224 AC2: `report.enabled: false` skips the PAGE, never the close."""
 

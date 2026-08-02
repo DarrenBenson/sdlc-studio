@@ -37,9 +37,9 @@ Refuse when more than one id survives disambiguation rather than returning the f
 
 ### AC2: a carry-over disambiguates in both word orders
 
-- **Given** `<id> carry-over` and `carry-over from <id>`
+- **Given** `<id> carry-over` and `carry-over from <id>`, each beside two `run <id>` mentions so the carry-over is what settles it
 - **When** each is resolved
-- **Then** both yield the filing run, because half the corpus writes the second form and a pattern that silently matches nothing is how the disambiguation stopped happening
+- **Then** both yield the filing run, because a pattern that silently matches nothing is how the disambiguation stopped happening. The second word order is DEFENSIVE, not observed: measured over this corpus's `Raised-by` lines, 12 write `<id> carry-over` and none writes `carry-over from <id>`. An earlier draft of this criterion claimed the corpus was half-and-half, which measurement refutes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py::FilingRunDisambiguationTests::test_a_carry_over_disambiguates_in_both_word_orders
 - **Verified:** yes (2026-08-02)
 

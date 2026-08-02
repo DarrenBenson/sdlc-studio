@@ -5602,6 +5602,12 @@ def _tell_the_operator(root) -> None:
     function nobody calls tells nobody anything - which is what shipped, and what US0604 asked
     for. Advisory like `_draw_report`: a missing report must never lose a completed ceremony.
     """
+    # BOTH deferred siblings, not just one. `critic` has no module-scope import in this file -
+    # every use is a local one - so reading the review rounds below without importing it here
+    # raised NameError for any non-empty batch, and the advisory `except` swallowed it. The
+    # report therefore printed only when the batch was empty, which no real close has: the
+    # feature was dead on arrival at the one input it exists to serve.
+    import critic  # noqa: PLC0415 - deferred, like the chain's sibling imports
     import sprint_report  # noqa: PLC0415 - deferred, like the chain's sibling imports
     try:
         state = run_state.read(root) or {}
@@ -5639,7 +5645,14 @@ def _close_cost(root, state: dict, shipped: list) -> dict:
     zeroed - `close_report` names an absent cost absent, and "not attributable" and "nothing
     spent" are different facts."""
     cost: dict = {}
-    tokens = (state.get("token_forecast") or {}).get("actual")
+    # `token_forecast` is written as a plain INT by the plan (`_cost_note` formats it as one),
+    # so `.get("actual")` on it raised AttributeError for every run that carried a forecast -
+    # swallowed by the report's advisory `except`, which is why the report went missing rather
+    # than complaining. Both shapes are read here: the mapping a later schema may use, and the
+    # int the plan writes today. A forecast is not an actual, so it is NOT reported as the
+    # spend - an absent actual stays absent, which `close_report` names absent.
+    forecast = state.get("token_forecast")
+    tokens = forecast.get("actual") if isinstance(forecast, dict) else None
     if isinstance(tokens, int):
         cost["tokens"] = tokens
     points = 0
