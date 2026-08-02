@@ -30,6 +30,9 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 - **goal-review record takes 'seat' in a fields-file but documents 'role' on the flag, and the refusal names neither spelling's fix**: `sprint goal-review record --seat SPEC` documents its format as 'role|achievable|what done means|one increment[|note]'. The `--fields-file` path for the same command requires each seat object to carry the key `seat`, not `role`. A document written from the flag's documentation is refused with 'a seat verdict in --fields-file has no seat role', which names the missing key ambiguously and does not say that the flag calls it something else.
 
   The fields-file path exists precisely so a seat note carrying shell metacharacters is stored verbatim, so it is the path a considered verdict takes - and it is the one whose key name is undocumented.
+- **the suite-claim lane fires on a message that QUOTES a greenness claim rather than making one**: The commit-msg suite-claim lane matches the phrase anywhere in the message, so a commit DESCRIBING the defect refuses itself. Hit while filing BG0492, whose body reads: a scripts-only verdict satisfies a claim of "both suites green". The lane matched the quoted phrase and blocked the commit, though the message makes no claim about this commit's suite at all.
+
+  Self-demonstrating, and the second time this repo has hit the shape - BG0301 was the shell-hazard detector firing on the artefact that documented it. A guard that cannot tell a claim from a quotation of a claim will refuse precisely the commits that write about it.
 
 ## Revision History
 

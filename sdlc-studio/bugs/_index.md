@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 10 |
+| Open | 17 |
 | In Progress | 0 |
 | Fixed | 394 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **487** |
+| **Total** | **494** |
 
 ## All Bugs
 
@@ -205,6 +205,13 @@
 | [BG0485](BG0485-the-goal-review-panel-maps-a-seat-s.md) | the goal-review panel maps a seat's no to partial, and fans a whole-goal answer across every clause | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0486](BG0486-duplicate-verifiers-are-grouped-on-a-normalised-string.md) | duplicate verifiers are grouped on a normalised string, so two ACs running the same command can read as distinct | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0487](BG0487-lane-check-misses-lane-entry-made-through-a.md) | lane-check misses lane entry made through a shared test helper | Fixed | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0488](BG0488-us0608-and-us0609-ship-a-feature-no-cli.md) | US0608 and US0609 ship a feature no CLI invocation can reach, and their tests survive its deletion | Open | High | 2026-08-02 | 2026-08-02 |
+| [BG0489](BG0489-the-commit-msg-suite-verdict-is-written-before.md) | the commit-msg suite verdict is written before the tool-tests lane runs, so a green verdict survives its failure | Open | High | 2026-08-02 | 2026-08-02 |
+| [BG0490](BG0490-four-bug-repairs-are-fixed-with-half-their.md) | four bug repairs are Fixed with half their title undelivered and no recorded narrowing | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0491](BG0491-lane-check-scans-only-stories-so-487-bugs.md) | lane-check scans only stories, so 487 bugs are outside the number a blocking decision would rest on | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0492](BG0492-the-suite-verdict-binds-to-head-rather-than.md) | the suite verdict binds to HEAD rather than the tree, and --check ignores which suite ran | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0493](BG0493-four-more-verifiers-pass-on-a-delivery-that.md) | four more verifiers pass on a delivery that has been made inert | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0494](BG0494-resolve-affects-tries-the-prefix-stripped-candidate-against.md) | resolve_affects tries the prefix-stripped candidate against the repo root first, so a consuming project's own file wins | Open | Medium | 2026-08-02 | 2026-08-02 |
 
 ## Archived Releases
 
