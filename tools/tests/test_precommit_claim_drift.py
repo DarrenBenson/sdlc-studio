@@ -20,6 +20,8 @@ from pathlib import Path
 # under `unittest discover`, but pytest - which `verify_ac` invokes to check a
 # criterion - does not put this directory on the path, so the import failed there and
 # the story's own verifier could not run.
+# Kept alongside conftest.py: a direct `python3 tools/tests/test_x.py` run collects no
+# conftest, so this module must still resolve its sibling on its own.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import test_precommit_window_guard as _wg

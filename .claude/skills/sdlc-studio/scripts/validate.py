@@ -469,8 +469,16 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
     # blank where its content should be; a fresh one carrying the same slot is simply not written
     # yet. The terminal set is derived from the type's own vocabulary (`is_terminal_status`), never
     # enumerated here, so a project that adds a terminal status is covered without editing this.
-    _pre_ready_story = type_ == "story" and _canon in ("Proposed", "Draft")
-    _ac_sev = SEVERITY_WARNING if _pre_ready_story else SEVERITY_ERROR
+    # FRESHNESS, not type. A Draft story's placeholder was a warning while a freshly-minted
+    # CR's was an ERROR, so the recommended path - `artifact.py new --type cr` - produced an
+    # artefact that blocked the very next commit, and the author had to hand-edit what the tool
+    # had just written. That is the hand-authoring the deterministic path exists to avoid,
+    # induced by it. A request at its opening status is "not written yet" for exactly the same
+    # reason a Draft story is; once it moves past that, the placeholder is real debt and errors.
+    _opening_status = {"story": ("Proposed", "Draft"), "bug": ("Open",),
+                       "cr": ("Proposed",), "rfc": ("Draft",)}.get(type_, ())
+    _not_yet_written = _canon in _opening_status
+    _ac_sev = SEVERITY_WARNING if _not_yet_written else SEVERITY_ERROR
     # A widened check must not block on the backlog it reveals. When the sweep was extended from
     # the AC section to the whole body it surfaced 31 already-terminal artefacts carrying an
     # unfilled scaffold - real debt, but debt that predates the check. Those ids are recorded in a

@@ -1442,6 +1442,15 @@ def cmd_new(args: argparse.Namespace) -> int:
     else:
         print(f"{verb} {r['id']} -> {r['path']} "
               f"(indexed={r.get('indexed')}, epic_linked={r.get('epic_linked')})")
+        # An artefact minted with an unfilled criteria scaffold is NOT finished, and saying so
+        # here is the difference between a tool that reports success and one that reports what
+        # it did. Reporting unqualified success sent authors away from a document that still
+        # needed writing, and they met that fact later as a refusal from another command.
+        _body = sdlc_md.read_text_safe(Path(r["path"])) or ""
+        if "{{criterion}}" in _body or "{{" in _body.split("## Acceptance Criteria", 1)[-1][:400]:
+            print("  NOT FINISHED: its acceptance criteria are still the scaffold placeholder. "
+                  "Author them before planning or reviewing this - `sprint plan` refuses an "
+                  "ungroomed unit, and a criterion nobody wrote is one nothing can check.")
     return 0
 
 

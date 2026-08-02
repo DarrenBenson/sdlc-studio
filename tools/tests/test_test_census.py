@@ -20,6 +20,7 @@ import io
 import json
 import sys
 import tempfile
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -69,6 +70,11 @@ def _repo(tmp: Path) -> Path:
         "# reads .githooks/pre-commit as text\n", encoding="utf-8")
     return tmp
 
+
+#: For the importability guard below - the directory whose modules must import under
+#: BOTH runners, and the repo root pytest is invoked from.
+TESTS_DIR = Path(__file__).resolve().parent
+REPO = TESTS_DIR.parents[1]
 
 class CensusTests(unittest.TestCase):
     """US0506: suite time and count attributed to the module each test covers."""
@@ -598,6 +604,38 @@ class CliTests(unittest.TestCase):
             # Named, never a bare count - the file, its cost, and one node id from it.
             self.assertIn("pkg/tests/test_hook_contract.py", text)
             self.assertIn("test_hook_is_executable", text)
+
+
+class ImportabilityTests(unittest.TestCase):
+
+    def test_a_conftest_puts_this_directory_on_the_path(self) -> None:
+        """MUTANT: delete tools/tests/conftest.py.
+
+        Pinned on the FILE, because the per-file inserts it replaces are exactly what gets
+        forgotten - and a guard that only checked the two modules which happen to carry one
+        would go green the moment a third arrives without it.
+        """
+        conftest = TESTS_DIR / "conftest.py"
+        self.assertTrue(conftest.is_file(),
+                        "tools/tests has no conftest.py, so a sibling import resolves under "
+                        "unittest and not under pytest")
+        self.assertIn("sys.path.insert", conftest.read_text(encoding="utf-8"),
+                      "the conftest does not put this directory on the path")
+
+    def test_every_module_here_imports_under_pytest(self) -> None:
+        """MUTANT: revert the conftest, or add a module with an unresolvable sibling import.
+
+        Runs pytest in COLLECT-ONLY mode over the whole directory: collection is where an
+        unresolvable import fails, and it costs seconds rather than a full suite run.
+        """
+        result = subprocess.run(
+            [sys.executable, "-B", "-m", "pytest", "--collect-only", "-q", str(TESTS_DIR)],
+            cwd=REPO, capture_output=True, text=True, timeout=300)
+        self.assertEqual(
+            0, result.returncode,
+            f"a module under tools/tests does not import under pytest:\n"
+            f"{result.stdout[-2000:]}\n{result.stderr[-2000:]}")
+
 
 
 if __name__ == "__main__":

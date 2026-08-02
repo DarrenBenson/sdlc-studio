@@ -2522,5 +2522,65 @@ class OpenQuestionsTests(unittest.TestCase):
                                 f"the sweep is blind to {label} - a clean corpus proves nothing")
 
 
+class FreshArtefactPlaceholderTests(unittest.TestCase):
+    """A freshly-minted artefact's criteria scaffold is not-yet-written, not an error.
+
+    A Draft story's placeholder was a WARNING while a freshly-minted CR's was an ERROR - so
+    `artifact.py new --type cr`, the path the docs call recommended, produced an artefact that
+    blocked the very next commit, and the author had to hand-edit what the tool had just
+    written. That is the hand-authoring the deterministic path exists to avoid, induced by it.
+    """
+
+    def _artefact(self, root, folder, name, body):
+        d = root / "sdlc-studio" / folder
+        d.mkdir(parents=True, exist_ok=True)
+        (d / name).write_text(body, encoding="utf-8")
+
+    def test_a_fresh_request_placeholder_is_a_warning(self) -> None:
+        """MUTANT: restore the story-only condition.
+
+        A CR at its opening status is 'not written yet' for exactly the same reason a Draft
+        story is.
+        """
+        mod = validate
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._artefact(root, "change-requests", "CR0001-x.md",
+                           "# CR-0001: a request\n\n> **Status:** Proposed\n"
+                           "> **Priority:** High\n> **Type:** Improvement\n"
+                           "> **Size:** S\n> **Affects:** src/a.py\n\n"
+                           "## Summary\n\ns\n\n## Impact\n\ni\n\n"
+                           "## Acceptance Criteria\n\n- [ ] {{criterion}}\n")
+            findings = mod.validate_file(
+                root / "sdlc-studio" / "change-requests" / "CR0001-x.md", "cr", root)
+        errors = [f for f in findings
+                  if f.get("severity") == mod.SEVERITY_ERROR and "placeholder" in str(f)]
+        self.assertEqual([], errors,
+                         f"a freshly-minted request's scaffold placeholder errored: {errors}")
+
+    def test_a_request_past_its_opening_status_still_errors(self) -> None:
+        """The positive control. MUTANT: warn on every placeholder regardless of status.
+
+        Once a request is being acted on, an unfilled criterion is real debt - and a rule that
+        never errors is not a rule.
+        """
+        mod = validate
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._artefact(root, "change-requests", "CR0002-y.md",
+                           "# CR-0002: a request\n\n> **Status:** In Progress\n"
+                           "> **Priority:** High\n> **Type:** Improvement\n"
+                           "> **Size:** S\n> **Affects:** src/a.py\n\n"
+                           "## Summary\n\ns\n\n## Impact\n\ni\n\n"
+                           "## Acceptance Criteria\n\n- [ ] {{criterion}}\n")
+            findings = mod.validate_file(
+                root / "sdlc-studio" / "change-requests" / "CR0002-y.md", "cr", root)
+        errors = [f for f in findings
+                  if f.get("severity") == mod.SEVERITY_ERROR and "placeholder" in str(f)]
+        self.assertTrue(errors,
+                        "a request past its opening status kept an unfilled criterion without "
+                        "erroring")
+
+
 if __name__ == "__main__":
     unittest.main()
