@@ -3368,5 +3368,62 @@ class MutationResultCarriesItsTreeTests(unittest.TestCase):
         self.assertIn("TREE UNESTABLISHED", mod.tree_warning_line({}))
 
 
+class KillerScalarTests(unittest.TestCase):
+    """The recorded row names WHICH test killed the mutant, in both fields.
+
+    The sole guard was `'row["test"] = killer' in inspect.getsource(...)` - a grep over source
+    text, which stays green with the assignment dead. Replacing it with `row.get("test")`
+    survived the whole suite, so nothing checked that the scalar carries the killer's name.
+    """
+
+    def test_the_row_carries_the_killing_test_in_both_fields(self) -> None:
+        """MUTANT: `row["test"] = killer` -> `row["test"] = row.get("test")`.
+
+        Asserted on the VALUE, not on the source text: a grep for the assignment is satisfied
+        by the line existing, which is exactly how this went unnoticed. `killed_by` is a list
+        for `tools/test_census.py`, `test` is the scalar - both must name the same test, since
+        shipping only one of them was the original defect.
+        """
+        mod = _load()
+        killer = "tests/test_thing.py::T::test_it"
+        # The PRODUCTION path, not a row this test builds. Rebuilding it here would assert my
+        # own fixture - the same shape as the source-grep guard this replaces.
+        row = mod.attribute_kill({"verdict": "killed"}, f"FAILED {killer} - AssertionError")
+        self.assertEqual([killer], row.get("killed_by"),
+                         "killed_by does not name the killing test")
+        self.assertEqual(killer, row.get("test"),
+                         "the scalar `test` does not name the killing test - a consumer reading "
+                         "it gets nothing")
+
+    def test_an_unattributed_kill_carries_no_invented_name(self) -> None:
+        """MUTANT: fall back to a placeholder when the output names no test.
+
+        Absent is TRUE; a fabricated name is evidence about the wrong test, which is worse than
+        no evidence at all.
+        """
+        mod = _load()
+        row = mod.attribute_kill({"verdict": "killed"}, "the suite failed, saying nothing useful")
+        self.assertNotIn("test", row, "an unattributed kill invented a test name")
+        self.assertNotIn("killed_by", row, "an unattributed kill invented a killer list")
+
+    def test_a_surviving_mutant_is_not_attributed(self) -> None:
+        """The control. MUTANT: attribute every row regardless of verdict."""
+        mod = _load()
+        row = mod.attribute_kill({"verdict": "survived"}, "FAILED tests/x.py::T::t")
+        self.assertNotIn("test", row, "a SURVIVING mutant was given a killing test")
+
+    def test_the_assignment_is_reachable_in_the_shipped_source(self) -> None:
+        """The lane half. MUTANT: delete the assignment entirely.
+
+        Kept alongside the value assertion rather than instead of it: this one catches removal,
+        the one above catches the assignment being made inert - and the original guard could
+        only ever catch the first.
+        """
+        src = (Path(__file__).resolve().parent.parent / "mutation.py").read_text(encoding="utf-8")
+        self.assertIn("attribute_kill(", src,
+                      "run_gate no longer routes its attribution through the seam, so the "
+                      "value assertions above no longer cover the production path")
+
+
 if __name__ == "__main__":
     unittest.main()

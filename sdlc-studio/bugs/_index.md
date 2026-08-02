@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 12 |
+| Open | 11 |
 | In Progress | 0 |
-| Fixed | 391 |
+| Fixed | 392 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -118,7 +118,7 @@
 | [BG0398](BG0398-listing-only-paths-never-checks-that-the-declared.md) | listing_only_paths never checks that the declared read IS a listing, and applies one module's declaration globally | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0399](BG0399-file-finding-discards-a-cr-s-steps-and.md) | file_finding discards a CR's steps and fix fields, so BG0384's defect is still live in the other filer | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0400](BG0400-the-read-map-scanner-attributes-a-fixture-path.md) | The read-map scanner attributes a fixture path to the real tree, so one module's tmpdir read blocks a listing-only narrowing | Fixed | Medium | 2026-07-29 | 2026-07-29 |
-| [BG0401](BG0401-four-of-this-sprint-s-repairs-can-be.md) | Four of this sprint's repairs can be fully reverted with no test going red: the guard is the delivery, and the guard is inert | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0401](BG0401-four-of-this-sprint-s-repairs-can-be.md) | Four of this sprint's repairs can be fully reverted with no test going red: the guard is the delivery, and the guard is inert | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0402](BG0402-close-goal-judgement-compares-seat-names-against-a.md) | close_goal_judgement compares seat NAMES against a critic author id, so 'author excluded' is printed over a panel that excluded nobody | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0403](BG0403-group-blockers-keyed-on-the-detail-files-one.md) | group_blockers keyed on the detail files one CR per unit again, and cannot see a v3 id at all | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0404](BG0404-close-cost-with-no-run-id-reports-every.md) | close_cost with no run id reports every close ever recorded as this one: 6x on seconds, 143x on elapsed | Fixed | Medium | 2026-07-29 | 2026-07-29 |

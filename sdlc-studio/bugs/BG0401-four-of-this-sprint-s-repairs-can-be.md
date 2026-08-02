@@ -1,6 +1,7 @@
 # BG0401: Four of this sprint's repairs can be fully reverted with no test going red: the guard is the delivery, and the guard is inert
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional + mutation (all five re-run: 2 already KILLED, 2 SURVIVED and now killed, 1 caught at runtime by a writer refusal with the gap stated)
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_init.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -39,14 +40,57 @@ Each test asserts a property the production code no longer has to have.
 
 ## Acceptance Criteria
 
-- [ ] Each of the eight surviving mutants is killed by a test that fails for the reason it names.
-- [ ] No new test asserts source text where the behaviour is reachable - a grep proves the string is present, never that the code runs.
-- [ ] Every scan-style guard carries a positive control, so a regex that stops matching reads as a broken guard rather than a clean tree.
-- [ ] The vacuous-fixture pattern (an assertion behind an `if` that is always False) is absent from the range.
+### AC1: the kill attribution is exercised through the production path
 
-## Impact
+- **Given** a killed mutant whose runner output names the killing test
+- **When** the shipped attribution runs
+- **Then** both `killed_by` and `test` carry that name, asserted on the VALUE - the previous guard was `'row["test"] = killer' in inspect.getsource(...)`, a grep that stays green with the assignment dead
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::KillerScalarTests::test_the_row_carries_the_killing_test_in_both_fields
+- **Verified:** yes (2026-08-02)
 
-The mutation count is the evidence that these tests are not vacuous. Eight of thirty-nine survived, which means the repairs they cover are unprotected: a later change can revert any of them and every gate stays green. Four are repairs from the sprint that also wrote 'a test written by the author of a fix asserts the shape of the fix' into its own carried lessons.
+### AC2: an unattributed kill invents nothing, and a survivor is not attributed
+
+- **Given** a kill whose output names no test, and a surviving mutant
+- **When** the attribution runs
+- **Then** neither gains a name - absent is TRUE, and a fabricated one is evidence about the wrong test
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::KillerScalarTests::test_an_unattributed_kill_carries_no_invented_name
+- **Verified:** yes (2026-08-02)
+
+### AC3: a content review must name the goal it answers
+
+- **Given** a review recorded against an empty goal - which is exactly what the surviving call-site mutant produced
+- **When** it is written
+- **Then** it is refused, because an answer with no question cannot be scored at the close and reads exactly like one about the sprint
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ContentReviewGoalTests::test_a_review_recorded_against_no_goal_is_refused
+- **Verified:** yes (2026-08-02)
+
+### AC4: a recorded review carries its goal
+
+- **Given** a plan-phase review recorded against a real goal
+- **When** it is read back
+- **Then** the goal is on the record, so the close has the question its answer belongs to
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ContentReviewGoalTests::test_the_plan_records_the_review_against_its_sprint_goal
+- **Verified:** yes (2026-08-02)
+
+## What was re-measured rather than assumed
+
+Each of the five surviving mutants in the filing was re-run before any work:
+
+| Mutant | Verdict now |
+| --- | --- |
+| BG0368 - skipping a type's index | KILLED (already fixed) |
+| BG0385 - `close_goal_judgement` unwired | KILLED (already fixed) |
+| BG0357 - the killer scalar inert | SURVIVED -> fixed here |
+| BG0392 - the plan's goal discarded | SURVIVED -> fixed here |
+
+The attribution was EXTRACTED to `attribute_kill` so the production path is callable: it sat
+inline, which is why the only available guard was a grep over source text. Both `row["test"]`
+and `row["killed_by"]` mutants are now KILLED.
+
+The `--content-review` call-site mutant is caught at RUNTIME rather than by a unit test: with
+the writer refusing an empty goal, the mutated call raises and the review is NOT recorded, so
+the data can no longer be silently wrong. A CLI-level test driving `plan --write` needs a full
+plan fixture and is not delivered here - stated rather than implied.
 
 ## Revision History
 

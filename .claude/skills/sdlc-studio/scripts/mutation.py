@@ -1144,6 +1144,30 @@ def tree_warning_line(summary: dict) -> str | None:
     return f"  {label}: {tree.get('why') or 'no isolation evidence was recorded for this run'}"
 
 
+def attribute_kill(row: dict, run_output: str) -> dict:
+    """Name the test that killed this mutant, in both fields the consumers read.
+
+    A SEAM on purpose. The attribution used to sit inline inside `run_gate`, so the only way to
+    check it was to grep the source for the assignment - a guard that stays green with the
+    assignment dead, which is exactly what happened. Extracted, the production path is callable,
+    so a test asserts the VALUE rather than the presence of a line.
+
+    `killed_by` is a LIST because `tools/test_census.py` reads it; `test` is the scalar. Shipping
+    only one of them was the original defect, so both are written from the same name.
+
+    Absent rather than guessed when the runner's output names no test: the consumer reads a
+    missing key as unattributed, which is true, where a fabricated one would be evidence about
+    the wrong test.
+    """
+    if row.get("verdict") != "killed":
+        return row
+    killer = _killing_test(run_output)
+    if killer:
+        row["killed_by"] = [killer]
+        row["test"] = killer
+    return row
+
+
 def run_gate(repo_root: Path | str, files, test_cmd: str,
              max_mutations: int | None = None,
              classes: tuple = FAULT_CLASSES, write_report: bool = True,
@@ -1237,16 +1261,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                 # ATTRIBUTION on a kill. Absent rather than guessed when the runner's output
                 # names no test - the consumer reads a missing key as unattributed, which is
                 # true, where a fabricated one would be evidence about the wrong test.
-                row = {**m, "verdict": verdict}
-                if verdict == "killed":
-                    killer = _killing_test(_LAST_RUN_OUTPUT[0])
-                    if killer:
-                        # `killed_by` (a LIST) and `test` (the scalar) - the consumer in
-                        # `tools/test_census.py` reads `killed_by`, and shipping only `test`
-                        # left it refusing every real report, which was the whole defect this
-                        # was meant to fix.
-                        row["killed_by"] = [killer]
-                        row["test"] = killer
+                row = attribute_kill({**m, "verdict": verdict}, _LAST_RUN_OUTPUT[0])
                 records.append(row)
         finally:
             # Never raise out of the restore path. A window this run cannot find - cleared by

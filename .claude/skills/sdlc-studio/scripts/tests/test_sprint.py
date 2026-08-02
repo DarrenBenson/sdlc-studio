@@ -12087,5 +12087,56 @@ class RunbookTests(unittest.TestCase):
                       "the absence was not reported")
 
 
+class ContentReviewGoalTests(unittest.TestCase):
+    """The recorded content review carries the GOAL it was an answer about.
+
+    The only assertion was that the flag string appears in the parser, so making `plan` accept
+    `--content-review` and discard it survived - and so did recording the review against an
+    empty goal. A bookend answer detached from the question it answered cannot be scored
+    against anything at the close, which is the entire purpose of recording it.
+    """
+
+    def test_the_plan_records_the_review_against_its_sprint_goal(self) -> None:
+        """MUTANT: pass `""` instead of `state.get("sprint_goal")`.
+
+        Asserted on the RECORDED VALUE. A parser-level assertion is satisfied by a flag that is
+        accepted and thrown away, which is what shipped.
+        """
+        sprint = _load()
+        goal = "the close runs without the operator in it"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            # A review belongs to a RUN - recorded against none it is written where the next
+            # `plan --write` destroys it, and the writer says so. Open one first.
+            import json as _j
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                _j.dumps({"run_id": "RUN-T", "batch": ["US0001"], "outcome": "running"}),
+                encoding="utf-8")
+            sprint.record_content_review(root, "plan", goal, "yes")
+            recorded = sprint.content_reviews(root)
+        self.assertTrue(recorded, "no content review was recorded at all")
+        plan = recorded.get("plan") or {}
+        self.assertEqual(goal, plan.get("goal"),
+                         f"the recorded review does not carry the goal it answered: {recorded}")
+
+    def test_a_review_recorded_against_no_goal_is_refused(self) -> None:
+        """MUTANT: accept an empty goal silently.
+
+        An answer with no question is the state the mutant above produced, so the writer must
+        say so rather than storing it - otherwise the close scores a prediction about nothing.
+        """
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            import json as _j
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                _j.dumps({"run_id": "RUN-T", "batch": ["US0001"], "outcome": "running"}),
+                encoding="utf-8")
+            with self.assertRaises(ValueError):
+                sprint.record_content_review(root, "plan", "", "yes")
+
+
 if __name__ == "__main__":
     unittest.main()

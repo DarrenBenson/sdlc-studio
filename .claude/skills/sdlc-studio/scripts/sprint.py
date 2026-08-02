@@ -6593,6 +6593,16 @@ def record_content_review(repo_root: Path | str, phase: str, goal: str, answer: 
             "no run is open, so this review would be written where the next `sprint plan "
             "--write` destroys it. Open the run first - the review belongs to a run, and one "
             "recorded against no run cannot be scored at its close")
+    # ...and refused with no GOAL, for the same reason. A bookend answer detached from the
+    # question it answered cannot be scored against anything at the close, which is the entire
+    # purpose of recording it. This is not hypothetical: replacing the goal with `""` at the
+    # call site survived the whole suite, so the review could be recorded about nothing and
+    # `prediction_miss` would compare an answer with no question.
+    if not str(goal or "").strip():
+        raise ValueError(
+            "a content review must name the GOAL it answers - an answer with no question "
+            "cannot be scored at the close, and a review recorded about nothing reads exactly "
+            "like one about the sprint")
     a = str(answer or "").strip().lower()
     if a not in CONTENT_ANSWERS:
         raise ValueError(f"answer must be one of {', '.join(CONTENT_ANSWERS)}, got {answer!r}")
