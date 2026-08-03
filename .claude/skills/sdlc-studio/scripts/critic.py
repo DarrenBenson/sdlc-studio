@@ -1105,6 +1105,81 @@ def sprint_reviews(repo_root: Path | str) -> list[dict]:
     return _read_rows(sprint_review_path(repo_root), _SPRINT_COLS)
 
 
+#: Two REJECTs on one unit is the point at which the repair has stopped converging.
+PANEL_REJECT_LIMIT = 2
+
+
+def review_rounds_across_ledgers(repo_root: Path | str, unit: str,
+                                 phase: str = "delivery") -> list[dict]:
+    """Every recorded adversarial round on one unit, from BOTH ledgers, oldest first.
+
+    A unit's rounds live in two files and the question "has this stopped converging" spans them:
+    `critic.py record` appends to `critic-verdicts.md`, and `sprint.py review-batch` appends a
+    batch row naming the unit to `sprint-review-record.md`. Escalation used to read the first
+    only, while the command that consulted it wrote the second - so two `review-batch --verdict
+    REJECT` rounds on one unit escalated nothing, and the notification fired only in the single
+    combination where somebody used both commands on the same unit.
+
+    Deliberately NOT folded into `unit_review_rounds`, which feeds `seat_verdicts` and the
+    coverage predicate. Those ask "which seat holds what verdict on this unit" - a per-unit
+    question a batch row cannot answer, because a batch reviewer reviewed a span rather than a
+    seat's slice of one unit. Two questions, two readers, and the difference is stated here so
+    the next reader does not merge them by tidiness.
+    """
+    want = sdlc_md.norm_id(unit)
+    rows = list(unit_review_rounds(repo_root, unit, phase))
+    if phase == "delivery":
+        for row in sprint_reviews(repo_root):
+            named = {sdlc_md.norm_id(u) for u in str(row.get("units") or "").split()}
+            if want in named:
+                rows.append({"unit": want, "verdict": row.get("verdict"),
+                             "reviewer": row.get("reviewer"), "date": row.get("date"),
+                             "ledger": "sprint-review"})
+    rows.sort(key=lambda r: str(r.get("date") or ""))
+    return rows
+
+
+def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
+    """Whether a unit must go to the operator, and why.
+
+    NOTIFIES, never waits. Human-in-the-lead means the decision reaches the operator; it does
+    not mean the machine blocks on input that will not arrive. An escalation that waits is
+    indistinguishable from a hang, and unattended that is exactly what it becomes.
+
+    Lives here, beside the ledgers it judges, so the two commands that record a round consult
+    one rule rather than a copy each. `sprint.panel_escalation` delegates to it.
+    """
+    verdicts = [str(v).upper() for v in (rounds or [])]
+    rejects = sum(1 for v in verdicts if v == REJECT)
+    if rejects >= PANEL_REJECT_LIMIT:
+        return (True, f"the panel rejected this unit twice ({rejects} REJECTs) - the repair is "
+                      f"not converging. The operator is NOTIFIED and the run continues to its "
+                      f"handoff; nothing waits on a reply.")
+    seats = {k: str(v).upper() for k, v in (seat_verdicts or {}).items() if v}
+    if len(set(seats.values())) > 1:
+        # The disagreement IS the signal. Resolving it by majority discards precisely the
+        # information the panel was convened to produce, and does so where nobody sees it.
+        dissent = sorted(k for k, v in seats.items() if v == REJECT)
+        agree = sorted(k for k, v in seats.items() if v != REJECT)
+        return (True, f"the panel split: {', '.join(dissent) or 'some seats'} rejected while "
+                      f"{', '.join(agree) or 'others'} approved. The disagreement is the "
+                      f"finding, so it is not resolved by majority - the operator is NOTIFIED "
+                      f"with both sides named.")
+    return (False, "")
+
+
+def escalation_notice(repo_root: Path | str, unit: str, phase: str = "delivery") -> str:
+    """The escalation line for one unit, or "" - the whole check in one call.
+
+    Both recording commands call THIS rather than assembling the rounds themselves, because the
+    defect being repaired was precisely that the caller assembled them from the wrong ledger.
+    """
+    rounds = [str(r.get("verdict") or "")
+              for r in review_rounds_across_ledgers(repo_root, unit, phase)]
+    escalate, why = panel_escalation(rounds, seat_verdicts(repo_root, unit, phase))
+    return f"  ESCALATED to the operator - {sdlc_md.norm_id(unit)}: {why}" if escalate else ""
+
+
 # The shipped ceiling on close-review rounds. Three is the point past which this project's own
 # history stops paying: RUN-01KXVYGR ran five, and rounds 2, 3 and 4 each had a MAJOR created
 # by the previous round's repair. It is a stop-and-ask, never a hard refusal - the operator can
@@ -2781,6 +2856,17 @@ def cmd_record(args: argparse.Namespace) -> int:
               f"[{args.phase}] -> {path}{note}")
 
     rc = _run_batch(args, "record", write)
+    # ESCALATION on this path too. A panel that records its rounds with `record` and never runs
+    # `review-batch` notified nobody, because the only caller of the rule was the other command
+    # - so the operator heard about a non-converging repair exactly when the reviewer happened
+    # to have used both commands.
+    try:
+        recorded = batch_units(args, "record")
+    except BatchRefused:
+        recorded = []
+    for unit in recorded:
+        if notice := escalation_notice(args.root, unit, args.phase):
+            print(notice)
     if drift := _seat_drift_warning(args.root, args.reviewer):
         print(f"WARNING: {drift}", file=sys.stderr)
     return rc

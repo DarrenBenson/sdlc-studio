@@ -1,8 +1,9 @@
 # BG0502: a close sealed by --file-and-close tells the operator nothing, because cmd_close returns before the report
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
+> **Verification depth:** functional
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Found by the round-four independent pass on US0604 during the RUN-01KYZKY5 close, reproduced live in a fixture.
 > **Created:** 2026-08-03
@@ -24,7 +25,37 @@ Emit the report on that route too, before the bounded-exit return, and pin it wi
 
 ## Acceptance Criteria
 
-- [ ] A close sealed with --file-and-close prints the close report, naming what was deferred, and a test driven through the command reddens if the call is removed.
+- [x] **AC1: the bounded exit prints the close report, naming what was deferred.**
+  - **Given** a close whose blockers are all deferrable, sealed with `--file-and-close`
+  - **When** it is driven through `main(["close", ...])`
+  - **Then** stdout carries the CLOSE REPORT with a DEFERRED section naming each filed artefact,
+    and the wording distinguishes deferred from waived
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FileAndCloseTests::test_file_and_close_prints_the_close_report_naming_the_deferrals
+  - **Verified:** yes (2026-08-03)
+
+- [x] **AC2: an ordinary close carries no DEFERRED section.**
+  - **Given** a close that deferred nothing
+  - **When** the report is built
+  - **Then** the section is absent rather than reading "none deferred" - a section that appears
+    on every close trains the eye past it, and this is the line that matters on the one route
+    where it is ever non-empty
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FileAndCloseTests::test_an_ordinary_close_report_carries_no_deferred_section
+  - **Verified:** yes (2026-08-03)
+
+## Verification evidence
+
+Functional, driven through `main(["close", "--file-and-close", ...])`. A criterion calling
+`_tell_the_operator` directly is green whether or not this route reaches it, which is how the
+gap survived US0604's five criteria - so the test drives the command.
+
+| Mutant | Result |
+| --- | --- |
+| remove the `_tell_the_operator` call from the `--file-and-close` route | killed by AC1 |
+| always emit the DEFERRED section | killed by AC2 |
+
+**The decision this bug asked for.** A `closed-outstanding` report DOES name its deferrals, in
+its own section, marked "filed, not waived" - the same distinction the retro and the review
+anchor already carry, repeated here because the report is what the operator actually reads.
 
 ## Impact
 

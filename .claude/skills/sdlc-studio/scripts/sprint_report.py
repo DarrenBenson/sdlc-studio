@@ -1095,7 +1095,7 @@ def close_report(summary: dict) -> str:
         cost_line = "    not attributable - no per-run figure was captured for this close"
 
     run = summary.get("run_id") or "this run"
-    return "\n".join([
+    lines = [
         f"CLOSE REPORT - {run}",
         "",
         "  SHIPPED",
@@ -1109,7 +1109,15 @@ def close_report(summary: dict) -> str:
         "",
         "  FINDINGS",
         _listing(summary.get("findings"), "none raised by the reviews"),
-    ])
+    ]
+    # DEFERRED appears only on a close that deferred something. A section reading "none
+    # deferred" on every ordinary close trains the eye past it, and this is the line that
+    # matters on the one route where it is ever non-empty - `--file-and-close`, the exit for a
+    # close that could not complete cleanly. Deferred is not waived, and the wording says so
+    # here as well as in the retro, because the report is what the operator actually reads.
+    if deferred := [str(d) for d in (summary.get("deferred") or []) if str(d).strip()]:
+        lines += ["", "  DEFERRED (filed, not waived)", _listing(deferred, "")]
+    return "\n".join(lines)
 
 
 def _ck_signoff(ctx: dict) -> tuple:

@@ -30,6 +30,23 @@ def _load():
     return mod
 
 
+def _load_critic():
+    """`critic` as a sibling module, for the tests that drive BOTH recording commands.
+
+    `sprint` imports it lazily by name, so it must be registered under "critic" in `sys.modules`
+    exactly as `_load` registers "sprint" - loading it under any other name would give the test
+    one module and `sprint` another, and the two would read the same ledgers through different
+    module state.
+    """
+    path = SCRIPT.parent / "critic.py"
+    spec = importlib.util.spec_from_file_location("critic", path)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["critic"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
 # The default fixtures are GROOMED - they declare the files they touch and their Points - because
 # `sprint plan` refuses a batch that is not, and a fixture that could not be planned would be
 # testing the gate rather than the behaviour under test. Each declares its OWN file (no
@@ -4416,6 +4433,43 @@ class FileAndCloseTests(unittest.TestCase):
                                .read_text(encoding="utf-8"))
             self.assertEqual(state["outcome"], "closed-outstanding")
             self.assertIn("known outstanding work", out)
+
+    def test_file_and_close_prints_the_close_report_naming_the_deferrals(self) -> None:
+        """BG0502. MUTANT: remove the `_tell_the_operator` call from `_file_and_close`.
+
+        The report is emitted from `cmd_close`'s success path and the `--apply-signoff` tail,
+        and this route returns before both - so the one exit designed for a close that could
+        NOT complete cleanly printed no account of what shipped, what is carried or what was
+        deferred. That is the case where the operator most needs one.
+
+        Driven through `main(["close", ...])`. A criterion calling `_tell_the_operator` directly
+        is green whether or not this route reaches it, which is how the gap survived US0604's
+        five criteria.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            mod = _load()
+            rc, out, err = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+            self.assertEqual(rc, 0, err)
+            self.assertIn("CLOSE REPORT", out,
+                          f"the bounded exit printed no close report:\n{out}")
+            self.assertIn("DEFERRED", out, "the report does not name what was deferred")
+            self.assertIn("not waived", out,
+                          "the report does not distinguish deferred from waived")
+
+    def test_an_ordinary_close_report_carries_no_deferred_section(self) -> None:
+        """The control. MUTANT: always emit the DEFERRED section.
+
+        A section reading "none deferred" on every close trains the eye past it, and this is
+        the line that matters on the one route where it is ever non-empty.
+        """
+        import sprint_report  # noqa: PLC0415
+        plain = sprint_report.close_report({"run_id": "RUN-X", "shipped": ["US0001 (Done)"]})
+        self.assertNotIn("DEFERRED", plain, plain)
+        with_deferrals = sprint_report.close_report(
+            {"run_id": "RUN-X", "shipped": [], "deferred": ["CR0001: [gate] stale review"]})
+        self.assertIn("DEFERRED", with_deferrals)
+        self.assertIn("CR0001", with_deferrals)
 
     def test_file_and_close_names_deferrals_in_retro_and_anchor(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -12033,6 +12087,98 @@ class EscalationTests(unittest.TestCase):
                       "the escalation does not state that the operator is NOTIFIED")
         self.assertNotIn("waiting for", why.lower(),
                          "the escalation blocks on operator input, which unattended is a hang")
+
+
+class EscalationReachesBothRecordingCommandsTests(unittest.TestCase):
+    """BG0499: the rule and the ledger were on opposite sides of two different files.
+
+    `panel_escalation` was consulted only from `cmd_review_batch` and decided from
+    `critic-verdicts.md`, which is the file `critic.py record` writes - while `review-batch`
+    writes `sprint-review-record.md`. So two REJECT rounds recorded through the command that
+    OWNS the escalation escalated nothing, and a panel using `record` alone notified nobody. It
+    fired only in the single combination where somebody used both commands on one unit.
+
+    Every test here drives a shipped `main([...])`. The round-two review of US0603 found that
+    deleting the whole escalation loop left all five of its criteria green, because they called
+    `panel_escalation` directly - so a criterion that never runs the command cannot see whether
+    the command still calls the rule.
+    """
+
+    ARGS = ("--reviewer", "qa-seat", "--author", "builder", "--findings", "probed the diff")
+
+    def _reject_twice_via_review_batch(self, root) -> str:
+        sprint = _load()
+        out = io.StringIO()
+        for _ in range(2):
+            with contextlib.redirect_stdout(out):
+                rc = sprint.main(["review-batch", "--units", "US0017", "--verdict", "REJECT",
+                                  *self.ARGS, "--root", str(root)])
+            self.assertEqual(rc, 0, out.getvalue())
+        return out.getvalue()
+
+    def test_two_rejects_through_review_batch_escalate(self) -> None:
+        """MUTANT: read `unit_review_rounds` instead of `review_rounds_across_ledgers`.
+
+        That is the shipped defect exactly: this command's own two writes are invisible to it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            out = self._reject_twice_via_review_batch(root)
+        self.assertIn("ESCALATED", out,
+                      "two REJECT rounds recorded by review-batch escalated nothing - the "
+                      f"command cannot see its own ledger:\n{out}")
+
+    def test_one_reject_through_review_batch_does_not_escalate(self) -> None:
+        """The control. MUTANT: escalate on every recorded verdict.
+
+        A notification that fires on the first ordinary finding is one the operator learns to
+        ignore, which is the same outcome as not sending it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                _load().main(["review-batch", "--units", "US0017", "--verdict", "REJECT",
+                              *self.ARGS, "--root", str(root)])
+        self.assertNotIn("ESCALATED", out.getvalue(), out.getvalue())
+
+    def test_two_rejects_through_critic_record_escalate(self) -> None:
+        """MUTANT: drop the escalation call from `critic.cmd_record`.
+
+        The other half of the same defect: nothing consulted the rule on this path at all, so a
+        panel that records its rounds with `record` and never runs `review-batch` was silent.
+        """
+        critic = _load_critic()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            out = io.StringIO()
+            for seat in ("qa-seat", "engineering-seat"):
+                with contextlib.redirect_stdout(out):
+                    rc = critic.main(["record", "--unit", "US0017", "--verdict", "reject",
+                                      "--reviewer", seat, "--author", "builder",
+                                      "--brief", "abcdef123456", "--root", str(root)])
+                self.assertEqual(rc, 0, out.getvalue())
+        self.assertIn("ESCALATED", out.getvalue(),
+                      f"two REJECTs recorded through critic.py record notified nobody:\n"
+                      f"{out.getvalue()}")
+
+    def test_a_round_from_each_ledger_still_escalates(self) -> None:
+        """MUTANT: read either ledger alone.
+
+        One REJECT in each file is two rounds on the unit. Reading one ledger sees one round and
+        stays silent, which is the combination the shipped code got right by accident.
+        """
+        critic, sprint = _load_critic(), _load()
+        with tempfile.TemporaryDirectory() as d:
+            root, out = Path(d), io.StringIO()
+            with contextlib.redirect_stdout(out):
+                critic.main(["record", "--unit", "US0017", "--verdict", "reject",
+                             "--reviewer", "qa-seat", "--author", "builder",
+                             "--brief", "abcdef123456", "--root", str(root)])
+                rc = sprint.main(["review-batch", "--units", "US0017", "--verdict", "REJECT",
+                                  *self.ARGS, "--root", str(root)])
+            self.assertEqual(rc, 0, out.getvalue())
+        self.assertIn("ESCALATED", out.getvalue(), out.getvalue())
 
 
 class CadenceDebtFileAndCloseTests(unittest.TestCase):

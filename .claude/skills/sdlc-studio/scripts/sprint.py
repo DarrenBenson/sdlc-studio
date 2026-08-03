@@ -5598,12 +5598,16 @@ def _finalise_outcome(root, state) -> None:
     print("close: run outcome recorded goal-reached")
 
 
-def _tell_the_operator(root) -> None:
-    """Emit the close report: shipped, carried, cost, findings.
+def _tell_the_operator(root, deferred: list | None = None) -> None:
+    """Emit the close report: shipped, carried, cost, findings, and any deferrals.
 
     Being informed is the operator's half of human-in-the-lead. A report that exists only as a
     function nobody calls tells nobody anything - which is what shipped, and what US0604 asked
     for. Advisory like `_draw_report`: a missing report must never lose a completed ceremony.
+
+    `deferred` is passed by the `--file-and-close` route alone. That route returned before both
+    of the emitters, so the one exit designed for a close that could NOT complete cleanly was
+    the one that reported least - and it is exactly where the account matters most.
     """
     # BOTH deferred siblings, not just one. `critic` has no module-scope import in this file -
     # every use is a local one - so reading the review rounds below without importing it here
@@ -5637,6 +5641,7 @@ def _tell_the_operator(root) -> None:
             "run_id": state.get("run_id"),
             "shipped": shipped, "carried": carried, "findings": findings,
             "cost": _close_cost(root, state, shipped),
+            "deferred": deferred or [],
         }))
     except Exception as exc:  # noqa: BLE001 - advisory: the close outranks its own report
         print(f"close: close report not emitted ({type(exc).__name__}: {exc}) - the close is "
@@ -6151,29 +6156,15 @@ _PANEL_REJECT_LIMIT = 2
 
 
 def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
-    """Whether a unit must go to the operator, and why.
+    """Whether a unit must go to the operator, and why - delegated to `critic.panel_escalation`.
 
-    NOTIFIES, never waits. Human-in-the-lead means the decision reaches the operator; it does
-    not mean the machine blocks on input that will not arrive. An escalation that waits is
-    indistinguishable from a hang, and unattended that is exactly what it becomes.
+    The rule moved next to the ledgers it judges, because the two commands that record a round
+    were consulting it from opposite sides of two different files. Kept here as a delegation
+    rather than deleted: every existing caller and test names this, and one rule with two homes
+    is the shape that produced the defect (the looser copy is the one that runs).
     """
-    verdicts = [str(v).upper() for v in (rounds or [])]
-    rejects = sum(1 for v in verdicts if v == "REJECT")
-    if rejects >= _PANEL_REJECT_LIMIT:
-        return (True, f"the panel rejected this unit twice ({rejects} REJECTs) - the repair is "
-                      f"not converging. The operator is NOTIFIED and the run continues to its "
-                      f"handoff; nothing waits on a reply.")
-    seats = {k: str(v).upper() for k, v in (seat_verdicts or {}).items() if v}
-    if len(set(seats.values())) > 1:
-        # The disagreement IS the signal. Resolving it by majority discards precisely the
-        # information the panel was convened to produce, and does so where nobody sees it.
-        dissent = sorted(k for k, v in seats.items() if v == "REJECT")
-        agree = sorted(k for k, v in seats.items() if v != "REJECT")
-        return (True, f"the panel split: {', '.join(dissent) or 'some seats'} rejected while "
-                      f"{', '.join(agree) or 'others'} approved. The disagreement is the "
-                      f"finding, so it is not resolved by majority - the operator is NOTIFIED "
-                      f"with both sides named.")
-    return (False, "")
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    return critic.panel_escalation(rounds, seat_verdicts)
 
 
 def loop_termination(attempts: list, *, cap: int = DEFAULT_LOOP_CAP) -> tuple[bool, str]:
@@ -6394,6 +6385,14 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
         print(carried)
     print(f"{run_id} closed with known outstanding work - outcome "
           f"`{run_state.CLOSED_OUTSTANDING}`, nothing waived.")
+    # The report, on THIS route too. It was emitted from `cmd_close`'s success path and the
+    # `--apply-signoff` tail, and this route returns before both - so the one exit designed for
+    # a close that could not complete cleanly was the one that reported least, though it is
+    # exactly where the operator most needs an account of what shipped, what is carried and what
+    # was deferred. Emitted last, after the deferral lines, so the report is read in the context
+    # of the filings rather than before them.
+    _tell_the_operator(root, deferred=[
+        f"{fid}: [{b['stage']}] {b['detail']}" for fid, b in filed])
     return 0
 
 
@@ -6488,11 +6487,13 @@ def cmd_review_batch(args: argparse.Namespace) -> int:
     # converging, and the operator learns that here rather than at the close - which is the
     # difference between a decision they can act on and a fact they are told afterwards. It
     # NOTIFIES; nothing waits on a reply.
+    # Reads BOTH ledgers. This command writes to `sprint-review-record.md` and the escalation
+    # used to read `critic-verdicts.md` alone, so two REJECT rounds recorded HERE escalated
+    # nothing - the notification fired only when somebody happened to use both commands on the
+    # same unit.
     for uid in sorted(reviewed_units):
-        rounds = [str(r.get("verdict") or "") for r in critic.unit_review_rounds(root, uid)]
-        escalate, why = panel_escalation(rounds, critic.seat_verdicts(root, uid))
-        if escalate:
-            print(f"  ESCALATED to the operator - {uid}: {why}")
+        if notice := critic.escalation_notice(root, uid):
+            print(notice)
     return 0
 
 
