@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
+| Open | 23 |
 | In Progress | 0 |
 | Fixed | 399 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **508** |
+| **Total** | **509** |
 
 ## All Bugs
 
@@ -48,6 +48,7 @@
 | [BG0506](BG0506-a-repeated-single-valued-metadata-field-is-accepted.md) | a repeated single-valued metadata field is accepted, read first-wins, and corrected first-only - so a gate can read one of two contradictory claims | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0507](BG0507-the-suite-collapse-lane-sets-fail-1-after.md) | the suite-collapse lane sets fail=1 after the green verdict is already written, so a collapsed suite is reusable | Open | High | 2026-08-03 | 2026-08-03 |
 | [BG0508](BG0508-the-close-report-s-sibling-imports-sit-outside.md) | the close report's sibling imports sit outside its advisory try, so an ImportError escapes after the run is already stamped closed | Open | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0509](BG0509-the-close-time-repair-split-uses-day-granularity.md) | the close-time-repair split uses day granularity and a global override map, so a same-day terminal is excused and an override never expires | Open | Medium | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 

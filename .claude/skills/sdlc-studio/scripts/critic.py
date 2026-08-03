@@ -578,8 +578,15 @@ _REPAIR_HEADER = (
 #: The evidence is one of three shapes, from CR0506 - a re-applied mutant, a test that now
 #: reddens, or the artefact id the residue was filed as.
 _CLOSURE_SPLIT = "->"
-#: A closure whose evidence names an artefact id is a FILED disposition rather than a fix.
-_FILED_HINT = re.compile(r"\b(filed|file[sd]? as)\b", re.IGNORECASE)
+#: The EXPLICIT disposition token a closure's evidence may lead with - `fixed:` or `filed:`.
+#: Sniffing prose got both directions wrong: `killed the mutant that BG0123 filed` was recorded
+#: as a deferral, and `deferred to BG9999, see the bug` was recorded as a fix - which then
+#: skipped the resolvable-id check entirely. A token cannot be misread.
+_DISPOSITION_TOKEN = re.compile(r"^\s*(fixed|filed)\s*:\s*(.*)$", re.IGNORECASE | re.DOTALL)
+#: The LEGACY reading, for rows written before the token existed: a deferral verb beside an
+#: artefact id. Kept deliberately - `repair_state` re-parses stored rows, so dropping it would
+#: silently re-open every repair already on disk - and tightened to require both.
+_FILED_HINT = re.compile(r"\b(filed|file[sd]?\s+as|deferred|carried)\b", re.IGNORECASE)
 
 
 def _append_row(path: Path, header: str, cells: tuple[str, ...]) -> Path:
@@ -667,11 +674,22 @@ def parse_closures(closed: str) -> list[dict]:
         finding, evidence = finding.strip(), evidence.strip()
         if not finding or not evidence:
             continue
-        filed = bool(_FILED_HINT.search(evidence)) and bool(sdlc_md.ID_SEARCH_RE.search(evidence))
+        if tok := _DISPOSITION_TOKEN.match(evidence):
+            disposition = tok.group(1).lower()
+        else:
+            disposition = ("filed"
+                           if _FILED_HINT.search(evidence)
+                           and sdlc_md.ID_SEARCH_RE.search(evidence)
+                           else "fixed")
+        # EVERY id the evidence names is collected, whatever the disposition. The resolvable-id
+        # check reads this, and reading it only for `filed` meant a deferral the classifier had
+        # called a fix pointed at a non-existent bug with nothing checking - the misclassification
+        # disarming the guard beside it.
+        ids = [m.group(0) for m in sdlc_md.ID_SEARCH_RE.finditer(evidence)]
         out.append({"finding": finding, "evidence": evidence,
-                    "disposition": "filed" if filed else "fixed",
-                    "artefact": (sdlc_md.ID_SEARCH_RE.search(evidence).group(0)
-                                 if filed else "")})
+                    "disposition": disposition,
+                    "ids": ids,
+                    "artefact": (ids[0] if disposition == "filed" and ids else "")})
     return out
 
 
@@ -700,29 +718,91 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
         raise ValueError("a repair needs at least one `<finding> -> <evidence>` closure - the "
                          "evidence is the re-applied mutant, the test that now reddens, or the "
                          "artefact the residue was filed as")
-    raised = {_match_key(f["text"]) for f in parse_findings(row.get("issues", ""))}
-    if raised:
-        unknown = [c["finding"] for c in closures
-                   if not any(_match_key(c["finding"]) in r or r in _match_key(c["finding"])
-                              for r in raised)]
-        if unknown:
-            raise ValueError(
-                f"these closures name findings the verdict never raised: {unknown}. A "
-                f"disposition that matches nothing is not a disposition")
+    raised = [f["text"] for f in parse_findings(row.get("issues", ""))]
+    for c in closures:
+        # Resolved to EXACTLY ONE raised finding. Anything looser is a review bypass, not a
+        # convenience - see `resolve_finding`.
+        resolve_finding(c["finding"], raised)
     # A FILED disposition must name an artefact that RESOLVES. A reference nobody can follow
     # records the appearance of a disposition rather than one - the same failure shape as a
     # `Verify:` line naming a test that does not exist, and it is discovered on the day it
     # matters rather than the day it is written.
     for c in closures:
-        if c["disposition"] == "filed" and not sdlc_md.find_by_id(repo_root, c["artefact"]):
-            raise ValueError(
-                f"{c['artefact']} resolves to no artefact, so this closure records a filing "
-                f"nobody can follow: {c['finding']!r}")
+        for rid in c["ids"]:
+            if not sdlc_md.find_by_id(repo_root, rid):
+                raise ValueError(
+                    f"{rid} resolves to no artefact, so this closure points somewhere nobody "
+                    f"can follow: {c['finding']!r}. Checked whatever the disposition - a "
+                    f"deferral misread as a fix is exactly how an unresolvable id gets in")
     outstanding = repair_outstanding(row.get("issues", ""), closures)
     return _append_row(repair_path(repo_root), _REPAIR_HEADER,
                        (sdlc_md.norm_id(unit), _clean(str(row.get("date") or "")),
                         _clean(author), sdlc_md.now_date(), _clean(closed),
                         _clean("; ".join(outstanding) or "-")))
+
+
+#: How much of a finding a closure must quote before it counts as naming that finding. Below
+#: this, only an exact match or an ordinal will do. Chosen so a closure has to carry enough of
+#: the finding to be about it: the bypass this replaces let a ONE-CHARACTER closure close every
+#: finding a rejection raised.
+_MIN_QUOTE = 24
+
+
+class AmbiguousClosure(ValueError):
+    """A closure that names more than one raised finding, or none."""
+
+
+def resolve_finding(closure: str, raised: list[str]) -> str:
+    """The ONE raised finding a closure names, or raise.
+
+    THE LOAD-BEARING RULE of the repair record, and the one that decides whether a rejected
+    unit can reach the Done gate - so it fails closed and it fails loudly.
+
+    The first version matched by bidirectional substring, which meant a closure of `e` closed
+    every finding: `repair --closed "e -> fixed"` marked a REJECT COMPLETE, flipped coverage to
+    `repaired` and cleared the verdict half of the conformance gate. That is the thing this
+    module's own docstring says PARTIAL exists to prevent - converting every REJECT into an
+    APPROVE for the cost of one command - and it was reachable through the shipped CLI.
+
+    Three ways to name a finding, each unambiguous:
+
+      * an ORDINAL - `#2` - which is what the refusal message offers, because a reviewer's
+        finding text is long and re-typing it is where the temptation to abbreviate comes from;
+      * an exact match, after normalising away markdown the ledger added;
+      * a PREFIX of at least `_MIN_QUOTE` characters, so quoting the opening of a long finding
+        works without demanding the whole paragraph.
+
+    A closure matching several raised findings is refused rather than resolved in the author's
+    favour, and so is one matching none. Both were silently accepted before.
+    """
+    key = _match_key(closure)
+    keys = [_match_key(r) for r in raised]
+    if m := re.fullmatch(r"#\s*(\d+)", key):
+        idx = int(m.group(1)) - 1
+        if 0 <= idx < len(raised):
+            return raised[idx]
+        raise AmbiguousClosure(
+            f"closure {closure!r} names finding #{idx + 1}, but the verdict raised "
+            f"{len(raised)}")
+    exact = [r for r, k in zip(raised, keys) if k == key]
+    if len(exact) == 1:
+        return exact[0]
+    if len(exact) > 1:
+        raise AmbiguousClosure(f"closure {closure!r} matches {len(exact)} raised findings "
+                               f"identically - name it by ordinal instead (#1, #2, ...)")
+    if len(key) >= _MIN_QUOTE:
+        prefixed = [r for r, k in zip(raised, keys) if k.startswith(key)]
+        if len(prefixed) == 1:
+            return prefixed[0]
+        if len(prefixed) > 1:
+            raise AmbiguousClosure(
+                f"closure {closure!r} is a prefix of {len(prefixed)} raised findings, so which "
+                f"one it closes is a guess - quote more of it, or use an ordinal (#1, #2, ...)")
+    listing = "; ".join(f"#{i + 1} {r[:60]}" for i, r in enumerate(raised))
+    raise AmbiguousClosure(
+        f"closure {closure!r} names no finding this verdict raised. A disposition that matches "
+        f"nothing is not a disposition. Name one by ordinal or quote at least {_MIN_QUOTE} "
+        f"characters of it. Raised: {listing}")
 
 
 def repair_outstanding(issues: str, closures: list[dict]) -> list[str]:
@@ -731,14 +811,19 @@ def repair_outstanding(issues: str, closures: list[dict]) -> list[str]:
     DERIVED, never counted and never read from the repair's own prose. A repair claiming in its
     text that everything is closed is still PARTIAL if a raised finding has no closure - LL0015,
     a guard that only catches the total case is not a guard.
+
+    Resolution goes through `resolve_finding`, so this and the refusal above cannot disagree
+    about what a closure names. When they did, closing a SHORT finding silently closed a longer
+    one that happened to contain it, and the residue this function exists to name went unnamed.
     """
-    closed_texts = [_match_key(c["finding"]) for c in closures]
-    out = []
-    for f in parse_findings(issues):
-        key = _match_key(f["text"])
-        if not any(key in c or c in key for c in closed_texts):
-            out.append(f["text"].strip())
-    return out
+    raised = [f["text"] for f in parse_findings(issues)]
+    closed: set = set()
+    for c in closures:
+        try:
+            closed.add(resolve_finding(c["finding"], raised))
+        except AmbiguousClosure:
+            continue          # refused at write time; here it simply closes nothing
+    return [r.strip() for r in raised if r not in closed]
 
 
 def repair_for(repo_root: Path | str, unit: str):
@@ -755,10 +840,16 @@ def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> d
     because it would convert every REJECT into an APPROVE for the cost of one command.
     """
     row = repair_for(repo_root, unit)
+    verdict = verdict_for(repo_root, unit, phase) or {}
+    # The repair must answer THIS rejection. `verdict_date` was recorded and then read nowhere,
+    # so a round-one repair kept satisfying a later, different REJECT - the unit reading
+    # `repaired` against findings nobody had answered. A repair whose recorded verdict date does
+    # not match the live verdict's is an answer to an older question.
+    if row and str(row.get("verdict_date") or "") != str(verdict.get("date") or ""):
+        row = None
     if not row:
         return {"state": "none", "closed": [], "outstanding": [], "filed": 0, "fixed": 0}
     closures = parse_closures(row.get("closed", ""))
-    verdict = verdict_for(repo_root, unit, phase) or {}
     outstanding = repair_outstanding(verdict.get("issues", ""), closures)
     return {"state": "partial" if outstanding else "complete",
             "closed": closures, "outstanding": outstanding,
@@ -1840,11 +1931,26 @@ def coverage_state(repo_root: Path | str, unit: str, phase: str = "delivery") ->
     unreviewed.
     """
     row = verdict_for(repo_root, unit, phase)
-    if row and sprint_covers_independently(repo_root, unit, row):
+    # ONE authority, shared with `conformance.critiqued_unmet`. Answering this through
+    # `sprint_covers_independently` alone gave two answers to one question: that predicate
+    # refuses the PRE_GATE sentinel while `critiqued_unmet` honours it, so 75-odd grandfathered
+    # APPROVEs in this repo's own ledger started reading as REJECTED - a regression introduced
+    # by the very row that exists to make coverage honest.
+    per_unit_ok = (bool(row) and str(row.get("verdict") or "").upper() == APPROVE
+                   and (is_independent(row) or is_pre_gate(row)))
+    if per_unit_ok:
         return COVERAGE_APPROVED
     if row and str(row.get("verdict") or "").upper() == REJECT:
         if repair_state(repo_root, unit, phase)["state"] == "complete":
             return COVERAGE_REPAIRED
+        return COVERAGE_UNREVIEWED
+    # No per-unit verdict at all: a batch review naming the unit still covers it, which is the
+    # third lane `review_coverage` has always read. Ignoring it classed an independently
+    # batch-reviewed unit as unreviewed AND named it as the one real gap - manufacturing
+    # exactly the false alarm this epic exists to remove.
+    if not row and sprint_covers_independently(repo_root, unit,
+                                               sprint_review_for(repo_root, unit)):
+        return COVERAGE_APPROVED
     return COVERAGE_UNREVIEWED
 
 

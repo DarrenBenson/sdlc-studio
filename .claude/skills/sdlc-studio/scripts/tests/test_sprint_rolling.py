@@ -160,13 +160,25 @@ def _judged(root: Path, verdict: str = "achieved") -> None:
 
 
 def _ready_cycle(root: Path, bugs: tuple[int, ...] = (1, 2)) -> str:
-    """A workspace with an open, judged cycle-1 rolling run and a retro to close on."""
+    """A workspace with an open, judged cycle-1 rolling run and a retro to close on.
+
+    The batch's own source files are COMMITTED when the workspace sits in a git repo. A close
+    refuses while the tree carries an uncommitted change to a file one of its batch units
+    declares (US0616), and delivered work is committed before the ceremony by construction - so
+    a fixture that left it dirty was asserting the boundary over a state no real close reaches,
+    and reddened seven tests here the moment that guard landed. Silent outside a repo, which is
+    where most of these fixtures live.
+    """
     _ws(root)
     for n in bugs:
         _bug(root, n)
     rid = _retro(root)
     _plan(root, "--cycles", "2")
     _judged(root)
+    if (Path(root) / ".git").exists():
+        _run(root, "add", "-A")
+        _run(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm",
+             "the batch's delivered work, committed before the close")
     return rid
 
 
@@ -895,6 +907,12 @@ class RollingEndToEndTests(unittest.TestCase):
             _retro(root, "RETRO0001"); _retro(root, "RETRO0002")
             _plan(root, "--cycles", "2")
             _judged(root, "achieved")
+            # Delivered work is committed before the ceremony - the close refuses over
+            # an uncommitted change to a batch unit's own file (US0616). This fixture
+            # builds its workspace inline rather than through `_ready_cycle`.
+            _run(root, "add", "-A")
+            _run(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm",
+                 "delivered work, committed before the close")
             with _stubbed_close():
                 rc, first = _boundary(root, "--retro", "RETRO0001")
             self.assertEqual(rc, 0, first)

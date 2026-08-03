@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import fnmatch
 import io
 import json
 import os
@@ -4515,7 +4516,18 @@ def _no_negative_verdict(root, uid: str, critic) -> bool:
         return True
     if not rec:
         return True
-    return str(rec.get("verdict") or "").strip().upper() == "APPROVE"
+    if str(rec.get("verdict") or "").strip().upper() == "APPROVE":
+        return True
+    # A REJECT whose every raised finding carries a recorded closure is ANSWERED, and an
+    # answered rejection is not a negative verdict standing over the unit. Without this the
+    # preflight - the command an operator actually runs before a close - still reported a
+    # repaired unit as "covered by no independent review", which is the whole defect CR0506
+    # was filed for, surviving in the operator-facing half while the checklist row was fixed.
+    try:
+        return critic.repair_state(root, uid)["state"] == "complete"
+    except Exception as exc:  # noqa: BLE001 - an unreadable repair ledger is "not repaired"
+        sdlc_md.debug("sprint._no_negative_verdict", exc)
+        return False
 
 
 def review_coverage(root, units: list[str]) -> dict:
@@ -4579,6 +4591,18 @@ def review_coverage(root, units: list[str]) -> dict:
             # and forgetting the verdict half let a recorded REJECT clear this gate while the
             # tool printed "it clears no unit's gate" - the exact drift a second copy of a rule
             # produces, in the function whose docstring claimed to avoid it.
+            # A REJECT ANSWERED by a complete repair covers the unit as surely as an APPROVE:
+            # the rejection was independent, the findings were closed one by one, and the
+            # evidence closing each is recorded. Checked HERE as well as in
+            # `_no_negative_verdict`, because that guard only lets the unit reach the lanes -
+            # the lane still has to accept it, and without this the preflight passed a repaired
+            # unit through the gate and then found no lane willing to cover it.
+            if (label == "per-unit verdict"
+                    and str(rec.get("verdict") or "").upper() == critic.REJECT
+                    and critic.repair_state(root, uid)["state"] == "complete"
+                    and critic.is_independent(rec)):
+                by = "repaired rejection"
+                break
             if not critic.sprint_covers_independently(root, uid, rec):
                 continue
             # ...and the grandfather marker is not independence. `critic.is_independent`
@@ -7283,14 +7307,7 @@ def batch_repair_in_tree(root, state: dict) -> list:
     Degrades to "nothing found" when git cannot be read: this is a discipline gate, and a close
     that cannot run because git is unavailable is a worse failure than one that proceeds.
     """
-    try:
-        out = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "-z"],
-                             capture_output=True, text=True, timeout=30)
-        if out.returncode != 0:
-            return []
-        changed = {e[3:] for e in out.stdout.split("\0") if len(e) > 3}
-    except (OSError, subprocess.SubprocessError):
-        return []
+    changed = _changed_paths(root)
     if not changed:
         return []
     hits: list = []
@@ -7298,10 +7315,67 @@ def batch_repair_in_tree(root, state: dict) -> list:
         found = sdlc_md.find_by_id(root, uid)
         if not found:
             continue
-        declared = sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]) or "")
-        for path in sorted(changed & {str(d) for d in declared}):
-            hits.append((uid, path))
+        declared = set()
+        for raw in sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]) or ""):
+            # NORMALISED, not compared raw. `Affects` is hand-written and this repo alone
+            # carries 95 declarations that do not resolve from the root and 14 containing
+            # `..`, none of which can ever equal git's spelling - so a raw comparison is dark
+            # to them. `resolve_affects` is the shared normaliser and already existed.
+            resolved = sdlc_md.resolve_affects(root, raw)
+            rel = _repo_rel(root, resolved) if resolved else raw.strip()
+            if rel:
+                # NOT `lstrip("./")` - that strips any leading `.` or `/` CHARACTER, so
+                # `.claude/...` became `claude/...` and the guard matched nothing at all on
+                # this repository. Only a literal `./` prefix is meant.
+                norm = rel.replace("\\", "/")
+                declared.add(norm[2:] if norm.startswith("./") else norm)
+        for path in sorted(changed):
+            # A DIRECTORY or glob declaration covers what sits under it. Comparing only whole
+            # paths meant a unit declaring `src/` - or `sdlc-studio/stories`, which several do -
+            # matched nothing at all.
+            if any(path == d or path.startswith(d.rstrip("/") + "/") or fnmatch.fnmatch(path, d)
+                   for d in declared):
+                hits.append((uid, path))
     return hits
+
+
+def _changed_paths(root) -> set:
+    """Every path the working tree has changed, repo-relative, as FILES.
+
+    Deliberately NOT `git status --porcelain` parsing. That format reports a rename as
+    `R  <new>\0<orig>\0`, where the original is a BARE field with no XY prefix - so stripping
+    three characters from every record mangles it, and a `git mv` of a batch unit's own file got
+    a close straight through. It also collapses a wholly-new directory to `?? newpkg/` and never
+    names the files inside, which is the ordinary shape of a unit that adds a module.
+
+    Two plumbing commands instead, each answering one question exactly: `diff HEAD --name-only`
+    for tracked changes (staged and unstaged, with renames reported as the names they are), and
+    `ls-files --others` for untracked FILES, which expands the directory case by construction.
+    """
+    # A BASELINE is required before anything can be called a change. In a repo with no commits
+    # every file is untracked, so an untracked-aware guard would refuse EVERY close there - the
+    # refuses-always shape, and it reddened seven rolling-boundary fixtures the moment untracked
+    # detection landed. No HEAD means no baseline, and the guard declines rather than inventing
+    # one, on the same terms it declines when git cannot be read at all.
+    try:
+        head = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                              capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    if head.returncode != 0:
+        return set()
+    paths: set = set()
+    for argv in (["diff", "HEAD", "--name-only", "-z"],
+                 ["ls-files", "--others", "--exclude-standard", "-z"]):
+        try:
+            out = subprocess.run(["git", "-C", str(root), *argv],
+                                 capture_output=True, text=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return set()
+        if out.returncode != 0:
+            continue          # a repo with no commits has no HEAD to diff against
+        paths |= {e for e in out.stdout.split("\0") if e}
+    return paths
 
 
 def _refuse_batch_repair(root, state: dict, verb: str) -> str:

@@ -47,6 +47,7 @@ Read this at plan time. `sprint plan` prints it.
 | Record the adversarial pass | `critic.py evidence --unit <id> --findings ...` | leaving the pass in a transcript |
 | Record the verdict | `critic.py record --unit <id> --verdict ... --brief <fingerprint>` | a verdict with no provenance |
 | Record a batch pass | `sprint.py review-batch --units ... --fields-file <doc>` | findings mangled by the shell |
+| Answer a REJECT once its findings are repaired | `critic.py repair --unit <id> --author <who> --closed-file <doc>` | a repaired batch that still reads as unreviewed |
 | Find library-only verifiers | `verify_ac.py lane-check` | discovering it in review |
 
 ## 5. Close

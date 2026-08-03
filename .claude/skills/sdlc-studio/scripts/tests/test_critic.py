@@ -3882,7 +3882,7 @@ class RepairRecordTests(unittest.TestCase):
             with self.assertRaises(ValueError) as caught:
                 mod.record_repair(root, "US0017", "builder",
                                   "a finding nobody raised -> handwaving")
-            self.assertIn("never raised", str(caught.exception))
+            self.assertIn("names no finding this verdict raised", str(caught.exception))
 
     def test_the_reject_survives_the_repair_byte_identically(self) -> None:
         """MUTANT: write the repair over the verdict row, or amend it.
@@ -3949,6 +3949,107 @@ class RepairRecordTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertIn("repair", out.getvalue().lower(),
                       f"`show` does not mention the repair:\n{out.getvalue()}")
+
+
+class ClosureResolutionTests(unittest.TestCase):
+    """The rule that decides whether a rejected unit can reach the Done gate.
+
+    THE REVIEW BYPASS. The first version matched bidirectional substring, so a closure of one
+    character closed every finding: `repair --closed "e -> fixed"` through the shipped CLI marked
+    a REJECT COMPLETE, flipped coverage to `repaired` and cleared the verdict half of the
+    conformance gate - the exact thing `repair_state`'s own docstring says PARTIAL exists to
+    prevent. And no test pinned the matching rule at all: swapping both substring tests for exact
+    equality left the whole suite green, so the latitude was unchosen rather than designed.
+    """
+
+    def test_a_short_closure_cannot_close_every_finding(self) -> None:
+        """MUTANT: match a closure against a finding by bidirectional substring.
+
+        Driven through the shipped CLI, which is where the bypass was reachable.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0900")
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["repair", "--unit", "US0900", "--author", "attacker",
+                               "--closed", "e -> fixed", "--root", str(root)])
+            self.assertNotEqual(rc, 0, "a one-character closure was accepted")
+            self.assertEqual(mod.repair_state(root, "US0900")["state"], "none")
+            self.assertEqual(mod.coverage_state(root, "US0900"), mod.COVERAGE_UNREVIEWED)
+
+    def test_closing_a_short_finding_does_not_close_a_longer_one_containing_it(self) -> None:
+        """MUTANT: the same substring rule, in reverse.
+
+        Closing `the gate is slow` silently closed `the gate is slow and drops the last unit`,
+        so the residue this record exists to name went unnamed.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0901",
+                      "[new] the gate is slow; "
+                      "[new] the gate is slow and drops the last unit silently")
+            mod.record_repair(root, "US0901", "b", "#1 -> timed it, acceptable")
+            st = mod.repair_state(root, "US0901")
+        self.assertEqual(st["state"], "partial")
+        self.assertEqual(len(st["outstanding"]), 1)
+        self.assertIn("drops the last unit", st["outstanding"][0])
+
+    def test_an_ambiguous_closure_is_refused_rather_than_guessed(self) -> None:
+        """MUTANT: resolve a multi-match in the author's favour (take the first).
+
+        Which finding a closure answers is not a coin toss, and resolving it silently is how the
+        bypass reads as a feature.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0902",
+                      "[new] the resolver is wrong about paths; "
+                      "[new] the resolver is wrong about ids")
+            with self.assertRaises(ValueError) as caught:
+                mod.record_repair(root, "US0902", "b",
+                                  "the resolver is wrong about -> looked at it")
+        self.assertIn("prefix of 2", str(caught.exception))
+
+    def test_an_ordinal_names_a_finding_exactly(self) -> None:
+        """The positive control. MUTANT: refuse every closure.
+
+        A rule that accepts nothing closes the route back to covered rather than gating it, so
+        the refusal above must sit beside a form that works - and the ordinal is what the
+        refusal message itself offers.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0903")
+            mod.record_repair(root, "US0903", "b", "#1 -> killed; #2 -> killed")
+            self.assertEqual(mod.repair_state(root, "US0903")["state"], "complete")
+
+    def test_a_repair_does_not_answer_a_LATER_rejection(self) -> None:
+        """MUTANT: read the latest repair regardless of which verdict it answers.
+
+        `verdict_date` was recorded and read nowhere, so a round-one repair kept satisfying a
+        later REJECT raising different findings - the unit reading `repaired` against findings
+        nobody had answered.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0904", "[new] alpha broke")
+            mod.record_repair(root, "US0904", "b", "#1 -> killed")
+            self.assertEqual(mod.coverage_state(root, "US0904"), mod.COVERAGE_REPAIRED)
+            # A FRESH rejection on a LATER day. The clock is patched rather than the ledger
+            # rewritten, so the two rows differ the way two real rounds would.
+            with unittest.mock.patch.object(mod.sdlc_md, "now_date", return_value="2099-12-31"):
+                mod.record_verdict(root, "US0904", "REJECT", "qa-seat", "builder",
+                                   "[new] a completely different defect", "delivery",
+                                   "abcdef123456")
+                state = mod.repair_state(root, "US0904")
+        self.assertEqual(state["state"], "none",
+                         "a repair answering an earlier rejection satisfied a later one")
 
 
 class ThreeStateCoverageTests(unittest.TestCase):

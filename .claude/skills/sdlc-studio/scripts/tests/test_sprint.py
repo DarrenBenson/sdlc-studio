@@ -4474,6 +4474,40 @@ class FileAndCloseTests(unittest.TestCase):
                 self.assertIn(cid, deferred_block,
                               f"{cid} was filed but the DEFERRED section does not name it")
 
+    def test_the_close_records_the_tree_its_account_describes(self) -> None:
+        """MUTANT: replace every `record_close_tree(root)` call site with `pass`.
+
+        REVIEW FINDING, and the sharpest one on US0619: doing exactly that left the WHOLE of
+        `test_sprint.py` green at 734 passed while the feature was wholly inert - `close_tree`
+        never written, `close_is_a_noop` always "", no close ever idempotent. The idempotence
+        tests hand-stamped `close_tree` themselves, so they substituted AC1's Given instead of
+        exercising it, and nothing anywhere drove the RECORDING lane.
+
+        This drives a real close through `main([...])` - the `--file-and-close` route, the one
+        route a fixture can carry to completion - and asserts the digest reaches run-state.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            # A REAL git repo: the digest is a git tree object, and it degrades to "" outside
+            # one. Without this the test would assert against the degrade path and pass on the
+            # mutant, which is the vacuity the finding was about.
+            env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull,
+                   "GIT_CONFIG_SYSTEM": os.devnull}
+            for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+                env.pop(name, None)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True, env=env)
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True, env=env)
+            subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit",
+                            "-qm", "seed"], cwd=root, check=True, env=env)
+            mod = _load()
+            rc, _out, err = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+            self.assertEqual(rc, 0, err)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                               .read_text(encoding="utf-8"))
+        self.assertTrue(state.get("close_tree"),
+                        "the close recorded no tree digest, so no later close can prove the "
+                        "tree unchanged and the no-op is unreachable in production")
+
     def test_an_ordinary_close_report_carries_no_deferred_section(self) -> None:
         """The control. MUTANT: always emit the DEFERRED section.
 
@@ -12518,6 +12552,7 @@ class CloseFixedPointTests(unittest.TestCase):
         clean = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}
         for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
             clean.pop(name, None)
+        self._env = clean
         subprocess.run(["git", "init", "-q"], cwd=root, check=True, env=clean)
         src = root / "src"
         src.mkdir()
@@ -12584,6 +12619,62 @@ class CloseFixedPointTests(unittest.TestCase):
                 rc, out = self._run("close", self._repo(d, **kwargs))
                 self.assertNotIn("REFUSED: the working tree carries", out,
                                  f"the fixed-point guard fired on a {label} tree:\n{out}")
+
+    def test_a_renamed_batch_file_is_caught(self) -> None:
+        """MUTANT: parse `git status --porcelain -z` and strip three characters per record.
+
+        REVIEW FINDING. A rename emits `R  <new>\\0<orig>\\0` where the ORIGINAL is a bare field
+        with no XY prefix, so stripping three characters mangles it and the declared path never
+        matched: `git mv` of a batch unit's own file got a close straight through.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, dirty_batch_file=False)
+            subprocess.run(["git", "mv", "src/widget.py", "src/gadget.py"], cwd=root,
+                           check=True, env=self._env)
+            rc, out = self._run("close", root)
+        self.assertEqual(rc, 2, f"a renamed batch file got the close through:\n{out}")
+        self.assertIn("US0101", out)
+
+    def test_a_new_module_inside_a_new_directory_is_caught(self) -> None:
+        """MUTANT: enumerate changes with `git status --porcelain`.
+
+        REVIEW FINDING. Porcelain collapses a wholly-new directory to `?? newpkg/` and never
+        names the files inside - and a unit that ADDS a module is the ordinary shape of new
+        work, so the commonest case was invisible.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, dirty_batch_file=False)
+            story = root / "sdlc-studio" / "stories" / "US0101-widget.md"
+            story.write_text(story.read_text(encoding="utf-8").replace(
+                "> **Affects:** src/widget.py", "> **Affects:** newpkg/mod.py"),
+                encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True, env=self._env)
+            subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit",
+                            "-qm", "declare"], cwd=root, check=True, env=self._env)
+            (root / "newpkg").mkdir()
+            (root / "newpkg" / "mod.py").write_text("x = 1\n", encoding="utf-8")
+            rc, out = self._run("close", root)
+        self.assertEqual(rc, 2, f"a new module in a new directory was invisible:\n{out}")
+        self.assertIn("newpkg/mod.py", out)
+
+    def test_a_directory_declaration_covers_what_sits_under_it(self) -> None:
+        """MUTANT: compare whole paths only.
+
+        Several units in this repo declare a DIRECTORY (`sdlc-studio/stories`), and a
+        whole-path comparison matched none of them - so the guard was dark to exactly the
+        units with the widest surface.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, dirty_batch_file=False)
+            story = root / "sdlc-studio" / "stories" / "US0101-widget.md"
+            story.write_text(story.read_text(encoding="utf-8").replace(
+                "> **Affects:** src/widget.py", "> **Affects:** src"), encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True, env=self._env)
+            subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit",
+                            "-qm", "declare dir"], cwd=root, check=True, env=self._env)
+            (root / "src" / "widget.py").write_text("changed\n", encoding="utf-8")
+            rc, out = self._run("close", root)
+        self.assertEqual(rc, 2, f"a directory declaration matched nothing:\n{out}")
 
     def test_the_doctrine_states_the_rule_and_names_its_gate(self) -> None:
         """MUTANT: ship the gate with no doctrine statement, or a statement naming no command.
@@ -12721,6 +12812,44 @@ class PreflightCoverageCountsTests(unittest.TestCase):
     def _row(self, root: Path, units: list) -> tuple:
         import sprint_report  # noqa: PLC0415
         return sprint_report._ck_review_attribution(self._ctx(root, units))
+
+    def test_the_shipped_preflight_stops_calling_a_repaired_unit_uncovered(self) -> None:
+        """MUTANT: fix only the checklist row and leave `review_coverage` untouched.
+
+        REVIEW FINDING, and the sharpest on this unit: the first repair changed
+        `sprint_report._ck_review_attribution` - a checklist row - while the operator-facing
+        preflight builds its coverage line through `coverage_blockers` -> `uncovered_units` ->
+        `review_coverage`, which the diff never touched. On the live repository it still printed
+        "12 of 13 unit(s) are covered by no independent review". The epic's headline defect
+        survived in the command an operator actually runs.
+
+        Drives the SHIPPED path, not the private checklist resolver the first verifier called -
+        which was the LL0040 shape this criterion's own text forbids.
+        """
+        sprint, critic = _load(), _load_critic()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            critic.record_verdict(root, "US0002", "REJECT", "qa-seat", "b",
+                                  "[new] alpha broke", "delivery", "abcdef123456")
+            self.assertEqual(sprint.uncovered_units(root, ["US0002"]), ["US0002"],
+                             "an unrepaired REJECT should still read uncovered")
+            critic.record_repair(root, "US0002", "b", "#1 -> mutant re-applied and killed")
+            self.assertEqual(sprint.uncovered_units(root, ["US0002"]), [],
+                             "the shipped preflight still calls a repaired unit uncovered")
+
+    def test_a_partly_repaired_unit_is_still_uncovered_in_the_preflight(self) -> None:
+        """The other direction. MUTANT: treat any repair as coverage in `review_coverage`.
+
+        The preflight must not become the loose end the predicate is strict about.
+        """
+        sprint, critic = _load(), _load_critic()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            critic.record_verdict(root, "US0003", "REJECT", "qa-seat", "b",
+                                  "[new] alpha broke; [new] beta broke", "delivery",
+                                  "abcdef123456")
+            critic.record_repair(root, "US0003", "b", "#1 -> killed")
+            self.assertEqual(sprint.uncovered_units(root, ["US0003"]), ["US0003"])
 
     def test_the_preflight_prints_three_named_counts(self) -> None:
         """MUTANT: report `covered / rejected / uncovered` as before."""

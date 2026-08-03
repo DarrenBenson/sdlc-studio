@@ -5,7 +5,7 @@
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Epic:** EP0205
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -39,7 +39,7 @@ was in what the operator was shown, and only a check driving the shipped preflig
 - **Then** its coverage line states the three counts separately with the states named, driven
   through the shipped command rather than through the predicate - the defect was in what the
   operator was shown
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightCoverageCountsTests::test_the_preflight_prints_three_named_counts
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightCoverageCountsTests::test_the_shipped_preflight_stops_calling_a_repaired_unit_uncovered
 - **Verified:** yes (2026-08-03)
 
 ### AC2: the three counts sum to the batch, and the sum is asserted
