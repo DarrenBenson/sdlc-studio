@@ -1,13 +1,14 @@
 # BG0492: the suite verdict binds to HEAD rather than the tree, and --check ignores which suite ran
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/run-suite.sh, .githooks/commit-msg, tools/tests/test_run_suite.py
+> **Affects:** tools/run-suite.sh, tools/tests/test_run_suite.py, tools/tests/test_test_census.py
 > **Severity:** Medium
 > **Points:** 3
+> **Verification depth:** functional
 
 ## Summary
 
@@ -26,6 +27,57 @@ And `--check` never reads the `suite` field, so a verdict from `run-suite.sh scr
 ## Proposed Fix
 
 Record a hash of the tracked working tree beside `head_sha` and refuse when it moves. Record and check the `suite` field, so a claim naming both suites needs a verdict from `all`. Both are cheap; the second is a one-line comparison.
+
+## Acceptance Criteria
+
+- [x] **AC1: an edit made after the verdict was taken makes it stale, at the same commit.**
+  - **Given** a green `all` verdict, then any edit to a tracked file - unstaged, staged, or a
+    new untracked module - with `HEAD` unmoved
+  - **When** `run-suite.sh --check` runs
+  - **Then** it refuses, naming the tree, because the existing `head_sha` comparison is green on
+    this case by construction and cannot see it
+  - **Verify:** python3 -m unittest discover -s tools/tests -p test_run_suite.py -k VerdictBindsToTheTreeTests
+  - **Verified:** yes (2026-08-03) - six tests, covering unstaged, staged and untracked
+
+- [x] **AC2: the verdict does not expire itself.**
+  - **Given** the verdict is written INTO the tree it describes
+  - **When** it is recorded and then checked with nothing else changed
+  - **Then** the check passes - ignored files are excluded and the verdict's own directory is
+    excluded on top of that, because a guard that refuses always is one that gets switched off
+  - **Verify:** python3 -m unittest discover -s tools/tests -p test_run_suite.py -k test_the_verdicts_own_output_does_not_expire_it
+  - **Verified:** yes (2026-08-03)
+
+- [x] **AC3: a narrower suite does not satisfy an unqualified claim, and `all` still answers a narrower question.**
+  - **Given** a verdict from `run-suite.sh scripts`
+  - **When** a bare `--check` runs - the form the commit-msg lane uses for "Both suites green."
+  - **Then** it refuses and names the suite that did run; and conversely `--check scripts`
+    against an `all` verdict PASSES, because coverage is the test rather than equality
+  - **Verify:** python3 -m unittest discover -s tools/tests -p test_run_suite.py -k test_a_narrower_suite_does_not_satisfy_a_whole_tree_claim
+  - **Verified:** yes (2026-08-03)
+
+## Verification evidence
+
+Functional, driven through the shipped script as a subprocess rather than through any library -
+every test in `VerdictBindsToTheTreeTests` invokes `tools/run-suite.sh` itself. Four mutants
+executed, `__pycache__` purged and re-run under `python3 -B`, source restored afterwards:
+
+| Mutant | Result |
+| --- | --- |
+| drop the tree-hash comparison from `--check` | killed by 3 tests |
+| drop the suite-coverage check | killed by 1 |
+| compare suite names by equality instead of coverage | killed by 1 |
+| hash `git diff` without `HEAD`, so staged edits are invisible | killed by 1 |
+
+Also driven on the real repository: `run-suite.sh --check` against the tree at delivery refuses
+with the STALE message, the head comparison firing before the tree comparison as intended.
+
+**One regression this diff caused, and how it was repaired.** `test_test_census` asserted that
+`tools/tests/test_commit_msg_hook.py` is unattributed, and BG0489's fixture in that file has to
+stub `tools/skill-tests.sh` - one incidental mention of a sibling module's stem moved the file to
+attributed-by-reference, so a test about the census's WORDING failed for a reason unrelated to
+wording. The example is now derived from whichever files are unattributed today rather than
+hard-coded, which is the selection-bias shape LL0044 names. The census's own behaviour is
+unchanged; only the test's choice of example was pinned to one file's content.
 
 ## Impact
 

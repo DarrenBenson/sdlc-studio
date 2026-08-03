@@ -9,6 +9,7 @@ fixup/squash, and every honest-degrade case (no script / unreadable message).
 """
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import tempfile
@@ -276,6 +277,100 @@ class UnnamedUnitAttributionTests(unittest.TestCase):
             self.assertEqual(r.returncode, 0, out)
             self.assertNotIn("BG0268", out)          # two owners: no claim about whose work it is
             self.assertEqual(out.strip(), "", out)   # ... and a clean run stays silent
+
+
+class SuiteVerdictIsEarnedByBothLanesTests(unittest.TestCase):
+    """A green suite verdict is written only when BOTH lanes actually passed - proven by RUNNING
+    the hook, not by reading it.
+
+    `SuiteVerdictFailOpenTests` in `test_precommit_lane_order.py` already asserts the placement
+    and the guard, and every one of those assertions is a `text.index` over the hook's source.
+    That is precisely why this defect survived its own repair twice: the verdict write moved out
+    from under the failing lane, then moved to sit BETWEEN the lanes, and a grep for
+    `if [ "$fail" -eq 0 ]` was green on both shapes. A source-order assertion also cannot see a
+    refactor that keeps the text order and changes when the write executes - hoisting it into a
+    function called earlier, say.
+
+    So this class executes the hook against a fixture repo whose two lanes are controlled
+    independently, and asserts on the verdict FILE the next commit would read.
+
+    Reaching the suite section needs the handoff `pre-commit` leaves at `$git_dir/sdlc-gate-suites`;
+    without it the hook exits before the lanes, and a test that forgot it would pass vacuously on
+    every mutant. `test_the_control_case_records_a_green_verdict` is what makes that impossible to
+    miss: it fails if the lanes never ran.
+    """
+
+    def _fixture(self, d: str, *, tool_lane_passes: bool) -> tuple[Path, dict]:
+        """A repo whose skill lane always passes and whose tool lane is the parameter.
+
+        The skill lane is a stub script printing a plausible `Ran N tests` line, because the hook
+        parses that for the budget lane. The tool lane is a REAL unittest module discovered the
+        way the hook discovers it, so the failure travels the same path a genuine red test does
+        rather than through a stub's exit code.
+        """
+        repo = Path(d)
+        clean = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull,
+                 "GIT_CONFIG_SYSTEM": os.devnull}
+        for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+            clean.pop(name, None)
+        subprocess.run(["git", "init", "-q"], cwd=repo, check=True, env=clean)
+        scripts = repo / ".claude" / "skills" / "sdlc-studio"
+        scripts.mkdir(parents=True)
+        (scripts / "scripts").symlink_to(
+            REPO / ".claude" / "skills" / "sdlc-studio" / "scripts")
+        tools = repo / "tools"
+        tools.mkdir()
+        (tools / "skill-tests.sh").write_text(
+            '#!/bin/sh\necho "Ran 3 tests in 0.100s"\nexit 0\n', encoding="utf-8")
+        tests = tools / "tests"
+        tests.mkdir()
+        (tests / "test_probe.py").write_text(
+            "import unittest\n\n\nclass T(unittest.TestCase):\n"
+            f"    def test_probe(self):\n        self.assertTrue({tool_lane_passes})\n",
+            encoding="utf-8")
+        # The handoff pre-commit leaves behind; without it the hook exits before the lanes.
+        (repo / ".git" / "sdlc-gate-suites").write_text("precommit_seconds=1\n", encoding="utf-8")
+        return repo, clean
+
+    def _run(self, *, tool_lane_passes: bool):
+        with tempfile.TemporaryDirectory() as d:
+            repo, env = self._fixture(d, tool_lane_passes=tool_lane_passes)
+            msg = repo / "COMMIT_EDITMSG"
+            msg.write_text("fix(BG0489): probe\n", encoding="utf-8")
+            r = subprocess.run(["bash", str(HOOK), str(msg)], capture_output=True, text=True,
+                               env=env, cwd=str(repo))
+            verdict = repo / "sdlc-studio" / ".local" / "gate-suite-verdict.json"
+            return r, (json.loads(verdict.read_text(encoding="utf-8"))
+                       if verdict.is_file() else None)
+
+    def test_a_failing_tool_lane_writes_no_green_verdict(self):
+        """MUTANT: move the `--record-suite-verdict` call above `run "tool-tests"`.
+
+        That is the exact shape BG0423's repair left behind and BG0489 was filed on: the skill
+        lane passes, `$fail` is still 0, a green verdict is written, and then the tool lane fails
+        and blocks the commit. The byte-identical retry reads that green and runs no tests at all.
+        """
+        r, verdict = self._run(tool_lane_passes=False)
+        out = r.stdout + r.stderr
+        self.assertNotEqual(r.returncode, 0, "a failing tool lane must block the commit")
+        self.assertIsNone(
+            verdict,
+            "the hook recorded a suite verdict though the tool-tests lane FAILED - the next "
+            f"byte-identical attempt would reuse it and skip both suites. Verdict: {verdict}")
+
+    def test_the_control_case_records_a_green_verdict(self):
+        """MUTANT: delete the `--record-suite-verdict` call entirely.
+
+        Without this the refusal above is satisfied by a hook that never records anything, and
+        the reuse path the verdict exists for would be unreachable in production however well it
+        is tested. It is also what proves the fixture reaches the lanes at all.
+        """
+        r, verdict = self._run(tool_lane_passes=True)
+        out = r.stdout + r.stderr
+        self.assertEqual(r.returncode, 0, out)
+        self.assertIn("ok   tool-tests", out, "the fixture never reached the tool lane")
+        self.assertIsNotNone(verdict, "two passing lanes recorded no verdict")
+        self.assertEqual(verdict["status"], "green", verdict)
 
 
 if __name__ == "__main__":

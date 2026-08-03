@@ -191,13 +191,122 @@ class GateTests(unittest.TestCase):
 
         A check that refuses every commit discriminates no better than one that refuses none,
         and would simply be switched off.
+
+        Asks for `scripts` explicitly. It used to pass a bare `--check` against a `scripts`
+        verdict and expect green, which was the second half of BG0492: a bare check now means
+        "the whole tree is green" and only an `all` verdict establishes that. The assertion is
+        narrower than it was, not weaker - it pins that a narrower REQUEST is still satisfiable.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            _run(root, "scripts", cmd="exit 0")
+            r = _run(root, "--check", "scripts")
+        self.assertEqual(0, r.returncode,
+                         f"a current green verdict was refused:\n{r.stdout}{r.stderr}")
+
+
+class VerdictBindsToTheTreeTests(unittest.TestCase):
+    """BG0492: the verdict authorised the COMMIT, not the working tree, and `--check` never read
+    which suite had run.
+
+    A verdict is necessarily taken at its parent commit, so binding staleness to `head_sha` alone
+    made every subsequent edit covered by it. With a green verdict at HEAD, staging a syntactically
+    broken file and claiming "Both suites green." passed. An uncommitted working tree is the normal
+    state mid-session, which is what makes this the dangerous half.
+    """
+
+    def test_an_edit_after_the_verdict_makes_it_stale(self) -> None:
+        """MUTANT: drop the tree-hash comparison from --check.
+
+        The commit sha is unchanged here - only the tree moved - so the existing head_sha check
+        is green on this fixture and cannot catch it. That is why this is a separate test rather
+        than an extra assertion on the staleness one.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            _run(root, "all", cmd="exit 0")
+            self.assertEqual(0, _run(root, "--check").returncode, "fixture starts green")
+            (root / "a.txt").write_text("edited after the suite ran", encoding="utf-8")
+            r = _run(root, "--check")
+        out = (r.stdout + r.stderr).lower()
+        self.assertNotEqual(0, r.returncode,
+                            "an edit made after the verdict was taken was accepted as green")
+        self.assertIn("tree", out, out)
+
+    def test_a_staged_edit_after_the_verdict_makes_it_stale(self) -> None:
+        """MUTANT: hash only the unstaged diff.
+
+        BG0492's own reproduction stages the broken file, so a hash reading `git diff` without
+        `HEAD` would compare a clean-looking worktree against the index and see nothing.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            _run(root, "all", cmd="exit 0")
+            (root / "a.txt").write_text("broken", encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            r = _run(root, "--check")
+        self.assertNotEqual(0, r.returncode, "a STAGED edit after the verdict was accepted")
+
+    def test_a_new_untracked_file_makes_it_stale(self) -> None:
+        """MUTANT: hash the tracked diff only.
+
+        A new module is the commonest mid-session change and is untracked until it is added, so a
+        hash blind to untracked files answers "unchanged" for the case where the most new code
+        arrived at once. Ignored files must not count, or the verdict expires on its own output.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            _run(root, "all", cmd="exit 0")
+            (root / "new_module.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+            r = _run(root, "--check")
+        self.assertNotEqual(0, r.returncode, "a new untracked module was accepted as covered")
+
+    def test_the_verdicts_own_output_does_not_expire_it(self) -> None:
+        """MUTANT: hash untracked files without honouring .gitignore.
+
+        The verdict is written INTO the tree it describes. If the hash counted ignored files it
+        would differ the instant it was recorded, so every check would refuse - a guard that
+        refuses always is switched off, and this is the shape that would do it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / ".gitignore").write_text("sdlc-studio/.local/\n", encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-qm", "ignore local"], cwd=root, check=True)
+            _run(root, "all", cmd="exit 0")
+            r = _run(root, "--check")
+        self.assertEqual(0, r.returncode,
+                         f"the verdict expired itself:\n{r.stdout}{r.stderr}")
+
+    def test_a_narrower_suite_does_not_satisfy_a_whole_tree_claim(self) -> None:
+        """MUTANT: stop reading the `suite` field in --check.
+
+        The commit-msg lane matches "Both suites green." and calls a bare `--check`, which never
+        read which suite had run - so a verdict from `run-suite.sh scripts` satisfied a claim
+        about both.
         """
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
             _run(root, "scripts", cmd="exit 0")
             r = _run(root, "--check")
+        out = (r.stdout + r.stderr).lower()
+        self.assertNotEqual(0, r.returncode,
+                            "a scripts-only verdict satisfied an unqualified greenness check")
+        self.assertIn("scripts", out, out)
+
+    def test_an_all_verdict_satisfies_a_narrower_request(self) -> None:
+        """MUTANT: compare the suite names for equality instead of coverage.
+
+        `all` ran the scripts suite, so it answers a request for `scripts`. Equality would refuse
+        a verdict that genuinely covers the question asked, which teaches people to re-run a
+        six-minute suite for no information.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            _run(root, "all", cmd="exit 0")
+            r = _run(root, "--check", "scripts")
         self.assertEqual(0, r.returncode,
-                         f"a current green verdict was refused:\n{r.stdout}{r.stderr}")
+                         f"an `all` verdict was refused for a `scripts` request:\n{r.stderr}")
 
 
 class CommitClaimLaneTests(unittest.TestCase):

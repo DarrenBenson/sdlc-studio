@@ -28,18 +28,62 @@ VERDICT_REL="sdlc-studio/.local/suite-verdict.json"
 usage() {
     cat <<'EOF'
 Usage: tools/run-suite.sh scripts|tools|all
+       tools/run-suite.sh --check [scripts|tools|all]
 
 Runs a suite, prints one verdict line, and writes the full verdict to
 sdlc-studio/.local/suite-verdict.json:
 
-  {suite, exit_code, passed, failed, duration, head_sha}
+  {suite, exit_code, passed, failed, duration, head_sha, tree_hash}
 
 Exits with the SUITE's status, so a caller that checks $? is still correct.
 Read the file rather than the output - that is the point.
 
+--check confirms a verdict is current and covers the suite asked about. With no
+suite named it requires `all`, because an unqualified claim of greenness is a
+claim about the whole tree and only `all` establishes that. `--check scripts`
+asserts the narrower thing; an `all` verdict satisfies it, having run that suite.
+
 Options:
   --help, -h    Show this help
 EOF
+}
+
+# The hasher, chosen once. coreutils on Linux, BSD `shasum` elsewhere; absent on neither is
+# treated as a reason to refuse rather than to skip - see `tree_state`.
+_hash_cmd() {
+    if command -v sha256sum >/dev/null 2>&1; then printf 'sha256sum'
+    elif command -v shasum >/dev/null 2>&1; then printf 'shasum -a 256'
+    else printf ''; fi
+}
+
+# A digest of the TRACKED WORKING TREE, not of the commit (BG0492).
+#
+# A verdict is necessarily taken at its parent commit, so `head_sha` alone authorises every
+# edit made after the suite ran - and an uncommitted working tree is the normal state
+# mid-session. With a green verdict at HEAD, staging a syntactically broken file and claiming
+# "Both suites green." passed.
+#
+# Three inputs, each for a case the others miss: the commit, so a new commit invalidates;
+# `git diff HEAD`, which covers staged AND unstaged edits to tracked files (BG0492's own
+# reproduction stages the file, so reading the unstaged diff alone would see nothing); and the
+# CONTENT of untracked files, because a new module is the commonest mid-session change and is
+# untracked until somebody adds it.
+#
+# `--exclude-standard` keeps ignored files out, and the verdict's own directory is excluded
+# explicitly on top of that: the verdict is written INTO the tree it describes, so counting it
+# would make every verdict differ from its own tree the instant it was recorded, and a guard
+# that refuses always is a guard that gets switched off. In this repo `.local/` is gitignored
+# and the exclusion is redundant; in a fixture that has not written a .gitignore yet it is not.
+tree_state() {
+    local h; h="$(_hash_cmd)"
+    [[ -z "$h" ]] && return 1
+    {
+        git rev-parse HEAD 2>/dev/null || echo nohead
+        git diff HEAD --binary 2>/dev/null
+        git ls-files --others --exclude-standard -z 2>/dev/null \
+            | { grep -zv '^sdlc-studio/\.local/' || true; } \
+            | xargs -0 -r $h 2>/dev/null | sort
+    } | $h | cut -d' ' -f1
 }
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
@@ -59,18 +103,52 @@ if [[ "${1:-}" == "--check" ]]; then
     fi
     V_RC="$(grep -oE '"exit_code":[[:space:]]*-?[0-9]+' "$VERDICT_REL" | grep -oE '\-?[0-9]+' || echo missing)"
     V_SHA="$(grep -oE '"head_sha":[[:space:]]*"[^"]*"' "$VERDICT_REL" | sed 's/.*"\([^"]*\)"$/\1/' || echo missing)"
+    V_SUITE="$(grep -oE '"suite":[[:space:]]*"[^"]*"' "$VERDICT_REL" | sed 's/.*"\([^"]*\)"$/\1/' || echo missing)"
+    V_TREE="$(grep -oE '"tree_hash":[[:space:]]*"[^"]*"' "$VERDICT_REL" | sed 's/.*"\([^"]*\)"$/\1/' || echo "")"
     HEAD_NOW="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+    # Which suite the caller is entitled to claim. Unqualified means the WHOLE tree, because
+    # that is what an unqualified claim of greenness asserts - the commit-msg lane matches
+    # "Both suites green." and called a bare --check, which never read this field at all.
+    WANT="${2:-all}"
     if [[ "$V_SHA" != "$HEAD_NOW" ]]; then
         echo "run-suite --check: the suite verdict is STALE - taken at ${V_SHA:0:12}, HEAD is " \
              "${HEAD_NOW:0:12}. A verdict from an earlier commit exists and looks current, " \
              "which is worse than none. Re-run the suite." >&2
         exit 1
     fi
+    # The TREE, checked after the commit and before the exit code: a verdict at the right sha
+    # over a tree that has since moved is the same stale-but-current-looking shape, and it is
+    # the commoner one - every uncommitted edit lands in it.
+    TREE_NOW="$(tree_state || true)"
+    if [[ -z "$TREE_NOW" ]]; then
+        echo "run-suite --check: cannot hash the working tree - no sha256sum or shasum on PATH, " \
+             "so whether the tree still matches the verdict is UNKNOWN. Refusing rather than " \
+             "assuming, because an unverifiable green is the shape this check exists to remove." >&2
+        exit 1
+    fi
+    if [[ -z "$V_TREE" ]]; then
+        echo "run-suite --check: the verdict records no tree_hash - it predates the tree binding " \
+             "and cannot say whether the working tree has moved since. Re-run the suite." >&2
+        exit 1
+    fi
+    if [[ "$V_TREE" != "$TREE_NOW" ]]; then
+        echo "run-suite --check: the working TREE has changed since the verdict was taken " \
+             "(recorded ${V_TREE:0:12}, now ${TREE_NOW:0:12}) - the verdict authorises the commit " \
+             "it ran at, not the edits made after it. Re-run the suite." >&2
+        exit 1
+    fi
+    # Coverage, not equality: `all` ran the scripts suite, so it answers a request for
+    # `scripts`. Equality would refuse a verdict that genuinely covers the question asked.
+    if [[ "$WANT" != "$V_SUITE" && "$V_SUITE" != "all" ]]; then
+        echo "run-suite --check: the recorded verdict is from the '$V_SUITE' suite, which does " \
+             "not cover a claim about '$WANT'. Run 'tools/run-suite.sh $WANT'." >&2
+        exit 1
+    fi
     if [[ "$V_RC" != "0" ]]; then
         echo "run-suite --check: the recorded verdict is RED (exit $V_RC) at this HEAD" >&2
         exit 1
     fi
-    echo "suite verdict: GREEN at ${HEAD_NOW:0:12}"
+    echo "suite verdict: GREEN ($V_SUITE) at ${HEAD_NOW:0:12}, tree ${TREE_NOW:0:12}"
     exit 0
 fi
 
@@ -120,6 +198,11 @@ fi
 [[ -z "$FAILED" ]] && FAILED=null
 
 HEAD_SHA="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+# Taken AFTER the run, so it describes the tree the suite actually saw rather than the one it
+# started against - a run that rewrites a fixture would otherwise record a hash for a state
+# that no longer exists. Recorded empty when the tree cannot be hashed; `--check` refuses on
+# an empty one rather than skipping the comparison.
+TREE_HASH="$(tree_state || true)"
 
 cat > "$VERDICT_REL" <<EOF
 {
@@ -128,7 +211,8 @@ cat > "$VERDICT_REL" <<EOF
   "passed": $PASSED,
   "failed": $FAILED,
   "duration": $DURATION,
-  "head_sha": "$HEAD_SHA"
+  "head_sha": "$HEAD_SHA",
+  "tree_hash": "$TREE_HASH"
 }
 EOF
 

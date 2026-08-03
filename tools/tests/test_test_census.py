@@ -284,11 +284,33 @@ class RealRepoTests(unittest.TestCase):
                 self.assertEqual(tc.attribute(self.REPO, test_file), (module, "name"))
 
     def test_an_unattributed_file_says_why_in_terms_of_the_convention(self) -> None:
-        """The reason has to be actionable: which rule missed, and against what."""
-        module, why = tc.attribute(self.REPO, "tools/tests/test_commit_msg_hook.py")
-        self.assertIsNone(module)
-        self.assertIn("test_commit_msg_hook.py", why)
-        self.assertIn("name", why)
+        """The reason has to be actionable: which rule missed, and against what.
+
+        The file is DERIVED, not named. This used to assert against
+        `tools/tests/test_commit_msg_hook.py`, and it broke the day a fixture inside that file
+        had to stub `tools/skill-tests.sh` - one incidental mention of a sibling module's stem
+        moved it from unattributed to attributed-by-reference, and a test about the census's
+        WORDING failed for a reason that had nothing to do with wording.
+
+        Pinning the property to one file's current content is the selection-bias shape (LL0044):
+        the example was chosen by an author, and the test silently became a test of that choice.
+        Reading whichever files are unattributed today asserts the rule instead.
+        """
+        files = [f for f in tc.test_files(self.REPO) if "bench/fixtures" not in f.as_posix()]
+        unattributed = [(f, tc.attribute(self.REPO, f)[1])
+                        for f in files if tc.attribute(self.REPO, f)[0] is None]
+        self.assertTrue(unattributed,
+                        "no file is unattributed, so the reason-wording rule is unexercised - "
+                        "if the convention now places everything, delete this test deliberately")
+        for rel, why in unattributed:
+            with self.subTest(rel.as_posix()):
+                self.assertIn(rel.name, why, "the reason does not name the file it is about")
+                # Every branch of `attribute` that declines to place a file: nothing sits
+                # BESIDE it, it could not be READ, it matches no module by NAME and REFERENCES
+                # none, or it references several equally. Each names the rule that missed.
+                self.assertTrue(
+                    any(w in why for w in ("beside", "read", "name", "references")),
+                    f"the reason names no rule a reader could act on: {why!r}")
 
 
 class PruneCandidateTests(unittest.TestCase):
