@@ -35,6 +35,30 @@ def _mod(name: str):
 reconcile = _mod("reconcile")
 sdlc_md = reconcile.sdlc_md
 
+
+def _index_rows(repo: Path, type_: str) -> list[str]:
+    """Every epic row in the corpus: the live index UNIONED with its `archive/**` sub-indexes.
+
+    Reading only `_index.md` would make this sweep's population "whatever has not been archived
+    yet", and `archive.py` is the maintenance step `reconcile detect` advises on every run once an
+    index passes `indexes.archive_after`. Taking that advice moved 177 epic rows out of the live
+    table and dropped the floors below to 30, reporting a corrupt index where there was none
+    (BG0504). `reconcile.parse_index` performs exactly this union, and for the same reason.
+    """
+    rel = sdlc_md.ARTIFACT_TYPES[type_][0]
+    paths = [repo / rel / "_index.md", *sorted((repo / rel / "archive").rglob("*.md"))]
+    return [ln for p in paths if p.is_file()
+            for ln in p.read_text(encoding="utf-8").splitlines()
+            if reconcile._EPIC_ROW_RE.match(ln)]
+
+
+def _index_rows_live(repo: Path) -> list[str]:
+    """Only the live epic index - the table `reconcile apply` rewrites, and so the scope of the
+    detectors that feed it. Kept separate from `_index_rows` so the difference is deliberate."""
+    p = repo / "sdlc-studio" / "epics" / "_index.md"
+    return [ln for ln in p.read_text(encoding="utf-8").splitlines()
+            if reconcile._EPIC_ROW_RE.match(ln)] if p.is_file() else []
+
 #: The rows whose count the census FALLS SHORT of, pinned with both numbers.
 #:
 #: WHY they are held, corrected after an independent review falsified the first explanation. It is
@@ -62,7 +86,7 @@ class EpicIndexRepoTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.text = INDEX.read_text(encoding="utf-8")
-        cls.rows = [l for l in cls.text.splitlines() if reconcile._EPIC_ROW_RE.match(l)]
+        cls.rows = _index_rows(REPO, "epic")
 
     def test_every_row_is_derived_and_a_mutated_row_fails(self) -> None:
         """AC5, over all rows and shown able to go red.
@@ -140,10 +164,19 @@ class EpicIndexRepoTests(unittest.TestCase):
     def test_the_uncorroborated_rows_are_ADVISORY_and_untouched(self) -> None:
         """Eight rows whose count the census falls short of. They are reported, never rewritten,
         and never counted as drift - a blocking lane that can only be cleared by destroying a
-        record is a lane that gets switched off."""
+        record is a lane that gets switched off.
+
+        Two halves, because archiving moves a row without changing it. The advisory reads the LIVE
+        index, since that is the table `apply` would rewrite, so its scope is the live subset. The
+        numbers themselves are pinned over the whole corpus instead: what this guard exists to
+        protect is that the six recorded counts survive, and an archived row that lost its value
+        would fail here whether or not the advisory can still see it.
+        """
+        live_ids = {reconcile._EPIC_ROW_RE.match(l).group(1) for l in _index_rows_live(REPO)}
+        expected = {k: v for k, v in UNCORROBORATED.items() if k.split(".", 1)[0] in live_ids}
         advisory = {f"{a['id']}.{a['column']}": (a["current"], a["expected"])
                     for a in reconcile.epic_index_uncorroborated_advisory(REPO)}
-        self.assertEqual(UNCORROBORATED, advisory,
+        self.assertEqual(expected, advisory,
                          "the uncorroborated set changed - update it deliberately, by hand")
         drift_ids = {f"{d['id']}.{d['column']}" for d in reconcile.epic_index_derivable_drift(REPO)}
         self.assertEqual(set(), drift_ids & set(UNCORROBORATED),
@@ -152,12 +185,49 @@ class EpicIndexRepoTests(unittest.TestCase):
             with self.subTest(row=a["id"]):
                 self.assertIn("left alone", a["note"])
 
+        # The recorded numbers, wherever the row now lives. Without this, archiving the six would
+        # empty `expected` above and the guard would pass over a corpus that had lost them.
+        by_id = {reconcile._EPIC_ROW_RE.match(l).group(1): reconcile._split_row_cells(l)
+                 for l in self.rows}
+        for key, (current, _expected) in UNCORROBORATED.items():
+            rec, column = key.split(".", 1)
+            with self.subTest(row=key):
+                self.assertIn(rec, by_id, f"{rec}'s row is in neither the live index nor an "
+                                          f"archive sub-index - the record is gone")
+                cell = by_id[rec][sdlc_md.EPIC_INDEX_COLUMNS.index(column)]
+                self.assertEqual(current, cell,
+                                 f"{rec}'s recorded {column} count was rewritten from "
+                                 f"`{current}` to `{cell}`")
+
     def test_the_kind_is_registered_and_carries_a_remediation_hint(self) -> None:
         self.assertIn("epic-index-derivable", reconcile.DRIFT_KINDS)
         hint = sdlc_md.REMEDIATION["reconcile"]["epic-index-derivable"]
         self.assertIn("PLACEHOLDER", hint)
         self.assertIn("left alone", hint,
                       "the hint must say that a contradicted value is held, not rewritten")
+
+    def test_the_sweep_reads_archived_rows_and_not_only_the_live_table(self) -> None:
+        """BG0504. The mutant this kills is `_index_rows` reading `_index.md` alone.
+
+        Every floor in this file was calibrated against an index nobody had archived, so a
+        live-only read makes them track the live table's size instead of the corpus - and
+        `reconcile detect` advises archiving on every run once the table passes
+        `indexes.archive_after`. Taking that advice once dropped the sweep from 207 rows to 30 and
+        reported a corrupt index where there was none.
+
+        Asserted against the archive as it is, so this holds before the first sweep too: with no
+        archive on disk the two reads agree and only the shared floor applies.
+        """
+        live, whole = _index_rows_live(REPO), self.rows
+        archived = len(whole) - len(live)
+        self.assertGreaterEqual(archived, 0, "the union dropped a live row")
+        self.assertGreater(len(whole), 150,
+                           "the corpus sweep reads almost nothing - the floor every other test "
+                           "here rests on")
+        if (REPO / "sdlc-studio" / "epics" / "archive").is_dir():
+            self.assertGreater(archived, 0,
+                               "an epic archive exists and the sweep found no row in it, so it is "
+                               "reading the live table only")
 
     def test_the_index_header_matches_the_canonical_column_definition(self) -> None:
         header = next(l for l in self.text.splitlines() if l.startswith("| ID |"))

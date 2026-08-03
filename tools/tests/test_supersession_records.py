@@ -36,6 +36,19 @@ def _field(text: str, name: str) -> str:
     return ""
 
 
+def _index_text() -> str:
+    """The live RFC index plus its `archive/**` sub-indexes.
+
+    A row is archived by release once the live table passes `indexes.archive_after`, which is the
+    step `reconcile detect` advises on every run - and both RFCs this file checks are terminal, so
+    both were in the first sweep that took the advice. Reading only `_index.md` reported their
+    supersession note as missing while it sat intact one file over (BG0504). The union is what
+    `reconcile.parse_index` reads, for the same reason.
+    """
+    paths = [INDEX, *sorted((RFCS / "archive").rglob("*.md"))]
+    return "\n".join(p.read_text(encoding="utf-8") for p in paths if p.is_file())
+
+
 def _row(text: str, rfc_id: str) -> str:
     for line in text.splitlines():
         if line.startswith(f"| [{rfc_id}]"):
@@ -49,7 +62,7 @@ class RFC0009RecordTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.nine = RFC0009.read_text(encoding="utf-8")
         cls.thirtyeight = RFC0038.read_text(encoding="utf-8")
-        cls.index = INDEX.read_text(encoding="utf-8")
+        cls.index = _index_text()
 
     def test_each_of_the_five_supersession_elements_is_present(self) -> None:
         """AC1. Five assertions, not one compound: deleting any single element must fail on its
@@ -118,7 +131,7 @@ class EverySupersededRfcIsRecordedOnBothSidesTests(unittest.TestCase):
         declared = _field(RFC0038.read_text(encoding="utf-8"), "Supersedes (in part)")
         ids = sorted(set(_RFC_REF.findall(declared)) - {"0038"})
         self.assertTrue(ids, "RFC-0038 declares no partial supersession at all")
-        index = INDEX.read_text(encoding="utf-8")
+        index = _index_text()
         for num in ids:
             with self.subTest(rfc=num):
                 row = _row(index, f"RFC-{num}")
