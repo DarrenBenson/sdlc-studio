@@ -1,6 +1,6 @@
 # US0482: The baselined duplicate Verify groups are split into discriminating selectors
 
-> **Status:** Ready
+> **Status:** Superseded
 > **Delivers:** CR0445
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -16,6 +16,14 @@
 **So that** a green stamp means that criterion was checked, not that some criterion in the story was
 
 ## Notes
+
+**Superseded by US0635, US0636 and US0637 on 2026-08-03.** At 8 points this sat on the
+ceiling, where `backlog_triage.py check` reports it and estimation reliability falls off, so it
+was split rather than planned: US0635 takes the thirteen story-side groups, US0636 the seven
+bug-side ones and the baseline close-out, US0637 the resolver-derived reporting that was AC2
+here. Nothing was dropped - the three carry 3 + 3 + 2 points and every criterion below has a
+successor. The measurement in this story's own notes was re-taken at split time against the
+live tree and each half records its own figure, so neither inherits a count nobody re-ran.
 
 **Scope is stories AND bugs**, matching the ratchet in US0461 (AC1), whose scan covers
 `sdlc-studio/bugs` precisely so a shared selector cannot be parked in a bug where
@@ -59,3 +67,4 @@ added or paid down between grooming and delivery does not make the story wrong.
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-27 | Claude Fable 5 | Groomed: acceptance criteria authored against the slice |
 | 2026-07-28 | Claude Opus 5 (BG0346) | Regroomed: scope widened to stories and bugs to match the ratchet, baseline file declared, resized 5 to 8, and the invented four unanswerable groups replaced by a resolver-derived criterion |
+| 2026-08-03 | Claude Opus 5 | Superseded: split into US0635 (story side, 3), US0636 (bug side + baseline close-out, 3) and US0637 (resolver-derived reporting, 2) to clear the 8-point ceiling |

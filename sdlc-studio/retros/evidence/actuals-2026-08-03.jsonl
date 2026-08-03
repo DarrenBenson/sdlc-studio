@@ -45,3 +45,4 @@
 {"id": "CR0522", "type": "cr", "project": "sdlc-studio"}
 {"id": "BG0503", "type": "bug", "project": "sdlc-studio"}
 {"id": "BG0505", "type": "bug", "project": "sdlc-studio"}
+{"id": "US0482", "type": "story", "project": "sdlc-studio"}

@@ -31,7 +31,7 @@
 | [EP0171](EP0171-in-flight-sprint-controls-and-a-close-review.md) | In-flight sprint controls and a close review derived from one recorded entry | Draft | 7 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0172](EP0172-dead-surfaces-the-supersession-record-the-epic-index.md) | Dead surfaces: the supersession record, the epic-index columns and the flag that does nothing | Done | 4 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0173](EP0173-footprint-and-criterion-checks-bite-instead-of-accumulating.md) | Footprint and criterion checks bite instead of accumulating | Draft | 2 | -- | 2026-07-27 | 2026-07-27 |
-| [EP0174](EP0174-pay-down-the-debt-the-v5-scope-caps.md) | Pay down the debt the v5 scope caps baselined | Draft | 2 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0174](EP0174-pay-down-the-debt-the-v5-scope-caps.md) | Pay down the debt the v5 scope caps baselined | Draft | 5 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0175](EP0175-detectors-for-the-classes-the-audit-had-to.md) | Detectors for the classes the audit had to find by hand | Done | 3 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0176](EP0176-a-queue-of-planned-sprint-charters-plan-several.md) | A queue of planned sprint charters: plan several, run the next, and let the planner and the runner be different people | Draft | 6 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0177](EP0177-make-the-discipline-cheaper-than-the-sloppiness-it.md) | Make the discipline cheaper than the sloppiness it replaces: run the tests the change can reach, at the boundaries that matter | Done | 15 | -- | 2026-07-28 | 2026-07-28 |

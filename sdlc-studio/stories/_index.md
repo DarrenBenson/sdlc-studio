@@ -1,6 +1,6 @@
 # Story Index
 
-**Last Updated:** 2026-08-02
+**Last Updated:** 2026-08-03
 
 ## Summary
 
@@ -8,16 +8,16 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 36 |
-| Ready | 14 |
+| Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
 | Done | 581 |
 | Won't Implement | 1 |
 | Deferred | 0 |
-| Superseded | 1 |
+| Superseded | 2 |
 | Blocked | 1 |
-| **Total** | **634** |
+| **Total** | **637** |
 
 ## All Stories
 
@@ -30,7 +30,7 @@
 | [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
-| [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-07-27 | 2026-07-27 |
+| [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Superseded | EP0174 | 2026-07-27 | 2026-07-27 |
 | [US0487](US0487-a-sprint-charter-is-a-first-class-artefact.md) | A sprint charter is a first-class artefact: goal, scope rule and appetite, with a tool-allocated id and an index row | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0488](US0488-sprint-next-materialises-the-head-charter-against-the.md) | sprint next materialises the head charter against the backlog as it is at that moment, and stops when its scope resolves to nothing | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0489](US0489-the-queue-is-inspectable-and-editable-show-the.md) | The queue is inspectable and editable: show the next charter with its goal and resolved contents, insert, cancel, clear and reorder | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
@@ -74,6 +74,9 @@
 | [US0632](US0632-at-delivery-each-planned-mutant-is-executed-against.md) | at delivery each planned mutant is EXECUTED against the shipped test and its death recorded | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0633](US0633-a-criterion-whose-mutant-cannot-be-named-is.md) | a criterion whose mutant cannot be named is refused at grooming | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0634](US0634-the-cost-is-measured-over-one-run-and.md) | the cost is measured over one run and reported: passes spent on test-plan review versus on code review | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0635](US0635-the-thirteen-story-side-duplicate-verify-groups-are.md) | The thirteen story-side duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
+| [US0636](US0636-the-seven-bug-side-duplicate-verify-groups-are.md) | The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
+| [US0637](US0637-the-duplicate-groups-no-collection-can-answer-are.md) | The duplicate groups no collection can answer are derived from the resolver and named one by one | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 

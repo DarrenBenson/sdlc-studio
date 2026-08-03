@@ -1,0 +1,71 @@
+# US0636: The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt
+
+> **Status:** Ready
+> **Delivers:** CR0445
+> **Supersedes:** US0482
+> **Created:** 2026-08-03
+> **Created-by:** sdlc-studio new
+> **Raised-by:** sdlc-studio; agent; v1
+> **Affects:** sdlc-studio/bugs, sdlc-studio/.verify-lint-baseline.json, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Epic:** EP0174
+> **Points:** 3
+> **Persona:** Maya Okafor
+
+## User Story
+
+**As a** reader taking a Fixed bug's evidence as proof of the criterion beside it
+**I want** a bug's criteria held to the same discriminating-selector rule as a story's
+**So that** a shared selector cannot be parked in a bug, where the burn-down would never look
+
+## Notes
+
+Split from US0482, which was at the 8-point ceiling. This is the bug-side half of the
+burn-down and the unit that closes the baseline out; US0635 is the story-side half; US0637 is
+the reporting change that was US0482's AC2.
+
+Scope is bugs on purpose. The ratchet in US0461 (AC1) scans `sdlc-studio/bugs` precisely so a
+shared selector cannot be parked where `duplicate_verifiers` never looked, and a stories-only
+burn-down would leave the bug-side groups baselined for good.
+
+Measured at split time with `verify_ac.duplicate_verifiers` over the live tree: **7
+intra-record groups across 6 bug records** - BG0239, BG0240, BG0241, BG0242, BG0245 and
+BG0251, which holds two. Every one is a whole-file `unittest discover -p` selector, the shape
+that reads as green evidence for criteria it never separately exercised.
+
+AC3 is the only criterion here that depends on US0635 having landed; the first two stand on
+their own, so this unit is shippable whichever order the pair runs in and only its closing
+claim waits.
+
+## Acceptance Criteria
+
+### AC1: no intra-record duplicate group remains in a bug
+
+- **Given** the duplicate groups confined within a single record under `sdlc-studio/bugs`
+- **When** `verify_ac.py lint --ratchet --bugs` runs over the workspace, deriving the set from
+  the resolver at lint time rather than from any count recorded in prose
+- **Then** it reports no intra-record duplicate group in that directory, each having been
+  split into a per-criterion selector on the same terms a story's is
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_no_intra_record_group_remains_in_bugs
+
+### AC2: emptying the bug side did not disarm the guard
+
+- **Given** a bug introducing a fresh duplicate group, added after the burn-down
+- **When** the ratchet runs with `--bugs`
+- **Then** it refuses, proving the entries were removed by splitting the selectors rather than
+  by weakening the check that protects them
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_a_fresh_duplicate_in_a_bug_is_still_refused
+
+### AC3: with both halves landed, the baseline carries no intra-record group at all
+
+- **Given** US0635 shipped, so the story-side entries are already gone
+- **When** the baseline is read after this unit lands
+- **Then** it lists no intra-record group in either directory - the burn-down is complete
+  rather than half-done, and what remains in the file is cross-record only
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_the_baseline_holds_no_intra_record_group_in_either_directory
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-08-03 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-03 | Claude Opus 5 | Split from US0482 (8 points, over the ceiling): the bug-side burn-down and the baseline close-out, groomed against the resolver's measurement of the live tree |
