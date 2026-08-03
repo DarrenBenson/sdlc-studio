@@ -1,6 +1,6 @@
 # BG0492: the suite verdict binds to HEAD rather than the tree, and --check ignores which suite ran
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
@@ -112,6 +112,24 @@ verdict. It is now refused on the same terms the run path already refuses an unk
 
 Round-2 mutants, all killed: drop the `.local` pathspec (8 tests), stage ignored files with
 `-f` (1 - the mutant that had survived), accept any `--check` suite name (3).
+
+## Round 3: the repair was inert on this repository
+
+Found while building US0619's tree digest, which needed the same thing and so re-ran this one
+against the real tree. **`tree_hash` was empty here.** `git add -- ':(exclude)<path>'` FAILS when
+the path is also gitignored - git refuses with "the following paths are ignored by one of your
+.gitignore files" - and this repository ignores `sdlc-studio/.local` three ways. So the digest
+returned nothing, the verdict recorded an empty `tree_hash`, and `--check` refused every claim as
+unbindable: the mechanism was inert exactly where it ships.
+
+All six fixtures passed throughout, because not one of them gitignores `.local`. The reviewer had
+flagged that they could only test fixtures, and this is the gap that hid in it.
+
+The path is now dropped from the throwaway index with `rm --cached --ignore-unmatch`, which is
+silent whether it is tracked, untracked or ignored, so one form covers all three states. The
+pinning test asserts a NON-EMPTY digest under a fixture that ignores the directory - the
+assertion the other tests structurally could not make, because they compare digests to each other
+and two empty strings compare equal. Both implementations now agree on the real tree.
 
 ## Impact
 

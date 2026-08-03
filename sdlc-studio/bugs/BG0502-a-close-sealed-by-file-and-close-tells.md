@@ -1,6 +1,6 @@
 # BG0502: a close sealed by --file-and-close tells the operator nothing, because cmd_close returns before the report
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Points:** 2
 > **Verification depth:** functional

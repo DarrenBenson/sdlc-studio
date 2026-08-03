@@ -1,6 +1,6 @@
 # BG0489: the commit-msg suite verdict is written before the tool-tests lane runs, so a green verdict survives its failure
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood

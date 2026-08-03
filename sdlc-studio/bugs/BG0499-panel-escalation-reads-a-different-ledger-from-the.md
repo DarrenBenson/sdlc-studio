@@ -1,6 +1,6 @@
 # BG0499: panel escalation reads a different ledger from the one review-batch writes, so two REJECT rounds through the CLI notify nobody
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Points:** 3
 > **Verification depth:** functional
