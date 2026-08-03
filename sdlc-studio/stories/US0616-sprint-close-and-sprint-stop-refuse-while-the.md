@@ -1,6 +1,6 @@
 # US0616: sprint close and sprint stop refuse while the tree carries a repair to a batch unit
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0527
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -41,6 +41,7 @@ leaves the operator to work out the remedy is the shape that gets bypassed.
 - **Then** it refuses before writing anything, names the unit and the offending path, and states
   both remedies - commit it as batch work, or file it and defer to the next run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseFixedPointTests::test_close_refuses_while_the_tree_carries_a_batch_unit_repair
+- **Verified:** yes (2026-08-03)
 
 ### AC2: `sprint stop` refuses on the same terms
 
@@ -50,6 +51,7 @@ leaves the operator to work out the remedy is the shape that gets bypassed.
   last run was STOPPED rather than closed, so a gate covering only `close` would leave the route
   actually taken ungated
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseFixedPointTests::test_stop_refuses_on_the_same_terms_as_close
+- **Verified:** yes (2026-08-03)
 
 ### AC3: a clean tree, and a change outside the batch, both proceed
 
@@ -60,6 +62,7 @@ leaves the operator to work out the remedy is the shape that gets bypassed.
   all, and a guard that stopped every close over any dirty file would be switched off within a
   sprint
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseFixedPointTests::test_a_clean_tree_and_an_out_of_batch_change_both_proceed
+- **Verified:** yes (2026-08-03)
 
 ### AC4: the doctrine states the rule and names the command that enforces it
 
@@ -69,6 +72,7 @@ leaves the operator to work out the remedy is the shape that gets bypassed.
   command that refuses otherwise, so a project learns the rule and where it bites rather than
   being asked to remember it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseFixedPointTests::test_the_doctrine_states_the_rule_and_names_its_gate
+- **Verified:** yes (2026-08-03)
 
 ## Revision History
 

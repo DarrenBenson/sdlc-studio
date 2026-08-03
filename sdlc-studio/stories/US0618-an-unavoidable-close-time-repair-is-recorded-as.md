@@ -1,6 +1,6 @@
 # US0618: an unavoidable close-time repair is recorded as an explicit override with its reason
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0527
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -36,6 +36,7 @@ Follow that.
 - **Then** it is refused, and with a reason it is accepted - the marker alone must not satisfy
   it, on the same terms `close_owed` already applies to a bare `Velocity-override:`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::CloseRepairOverrideTests::test_a_bare_override_is_refused_and_a_reasoned_one_is_accepted
+- **Verified:** yes (2026-08-03)
 
 ### AC2: the override names the unit it covers, and covers nothing else
 
@@ -44,6 +45,7 @@ Follow that.
 - **Then** the second is reported as uncovered - an override is per unit with its own reason, so
   one exception cannot silently license the next
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::CloseRepairOverrideTests::test_an_override_covers_only_the_unit_it_names
+- **Verified:** yes (2026-08-03)
 
 ### AC3: overrides are counted and surfaced, not merely stored
 
@@ -53,6 +55,7 @@ Follow that.
   countable rather than routine - an override nobody sees is indistinguishable from the inline
   repair the rule forbids
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::CloseRepairOverrideTests::test_the_close_reports_the_override_count_and_reasons
+- **Verified:** yes (2026-08-03)
 
 ## Revision History
 

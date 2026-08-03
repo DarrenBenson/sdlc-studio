@@ -7181,6 +7181,65 @@ def cmd_lane(args: argparse.Namespace) -> int:
     return 1 if any(r["outcome"] == "blocked" for r in results) else 0
 
 
+def batch_repair_in_tree(root, state: dict) -> list:
+    """Uncommitted changes to files a BATCH UNIT declares, as `[(unit_id, path)]`.
+
+    The close's fixed point. A close writes a retro accounting for its batch and then
+    stamps the ledger; anything reaching terminal after that is unaccounted, so a repair made
+    DURING the close re-opens the account written moments earlier. It happened twice in one
+    close of RUN-01KYZKY5, and the operator's reading was that the sprint was never being
+    closed - it was, repeatedly, and each close was undone by the next repair.
+
+    Scoped to the batch's OWN declared surface, never to any dirty file. A guard that stopped
+    every close over an unrelated edit - a scratch note, an unrelated project file - would be
+    switched off inside a sprint, and then it would guard nothing. What it refuses is a repair
+    to the very work being certified.
+
+    Degrades to "nothing found" when git cannot be read: this is a discipline gate, and a close
+    that cannot run because git is unavailable is a worse failure than one that proceeds.
+    """
+    try:
+        out = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "-z"],
+                             capture_output=True, text=True, timeout=30)
+        if out.returncode != 0:
+            return []
+        changed = {e[3:] for e in out.stdout.split("\0") if len(e) > 3}
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if not changed:
+        return []
+    hits: list = []
+    for uid in [sdlc_md.norm_id(u) for u in (state.get("batch") or [])]:
+        found = sdlc_md.find_by_id(root, uid)
+        if not found:
+            continue
+        declared = sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]) or "")
+        for path in sorted(changed & {str(d) for d in declared}):
+            hits.append((uid, path))
+    return hits
+
+
+def _refuse_batch_repair(root, state: dict, verb: str) -> str:
+    """The refusal text for `verb`, or "" when the tree is clean of batch repairs.
+
+    Names the unit, the path, and BOTH ways out. A refusal that leaves the operator to work out
+    the remedy is the shape that gets bypassed, and this one has an honest remedy on each side:
+    the change is either batch work, in which case commit it before the ceremony starts, or it
+    is a finding, in which case file it and let the next run carry it.
+    """
+    hits = batch_repair_in_tree(root, state)
+    if not hits:
+        return ""
+    lines = [f"{verb} REFUSED: the working tree carries {len(hits)} uncommitted change(s) to "
+             f"files this batch's own units declare, so the account this {verb} is about to "
+             f"write would be out of date before it is read."]
+    lines += [f"  {uid}: {path}" for uid, path in hits]
+    lines.append("  Either COMMIT it as batch work before the ceremony starts, or FILE it and "
+                 "defer it to the next run. A finding surfaced during a close is filed and "
+                 "deferred - that rule is what gives the close a fixed point.")
+    return "\n".join(lines)
+
+
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
     root = args.root
@@ -7203,7 +7262,15 @@ def cmd_close(args: argparse.Namespace) -> int:
         # would make the attempt trend report the tool being used carefully as a tool failing.
         result = close_dry_run(root, args.retro)
         print(dry_run_report(result))
+        if refusal := _refuse_batch_repair(root, state, "close"):
+            print(refusal)          # REPORTED on a preview, refused on the real thing
         return 0 if result["clean"] else 1
+    # THE FIXED POINT, before anything is written. A repair to a batch unit sitting in the tree
+    # will land after this close's account and re-open the ledger it is about to satisfy, so the
+    # ceremony refuses rather than producing an account with a known expiry.
+    if refusal := _refuse_batch_repair(root, state, "close"):
+        print(refusal, file=sys.stderr)
+        return 2
     pre = _report_preflight(root, args.retro)
     trend = _record_close_attempt(root, pre)
     if trend:
@@ -8227,6 +8294,11 @@ def cmd_stop(args) -> int:
         return 2
     if not run_state.is_open(root):
         print("stop refused: no open run - there is nothing to stop", file=sys.stderr)
+        return 2
+    # A STOP writes the same account a close does, and the last run was STOPPED rather than
+    # closed - so a gate covering only `close` would leave ungated the route actually taken.
+    if refusal := _refuse_batch_repair(root, state, "stop"):
+        print(refusal, file=sys.stderr)
         return 2
     out = blocked_by_pending(root)
     forced = bool(getattr(args, "force", False))

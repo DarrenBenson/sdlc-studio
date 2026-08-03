@@ -564,6 +564,14 @@ none in flight. Stage named paths; never `git add -A`. See [reference-review.md]
 - **Decisions ledger (D4):** a committed, append-only per-tranche log
   (`scripts/ledger.py` -> `sdlc-studio/decisions/<tranche>.md`); survives context
   compaction.
+- **The close has a fixed point.** A finding surfaced during a close is FILED and deferred to
+  the next run, never repaired inline: a repair made inside the ceremony reaches terminal
+  AFTER the retro accounted for the batch, so it re-opens the ledger the close just satisfied
+  and the close appears never to finish. Gated, not asked for - `sprint close` and
+  `sprint stop` both refuse while the tree holds an uncommitted change to a file one of the
+  batch's own units declares, naming the unit, the path, and the two ways out. Scoped to the
+  batch's declared surface only, because a guard that refused every close over any dirty file
+  would be switched off within a sprint.
 
 ## Autonomous mode (`--autonomous`)
 

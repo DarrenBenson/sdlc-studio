@@ -138,6 +138,12 @@ SCRUB_SITES: dict[str, str] = {
         "fixture repo each hook run needs (BG0281). It is scrubbing its OWN child's environment "
         "so the fixture is not steered at the outer repo, not protecting a shipped path, and it "
         "never writes outside its temp dir. Widen it to REPO_LOCATING when touched.",
+    ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py":
+        "PARTIAL: clears only GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE when building the throwaway "
+        "repo CloseFixedPointTests needs, so the fixture is not steered at the outer repo "
+        "(US0616). Same shape and same reason as the commit-msg fixture above - it scrubs its "
+        "OWN child's environment rather than protecting a shipped path, and never writes "
+        "outside its temp dir. Widen it to REPO_LOCATING when touched.",
     ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py":
         "asserts the shipped helper's confinement behaviourally, against throwaway repos",
     ".claude/skills/sdlc-studio/scripts/tests/gitutil.py":

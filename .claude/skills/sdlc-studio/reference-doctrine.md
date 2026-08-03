@@ -197,6 +197,32 @@ rules, the agents/services) live in that project's agent-instructions file
     tree has problems. An unjustified REJECT is as much a failure as an unjustified
     APPROVE, and only a bounded review can tell the two apart.
 
+20. **A finding surfaced during a close is FILED and deferred, never repaired inline.**
+    The close writes an account of the batch and then stamps the ledger that says the batch
+    is accounted for. Anything reaching a terminal status after that stamp is, by
+    construction, unaccounted - so a repair made *inside* the ceremony invalidates the
+    account written moments earlier and re-opens the ledger the close just satisfied.
+
+    The failure this produces is not an error message. It is a close that appears never to
+    finish: every mechanical check passes, the run reads closed, and the ledger still says a
+    close is owed. One run hit it twice in a single close, and the reading from outside was
+    that the sprint was never being closed. It was - repeatedly - and each close was undone
+    by the next repair.
+
+    So the ceremony has a **fixed point**, and it is gated rather than asked for:
+    `sprint close` and `sprint stop` both refuse while the working tree carries an
+    uncommitted change to a file one of the batch's own units declares. The refusal names
+    the unit, the path, and the two ways out - commit it as batch work before the ceremony
+    starts, or file it and let the next run carry it. Scoped to the batch's own declared
+    surface, never to any dirty file: a guard that stopped every close over an unrelated
+    edit would be switched off within a sprint, and then it would guard nothing.
+
+    This punishes no instinct worth keeping. Finding a defect during a close is what a
+    careful close is *for*; the rule is only about where the repair lands. Filing it loses
+    nothing and keeps the account true, and the close-owed ledger reports a repair that
+    still had to happen as a close-time repair rather than as work nobody accounted for -
+    visible and countable, without holding the gate.
+
 ## Project constitution {#constitution}
 
 A project may declare its inviolable principles in an optional

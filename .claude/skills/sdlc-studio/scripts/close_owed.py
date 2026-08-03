@@ -78,6 +78,42 @@ VELOCITY_FILE = "sdlc-studio/retros/VELOCITY.md"
 #: "reasoned" by whatever prose followed it, which is the bare dodge dressed as a reason.
 VELOCITY_OVERRIDE_RE = re.compile(r"(?mi)^>?\s*\*\*Velocity-override:\*\*[ \t]*(.*)$")
 
+#: THE RECORDED EXCEPTION for a repair that genuinely could not be deferred:
+#: `> **Close-repair-override:** BG0123 - <why this could not wait>`, one line per unit.
+#:
+#: It travels with the retro rather than in a command flag, on the same reasoning as the
+#: velocity override beside it: an escape nobody can read afterwards is a silent pass. And by
+#: the same rule, a BARE marker is not an override - an exception has to cost a sentence, or it
+#: becomes the routine the rule was written against.
+#:
+#: PER UNIT, because one exception must not license the next. The unit id is required: an
+#: override naming nothing would forgive every close-time repair in the run at once, which is
+#: the blanket exemption this is specifically not.
+CLOSE_REPAIR_OVERRIDE_RE = re.compile(
+    r"(?mi)^>?\s*\*\*Close-repair-override:\*\*[ \t]*(.*)$")
+
+
+def close_repair_overrides(root: Path) -> dict:
+    """`{unit_id: reason}` for every reasoned close-repair override across the retros.
+
+    A line naming no unit, or naming one with no reason after it, contributes nothing - it is
+    the bare dodge dressed as a reason, and it is dropped rather than honoured.
+    """
+    out: dict = {}
+    retros_dir = Path(root) / "sdlc-studio" / "retros"
+    if not retros_dir.is_dir():
+        return out
+    for p in sorted(retros_dir.glob("RETRO*.md")):
+        for m in CLOSE_REPAIR_OVERRIDE_RE.finditer(sdlc_md.read_text_safe(p)):
+            raw = " ".join(retro.PLACEHOLDER_RE.sub("", m.group(1)).split())
+            hit = sdlc_md.ID_SEARCH_RE.search(raw)
+            if not hit:
+                continue
+            reason = raw[hit.end():].lstrip(" -:\u2013").strip()
+            if reason:
+                out[sdlc_md.norm_id(hit.group(0))] = reason
+    return out
+
 
 def batch_covered_ids(text: str) -> set[str]:
     """The unit ids a retro's `Batch` line accounts for, parentheticals included.
@@ -462,9 +498,17 @@ def owed(root: Path) -> dict:
     # separately, because an advisory that reports a run which did account for itself is one
     # people learn to step over.
     repairs, unaccounted = close_time_repairs(root, owed_units)
+    # An override is per unit and reasoned. Recorded ones are split out so the exception is
+    # COUNTABLE rather than routine - CR0527 asks for visible, not for forgiven, and an
+    # exception nobody can count is indistinguishable from the inline repair the rule forbids.
+    overrides = close_repair_overrides(root)
+    overridden = [(cid, t) for cid, t in repairs if sdlc_md.norm_id(cid) in overrides]
+    repairs = [(cid, t) for cid, t in repairs if sdlc_md.norm_id(cid) not in overrides]
     vel = velocity_owed(root, str(baseline.get("stamped") or ""))
     return {"baselined": True, "corrupt": False, "owed": sorted(owed_units),
             "close_time_repairs": repairs, "unaccounted": unaccounted,
+            "close_repair_overrides": sorted(
+                (cid, t, overrides[sdlc_md.norm_id(cid)]) for cid, t in overridden),
             "grandfathered": len(uncovered) - len(owed_units),
             "covered": len(covered), "terminal": len(terminal),
             "dead_breakdown_ids": dead_ids, "unreadable": degraded,
@@ -534,9 +578,14 @@ def render(report: dict) -> str:
         lines.append(f"  {len(repairs)} of these is a CLOSE-TIME REPAIR - terminal after the "
                      f"retro was written, so the account it postdates could not name it: "
                      + ", ".join(cid for cid, _ in repairs))
-        lines.append("    Amend that retro's Batch, or record the override "
-                     "(`--close-repair-override`) if the repair was unavoidable. "
+        lines.append("    Amend that retro's Batch, or - if the repair genuinely could not "
+                     "wait - record `> **Close-repair-override:** <UNIT> - <why>` in the retro. "
                      "The rule is that a finding surfaced during a close is FILED and deferred.")
+    # Counted and NAMED, with the reason. An override nobody sees is indistinguishable from the
+    # inline repair the rule forbids, so it is reported on every run rather than filed away.
+    if ov := report.get("close_repair_overrides") or []:
+        lines.append(f"  {len(ov)} close-time repair(s) carry a recorded override:")
+        lines += [f"    {cid} ({t}) - {why}" for cid, t, why in ov]
     if n and (not report["baselined"] or n <= 40):
         lines.append("  " + ", ".join(f"{cid} ({t})" for cid, t in report["owed"]))
     elif n:

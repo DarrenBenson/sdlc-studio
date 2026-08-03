@@ -7,6 +7,8 @@ import importlib.util
 import inspect
 import io
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import shutil
@@ -12494,6 +12496,110 @@ class ContentReviewGoalTests(unittest.TestCase):
                 encoding="utf-8")
             with self.assertRaises(ValueError):
                 sprint.record_content_review(root, "plan", "", "yes")
+
+
+
+
+class CloseFixedPointTests(unittest.TestCase):
+    """US0616 / CR0527: the ceremony refuses while a repair to its own batch sits in the tree.
+
+    A close writes an account of the batch and stamps the ledger; anything terminal after that
+    stamp is unaccounted, so a repair made INSIDE the ceremony invalidates the account written
+    moments earlier. RUN-01KYZKY5 hit it twice in one close, and from outside it read as a
+    sprint that was never being closed - it was, repeatedly, each close undone by the next
+    repair.
+
+    Every test drives `main([...])`. The guard shells out to `git status`, so a library-level
+    assertion could not see whether the command consults it at all.
+    """
+
+    def _repo(self, d: str, *, dirty_batch_file: bool, dirty_other: bool = False) -> Path:
+        root = Path(d)
+        clean = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}
+        for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+            clean.pop(name, None)
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True, env=clean)
+        src = root / "src"
+        src.mkdir()
+        (src / "widget.py").write_text("x = 1\n", encoding="utf-8")
+        (src / "unrelated.py").write_text("y = 1\n", encoding="utf-8")
+        stories = root / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        (stories / "US0101-widget.md").write_text(
+            "# US0101: widget\n\n> **Status:** Review\n> **Epic:** EP0100\n"
+            "> **Points:** 2\n> **Affects:** src/widget.py\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True, env=clean)
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "-qm", "seed"], cwd=root, check=True, env=clean)
+        if dirty_batch_file:
+            (src / "widget.py").write_text("x = 2  # repaired during the close\n",
+                                           encoding="utf-8")
+        if dirty_other:
+            (src / "unrelated.py").write_text("y = 2\n", encoding="utf-8")
+        _close_state(root, batch=["US0101"])
+        return root
+
+    def _run(self, verb: str, root: Path, extra: tuple = ()) -> tuple:
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        argv = ([verb, "--retro", "RETRO0001", "--root", str(root), *extra] if verb == "close"
+                else [verb, "--reason", "probing the guard", "--root", str(root), *extra])
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                contextlib.suppress(SystemExit):
+            rc = mod.main(argv)
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_close_refuses_while_the_tree_carries_a_batch_unit_repair(self) -> None:
+        """MUTANT: drop the `_refuse_batch_repair` call from `cmd_close`."""
+        with tempfile.TemporaryDirectory() as d:
+            rc, out = self._run("close", self._repo(d, dirty_batch_file=True))
+        self.assertEqual(rc, 2, out)
+        self.assertIn("US0101", out, "the refusal does not name the unit")
+        self.assertIn("src/widget.py", out, "the refusal does not name the path")
+        self.assertIn("COMMIT", out.upper(), "the refusal does not state the first remedy")
+        self.assertIn("FILE", out.upper(), "the refusal does not state the second remedy")
+
+    def test_stop_refuses_on_the_same_terms_as_close(self) -> None:
+        """MUTANT: guard only `cmd_close`.
+
+        The last run was STOPPED rather than closed, so a gate covering only `close` leaves
+        ungated the route that was actually taken.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            rc, out = self._run("stop", self._repo(d, dirty_batch_file=True))
+        self.assertEqual(rc, 2, out)
+        self.assertIn("US0101", out)
+
+    def test_a_clean_tree_and_an_out_of_batch_change_both_proceed(self) -> None:
+        """The control. MUTANT: refuse on ANY dirty file rather than on a declared one.
+
+        A guard that stopped every close over an unrelated edit would be switched off within a
+        sprint, and then it would guard nothing. Both halves are asserted: a clean tree, and a
+        tree dirty only outside the batch's declared surface.
+        """
+        for label, kwargs in (("clean", {"dirty_batch_file": False}),
+                              ("dirty outside the batch",
+                               {"dirty_batch_file": False, "dirty_other": True})):
+            with self.subTest(label), tempfile.TemporaryDirectory() as d:
+                rc, out = self._run("close", self._repo(d, **kwargs))
+                self.assertNotIn("REFUSED: the working tree carries", out,
+                                 f"the fixed-point guard fired on a {label} tree:\n{out}")
+
+    def test_the_doctrine_states_the_rule_and_names_its_gate(self) -> None:
+        """MUTANT: ship the gate with no doctrine statement, or a statement naming no command.
+
+        LL0027: a rule stated in a document with no gate behind it is a known-weak rule, and a
+        gate with no statement is one a consuming project never learns. Both references are
+        checked, because a project inherits the doctrine and reads the sprint reference.
+        """
+        skill = Path(__file__).resolve().parent.parent.parent
+        for name in ("reference-doctrine.md", "reference-sprint.md"):
+            with self.subTest(name):
+                text = (skill / name).read_text(encoding="utf-8").lower()
+                self.assertIn("filed and deferred", text,
+                              f"{name} does not state the close-time rule")
+                self.assertIn("sprint stop", text,
+                              f"{name} states the rule without naming the command that gates it")
 
 
 if __name__ == "__main__":

@@ -804,5 +804,92 @@ class CloseTimeRepairTests(CloseOwedBase):
         self.assertEqual(rc, 1, "an unaccounted unit did not hold the gate")
 
 
+
+
+class CloseRepairOverrideTests(CloseOwedBase):
+    """US0618 / CR0527: the deliberate way through, for a repair that genuinely could not wait.
+
+    US0616 refuses the inline repair and US0617 makes the residue readable. This is the recorded
+    exception - and it has to cost something to use and be countable afterwards, or it becomes
+    the routine the rule was written against.
+    """
+
+    def _tree(self, override: str = "") -> dict:
+        _bug(self.root, "BG0001", "Fixed")
+        close_owed.stamp_baseline(self.root, date="2026-01-01")
+        _bug(self.root, "BG0005", "Fixed")
+        lines = ["# RETRO-0002: a sprint", "", "> **Date:** 2026-02-01",
+                 "> **Batch:** BG0001",
+                 "> **Velocity-override:** no plan-time forecast for this fixture"]
+        if override:
+            lines.append(f"> **Close-repair-override:** {override}")
+        lines += ["", "## Delivered", "- shipped", ""]
+        _write(self.root / "sdlc-studio" / "retros" / "RETRO0002-r.md",
+               "\n".join(lines) + "\n")
+        _actuals(self.root, "2026-02-02", ["BG0005"])
+        _run_state(self.root, "stopped")
+        return close_owed.owed(self.root)
+
+    def test_a_bare_override_is_refused_and_a_reasoned_one_is_accepted(self) -> None:
+        """MUTANT: accept the marker's presence rather than a reason after it.
+
+        The velocity override beside it already holds this rule: a bare marker is not an
+        override. An escape that costs nothing to write is one that gets written every time.
+        """
+        bare = self._tree(override="BG0005")
+        self.assertEqual(bare["close_repair_overrides"], [],
+                         "a bare marker with no reason was honoured as an override")
+        self.assertEqual([c for c, _ in bare["close_time_repairs"]], ["BG0005"])
+
+        self.setUp()
+        reasoned = self._tree(override="BG0005 - the close itself was wrong without it")
+        self.assertEqual([c for c, _t, _w in reasoned["close_repair_overrides"]], ["BG0005"])
+        self.assertEqual(reasoned["close_time_repairs"], [])
+
+    def test_an_override_covers_only_the_unit_it_names(self) -> None:
+        """MUTANT: treat any recorded override as covering the whole run.
+
+        One exception must not license the next, which is the difference between a recorded
+        exception and a blanket exemption.
+        """
+        _bug(self.root, "BG0001", "Fixed")
+        close_owed.stamp_baseline(self.root, date="2026-01-01")
+        for bid in ("BG0005", "BG0006"):
+            _bug(self.root, bid, "Fixed")
+        _write(self.root / "sdlc-studio" / "retros" / "RETRO0002-r.md",
+               "# RETRO-0002: a sprint\n\n> **Date:** 2026-02-01\n> **Batch:** BG0001\n"
+               "> **Velocity-override:** none needed\n"
+               "> **Close-repair-override:** BG0005 - unavoidable\n\n## Delivered\n- x\n")
+        _actuals(self.root, "2026-02-02", ["BG0005", "BG0006"])
+        _run_state(self.root, "stopped")
+        r = close_owed.owed(self.root)
+        self.assertEqual([c for c, _t, _w in r["close_repair_overrides"]], ["BG0005"])
+        self.assertEqual([c for c, _ in r["close_time_repairs"]], ["BG0006"],
+                         "one unit's override covered another unit's repair")
+
+    def test_an_override_naming_no_unit_forgives_nothing(self) -> None:
+        """MUTANT: allow an override with a reason but no unit id.
+
+        That would forgive every close-time repair in the run at once - the blanket exemption
+        this is specifically not.
+        """
+        r = self._tree(override="it was all unavoidable, honestly")
+        self.assertEqual(r["close_repair_overrides"], [])
+        self.assertEqual([c for c, _ in r["close_time_repairs"]], ["BG0005"])
+
+    def test_the_close_reports_the_override_count_and_reasons(self) -> None:
+        """MUTANT: store the override without reporting it.
+
+        An override nobody sees is indistinguishable from the inline repair the rule forbids,
+        so it is surfaced on every run rather than filed away.
+        """
+        r = self._tree(override="BG0005 - the close itself was wrong without it")
+        text = close_owed.render(r)
+        self.assertIn("BG0005", text)
+        self.assertIn("recorded override", text)
+        self.assertIn("the close itself was wrong without it", text,
+                      "the reason is stored but never shown, so nobody can question it")
+
+
 if __name__ == "__main__":
     unittest.main()
