@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 27 |
-| Ready | 16 |
+| Draft | 20 |
+| Ready | 23 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -38,11 +38,11 @@
 | [US0491](US0491-calling-a-sprint-at-a-point-is-an.md) | Calling a sprint at a point is an honest close: the unstarted remainder is descoped with a reason and returns to the backlog | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0492](US0492-the-queue-lifecycle-is-documented-alongside-the-run.md) | The queue lifecycle is documented alongside the run lifecycle, with every invocation shown taken from the shipped parser | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Won't Implement | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0573](US0573-an-uncommitted-changed-surface-is-reported-as-that.md) | an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence | Draft | EP0193 | 2026-07-30 | 2026-07-30 |
+| [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0573](US0573-an-uncommitted-changed-surface-is-reported-as-that.md) | an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence | Ready | EP0193 | 2026-07-30 | 2026-07-30 |
 | [US0581](US0581-a-finding-matching-an-open-bug-or-cr.md) | A finding matching an open Bug or CR is annotated with that id automatically and never blocks | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
 | [US0586](US0586-every-skill-script-records-the-artefact-it-touched.md) | Every skill script records the artefact it touched and the action it performed, per run | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0587](US0587-an-artefact-changed-in-the-run-diff-with.md) | An artefact changed in the run diff with no tool provenance is reported by name at the close | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
@@ -68,11 +68,11 @@
 | [US0626](US0626-sprint-close-and-sprint-stop-refuse-while-any.md) | sprint close and sprint stop refuse while any batch unit is non-terminal, naming each and where its findings went | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0627](US0627-closing-a-story-over-a-recorded-reject-requires.md) | closing a story over a recorded REJECT requires a filed artefact id or an explicit stop-ship ruling | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0628](US0628-a-story-closed-this-way-names-the-bug.md) | a story closed this way names the bug in its own record | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
-| [US0629](US0629-a-test-plan-is-derived-from-the-unit.md) | a test plan is DERIVED from the unit's criteria by the tooling, naming per criterion the production change the test must fail on | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0629](US0629-a-test-plan-is-derived-from-the-unit.md) | a test plan is DERIVED from the unit's criteria by the tooling, naming per criterion the production change the test must fail on | Ready | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0630](US0630-a-unit-reaching-delivery-without-a-reviewed-test.md) | a unit reaching delivery without a reviewed test plan is REFUSED by the command that starts the work | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0631](US0631-the-test-plan-is-reviewed-by-an-independent.md) | the test plan is reviewed by an independent seat before the code, and that review is recorded like a code review | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0632](US0632-at-delivery-each-planned-mutant-is-executed-against.md) | at delivery each planned mutant is EXECUTED against the shipped test and its death recorded | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
-| [US0633](US0633-a-criterion-whose-mutant-cannot-be-named-is.md) | a criterion whose mutant cannot be named is refused at grooming | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0633](US0633-a-criterion-whose-mutant-cannot-be-named-is.md) | a criterion whose mutant cannot be named is refused at grooming | Ready | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0634](US0634-the-cost-is-measured-over-one-run-and.md) | the cost is measured over one run and reported: passes spent on test-plan review versus on code review | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0635](US0635-the-thirteen-story-side-duplicate-verify-groups-are.md) | The thirteen story-side duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
 | [US0636](US0636-the-seven-bug-side-duplicate-verify-groups-are.md) | The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt | Ready | EP0174 | 2026-08-03 | 2026-08-03 |

@@ -1,6 +1,6 @@
 # US0633: a criterion whose mutant cannot be named is refused at grooming
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0525
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -12,16 +12,37 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer grooming a batch
+**I want** a criterion whose falsifying change nobody can name to be refused before the batch is planned
+**So that** the unanswerable question is asked while the criterion can still be rewritten, rather than at delivery when the only remaining move is to waive it
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: a batch carrying an unnameable mutant is not plannable
+
+- **Given** a batch in which one unit's test plan carries a row marked `unnameable`
+- **When** `sprint.py breakdown` reports and `sprint.py plan --write` runs over that batch
+- **Then** `breakdown` names the unit and the criterion read-only, and `plan --write` refuses, on the same terms it already refuses a unit lacking `Affects` or `Points`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnnameableMutantTests::test_an_unnameable_mutant_refuses_the_plan
+- **Caller:** `sprint.py plan --write` (the command that opens a run)
+- **Verification target:** functional
+- **Mutation-checked:** to be recorded at delivery - reducing the refusal to a warning must turn this test red
+- **Verified:** no
+
+### AC2: `unnameable` must carry its reason, so the state cannot be used as a silent exit
+
+- **Given** a row marked `unnameable` with no reason recorded
+- **When** the batch is read
+- **Then** it is refused as malformed rather than accepted as a declared exemption, because a state that costs nothing to enter is the state every awkward criterion ends up in
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnnameableMutantTests::test_unnameable_without_a_reason_is_malformed
+- **Caller:** `sprint.py breakdown` and `sprint.py plan --write`
+- **Verification target:** functional
+- **Mutation-checked:** to be recorded at delivery - accepting a reasonless `unnameable` must turn this test red
+- **Verified:** no
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-03 | sdlc-studio | Groomed: criteria authored against the `sprint.py` grooming refusal slice |
