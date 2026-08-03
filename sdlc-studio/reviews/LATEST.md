@@ -3,87 +3,61 @@
 > **RUN-01KYZKY5 closed stopped.** 44 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **Run of record:** RUN-01KYZKY5 - closing review [`RV0026`](RV0026-run-01kyzky5-closing-review-thirty-eight-passes-three.md).
-> 152 of 152 points delivered across 44 units. Every unit is terminal and independently
-> reviewed. Three stop-ship defects were found, repaired and re-reviewed.
+> **Run of record:** RUN-01KZ3V4D - the close-convergence sprint.
+> 39 of 39 points delivered across 13 units. Every unit is terminal, independently reviewed at
+> the lane boundary, and signed off by the operator. Six review passes returned five REJECTs
+> and 22 blocking findings; every one was repaired in the batch that raised it.
 
-## Landed: RUN-01KYZKY5 - the batch delivered in full, and the review finally happened
+## Landed: RUN-01KZ3V4D - the close converges, and its findings count
 
-The run had been STOPPED rather than closed, and the reason was not the code.
+The sprint goal was that a close converges in one pass and its findings count: nothing is
+repaired inside the close, a repaired REJECT has a route back to covered, and no close gate
+reports a green it did not earn. All three clauses shipped.
 
-**The review had not happened in the record.** Of 44 units: six were covered by an independent
-pass, eighteen carried a live REJECT from an earlier round, and **twenty had no recorded
-verdict at all** - almost all of them the bug fixes. The run's own account claimed "27 REJECT
-and 11 APPROVE over 38 units", but only twenty-three verdicts had ever reached
-`critic.py record`. The rest lived in a transcript, and the close cannot read a transcript.
+**The close now has a fixed point.** `sprint close` and `sprint stop` refuse while the working
+tree carries an uncommitted change to a file one of their own batch units declares, because a
+repair made inside the ceremony reaches terminal after the retro accounted for the batch and
+re-opens the ledger the close just satisfied. One run hit that twice in a single close and it
+read, from outside, as a sprint that was never being closed. The ledger now tells a close-time
+repair from an unaccounted unit, an unavoidable one can be recorded as a reasoned per-unit
+override, and re-running a finished close over an unchanged tree is a no-op that says so.
 
-So the close was right to refuse, and what it was refusing was real.
+**A REJECT can be answered.** `critic repair` records what was done about a rejection beside the
+verdict rather than over it, naming each finding it closes and the evidence closing it. Coverage
+distinguishes approved, repaired and unreviewed - the figure that motivated this was wrong by 18
+out of 19 because one number cannot carry three states - and the preflight now states the counts
+separately and NAMES the units nobody reviewed.
 
-`RV0026` is the review that batch never got: 38 briefs from `critic.py brief`, six independent
-contexts in their own git worktrees, scope bounded to each unit's `Affects` against
-`4e7d5e6c`. Eighteen rejoinders carrying the prior verdict verbatim, twenty first passes.
+**The suite verdict is earned.** It is written below both suite lanes, proven by executing the
+hook rather than grepping it, and bound to the working tree rather than the commit, so it no
+longer authorises every edit made after the suite ran.
 
-### What the review found
+### What the reviews found, and why it matters
 
-Three stop-ship defects, each reproduced by execution before it was believed:
+Five of six independent passes returned REJECT. The findings were not cosmetic:
 
-| Unit | Defect |
+| Finding | Shape |
 | --- | --- |
-| `BG0423` | the fix for a fail-open left the verdict write BETWEEN the two suite lanes, so a failing `tool-tests` lane still recorded `status green` and the identical retry ran no tests |
-| `US0604` | the close report called `critic` without importing it, so every non-empty batch raised `NameError` into an advisory `except` - it printed only for an empty batch |
-| `BG0437` | a criterion testing disambiguation whose fixtures needed no disambiguating - deleting the feature outright left the module green at 21 passed |
+| A one-character closure marked a REJECT COMPLETE | a review bypass through the shipped CLI, in the mechanism built to make rejections answerable |
+| `US0624` was false through the command it named | the fix landed in a checklist row while the operator-facing preflight ran a different path |
+| `US0619`'s recording lane was wholly inert | replacing all three call sites with `pass` changed no test result |
+| A pre-gate APPROVE read as rejected | two authorities answering one question, over 75 rows |
+| `BG0492`'s digest was empty on this repo | the exclude form fails when the path is gitignored; every fixture passed |
 
-All three share one shape: **the feature did not work through the entry point, and the
-verifier could not see it.** Each was repaired, mutation-verified, and re-reviewed by a pass
-judging the repair rather than the claim about it.
-
-`US0604` needed FOUR rounds, and each one found a real defect one layer out. Round one: the
-emitter raised `NameError` on an unimported module. Round two: the repair's test drove the
-emitter's caller and killed every mutant, while a real `sprint.py close` still printed
-nothing, because that caller is reached on a plain close only through a branch it never
-takes. Round three found that. Round four confirmed the report reaches the operator, by driving a complete
-unpatched close through all ten chain steps on all four routes.
-
-Three repairs, every one mutation-verified, every one wrong about the thing that mattered.
-**A mutation-killed test proves the test can fail, not that production takes that path.**
-
-Round two also caught a defect this close itself introduced: adding the tool lane's log
-capture gave the commit hook a second occurrence of the log path, and a neighbouring test's
-bare `index()` fell through to it, so deleting the skill lane's capture left that test green
-while a blocked commit lost its log. A repair that quietly weakens the test beside it is
-exactly what an independent second round exists to catch.
-
-### The finding that outranks all of them
-
-**Twenty units shipped with no independent review, and nothing in the system said so.** The
-units were `Done` and `Fixed`, the gate was green, the paperwork complete. A batch can pass
-every check this repo has while nobody has looked at half of it, and the first moment that
-becomes visible is the close refusing after 152 points have landed.
-
-`sprint.py review-batch --open` exists to review at the boundary where work lands. It was
-never called once across 44 units, because nothing prompts it and nothing refuses without it.
-That is `CR0523`, unbuilt.
-
-The second-order version is sharper: **a review that happened but was not recorded did not
-happen.** Fifteen verdicts were reported and never written down.
+Two of those were found by the author only because the work was driven against the real tree;
+the rest needed a reviewer who had not written the code.
 
 ### What is owed
 
 | Item | Where |
 | --- | --- |
-| Unrepaired findings from the earlier rounds | `BG0488`-`BG0494`, open |
-| Filed by this closing review | `BG0499`-`BG0502`, plus four routed into `CR0511` |
-| Review at the boundary, not at the close | `CR0523` |
-| `lane-check` made blocking (165 findings over 634 stories, advisory today) | `CR0520` |
-| The close's fixed point | `CR0527` / `EP0204` |
-| The four structural repairs | `EP0204`-`EP0207`, 67 points, all skeletons |
+| The suite-collapse lane writes its green above the collapse check | `BG0507`, open |
+| The close report's imports sit outside its own advisory try | `BG0508`, open |
+| Day-granularity in the close-time-repair split, and an override that never expires | `BG0509`, open |
+| Review at the boundary is still not PROMPTED by anything | `CR0523`, undecomposed |
+| A verdict vocabulary separating broken from unproven | `CR0524`, undecomposed |
+| A unit's test plan written and reviewed before its code | `CR0525` / `EP0207`, 26 points, unbuilt |
 
-`verify_ac.py lane-check` now reports no library-only verifiers for `US0604`: its criterion
-drives `main(["close", ...])`. Across the corpus the lane still reports 165 findings over 634
-stories, and it is advisory until `CR0520` ships.
-
-### Sprint Goal: partial
-
-The loop does now stop when it stops converging, and the gates landed in the commands people
-run. But the close still needed the operator in it, because the amigo panel could not satisfy
-the reviewer-of-record half - which was the goal's headline.
+The last three are the natural next sprint: this run made a rejection answerable, but nothing
+yet prompts the review that produces one, and half of the previous run's rejections were correct
+features whose verifiers could not fail.

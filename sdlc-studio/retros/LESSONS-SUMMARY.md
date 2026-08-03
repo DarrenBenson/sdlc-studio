@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0291: **A guard reddening a fixture is evidence about the fixture as often as about the guard.** Seven rolling tests went red because they never...**
+- **L-0290: **Fixing the row an operator does not read is not fixing it.** `US0624` changed a checklist resolver while the preflight - the command an...**
+- **L-0289: **A matching rule that is convenient is a gate that is optional.** The repair record's closure-to-finding match was bidirectional substring...**
+- **L-0288: **A mechanism verified only in fixtures is verified only in fixtures.** Two of this sprint's own deliveries were inert on the real...**
 - **L-0287: **A cascade that ticks a checkbox is not a status cascade.** `_cascade_epic` ticks the story's line in its parent's Story Breakdown and...**
 - **L-0286: **An operation the tooling advises on every run, and that nobody can commit, accumulates silently and is invisible in the advisory...**
 - **L-0285: **A guard that reads the live index treats "what nobody has archived yet" as the corpus.** Both failing guards asserted floors - `> 150`...**
