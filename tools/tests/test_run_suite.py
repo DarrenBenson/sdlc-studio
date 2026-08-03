@@ -324,6 +324,32 @@ class VerdictBindsToTheTreeTests(unittest.TestCase):
                          "`git add` alone invalidated a byte-identical tree:\n"
                          f"{r.stdout}{r.stderr}")
 
+    def test_the_digest_is_recorded_when_the_verdict_dir_is_itself_gitignored(self) -> None:
+        """MUTANT: exclude `.local` with an `add -- ':(exclude)<p>'` pathspec.
+
+        THE SHAPE THIS REPOSITORY ACTUALLY HAS, and the one every other fixture here lacks.
+        `git add -- ':(exclude)<p>'` FAILS when <p> is also gitignored - "the following paths
+        are ignored by one of your .gitignore files" - so the digest came back empty on the real
+        repo while all six fixtures passed, because none of them ignores `.local`. The verdict
+        then recorded `tree_hash: ""` and `--check` refused every claim as unbindable: the fix
+        was inert exactly where it ships.
+
+        Asserts a NON-EMPTY digest, which is the assertion the other tests cannot make - they
+        compare digests to each other, and two empty strings compare equal.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / ".gitignore").write_text("sdlc-studio/.local/\n", encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-qm", "ignore local"], cwd=root, check=True)
+            _run(root, "all", cmd="exit 0")
+            verdict = json.loads((root / VERDICT_REL).read_text(encoding="utf-8"))
+            self.assertTrue(verdict["tree_hash"],
+                            "the verdict recorded an EMPTY tree_hash, so nothing binds it to "
+                            "the tree - the check degrades to refusing everything")
+            self.assertEqual(0, _run(root, "--check").returncode,
+                             "a verdict with a real digest was still refused")
+
     def test_an_unknown_suite_is_refused_rather_than_defaulted(self) -> None:
         """MUTANT: accept any `--check <word>`.
 

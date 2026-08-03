@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 27 |
-| Ready | 22 |
+| Ready | 21 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 3 |
+| Review | 4 |
 | Done | 581 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -58,7 +58,7 @@
 | [US0616](US0616-sprint-close-and-sprint-stop-refuse-while-the.md) | sprint close and sprint stop refuse while the tree carries a repair to a batch unit | Review | EP0204 | 2026-08-02 | 2026-08-02 |
 | [US0617](US0617-the-close-owed-ledger-distinguishes-a-close-time.md) | the close-owed ledger distinguishes a close-time repair from an unaccounted unit | Review | EP0204 | 2026-08-02 | 2026-08-02 |
 | [US0618](US0618-an-unavoidable-close-time-repair-is-recorded-as.md) | an unavoidable close-time repair is recorded as an explicit override with its reason | Review | EP0204 | 2026-08-02 | 2026-08-02 |
-| [US0619](US0619-re-running-a-completed-close-over-an-unchanged.md) | re-running a completed close over an unchanged tree is a no-op that says so | Ready | EP0204 | 2026-08-02 | 2026-08-02 |
+| [US0619](US0619-re-running-a-completed-close-over-an-unchanged.md) | re-running a completed close over an unchanged tree is a no-op that says so | Review | EP0204 | 2026-08-02 | 2026-08-02 |
 | [US0620](US0620-a-reject-can-be-answered-by-a-recorded.md) | a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
 | [US0621](US0621-the-coverage-predicate-distinguishes-approved-repaired-and-unreviewed.md) | the coverage predicate distinguishes approved, repaired and unreviewed rather than two states | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
 | [US0622](US0622-a-repair-closing-fewer-findings-than-the-reject.md) | a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones | Ready | EP0205 | 2026-08-02 | 2026-08-02 |

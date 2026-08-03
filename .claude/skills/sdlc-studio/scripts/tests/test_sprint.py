@@ -12602,5 +12602,103 @@ class CloseFixedPointTests(unittest.TestCase):
                               f"{name} states the rule without naming the command that gates it")
 
 
+class CloseIdempotenceTests(unittest.TestCase):
+    """US0619 / CR0527: re-running a finished close over an unchanged tree changes nothing.
+
+    The close was run three times on RUN-01KYMJEM and repeatedly on RUN-01KYZKY5, and the
+    operator's reading was that the sprint was never being closed. It was: each close was undone
+    by the next repair, and each re-run re-derived an account that could differ from the one
+    before it. Stated as an invariant - the close is IDEMPOTENT over an unchanged tree - so
+    re-running is free and the operator can CHECK rather than guess, which is the behaviour a
+    close-time gate makes people want.
+    """
+
+    def _repo(self, d: str) -> Path:
+        root = Path(d)
+        clean = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}
+        for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+            clean.pop(name, None)
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True, env=clean)
+        (root / "a.txt").write_text("x\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True, env=clean)
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "-qm", "seed"], cwd=root, check=True, env=clean)
+        self._env = clean
+        return root
+
+    def _closed_state(self, mod, root: Path) -> None:
+        """A run whose close COMPLETED, with the tree it described stamped on it."""
+        _close_state(root, outcome="goal-reached", batch=[])
+        run_state = mod.run_state
+        run_state.update(root, close_tree=mod.tree_digest(root))
+
+    def _close(self, mod, root: Path) -> tuple:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                contextlib.suppress(SystemExit):
+            rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_a_second_close_over_an_unchanged_tree_writes_nothing(self) -> None:
+        """MUTANT: drop the `close_is_a_noop` short-circuit from `cmd_close`."""
+        with tempfile.TemporaryDirectory() as d:
+            mod, root = _load(), self._repo(d)
+            self._closed_state(mod, root)
+            before = (root / "sdlc-studio" / ".local" / "run-state.json").read_text("utf-8")
+            rc, out = self._close(mod, root)
+            after = (root / "sdlc-studio" / ".local" / "run-state.json").read_text("utf-8")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("already accounted for", out)
+        self.assertEqual(before, after, "the no-op re-derived the run state")
+
+    def test_unchanged_is_judged_on_the_tree_not_on_head(self) -> None:
+        """MUTANT: key the check on `head_sha` instead of the tree digest.
+
+        A close is FOLLOWED by commits - its own paperwork - so a check keyed on the commit id
+        reports "changed" after every close and never short-circuits, and reports "unchanged"
+        while an uncommitted repair sits in the tree. Both directions are wrong.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            mod, root = _load(), self._repo(d)
+            self._closed_state(mod, root)
+            # A new COMMIT that moves no content the digest reads: same tree, new HEAD.
+            subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit",
+                            "-q", "--allow-empty", "-m", "paperwork"], cwd=root, check=True,
+                           env=self._env)
+            rc, out = self._close(mod, root)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("already accounted for", out,
+                      "a commit that changed no content made the close re-run")
+
+    def test_a_changed_tree_re_runs_the_close(self) -> None:
+        """The control. MUTANT: always short-circuit.
+
+        The no-op is an idempotence guarantee, not a lock: a close that refused to re-run after
+        real work would be worse than the churn it replaces.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            mod, root = _load(), self._repo(d)
+            self._closed_state(mod, root)
+            (root / "a.txt").write_text("genuinely different\n", encoding="utf-8")
+            _rc, out = self._close(mod, root)
+        self.assertNotIn("already accounted for", out,
+                         f"a changed tree was reported as already accounted:\n{out}")
+
+    def test_an_open_run_is_never_a_noop(self) -> None:
+        """MUTANT: short-circuit on any run carrying a `close_tree`.
+
+        A run still open has not been closed at all, so its FIRST close must never be skipped -
+        that would be the ceremony silently not happening, which is worse than running twice.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            mod, root = _load(), self._repo(d)
+            _close_state(root, outcome="running", batch=[])
+            mod.run_state.update(root, close_tree=mod.tree_digest(root))
+            _rc, out = self._close(mod, root)
+        self.assertNotIn("already accounted for", out,
+                         f"an OPEN run's first close was skipped as a no-op:\n{out}")
+
+
+
 if __name__ == "__main__":
     unittest.main()

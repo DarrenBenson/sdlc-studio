@@ -42,6 +42,7 @@ import argparse
 import contextlib
 import io
 import json
+import os
 import re
 import subprocess
 import sys
@@ -5518,6 +5519,7 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     # here too - it is the end of that route, and the operator is owed the same account of the
     # close whichever way it completed.
     _tell_the_operator(root)
+    record_close_tree(root)
     return 0
 
 
@@ -6395,6 +6397,7 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
     # of the filings rather than before them.
     _tell_the_operator(root, deferred=[
         f"{fid}: [{b['stage']}] {b['detail']}" for fid, b in filed])
+    record_close_tree(root)
     return 0
 
 
@@ -7181,6 +7184,88 @@ def cmd_lane(args: argparse.Namespace) -> int:
     return 1 if any(r["outcome"] == "blocked" for r in results) else 0
 
 
+def tree_digest(root) -> str:
+    """A digest of the working tree's CONTENT, as a real git tree object, or "".
+
+    Built in a throwaway index - read HEAD, stage everything, write the tree - so it is a
+    function of CONTENT alone and cannot tell a staged change from an unstaged one. That
+    matters here for the same reason it matters to the suite verdict: `git add` is not an edit,
+    and a digest that moved when work was staged would make the close's no-op unreachable in
+    the normal mid-session state.
+
+    HEAD alone would be the wrong question. A close is followed by commits - its own paperwork -
+    so an idempotence check keyed on the commit id would report "changed" after every close and
+    never short-circuit; and, worse, would report "unchanged" while an uncommitted repair sat in
+    the tree. The tree is what the account describes.
+
+    Returns "" when git cannot be read. The caller treats that as "cannot prove it is unchanged"
+    and does the work, which is the safe direction: a close that runs twice costs time, one that
+    wrongly skips loses the ceremony.
+    """
+    import tempfile  # noqa: PLC0415 - deferred, as elsewhere in this module
+    idx = None
+    try:
+        fd, idx = tempfile.mkstemp(prefix="sdlc-close-index.")
+        os.close(fd)
+        os.unlink(idx)
+        env = {**os.environ, "GIT_INDEX_FILE": idx}
+        subprocess.run(["git", "-C", str(root), "read-tree", "HEAD"], env=env,
+                       capture_output=True, timeout=30)
+        add = subprocess.run(["git", "-C", str(root), "add", "-A", "--", "."],
+                             env=env, capture_output=True, timeout=60)
+        if add.returncode != 0:
+            return ""
+        # Dropped from the INDEX rather than excluded by pathspec: `add -- ':(exclude)<p>'`
+        # errors when <p> is also gitignored, which is this repository's own shape.
+        subprocess.run(["git", "-C", str(root), "rm", "--cached", "-r", "-q",
+                        "--ignore-unmatch", "--", "sdlc-studio/.local"],
+                       env=env, capture_output=True, timeout=30)
+        out = subprocess.run(["git", "-C", str(root), "write-tree"], env=env,
+                             capture_output=True, text=True, timeout=30)
+        return out.stdout.strip() if out.returncode == 0 else ""
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    finally:
+        if idx:
+            with contextlib.suppress(OSError):
+                os.unlink(idx)
+
+
+def record_close_tree(root) -> None:
+    """Stamp the tree this close's account describes, so a later re-run can prove it unchanged.
+
+    Written AFTER the close has stamped its outcome, because the account includes whatever the
+    close itself wrote. Silent when the digest is unavailable: `close_is_a_noop` then declines to
+    short-circuit, which is the safe direction.
+    """
+    if digest := tree_digest(root):
+        with contextlib.suppress(Exception):
+            run_state.update(root, close_tree=digest)
+
+
+def close_is_a_noop(root, state: dict) -> str:
+    """The already-accounted message when re-running would change nothing, else "".
+
+    The close was run three times on RUN-01KYMJEM and repeatedly on RUN-01KYZKY5, and the
+    operator's reading was that the sprint was never being closed. It was: each close was
+    undone by the next repair, and each re-run re-derived an account that could differ from the
+    one before it. This is the fixed point stated as an invariant - the close is IDEMPOTENT over
+    an unchanged tree - so re-running is free and the operator can check rather than guess,
+    which is the behaviour a close-time gate makes people want.
+    """
+    if state.get("outcome") in (None, "", run_state.RUNNING):
+        return ""                     # still open: a close here is the first one, not a re-run
+    recorded = str(state.get("close_tree") or "")
+    if not recorded:
+        return ""                     # closed before this was recorded - cannot prove anything
+    now = tree_digest(root)
+    if not now or now != recorded:
+        return ""
+    return (f"close: {state.get('run_id') or 'this run'} is already accounted for - its close "
+            f"completed (outcome `{state.get('outcome')}`) and the tree has not moved since "
+            f"({recorded[:12]}). Nothing re-derived, nothing written.")
+
+
 def batch_repair_in_tree(root, state: dict) -> list:
     """Uncommitted changes to files a BATCH UNIT declares, as `[(unit_id, path)]`.
 
@@ -7271,6 +7356,11 @@ def cmd_close(args: argparse.Namespace) -> int:
     if refusal := _refuse_batch_repair(root, state, "close"):
         print(refusal, file=sys.stderr)
         return 2
+    # IDEMPOTENT over an unchanged tree. Checked after the repair guard, so a dirty tree is
+    # still refused rather than reported as already-accounted.
+    if noop := close_is_a_noop(root, state):
+        print(noop)
+        return 0
     pre = _report_preflight(root, args.retro)
     trend = _record_close_attempt(root, pre)
     if trend:
@@ -7401,6 +7491,7 @@ def cmd_close(args: argparse.Namespace) -> int:
     # already stamped the run goal-reached. So a completed close told the operator nothing.
     # Twice over: the first repair fixed a NameError inside a function the close does not call.
     _tell_the_operator(root)
+    record_close_tree(root)
     import critic  # noqa: PLC0415 - the brief composer
     gate_note = f"gate --require-retro {args.retro} --require-review: PASS; {_mutation_note(root)}"
     batch = state.get("batch") or []

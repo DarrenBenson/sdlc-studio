@@ -1,6 +1,6 @@
 # US0619: re-running a completed close over an unchanged tree is a no-op that says so
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0527
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -41,6 +41,7 @@ any.
 - **Then** it exits zero, reports the run already accounted for, and writes no artefact - no
   re-derived retro row, no re-stamped baseline, no second handoff
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseIdempotenceTests::test_a_second_close_over_an_unchanged_tree_writes_nothing
+- **Verified:** yes (2026-08-03)
 
 ### AC2: "unchanged" is judged on the tree, not on HEAD
 
@@ -50,6 +51,7 @@ any.
   does not manufacture a difference, and an uncommitted edit is not hidden by there being no new
   commit
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseIdempotenceTests::test_unchanged_is_judged_on_the_tree_not_on_head
+- **Verified:** yes (2026-08-03)
 
 ### AC3: a genuinely changed tree re-runs the close
 
@@ -58,6 +60,7 @@ any.
 - **Then** it proceeds normally - the no-op is an idempotence guarantee, not a lock, and a close
   that refused to re-run after real work would be worse than the churn it replaces
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseIdempotenceTests::test_a_changed_tree_re_runs_the_close
+- **Verified:** yes (2026-08-03)
 
 ## Revision History
 

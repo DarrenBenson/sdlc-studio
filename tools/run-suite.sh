@@ -89,9 +89,14 @@ tree_state() {
     # `read-tree` seeds from HEAD so an unmodified tree costs almost nothing to stage; on a
     # repo with no commits there is nothing to seed from and `add` builds the index alone.
     GIT_INDEX_FILE="$idx" git read-tree HEAD >/dev/null 2>&1 || true
-    GIT_INDEX_FILE="$idx" git add -A -- . ":(exclude)sdlc-studio/.local" >/dev/null 2>&1 || {
-        rm -f "$idx"; return 1
-    }
+    GIT_INDEX_FILE="$idx" git add -A -- . >/dev/null 2>&1 || { rm -f "$idx"; return 1; }
+    # Dropped from the INDEX rather than excluded by pathspec. `git add -- ':(exclude)<p>'`
+    # errors when <p> is also gitignored ("the following paths are ignored"), which is exactly
+    # this repository's shape - so the pathspec form returned empty here while every fixture,
+    # none of which ignores .local, passed. `rm --cached --ignore-unmatch` is silent whether the
+    # path is tracked, untracked or ignored, so one form covers all three.
+    GIT_INDEX_FILE="$idx" git rm --cached -r -q --ignore-unmatch \
+        -- "sdlc-studio/.local" >/dev/null 2>&1 || true
     tree="$(GIT_INDEX_FILE="$idx" git write-tree 2>/dev/null)"
     rm -f "$idx"
     [[ -n "$tree" ]] || return 1
