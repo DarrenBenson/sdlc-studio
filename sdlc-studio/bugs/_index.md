@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
+| Open | 24 |
 | In Progress | 0 |
 | Fixed | 399 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **505** |
+| **Total** | **506** |
 
 ## All Bugs
 
@@ -45,6 +45,7 @@
 | [BG0503](BG0503-an-epic-whose-every-child-is-terminal-stays.md) | an epic whose every child is terminal stays Draft, and no reconcile detector says so: 15 of 30 open epics are already delivered | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0504](BG0504-seven-repo-guards-read-the-live-index-directly.md) | seven repo guards read the live index directly, so taking reconcile's own archival advice turns the tree red | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0505](BG0505-claim-drift-compares-a-bare-filename-against-full.md) | claim-drift compares a bare filename against full repo paths, so any Verify line naming a test by basename is a guaranteed false positive | Fixed | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0506](BG0506-a-repeated-single-valued-metadata-field-is-accepted.md) | a repeated single-valued metadata field is accepted, read first-wins, and corrected first-only - so a gate can read one of two contradictory claims | Open | Medium | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 
