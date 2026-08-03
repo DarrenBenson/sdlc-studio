@@ -1,3 +1,8 @@
+
+<!-- close-status:begin -->
+> **RUN-01KYZKY5 closed stopped.** 44 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
 > **Run of record:** RUN-01KYZKY5 - closing review [`RV0026`](RV0026-run-01kyzky5-closing-review-thirty-eight-passes-three.md).
 > 152 of 152 points delivered across 44 units. Every unit is terminal and independently
 > reviewed. Three stop-ship defects were found, repaired and re-reviewed.

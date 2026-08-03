@@ -253,7 +253,7 @@ sprints fits noise.
 
 **0 of 44 unit(s) measured; 43 of 44 forecast at plan time.**
 
-**Velocity: 4.96 points/elapsed-hour** (76 points over 15.312h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+**Velocity: 9.67 points/elapsed-hour** (148 points over 15.312h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: BG0438, BG0423, BG0432, BG0433, BG0435, BG0436, BG0448, BG0462, BG0470, BG0476, BG0478, BG0431, BG0434, BG0437, BG0475, BG0483, US0607, BG0359, BG0420, BG0474, US0466, US0470, US0471, US0472, US0473, US0601, US0602, US0606, US0609, US0611, US0615, BG0401, US0598, US0599, US0600, US0603, US0604, US0605, US0608, US0610, US0612, US0613, US0614. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.

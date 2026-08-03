@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0284: **A mutation-killed test proves the test can fail, not that production takes that path.** `US0604` needed four rounds.**
+- **L-0283: **A review exists when the ledger says so, not when it happened.** Fifteen of this run's verdicts were produced and never recorded, and...**
 - **L-0282: **An advisory detector that fires on the author changes nothing.** `lane-check`'s yield is no longer a question: 7 flagged, 6 independently...**
 - **L-0281: **"Broken" and "unproven" are different facts and want different words.** Roughly 13 of the 27 rejections were a feature that does not...**
 - **L-0280: **Reviewing the test is cheaper than reviewing the code.** This run spent five adversarial passes and roughly 800k tokens to discover...**
