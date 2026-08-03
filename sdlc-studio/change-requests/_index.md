@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 12 |
 | Approved | 0 |
-| In Progress | 18 |
-| Complete | 474 |
+| In Progress | 17 |
+| Complete | 475 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
@@ -51,7 +51,7 @@
 | [CR-0465](CR0465-reconcile-s-sweep-detectors-re-read-the-whole.md) | reconcile's sweep detectors re-read the whole corpus per unit: 733,271 file opens for one run | Complete | Medium | Improvement | 2026-07-28 | EP0181 |
 | [CR-0496](CR0496-a-project-config-decision-is-invisible-to-the.md) | A project-config decision is invisible to the forward-port check, so 'in sync' reads as 'everything is mirrored' when the reasoning stayed behind | Proposed | Medium | enhancement | 2026-07-28 | -- |
 | [CR-0497](CR0497-the-v5-upgrade-grandfathers-a-project-s-history.md) | The v5 upgrade grandfathers a project's history silently, so every exemption it grants is a number with no record of what it forgave or why | Proposed | High | enhancement | 2026-07-28 | -- |
-| [CR-0498](CR0498-the-close-ceremony-costs-more-than-the-work.md) | The close ceremony costs more than the work it certifies: measured at ~32 minutes of gate and 57 process spawns to sign off 19 units | In Progress | High | enhancement | 2026-07-29 | EP0189 |
+| [CR-0498](CR0498-the-close-ceremony-costs-more-than-the-work.md) | The close ceremony costs more than the work it certifies: measured at ~32 minutes of gate and 57 process spawns to sign off 19 units | Complete | High | enhancement | 2026-07-29 | EP0189 |
 | [CR-0499](CR0499-a-sprint-is-never-asked-whether-it-produced.md) | A sprint is never asked whether it produced a SHIPPABLE increment: the release definition-of-done encodes mechanism, not outcome | Proposed | High | Improvement | 2026-07-29 | -- |
 | [CR-0500](CR0500-the-adversarial-review-runs-at-the-close-so.md) | The adversarial review runs at the close, so every defect it finds becomes close work - it belongs at the delivery cadence | Complete | High | Improvement | 2026-07-29 | EP0190 |
 | [CR-0501](CR0501-a-repair-is-held-only-by-a-test.md) | A repair is held only by a test its own author wrote, and repairs land in guards - mutation must be mandatory on a fix, not optional on a sprint | In Progress | High | Improvement | 2026-07-29 | EP0191 |

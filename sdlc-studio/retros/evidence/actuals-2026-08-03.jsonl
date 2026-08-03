@@ -46,3 +46,6 @@
 {"id": "BG0503", "type": "bug", "project": "sdlc-studio"}
 {"id": "BG0505", "type": "bug", "project": "sdlc-studio"}
 {"id": "US0482", "type": "story", "project": "sdlc-studio"}
+{"id": "US0553", "type": "story", "project": "sdlc-studio"}
+{"id": "EP0189", "type": "epic", "project": "sdlc-studio"}
+{"id": "CR0498", "type": "cr", "project": "sdlc-studio"}

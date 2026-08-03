@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 15 |
+| Draft | 14 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 192 |
+| Done | 193 |
 | **Total** | **207** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -36,7 +36,7 @@
 | [EP0176](EP0176-a-queue-of-planned-sprint-charters-plan-several.md) | A queue of planned sprint charters: plan several, run the next, and let the planner and the runner be different people | Draft | 6 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0177](EP0177-make-the-discipline-cheaper-than-the-sloppiness-it.md) | Make the discipline cheaper than the sloppiness it replaces: run the tests the change can reach, at the boundaries that matter | Done | 15 | -- | 2026-07-28 | 2026-07-28 |
 | [EP0181](EP0181-reconcile-s-sweeps-read-the-corpus-once-per.md) | reconcile's sweeps read the corpus once per run, not once per unit | Done | 3 | -- | 2026-07-28 | 2026-07-28 |
-| [EP0189](EP0189-the-close-costs-less-than-the-work-it.md) | The close costs less than the work it certifies: earn the gate verdict once, record a batch in one call, and refuse in one pass | Draft | 7 | -- | 2026-07-29 | 2026-07-29 |
+| [EP0189](EP0189-the-close-costs-less-than-the-work-it.md) | The close costs less than the work it certifies: earn the gate verdict once, record a batch in one call, and refuse in one pass | Done | 7 | -- | 2026-07-29 | 2026-07-29 |
 | [EP0190](EP0190-the-review-happens-inside-the-sprint-batch-boundary.md) | The review happens inside the sprint: batch-boundary adversarial passes, so a finding is delivery work not close overhead | Done | 4 | -- | 2026-07-29 | 2026-07-29 |
 | [EP0191](EP0191-a-repair-is-held-by-a-mutant-it.md) | A repair is held by a mutant it kills: mutation is mandatory on a fix, gated on survivors at the transition | Draft | 4 | -- | 2026-07-29 | 2026-07-29 |
 | [EP0193](EP0193-the-mutation-lane-tells-an-uncommitted-surface-apart.md) | The mutation lane tells an uncommitted surface apart from an untested one | Draft | 1 | -- | 2026-07-30 | 2026-07-30 |

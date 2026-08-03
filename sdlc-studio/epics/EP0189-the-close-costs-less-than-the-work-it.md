@@ -1,6 +1,6 @@
 # EP0189: The close costs less than the work it certifies: earn the gate verdict once, record a batch in one call, and refuse in one pass
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 32
 > **Parent:** CR0498
 > **Created:** 2026-07-29
@@ -14,7 +14,7 @@ Decomposed from CR0498. Delivers the work CR0498 requested.
 
 ## Story Breakdown
 
-- [ ] [US0553: A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites](../stories/US0553-a-close-phase-commit-over-an-unchanged-test.md)
+- [x] [US0553: A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites](../stories/US0553-a-close-phase-commit-over-an-unchanged-test.md)
 - [x] [US0554: A listing-only declaration names the ids its structural read depends on, so filing an artefact stops triggering the full suites](../stories/US0554-a-listing-only-declaration-names-the-ids-its.md)
 - [x] [US0555: sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing](../stories/US0555-sprint-close-dry-run-reports-every-unmet-prerequisite.md)
 - [x] [US0556: critic evidence, record and signoff each record a whole batch in one invocation, with the open run as the default scope](../stories/US0556-critic-evidence-record-and-signoff-each-record-a.md)

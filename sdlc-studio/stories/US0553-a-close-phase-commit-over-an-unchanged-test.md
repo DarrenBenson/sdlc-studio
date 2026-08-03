@@ -1,6 +1,6 @@
 # US0553: A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites
 
-> **Status:** Blocked
+> **Status:** Won't Implement
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

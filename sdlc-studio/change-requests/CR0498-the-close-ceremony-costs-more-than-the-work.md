@@ -1,6 +1,6 @@
 # CR-0498: The close ceremony costs more than the work it certifies: measured at ~32 minutes of gate and 57 process spawns to sign off 19 units
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0189
 > **Priority:** High
 > **Type:** enhancement

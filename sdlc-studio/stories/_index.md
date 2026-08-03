@@ -7,16 +7,16 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 36 |
-| Ready | 16 |
+| Draft | 27 |
+| Ready | 25 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
 | Done | 581 |
-| Won't Implement | 1 |
+| Won't Implement | 2 |
 | Deferred | 0 |
 | Superseded | 2 |
-| Blocked | 1 |
+| Blocked | 0 |
 | **Total** | **637** |
 
 ## All Stories
@@ -37,7 +37,7 @@
 | [US0490](US0490-a-charter-carries-its-own-goal-review-and.md) | A charter carries its own goal review, and the run records who reviewed the goal and who ran it without refusing when they match | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0491](US0491-calling-a-sprint-at-a-point-is-an.md) | Calling a sprint at a point is an honest close: the unstarted remainder is descoped with a reason and returns to the backlog | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0492](US0492-the-queue-lifecycle-is-documented-alongside-the-run.md) | The queue lifecycle is documented alongside the run lifecycle, with every invocation shown taken from the shipped parser | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
-| [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Blocked | EP0189 | 2026-07-29 | 2026-07-29 |
+| [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Won't Implement | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
@@ -55,15 +55,15 @@
 | [US0594](US0594-a-unit-whose-ticked-criteria-the-tree-contradicts.md) | A unit whose ticked criteria the tree contradicts is reported outstanding at the close | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0595](US0595-a-waiver-records-whether-it-was-deliberate-or.md) | A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
-| [US0616](US0616-sprint-close-and-sprint-stop-refuse-while-the.md) | sprint close and sprint stop refuse while the tree carries a repair to a batch unit | Draft | EP0204 | 2026-08-02 | 2026-08-02 |
-| [US0617](US0617-the-close-owed-ledger-distinguishes-a-close-time.md) | the close-owed ledger distinguishes a close-time repair from an unaccounted unit | Draft | EP0204 | 2026-08-02 | 2026-08-02 |
-| [US0618](US0618-an-unavoidable-close-time-repair-is-recorded-as.md) | an unavoidable close-time repair is recorded as an explicit override with its reason | Draft | EP0204 | 2026-08-02 | 2026-08-02 |
-| [US0619](US0619-re-running-a-completed-close-over-an-unchanged.md) | re-running a completed close over an unchanged tree is a no-op that says so | Draft | EP0204 | 2026-08-02 | 2026-08-02 |
-| [US0620](US0620-a-reject-can-be-answered-by-a-recorded.md) | a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
-| [US0621](US0621-the-coverage-predicate-distinguishes-approved-repaired-and-unreviewed.md) | the coverage predicate distinguishes approved, repaired and unreviewed rather than two states | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
-| [US0622](US0622-a-repair-closing-fewer-findings-than-the-reject.md) | a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
-| [US0623](US0623-a-finding-closed-by-filing-is-recorded-distinctly.md) | a finding closed by FILING is recorded distinctly from one closed by fixing | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
-| [US0624](US0624-the-close-preflight-states-the-three-coverage-counts.md) | the close preflight states the three coverage counts separately | Draft | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0616](US0616-sprint-close-and-sprint-stop-refuse-while-the.md) | sprint close and sprint stop refuse while the tree carries a repair to a batch unit | Ready | EP0204 | 2026-08-02 | 2026-08-02 |
+| [US0617](US0617-the-close-owed-ledger-distinguishes-a-close-time.md) | the close-owed ledger distinguishes a close-time repair from an unaccounted unit | Ready | EP0204 | 2026-08-02 | 2026-08-02 |
+| [US0618](US0618-an-unavoidable-close-time-repair-is-recorded-as.md) | an unavoidable close-time repair is recorded as an explicit override with its reason | Ready | EP0204 | 2026-08-02 | 2026-08-02 |
+| [US0619](US0619-re-running-a-completed-close-over-an-unchanged.md) | re-running a completed close over an unchanged tree is a no-op that says so | Ready | EP0204 | 2026-08-02 | 2026-08-02 |
+| [US0620](US0620-a-reject-can-be-answered-by-a-recorded.md) | a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0621](US0621-the-coverage-predicate-distinguishes-approved-repaired-and-unreviewed.md) | the coverage predicate distinguishes approved, repaired and unreviewed rather than two states | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0622](US0622-a-repair-closing-fewer-findings-than-the-reject.md) | a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0623](US0623-a-finding-closed-by-filing-is-recorded-distinctly.md) | a finding closed by FILING is recorded distinctly from one closed by fixing | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0624](US0624-the-close-preflight-states-the-three-coverage-counts.md) | the close preflight states the three coverage counts separately | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
 | [US0625](US0625-the-doctrine-states-the-rule-and-the-stop.md) | the doctrine states the rule and the stop-ship judgement is recorded per finding at review time | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0626](US0626-sprint-close-and-sprint-stop-refuse-while-any.md) | sprint close and sprint stop refuse while any batch unit is non-terminal, naming each and where its findings went | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0627](US0627-closing-a-story-over-a-recorded-reject-requires.md) | closing a story over a recorded REJECT requires a filed artefact id or an explicit stop-ship ruling | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
