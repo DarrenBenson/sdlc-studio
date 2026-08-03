@@ -1,6 +1,6 @@
 # EP0204: The close converges: nothing is fixed inside it, and the ledger can tell a close-time repair from an unaccounted unit
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 10
 > **Parent:** CR0527
 > **Created:** 2026-08-02
@@ -14,10 +14,10 @@ Decomposed from CR0527. Delivers the work CR0527 requested.
 
 ## Story Breakdown
 
-- [ ] [US0616: sprint close and sprint stop refuse while the tree carries a repair to a batch unit](../stories/US0616-sprint-close-and-sprint-stop-refuse-while-the.md)
-- [ ] [US0617: the close-owed ledger distinguishes a close-time repair from an unaccounted unit](../stories/US0617-the-close-owed-ledger-distinguishes-a-close-time.md)
-- [ ] [US0618: an unavoidable close-time repair is recorded as an explicit override with its reason](../stories/US0618-an-unavoidable-close-time-repair-is-recorded-as.md)
-- [ ] [US0619: re-running a completed close over an unchanged tree is a no-op that says so](../stories/US0619-re-running-a-completed-close-over-an-unchanged.md)
+- [x] [US0616: sprint close and sprint stop refuse while the tree carries a repair to a batch unit](../stories/US0616-sprint-close-and-sprint-stop-refuse-while-the.md)
+- [x] [US0617: the close-owed ledger distinguishes a close-time repair from an unaccounted unit](../stories/US0617-the-close-owed-ledger-distinguishes-a-close-time.md)
+- [x] [US0618: an unavoidable close-time repair is recorded as an explicit override with its reason](../stories/US0618-an-unavoidable-close-time-repair-is-recorded-as.md)
+- [x] [US0619: re-running a completed close over an unchanged tree is a no-op that says so](../stories/US0619-re-running-a-completed-close-over-an-unchanged.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -1,6 +1,6 @@
 # US0617: the close-owed ledger distinguishes a close-time repair from an unaccounted unit
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0527
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0619: re-running a completed close over an unchanged tree is a no-op that says so
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0527
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

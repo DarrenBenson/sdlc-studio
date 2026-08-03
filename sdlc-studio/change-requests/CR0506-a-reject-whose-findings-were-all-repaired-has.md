@@ -1,6 +1,6 @@
 # CR-0506: a REJECT whose findings were all repaired has no route back to covered, so a fully repaired batch reads identically to one nobody reviewed
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0205
 > **Priority:** High
 > **Type:** Improvement

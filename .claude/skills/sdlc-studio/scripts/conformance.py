@@ -279,6 +279,32 @@ def two_role_applies_to(rid: str, two_role_cutoff: int | None) -> bool:
     return rid_num is None or rid_num > two_role_cutoff
 
 
+def verdict_half_ok(root, rid, sprint_covers: bool) -> bool:
+    """Whether the VERDICT half of `critiqued` is satisfied - THE one definition.
+
+    Three ways, and they are the same three everywhere this question is asked:
+
+      * an independent (or grandfathered pre-gate) APPROVE;
+      * a REJECT whose every raised finding carries a recorded closure - the rejection was
+        answered, which is what the gate is actually asking;
+      * no per-unit verdict at all, but a batch review covering the unit.
+
+    Extracted because this file computed it TWICE - once in `critiqued_unmet` and once in the
+    detailed form below - and teaching only the first about repaired rejections left nine Done
+    units reporting `missing critiqued` while the other answer said they were fine. That is the
+    drift `critiqued_unmet`'s own docstring exists to warn about, reproduced inside the file
+    that warns about it.
+    """
+    verdict = critic.verdict_for(root, rid)
+    per_unit_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
+                   and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
+    if per_unit_ok:
+        return True
+    if verdict and str(verdict.get("verdict") or "").upper() == critic.REJECT:
+        return critic.repair_state(root, rid)["state"] == "complete"
+    return verdict is None and sprint_covers
+
+
 def critiqued_unmet(root, rid, two_role_cutoff: int | None,
                     critic_required: bool = True, two_role_only: bool = False) -> list[str]:
     """The `critiqued` halves left unmet for `rid`, in this module's own vocabulary.
@@ -294,22 +320,7 @@ def critiqued_unmet(root, rid, two_role_cutoff: int | None,
     verdict = critic.verdict_for(root, rid)
     sprint_covers = critic.sprint_covers_independently(
         root, rid, critic.sprint_review_for(root, rid))
-    per_unit_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
-                   and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
-    # A REJECT whose every raised finding carries a recorded closure is REPAIRED, and that is a
-    # third state rather than a shade of unreviewed. Reported in its own words: conformance said
-    # `missing critiqued (independent APPROVE verdict)` for all eighteen repaired units of one
-    # run AND for units nobody had opened, which is what sent that close to a waiver sweep over
-    # work whose findings were already fixed and mutation-verified.
-    #
-    # The DECLARED rule, so a reader learns it here rather than from whichever branch runs: a
-    # repaired unit SATISFIES the verdict half. What the reviewer found stays recorded, and what
-    # was done about it is recorded beside it - the gate asks whether the rejection was answered,
-    # and a complete repair is the answer. A PARTIAL repair is not, and reaches neither state.
-    repaired_ok = (bool(verdict)
-                   and str(verdict.get("verdict") or "").upper() == critic.REJECT
-                   and critic.repair_state(root, rid)["state"] == "complete")
-    verdict_ok = per_unit_ok or repaired_ok or (verdict is None and sprint_covers)
+    verdict_ok = verdict_half_ok(root, rid, sprint_covers)
     unmet = []
     # `two_role_only` is for the callers that enforce the TWO-ROLE clause specifically - the
     # Done verb, whose bar is that clause. The verdict half is the `critiqued` stage's own
@@ -360,11 +371,9 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     # self-review (or a verdict with no recorded author) never clears the Done gate. The floor
     # holds for generic workers too. Units closed before the gate (the visible PRE_GATE marker,
     # under the prior risk-scaled policy) are grandfathered; the gate applies to all new work.
-    per_unit_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
-                   and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
-    # Sprint coverage stands in ONLY when the unit has no per-unit verdict of its own: a recorded
-    # per-unit REJECT is not papered over by a batch-level APPROVE.
-    verdict_ok = per_unit_ok or (verdict is None and sprint_covers)
+    # THE shared definition - see `verdict_half_ok`. A batch-level APPROVE never papers over a
+    # per-unit REJECT; only a recorded, complete REPAIR answers one.
+    verdict_ok = verdict_half_ok(root, rid, sprint_covers)
     verdict_half = verdict_ok if critic_required else True
     # The two-role half: with `review.two_role_after` set, a Done unit PAST the cutoff
     # additionally needs the adversarial pass recorded as EVIDENCE and an independent

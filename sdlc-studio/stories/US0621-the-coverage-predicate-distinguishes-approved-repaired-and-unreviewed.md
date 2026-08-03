@@ -1,6 +1,6 @@
 # US0621: the coverage predicate distinguishes approved, repaired and unreviewed rather than two states
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

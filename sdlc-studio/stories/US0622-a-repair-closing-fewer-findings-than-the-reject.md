@@ -1,6 +1,6 @@
 # US0622: a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

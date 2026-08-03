@@ -1,6 +1,6 @@
 # US0623: a finding closed by FILING is recorded distinctly from one closed by fixing
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

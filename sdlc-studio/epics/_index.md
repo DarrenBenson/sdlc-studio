@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 14 |
+| Draft | 12 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 193 |
+| Done | 195 |
 | **Total** | **207** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -49,8 +49,8 @@
 | [EP0201](EP0201-a-suite-verdict-is-a-fact-read-from.md) | A suite verdict is a fact read from a file, never a stream an agent interprets | Done | 2 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0202](EP0202-a-sprint-run-has-a-tool-runbook-it.md) | A sprint run has a tool runbook it is made to read, ordered by step rather than by script | Done | 2 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0203](EP0203-the-routine-backlog-question-is-answered-by-the.md) | The routine backlog question is answered by the tooling, and a review's findings never cross a shell | Done | 2 | -- | 2026-08-01 | 2026-08-01 |
-| [EP0204](EP0204-the-close-converges-nothing-is-fixed-inside-it.md) | The close converges: nothing is fixed inside it, and the ledger can tell a close-time repair from an unaccounted unit | Draft | 4 | -- | 2026-08-02 | 2026-08-02 |
-| [EP0205](EP0205-a-reject-whose-findings-were-repaired-has-a.md) | A REJECT whose findings were repaired has a route back to covered, so a repaired batch stops reading like an unreviewed one | Draft | 5 | -- | 2026-08-02 | 2026-08-02 |
+| [EP0204](EP0204-the-close-converges-nothing-is-fixed-inside-it.md) | The close converges: nothing is fixed inside it, and the ledger can tell a close-time repair from an unaccounted unit | Done | 4 | -- | 2026-08-02 | 2026-08-02 |
+| [EP0205](EP0205-a-reject-whose-findings-were-repaired-has-a.md) | A REJECT whose findings were repaired has a route back to covered, so a repaired batch stops reading like an unreviewed one | Done | 5 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0206](EP0206-a-sprint-ends-with-nothing-open-a-non.md) | A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it | Draft | 4 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0207](EP0207-a-unit-s-test-plan-is-written-and.md) | A unit's test plan is written and reviewed before its code, because reviewing the test is cheaper than reviewing the code | Draft | 6 | -- | 2026-08-02 | 2026-08-02 |
 

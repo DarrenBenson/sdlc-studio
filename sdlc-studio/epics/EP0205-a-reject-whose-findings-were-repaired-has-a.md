@@ -1,6 +1,6 @@
 # EP0205: A REJECT whose findings were repaired has a route back to covered, so a repaired batch stops reading like an unreviewed one
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 18
 > **Parent:** CR0506
 > **Created:** 2026-08-02
@@ -14,11 +14,11 @@ Decomposed from CR0506. Delivers the work CR0506 requested.
 
 ## Story Breakdown
 
-- [ ] [US0620: a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each](../stories/US0620-a-reject-can-be-answered-by-a-recorded.md)
-- [ ] [US0621: the coverage predicate distinguishes approved, repaired and unreviewed rather than two states](../stories/US0621-the-coverage-predicate-distinguishes-approved-repaired-and-unreviewed.md)
-- [ ] [US0622: a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones](../stories/US0622-a-repair-closing-fewer-findings-than-the-reject.md)
-- [ ] [US0623: a finding closed by FILING is recorded distinctly from one closed by fixing](../stories/US0623-a-finding-closed-by-filing-is-recorded-distinctly.md)
-- [ ] [US0624: the close preflight states the three coverage counts separately](../stories/US0624-the-close-preflight-states-the-three-coverage-counts.md)
+- [x] [US0620: a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each](../stories/US0620-a-reject-can-be-answered-by-a-recorded.md)
+- [x] [US0621: the coverage predicate distinguishes approved, repaired and unreviewed rather than two states](../stories/US0621-the-coverage-predicate-distinguishes-approved-repaired-and-unreviewed.md)
+- [x] [US0622: a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones](../stories/US0622-a-repair-closing-fewer-findings-than-the-reject.md)
+- [x] [US0623: a finding closed by FILING is recorded distinctly from one closed by fixing](../stories/US0623-a-finding-closed-by-filing-is-recorded-distinctly.md)
+- [x] [US0624: the close preflight states the three coverage counts separately](../stories/US0624-the-close-preflight-states-the-three-coverage-counts.md)
 
 ## Acceptance Criteria (Epic Level)
 

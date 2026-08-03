@@ -1,6 +1,6 @@
 # CR-0527: the close has no fixed point, so a repair made during it re-opens the ledger it just satisfied
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0204
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

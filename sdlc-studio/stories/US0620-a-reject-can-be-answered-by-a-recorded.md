@@ -1,6 +1,6 @@
 # US0620: a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

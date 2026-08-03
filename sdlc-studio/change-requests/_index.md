@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 12 |
 | Approved | 0 |
-| In Progress | 17 |
-| Complete | 475 |
+| In Progress | 15 |
+| Complete | 477 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
@@ -58,7 +58,7 @@
 | [CR-0502](CR0502-the-mutation-lane-asks-for-evidence-on-a.md) | the mutation lane asks for evidence on a changed surface the mutation runner refuses to mutate | In Progress | Medium | Improvement | 2026-07-30 | EP0193 |
 | [CR-0503](CR0503-an-adversarial-review-can-be-run-outside-the.md) | an adversarial review can be run outside the seat ceremony, losing every standing practice, and nothing detects that it was | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0504](CR0504-closing-review-is-doing-the-work-development-should.md) | closing review is doing the work development should have done, and the same five defect classes recur every sprint | Proposed | High | Improvement | 2026-07-30 | -- |
-| [CR-0506](CR0506-a-reject-whose-findings-were-all-repaired-has.md) | a REJECT whose findings were all repaired has no route back to covered, so a fully repaired batch reads identically to one nobody reviewed | In Progress | High | Improvement | 2026-07-30 | EP0205 |
+| [CR-0506](CR0506-a-reject-whose-findings-were-all-repaired-has.md) | a REJECT whose findings were all repaired has no route back to covered, so a fully repaired batch reads identically to one nobody reviewed | Complete | High | Improvement | 2026-07-30 | EP0205 |
 | [CR-0507](CR0507-closing-a-sprint-asks-twenty-questions-when-it.md) | closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0508](CR0508-a-verify-selector-naming-a-test-that-does.md) | a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0509](CR0509-a-review-worktree-opens-at-a-stale-base.md) | A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet | Proposed | High | Improvement | 2026-07-31 | -- |
@@ -77,7 +77,7 @@
 | [CR-0524](CR0524-a-review-verdict-separates-a-broken-feature-from.md) | a review verdict separates a broken feature from evidence that cannot fail | Proposed | High | Improvement | 2026-08-02 | -- |
 | [CR-0525](CR0525-a-unit-s-test-plan-is-written-and.md) | a unit's test plan is written and reviewed BEFORE its code, because reviewing the test is cheaper than reviewing the code | In Progress | Critical | Improvement | 2026-08-02 | EP0207 |
 | [CR-0526](CR0526-a-sprint-ends-with-nothing-open-a-non.md) | a sprint ends with nothing open - a non-stop-ship finding becomes a bug and its story closes | In Progress | Critical | Improvement | 2026-08-02 | EP0206 |
-| [CR-0527](CR0527-the-close-has-no-fixed-point-so-a.md) | the close has no fixed point, so a repair made during it re-opens the ledger it just satisfied | In Progress | Critical | Improvement | 2026-08-02 | EP0204 |
+| [CR-0527](CR0527-the-close-has-no-fixed-point-so-a.md) | the close has no fixed point, so a repair made during it re-opens the ledger it just satisfied | Complete | Critical | Improvement | 2026-08-02 | EP0204 |
 
 ## Archived Releases
 

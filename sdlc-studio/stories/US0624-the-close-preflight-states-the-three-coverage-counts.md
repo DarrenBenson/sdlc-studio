@@ -1,6 +1,6 @@
 # US0624: the close preflight states the three coverage counts separately
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

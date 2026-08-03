@@ -1,6 +1,6 @@
 # US0616: sprint close and sprint stop refuse while the tree carries a repair to a batch unit
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0527
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 
 <!-- close-status:begin -->
-> **RUN-01KYZKY5 closed stopped.** 44 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01KZ3V4D closed goal-reached.** 13 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **Run of record:** RUN-01KZ3V4D - the close-convergence sprint.

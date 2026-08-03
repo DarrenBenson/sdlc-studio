@@ -1,6 +1,6 @@
 # US0618: an unavoidable close-time repair is recorded as an explicit override with its reason
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0527
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
