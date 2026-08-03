@@ -4456,6 +4456,21 @@ class FileAndCloseTests(unittest.TestCase):
             self.assertIn("DEFERRED", out, "the report does not name what was deferred")
             self.assertIn("not waived", out,
                           "the report does not distinguish deferred from waived")
+            # EVERY filed artefact, by id. Asserting only that the section exists let two
+            # mutants through in review: a summary line carrying no id at all, and a payload
+            # holding just the first of two filings. AC1 says the section NAMES each filed
+            # artefact, so the test has to read the ids the fixture actually filed rather than
+            # trusting the heading above them.
+            filed = sorted(p.stem.split("-")[0] for p in
+                           (root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+            self.assertEqual(len(filed), 2, "fixture should file one artefact per blocker")
+            # Compared with the hyphen stripped: an id is written `CR-0001` for a reader and
+            # `CR0001` in a filename, and both are the same id. Asserting the filename form
+            # against the rendered form fails on presentation rather than on substance.
+            deferred_block = out.split("DEFERRED", 1)[1].replace("-", "")
+            for cid in filed:
+                self.assertIn(cid, deferred_block,
+                              f"{cid} was filed but the DEFERRED section does not name it")
 
     def test_an_ordinary_close_report_carries_no_deferred_section(self) -> None:
         """The control. MUTANT: always emit the DEFERRED section.
@@ -12161,6 +12176,100 @@ class EscalationReachesBothRecordingCommandsTests(unittest.TestCase):
         self.assertIn("ESCALATED", out.getvalue(),
                       f"two REJECTs recorded through critic.py record notified nobody:\n"
                       f"{out.getvalue()}")
+
+    def test_two_rejects_through_critic_sprint_review_escalate(self) -> None:
+        """MUTANT: drop the escalation loop from `critic.cmd_sprint_review`.
+
+        REVIEW FINDING. `sprint-review` is the THIRD command that records a round into the batch
+        ledger, and it was the one left unwired. Two REJECTs through it printed nothing, and the
+        notice then surfaced later attached to an unrelated APPROVE recorded through a different
+        command - the exact "fires only in one combination" defect this rule exists to remove,
+        surviving in the third door.
+        """
+        critic = _load_critic()
+        with tempfile.TemporaryDirectory() as d:
+            root, out = Path(d), io.StringIO()
+            for _ in range(2):
+                with contextlib.redirect_stdout(out):
+                    rc = critic.main(["sprint-review", "--units", "US0017", "--verdict", "REJECT",
+                                      "--reviewer", "qa-seat", "--author", "builder",
+                                      "--findings", "probed the diff", "--root", str(root)])
+                self.assertEqual(rc, 0, out.getvalue())
+        self.assertIn("ESCALATED", out.getvalue(),
+                      f"two REJECTs through sprint-review escalated nothing:\n{out.getvalue()}")
+
+    def test_a_batch_row_escalates_only_the_units_it_names(self) -> None:
+        """MUTANT: `if want in named:` -> `if True:` in `review_rounds_across_ledgers`.
+
+        REVIEW FINDING: that predicate had ZERO cover - the mutant survived the whole of
+        test_sprint, test_critic and test_conformance. It is the only thing stopping a batch row
+        naming one unit from escalating a different one, and without a test a later edit reverts
+        it with the suite green.
+        """
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root, out = Path(d), io.StringIO()
+            for _ in range(2):
+                with contextlib.redirect_stdout(out):
+                    sprint.main(["review-batch", "--units", "US0100", "--verdict", "REJECT",
+                                 *self.ARGS, "--root", str(root)])
+            innocent = io.StringIO()
+            with contextlib.redirect_stdout(innocent):
+                sprint.main(["review-batch", "--units", "US0200", "--verdict", "REJECT",
+                             *self.ARGS, "--root", str(root)])
+        self.assertIn("ESCALATED", out.getvalue(), "the twice-rejected unit did not escalate")
+        self.assertNotIn("US0200", out.getvalue())
+        self.assertNotIn("ESCALATED", innocent.getvalue(),
+                         "a unit with ONE rejection escalated on another unit's rounds:\n"
+                         f"{innocent.getvalue()}")
+
+    def test_a_plan_review_round_does_not_inherit_delivery_batch_rounds(self) -> None:
+        """MUTANT: `if phase == "delivery":` -> `if True:`.
+
+        REVIEW FINDING: also uncovered. Batch rows are delivery-phase records, so folding them
+        into a `plan-review` count would let two delivery REJECTs escalate a plan review that
+        has been round only once.
+        """
+        critic, sprint = _load_critic(), _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            with contextlib.redirect_stdout(io.StringIO()):
+                for _ in range(2):
+                    sprint.main(["review-batch", "--units", "US0017", "--verdict", "REJECT",
+                                 *self.ARGS, "--root", str(root)])
+            plan = io.StringIO()
+            with contextlib.redirect_stdout(plan):
+                critic.main(["record", "--unit", "US0017", "--verdict", "reject",
+                             "--phase", "plan-review", "--reviewer", "qa-seat",
+                             "--author", "builder", "--brief", "abcdef123456",
+                             "--root", str(root)])
+        self.assertNotIn("ESCALATED", plan.getvalue(),
+                         "a first plan-review round inherited two delivery rounds:\n"
+                         f"{plan.getvalue()}")
+
+    def test_a_refused_record_escalates_nothing(self) -> None:
+        """MUTANT: run the escalation loop regardless of the exit code.
+
+        REVIEW FINDING: a refused `record` - a missing `--author` - printed "Nothing was
+        written" and an ESCALATED line in the same breath. Noise on the one channel whose value
+        depends on staying rare.
+        """
+        critic, sprint = _load_critic(), _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            with contextlib.redirect_stdout(io.StringIO()):
+                for _ in range(2):
+                    sprint.main(["review-batch", "--units", "US0017", "--verdict", "REJECT",
+                                 *self.ARGS, "--root", str(root)])
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                    contextlib.suppress(SystemExit):
+                rc = critic.main(["record", "--unit", "US0017", "--verdict", "reject",
+                                  "--reviewer", "qa-seat", "--brief", "abcdef123456",
+                                  "--root", str(root)])
+                self.assertNotEqual(rc, 0)
+        self.assertNotIn("ESCALATED", out.getvalue(),
+                         f"a REFUSED record escalated:\n{out.getvalue()}")
 
     def test_a_round_from_each_ledger_still_escalates(self) -> None:
         """MUTANT: read either ledger alone.

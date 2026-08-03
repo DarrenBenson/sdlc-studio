@@ -4,7 +4,7 @@
 > **Severity:** High
 > **Points:** 3
 > **Verification depth:** functional
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Executed by the independent closing-review pass on US0603 during the RUN-01KYZKY5 close, reproduced through the shipped CLI in a fixture.
 > **Created:** 2026-08-03
 > **Created-by:** sdlc-studio file
@@ -70,6 +70,40 @@ that - the reviewer reviewed a span, not a seat's slice. Two questions, two read
 difference recorded beside both. `panel_escalation` moved to `critic.py` next to the ledgers it
 judges; `sprint.panel_escalation` remains as a delegation, because one rule with two homes is
 the shape that produced this defect.
+
+## Round 2: what the independent review rejected, and what changed
+
+REJECTed at the lane boundary with two blocking findings.
+
+**There was a THIRD recording command.** `critic.py sprint-review` writes the same batch ledger
+`sprint review-batch` writes, and the first repair left it unwired - so two REJECTs recorded
+through it printed nothing, and the notice then surfaced later attached to an unrelated APPROVE
+recorded through a different command. That is precisely the "fires only in one combination"
+defect this bug exists to remove, surviving in the third door. Worse, the repair's own prose
+asserted the opposite in two places - the changelog said "both recording commands" and the
+function's docstring said "the two commands that record a round" - so the diff shipped a claim
+the code contradicted. Both are corrected and the third command is wired.
+
+**Two predicates had ZERO cover.** The reviewer mutated `if want in named:` to `if True:` and
+the whole of `test_sprint`, `test_critic` and `test_conformance` stayed green - that predicate
+is the only thing stopping a batch row naming one unit from escalating a different one. The
+phase guard was equally unpinned. Behaviour was correct in both cases; the regression cover was
+absent, which is the state where a later edit reverts it with the suite green.
+
+Also repaired from the non-blocking set: a REFUSED `record` printed "Nothing was written" and an
+ESCALATED line in the same breath, because the loop ran regardless of the exit code. It now runs
+only when a round was actually written - noise on this channel is what makes an operator stop
+reading it, which is the same argument AC2 makes for not escalating a first rejection.
+
+Round-2 mutants, all killed: the unit-matching predicate, the phase guard, escalating on a
+refused record, and dropping the escalation from `cmd_sprint_review`.
+
+Two findings recorded and NOT fixed here. The split-panel branch is unreachable from a
+batch-only history, because `escalation_notice` pairs a two-ledger round list with a one-ledger
+`seat_verdicts` - pre-existing and outside this unit's criteria. And a mis-recorded batch REJECT
+has no supersession path, so it is a permanent escalation trigger; that is a real gap in the
+batch ledger's erratum story rather than in this rule, and it is left for a filing rather than
+widened into here.
 
 ## Impact
 

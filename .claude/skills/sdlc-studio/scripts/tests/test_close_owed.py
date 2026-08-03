@@ -645,5 +645,164 @@ class DecisionTerminalTests(unittest.TestCase):
                                  or close_owed.sdlc_md.is_delivered_terminal("bug", ruled))
 
 
+
+
+def _actuals(root: Path, day: str, ids: list) -> None:
+    """The close telemetry `transition.py` writes: one row per unit reaching terminal, in a file
+    named for the day. That filename IS the terminal date - derived, never declared."""
+    import json as _json
+    p = root / "sdlc-studio" / "retros" / "evidence" / f"actuals-{day}.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("".join(_json.dumps({"id": i, "type": "bug", "project": "x"}) + "\n"
+                         for i in ids), encoding="utf-8")
+
+
+def _run_state(root: Path, outcome: str) -> None:
+    import json as _json
+    p = root / "sdlc-studio" / ".local" / "run-state.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(_json.dumps({"schema": 1, "run_id": "RUN-T", "outcome": outcome}),
+                 encoding="utf-8")
+
+
+class CloseTimeRepairTests(CloseOwedBase):
+    """US0617 / CR0527: a unit fixed DURING a close is not a unit nobody accounted for.
+
+    A close writes a retro accounting for its batch, then stamps the baseline. Anything reaching
+    terminal after that stamp is uncovered - and a repair made during the close is exactly such a
+    unit, so the ledger re-opened the moment a careful close did its job. Observed twice in one
+    close of RUN-01KYZKY5. The operator's reading was that the sprint was never being closed; the
+    mechanism was worse - it WAS closed, repeatedly, and each close was undone by the next repair.
+
+    Both states are still REPORTED. The split is about wording and countability, never about
+    forgiving anything, so every test here also asserts the unit stays in `owed`.
+    """
+
+    def _tree(self, *, terminal_day: str, retro_day: str, outcome: str) -> dict:
+        """The retro carries a recorded velocity override on purpose.
+
+        The close has TWO halves and each holds the exit code on its own account. Without the
+        override the fixture also owes a velocity row, so an exit-code assertion here would pass
+        or fail for a reason that has nothing to do with the unit split under test - which it did
+        on the first run of these tests.
+        """
+        _bug(self.root, "BG0001", "Fixed")
+        close_owed.stamp_baseline(self.root, date="2026-01-01")
+        _bug(self.root, "BG0005", "Fixed")
+        _dated_retro(self.root, "RETRO0002", "BG0001", retro_day,
+                     override="no plan-time forecast for this fixture")
+        _actuals(self.root, terminal_day, ["BG0005"])
+        _run_state(self.root, outcome)
+        return close_owed.owed(self.root)
+
+    def test_a_unit_terminal_after_the_retro_is_reported_as_a_close_time_repair(self) -> None:
+        """MUTANT: classify every uncovered unit as unaccounted (drop the date comparison)."""
+        r = self._tree(terminal_day="2026-02-02", retro_day="2026-02-01", outcome="stopped")
+        self.assertEqual([cid for cid, _ in r["close_time_repairs"]], ["BG0005"])
+        self.assertEqual(r["unaccounted"], [])
+        self.assertEqual({cid for cid, _ in r["owed"]}, {"BG0005"},
+                         "the split must not forgive the unit - it is still owed")
+
+    def test_an_unaccounted_unit_is_still_reported_as_unaccounted(self) -> None:
+        """The control. MUTANT: classify every uncovered unit as a close-time repair.
+
+        That would empty the unaccounted set and turn the ledger into a rubber stamp.
+        """
+        r = self._tree(terminal_day="2026-01-15", retro_day="2026-02-01", outcome="stopped")
+        self.assertEqual(r["close_time_repairs"], [])
+        self.assertEqual([cid for cid, _ in r["unaccounted"]], ["BG0005"])
+
+    def test_work_delivered_into_an_OPEN_run_is_not_a_close_time_repair(self) -> None:
+        """MUTANT: test `outcome` for truthiness instead of comparing it to `running`.
+
+        `outcome` is the string "running" while a run is live, so a truthiness test reads an
+        open run as a closed one - and then every unit delivered into the current sprint is
+        excused as a repair made during a close that has not started. Caught on this repo's own
+        tree, where four units of an open batch were all reported as close-time repairs.
+        """
+        r = self._tree(terminal_day="2026-02-02", retro_day="2026-02-01", outcome="running")
+        self.assertEqual(r["close_time_repairs"], [],
+                         "ordinary delivery into an open run was excused as a close-time repair")
+        self.assertEqual([cid for cid, _ in r["unaccounted"]], ["BG0005"])
+
+    def test_the_classification_is_derived_not_declared(self) -> None:
+        """MUTANT: read the terminal date from a field on the artefact instead.
+
+        No unit declares when it closed, and a field somebody must remember to set records the
+        honest case and misses the careless one - which is the whole population this ledger
+        exists for. With no telemetry row, nothing is classified a repair.
+        """
+        _bug(self.root, "BG0001", "Fixed")
+        close_owed.stamp_baseline(self.root, date="2026-01-01")
+        _bug(self.root, "BG0005", "Fixed")
+        _dated_retro(self.root, "RETRO0002", "BG0001", "2026-02-01")
+        _run_state(self.root, "stopped")
+        r = close_owed.owed(self.root)         # no actuals file at all
+        self.assertEqual(r["close_time_repairs"], [])
+        self.assertEqual([cid for cid, _ in r["unaccounted"]], ["BG0005"])
+        self.assertEqual(close_owed.terminal_dates(self.root), {})
+
+    def test_the_earliest_close_is_the_one_that_counts(self) -> None:
+        """MUTANT: keep the LATEST date per unit.
+
+        A unit reopened and re-closed owes its account from the first close; taking the later
+        date would let a re-close move a unit out of the owed set it was already in.
+        """
+        _actuals(self.root, "2026-03-01", ["BG0009"])
+        _actuals(self.root, "2026-01-09", ["BG0009"])
+        self.assertEqual(close_owed.terminal_dates(self.root)["BG0009"], "2026-01-09")
+
+    def test_a_malformed_telemetry_row_is_not_a_date(self) -> None:
+        """MUTANT: let a bad row raise, or count it as a unit.
+
+        The scan must survive a truncated write - the file is appended to on every transition,
+        and a crash mid-append must not make the whole ledger unreadable.
+        """
+        p = self.root / "sdlc-studio" / "retros" / "evidence" / "actuals-2026-02-02.jsonl"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text('{"id": "BG0007", "type": "bug"}\n{"id": "BG00\n\n', encoding="utf-8")
+        self.assertEqual(close_owed.terminal_dates(self.root), {"BG0007": "2026-02-02"})
+
+    def test_the_report_names_the_two_states_apart(self) -> None:
+        """MUTANT: print one combined list.
+
+        One number cannot carry two states, and the failure being repaired is an advisory that
+        fires on a run which did account for itself - which is how it comes to be stepped over.
+        """
+        r = self._tree(terminal_day="2026-02-02", retro_day="2026-02-01", outcome="stopped")
+        text = close_owed.render(r)
+        self.assertIn("CLOSE-TIME REPAIR", text)
+        self.assertIn("BG0005", text)
+        self.assertIn("FILED and deferred", text,
+                      "the report does not state the rule the split exists to serve")
+
+    def test_close_time_repairs_alone_do_not_hold_the_exit_code(self) -> None:
+        """MUTANT: keep gating the exit code on `owed` rather than on `unaccounted`.
+
+        Driven through `main(["detect"])`, not through `owed()`: the exit code IS the interface
+        a gate branches on, and a library-level assertion cannot see which field the command
+        actually reads. Gating on a close-time repair would refuse the ceremony precisely
+        because the close had done its job carefully - the unconvergeable close from the other
+        side.
+        """
+        self._tree(terminal_day="2026-02-02", retro_day="2026-02-01", outcome="stopped")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = close_owed.main(["--root", str(self.root), "detect"])
+        self.assertEqual(rc, 0, f"a close-time repair alone held the gate:\n{out.getvalue()}")
+        self.assertIn("CLOSE-TIME REPAIR", out.getvalue(), "...and it was not even reported")
+
+    def test_an_unaccounted_unit_still_holds_the_exit_code(self) -> None:
+        """The positive control. MUTANT: always exit 0.
+
+        The ledger's whole value is refusing a run nobody accounted for; a detector that never
+        holds the gate reports into a void.
+        """
+        self._tree(terminal_day="2026-01-15", retro_day="2026-02-01", outcome="stopped")
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = close_owed.main(["--root", str(self.root), "detect"])
+        self.assertEqual(rc, 1, "an unaccounted unit did not hold the gate")
+
+
 if __name__ == "__main__":
     unittest.main()

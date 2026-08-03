@@ -262,21 +262,85 @@ class VerdictBindsToTheTreeTests(unittest.TestCase):
         self.assertNotEqual(0, r.returncode, "a new untracked module was accepted as covered")
 
     def test_the_verdicts_own_output_does_not_expire_it(self) -> None:
-        """MUTANT: hash untracked files without honouring .gitignore.
+        """MUTANT: drop the `:(exclude)sdlc-studio/.local` pathspec.
 
-        The verdict is written INTO the tree it describes. If the hash counted ignored files it
-        would differ the instant it was recorded, so every check would refuse - a guard that
-        refuses always is switched off, and this is the shape that would do it.
+        The verdict is written INTO the tree it describes, so a digest that counted it would
+        differ the instant it was recorded and every check would refuse - a guard that refuses
+        always is switched off, and this is the shape that would do it.
+
+        NO .gitignore here, deliberately. The first version of this test wrote one naming the
+        very path the exclusion also covers, so the two masked each other and the mutant the
+        docstring named SURVIVED - review caught it. With no .gitignore, only the pathspec can
+        make this pass.
         """
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
-            (root / ".gitignore").write_text("sdlc-studio/.local/\n", encoding="utf-8")
-            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
-            subprocess.run(["git", "commit", "-qm", "ignore local"], cwd=root, check=True)
             _run(root, "all", cmd="exit 0")
             r = _run(root, "--check")
         self.assertEqual(0, r.returncode,
                          f"the verdict expired itself:\n{r.stdout}{r.stderr}")
+
+    def test_an_ignored_file_does_not_invalidate_the_verdict(self) -> None:
+        """MUTANT: stage with `git add -A -f`, ignoring .gitignore.
+
+        Ignore handling is git's own here rather than a flag this script passes, which is the
+        point - a second ignore rule drifts from the first. This repo ignores `__pycache__/`,
+        `node_modules/` and `.pytest_cache/`, all of which appear during an ordinary suite run,
+        so a digest blind to .gitignore would expire the verdict its own suite had just earned.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / ".gitignore").write_text("build/\n", encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-qm", "ignore build"], cwd=root, check=True)
+            _run(root, "all", cmd="exit 0")
+            (root / "build").mkdir()
+            (root / "build" / "generated.py").write_text("x = 1\n", encoding="utf-8")
+            r = _run(root, "--check")
+        self.assertEqual(0, r.returncode,
+                         f"an ignored file expired the verdict:\n{r.stdout}{r.stderr}")
+
+    def test_staging_an_unchanged_tree_does_not_invalidate_the_verdict(self) -> None:
+        """MUTANT: return to hashing `git diff HEAD` plus untracked file hashes.
+
+        REVIEW FINDING, and the reason the digest is a git tree object. That shape mixed two
+        representations of the same bytes - an untracked file contributed `sha256  path`, the
+        same file staged contributed a new-file patch - so `git add` alone moved the digest
+        with no edit at all. On the shipped commit-msg lane that refused the ordinary sequence
+        (write a module, run the suite, `git add -A`, commit) and told the author to re-run a
+        nine-minute suite for no information.
+
+        Both directions are staged here: a NEW file added, and a MODIFIED tracked file added.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "new_module.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+            (root / "a.txt").write_text("modified", encoding="utf-8")
+            _run(root, "all", cmd="exit 0")
+            self.assertEqual(0, _run(root, "--check").returncode, "fixture starts green")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            r = _run(root, "--check")
+        self.assertEqual(0, r.returncode,
+                         "`git add` alone invalidated a byte-identical tree:\n"
+                         f"{r.stdout}{r.stderr}")
+
+    def test_an_unknown_suite_is_refused_rather_than_defaulted(self) -> None:
+        """MUTANT: accept any `--check <word>`.
+
+        `WANT` was unvalidated and the coverage test short-circuits on an `all` verdict, so
+        `--check nonsense`, `--check ALL` and `--check --help` all printed GREEN. The run path
+        already refuses an unknown suite, with a comment reading "REFUSED, never defaulted";
+        this is the second entry point applying the same rule.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            _run(root, "all", cmd="exit 0")
+            self.assertEqual(0, _run(root, "--check", "all").returncode, "control")
+            for bad in ("nonsense", "ALL", "scripts tools"):
+                with self.subTest(bad):
+                    r = _run(root, "--check", bad)
+                    self.assertNotEqual(0, r.returncode,
+                                        f"--check {bad!r} was accepted as a checked assertion")
 
     def test_a_narrower_suite_does_not_satisfy_a_whole_tree_claim(self) -> None:
         """MUTANT: stop reading the `suite` field in --check.

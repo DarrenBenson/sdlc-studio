@@ -1146,8 +1146,16 @@ def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
     not mean the machine blocks on input that will not arrive. An escalation that waits is
     indistinguishable from a hang, and unattended that is exactly what it becomes.
 
-    Lives here, beside the ledgers it judges, so the two commands that record a round consult
-    one rule rather than a copy each. `sprint.panel_escalation` delegates to it.
+    Lives here, beside the ledgers it judges, so the THREE commands that record a round consult
+    one rule rather than a copy each: `sprint review-batch`, `critic record` and `critic
+    sprint-review`. The first draft of this said "two" and wired two - `sprint-review` writes the
+    same batch ledger `review-batch` writes and was left out, so two REJECTs recorded through it
+    printed nothing and the notice surfaced later against an unrelated verdict. Independent
+    review found that, not the author, which is the argument for counting the callers rather
+    than remembering them.
+
+    `sprint.panel_escalation` delegates here and now has no production caller of its own - it is
+    kept as a named shim because tests and any consuming project may still reach for it.
     """
     verdicts = [str(v).upper() for v in (rounds or [])]
     rejects = sum(1 for v in verdicts if v == REJECT)
@@ -2860,8 +2868,12 @@ def cmd_record(args: argparse.Namespace) -> int:
     # `review-batch` notified nobody, because the only caller of the rule was the other command
     # - so the operator heard about a non-converging repair exactly when the reviewer happened
     # to have used both commands.
+    #
+    # Only when something was WRITTEN. A refused invocation - a missing `--author`, say - wrote
+    # no round, so escalating on it puts noise on the one channel that has to stay rare, and it
+    # did: a refusal printed "Nothing was written" and an ESCALATED line in the same breath.
     try:
-        recorded = batch_units(args, "record")
+        recorded = batch_units(args, "record") if rc == 0 else []
     except BatchRefused:
         recorded = []
     for unit in recorded:
@@ -3041,6 +3053,15 @@ def cmd_sprint_review(args: argparse.Namespace) -> int:
         print(f"sprint-review refused: {exc}", file=sys.stderr)
         return 2
     print(f"sprint-level review recorded ({args.verdict}) over {len(units)} unit(s) -> {path}")
+    # THE THIRD recording command. This writes the same batch ledger `sprint review-batch`
+    # writes, so it records rounds on exactly the same terms - and it was the one command left
+    # unwired when the escalation was taught to read both ledgers. Two REJECTs recorded here
+    # printed nothing, and the notice then appeared later, attached to an unrelated APPROVE
+    # through another command. That is the defect this rule exists to remove, surviving in the
+    # third door; found by the independent review of BG0499 rather than by the author.
+    for unit in units:
+        if notice := escalation_notice(args.root, unit):
+            print(notice)
     return 0
 
 

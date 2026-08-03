@@ -56,34 +56,46 @@ _hash_cmd() {
     else printf ''; fi
 }
 
-# A digest of the TRACKED WORKING TREE, not of the commit (BG0492).
+# A digest of the WORKING TREE's CONTENT, not of the commit (BG0492).
 #
 # A verdict is necessarily taken at its parent commit, so `head_sha` alone authorises every
 # edit made after the suite ran - and an uncommitted working tree is the normal state
 # mid-session. With a green verdict at HEAD, staging a syntactically broken file and claiming
-# "Both suites green." passed.
+# both suites green passed.
 #
-# Three inputs, each for a case the others miss: the commit, so a new commit invalidates;
-# `git diff HEAD`, which covers staged AND unstaged edits to tracked files (BG0492's own
-# reproduction stages the file, so reading the unstaged diff alone would see nothing); and the
-# CONTENT of untracked files, because a new module is the commonest mid-session change and is
-# untracked until somebody adds it.
+# Computed as a real git TREE OBJECT, built in a throwaway index: read HEAD, stage everything
+# the working tree currently holds, write the tree. That is the whole point - a tree object is
+# a function of CONTENT alone, so it cannot tell a staged change from an unstaged one, and
+# `git add` on its own can never move the digest.
 #
-# `--exclude-standard` keeps ignored files out, and the verdict's own directory is excluded
-# explicitly on top of that: the verdict is written INTO the tree it describes, so counting it
-# would make every verdict differ from its own tree the instant it was recorded, and a guard
-# that refuses always is a guard that gets switched off. In this repo `.local/` is gitignored
-# and the exclusion is redundant; in a fixture that has not written a .gitignore yet it is not.
+# The first shape of this hashed three things (HEAD, `git diff HEAD`, and untracked file
+# hashes) and was REJECTED in review for exactly that: an untracked file contributed
+# `sha256  path` while the same bytes staged contributed a new-file patch, so `git add -A`
+# alone invalidated a byte-identical tree. On the shipped commit-msg lane that meant the
+# ordinary sequence - write a module, run the suite, `git add -A`, commit - was refused and
+# told to re-run a nine-minute suite for no information. A guard that refuses always is a
+# guard that gets switched off.
+#
+# Ignored files are excluded by `git add` itself rather than by a flag this script passes, so
+# there is no second ignore rule to drift from git's. The verdict's own directory is excluded
+# by pathspec on top of that: the verdict is written INTO the tree it describes, so counting it
+# would make every verdict differ from its own tree the instant it was recorded. That exclusion
+# is by PATH, so it holds whether the file is untracked, staged or committed - the earlier
+# version excluded it only while untracked, and a committed verdict could then never match.
 tree_state() {
-    local h; h="$(_hash_cmd)"
-    [[ -z "$h" ]] && return 1
-    {
-        git rev-parse HEAD 2>/dev/null || echo nohead
-        git diff HEAD --binary 2>/dev/null
-        git ls-files --others --exclude-standard -z 2>/dev/null \
-            | { grep -zv '^sdlc-studio/\.local/' || true; } \
-            | xargs -0 -r $h 2>/dev/null | sort
-    } | $h | cut -d' ' -f1
+    local idx tree
+    idx="$(mktemp "${TMPDIR:-/tmp}/sdlc-tree-index.XXXXXX")" || return 1
+    rm -f "$idx"                 # git wants to CREATE the index file, not adopt an empty one
+    # `read-tree` seeds from HEAD so an unmodified tree costs almost nothing to stage; on a
+    # repo with no commits there is nothing to seed from and `add` builds the index alone.
+    GIT_INDEX_FILE="$idx" git read-tree HEAD >/dev/null 2>&1 || true
+    GIT_INDEX_FILE="$idx" git add -A -- . ":(exclude)sdlc-studio/.local" >/dev/null 2>&1 || {
+        rm -f "$idx"; return 1
+    }
+    tree="$(GIT_INDEX_FILE="$idx" git write-tree 2>/dev/null)"
+    rm -f "$idx"
+    [[ -n "$tree" ]] || return 1
+    printf '%s' "$tree"
 }
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
@@ -110,6 +122,16 @@ if [[ "${1:-}" == "--check" ]]; then
     # that is what an unqualified claim of greenness asserts - the commit-msg lane matches
     # "Both suites green." and called a bare --check, which never read this field at all.
     WANT="${2:-all}"
+    # REFUSED, never defaulted - the same rule the run path applies to an unknown suite. Without
+    # this, `--check nonsense`, `--check ALL` and `--check --help` all printed GREEN against an
+    # `all` verdict, because the coverage test short-circuits on `"$V_SUITE" = all`. A typo in a
+    # future hook lane would read as a checked assertion and be none.
+    case "$WANT" in
+        scripts|tools|all) ;;
+        *) echo "run-suite --check: unknown suite ${WANT} - expected scripts, tools or all. " \
+                "A verdict cannot be checked against a suite that does not exist." >&2
+           exit 2 ;;
+    esac
     if [[ "$V_SHA" != "$HEAD_NOW" ]]; then
         echo "run-suite --check: the suite verdict is STALE - taken at ${V_SHA:0:12}, HEAD is " \
              "${HEAD_NOW:0:12}. A verdict from an earlier commit exists and looks current, " \

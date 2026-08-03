@@ -79,6 +79,40 @@ wording. The example is now derived from whichever files are unattributed today 
 hard-coded, which is the selection-bias shape LL0044 names. The census's own behaviour is
 unchanged; only the test's choice of example was pinned to one file's content.
 
+## Round 2: what the independent review rejected, and what changed
+
+REJECTed at the lane boundary with two blocking findings, both reproduced by execution.
+
+**The digest was wrong, not merely under-tested.** It hashed three inputs - HEAD, `git diff
+HEAD`, and untracked file hashes - and so held two representations of the same bytes: an
+untracked file contributed a `sha256  path` line, the same file staged contributed a new-file
+patch. `git add -A` alone therefore moved the digest with no edit at all, and because the
+commit-msg lane calls a bare `--check` on any message claiming greenness, the ordinary
+sequence of writing a module, running the suite, staging it and committing was refused and
+told to re-run a nine-minute suite for no information. That is the guard-that-refuses-always shape AC2 exists to
+prevent, arriving through a door AC1 did not describe.
+
+The digest is now a real git TREE OBJECT, built in a throwaway index: read HEAD, stage the
+working tree, write the tree. A tree object is a function of CONTENT alone, so it cannot tell a
+staged change from an unstaged one and `git add` can never move it. Ignore handling becomes
+git's own rather than a second rule this script passes, and the verdict's own directory is
+excluded by PATH, which also fixes the reviewer's fourth finding - a COMMITTED verdict used to
+be unable to match its own tree and refused permanently, advising a re-run that never converged.
+Verified: three consecutive record-then-check cycles over a committed verdict now return zero.
+
+**A mutant the docstring named had SURVIVED.** `test_the_verdicts_own_output_does_not_expire_it`
+wrote a `.gitignore` naming the very path the pathspec also excluded, so the two masked each
+other and `--exclude-standard` shipped unpinned. The fixture no longer writes a `.gitignore`, so
+only the pathspec can make it pass, and a separate test pins ignore handling with an ignored
+file appearing after the verdict.
+
+Also repaired from the non-blocking set: `--check <unknown-suite>` was silently accepted, so
+`--check nonsense`, `--check ALL` and `--check --help` all printed GREEN against an `all`
+verdict. It is now refused on the same terms the run path already refuses an unknown suite.
+
+Round-2 mutants, all killed: drop the `.local` pathspec (8 tests), stage ignored files with
+`-f` (1 - the mutant that had survived), accept any `--check` suite name (3).
+
 ## Impact
 
 The verdict is the repo's answer to 'was it green', and both holes let it answer yes for a state it never observed. The first is the more dangerous: it authorises uncommitted edits, which is the normal state of a working tree mid-session.

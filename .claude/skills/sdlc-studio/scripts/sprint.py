@@ -6158,10 +6158,12 @@ _PANEL_REJECT_LIMIT = 2
 def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
     """Whether a unit must go to the operator, and why - delegated to `critic.panel_escalation`.
 
-    The rule moved next to the ledgers it judges, because the two commands that record a round
-    were consulting it from opposite sides of two different files. Kept here as a delegation
-    rather than deleted: every existing caller and test names this, and one rule with two homes
-    is the shape that produced the defect (the looser copy is the one that runs).
+    The rule moved next to the ledgers it judges, because the commands that record a round were
+    consulting it from opposite sides of two different files. Kept here as a delegation rather
+    than deleted, and honestly: after the move this has no PRODUCTION caller - `cmd_review_batch`
+    goes through `critic.escalation_notice` - so it is a named shim for the tests and for any
+    consuming project that reached for it. One rule with two homes is the shape that produced the
+    defect, and the looser copy is the one that runs, so the body lives in exactly one place.
     """
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     return critic.panel_escalation(rounds, seat_verdicts)

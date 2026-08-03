@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Verification depth:** functional
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Found by the round-four independent pass on US0604 during the RUN-01KYZKY5 close, reproduced live in a fixture.
 > **Created:** 2026-08-03
 > **Created-by:** sdlc-studio file
@@ -56,6 +56,28 @@ gap survived US0604's five criteria - so the test drives the command.
 **The decision this bug asked for.** A `closed-outstanding` report DOES name its deferrals, in
 its own section, marked "filed, not waived" - the same distinction the retro and the review
 anchor already carry, repeated here because the report is what the operator actually reads.
+
+## Round 2: what the independent review rejected, and what changed
+
+REJECTed at the lane boundary with two blocking findings.
+
+**The footprint was understated.** `sprint_report.py` holds the whole DEFERRED section and is
+the exact target of AC2's Verify command, and neither this unit nor its sibling BG0499 declared
+it. That is not bookkeeping: `critic.py brief` bounds the review diff to the declared `Affects`,
+so the reviewer was handed a scope omitting the file implementing the criterion they were told
+was law - and said so. Declared now.
+
+**AC1's own words were not pinned.** The criterion says the section NAMES each filed artefact;
+the test asserted only that a DEFERRED heading and the phrase "not waived" appeared. Two mutants
+therefore SURVIVED in review: a summary line carrying no id at all, and a payload holding just
+the first of two filings. The test now reads the ids the fixture actually filed off disk and
+asserts each one appears inside the DEFERRED block - compared with the hyphen stripped, because
+an id is written `CR-0001` for a reader and `CR0001` in a filename and both are the same id.
+Both surviving mutants were re-applied with the syntax checked and are now killed.
+
+The non-blocking prose finding is fixed too: the changelog quoted the marker as "filed, not
+waived" where the retro and anchor read "(deferred, not waived)". Same distinction, and the
+fragment now quotes both accurately.
 
 ## Impact
 

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 20 |
+| Open | 22 |
 | In Progress | 0 |
 | Fixed | 403 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **506** |
+| **Total** | **508** |
 
 ## All Bugs
 
@@ -46,6 +46,8 @@
 | [BG0504](BG0504-seven-repo-guards-read-the-live-index-directly.md) | seven repo guards read the live index directly, so taking reconcile's own archival advice turns the tree red | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0505](BG0505-claim-drift-compares-a-bare-filename-against-full.md) | claim-drift compares a bare filename against full repo paths, so any Verify line naming a test by basename is a guaranteed false positive | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0506](BG0506-a-repeated-single-valued-metadata-field-is-accepted.md) | a repeated single-valued metadata field is accepted, read first-wins, and corrected first-only - so a gate can read one of two contradictory claims | Open | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0507](BG0507-the-suite-collapse-lane-sets-fail-1-after.md) | the suite-collapse lane sets fail=1 after the green verdict is already written, so a collapsed suite is reusable | Open | High | 2026-08-03 | 2026-08-03 |
+| [BG0508](BG0508-the-close-report-s-sibling-imports-sit-outside.md) | the close report's sibling imports sit outside its advisory try, so an ImportError escapes after the run is already stamped closed | Open | Medium | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 

@@ -36,6 +36,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import retro  # noqa: E402  (sibling - for the `Batch` field pattern, so both read the same line)
+from lib import run_state  # noqa: E402  (the run's own vocabulary for open vs finished)
 
 # The delivery backlog: the units a sprint sets out to complete and a retro accounts for.
 # Discovery artefacts (RFC/CR/Issue) reach terminal by derivation from these, so they are not
@@ -177,6 +178,104 @@ def velocity_owed(root: Path, stamped: str) -> dict:
         else:
             owed_rows.append((rid, date))
     return {"owed": sorted(owed_rows), "overrides": sorted(overrides), "undated": sorted(undated)}
+
+
+#: Where a terminal close is timestamped. `transition.py` appends one row per unit reaching a
+#: terminal status, into a file named for the DAY it happened - so the date a unit closed is on
+#: disk already, in the filename, and nobody has to declare it.
+_ACTUALS_GLOB = "sdlc-studio/retros/evidence/actuals-*.jsonl"
+_ACTUALS_DATE_RE = re.compile(r"actuals-(\d{4}-\d{2}-\d{2})\.jsonl$")
+
+
+def terminal_dates(root: Path) -> dict:
+    """`{unit_id: earliest date it was recorded terminal}`, from the close telemetry.
+
+    DERIVED, never declared. A flag somebody must remember to pass records the honest case and
+    misses the careless one, and the careless one is the whole population this ledger exists for.
+
+    Earliest rather than latest: a unit reopened and re-closed owes its account from the first
+    close, and taking the later date would let a re-close move a unit out of the owed set.
+    """
+    out: dict = {}
+    for p in sorted(Path(root).glob(_ACTUALS_GLOB)):
+        m = _ACTUALS_DATE_RE.search(p.name)
+        if not m:
+            continue
+        day = m.group(1)
+        for line in sdlc_md.read_text_safe(p).splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                uid = sdlc_md.norm_id(str(json.loads(line).get("id") or ""))
+            except (ValueError, TypeError):
+                continue           # a malformed row is not a date, and must not become one
+            if uid and (uid not in out or day < out[uid]):
+                out[uid] = day
+    return out
+
+
+def close_time_repairs(root: Path, uncovered: list) -> tuple[list, list]:
+    """Split `uncovered` into `(close_time_repairs, unaccounted)`.
+
+    A CLOSE-TIME REPAIR is a unit that reached terminal AFTER the most recent retro was written,
+    while the run that retro closed was itself already closed. Those are the units a close
+    produced about itself: found during the ceremony, fixed, and therefore unaccounted by the
+    account written moments earlier. The ledger then re-opened, and the operator's reading was
+    that the sprint was never being closed - it was, repeatedly, and each close was undone by
+    the next repair.
+
+    "Fixed after the account was written" and "nobody accounted for this" are different facts
+    and must not read the same. Both are still REPORTED - the split is about wording and
+    countability, not about forgiving anything.
+
+    The two conditions are both load-bearing. Without the date test every uncovered unit would
+    be excused; without the run-closed test, ordinary delivery in the NEXT sprint would be
+    excused too, because it also postdates the last retro. When a run is open, work reaching
+    terminal is that run's batch and owes that run's account - which is the ordinary case.
+    """
+    repairs, unaccounted = [], []
+    latest = _latest_retro_date(root)
+    closed = _last_run_is_closed(root)
+    dates = terminal_dates(root) if (latest and closed) else {}
+    for cid, t in uncovered:
+        when = dates.get(sdlc_md.norm_id(cid), "")
+        (repairs if (when and latest and when >= latest) else unaccounted).append((cid, t))
+    return sorted(repairs), sorted(unaccounted)
+
+
+def _latest_retro_date(root: Path) -> str:
+    """The most recent `> **Date:**` across the retros, or "" when none is dated."""
+    best = ""
+    retros_dir = Path(root) / "sdlc-studio" / "retros"
+    if not retros_dir.is_dir():
+        return ""
+    for p in sorted(retros_dir.glob("RETRO*.md")):
+        m = retro.DATE_RE.search(sdlc_md.read_text_safe(p))
+        date = (m.group(1).strip() if m else "")
+        if date > best:
+            best = date
+    return best
+
+
+def _last_run_is_closed(root: Path) -> bool:
+    """Whether the recorded run has FINISHED - an outcome that is not `running`.
+
+    `outcome` is `"running"` while a run is live, so a truthiness test reads an open run as a
+    closed one and excuses that run's ordinary delivery as close-time repair. Caught on this
+    repository's own tree: the four units delivered into an OPEN run were all reported as
+    repairs made during a close that had not started.
+
+    Read defensively: an unreadable or absent run state answers False, so the split degrades to
+    calling everything unaccounted. That is the direction that over-reports rather than
+    under-reports, and this ledger's whole value is that it does not quietly say "none owed".
+    """
+    p = Path(root) / "sdlc-studio" / ".local" / "run-state.json"
+    try:
+        outcome = str((json.loads(p.read_text(encoding="utf-8")) or {}).get("outcome") or "")
+    except (OSError, ValueError, TypeError):
+        return False
+    return bool(outcome) and outcome != run_state.RUNNING
 
 
 def scan_delivery(root: Path) -> tuple[list[tuple[str, str]], set[str]]:
@@ -344,6 +443,7 @@ def owed(root: Path) -> dict:
         # A present-but-corrupt baseline is a loud blocking state: never 'allow', never a
         # re-stamp nudge. The enforcement halves must fail closed and direct a repair.
         return {"baselined": False, "corrupt": True, "error": str(exc), "owed": [],
+                "close_time_repairs": [], "unaccounted": [],
                 "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
                 "dead_breakdown_ids": dead_ids, "unreadable": degraded,
                 **_no_velocity_demand()}
@@ -351,13 +451,20 @@ def owed(root: Path) -> dict:
         # No stamp, so no date to scope the velocity demand to. Reporting every retro on disk
         # would be the unclearable tail again; the baseline nudge below stands on its own.
         return {"baselined": False, "corrupt": False, "owed": sorted(uncovered),
+                "close_time_repairs": [], "unaccounted": sorted(uncovered),
                 "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
                 "dead_breakdown_ids": dead_ids, "unreadable": degraded,
                 **_no_velocity_demand()}
     forgiven = {sdlc_md.norm_id(x) for x in baseline["grandfathered"]}
     owed_units = [(cid, t) for (cid, t) in uncovered if sdlc_md.norm_id(cid) not in forgiven]
+    # The split the ledger could not make: a unit fixed DURING a close is not a unit nobody
+    # accounted for. Both stay in `owed` - nothing is forgiven here - but they are named
+    # separately, because an advisory that reports a run which did account for itself is one
+    # people learn to step over.
+    repairs, unaccounted = close_time_repairs(root, owed_units)
     vel = velocity_owed(root, str(baseline.get("stamped") or ""))
     return {"baselined": True, "corrupt": False, "owed": sorted(owed_units),
+            "close_time_repairs": repairs, "unaccounted": unaccounted,
             "grandfathered": len(uncovered) - len(owed_units),
             "covered": len(covered), "terminal": len(terminal),
             "dead_breakdown_ids": dead_ids, "unreadable": degraded,
@@ -419,6 +526,17 @@ def render(report: dict) -> str:
                 f"retro accounting for them - a sprint close is owed "
                 f"(run the retro, then `gate --require-retro RETROxxxx`).")
     lines = [head]
+    # The two states named apart. "Fixed after the account was written" and "nobody accounted
+    # for this" are different facts, and a ledger that reports a run which DID account for
+    # itself is one people learn to step over. Only printed when the split found something, so
+    # an ordinary owed close reads exactly as before.
+    if repairs := report.get("close_time_repairs") or []:
+        lines.append(f"  {len(repairs)} of these is a CLOSE-TIME REPAIR - terminal after the "
+                     f"retro was written, so the account it postdates could not name it: "
+                     + ", ".join(cid for cid, _ in repairs))
+        lines.append("    Amend that retro's Batch, or record the override "
+                     "(`--close-repair-override`) if the repair was unavoidable. "
+                     "The rule is that a finding surfaced during a close is FILED and deferred.")
     if n and (not report["baselined"] or n <= 40):
         lines.append("  " + ", ".join(f"{cid} ({t})" for cid, t in report["owed"]))
     elif n:
@@ -460,13 +578,19 @@ def cmd_detect(args: argparse.Namespace) -> int:
         print(json.dumps(report, indent=2))
     else:
         print(render(report))
-    # Non-zero when a close is genuinely owed (baselined AND owed units exist, or a retro closed
-    # without its velocity row) OR when the baseline is corrupt - so a gate or hook can branch on
-    # the exit code. An unbaselined project is a soft state (exit 0); a corrupt baseline is a loud
-    # blocking failure, never a silent pass.
+    # Non-zero when a close is genuinely owed (baselined AND unaccounted units exist, or a retro
+    # closed without its velocity row) OR when the baseline is corrupt - so a gate or hook can
+    # branch on the exit code. An unbaselined project is a soft state (exit 0); a corrupt
+    # baseline is a loud blocking failure, never a silent pass.
+    #
+    # A CLOSE-TIME REPAIR is reported and does not hold the exit code. CR0527 asks for it to be
+    # visible and countable, which the report above does; gating on it would re-create the
+    # unconvergeable close from the other side - the ceremony would refuse precisely because the
+    # close had done its job carefully. What holds the gate is work nobody accounted for.
+    unaccounted = report.get("unaccounted", report["owed"])
     return 1 if (report.get("corrupt")
                  or (report["baselined"]
-                     and (report["owed"] or report.get("velocity_owed")))) else 0
+                     and (unaccounted or report.get("velocity_owed")))) else 0
 
 
 def cmd_baseline(args: argparse.Namespace) -> int:

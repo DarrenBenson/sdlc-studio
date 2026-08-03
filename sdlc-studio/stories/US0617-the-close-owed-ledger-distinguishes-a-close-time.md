@@ -1,6 +1,6 @@
 # US0617: the close-owed ledger distinguishes a close-time repair from an unaccounted unit
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0527
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -43,6 +43,7 @@ alarming, and it is also what tells an operator that US0616's gate is holding.
   units, and the wording distinguishes the two - "fixed after the account was written" and
   "nobody accounted for this" are different facts and must not read the same
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::CloseTimeRepairTests::test_a_unit_terminal_after_the_retro_is_reported_as_a_close_time_repair
+- **Verified:** yes (2026-08-03)
 
 ### AC2: a genuinely unaccounted unit is still reported as one
 
@@ -52,6 +53,7 @@ alarming, and it is also what tells an operator that US0616's gate is holding.
 - **Then** it is reported as unaccounted exactly as today, so the new state is a split of the
   reported set and never an escape hatch that empties it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::CloseTimeRepairTests::test_an_unaccounted_unit_is_still_reported_as_unaccounted
+- **Verified:** yes (2026-08-03)
 
 ### AC3: the split is derived from timestamps already on disk
 
@@ -61,6 +63,7 @@ alarming, and it is also what tells an operator that US0616's gate is holding.
   no caller has to declare which kind a unit is - a declaration would record the honest case and
   miss the careless one, which is the population the advisory exists for
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::CloseTimeRepairTests::test_the_classification_is_derived_not_declared
+- **Verified:** yes (2026-08-03)
 
 ### AC4: the exit code still reflects a genuine debt only
 
@@ -70,6 +73,7 @@ alarming, and it is also what tells an operator that US0616's gate is holding.
   run - a close-time repair is visible and countable, which is what CR0527 asks for, and gating
   on it would re-create the unconvergeable close from the other side
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::CloseTimeRepairTests::test_close_time_repairs_alone_do_not_hold_the_exit_code
+- **Verified:** yes (2026-08-03)
 
 ## Revision History
 

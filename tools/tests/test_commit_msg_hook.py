@@ -353,6 +353,13 @@ class SuiteVerdictIsEarnedByBothLanesTests(unittest.TestCase):
         r, verdict = self._run(tool_lane_passes=False)
         out = r.stdout + r.stderr
         self.assertNotEqual(r.returncode, 0, "a failing tool lane must block the commit")
+        # The lane must actually have RUN and FAILED. Without this the criterion is satisfied
+        # by a hook that exits 1 before reaching any lane - review demonstrated it, replacing
+        # the hook with `exit 1` and watching this test pass in 4ms. AC2 catches that case, but
+        # AC1's Verify line is a standalone `-k` invocation, so anybody running the criterion
+        # as written would get a green from a hook that reached nothing.
+        self.assertIn("FAIL tool-tests", out,
+                      f"the tool lane never ran, so this proves nothing:\n{out}")
         self.assertIsNone(
             verdict,
             "the hook recorded a suite verdict though the tool-tests lane FAILED - the next "
