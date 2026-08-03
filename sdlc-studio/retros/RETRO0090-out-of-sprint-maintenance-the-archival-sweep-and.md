@@ -1,16 +1,26 @@
 # RETRO-0090: Out-of-sprint maintenance: the archival sweep, and the guards that refused it
 
 > **Date:** 2026-08-03
-> **Batch:** BG0504
-> **Goal:** clear the five index-archival advisories and file the reconcile gap the backlog analysis found
-> **Delivered:** 1 / 1   **Blocked:** 0
-> **Velocity-override:** no sprint ran, so there is no plan-time forecast to measure an actual against. A single unit repaired inside a maintenance task carries no appetite, no batch and no rate this record could re-measure, and writing a one-unit row would put a number into the tokens-per-point series that no plan produced.
+> **Batch:** BG0504, BG0503, BG0505
+> **Goal:** clear the five index-archival advisories, file the reconcile gap the backlog analysis found, and repair both findings it raised
+> **Delivered:** 3 / 3   **Blocked:** 0
+> **Velocity-override:** no sprint ran, so there is no plan-time forecast to measure an actual against. Three units repaired inside a maintenance task carry no appetite, no batch and no rate this record could re-measure, and writing a row would put a number into the tokens-per-point series that no plan produced.
 
 ## Delivered
 
 - `BG0504` - the two repo guards that read `_index.md` with a bare `read_text` now read it
   unioned with its `archive/**` sub-indexes, so archiving no longer turns them red. Shipped in
   `fa7cd067` with `changelog.d/BG0504.md`.
+- `BG0503` - `reconcile detect` gained an `epic-status-stale` kind: an epic still live over a
+  breakdown whose every declared unit is terminal. Detect-only on purpose, because closing an
+  epic is a transition and `transition.py set` is where its gates live. Shipped in `c215541c`.
+- `BG0505` - `check_spec_claims.py` compares a bare filename against the diff's basenames rather
+  than its paths, so the commonest way to name a Python test no longer guarantees a claim-drift
+  finding. Shipped in `c215541c`.
+
+The last two were filed by this same maintenance task and carried as not-stop-ship; the operator
+asked for them next, so they were repaired in the thread that raised them rather than planned into
+a sprint. That is why they appear both in **Actions raised** and in **Delivered**.
 
 The occasion was not a sprint. A backlog analysis over the 164 open artefacts reported five
 indexes between 6x and 15x `indexes.archive_after`, and the operator asked for the sweep. It ran:
@@ -64,8 +74,11 @@ Nothing was blocked. Two findings were filed rather than fixed - see **Known iss
   line in its parent's Story Breakdown and returns; it never touches the parent's Status. Fifteen
   of thirty open epics have every child Done and every box ticked and still read Draft, and
   `reconcile detect` reports `drift_items=0` over all of them. The direction that masks unfinished
-  work is detected; the direction that masks finished work is not, so a delivery backlog can be
-  overstated by half and nothing says so - `BG0503`.
+  work was detected; the direction that masks finished work was not, so a delivery backlog can be
+  overstated by half and nothing says so - `BG0503`, now the `epic-status-stale` kind. Clearing it
+  showed the overstatement was not confined to the epic layer: closing the fifteen made 29
+  requests derivable, and Discovery fell 60 to 31, Delivery 106 to 89. A roll-up that is not
+  derived is wrong at every layer above it, not only at the one that stopped deriving.
 
 ## Carried lessons
 
@@ -94,8 +107,13 @@ ruling HOLDS the close, which is the point of being able to make one.
 
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
-| BG0503 | not-stop-ship | agent, out-of-sprint maintenance - the epics are miscounted, not broken, and the fix moves a status past `transition.py set`'s gates so it wants planning rather than a same-day repair | 2026-08-03 |
-| BG0505 | not-stop-ship | agent, out-of-sprint maintenance - claim-drift is advisory by design and cannot fail a commit; the cost is a false positive and an inflated yield figure, both of which the filing records | 2026-08-03 |
+
+**Nothing is carried.** `BG0503` and `BG0505` were ruled `not-stop-ship` here when they were
+filed - the epics were miscounted rather than broken, and claim-drift is advisory and cannot
+fail a commit. The operator then asked for both, so they were repaired in `c215541c` instead of
+being carried, and the rows were removed rather than left contradicting the Delivered list. The
+ruling is recorded because a finding that was looked at and deferred must never read the same as
+one nobody looked at, even after the deferral is overtaken.
 
 ## Estimate vs actual
 
@@ -129,7 +147,7 @@ sprints fits noise.
 <!-- accuracy:end -->
 
 - **Not applicable.** No sprint opened, so no run baseline was stamped and no unit carries a
-  plan-time forecast. `BG0504` was sized at 3 points after the fact, which is a record of the job
+  plan-time forecast. All three units were sized after the fact, which is a record of the job
   rather than a prediction anything can be scored against. The velocity override above states the
   same fact in the form the close reads.
 
@@ -149,9 +167,9 @@ not an answer.
 
 | Finding | Disposition |
 | --- | --- |
-| Fifteen Draft epics have every child terminal and no detector says so | BG0503 |
+| Fifteen Draft epics have every child terminal and no detector says so | BG0503, fixed-in: c215541c |
 | Two repo guards read the live index as the whole corpus, so archiving reddens them | fixed-in: fa7cd067 |
-| claim-drift matches a bare filename against full repo paths, a guaranteed false positive on any `unittest -p` Verify line | BG0505 |
+| claim-drift matches a bare filename against full repo paths, a guaranteed false positive on any `unittest -p` Verify line | BG0505, fixed-in: c215541c |
 | `file_finding.py` writes no `Verification depth`, so every filed bug must be hand-edited before `transition -> Fixed` will accept it | declined: one field edit per finding, and inventing a depth at filing time would record a verification nobody performed - the refusal is asking the right question at the right moment |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
@@ -170,4 +188,4 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Metrics
 
-- Tokens: not-attributable (no run baseline - this was maintenance, not a sprint) · Duration: one session · Critic rejects: none - `BG0504` carries no independent review, which is recorded here rather than implied by its absence
+- Tokens: not-attributable (no run baseline - this was maintenance, not a sprint) · Duration: one session · Critic rejects: none - none of the three units carries an independent review, which is recorded here rather than implied by its absence
