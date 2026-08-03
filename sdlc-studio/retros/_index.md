@@ -99,3 +99,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0087](RETRO0087-the-sprint-run-is-a-controllable-object-end.md) | The sprint run is a controllable object end to end: inspectable and mutable in flight, queued as charters, and closed on evidence that can fail | 2026-08-01 | -- | -- |
 | [RETRO-0088](RETRO0088-run-01kyy52d-the-review-learned-to-discriminate-and.md) | RUN-01KYY52D: the review learned to discriminate, and then failed its own new rule | 2026-08-01 | -- | -- |
 | [RETRO-0089](RETRO0089-run-01kyzky5-stopped-152-points-delivered-27-of.md) | RUN-01KYZKY5 stopped - 152 points delivered, 27 of 38 units rejected on review | 2026-08-02 | -- | -- |
+| [RETRO-0090](RETRO0090-out-of-sprint-maintenance-the-archival-sweep-and.md) | Out-of-sprint maintenance: the archival sweep, and the guards that refused it | 2026-08-03 | -- | -- |

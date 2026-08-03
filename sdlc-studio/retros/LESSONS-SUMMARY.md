@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0287: **A cascade that ticks a checkbox is not a status cascade.** `_cascade_epic` ticks the story's line in its parent's Story Breakdown and...**
+- **L-0286: **An operation the tooling advises on every run, and that nobody can commit, accumulates silently and is invisible in the advisory...**
+- **L-0285: **A guard that reads the live index treats "what nobody has archived yet" as the corpus.** Both failing guards asserted floors - `> 150`...**
 - **L-0284: **A mutation-killed test proves the test can fail, not that production takes that path.** `US0604` needed four rounds.**
 - **L-0283: **A review exists when the ledger says so, not when it happened.** Fifteen of this run's verdicts were produced and never recorded, and...**
 - **L-0282: **An advisory detector that fires on the author changes nothing.** `lane-check`'s yield is no longer a question: 7 flagged, 6 independently...**
