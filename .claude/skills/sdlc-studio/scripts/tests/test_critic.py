@@ -3841,6 +3841,307 @@ class SkippedCountTests(unittest.TestCase):
         self.assertIn("1 unit(s) written", out, f"the count does not match the record:\n{out}")
 
 
+def _rejected(mod, root, unit="US0017", issues="[new] alpha broke; [new] beta broke"):
+    """A unit carrying a live REJECT with two itemised findings."""
+    mod.record_verdict(root, unit, "REJECT", "qa-seat", "builder", issues, "delivery",
+                       "abcdef123456")
+
+
+def _bug_on_disk(root, bid="BG0123"):
+    """A real artefact for a FILED closure to point at - the id has to RESOLVE."""
+    d = root / "sdlc-studio" / "bugs"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{bid}-residue.md").write_text(
+        f"# {bid}: the residue\n\n> **Status:** Open\n> **Points:** 1\n", encoding="utf-8")
+
+
+class RepairRecordTests(unittest.TestCase):
+    """US0620 / CR0506: a REJECT can be ANSWERED, beside the verdict rather than over it.
+
+    `sprint_covers_independently` is satisfied only by an APPROVE, and no verb recorded what was
+    done about a rejection - so a batch reviewed, rejected, repaired and mutation-verified read
+    exactly like one nobody opened. This is the record the rest of the epic reads.
+    """
+
+    def test_a_repair_names_each_finding_it_closes_with_its_evidence(self) -> None:
+        """MUTANT: accept a repair naming a finding the verdict never raised.
+
+        A disposition that matches nothing is not a disposition, and without the check the route
+        back to covered is opened by writing any text at all.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root)
+            mod.record_repair(root, "US0017", "builder",
+                              "alpha broke -> mutant re-applied and killed; "
+                              "beta broke -> test now reddens")
+            st = mod.repair_state(root, "US0017")
+            self.assertEqual(st["state"], "complete")
+            self.assertEqual(len(st["closed"]), 2)
+            with self.assertRaises(ValueError) as caught:
+                mod.record_repair(root, "US0017", "builder",
+                                  "a finding nobody raised -> handwaving")
+            self.assertIn("never raised", str(caught.exception))
+
+    def test_the_reject_survives_the_repair_byte_identically(self) -> None:
+        """MUTANT: write the repair over the verdict row, or amend it.
+
+        What the reviewer found stays true. A repair that replaced the verdict would destroy the
+        only evidence the review happened - the failure this epic exists to END, arriving from
+        the other side.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root)
+            before = mod.verdicts_path(root).read_text(encoding="utf-8")
+            mod.record_repair(root, "US0017", "builder",
+                              "alpha broke -> killed; beta broke -> killed")
+            after = mod.verdicts_path(root).read_text(encoding="utf-8")
+        self.assertEqual(before, after, "the repair rewrote the verdict ledger")
+
+    def test_an_unattributed_repair_is_refused(self) -> None:
+        """MUTANT: default the author to the reviewer, or to empty.
+
+        A repair is a claim about work somebody did, and an unattributed claim cannot be
+        questioned - the same rule the verdict already holds.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root)
+            with self.assertRaises(ValueError) as caught:
+                mod.record_repair(root, "US0017", "", "alpha broke -> killed")
+        self.assertIn("author", str(caught.exception))
+
+    def test_a_repair_needs_a_live_reject_to_answer(self) -> None:
+        """MUTANT: record a repair against any unit.
+
+        A repair records what was done about a rejection, so there has to be one - otherwise the
+        ledger fills with dispositions for findings nobody made.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod.record_verdict(root, "US0017", "APPROVE", "qa-seat", "builder", "none",
+                               "delivery", "abcdef123456")
+            with self.assertRaises(ValueError) as caught:
+                mod.record_repair(root, "US0017", "builder", "alpha -> killed")
+        self.assertIn("no live REJECT", str(caught.exception))
+
+    def test_show_prints_the_repair_beside_the_verdict(self) -> None:
+        """MUTANT: store the repair in a ledger the verdict's reader never consults.
+
+        The whole value is that a reader of the verdict sees the disposition without knowing a
+        second command exists. Driven through the shipped CLI - a library check cannot see a
+        record the shipped reader never prints (LL0040).
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root)
+            mod.record_repair(root, "US0017", "builder",
+                              "alpha broke -> killed; beta broke -> killed")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = mod.main(["show", "--unit", "US0017", "--root", str(root)])
+        self.assertEqual(rc, 0)
+        self.assertIn("repair", out.getvalue().lower(),
+                      f"`show` does not mention the repair:\n{out.getvalue()}")
+
+
+class ThreeStateCoverageTests(unittest.TestCase):
+    """US0621 / CR0506: approved, repaired and unreviewed are three states, not two."""
+
+    def test_approved_repaired_and_unreviewed_are_three_distinct_states(self) -> None:
+        """MUTANT: collapse `repaired` into either outer state.
+
+        Reading it as unreviewed manufactures work; reading it as approved clears the gate on an
+        unrepaired rejection. The defect this is filed from is the first.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod.record_verdict(root, "US0001", "APPROVE", "qa-seat", "builder", "none",
+                               "delivery", "abcdef123456")
+            _rejected(mod, root, "US0002")
+            mod.record_repair(root, "US0002", "builder",
+                              "alpha broke -> killed; beta broke -> killed")
+            counts = mod.coverage_counts(root, ["US0001", "US0002", "US0003"])
+        self.assertEqual(counts[mod.COVERAGE_APPROVED], ["US0001"])
+        self.assertEqual(counts[mod.COVERAGE_REPAIRED], ["US0002"])
+        self.assertEqual(counts[mod.COVERAGE_UNREVIEWED], ["US0003"])
+
+    def test_an_unrepaired_or_partly_repaired_reject_stays_uncovered(self) -> None:
+        """MUTANT: let any recorded repair reach `repaired`.
+
+        That would convert every REJECT into an APPROVE for the cost of one command - a worse
+        gate than the one being replaced.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0002")
+            self.assertEqual(mod.coverage_state(root, "US0002"), mod.COVERAGE_UNREVIEWED)
+            mod.record_repair(root, "US0002", "builder", "alpha broke -> killed")
+            self.assertEqual(mod.coverage_state(root, "US0002"), mod.COVERAGE_UNREVIEWED,
+                             "a PARTIAL repair reached the covered state")
+
+    def test_the_gates_treatment_of_a_repaired_unit_is_declared_and_tested_both_ways(self) -> None:
+        """MUTANT: let the gate answer this by accident of the APPROVE check.
+
+        Whether a repaired unit satisfies the Done bar is a DECLARED rule with a test either
+        way, so a future reader learns the answer from the code rather than from whichever
+        branch happened to run. The declared answer: a COMPLETE repair satisfies the verdict
+        half, a PARTIAL one does not.
+        """
+        mod = _load()
+        import importlib.util as _u
+        spec = _u.spec_from_file_location(
+            "conformance", Path(__file__).resolve().parent.parent / "conformance.py")
+        conf = _u.module_from_spec(spec)
+        sys.modules["conformance"] = conf
+        spec.loader.exec_module(conf)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US9002", "[new] alpha broke; [new] beta broke")
+            partial_unmet = conf.critiqued_unmet(root, "US9002", 0, True, False)
+            self.assertIn(conf.HALF_VERDICT, partial_unmet,
+                          "an unrepaired REJECT satisfied the verdict half")
+            mod.record_repair(root, "US9002", "builder",
+                              "alpha broke -> killed; beta broke -> killed")
+            complete_unmet = conf.critiqued_unmet(root, "US9002", 0, True, False)
+        self.assertNotIn(conf.HALF_VERDICT, complete_unmet,
+                         "a COMPLETE repair did not satisfy the verdict half, so the repaired "
+                         "state reaches the gate as 'missing critiqued' after all")
+
+    def test_the_three_counts_partition_the_batch(self) -> None:
+        """MUTANT: let a unit fall through the classification into no count.
+
+        Every unit falls in exactly one state and the total equals the batch size.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod.record_verdict(root, "US0001", "APPROVE", "qa", "b", "none", "delivery",
+                               "abcdef123456")
+            _rejected(mod, root, "US0002")
+            units = ["US0001", "US0002", "US0003", "US0004"]
+            counts = mod.coverage_counts(root, units)
+        total = sum(len(v) for v in counts.values())
+        self.assertEqual(total, len(units))
+        self.assertEqual(sorted(sum(counts.values(), [])), sorted(units))
+
+
+class PartialRepairTests(unittest.TestCase):
+    """US0622 / CR0506: a repair that half-answers a rejection is PARTIAL and says which half."""
+
+    def test_a_repair_covering_some_findings_is_partial_and_names_the_residue(self) -> None:
+        """MUTANT: report a count instead of the outstanding findings."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0002",
+                      "[new] alpha broke; [new] beta broke; [new] gamma broke")
+            mod.record_repair(root, "US0002", "builder", "alpha broke -> killed")
+            st = mod.repair_state(root, "US0002")
+        self.assertEqual(st["state"], "partial")
+        self.assertEqual(len(st["outstanding"]), 2)
+        self.assertTrue(any("beta" in o for o in st["outstanding"]))
+        self.assertTrue(any("gamma" in o for o in st["outstanding"]))
+
+    def test_completeness_is_derived_per_finding_not_read_from_prose(self) -> None:
+        """MUTANT: trust a repair that claims completeness in its own text.
+
+        LL0015 - a guard that only catches the total case is not a guard.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
+            mod.record_repair(root, "US0002", "builder",
+                              "alpha broke -> killed, and every finding is now closed")
+            st = mod.repair_state(root, "US0002")
+        self.assertEqual(st["state"], "partial",
+                         "a repair claiming completeness in prose was believed")
+
+    def test_a_repair_closing_every_finding_is_complete_and_counts_as_repaired(self) -> None:
+        """The positive control. MUTANT: always report PARTIAL.
+
+        PARTIAL must not be the only reachable answer, or the route back to covered is closed
+        rather than gated.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
+            mod.record_repair(root, "US0002", "builder",
+                              "alpha broke -> killed; beta broke -> killed")
+            self.assertEqual(mod.repair_state(root, "US0002")["state"], "complete")
+            self.assertEqual(mod.coverage_state(root, "US0002"), mod.COVERAGE_REPAIRED)
+
+
+class FiledDispositionTests(unittest.TestCase):
+    """US0623 / CR0506: closed by FILING is not the same as closed by fixing."""
+
+    def test_a_filed_closure_records_the_disposition_and_the_id(self) -> None:
+        """MUTANT: record every closure as a fix.
+
+        Both dispositions are legitimate under the operator's rule; being unable to tell them
+        apart afterwards is not.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug_on_disk(root)
+            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
+            mod.record_repair(root, "US0002", "builder",
+                              "alpha broke -> killed by the re-applied mutant; "
+                              "beta broke -> filed as BG0123")
+            st = mod.repair_state(root, "US0002")
+        self.assertEqual((st["fixed"], st["filed"]), (1, 1))
+        filed = [c for c in st["closed"] if c["disposition"] == "filed"]
+        self.assertEqual(filed[0]["artefact"], "BG0123")
+
+    def test_a_filed_closure_with_an_unresolvable_id_is_refused(self) -> None:
+        """MUTANT: accept any id in a FILED closure.
+
+        A reference nobody can follow records the appearance of a disposition rather than one -
+        the same failure shape as a `Verify:` line naming a test that does not exist, and found
+        on the day it matters rather than the day it is written.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
+            with self.assertRaises(ValueError) as caught:
+                mod.record_repair(root, "US0002", "builder",
+                                  "alpha broke -> killed; beta broke -> filed as BG9999")
+        self.assertIn("BG9999", str(caught.exception))
+        self.assertIn("resolves to no artefact", str(caught.exception))
+
+    def test_fixed_and_filed_are_counted_separately(self) -> None:
+        """MUTANT: report one combined `closed` total.
+
+        A single total is the shape that makes deferral invisible, and EP0206's rule is only
+        safe to enforce while the two can be told apart.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug_on_disk(root)
+            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                mod.main(["repair", "--unit", "US0002", "--author", "builder",
+                          "--closed", "alpha broke -> killed; beta broke -> filed as BG0123",
+                          "--root", str(root)])
+        self.assertIn("1 fixed", out.getvalue())
+        self.assertIn("1 filed", out.getvalue())
+
+
+
 if __name__ == "__main__":
     unittest.main()
 

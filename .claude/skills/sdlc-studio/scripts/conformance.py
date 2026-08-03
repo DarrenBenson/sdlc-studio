@@ -296,7 +296,20 @@ def critiqued_unmet(root, rid, two_role_cutoff: int | None,
         root, rid, critic.sprint_review_for(root, rid))
     per_unit_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
                    and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
-    verdict_ok = per_unit_ok or (verdict is None and sprint_covers)
+    # A REJECT whose every raised finding carries a recorded closure is REPAIRED, and that is a
+    # third state rather than a shade of unreviewed. Reported in its own words: conformance said
+    # `missing critiqued (independent APPROVE verdict)` for all eighteen repaired units of one
+    # run AND for units nobody had opened, which is what sent that close to a waiver sweep over
+    # work whose findings were already fixed and mutation-verified.
+    #
+    # The DECLARED rule, so a reader learns it here rather than from whichever branch runs: a
+    # repaired unit SATISFIES the verdict half. What the reviewer found stays recorded, and what
+    # was done about it is recorded beside it - the gate asks whether the rejection was answered,
+    # and a complete repair is the answer. A PARTIAL repair is not, and reaches neither state.
+    repaired_ok = (bool(verdict)
+                   and str(verdict.get("verdict") or "").upper() == critic.REJECT
+                   and critic.repair_state(root, rid)["state"] == "complete")
+    verdict_ok = per_unit_ok or repaired_ok or (verdict is None and sprint_covers)
     unmet = []
     # `two_role_only` is for the callers that enforce the TWO-ROLE clause specifically - the
     # Done verb, whose bar is that clause. The verdict half is the `critiqued` stage's own

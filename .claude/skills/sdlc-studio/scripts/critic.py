@@ -528,6 +528,7 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
 # author does not control - the operator by default, or a named delegate in a separate
 # trust boundary, with the delegation chain recorded. Neither substitutes for the other.
 _EVIDENCE_FILE = "critic-evidence.md"
+_REPAIR_FILE = "repair-record.md"
 _SIGNOFF_FILE = "signoff-record.md"
 _EVIDENCE_HEADER = (
     "# Critic Evidence\n\n"
@@ -543,6 +544,10 @@ _SIGNOFF_HEADER = (
     "| Unit | Principal | Chain | Author | Date | Note |\n"
     "| --- | --- | --- | --- | --- | --- |\n")
 _EVIDENCE_COLS = ("unit", "reviewer", "author", "date", "findings")
+#: A REPAIR answers a REJECT. `closed` carries one `<finding> -> <evidence>` item per finding
+#: the repair closes, and `disposition` records fixed-vs-filed per item; both ride on the text
+#: for the same reason `--issues` does - the writers keep one channel in step, not two.
+_REPAIR_COLS = ("unit", "verdict_date", "author", "date", "closed", "outstanding")
 _SIGNOFF_COLS = ("unit", "principal", "chain", "author", "date", "note")
 
 
@@ -552,6 +557,29 @@ def evidence_path(repo_root: Path | str) -> Path:
 
 def signoff_path(repo_root: Path | str) -> Path:
     return Path(repo_root) / "sdlc-studio" / "reviews" / _SIGNOFF_FILE
+
+
+def repair_path(repo_root: Path | str) -> Path:
+    return Path(repo_root) / "sdlc-studio" / "reviews" / _REPAIR_FILE
+
+
+_REPAIR_HEADER = (
+    "# Repair Records\n\n"
+    "> Append-only. What was DONE about a REJECT, recorded beside the verdict rather than\n"
+    "> replacing it: what the reviewer found stays true, and the disposition becomes visible.\n"
+    "> A repair closing fewer findings than the verdict raised is PARTIAL and names the rest.\n"
+    "> A finding closed by FILING an artefact is recorded as filed, with the id - 'fixed' and\n"
+    "> 'filed as a known issue' are both legitimate, and telling them apart afterwards is not\n"
+    "> optional.\n\n"
+    "| Unit | Verdict date | Author | Date | Closed | Outstanding |\n"
+    "| --- | --- | --- | --- | --- | --- |\n")
+
+#: How a repair names what it closed: `<the finding text> -> <the evidence closing it>`.
+#: The evidence is one of three shapes, from CR0506 - a re-applied mutant, a test that now
+#: reddens, or the artefact id the residue was filed as.
+_CLOSURE_SPLIT = "->"
+#: A closure whose evidence names an artefact id is a FILED disposition rather than a fix.
+_FILED_HINT = re.compile(r"\b(filed|file[sd]? as)\b", re.IGNORECASE)
 
 
 def _append_row(path: Path, header: str, cells: tuple[str, ...]) -> Path:
@@ -604,6 +632,138 @@ def record_evidence(repo_root: Path | str, unit: str, reviewer: str, author: str
     return _append_row(evidence_path(repo_root), _EVIDENCE_HEADER,
                        (sdlc_md.norm_id(unit), _clean(reviewer), _clean(author),
                         sdlc_md.now_date(), _clean(findings)))
+
+
+def _match_key(text: str) -> str:
+    """A finding's text reduced to what two writers would agree on.
+
+    The ledger markdown-escapes on the way in (`test\\_the\\_thing`), so the stored text is not
+    the text a human wrote or would copy back. Comparing raw made every closure fail to match
+    the finding it was closing - caught by dogfooding this verb on its own review findings.
+    Backslash escapes and whitespace runs are storage detail; case is not meaning here either.
+    """
+    stripped = text.replace("\\", "")
+    for mark in ("`", "*", "_"):
+        stripped = stripped.replace(mark, "")
+    return " ".join(stripped.split()).strip().lower()
+
+
+def parse_closures(closed: str) -> list[dict]:
+    """`[{finding, evidence, disposition}]` from a repair's `closed` text.
+
+    One item per finding closed, `<finding> -> <evidence>`, semicolon separated - the same
+    channel shape `--issues` uses, so a writer keeps one convention rather than two.
+
+    `disposition` is `filed` when the evidence names an artefact id and says so, else `fixed`.
+    Both are legitimate under the operator's rule - a non-stop-ship finding becomes a bug and
+    the story closes - and what is NOT legitimate is being unable to tell them apart afterwards.
+    """
+    out: list[dict] = []
+    for chunk in (closed or "").split(";"):
+        item = chunk.strip()
+        if not item:
+            continue
+        finding, _, evidence = item.partition(_CLOSURE_SPLIT)
+        finding, evidence = finding.strip(), evidence.strip()
+        if not finding or not evidence:
+            continue
+        filed = bool(_FILED_HINT.search(evidence)) and bool(sdlc_md.ID_SEARCH_RE.search(evidence))
+        out.append({"finding": finding, "evidence": evidence,
+                    "disposition": "filed" if filed else "fixed",
+                    "artefact": (sdlc_md.ID_SEARCH_RE.search(evidence).group(0)
+                                 if filed else "")})
+    return out
+
+
+def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
+                  phase: str = "delivery") -> Path:
+    """Append a REPAIR answering this unit's live REJECT.
+
+    APPEND-ONLY and beside the verdict, never over it: what the reviewer found stays true and
+    what was done about it becomes visible next to it. A repair that replaced the verdict would
+    destroy the only evidence the review happened, which is the failure this epic exists to end
+    rather than to repeat from the other side.
+
+    Refuses a repair with no live REJECT to answer, one naming a finding the verdict never
+    raised, and one with no author - a repair is a claim about work somebody did, and an
+    unattributed claim cannot be questioned.
+    """
+    if not (author or "").strip():
+        raise ValueError("a repair needs --author - it is a claim about work somebody did, "
+                         "and an unattributed claim cannot be questioned")
+    row = verdict_for(repo_root, unit, phase)
+    if not row or str(row.get("verdict") or "").upper() != REJECT:
+        raise ValueError(f"{sdlc_md.norm_id(unit)} carries no live REJECT to answer - a repair "
+                         f"records what was done about a rejection, so there has to be one")
+    closures = parse_closures(closed)
+    if not closures:
+        raise ValueError("a repair needs at least one `<finding> -> <evidence>` closure - the "
+                         "evidence is the re-applied mutant, the test that now reddens, or the "
+                         "artefact the residue was filed as")
+    raised = {_match_key(f["text"]) for f in parse_findings(row.get("issues", ""))}
+    if raised:
+        unknown = [c["finding"] for c in closures
+                   if not any(_match_key(c["finding"]) in r or r in _match_key(c["finding"])
+                              for r in raised)]
+        if unknown:
+            raise ValueError(
+                f"these closures name findings the verdict never raised: {unknown}. A "
+                f"disposition that matches nothing is not a disposition")
+    # A FILED disposition must name an artefact that RESOLVES. A reference nobody can follow
+    # records the appearance of a disposition rather than one - the same failure shape as a
+    # `Verify:` line naming a test that does not exist, and it is discovered on the day it
+    # matters rather than the day it is written.
+    for c in closures:
+        if c["disposition"] == "filed" and not sdlc_md.find_by_id(repo_root, c["artefact"]):
+            raise ValueError(
+                f"{c['artefact']} resolves to no artefact, so this closure records a filing "
+                f"nobody can follow: {c['finding']!r}")
+    outstanding = repair_outstanding(row.get("issues", ""), closures)
+    return _append_row(repair_path(repo_root), _REPAIR_HEADER,
+                       (sdlc_md.norm_id(unit), _clean(str(row.get("date") or "")),
+                        _clean(author), sdlc_md.now_date(), _clean(closed),
+                        _clean("; ".join(outstanding) or "-")))
+
+
+def repair_outstanding(issues: str, closures: list[dict]) -> list[str]:
+    """The findings a repair did NOT close, derived per finding.
+
+    DERIVED, never counted and never read from the repair's own prose. A repair claiming in its
+    text that everything is closed is still PARTIAL if a raised finding has no closure - LL0015,
+    a guard that only catches the total case is not a guard.
+    """
+    closed_texts = [_match_key(c["finding"]) for c in closures]
+    out = []
+    for f in parse_findings(issues):
+        key = _match_key(f["text"])
+        if not any(key in c or c in key for c in closed_texts):
+            out.append(f["text"].strip())
+    return out
+
+
+def repair_for(repo_root: Path | str, unit: str):
+    """The latest repair row for a unit, or None."""
+    return _latest_for(_read_rows(repair_path(repo_root), _REPAIR_COLS), unit)
+
+
+def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> dict:
+    """`{state, closed, outstanding, filed, fixed}` for a unit's repair, or state `none`.
+
+    `state` is `complete` when every raised finding carries a closure, `partial` when some do
+    not, and `none` when no repair was recorded. PARTIAL is what stops the route back to covered
+    being opened by recording any repair at all - a worse gate than the one being replaced,
+    because it would convert every REJECT into an APPROVE for the cost of one command.
+    """
+    row = repair_for(repo_root, unit)
+    if not row:
+        return {"state": "none", "closed": [], "outstanding": [], "filed": 0, "fixed": 0}
+    closures = parse_closures(row.get("closed", ""))
+    verdict = verdict_for(repo_root, unit, phase) or {}
+    outstanding = repair_outstanding(verdict.get("issues", ""), closures)
+    return {"state": "partial" if outstanding else "complete",
+            "closed": closures, "outstanding": outstanding,
+            "filed": sum(1 for c in closures if c["disposition"] == "filed"),
+            "fixed": sum(1 for c in closures if c["disposition"] == "fixed")}
 
 
 def evidence_for(repo_root: Path | str, unit: str):
@@ -1654,6 +1814,50 @@ def sprint_review_for(repo_root: Path | str, unit: str):
         if target in _covered_ids(r):
             latest = r
     return latest
+
+
+#: The three states a unit's independent review can be in. ONE number cannot carry three
+#: states, and the figure that motivated this was wrong by 18 out of 19 because it tried.
+COVERAGE_APPROVED = "approved"     # an APPROVE (or a REJECT whose findings are all pre-existing)
+COVERAGE_REPAIRED = "repaired"     # a REJECT whose findings ALL carry a recorded closure
+COVERAGE_UNREVIEWED = "unreviewed"  # nobody looked, or looked and the answer is still open
+
+
+def coverage_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> str:
+    """Which of the three states this unit's review is in.
+
+    `sprint_covers_independently` is satisfied only by an APPROVE, so a batch that was
+    independently reviewed, rejected, repaired and mutation-verified reported with the SAME WORD
+    as one nobody opened. Measured three times in four days across 41 units; on one run the
+    preflight said "28 of 44 covered by no independent review" and 18 of those 28 carried a real
+    REJECT whose every finding had been repaired in-run. The number was wrong by 18 out of 19,
+    and wrong in the direction that hides the one real gap inside a crowd of false ones.
+
+    BOTH failure directions are closed here, which is what makes this the load-bearing half:
+    reading the middle state as unreviewed manufactures work, and reading it as approved would
+    clear the gate on an unrepaired rejection. So a REJECT reaches `repaired` only through a
+    COMPLETE repair - every raised finding carrying a closure - and a partial one stays
+    unreviewed.
+    """
+    row = verdict_for(repo_root, unit, phase)
+    if row and sprint_covers_independently(repo_root, unit, row):
+        return COVERAGE_APPROVED
+    if row and str(row.get("verdict") or "").upper() == REJECT:
+        if repair_state(repo_root, unit, phase)["state"] == "complete":
+            return COVERAGE_REPAIRED
+    return COVERAGE_UNREVIEWED
+
+
+def coverage_counts(repo_root: Path | str, units, phase: str = "delivery") -> dict:
+    """`{approved: [...], repaired: [...], unreviewed: [...]}` over `units`.
+
+    A PARTITION: every unit falls in exactly one state and the three lists sum to the batch, so
+    a unit cannot fall through the classification into no count at all.
+    """
+    out = {COVERAGE_APPROVED: [], COVERAGE_REPAIRED: [], COVERAGE_UNREVIEWED: []}
+    for unit in units:
+        out[coverage_state(repo_root, unit, phase)].append(sdlc_md.norm_id(unit))
+    return out
 
 
 def sprint_covers_independently(repo_root: Path | str, unit: str, review: dict | None) -> bool:
@@ -2884,6 +3088,43 @@ def cmd_record(args: argparse.Namespace) -> int:
     return rc
 
 
+def cmd_repair(args: argparse.Namespace) -> int:
+    """Record a REPAIR answering a unit's live REJECT."""
+    closed = args.closed
+    if getattr(args, "closed_file", None):
+        try:
+            raw = (sys.stdin.read() if args.closed_file == "-"
+                   else Path(args.closed_file).read_text(encoding="utf-8"))
+        except OSError as exc:
+            print(f"repair refused: {exc}", file=sys.stderr)
+            return 2
+        closed = " ".join(raw.split())
+    if not (closed or "").strip():
+        print("repair refused: --closed (or --closed-file) is required - a repair records "
+              "which findings it closes and the evidence closing each, one per "
+              "`<finding> -> <evidence>` item", file=sys.stderr)
+        return 2
+    rc = 0
+    for unit in [u.strip() for u in (args.unit or "").replace(",", " ").split() if u.strip()]:
+        try:
+            path = record_repair(args.root, unit, args.author, closed, args.phase)
+        except ValueError as exc:
+            print(f"repair refused ({sdlc_md.norm_id(unit)}): {exc}", file=sys.stderr)
+            rc = 2
+            continue
+        st = repair_state(args.root, unit, args.phase)
+        label = "COMPLETE" if st["state"] == "complete" else "PARTIAL"
+        print(f"repair recorded for {sdlc_md.norm_id(unit)} [{label}] -> {path}")
+        print(f"  {st['fixed']} fixed, {st['filed']} filed as an artefact")
+        if st["outstanding"]:
+            # NAMED, not counted. A repair cannot be claimed wholesale over a rejection it only
+            # half answered, and the reader needs to know WHICH are still open.
+            print(f"  {len(st['outstanding'])} finding(s) still outstanding:")
+            for item in st["outstanding"]:
+                print(f"    - {item}")
+    return rc
+
+
 def cmd_evidence(args: argparse.Namespace) -> int:
     findings = args.findings
     if getattr(args, "from_verdict", None):
@@ -3090,6 +3331,18 @@ def cmd_show(args: argparse.Namespace) -> int:
     if args.unit:
         v = verdict_for(args.root, args.unit, args.phase)
         print(v if v else f"no verdict for {args.unit}")
+        # The REPAIR beside the verdict. The whole value of recording it here rather than in a
+        # ledger of its own is that a reader of the verdict sees the disposition without knowing
+        # a second command exists - so the verdict's own reader has to print it.
+        if v and str(v.get("verdict") or "").upper() == REJECT:
+            st = repair_state(args.root, args.unit, args.phase)
+            if st["state"] == "none":
+                print("  repair: none recorded - this REJECT is unanswered")
+            else:
+                print(f"  repair: {st['state'].upper()} - {st['fixed']} fixed, "
+                      f"{st['filed']} filed")
+                for item in st["outstanding"]:
+                    print(f"    still outstanding: {item}")
     else:
         for v in read_verdicts(args.root, args.phase):
             print(f"{v['unit']} {v['verdict']} ({v['date']}){_superseded_suffix(v)}")
@@ -3191,6 +3444,22 @@ def build_parser() -> argparse.ArgumentParser:
                    help="record the returned VERDICT/ISSUES/BLOCKING block as the findings")
     e.add_argument("--root", default=".")
     e.set_defaults(func=cmd_evidence)
+    rp = sub.add_parser("repair", help="Record a REPAIR answering a unit's REJECT - which "
+                                       "findings it closes, and the evidence closing each.")
+    rp.add_argument("--unit", default="", metavar="ID",
+                    help="a unit id; a comma-separated list is accepted")
+    rp.add_argument("--author", default="",
+                    help="who did the repair - a claim about work somebody did")
+    rp.add_argument("--closed", default="",
+                    help="`<finding> -> <evidence>` per finding closed, semicolon separated. "
+                         "The evidence is the re-applied mutant, the test that now reddens, or "
+                         "the artefact id the residue was FILED as")
+    rp.add_argument("--closed-file", dest="closed_file", metavar="FILE|-",
+                    help="THE RECOMMENDED PATH for prose carrying backticks or `$(` - read off "
+                         "disk so no value crosses a shell")
+    rp.add_argument("--phase", default="delivery", choices=("delivery", "plan-review"))
+    rp.add_argument("--root", default=".")
+    rp.set_defaults(func=cmd_repair)
     so = sub.add_parser("signoff", help="Record the reviewer-of-record sign-off "
                                         "(independent principal; optional named delegate with chain).")
     so.add_argument("--unit", action="append", metavar="ID",

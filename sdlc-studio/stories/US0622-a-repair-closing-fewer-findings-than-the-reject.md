@@ -1,6 +1,6 @@
 # US0622: a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -39,6 +39,7 @@ somebody writes "all findings repaired" in its own text.
 - **Then** it is reported PARTIAL and names the two outstanding findings individually, so the
   reader learns which are still open rather than that some are
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PartialRepairTests::test_a_repair_covering_some_findings_is_partial_and_names_the_residue
+- **Verified:** yes (2026-08-03)
 
 ### AC2: completeness is derived per finding, never taken from prose
 
@@ -47,6 +48,7 @@ somebody writes "all findings repaired" in its own text.
 - **Then** it is still PARTIAL, because the verdict is derived by matching each recorded closure
   against each raised finding - a claim in the repair's prose carries no weight
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PartialRepairTests::test_completeness_is_derived_per_finding_not_read_from_prose
+- **Verified:** yes (2026-08-03)
 
 ### AC3: a repair closing every finding is COMPLETE, and that is what US0621 reads
 
@@ -56,6 +58,7 @@ somebody writes "all findings repaired" in its own text.
   repaired - so the positive control sits beside the refusal and PARTIAL cannot be the only
   reachable answer
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PartialRepairTests::test_a_repair_closing_every_finding_is_complete_and_counts_as_repaired
+- **Verified:** yes (2026-08-03)
 
 ## Revision History
 

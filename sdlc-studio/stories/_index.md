@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 27 |
-| Ready | 21 |
+| Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 4 |
+| Review | 9 |
 | Done | 581 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -59,11 +59,11 @@
 | [US0617](US0617-the-close-owed-ledger-distinguishes-a-close-time.md) | the close-owed ledger distinguishes a close-time repair from an unaccounted unit | Review | EP0204 | 2026-08-02 | 2026-08-02 |
 | [US0618](US0618-an-unavoidable-close-time-repair-is-recorded-as.md) | an unavoidable close-time repair is recorded as an explicit override with its reason | Review | EP0204 | 2026-08-02 | 2026-08-02 |
 | [US0619](US0619-re-running-a-completed-close-over-an-unchanged.md) | re-running a completed close over an unchanged tree is a no-op that says so | Review | EP0204 | 2026-08-02 | 2026-08-02 |
-| [US0620](US0620-a-reject-can-be-answered-by-a-recorded.md) | a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
-| [US0621](US0621-the-coverage-predicate-distinguishes-approved-repaired-and-unreviewed.md) | the coverage predicate distinguishes approved, repaired and unreviewed rather than two states | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
-| [US0622](US0622-a-repair-closing-fewer-findings-than-the-reject.md) | a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
-| [US0623](US0623-a-finding-closed-by-filing-is-recorded-distinctly.md) | a finding closed by FILING is recorded distinctly from one closed by fixing | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
-| [US0624](US0624-the-close-preflight-states-the-three-coverage-counts.md) | the close preflight states the three coverage counts separately | Ready | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0620](US0620-a-reject-can-be-answered-by-a-recorded.md) | a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each | Review | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0621](US0621-the-coverage-predicate-distinguishes-approved-repaired-and-unreviewed.md) | the coverage predicate distinguishes approved, repaired and unreviewed rather than two states | Review | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0622](US0622-a-repair-closing-fewer-findings-than-the-reject.md) | a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones | Review | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0623](US0623-a-finding-closed-by-filing-is-recorded-distinctly.md) | a finding closed by FILING is recorded distinctly from one closed by fixing | Review | EP0205 | 2026-08-02 | 2026-08-02 |
+| [US0624](US0624-the-close-preflight-states-the-three-coverage-counts.md) | the close preflight states the three coverage counts separately | Review | EP0205 | 2026-08-02 | 2026-08-02 |
 | [US0625](US0625-the-doctrine-states-the-rule-and-the-stop.md) | the doctrine states the rule and the stop-ship judgement is recorded per finding at review time | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0626](US0626-sprint-close-and-sprint-stop-refuse-while-any.md) | sprint close and sprint stop refuse while any batch unit is non-terminal, naming each and where its findings went | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0627](US0627-closing-a-story-over-a-recorded-reject-requires.md) | closing a story over a recorded REJECT requires a filed artefact id or an explicit stop-ship ruling | Draft | EP0206 | 2026-08-02 | 2026-08-02 |

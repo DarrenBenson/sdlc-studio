@@ -1,6 +1,6 @@
 # US0621: the coverage predicate distinguishes approved, repaired and unreviewed rather than two states
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -44,6 +44,7 @@ gate on an unrepaired rejection. A REJECT with no repair record must stay uncove
   approved nor unreviewed - a result that collapses the middle into either outer state is the
   defect this is filed from
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ThreeStateCoverageTests::test_approved_repaired_and_unreviewed_are_three_distinct_states
+- **Verified:** yes (2026-08-03)
 
 ### AC2: an unrepaired REJECT stays uncovered
 
@@ -53,6 +54,7 @@ gate on an unrepaired rejection. A REJECT with no repair record must stay uncove
 - **Then** neither counts as covered - the new state is earned by a recorded repair, so the route
   back to covered cannot be taken by having been rejected
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ThreeStateCoverageTests::test_an_unrepaired_or_partly_repaired_reject_stays_uncovered
+- **Verified:** yes (2026-08-03)
 
 ### AC3: conformance reports the repaired state rather than "missing critiqued"
 
@@ -62,6 +64,7 @@ gate on an unrepaired rejection. A REJECT with no repair record must stay uncove
   verdict)` - the words it used for all eighteen units of RUN-01KYZKY5 and for units nobody
   opened alike, which is what sent that close to a waiver sweep
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::ThreeStateCoverageTests::test_conformance_names_the_repaired_state_not_missing_critiqued
+- **Verified:** yes (2026-08-03)
 
 ### AC4: the gate's verdict on a repaired unit is stated, not inferred
 
@@ -71,6 +74,7 @@ gate on an unrepaired rejection. A REJECT with no repair record must stay uncove
   a future reader learns the answer from the code rather than from whichever branch happened to
   run - `sprint_covers_independently` today answers this by accident of the APPROVE check
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ThreeStateCoverageTests::test_the_gates_treatment_of_a_repaired_unit_is_declared_and_tested_both_ways
+- **Verified:** yes (2026-08-03)
 
 ## Revision History
 

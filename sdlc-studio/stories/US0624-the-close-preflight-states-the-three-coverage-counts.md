@@ -1,6 +1,6 @@
 # US0624: the close preflight states the three coverage counts separately
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -40,6 +40,7 @@ was in what the operator was shown, and only a check driving the shipped preflig
   through the shipped command rather than through the predicate - the defect was in what the
   operator was shown
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightCoverageCountsTests::test_the_preflight_prints_three_named_counts
+- **Verified:** yes (2026-08-03)
 
 ### AC2: the three counts sum to the batch, and the sum is asserted
 
@@ -48,6 +49,7 @@ was in what the operator was shown, and only a check driving the shipped preflig
 - **Then** they partition it - every unit falls in exactly one state and the total equals the
   batch size, so a unit cannot fall through the classification into no count at all
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightCoverageCountsTests::test_the_three_counts_partition_the_batch
+- **Verified:** yes (2026-08-03)
 
 ### AC3: a batch with one unreviewed unit names it
 
@@ -56,6 +58,7 @@ was in what the operator was shown, and only a check driving the shipped preflig
 - **Then** it names that unit - the failure being repaired is a real gap hidden inside a crowd of
   false ones, so a count alone would leave the operator to find it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightCoverageCountsTests::test_the_single_unreviewed_unit_is_named_not_just_counted
+- **Verified:** yes (2026-08-03)
 
 ## Revision History
 

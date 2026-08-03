@@ -12700,5 +12700,84 @@ class CloseIdempotenceTests(unittest.TestCase):
 
 
 
+class PreflightCoverageCountsTests(unittest.TestCase):
+    """US0624 / CR0506: the coverage line states three counts, and names the real gap.
+
+    The line this replaces said "28 of 44 unit(s) are covered by no independent review". It was
+    wrong by 18 out of 19, AND THE REASON IT WAS WRONG IS THAT ONE NUMBER CANNOT CARRY THREE
+    STATES. So the fix is not a better number - it is three.
+
+    US0620 records the repair and US0621 computes the states; without this they change a
+    predicate nobody reads. Driven through the shipped report builder, because the defect was
+    never in the arithmetic - it was in what the operator was shown (LL0040).
+    """
+
+    def _ctx(self, root: Path, units: list) -> dict:
+        critic = _load_critic()
+        return {"root": root, "units": units,
+                "sprint_reviews": critic.sprint_reviews(root),
+                "review_rounds": []}
+
+    def _row(self, root: Path, units: list) -> tuple:
+        import sprint_report  # noqa: PLC0415
+        return sprint_report._ck_review_attribution(self._ctx(root, units))
+
+    def test_the_preflight_prints_three_named_counts(self) -> None:
+        """MUTANT: report `covered / rejected / uncovered` as before."""
+        critic = _load_critic()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            critic.record_verdict(root, "US0001", "APPROVE", "qa-seat", "b", "none",
+                                  "delivery", "abcdef123456")
+            critic.record_verdict(root, "US0002", "REJECT", "qa-seat", "b",
+                                  "[new] alpha broke", "delivery", "abcdef123456")
+            critic.record_repair(root, "US0002", "b", "alpha broke -> killed")
+            _status, value, _detail = self._row(root, ["US0001", "US0002", "US0003"])
+        for word in ("approved", "repaired", "unreviewed"):
+            self.assertIn(word, value.lower(), f"the coverage line does not name {word}: {value}")
+        self.assertIn("1 approved", value)
+        self.assertIn("1 repaired", value)
+        self.assertIn("1 unreviewed", value)
+
+    def test_the_three_counts_partition_the_batch(self) -> None:
+        """MUTANT: let a unit fall into no count at all.
+
+        A unit that escapes the classification is invisible, which is the failure mode with no
+        symptom.
+        """
+        critic = _load_critic()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            critic.record_verdict(root, "US0001", "APPROVE", "qa", "b", "none", "delivery",
+                                  "abcdef123456")
+            units = ["US0001", "US0002", "US0003", "US0004"]
+            counts = critic.coverage_counts(root, units)
+        self.assertEqual(sum(len(v) for v in counts.values()), len(units))
+
+    def test_the_single_unreviewed_unit_is_named_not_just_counted(self) -> None:
+        """MUTANT: report the unreviewed count without naming the units.
+
+        The failure being repaired is a real gap hidden inside a crowd of false ones. A count
+        alone leaves the operator to find it, which is what sent one close to a waiver sweep
+        over eighteen units whose findings were already fixed.
+        """
+        critic = _load_critic()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            units = []
+            for i in range(1, 6):
+                uid = f"US000{i}"
+                units.append(uid)
+                critic.record_verdict(root, uid, "REJECT", "qa-seat", "b",
+                                      "[new] alpha broke", "delivery", "abcdef123456")
+                critic.record_repair(root, uid, "b", "alpha broke -> killed")
+            units.append("US0009")          # the one nobody reviewed
+            _status, value, detail = self._row(root, units)
+        self.assertIn("1 unreviewed", value)
+        self.assertIn("US0009", detail,
+                      f"the single genuinely unreviewed unit is not named:\n{detail}")
+
+
+
 if __name__ == "__main__":
     unittest.main()

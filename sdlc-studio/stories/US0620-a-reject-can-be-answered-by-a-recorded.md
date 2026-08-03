@@ -1,6 +1,6 @@
 # US0620: a REJECT can be answered by a recorded REPAIR naming the findings it closes and the evidence closing each
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -45,6 +45,7 @@ this same batch is what happens when two ledgers hold halves of one answer.
   test that now reddens, or a filed artefact id - and a repair naming a finding the verdict never
   raised is refused, because a disposition that matches nothing is not a disposition
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairRecordTests::test_a_repair_names_each_finding_it_closes_with_its_evidence
+- **Verified:** yes (2026-08-03)
 
 ### AC2: the REJECT survives the repair, verbatim
 
@@ -54,6 +55,7 @@ this same batch is what happens when two ledgers hold halves of one answer.
   afterwards, and the repair reads as a separate appended record - what the reviewer found stays
   true, and no repair route can quietly become an edit route
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairRecordTests::test_the_reject_survives_the_repair_byte_identically
+- **Verified:** yes (2026-08-03)
 
 ### AC3: the record carries its own author and is refused without one
 
@@ -62,6 +64,7 @@ this same batch is what happens when two ledgers hold halves of one answer.
 - **Then** it is refused - a repair is a claim about work somebody did, and an unattributed claim
   cannot be questioned, which is the same rule the verdict already holds
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairRecordTests::test_an_unattributed_repair_is_refused
+- **Verified:** yes (2026-08-03)
 
 ### AC4: the repair is visible from the verdict, through the shipped command
 
@@ -71,6 +74,7 @@ this same batch is what happens when two ledgers hold halves of one answer.
   knowing a second command exists - asserted through the CLI, because a library-only check cannot
   see a record the shipped reader never prints
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairRecordTests::test_show_prints_the_repair_beside_the_verdict
+- **Verified:** yes (2026-08-03)
 
 ## Revision History
 

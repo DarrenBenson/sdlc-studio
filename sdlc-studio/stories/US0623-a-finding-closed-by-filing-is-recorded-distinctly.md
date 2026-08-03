@@ -1,6 +1,6 @@
 # US0623: a finding closed by FILING is recorded distinctly from one closed by fixing
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0506
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -40,6 +40,7 @@ naming a test that does not exist - a reference nobody follows until the day it 
   carrying evidence of a fix, and both appear in the record rather than one being inferred from
   the other's absence
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FiledDispositionTests::test_a_filed_closure_records_the_disposition_and_the_id
+- **Verified:** yes (2026-08-03)
 
 ### AC2: a filed closure naming an unresolvable id is refused
 
@@ -48,6 +49,7 @@ naming a test that does not exist - a reference nobody follows until the day it 
 - **Then** it is refused, naming the id - a reference nobody can follow records the appearance of
   a disposition rather than one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FiledDispositionTests::test_a_filed_closure_with_an_unresolvable_id_is_refused
+- **Verified:** yes (2026-08-03)
 
 ### AC3: the two dispositions are counted separately where the residue is read
 
@@ -57,6 +59,7 @@ naming a test that does not exist - a reference nobody follows until the day it 
   repaired and how much was deferred - a single "closed" total is the shape that makes deferral
   invisible
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FiledDispositionTests::test_fixed_and_filed_are_counted_separately
+- **Verified:** yes (2026-08-03)
 
 ## Revision History
 

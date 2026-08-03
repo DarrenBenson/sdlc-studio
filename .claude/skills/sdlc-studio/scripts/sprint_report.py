@@ -824,7 +824,7 @@ DERIVED, RECORDED = "derived", "recorded"
 NON_CEREMONY_VERBS = {
     "sprint": ("appetite", "close", "boundary", "report", "checklist", "preflight",
                "reopen", "stop", "decision", "batch", "lane"),
-    "critic": ("brief", "caller-check", "correct", "evidence", "show",
+    "critic": ("brief", "caller-check", "correct", "evidence", "repair", "show",
                "signoff-brief", "supersede"),
     "handoff": ("show",),
     "lessons": ("add", "carried", "carry", "list", "propose", "prune", "rank",
@@ -1288,6 +1288,12 @@ def _ck_review_attribution(ctx: dict) -> tuple:
         seat = critic.seat_for(ctx["root"], who) if who else None
         return f"seat:{seat}" if seat else f"who:{who}"
 
+    # THREE states, not two. `verdict_for` alone cannot tell "rejected and repaired" from
+    # "nobody looked", and one number cannot carry three states: the figure this replaces said
+    # "28 of 44 covered by no independent review" when 18 of those 28 carried a REJECT whose
+    # every finding had been repaired in-run. Wrong by 18 out of 19, and wrong in the direction
+    # that hides the one real gap inside a crowd of false ones.
+    states = critic.coverage_counts(ctx["root"], units)
     covered, rejected, uncovered, reviewers = [], [], [], set()
     for uid in units:
         v = critic.verdict_for(ctx["root"], uid)
@@ -1306,9 +1312,21 @@ def _ck_review_attribution(ctx: dict) -> tuple:
                   for r in ctx["sprint_reviews"] + ctx["review_rounds"]}
     lenses = len({_lens(r) for r in reviewers if r})
     under = lenses < MIN_LENSES
-    value = (f"{len(covered)} covered, {len(rejected)} rejected, {len(uncovered)} uncovered; "
-             f"{lenses} lens(es)" + (" - UNDER-COVERED" if under else ""))
-    shown = covered[:6] + [f"REJECTED {r}" for r in rejected[:6]]
+    repaired = states[critic.COVERAGE_REPAIRED]
+    # The uncovered bucket holds two DIFFERENT facts and the operator needs both: a rejection
+    # nobody has answered, and a unit nobody has opened. Calling the first "unreviewed" would be
+    # the same collapse this row exists to undo, one level down - it WAS reviewed, and rejected.
+    unanswered = [u for u in states[critic.COVERAGE_UNREVIEWED]
+                  if critic.verdict_for(ctx["root"], u)]
+    never = [u for u in states[critic.COVERAGE_UNREVIEWED]
+             if not critic.verdict_for(ctx["root"], u)]
+    value = (f"{len(states[critic.COVERAGE_APPROVED])} approved, {len(repaired)} repaired, "
+             f"{len(unanswered)} rejected, {len(never)} unreviewed; {lenses} lens(es)"
+             + (" - UNDER-COVERED" if under else ""))
+    # The unreviewed units are NAMED, never only counted: the failure being repaired is one real
+    # gap hidden inside a crowd of false ones, so a count alone leaves the operator to find it.
+    shown = ([f"UNREVIEWED {u}" for u in never]
+             + covered[:6] + [f"REJECTED {r}" for r in rejected[:6]])
     dropped_from_view = (len(covered) - len(covered[:6])) + (len(rejected) - len(rejected[:6]))
     detail = "; ".join(shown) + (f" (+{dropped_from_view} more)" if dropped_from_view else "")
     if under:
