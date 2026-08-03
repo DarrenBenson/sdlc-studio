@@ -1,6 +1,6 @@
 # CR-0448: command_audit reports a flag whose destination is never read - and is proven on verify_batch
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0175
 > **Priority:** Medium
 > **Type:** Improvement

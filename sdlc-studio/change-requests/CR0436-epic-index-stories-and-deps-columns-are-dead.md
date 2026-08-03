@@ -1,6 +1,6 @@
 # CR-0436: Epic index Stories and Deps columns are dead for 156 of 165 epics and unchecked by reconcile
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0172
 > **Priority:** Low
 > **Type:** Improvement

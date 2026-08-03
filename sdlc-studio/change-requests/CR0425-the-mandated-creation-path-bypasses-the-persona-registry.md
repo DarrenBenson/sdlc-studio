@@ -1,6 +1,6 @@
 # CR-0425: The mandated creation path bypasses the persona registry entirely: registry personas unconsulted since the day the layer
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-07-27)
 > **Decomposed-into:** EP0166
 > **Priority:** High

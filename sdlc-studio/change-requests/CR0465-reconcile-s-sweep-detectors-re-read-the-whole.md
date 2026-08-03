@@ -1,6 +1,6 @@
 # CR-0465: reconcile's sweep detectors re-read the whole corpus per unit: 733,271 file opens for one run
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0181
 > **Priority:** Medium
 > **Type:** Improvement

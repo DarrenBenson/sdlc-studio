@@ -1,6 +1,6 @@
 # CR-0454: The sprint close invalidates itself: its own output makes the review stale and each retry pays a full suite
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0177
 > **Priority:** High
 > **Type:** Improvement

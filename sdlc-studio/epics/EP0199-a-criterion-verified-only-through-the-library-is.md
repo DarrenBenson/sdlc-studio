@@ -1,6 +1,6 @@
 # EP0199: A criterion verified only through the library is visible, so a feature cannot pass its own gate while its lane is unwired
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 10
 > **Parent:** CR0520
 > **Created:** 2026-08-01

@@ -504,6 +504,54 @@ class ClaimTickTests(unittest.TestCase):
         self.assertEqual(1, len(found))
         self.assertEqual("untouched", found[0]["kind"])
 
+    def test_a_bare_filename_naming_a_changed_file_is_not_flagged(self) -> None:
+        """BG0505. MUTANT: revert `_names_a_touched_file` to `any(s in touched ...)`. This must go
+        red.
+
+        `touched` holds repo-relative paths, so a bare name could never be a member of it, and
+        `unittest -p` takes a PATTERN rather than a path - which makes the shipped way to name a
+        Python test the one form that could not pass. It fired on BG0504's own criterion over a
+        file the same diff changed by 76 lines.
+        """
+        diff = self._diff(
+            ("sdlc-studio/bugs/BG0001-x.md", [
+                "- [x] both guards read the archive union",
+                '- **Verify:** python3 -m unittest discover -s tools/tests -p "test_touched.py"',
+            ]),
+            ("tools/tests/test_touched.py", ["    def test_a(self): pass"]),
+        )
+        self.assertEqual([], check_spec_claims.ticked_over_untouched(diff))
+
+    def test_a_bare_filename_matching_nothing_in_the_diff_is_still_flagged(self) -> None:
+        """The half that keeps the widening honest. MUTANT: make `_names_a_touched_file` return
+        True whenever a bare name appears - the check would then pass every basename-only Verify
+        line, which is most of them, and the lane would detect nothing it was built for."""
+        diff = self._diff(
+            ("sdlc-studio/bugs/BG0001-x.md", [
+                "- [x] both guards read the archive union",
+                '- **Verify:** python3 -m unittest discover -s tools/tests -p "test_absent.py"',
+            ]),
+            ("tools/tests/test_touched.py", ["    def test_a(self): pass"]),
+        )
+        found = check_spec_claims.ticked_over_untouched(diff)
+        self.assertEqual(1, len(found))
+        self.assertEqual("test_absent.py", found[0]["surface"])
+
+    def test_a_path_qualified_name_still_compares_by_path(self) -> None:
+        """MUTANT: drop the `"/" in s` branch and match every surface by basename. A criterion
+        naming `scripts/gate.py` would then be satisfied by a change to `tools/gate.py`, which is
+        a different file - the looseness must stay confined to the form carrying no directory to
+        be wrong about."""
+        diff = self._diff(
+            ("sdlc-studio/bugs/BG0001-x.md", [
+                "- [x] scripts/gate.py refuses a stale verdict",
+            ]),
+            ("tools/gate.py", ["    return 1"]),
+        )
+        found = check_spec_claims.ticked_over_untouched(diff)
+        self.assertEqual(1, len(found))
+        self.assertEqual("scripts/gate.py", found[0]["surface"])
+
     def test_an_unjudgeable_criterion_is_named_not_passed(self) -> None:
         """MUTANT: treat a criterion naming no surface as passing (drop it silently). This must
         go red - an unanswerable check must never read the same as a satisfied one, which is the

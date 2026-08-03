@@ -1,6 +1,6 @@
 # EP0201: A suite verdict is a fact read from a file, never a stream an agent interprets
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0519
 > **Created:** 2026-08-01

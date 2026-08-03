@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 25 |
+| Open | 23 |
 | In Progress | 0 |
-| Fixed | 397 |
+| Fixed | 399 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -42,9 +42,9 @@
 | [BG0500](BG0500-the-runbook-guard-runs-in-no-gate-lane.md) | the runbook guard runs in no gate lane, so the runbook can rot between tool-suite runs | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0501](BG0501-batch-add-epic-and-batch-swap-price-stories.md) | batch add-epic and batch swap price stories at zero because they hand-roll the points reader instead of using the shared one | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0502](BG0502-a-close-sealed-by-file-and-close-tells.md) | a close sealed by --file-and-close tells the operator nothing, because cmd_close returns before the report | Open | Medium | 2026-08-03 | 2026-08-03 |
-| [BG0503](BG0503-an-epic-whose-every-child-is-terminal-stays.md) | an epic whose every child is terminal stays Draft, and no reconcile detector says so: 15 of 30 open epics are already delivered | Open | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0503](BG0503-an-epic-whose-every-child-is-terminal-stays.md) | an epic whose every child is terminal stays Draft, and no reconcile detector says so: 15 of 30 open epics are already delivered | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0504](BG0504-seven-repo-guards-read-the-live-index-directly.md) | seven repo guards read the live index directly, so taking reconcile's own archival advice turns the tree red | Fixed | High | 2026-08-03 | 2026-08-03 |
-| [BG0505](BG0505-claim-drift-compares-a-bare-filename-against-full.md) | claim-drift compares a bare filename against full repo paths, so any Verify line naming a test by basename is a guaranteed false positive | Open | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0505](BG0505-claim-drift-compares-a-bare-filename-against-full.md) | claim-drift compares a bare filename against full repo paths, so any Verify line naming a test by basename is a guaranteed false positive | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 

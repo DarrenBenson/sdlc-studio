@@ -563,6 +563,23 @@ _TICK_RE = re.compile(r"^\s*-\s*\[x\]\s*(.+)$", re.IGNORECASE)
 _SURFACE_RE = re.compile(r"([\w./-]+\.(?:py|sh|md|ya?ml|json|ts|js))")
 
 
+def _names_a_touched_file(surfaces: list[str], touched: set[str]) -> bool:
+    """Does any named surface refer to a file this diff changed? (BG0505)
+
+    `_SURFACE_RE` matches a BARE filename as readily as a path, and `touched` holds repo-relative
+    paths, so a plain `s in touched` could never match one. That made every criterion verified by
+    `python3 -m unittest discover -s tools/tests -p "test_x.py"` a guaranteed finding - and `-p`
+    takes a pattern, not a path, so the shipped invocation is precisely the one that could not
+    pass. It reported BG0504's own AC over a file the same diff changed by 76 lines.
+
+    A name carrying a separator still compares as a path. Only a bare name falls back to matching
+    basenames, so `scripts/gate.py` is never satisfied by a change to `tools/gate.py`; the
+    looseness is confined to the form that carries no directory to be wrong about.
+    """
+    basenames = {p.rsplit("/", 1)[-1] for p in touched}
+    return any(s in touched if "/" in s else s in basenames for s in surfaces)
+
+
 def ticked_over_untouched(diff: str) -> list[dict]:
     """Criteria ticked in this diff whose named surface this diff does not touch (US0584).
 
@@ -595,14 +612,14 @@ def ticked_over_untouched(diff: str) -> list[dict]:
                 found = _SURFACE_RE.findall(pending)
                 if found:
                     pending = None
-                    if not any(s in touched for s in found):
+                    if not _names_a_touched_file(found, touched):
                         findings.append({"unit": unit, "kind": "untouched",
                                          "criterion": tick.group(1).strip(),
                                          "surface": found[0]})
                 continue
             if pending is not None and "Verify:" in line:
                 found = _SURFACE_RE.findall(line)
-                if found and not any(s in touched for s in found):
+                if found and not _names_a_touched_file(found, touched):
                     findings.append({"unit": unit, "kind": "untouched",
                                      "criterion": pending, "surface": found[0]})
                 pending = None

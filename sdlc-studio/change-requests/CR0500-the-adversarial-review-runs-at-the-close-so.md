@@ -1,6 +1,6 @@
 # CR-0500: The adversarial review runs at the close, so every defect it finds becomes close work - it belongs at the delivery cadence
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0190
 > **Priority:** High
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # CR-0516: Two mechanical tasks have no tool: review-batch findings cannot survive the shell, and no command reports backlog points
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0203
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -20,7 +20,19 @@ GAP 2 - NO POINTS CENSUS. Asked how many points remain in the backlog, no tool a
 
 ## Impact
 
-{{who this affects and what breaks}}
+Anyone recording a review verdict, and anyone asked how much work is left.
+
+GAP 1 damages the permanent record, silently and in the direction that looks fine. A finding
+passed to `--findings` on the command line loses whatever a shell substitutes: two verdicts in the
+run that raised this had a backticked term removed and the surrounding spaces closed up, so the
+sentence still reads as English and no longer says what the reviewer said. Nothing downstream can
+detect that - a verdict is not re-derivable from anything - so the loss is permanent and invisible
+at the same time, which is the pairing this repository treats as worst.
+
+GAP 2 costs a hand-rolled answer every time the question is asked, and a hand-rolled census is
+wrong in ways nobody checks. The first one written for this gap counted a `Won't Implement` story
+into the remaining points. Every appetite, tranche and go/no-go decision that reads "how much is
+left" reads whatever that census said.
 
 ## Acceptance Criteria
 

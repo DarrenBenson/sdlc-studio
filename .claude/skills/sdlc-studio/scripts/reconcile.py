@@ -79,6 +79,7 @@ DRIFT_KINDS = (
     "dead-row-link",
     "count-mismatch",
     "breakdown-unticked",
+    "epic-status-stale",
     "breakdown-ticked-early",
     "epic-points-stale",
     "link-asymmetry",
@@ -1002,6 +1003,65 @@ def epic_breakdown_drift(repo_root: Path | str) -> list[dict]:
                               "file_status": canon, "index_status": None,
                               "fix": f"untick {uid} ({canon}) in {eid}'s breakdown - "
                                      f"a checked box over a live unit masks unfinished work"})
+    return drift
+
+
+def epic_status_stale_drift(repo_root: Path | str) -> list[dict]:
+    """An epic still live over a breakdown whose every declared child is terminal.
+
+    The live cascade only ever ticks a BOX. `transition._cascade_epic` rewrites the story's line
+    in its parent's Story Breakdown and returns; nothing derives the parent's own Status from its
+    children. So the direction that masks UNFINISHED work is caught - `breakdown-ticked-early`,
+    and its docstring says that is why - and the direction that masks FINISHED work was caught by
+    nothing. On the tree that produced this lane, half the open epics had every child terminal,
+    every box ticked, and still read `Draft`, over a `detect` reporting `drift_items=0`. Anything
+    reading the delivery backlog to decide what is left - `status backlog`, `backlog_triage`, an
+    appetite - reads a number overstated by exactly those epics, and by the requests they deliver.
+
+    DETECT-ONLY, deliberately. No applier is registered for this kind, because closing an epic is
+    a status transition and `transition.py set` is where an epic's own gates live. An `apply` that
+    wrote `Done` into the file would route around them, which is how the roll-up would come to
+    claim a completion no gate had agreed to. The `fix` names the command instead.
+
+    Silent in three states, each because the epic asserts nothing to contradict:
+
+    - No breakdown at all, or one whose lines carry no ids: an epic that declares no children
+      declares no roll-up, the same rule `epic_points_drift` applies to an absent point total.
+    - A declared id that resolves to no file: `declared_breakdown_ids` records that an unresolved
+      child is UNKNOWN, not finished, and calling an epic complete off the subset that happens to
+      resolve is how a founding epic's placeholder stubs would close it.
+    - A `Deferred` child: re-activatable, so neither finished nor live, and exempt here for the
+      same reason `epic_breakdown_drift` exempts it in both box directions.
+    """
+    root = Path(repo_root)
+    drift: list[dict] = []
+    for epath in sdlc_md.artifact_files("epic", root):
+        text = sdlc_md.read_text_safe(epath)
+        eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
+        raw = (sdlc_md.extract_field(text, "Status") or "").strip()
+        if not raw:
+            continue
+        canon = _canonical_status(raw, sdlc_md.STATUS_VOCAB.get("epic", [])) or raw
+        if sdlc_md.is_terminal_status("epic", canon):
+            continue
+        declared = declared_breakdown_ids(text)
+        if not declared:
+            continue
+        units = list(_breakdown_units(root, text))
+        # Every DECLARED id must have resolved, or the epic's completion rests on a subset.
+        if len(units) != len(declared):
+            continue
+        if any(u_canon == "Deferred" or not sdlc_md.is_terminal_status(utype, u_canon)
+               for _ln, _ticked, _uid, utype, u_canon in units):
+            continue
+        terminal = sorted(sdlc_md.terminal_statuses("epic"))
+        drift.append({"type": "epic", "id": eid, "kind": "epic-status-stale",
+                      "file_status": canon, "index_status": None,
+                      "children": len(units),
+                      "fix": f"{eid} is `{canon}` and all {len(units)} of its breakdown units are "
+                             f"terminal - close it with `transition.py set --id {eid} --status "
+                             f"{terminal[0]}`, which runs the epic's own gates (`reconcile apply` "
+                             f"deliberately does not, so a completion is never written round them)"})
     return drift
 
 
@@ -2096,6 +2156,7 @@ def _detect_all(repo_root: Path, scope: str | None) -> tuple[dict, list[dict]]:
     # the epic files even though the drifting unit may be a bug or CR).
     if scope in (None, "epics"):
         all_drift.extend(epic_breakdown_drift(repo_root))
+        all_drift.extend(epic_status_stale_drift(repo_root))
         all_drift.extend(epic_points_drift(repo_root))
         all_drift.extend(epic_index_derivable_drift(repo_root))
     # The request<->child link check and the undecomposed check are cross-type (a CR under an RFC,

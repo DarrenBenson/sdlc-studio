@@ -1,6 +1,6 @@
 # EP0177: Make the discipline cheaper than the sloppiness it replaces: run the tests the change can reach, at the boundaries that matter
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0455
 > **Parent:** CR0452
 > **Parent:** CR0450

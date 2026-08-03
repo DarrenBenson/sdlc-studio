@@ -1,6 +1,6 @@
 # EP0172: Dead surfaces: the supersession record, the epic-index columns and the flag that does nothing
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0437
 > **Parent:** CR0436
 > **Derived Point Total:** 10

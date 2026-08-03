@@ -1,6 +1,6 @@
 # CR-0449: The Progressive Loading Guide's path cells resolve
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0175
 > **Priority:** Medium
 > **Type:** Improvement

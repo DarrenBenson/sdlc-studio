@@ -1,6 +1,6 @@
 # EP0169: Evidence that can fail: discriminating verifiers, findings that become detectors, and no terminal artefact with open questions
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0438
 > **Parent:** CR0435
 > **Derived Point Total:** 31

@@ -1,6 +1,6 @@
 # EP0203: The routine backlog question is answered by the tooling, and a review's findings never cross a shell
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0516
 > **Created:** 2026-08-01

@@ -1,6 +1,6 @@
 # EP0198: A sprint closes on an amigo panel's sign-off, so the operator is informed and never a step in the machine
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 31
 > **Parent:** CR0514
 > **Created:** 2026-08-01

@@ -1,6 +1,6 @@
 # CR-0437: gate.py --verify-batch is a dead flag: run_gate accepts verify_batch and never reads it
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0172
 > **Priority:** Low
 > **Type:** Improvement

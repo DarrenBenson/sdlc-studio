@@ -276,7 +276,7 @@ between installed copies.
 
 Scripts that emit machine-readable output use JSON. The verifier writes a report to
 `.local/verify-report.json`; reconcile emits a drift report whose drift kinds are
-`reconcile.DRIFT_KINDS` - `missing-index`, `index-status-column`, `missing-row`, `status-mismatch`, `orphan-row`, `dead-row-link`, `count-mismatch`, `breakdown-unticked`, `breakdown-ticked-early`, `epic-points-stale`, `link-asymmetry`, `undecomposed`, `request-derivable`, `linked-epics`, `stale-index-stamp`, `index-field`, `spawned-column`, `supersession-asymmetry`, `epic-index-derivable` -
+`reconcile.DRIFT_KINDS` - `missing-index`, `index-status-column`, `missing-row`, `status-mismatch`, `orphan-row`, `dead-row-link`, `count-mismatch`, `breakdown-unticked`, `epic-status-stale`, `breakdown-ticked-early`, `epic-points-stale`, `link-asymmetry`, `undecomposed`, `request-derivable`, `linked-epics`, `stale-index-stamp`, `index-field`, `spawned-column`, `supersession-asymmetry`, `epic-index-derivable` -
 held to that tuple by `tools/tests/test_trd_surface_derivation.py`;
 status emits the four-pillar census. There is no single canonical error envelope;
 failures surface as a non-zero exit plus a stderr message. [MEDIUM]
@@ -696,7 +696,7 @@ views stale and inconsistent.
 
 **Decision:** Treat the artifact files on disk as the sole source of truth. Indexes
 and statuses are derived. `reconcile.py` builds a census from disk and reports drift
-(`reconcile.DRIFT_KINDS`: `missing-index`, `index-status-column`, `missing-row`, `status-mismatch`, `orphan-row`, `dead-row-link`, `count-mismatch`, `breakdown-unticked`, `breakdown-ticked-early`, `epic-points-stale`, `link-asymmetry`, `undecomposed`, `request-derivable`, `linked-epics`, `stale-index-stamp`, `index-field`, `spawned-column`, `supersession-asymmetry`, `epic-index-derivable`);
+(`reconcile.DRIFT_KINDS`: `missing-index`, `index-status-column`, `missing-row`, `status-mismatch`, `orphan-row`, `dead-row-link`, `count-mismatch`, `breakdown-unticked`, `epic-status-stale`, `breakdown-ticked-early`, `epic-points-stale`, `link-asymmetry`, `undecomposed`, `request-derivable`, `linked-epics`, `stale-index-stamp`, `index-field`, `spawned-column`, `supersession-asymmetry`, `epic-index-derivable`);
 the agent applies fixes and the judgement-call transitions. Doctrine adds
 "ship the paperwork in the same commit as the code".
 

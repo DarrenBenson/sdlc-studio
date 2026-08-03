@@ -1,9 +1,10 @@
 # BG0505: claim-drift compares a bare filename against full repo paths, so any Verify line naming a test by basename is a guaranteed false positive
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** tools/check_spec_claims.py, tools/tests/test_precommit_claim_drift.py, tools/tests/test_check_spec_claims.py
+> **Affects:** tools/check_spec_claims.py, tools/tests/test_check_spec_claims.py
+> **Verification depth:** functional
 > **Evidence:** Reported by the pre-commit CLAIM-DRIFT lane on 2026-08-03 against the BG0504 commit; contradicted by `git diff --cached --stat` in the same working tree, which showed the file changed by 76 lines. Mechanism read from tools/check_spec_claims.py:563-606.
 > **Created:** 2026-08-03
 > **Created-by:** sdlc-studio file
@@ -28,7 +29,28 @@ Match a bare name against the basename of each touched path, keeping the exact-p
 
 ## Acceptance Criteria
 
-- [ ] A ticked criterion whose Verify line names a changed file by basename alone is not reported by claim-drift; a basename matching no file in the diff still is; and a path-qualified name still compares by path.
+- [x] **AC1: a ticked criterion whose Verify line names a changed file by basename alone is not reported.**
+  - **Verify:** `test_a_bare_filename_naming_a_changed_file_is_not_flagged`, driving the exact shipped form `unittest discover -s tools/tests -p "test_touched.py"`
+  - **Verified:** yes (2026-08-03)
+
+- [x] **AC2: a basename matching no file in the diff is still reported, so the widening does not switch the lane off.**
+  - **Verify:** `test_a_bare_filename_matching_nothing_in_the_diff_is_still_flagged`
+  - **Verified:** yes (2026-08-03)
+
+- [x] **AC3: a path-qualified name still compares by path, so `scripts/gate.py` is never satisfied by a change to `tools/gate.py`.**
+  - **Verify:** `test_a_path_qualified_name_still_compares_by_path`
+  - **Verified:** yes (2026-08-03) - the looseness is confined to the form carrying no directory to be wrong about
+
+## Verification evidence
+
+Functional. All 41 tests in `tools/tests/test_check_spec_claims.py` pass. The mutant - reverting
+`_names_a_touched_file` to `any(s in touched for s in surfaces)`, the shipped behaviour this bug
+describes - was executed with `__pycache__` purged under `python3 -B` and killed by AC1's test;
+the source was restored and re-run green.
+
+Two further mutants are named in the tests' own docstrings rather than executed, because each is
+killed by a criterion above: returning `True` for every bare name (killed by AC2) and dropping the
+`"/" in s` branch (killed by AC3).
 
 ## Impact
 

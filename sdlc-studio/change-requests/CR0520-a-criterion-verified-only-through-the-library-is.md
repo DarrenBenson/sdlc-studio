@@ -1,6 +1,6 @@
 # CR-0520: a criterion verified only through the library is not evidence the feature ships
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0199
 > **Priority:** High
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # EP0200: A sprint close gates on its own review coverage, not on an unrelated periodic ceremony
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0522
 > **Created:** 2026-08-01

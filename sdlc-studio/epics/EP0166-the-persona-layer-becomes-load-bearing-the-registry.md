@@ -1,6 +1,6 @@
 # EP0166: The persona layer becomes load-bearing: the registry is resolved by the path that mints work, and the PRD names it
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0426
 > **Derived Point Total:** 12
 > **Parent:** CR0425

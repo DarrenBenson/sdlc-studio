@@ -1,6 +1,6 @@
 # CR-0450: A delegated agent that stalls silently is indistinguishable from a slow one, and the doctrine has no detection rule
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0177
 > **Priority:** High
 > **Type:** Improvement

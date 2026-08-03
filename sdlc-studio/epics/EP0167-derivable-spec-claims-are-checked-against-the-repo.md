@@ -1,6 +1,6 @@
 # EP0167: Derivable spec claims are checked against the repo, so the TRD and TSD cannot quietly stop being true
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 11
 > **Parent:** RFC0056
 > **Created:** 2026-07-27

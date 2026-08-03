@@ -1,6 +1,6 @@
 # EP0202: A sprint run has a tool runbook it is made to read, ordered by step rather than by script
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 10
 > **Parent:** CR0518
 > **Created:** 2026-08-01

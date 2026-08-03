@@ -1864,6 +1864,123 @@ class EpicBreakdownTests(unittest.TestCase):
             self.assertEqual(rc, 1)  # breakdown drift alone must make detect non-zero
 
 
+class EpicStatusStaleTests(unittest.TestCase):
+    """BG0503: an epic still live over a breakdown whose every declared child is terminal.
+
+    THE MUTANT, named before the tests: delete the `epic_status_stale_drift` call from
+    `detect_all`'s epics scope, or invert `if sdlc_md.is_terminal_status("epic", canon): continue`.
+    Either leaves a Draft epic with every child Done reported as clean, which is the exact tree
+    this bug was filed against - fifteen such epics over a `detect` printing `drift_items=0`.
+
+    Driven through `reconcile.main(["detect"])` and not only the helper, because the defect was
+    never in the comparison: it was that no sweep performed one. A helper test would have passed
+    on the day the bug was filed.
+    """
+
+    @staticmethod
+    def _epic(root: Path, body: str) -> Path:
+        d = root / "sdlc-studio" / "epics"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "EP0001-a.md").write_text(body, encoding="utf-8")
+        return root
+
+    @staticmethod
+    def _unit(root: Path, rel: str, fname: str, status: str) -> None:
+        d = root / "sdlc-studio" / rel
+        d.mkdir(parents=True, exist_ok=True)
+        rec = fname.split("-", 1)[0]
+        (d / fname).write_text(f"# {rec}: x\n\n> **Status:** {status}\n", encoding="utf-8")
+
+    def _finished(self, root: Path, epic_status: str = "Draft") -> Path:
+        """An epic in `epic_status` whose two declared children are both terminal."""
+        self._unit(root, "stories", "US0001-z.md", "Done")
+        self._unit(root, "bugs", "BG0001-x.md", "Fixed")
+        return self._epic(root,
+                          f"# EP0001: A\n\n> **Status:** {epic_status}\n\n## Story Breakdown\n\n"
+                          "- [x] [US0001](../stories/US0001-z.md)\n"
+                          "- [x] [BG0001](../bugs/BG0001-x.md)\n")
+
+    def test_a_live_epic_over_a_finished_breakdown_is_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            drift = reconcile.epic_status_stale_drift(self._finished(Path(d)))
+            self.assertEqual([("EP0001", "epic-status-stale")],
+                             [(x["id"], x["kind"]) for x in drift])
+            self.assertEqual(2, drift[0]["children"])
+            self.assertIn("transition.py set --id EP0001 --status Done", drift[0]["fix"])
+
+    def test_the_default_sweep_reports_it_and_detect_exits_non_zero(self) -> None:
+        """The half that matters. The bug was a detector nobody called, so a passing helper
+        proves nothing about the tree an operator actually runs `detect` over."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._finished(Path(d))
+            _per_type, all_drift = reconcile.detect_all(root, None)
+            self.assertIn("epic-status-stale", {x["kind"] for x in all_drift})
+            self.assertEqual(1, reconcile.main(["detect", "--root", str(root)]))
+
+    def test_a_terminal_epic_is_not_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual([], reconcile.epic_status_stale_drift(
+                self._finished(Path(d), epic_status="Done")))
+
+    def test_one_live_child_holds_the_epic_open(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "stories", "US0001-z.md", "Done")
+            self._unit(root, "bugs", "BG0001-x.md", "Open")
+            self._epic(root, "# EP0001: A\n\n> **Status:** Draft\n\n## Story Breakdown\n\n"
+                             "- [x] [US0001](../stories/US0001-z.md)\n"
+                             "- [ ] [BG0001](../bugs/BG0001-x.md)\n")
+            self.assertEqual([], reconcile.epic_status_stale_drift(root))
+
+    def test_a_deferred_child_is_neither_finished_nor_live(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "stories", "US0001-z.md", "Done")
+            self._unit(root, "stories", "US0002-w.md", "Deferred")
+            self._epic(root, "# EP0001: A\n\n> **Status:** Draft\n\n## Story Breakdown\n\n"
+                             "- [x] [US0001](../stories/US0001-z.md)\n"
+                             "- [x] [US0002](../stories/US0002-w.md)\n")
+            self.assertEqual([], reconcile.epic_status_stale_drift(root))
+
+    def test_an_unresolvable_child_is_unknown_not_finished(self) -> None:
+        """A founding epic's placeholder stubs resolve to no file. Closing the epic off the
+        subset that happens to resolve is how six of this repo's oldest epics would be
+        declared complete on a census that can see none of their children."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "stories", "US0001-z.md", "Done")
+            self._epic(root, "# EP0001: A\n\n> **Status:** Draft\n\n## Story Breakdown\n\n"
+                             "- [x] [US0001](../stories/US0001-z.md)\n"
+                             "- [x] US9999 - placeholder stub, no backing file\n")
+            self.assertEqual([], reconcile.epic_status_stale_drift(root))
+
+    def test_an_epic_declaring_no_breakdown_asserts_no_rollup(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._epic(Path(d), "# EP0001: A\n\n> **Status:** Draft\n\nNo breakdown here.\n")
+            self.assertEqual([], reconcile.epic_status_stale_drift(root))
+
+    def test_apply_never_writes_this_one(self) -> None:
+        """Detect-only by design: closing an epic is a transition, and `transition.py set` is
+        where the epic's own gates live. The mutant is an applier that writes `Done` into the
+        file - it would route round them, and this asserts the status is untouched by a full
+        `apply` that has just seen the drift."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._finished(Path(d))
+            epath = root / "sdlc-studio" / "epics" / "EP0001-a.md"
+            before = epath.read_text(encoding="utf-8")
+            reconcile.main(["apply", "--root", str(root)])
+            self.assertIn("> **Status:** Draft", epath.read_text(encoding="utf-8"))
+            self.assertEqual(before.count("Status:"),
+                             epath.read_text(encoding="utf-8").count("Status:"))
+            self.assertEqual(1, len(reconcile.epic_status_stale_drift(root)))  # still reported
+
+    def test_the_kind_is_registered_and_carries_a_remediation_hint(self) -> None:
+        self.assertIn("epic-status-stale", reconcile.DRIFT_KINDS)
+        hint = sdlc_md.REMEDIATION["reconcile"]["epic-status-stale"]
+        self.assertIn("transition.py set", hint)
+        self.assertIn("apply", hint)
+
+
 class EraDivergenceTests(unittest.TestCase):
     """Multi-user era warning: config says v2 but v3 ULID ids exist in the workspace -
     another writer is on v3 (or config is stale). Advisory only, one direction only."""

@@ -1,6 +1,6 @@
 # EP0175: Detectors for the classes the audit had to find by hand
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0449
 > **Parent:** CR0448
 > **Derived Point Total:** 13

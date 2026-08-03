@@ -1,6 +1,6 @@
 # CR-0519: a suite verdict is read from a file, never from a pipe that can swallow the exit code
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0201
 > **Priority:** High
 > **Type:** Improvement

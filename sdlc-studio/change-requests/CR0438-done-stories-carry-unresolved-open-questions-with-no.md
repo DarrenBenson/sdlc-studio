@@ -1,6 +1,6 @@
 # CR-0438: Done stories carry unresolved Open Questions with no gate requiring resolution before terminal status (14 stories)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0169
 > **Priority:** Low
 > **Type:** Improvement

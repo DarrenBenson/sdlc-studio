@@ -1,6 +1,6 @@
 # EP0181: reconcile's sweeps read the corpus once per run, not once per unit
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 11
 > **Parent:** CR0465
 > **Created:** 2026-07-28

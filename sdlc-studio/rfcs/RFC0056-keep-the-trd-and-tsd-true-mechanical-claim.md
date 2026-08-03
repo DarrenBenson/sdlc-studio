@@ -1,6 +1,6 @@
 # RFC-0056: Keep the TRD and TSD true: mechanical claim-drift detection and a consumption path
 
-> **Status:** In Review
+> **Status:** Accepted
 > **Decomposed-into:** EP0167
 > **Size:** M
 > **Affects:** sdlc-studio/trd.md, sdlc-studio/tsd.md, .claude/skills/sdlc-studio/scripts/doc_freshness.py, .claude/skills/sdlc-studio/scripts/gate.py

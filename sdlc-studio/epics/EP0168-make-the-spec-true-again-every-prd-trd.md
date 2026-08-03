@@ -1,6 +1,6 @@
 # EP0168: Make the spec true again: every PRD, TRD and TSD claim the shipped code contradicts, repaired behind a guard that reddens on relapse
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0432
 > **Parent:** CR0431
 > **Parent:** CR0430

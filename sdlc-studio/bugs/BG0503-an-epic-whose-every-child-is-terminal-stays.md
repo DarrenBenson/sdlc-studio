@@ -1,9 +1,10 @@
 # BG0503: an epic whose every child is terminal stays Draft, and no reconcile detector says so: 15 of 30 open epics are already delivered
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/trd.md
+> **Verification depth:** functional
 > **Evidence:** Measured against HEAD 4979f93f during the post-close backlog analysis of RUN-01KYZKY5. Fifteen epics enumerated by counting non-terminal children per Draft epic; `reconcile detect` run over the same tree at the same commit returned drift_items=0.
 > **Created:** 2026-08-03
 > **Created-by:** sdlc-studio file
@@ -28,7 +29,47 @@ Add an `epic-status-stale` drift kind: an epic whose breakdown units are all ter
 
 ## Acceptance Criteria
 
-- [ ] A Draft epic whose every breakdown unit is terminal is reported by `reconcile detect` as drift naming the epic and the transition that clears it; an epic with a live child is not reported; and an epic declaring no breakdown is not reported.
+- [x] **AC1: a live epic whose every declared breakdown unit is terminal is reported by the DEFAULT sweep, and `detect` exits non-zero on it.**
+  - **Verify:** `python3 -m unittest tests.test_reconcile.EpicStatusStaleTests` from the scripts directory
+  - **Verified:** yes (2026-08-03) - 9 tests OK. The sweep half is asserted through `reconcile.main(["detect"])`, not only the helper: the defect was never in the comparison, it was that no sweep performed one, so a helper-only test would have passed on the day this was filed
+
+- [x] **AC2: the three states in which an epic asserts nothing are silent - a live child, a `Deferred` child, an unresolvable declared child, and an epic declaring no breakdown at all.**
+  - **Verify:** the same class - `test_one_live_child_holds_the_epic_open`, `test_a_deferred_child_is_neither_finished_nor_live`, `test_an_unresolvable_child_is_unknown_not_finished`, `test_an_epic_declaring_no_breakdown_asserts_no_rollup`
+  - **Verified:** yes (2026-08-03)
+
+- [x] **AC3: detect-only - `reconcile apply` never writes an epic's status.**
+  - **Given** closing an epic is a transition, and `transition.py set` is where the epic's own gates live
+  - **Then** a full `apply` that has just seen the drift leaves the status untouched and the drift still reported
+  - **Verify:** `test_apply_never_writes_this_one`
+  - **Verified:** yes (2026-08-03)
+
+- [x] **AC4: the kind is registered and carries a remediation hint naming the transition.**
+  - **Verify:** `test_the_kind_is_registered_and_carries_a_remediation_hint`
+  - **Verified:** yes (2026-08-03) - `epic-status-stale` in `DRIFT_KINDS`, hint in `sdlc_md.REMEDIATION`
+
+- [x] **AC5: the detector's verdict over the live tree matches the hand census that filed this bug.**
+  - **Verify:** run `epic_status_stale_drift` against the repo root before the repair
+  - **Verified:** yes (2026-08-03) - 15 epics, the same fifteen ids enumerated by hand: EP0166, EP0167, EP0168, EP0169, EP0172, EP0175, EP0177, EP0181, EP0190, EP0198, EP0199, EP0200, EP0201, EP0202, EP0203. Two independent methods, one answer
+
+## Verification evidence
+
+Functional, with both mutants executed and killed:
+
+| Mutant | Result |
+| --- | --- |
+| delete the `epic_status_stale_drift` call from `detect_all` | killed by `test_the_default_sweep_reports_it_and_detect_exits_non_zero` |
+| invert `if sdlc_md.is_terminal_status("epic", canon): continue` | killed by 4 of the 9 |
+
+`__pycache__` purged and re-run under `python3 -B` each time; source restored and re-run green.
+
+**What clearing it found.** The fifteen epics were closed with `transition.py set` (the remedy the
+finding names, one call each, so every epic's own gates ran). That unblocked a second layer the
+stale statuses had been masking: 29 requests - `RFC0056` and 28 CRs - whose every child was now
+resolved, reported as `request-derivable` and derived by `reconcile apply`, which routes through
+`transition`. The Discovery backlog fell from 60 to 31 and Delivery from 106 to 91. So the
+overstatement this bug describes was not confined to the epic layer; it propagated to every
+request those epics delivered, and any appetite taken from either number was reading roughly
+double the truth.
 
 ## Impact
 

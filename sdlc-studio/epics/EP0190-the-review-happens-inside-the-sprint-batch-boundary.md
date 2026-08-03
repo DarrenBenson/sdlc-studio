@@ -1,6 +1,6 @@
 # EP0190: The review happens inside the sprint: batch-boundary adversarial passes, so a finding is delivery work not close overhead
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 16
 > **Parent:** CR0500
 > **Created:** 2026-07-29

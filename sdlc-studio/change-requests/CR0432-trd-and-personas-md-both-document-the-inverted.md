@@ -1,6 +1,6 @@
 # CR-0432: TRD and personas.md both document the inverted porting flow: installed copy as back-port source vs the shipped forward-p
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0168
 > **Priority:** Medium
 > **Type:** Improvement
