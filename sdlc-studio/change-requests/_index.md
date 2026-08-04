@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 15 |
+| Proposed | 16 |
 | Approved | 0 |
 | In Progress | 15 |
 | Complete | 477 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **530** |
+| **Total** | **531** |
 
 ## All Changes
 
@@ -81,6 +81,7 @@
 | [CR-0528](CR0528-the-installed-copy-is-only-reconciled-at-a.md) | the installed copy is only reconciled at a close, so a fix believed shipped is in force nowhere for the length of a run | Proposed | Medium | Improvement | 2026-08-04 | -- |
 | [CR-0529](CR0529-the-prior-art-check-is-scoped-to-the.md) | the prior-art check is scoped to the reviewer, so an author rediscovers by being rejected what one command would have told them | Proposed | Medium | Improvement | 2026-08-04 | -- |
 | [CR-0530](CR0530-the-planner-reports-shared-file-clusters-not-the.md) | the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all | Proposed | Medium | Improvement | 2026-08-04 | -- |
+| [CR-0531](CR0531-a-charter-s-scope-query-cannot-express-a.md) | a charter's scope query cannot express a decomposition, so the only queued charter's two scope fields disagree | Proposed | Medium | Improvement | 2026-08-04 | -- |
 
 ## Archived Releases
 

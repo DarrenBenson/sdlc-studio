@@ -6,6 +6,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Appetite:** 480min/8units
 > **Scope query:** --crs Proposed
+> **Scope-query-caveat:** the query is WIDER than the rule above - `--crs Proposed` resolves 15 CRs today where the rule names two and their decomposition. The selector vocabulary cannot yet express `everything CR0507 decomposes into` (D0127 deferred the structured selector); CR0531 carries it. Until then this charter must be materialised with the batch narrowed by hand, or its query tightened when the CRs are refined.
 
 ## Sprint Goal
 
