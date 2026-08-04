@@ -30,8 +30,38 @@ Seed each story's criteria from the parent request's, as `--no-seed-acs` implies
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `refine apply` creates an epic and its stories and wires the links, which is the point.
-- [ ] The proposed fix lands, pinned by a test: Seed each story's criteria from the parent request's, as `--no-seed-acs` implies is the default, even if only as a draft an author then sharpens - a draft...
+- [ ] **AC1: a story minted from a request that HAS criteria carries seeded criteria, not a placeholder.**
+  - **Given** a request whose own acceptance criteria are authored, and a breakdown naming three
+    stories
+  - **When** `refine.py apply` runs without `--no-seed-acs`
+  - **Then** each minted story carries at least one seeded criterion naming a real surface rather
+    than the ungroomed placeholder, because `--no-seed-acs` already implies seeding is the
+    default and twenty stories in one run arrived with none
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededCriteriaTests::test_a_request_with_criteria_seeds_its_stories
+
+- [ ] **AC2: a seeded story is not thereby claimed groomed.**
+  - **Given** the stories minted by AC1
+  - **When** `sprint.py breakdown` runs over them
+  - **Then** they are still reported as owing grooming, because a seeded draft is a better
+    starting point and not an authored criterion - the census must not read a seed as authored
+    or this fix would hide the very debt it exists to price
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededCriteriaTests::test_a_seed_is_not_counted_as_authored
+
+- [ ] **AC3: the user-story fields are filled, and `Persona:` names a resolvable seat or is absent.**
+  - **Given** a minted story
+  - **When** it is read back
+  - **Then** no `{{role}}`, `{{capability}}` or `{{benefit}}` placeholder remains, and any
+    `Persona:` value resolves through `persona_resolve.py` - naming somebody who is in no seat
+    file is worse than naming nobody
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededCriteriaTests::test_no_placeholder_fields_and_a_resolvable_persona
+
+- [ ] **AC4: the grooming still owed is REPORTED at refine time, in units the planner uses.**
+  - **Given** a completed `refine apply`
+  - **When** it prints its result
+  - **Then** it names how many minted stories still owe authored criteria, so the unpriced work
+    is visible when the batch is planned rather than discovered as a full-batch refusal - this is
+    the honest-price half of the fix and it holds whether or not seeding is enabled
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededCriteriaTests::test_refine_reports_the_grooming_it_leaves_owed
 
 ## Revision History
 

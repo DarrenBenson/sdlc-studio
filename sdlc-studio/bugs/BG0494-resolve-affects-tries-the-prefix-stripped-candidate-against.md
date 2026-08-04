@@ -8,6 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
 > **Severity:** Medium
 > **Points:** 2
+> **Verification depth:** functional
 
 ## Summary
 
@@ -24,6 +25,25 @@ In a project holding its own `templates/core/story.md`, `resolve_affects(root, "
 ## Proposed Fix
 
 Swap the loop nesting, or restrict the prefix-stripped candidate to the skill bases only - it is a skill-relative spelling and has no business matching at the project root.
+
+## Acceptance Criteria
+
+- [ ] **AC1: a skill-relative spelling resolves to the SKILL's file, even when the project holds a same-named path.**
+  - **Given** a consuming project that holds its own `templates/core/story.md`, and the declared
+    path `.claude/skills/sdlc-studio/templates/core/story.md`
+  - **When** `resolve_affects` runs against that project root
+  - **Then** it returns the SKILL's copy, because the declared spelling is skill-relative and a
+    prefix-stripped candidate has no business matching at the project root - the current loop
+    nests base outside candidate, so the stripped form is tried at the root first and the
+    project's file wins silently
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::SkillRelativeResolutionTests::test_a_skill_spelling_does_not_resolve_to_a_project_file_of_the_same_name
+
+- [ ] **AC2: an ordinary project-relative path still resolves at the project root.**
+  - **Given** a declared path that is not skill-relative, naming a file the project does hold
+  - **When** `resolve_affects` runs
+  - **Then** it resolves at the project root exactly as before, so the fix narrows the
+    skill-relative candidate rather than reordering resolution for everything
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::SkillRelativeResolutionTests::test_an_ordinary_project_path_is_unaffected
 
 ## Impact
 
