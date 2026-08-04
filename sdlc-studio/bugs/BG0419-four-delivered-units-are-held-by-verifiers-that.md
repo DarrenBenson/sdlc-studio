@@ -9,6 +9,7 @@
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
 > **Raised-in-batch:** 2026-07-29T15:35:33Z
+> **Verification depth:** functional
 
 ## Summary
 
@@ -43,11 +44,31 @@ The common cause is one sentence: **each test asserts the pure helper, or the po
 
 ## Acceptance Criteria
 
-- [ ] US0555's test refuses at two action steps and asserts both are reported; the break-at-first mutant reddens it.
-- [ ] US0559 is covered by a test that RUNS a close and asserts the cost line in its output; deleting the call site reddens it.
-- [ ] US0557 asserts no write was ATTEMPTED, not merely that none landed; removing the early return reddens it.
-- [ ] US0532's sweep scales its lookups with the unit count, so its threshold discriminates: removing the corpus cache reddens it.
-- [ ] Each repair is accepted only when the mutant that motivated it is demonstrated to die, recorded with the unit.
+- [ ] **AC1: US0555's test refuses at two action steps and asserts both are reported.**
+  - **Then** the break-at-first mutant reddens it, where today a `break` after the first refusing
+    action step loses the second refusal and all sprint tests stay green
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_both_refusing_action_steps_are_reported
+
+- [ ] **AC2: US0559 is covered by a test that RUNS a close and asserts the cost line in its output.**
+  - **Then** deleting the close's sole cost-report call site reddens it, where today it survives
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_a_close_emits_its_cost_line
+
+- [ ] **AC3: US0557 asserts no write was ATTEMPTED, not merely that none landed.**
+  - **Then** removing the up-front refusal reddens it, where today its three tests assert only the
+    postcondition - which also holds when every write is attempted and every write fails
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::InertVerifierRepairTests::test_no_write_is_attempted_not_merely_that_none_landed
+
+- [ ] **AC4: US0532's sweep scales its lookups with the unit count, so its threshold discriminates.**
+  - **Then** removing the corpus cache reddens it, where today the harness makes a fixed twelve
+    lookups regardless of workspace size and then discards the only discriminating signal by
+    taking a ratio - 1.95 both ways
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::InertVerifierRepairTests::test_the_sweep_scales_with_the_unit_count
+
+- [ ] **AC5: each repair is accepted only when its motivating mutant is demonstrated to die, recorded with the unit.**
+  - **Then** the mutation ledger carries an entry per repair naming the mutant, the test it
+    reddens and the isolation it ran under - a linked worktree, because this main tree has other
+    worktrees attached and `mutation.py` reports a SURVIVED verdict here as unsound
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_every_repair_carries_a_recorded_dead_mutant
 
 ## Impact
 

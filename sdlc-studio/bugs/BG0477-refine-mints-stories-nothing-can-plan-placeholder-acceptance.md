@@ -2,7 +2,8 @@
 
 > **Status:** Open
 > **Severity:** High
-> **Points:** 5
+> **Points:** 3
+> **Verification depth:** functional
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, .claude/skills/sdlc-studio/templates/core/story.md
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio file
@@ -30,38 +31,38 @@ Seed each story's criteria from the parent request's, as `--no-seed-acs` implies
 
 ## Acceptance Criteria
 
-- [ ] **AC1: a story minted from a request that HAS criteria carries seeded criteria, not a placeholder.**
-  - **Given** a request whose own acceptance criteria are authored, and a breakdown naming three
-    stories
-  - **When** `refine.py apply` runs without `--no-seed-acs`
-  - **Then** each minted story carries at least one seeded criterion naming a real surface rather
-    than the ungroomed placeholder, because `--no-seed-acs` already implies seeding is the
-    default and twenty stories in one run arrived with none
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededCriteriaTests::test_a_request_with_criteria_seeds_its_stories
+> **Re-grounded at the plan-time goal review.** The filed summary claimed the parent request's
+> criteria "were not seeded". They ARE seeded - onto the EPIC, verbatim, and deliberately:
+> commit `7ef88707` removed story-level seeding for a multi-story breakdown because a breakdown
+> cannot know which criterion belongs to which story, and replaced the defending test with two
+> asserting the opposite. Seeding them back is that defect returning, so it is not asked for.
+> The `Persona:` claim was also wrong - the value is the declared Primary resolved by
+> `artifact._resolve_persona`, working as designed. What survives is the two defects that
+> reproduce, and the unit is re-priced from 5 to 3 accordingly.
 
-- [ ] **AC2: a seeded story is not thereby claimed groomed.**
-  - **Given** the stories minted by AC1
-  - **When** `sprint.py breakdown` runs over them
-  - **Then** they are still reported as owing grooming, because a seeded draft is a better
-    starting point and not an authored criterion - the census must not read a seed as authored
-    or this fix would hide the very debt it exists to price
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededCriteriaTests::test_a_seed_is_not_counted_as_authored
+- [ ] **AC1: a minted story carries no unfilled template field.**
+  - **Given** a breakdown minting three stories from a request
+  - **When** `refine.py apply` runs and the stories are read back
+  - **Then** no `{{role}}`, `{{capability}}` or `{{benefit}}` placeholder remains in the User
+    Story block, because a field the template left for an author to fill is indistinguishable
+    from one the author forgot
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::MintedStoryFieldsTests::test_no_template_placeholder_survives_minting
 
-- [ ] **AC3: the user-story fields are filled, and `Persona:` names a resolvable seat or is absent.**
-  - **Given** a minted story
-  - **When** it is read back
-  - **Then** no `{{role}}`, `{{capability}}` or `{{benefit}}` placeholder remains, and any
-    `Persona:` value resolves through `persona_resolve.py` - naming somebody who is in no seat
-    file is worse than naming nobody
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededCriteriaTests::test_no_placeholder_fields_and_a_resolvable_persona
-
-- [ ] **AC4: the grooming still owed is REPORTED at refine time, in units the planner uses.**
-  - **Given** a completed `refine apply`
+- [ ] **AC2: `refine` reports the grooming it leaves owed, in the planner's own units.**
+  - **Given** a completed `refine apply` that minted N stories, all ungroomed by construction
   - **When** it prints its result
-  - **Then** it names how many minted stories still owe authored criteria, so the unpriced work
-    is visible when the batch is planned rather than discovered as a full-batch refusal - this is
-    the honest-price half of the fix and it holds whether or not seeding is enabled
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededCriteriaTests::test_refine_reports_the_grooming_it_leaves_owed
+  - **Then** it names how many of them still owe authored criteria, so the unpriced work is
+    visible when the batch is planned rather than met as a full-batch refusal later - twenty
+    stories arrived this way in one run and grooming them was the largest single piece of that
+    sprint's planning
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::MintedStoryFieldsTests::test_refine_reports_the_grooming_it_leaves_owed
+
+- [ ] **AC3: the count it reports is the census's answer, not a second one.**
+  - **Given** the same minted set
+  - **When** the reported count is compared with `sprint.py breakdown` over those ids
+  - **Then** they agree, because a creator quoting its own arithmetic is how the planner and the
+    creator came to disagree in the first place
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::MintedStoryFieldsTests::test_the_reported_count_matches_the_breakdown_census
 
 ## Revision History
 

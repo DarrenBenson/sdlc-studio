@@ -8,6 +8,7 @@
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5; human; v1
 > **Raised-in-batch:** none open - raised outside a delivery batch
+> **Verification depth:** functional
 
 ## Summary
 
@@ -29,8 +30,20 @@ Route the seat's answer through `verdict_polarity` so there is ONE mapping, and 
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: Carved out of BG0402, which stood at Fixed while two of its four criteria were labelled NOT YET FIXED - a status the artefact's own body contradicted.
-- [ ] The proposed fix lands, pinned by a test: Route the seat's answer through `verdict_polarity` so there is ONE mapping, and leave a clause no seat answered per-clause as UNANSWERED rather than fanning a...
+- [ ] **AC1: a seat's answer is mapped in ONE place.**
+  - **Given** a seat verdict of `no`
+  - **When** the goal-review panel records it
+  - **Then** it is routed through `verdict_polarity` and stored as `no`, not downgraded to
+    `partial` by a second mapping - two mappings answering one question is how a refusal became
+    a qualified yes
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatAnswerPolarityTests::test_a_no_is_recorded_as_no_through_one_mapping
+
+- [ ] **AC2: a clause no seat answered is UNANSWERED, never inherited.**
+  - **Given** a goal of several clauses and a seat that answered the goal as a whole
+  - **When** the per-clause view is derived
+  - **Then** each clause the seat did not address reads `unanswered`, because fanning one
+    whole-goal answer across every clause reports a verdict nobody gave
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatAnswerPolarityTests::test_an_unanswered_clause_is_not_given_the_whole_goal_answer
 
 ## Revision History
 
