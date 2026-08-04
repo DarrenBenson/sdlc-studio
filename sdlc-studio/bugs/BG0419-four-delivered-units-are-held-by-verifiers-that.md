@@ -44,10 +44,10 @@ The common cause is one sentence: **each test asserts the pure helper, or the po
 
 ## Acceptance Criteria
 
-- [ ] **AC1: US0555's test refuses at two action steps and asserts both are reported.**
+- [x] **AC1: US0555's test refuses at two action steps and asserts both are reported.**
   - **Then** the break-at-first mutant reddens it, where today a `break` after the first refusing
     action step loses the second refusal and all sprint tests stay green
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_both_refusing_action_steps_are_reported
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_every_action_step_is_evaluated_even_after_one_refuses
 
 - [x] **AC2: US0559 is covered by a test that RUNS a close and asserts the cost line in its output.**
   - **Then** deleting the close's sole cost-report call site reddens it, where today it survives
@@ -62,7 +62,7 @@ The common cause is one sentence: **each test asserts the pure helper, or the po
   - **Then** removing the corpus cache reddens it, where today the harness makes a fixed twelve
     lookups regardless of workspace size and then discards the only discriminating signal by
     taking a ratio - 1.95 both ways
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::InertVerifierRepairTests::test_the_sweep_scales_with_the_unit_count
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::CorpusReadOnceTests::test_the_PRODUCTION_sweep_holds_the_cache_open
 
 - [ ] **AC5: each repair is accepted only when its motivating mutant is demonstrated to die, recorded with the unit.**
   - **Then** the mutation ledger carries an entry per repair naming the mutant, the test it
@@ -135,6 +135,13 @@ mutant, which is the same defect this unit exists to repair, caught in the repai
 it shipped.
 
 Re-running the named mutant: **KILLED**, where it previously left all eleven passing.
+
+**AC1 is delivered.** The existing dry-run coverage asserts over the PREFLIGHT's blockers,
+which a break in the action-step loop never touches - so the mutant left 21 dry-run tests
+passing. The property is now stated directly: every step in `DRY_RUN_ACTION_STEPS` carries a
+verdict after the pass, AND at least one of them refused. Both halves are needed, because "all
+steps present" alone holds on a run where nothing refused, and the test would stop measuring the
+moment the fixture went green. Mutant re-run: **KILLED**.
 
 **What this establishes for the repair.** Three of the four verifiers this unit exists to fix are
 confirmed unable to fail, on the current tree, by execution rather than by the filed report - so

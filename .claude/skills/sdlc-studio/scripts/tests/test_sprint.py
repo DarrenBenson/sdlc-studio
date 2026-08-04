@@ -12929,6 +12929,55 @@ class InertVerifierRepairTests(unittest.TestCase):
     same batch, had been filed four days after its own fix shipped.
     """
 
+    def _dry_repo(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="bg0419_dry_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text("# anchor\n", encoding="utf-8")
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-DRY", "batch": ["US0001"], "outcome": "running",
+            "sprint_goal": "a goal", "started_at": "2026-07-29T09:00:00Z"}), encoding="utf-8")
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    def _broken_retro(self, root: Path, retro_id: str = "RETRO9001") -> str:
+        """A retro that EXISTS and whose content is wrong - an undecided finding."""
+        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "retros" / f"{retro_id}-broken.md").write_text(
+            f"# {retro_id}: a sprint\n\n## Delivered\n\n- US0001 - shipped\n\n"
+            "## What went well\n\n- it went well\n\n## What was hard / what stalled\n\n"
+            "- it was hard\n\n## Lessons\n\n- a real lesson, learned the hard way\n\n"
+            "## Actions raised\n\n| Finding | Disposition |\n| --- | --- |\n"
+            "| a finding nobody decided | |\n", encoding="utf-8")
+        return retro_id
+
+    def test_every_action_step_is_evaluated_even_after_one_refuses(self) -> None:
+        """AC1. `close` stops at its first refusal; the dry run must not, and that is the whole
+        point of the story. The existing coverage asserts over the PREFLIGHT's blockers, which a
+        break in the action-step loop never touches - so inserting `break` at the first refusing
+        action step left 21 dry-run tests passing.
+
+        The property stated directly: every step in `DRY_RUN_ACTION_STEPS` carries a verdict
+        after the pass, and at least one of them refused. Both halves are needed - "all steps
+        present" alone would hold on a run where nothing refused, so the test would stop
+        measuring the moment the fixture went green.
+
+        MUTANT: `break` out of the `for step in DRY_RUN_ACTION_STEPS` loop once any step has
+        refused. This test must redden."""
+        sprint = _load()
+        root = self._dry_repo()
+        retro_id = self._broken_retro(root)
+        result = sprint.close_dry_run(root, retro_id)
+        evaluated = {s["step"] for s in result["steps"]}
+        missing = [s for s in sprint.DRY_RUN_ACTION_STEPS if s not in evaluated]
+        self.assertEqual(missing, [],
+                         f"the dry run stopped early - {missing} were never evaluated, so a "
+                         f"reader would fix one refusal and meet the next on the following pass")
+        refused = [s["step"] for s in result["steps"] if s.get("status") == "refuse"]
+        self.assertTrue(refused,
+                        "the fixture produced no refusing action step, so this test cannot "
+                        "tell 'kept going' from 'nothing to keep going past'")
+
     def test_a_close_emits_its_cost_line(self) -> None:
         """AC2. The close's own cost was RECALLED, never reported, and the mechanism that
         reports it was covered only by tests that build `close_cost` from a ledger by hand -
