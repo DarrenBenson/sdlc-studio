@@ -130,6 +130,12 @@ sprints fits noise.
 | **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
 **0 of 6 unit(s) measured; 6 of 6 forecast at plan time.**
+
+**Sprint tokens/point: 40,582** (1,055,132 tokens over 26 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity: 3.39 points/elapsed-hour** (26 points over 7.676h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: US0487, US0488, US0489, US0490, US0491, US0492. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
@@ -195,4 +201,4 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Handoff
 
-- [HO-0045](../handoffs/HO0045-run-01kz5yxm-work-complete-run-state-close-blocked.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
+- [HO-0046](../handoffs/HO0046-more-smaller-runs-is-a-command-rather-than.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

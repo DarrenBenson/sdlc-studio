@@ -1,3 +1,8 @@
+
+<!-- close-status:begin -->
+> **RUN-01KZ5YXM closed goal-reached.** 6 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
 > **Run of record:** RUN-01KZ5YXM - the charter queue. 26 of 26 points across 6 units, every
 > one approved at the third review round and signed off under D0126. Two earlier rounds returned
 > REJECT, and the tooling escalated the second to the operator for non-convergence. That
