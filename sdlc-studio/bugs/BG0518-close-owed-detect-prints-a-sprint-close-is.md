@@ -1,6 +1,6 @@
 # BG0518: close_owed detect prints "a sprint close is owed" on the run where it exits 0, so its headline contradicts its own verdict
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Verification depth:** functional

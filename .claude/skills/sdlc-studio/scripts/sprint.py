@@ -1403,28 +1403,31 @@ def queue_show(repo_root: Path | str, skip_personas: bool = False) -> dict:
     """
     root = Path(repo_root)
     queue = queued_charters(root)
-    head = materialise_next(root, skip_personas=skip_personas) if queue else None
+    # The RESOLUTION, not the materialiser. Showing what a charter would select cannot open
+    # anything, so it must not inherit the materialiser's single-run-slot refusal - see
+    # `resolve_head_charter`.
+    head = resolve_head_charter(root, skip_personas=skip_personas) if queue else None
     return {"queue": queue, "head": head}
 
 
-def materialise_next(repo_root: Path | str, order: str = "priority",
-                     skip_personas: bool = False, runner: str | None = None) -> dict:
-    """Resolve the head charter's scope against the CURRENT backlog. Writes nothing.
+def resolve_head_charter(repo_root: Path | str, order: str = "priority",
+                         skip_personas: bool = False, runner: str | None = None) -> dict:
+    """Resolve the head charter's scope against the CURRENT backlog. Writes nothing, and asks
+    nothing about whether a run is open.
+
+    Split out of `materialise_next` because the single-run-slot rule is a WRITE precondition and
+    this is a read. Sharing one function meant `queue show` refused first on that guard, so
+    during a run - the one moment the queue exists to be inspected - it reported that nothing was
+    runnable instead of what the head would select, and suppressed the charter's goal review with
+    it, both sitting inside the same success branch.
 
     Three refusals, each leaving the queue exactly as it was, because a charter that cannot be
     run is not a charter that should be silently dropped:
-      - a run is already open (the single-slot rule; merging would make the open run's approved
-        batch a thing nobody approved)
       - the head charter carries no parseable scope query
+      - the query does not parse
       - the scope resolves to no units against the backlog as it stands
     """
     root = Path(repo_root)
-    state = run_state.read(root) or {}
-    if (state.get("outcome") or "").strip().lower() == "running":
-        return {"ok": False, "reason": "run-open", "run_id": state.get("run_id"),
-                "detail": f"run {state.get('run_id')} is still open - close or stop it first. "
-                          f"Merging a charter's batch into an open run would make that run's "
-                          f"approved batch a set nobody approved."}
     queue = queued_charters(root)
     if not queue:
         return {"ok": False, "reason": "empty-queue", "detail": "no Queued charter to run"}
@@ -1449,6 +1452,25 @@ def materialise_next(repo_root: Path | str, order: str = "priority",
     return {"ok": True, "charter": head["id"], "title": head["title"], "goal": head["goal"],
             "query": head["query"], "units": units, "review": review,
             "ids": [u["id"] for u in units], "queued": len(queue)}
+
+
+def materialise_next(repo_root: Path | str, order: str = "priority",
+                     skip_personas: bool = False, runner: str | None = None) -> dict:
+    """The head charter resolved, for a caller that is about to OPEN a run from it.
+
+    The single-run-slot rule lives here rather than in `resolve_head_charter` because it guards
+    a WRITE: merging a charter's batch into an open run would make that run's approved batch a
+    set nobody approved. A read of the same charter carries no such risk, so the guard must not
+    travel with the resolution.
+    """
+    root = Path(repo_root)
+    state = run_state.read(root) or {}
+    if (state.get("outcome") or "").strip().lower() == "running":
+        return {"ok": False, "reason": "run-open", "run_id": state.get("run_id"),
+                "detail": f"run {state.get('run_id')} is still open - close or stop it first. "
+                          f"Merging a charter's batch into an open run would make that run's "
+                          f"approved batch a set nobody approved."}
+    return resolve_head_charter(root, order=order, skip_personas=skip_personas, runner=runner)
 
 
 def select_batches(repo_root: Path | str, queries: list[tuple[str, str]],

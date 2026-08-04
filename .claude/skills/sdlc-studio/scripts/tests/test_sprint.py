@@ -13442,6 +13442,116 @@ class QueueCrudTests(unittest.TestCase):
             self.assertIn("SC9999", err.getvalue())
 
 
+class QueueShowIsReadableDuringARunTests(unittest.TestCase):
+    """BG0514: `queue show` was blind at exactly the moment an operator uses it.
+
+    `queue_show` delegated to `materialise_next`, which refuses FIRST on the single-run-slot
+    guard. So during a run - the one moment the queue exists to be inspected - it reported that
+    nothing was runnable instead of what the head would select, and suppressed the charter's
+    goal review with it, both sitting inside the same success branch.
+
+    The rule the fix encodes: the single-slot guard is a WRITE precondition and belongs to
+    `next`. Showing what a charter would select cannot open anything.
+
+    Its own fixture rather than a subclass of `QueueCrudTests`: inheriting a TestCase to reuse
+    helpers re-runs that class's tests under this one's setup, and here that setup is "a run is
+    open" - which several of them are not written for.
+    """
+
+    def _charter(self, root, cid="SC0001", query="--bugs Open"):
+        d = root / "sdlc-studio" / "charters"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{cid}-x.md").write_text(
+            f"# {cid}: charter {cid}\n\n> **Status:** Queued\n"
+            f"> **Appetite:** 480min/8units\n> **Scope query:** {query}\n\n"
+            f"## Sprint Goal\n\ngoal of {cid}\n\n## Scope rule\n\nprose for {cid}\n",
+            encoding="utf-8")
+        idx = d / "_index.md"
+        idx.write_text("# Sprint Charter Queue\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                       f"| [{cid}]({cid}-x.md) | c | Queued |\n", encoding="utf-8")
+
+    def _bug(self, root, bid="BG0001"):
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / f"{bid}.py").write_text("", encoding="utf-8")
+        (d / f"{bid}-x.md").write_text(
+            f"# {bid}: b\n\n> **Status:** Open\n> **Severity:** Medium\n> **Points:** 2\n"
+            f"> **Affects:** src/{bid}.py\n\n## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+            f"- **Given** a thing\n- **Verify:** shell true\n", encoding="utf-8")
+
+    def _tree(self, d, *, run_open: bool):
+        sprint = _load()
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        self._charter(root)
+        self._bug(root)
+        if run_open:
+            from lib import run_state
+            run_state.write(root, {"run_id": "RUN-TEST01", "outcome": "running"})
+        return sprint, root
+
+    def test_queue_show_resolves_the_head_with_a_run_open(self) -> None:
+        """MUTANT: re-point `queue_show` back through `materialise_next`.
+
+        The fixture must have a run OPEN - which is exactly what US0489's own passing verifier
+        lacks, and why a green criterion sat over this defect for a whole unit.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            sprint, root = self._tree(d, run_open=True)
+            res = sprint.queue_show(root, skip_personas=True)
+        self.assertTrue(res["head"]["ok"],
+                        f"queue show is blind during a run: {res['head'].get('detail')}")
+        self.assertEqual(res["head"]["ids"], ["BG0001"],
+                         "the head resolved to nothing while a run was open")
+
+    def test_the_goal_review_travels_during_a_run(self) -> None:
+        """MUTANT: leave the review inside the branch the open-run refusal skipped.
+
+        The review sat in the same success branch as the units, so it vanished with them.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            sprint, root = self._tree(d, run_open=True)
+            res = sprint.queue_show(root, skip_personas=True)
+        self.assertIn("review", res["head"],
+                      "the charter's goal review is invisible while a run is open")
+
+    def test_next_is_still_refused_with_a_run_open(self) -> None:
+        """The control. MUTANT: delete the single-run-slot guard rather than moving it.
+
+        Without this the fix trades a blind read for an unguarded WRITE, which is strictly
+        worse than the defect.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            sprint, root = self._tree(d, run_open=True)
+            res = sprint.materialise_next(root, skip_personas=True)
+        self.assertFalse(res["ok"], "next opened a charter over an already-open run")
+        self.assertEqual(res["reason"], "run-open")
+
+    def test_next_still_resolves_when_no_run_is_open(self) -> None:
+        """The other control: the guard must not refuse the case it was never about."""
+        with tempfile.TemporaryDirectory() as d:
+            sprint, root = self._tree(d, run_open=False)
+            res = sprint.materialise_next(root, skip_personas=True)
+        self.assertTrue(res["ok"], res.get("detail"))
+        self.assertEqual(res["ids"], ["BG0001"])
+
+    def test_queue_show_writes_nothing_with_a_run_open(self) -> None:
+        """MUTANT: have the read path mark the charter, or touch the run state.
+
+        Read-only is the premise the whole split rests on. Compared as a census of every file's
+        bytes, so a status rewritten in place is caught as well as a file created.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            sprint, root = self._tree(d, run_open=True)
+            before = {p: p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()}
+            sprint.queue_show(root, skip_personas=True)
+            after = {p: p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()}
+        self.assertEqual(sorted(before), sorted(after), "queue show created or removed a file")
+        changed = [str(p) for p in before if before[p] != after.get(p)]
+        self.assertEqual(changed, [], f"queue show rewrote {changed}")
+
+
 class CharterReviewTests(unittest.TestCase):
     """US0490. A charter's goal review must TRAVEL with it. `.local/goal-review.json` is local
     state: a charter pulled into another working copy would arrive with no way to tell an
