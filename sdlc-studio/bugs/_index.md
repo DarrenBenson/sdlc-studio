@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-03
+**Last Updated:** 2026-08-04
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 19 |
 | In Progress | 0 |
 | Fixed | 406 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **511** |
+| **Total** | **512** |
 
 ## All Bugs
 
@@ -51,6 +51,7 @@
 | [BG0509](BG0509-the-close-time-repair-split-uses-day-granularity.md) | the close-time-repair split uses day granularity and a global override map, so a same-day terminal is excused and an override never expires | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0510](BG0510-the-plan-review-ledger-has-no-kind-column.md) | the plan-review ledger has no kind column, so a second pre-code gate would be cleared by the first gate's approval | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0511](BG0511-the-plan-gate-reports-a-batch-of-bugs.md) | the plan gate reports a batch of bugs groomed when the transition gate refuses them outright | Fixed | High | 2026-08-03 | 2026-08-03 |
+| [BG0512](BG0512-batch-add-epic-and-batch-swap-mutate-a.md) | batch add-epic and batch swap mutate a live batch without the ungroomed census, so a unit the plan gate would refuse can enter a run | Open | Medium | 2026-08-04 | 2026-08-04 |
 
 ## Archived Releases
 
