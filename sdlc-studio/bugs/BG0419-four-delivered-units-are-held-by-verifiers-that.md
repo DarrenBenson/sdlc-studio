@@ -83,8 +83,15 @@ landed; the pin still does not discriminate.
 Mutant run with `__pycache__` purged, the child under `python3 -B`, the anchor asserted unique,
 and `reconcile.py` verified byte-identical afterwards.
 
-The remaining three claims (US0555's break-at-first, US0559's deleted cost-report call site,
-US0557's postcondition-only assertion) are not yet re-verified. Each must be probed the same way
+**AC2's premise re-verified, and it also still reproduces.** Replacing the close's sole
+`print(close_cost_line(close_cost(...)))` with a no-op and running every cost-related test in
+`test_sprint.py` gives **34 passed**. The delivered mechanism is the line that reports the
+close's own cost, and nothing observes it - so the unit that shipped "the close reports what it
+cost" is one edit from silent. Same protocol: bytecode purged, child under `python3 -B`, anchor
+asserted unique, `sprint.py` byte-identical afterwards.
+
+Two of four probed, two confirmed. The remaining two claims (US0555's break-at-first, US0557's
+postcondition-only assertion) are not yet re-verified. Each must be probed the same way
 before it is repaired, because BG0485 in this same batch was filed four days after its own fix
 shipped, and this unit's AC5 makes a demonstrated-dead mutant the acceptance test for every
 repair in it.
