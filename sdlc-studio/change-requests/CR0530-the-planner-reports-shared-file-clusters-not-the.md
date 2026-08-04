@@ -18,6 +18,24 @@
 
 The wave analysis itself also has no command. `reference-epic.md` documents it as four judgement steps over layer tables and hub-file tables, executed by reading. Answering it for EP0176 required hand-rolling a union-find over the Affects graph in a throwaway script - which AGENTS.md names as a finding to file rather than something to repeat.
 
+## A file-disjoint unit is not necessarily an independent one
+
+Found while trying to deliver the one unit this analysis called parallelisable. US0492 documents
+the queue lifecycle and its `Affects` names only `help/sprint.md` and `reference-sprint.md`, so
+it shares no file with anything and every seam check calls it free. It is not: its AC1 asserts
+that every queue verb THE PARSER DEFINES is documented, and the parser defines none until
+US0488 to US0491 build them. Delivered first, the criterion passes over an empty set - the
+vacuous-verifier shape, arrived at through a scheduling decision rather than a badly written
+test.
+
+So the component count this request asks for is necessary and not sufficient. It answers "can
+these two edit the same file at once", which is the question `--agentic`'s safety rule asks, and
+`reference-epic.md` already knows the rest is judgement - its wave table marks cross-layer pairs
+CAUTION rather than SAFE for exactly this reason ("page may need types from this backend
+story"). The number should therefore be reported as what it is: an upper bound on parallelism,
+not a schedule. A unit whose criteria READ a surface another unit CREATES is coupled however
+disjoint its Affects.
+
 ## Impact
 
 Two costs. An operator cannot tell whether `--agentic` is worth invoking without doing the analysis by hand, so the flag is either used blindly or not used at all. And a planner reading `2 shared-file clusters` over a backlog that is 88 percent one serial component is being given a number that is true and misleading at once - the shape of the batch is concentrated where the report suggests it is split.
