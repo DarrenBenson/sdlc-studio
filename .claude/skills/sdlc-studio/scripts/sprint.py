@@ -6532,6 +6532,13 @@ def loop_termination(attempts: list, *, cap: int = DEFAULT_LOOP_CAP) -> tuple[bo
     """
     counts = [a.get("outstanding") for a in (attempts or [])
               if isinstance(a.get("outstanding"), int)]
+    # CONVERGED, before anything else. A loop whose latest round cleared everything has nothing
+    # left to iterate on, and the next round is the one that completes the ceremony - stopping it
+    # refuses a run that has done everything asked of it. The cap read only the LENGTH, so
+    # RUN-01KZ5YXM, whose series was 1,1,1,1,0,0, was told to hand off with an outstanding set
+    # that was empty. Raising the cap only moves the number at which a finished loop is refused.
+    if counts and counts[-1] == 0:
+        return (False, "")
     if len(attempts or []) >= cap:
         return (True, f"the declared round cap of {cap} is reached - a cap nobody enforces is "
                       f"a comment. Hand off with the outstanding set named.")

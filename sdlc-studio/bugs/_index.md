@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 24 |
+| Open | 23 |
 | In Progress | 0 |
-| Fixed | 406 |
+| Fixed | 407 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -56,7 +56,7 @@
 | [BG0514](BG0514-queue-show-is-blind-exactly-when-an-operator.md) | queue show is blind exactly when an operator uses it - it reuses the materialiser's open-run refusal | Open | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0515](BG0515-the-charter-queue-has-no-exit-nothing-sets.md) | the charter queue has no exit - nothing sets Spent, and next never opens a run | Open | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0516](BG0516-the-close-reports-a-gate-refusal-it-could.md) | the close reports a gate refusal it could not attribute, where the gate named its failing lane plainly | Open | High | 2026-08-04 | 2026-08-04 |
-| [BG0517](BG0517-the-close-loop-cap-stops-a-loop-that.md) | the close-loop cap stops a loop that has already converged - it counts attempts before it looks at the outstanding set | Open | High | 2026-08-04 | 2026-08-04 |
+| [BG0517](BG0517-the-close-loop-cap-stops-a-loop-that.md) | the close-loop cap stops a loop that has already converged - it counts attempts before it looks at the outstanding set | Fixed | High | 2026-08-04 | 2026-08-04 |
 
 ## Archived Releases
 

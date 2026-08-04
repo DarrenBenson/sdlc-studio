@@ -188,9 +188,3 @@ triage:
 # D0128: raised from the default 4 because BG0516 made four close rounds unactionable -
 # the close reported an unattributable refusal while the gate named its failing lane.
 # The cap stays and the divergence detector is untouched; revisit when BG0516 lands.
-# BG0517: the cap counts attempts before it looks at the outstanding set, so a CONVERGED
-# loop (outstanding 0) is refused at whatever the number happens to be. RUN-01KZ5YXM's
-# series was 1,1,1,1,0,0 - finished, and stopped. Raised once more to let a converged
-# close complete; the fix is BG0517, not this number, and both revert when it lands.
-review:
-  max_rounds: 8

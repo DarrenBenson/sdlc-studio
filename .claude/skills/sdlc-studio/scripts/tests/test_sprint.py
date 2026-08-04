@@ -13759,5 +13759,57 @@ class CallItHereTests(unittest.TestCase):
             self.assertIn("needs a reason", err.getvalue())
 
 
+class ConvergedLoopIsNotStoppedTests(unittest.TestCase):
+    """BG0517. `loop_termination` tested `len(attempts) >= cap` FIRST and returned, before any
+    check of what the attempts contained. RUN-01KZ5YXM's series was `1, 1, 1, 1, 0, 0` - every
+    blocker cleared, the next round certain to complete - and it was told to `hand off with the
+    outstanding set named` over an outstanding set that was empty. Raising the cap only moved
+    the number at which a finished loop was refused; it was raised twice before this was seen
+    for what it is.
+
+    MUTANTS:
+      1. move the converged check back below the cap test -> AC1 reddens.
+      2. treat any zero ANYWHERE in the series as converged -> a loop that cleared everything
+         and then broke it again escapes the cap.
+      3. drop the divergence detector -> AC3 reddens.
+    """
+
+    @staticmethod
+    def _series(*counts):
+        return [{"outstanding": n} for n in counts]
+
+    def test_a_series_ending_in_zero_outstanding_never_terminates(self) -> None:
+        sprint = _load()
+        # The exact series RUN-01KZ5YXM recorded, at and well beyond the cap.
+        stop, why = sprint.loop_termination(self._series(1, 1, 1, 1, 0, 0), cap=4)
+        self.assertFalse(stop, f"a converged loop was stopped: {why}")
+        stop, _ = sprint.loop_termination(self._series(*([3] * 20), 0), cap=4)
+        self.assertFalse(stop, "length alone still terminates a converged loop")
+
+    def test_the_cap_still_stops_a_loop_that_is_not_converging(self) -> None:
+        """The case the cap was written for is untouched: an unattended loop going round on
+        work it is not clearing."""
+        sprint = _load()
+        stop, why = sprint.loop_termination(self._series(1, 1, 1, 1), cap=4)
+        self.assertTrue(stop, "the cap stopped stopping a stuck loop")
+        self.assertIn("round cap", why)
+
+    def test_divergence_still_terminates(self) -> None:
+        """The convergence exemption must not become a way to keep alive a loop that is
+        re-breaking what the last round cleared."""
+        sprint = _load()
+        stop, why = sprint.loop_termination(self._series(1, 2, 3, 4), cap=99)
+        self.assertTrue(stop, "a diverging loop was allowed to continue")
+        self.assertIn("grew", why)
+
+    def test_a_zero_EARLIER_in_the_series_does_not_exempt_it(self) -> None:
+        """The mutant worth naming. Convergence is a fact about the LATEST round: a loop that
+        cleared everything and then broke it again is exactly the loop the cap exists for, and
+        reading `0 in counts` would let it run forever."""
+        sprint = _load()
+        stop, _ = sprint.loop_termination(self._series(1, 0, 2, 3), cap=4)
+        self.assertTrue(stop, "a loop that cleared and then re-broke its work escaped the cap")
+
+
 if __name__ == "__main__":
     unittest.main()
