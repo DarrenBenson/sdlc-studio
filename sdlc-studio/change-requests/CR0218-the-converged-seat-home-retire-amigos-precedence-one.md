@@ -1,8 +1,7 @@
 # CR-0218: the converged seat home: retire amigos/ precedence, one layout, upgrade offers generation first
 
 > **Status:** Complete
-> **Verification depth:** functional (red-then-green on both late-found defects: role-collision skip incl. post-apply resolution assertion, CLI decline gate driven through main(); critic re-ran both repros live plus a two-legacy-cards-one-role probe; 1632 suite green)
-> **Verification depth:** functional (red-then-green: a declared-role seat now beats the legacy amigos file - the old order was proven inverted by a red test; legacy fallback warns with the migration path; --apply migrates amigos/->seats/ mechanically ensuring role comments, never overwriting an existing seat filename (skip+report), removes the emptied dir, idempotent; defaults are opt-in via --with-default-amigos into seats/; the report carries the team-offer entry naming persona generate --team; seats/ + stakeholders/ excluded from the layout advisory; Output Format matches real write paths; suite 1591)
+> **Verification depth:** functional - red-then-green across both delivery rounds. Round 1: a declared-role seat beats the legacy amigos file (the old order was proven inverted by a red test), legacy fallback warns with the migration path, `--apply` migrates amigos/ to seats/ mechanically without overwriting an existing seat filename, and is idempotent; suite 1591. Round 2, on two late-found defects: the role-collision skip including its post-apply resolution assertion, and the CLI decline gate driven through `main()`; the critic re-ran both repros live plus a two-legacy-cards-one-role probe; suite 1632 green.
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-07-10

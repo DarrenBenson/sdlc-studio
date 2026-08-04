@@ -7,7 +7,6 @@
 > **Type:** Improvement
 > **Affects:** scripts/sprint.py, scripts/audit.py, scripts/conformance.py, help/sprint.md, reference-sprint.md
 > **Depends on:** -
-> **Created-by:** sdlc-studio remake (backfilled)
 
 ## Summary
 
@@ -57,4 +56,5 @@ Three follow-on gaps surfaced in the same field run:
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-08-04 | sdlc-studio | Provenance note moved here from a second `Created-by:` line, which read as live metadata while `extract_field` returned only the first |
 | 2026-07-04 | field | Filed from a consuming project's mixed backlog-clear sprint (two plans hand-merged; auditor overruled twice; conformance silent on all 8 units) |

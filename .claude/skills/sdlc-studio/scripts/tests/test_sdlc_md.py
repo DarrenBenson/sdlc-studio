@@ -1157,5 +1157,53 @@ class ResolveAffectsSkillDirTests(unittest.TestCase):
                         f"the derived skill dir {skill} does not contain this module")
 
 
+class SkillRelativeResolutionTests(unittest.TestCase):
+    """BG0494. `resolve_affects` nested base outside candidate, so the prefix-stripped candidate
+    was tried at the PROJECT ROOT before either skill base. A consuming project holding its own
+    `templates/core/story.md` therefore won the resolution of the skill's path of that name, in
+    every Affects resolution. Invisible in this repo, where the vendored copy wins either way -
+    which is exactly what makes it a defect that reaches consumers first.
+
+    MUTANT: offer the stripped candidate to `root` as well (restore `candidates = [p, stripped]`
+    for every base). `test_a_skill_spelling_does_not_resolve_to_a_project_file_of_the_same_name`
+    must redden."""
+
+    SKILL_PATH = ".claude/skills/sdlc-studio/templates/core/story.md"
+
+    def test_a_skill_spelling_does_not_resolve_to_a_project_file_of_the_same_name(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            decoy = root / "templates" / "core" / "story.md"
+            decoy.parent.mkdir(parents=True)
+            decoy.write_text("the PROJECT's own file\n", encoding="utf-8")
+            got = sdlc_md.resolve_affects(root, self.SKILL_PATH)
+            self.assertIsNotNone(got, "the skill's own copy should still resolve")
+            self.assertNotEqual(got.resolve(), decoy.resolve(),
+                                "a skill-relative spelling resolved to the project's file")
+            self.assertTrue(str(got).endswith("templates/core/story.md"))
+
+    def test_an_ordinary_project_path_is_unaffected(self) -> None:
+        """The control. Narrowing the SKILL-relative candidate must not reorder resolution for
+        an ordinary project-relative path, or the fix trades one wrong answer for another."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            own = root / "src" / "thing.py"
+            own.parent.mkdir(parents=True)
+            own.write_text("", encoding="utf-8")
+            self.assertEqual(sdlc_md.resolve_affects(root, "src/thing.py").resolve(),
+                             own.resolve())
+
+    def test_a_vendored_copy_still_wins_for_a_project_that_has_one(self) -> None:
+        """A project that genuinely VENDORS the skill keeps resolving to its vendored copy - the
+        second base - so the narrowing does not break the vendoring case it was built for."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            vendored = root / ".claude" / "skills" / "sdlc-studio" / "templates" / "core" / "story.md"
+            vendored.parent.mkdir(parents=True)
+            vendored.write_text("vendored\n", encoding="utf-8")
+            self.assertEqual(sdlc_md.resolve_affects(root, self.SKILL_PATH).resolve(),
+                             vendored.resolve())
+
+
 if __name__ == "__main__":
     unittest.main()

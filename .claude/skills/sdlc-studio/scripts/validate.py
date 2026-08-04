@@ -249,6 +249,14 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
         add("error", "unreadable", str(exc))
         return out
 
+    for field, lines in _repeated_single_valued(text).items():
+        add(SEVERITY_ERROR, "repeated-field",
+            f"`{field}` appears {len(lines)} times (lines {', '.join(str(n) for n in lines)}) "
+            f"but is single-valued. `extract_field` searches, so the FIRST wins and the rest "
+            f"still read as live metadata; `transition` rewrites only the first when the value "
+            f"is corrected. Keep one line, or add the field to `sdlc_md.PLURAL_FIELDS` if it is "
+            f"genuinely plural.")
+
     if sdlc_md.extract_h1_title(text) is None:
         add("error", "no-title", "no `# Title` heading found")
 
@@ -615,6 +623,31 @@ def _baselined(path, repo_root, token: str) -> bool:
     """Is THIS placeholder token, in THIS artefact, recorded as pre-existing debt?"""
     m = re.search(r"((?:BG|US|EP|CR|RFC)\d{4})", Path(path).name)
     return bool(m) and f"{m.group(1)}:{token}" in _placeholder_baseline(repo_root)
+
+
+_FIELD_LINE_RE = re.compile(r"^>?[^\S\n]*\*\*([^*:]+):\*\*")
+
+
+def _repeated_single_valued(text: str) -> dict:
+    """{field: [line numbers]} for every metadata field that repeats and is not declared plural.
+
+    The plural set is DECLARED in `sdlc_md.PLURAL_FIELDS`, never inferred from the corpus - a
+    guard that learned plurality from what it saw would exempt the very field somebody had just
+    wrongly repeated. Only the metadata block at the head of the artefact is scanned: a
+    `**Field:**` shape inside the body is prose, and the first `##` heading ends the block.
+    """
+    seen: dict = {}
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.startswith("## "):
+            break
+        m = _FIELD_LINE_RE.match(line)
+        if not m:
+            continue
+        field = m.group(1).strip()
+        if field in sdlc_md.PLURAL_FIELDS:
+            continue
+        seen.setdefault(field, []).append(n)
+    return {f: ns for f, ns in seen.items() if len(ns) > 1}
 
 def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR,
                         body_severity: str | None = None, baselined=None) -> None:

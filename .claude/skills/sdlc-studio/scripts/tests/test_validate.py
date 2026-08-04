@@ -2613,5 +2613,81 @@ class FreshArtefactPlaceholderTests(unittest.TestCase):
                         "erroring")
 
 
+class RepeatedFieldTests(unittest.TestCase):
+    """BG0506. `extract_field` matches with `re.search`, so a repeated `> **Name:** value` line
+    is read FIRST-WINS, and `transition._set_field` substitutes with `count=1`, so a correction
+    rewrites the first and leaves the rest standing. Nothing refused the shape: a fixture with
+    two `Verification depth` lines validated with `errors=0`, while the transition gate read one
+    of them and a human read the other.
+
+    `Parent` is plural BY DESIGN - a shared batch epic delivers more than one request - so the
+    rule needs a DECLARED exempt set rather than a blanket no-duplicates.
+
+    MUTANTS:
+      1. drop the `PLURAL_FIELDS` skip -> multi-parent epics become errors.
+      2. scan the whole file instead of stopping at the first `##` -> body prose reads as
+         metadata.
+      3. drop the rule entirely -> the two-depth fixture passes again.
+    """
+
+    def _art(self, d: Path, name: str, body: str) -> Path:
+        p = d / "sdlc-studio" / "change-requests" / name
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(body, encoding="utf-8")
+        return p
+
+    def test_a_repeated_single_valued_field_is_an_error(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._art(root, "CR9001-x.md",
+                          "# CR-9001: x\n\n> **Status:** Complete\n"
+                          "> **Verification depth:** smoke\n"
+                          "> **Verification depth:** soak\n\n## Summary\n\nx\n")
+            found = validate.validate_file(p, "cr")
+            hits = [f for f in found if f["rule"] == "repeated-field"]
+            self.assertEqual(len(hits), 1, found)
+            self.assertEqual(hits[0]["severity"], "error")
+            self.assertIn("Verification depth", hits[0]["message"])
+            self.assertIn("4", hits[0]["message"])
+            self.assertIn("5", hits[0]["message"])
+
+    def test_the_plural_set_is_declared_and_exempts_multi_parent_epics(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            parents = "".join(f"> **Parent:** CR{n:04d}\n" for n in range(1, 13))
+            p = self._art(root, "CR9002-x.md",
+                          f"# CR-9002: x\n\n> **Status:** Complete\n{parents}\n## Summary\n\nx\n")
+            hits = [f for f in validate.validate_file(p, "cr") if f["rule"] == "repeated-field"]
+            self.assertEqual(hits, [], "a plural field was flagged")
+        self.assertIn(sdlc_md.PARENT_FIELD, sdlc_md.PLURAL_FIELDS)
+        self.assertNotIn("Verification depth", sdlc_md.PLURAL_FIELDS)
+
+    def test_a_repeated_shape_in_the_BODY_is_prose_not_metadata(self) -> None:
+        """The metadata block ends at the first `##`. A `**Field:**` shape quoted in the body -
+        a template excerpt, a worked example - is prose, and flagging it would make documenting
+        the rule an error."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._art(root, "CR9003-x.md",
+                          "# CR-9003: x\n\n> **Status:** Complete\n\n## Summary\n\n"
+                          "**Points:** 3\n\n**Points:** 5\n")
+            hits = [f for f in validate.validate_file(p, "cr") if f["rule"] == "repeated-field"]
+            self.assertEqual(hits, [], "body prose was read as metadata")
+
+    def test_the_live_corpus_holds_no_repeated_single_valued_field(self) -> None:
+        """AC3. The guard landing and the debt being paid are proven separately: this asserts
+        the CORPUS is clean, which the fixture tests above cannot see."""
+        repo = Path(__file__).resolve().parents[4]
+        hits = []
+        for sub, type_ in (("change-requests", "cr"), ("bugs", "bug"), ("stories", "story"),
+                           ("epics", "epic"), ("rfcs", "rfc")):
+            for f in sorted((repo / "sdlc-studio" / sub).glob("*.md")):
+                if f.name.startswith("_"):
+                    continue
+                hits += [(f.name, x["message"]) for x in validate.validate_file(f, type_)
+                         if x["rule"] == "repeated-field"]
+        self.assertEqual(hits, [], f"{len(hits)} repeated single-valued field(s) in the corpus")
+
+
 if __name__ == "__main__":
     unittest.main()

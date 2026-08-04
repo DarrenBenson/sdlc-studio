@@ -37,22 +37,49 @@ Repair the two live records as part of it - `CR0218`'s two depth records describ
 
 ## Acceptance Criteria
 
-- [ ] **AC1: a repeated single-valued field is refused.** An artefact carrying two
+- [x] **AC1: a repeated single-valued field is refused.** An artefact carrying two
       `> **Verification depth:**` lines is reported by `validate.py check` as an error, naming
       the field and both line numbers, where today it passes with `errors=0`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RepeatedFieldTests::test_a_repeated_single_valued_field_is_an_error
+  - **Verified:** yes (2026-08-04)
 
-- [ ] **AC2: the plural fields are exempt by declaration, not by observation.** An epic
+- [x] **AC2: the plural fields are exempt by declaration, not by observation.** An epic
       carrying twelve `Parent:` lines passes, and the exempt set is read from one declared
       constant beside `PARENT_FIELD` - so a check run over the live corpus flags nothing among
       the 23 multi-parent epics while still flagging CR0138 and CR0218.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RepeatedFieldTests::test_the_plural_set_is_declared_and_exempts_multi_parent_epics
+  - **Verified:** yes (2026-08-04)
 
-- [ ] **AC3: the two live records are repaired and the corpus is clean.** `CR0218` carries one
+- [x] **AC3: the two live records are repaired and the corpus is clean.** `CR0218` carries one
       `Verification depth` reconciling both runs and `CR0138`'s backfill note has moved to its
       Revision History, so `validate.py check` over the repository reports no instance of this
       error - the guard landing and the debt being paid are proven separately.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RepeatedFieldTests::test_the_live_corpus_holds_no_repeated_single_valued_field
+  - **Verified:** yes (2026-08-04)
+
+## Verification evidence
+
+Functional. The plural set is DECLARED as `sdlc_md.PLURAL_FIELDS` beside `PARENT_FIELD`, never
+inferred from the corpus - a guard learning plurality from what it saw would exempt the very
+field somebody had just wrongly repeated. Three mutants executed, `__pycache__` purged and the
+child run under `python3 -B`, anchors asserted unique, source restored byte-identical:
+
+| Mutant | Result |
+| --- | --- |
+| drop the `PLURAL_FIELDS` skip | killed |
+| scan past the metadata block into the body | killed |
+| drop the rule entirely | killed |
+
+Discrimination measured on the live corpus rather than asserted: over 1941 artefacts the rule
+found exactly two records - `CR0138` and `CR0218`, the two the criterion names - and nothing
+else. Both are repaired, so `validate.py check` now reports `errors=0` where it reported 2.
+`CR0218` carried two `Verification depth` lines from two real delivery rounds, now reconciled
+into one that keeps both rounds' evidence; `CR0138`'s second `Created-by` was a backfill note
+and has moved to its Revision History.
+
+The corpus assertion is its own test rather than a fixture, because a fixture cannot see the
+debt: the guard landing and the debt being paid are separately provable, and only one of them
+is about the code.
 
 ## Impact
 

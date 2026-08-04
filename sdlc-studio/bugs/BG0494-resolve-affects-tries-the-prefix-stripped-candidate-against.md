@@ -28,7 +28,7 @@ Swap the loop nesting, or restrict the prefix-stripped candidate to the skill ba
 
 ## Acceptance Criteria
 
-- [ ] **AC1: a skill-relative spelling resolves to the SKILL's file, even when the project holds a same-named path.**
+- [x] **AC1: a skill-relative spelling resolves to the SKILL's file, even when the project holds a same-named path.**
   - **Given** a consuming project that holds its own `templates/core/story.md`, and the declared
     path `.claude/skills/sdlc-studio/templates/core/story.md`
   - **When** `resolve_affects` runs against that project root
@@ -37,13 +37,35 @@ Swap the loop nesting, or restrict the prefix-stripped candidate to the skill ba
     nests base outside candidate, so the stripped form is tried at the root first and the
     project's file wins silently
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::SkillRelativeResolutionTests::test_a_skill_spelling_does_not_resolve_to_a_project_file_of_the_same_name
+  - **Verified:** yes (2026-08-04)
 
-- [ ] **AC2: an ordinary project-relative path still resolves at the project root.**
+- [x] **AC2: an ordinary project-relative path still resolves at the project root.**
   - **Given** a declared path that is not skill-relative, naming a file the project does hold
   - **When** `resolve_affects` runs
   - **Then** it resolves at the project root exactly as before, so the fix narrows the
     skill-relative candidate rather than reordering resolution for everything
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::SkillRelativeResolutionTests::test_an_ordinary_project_path_is_unaffected
+  - **Verified:** yes (2026-08-04)
+
+## Verification evidence
+
+Functional. The stripped candidate is now offered to the skill bases only, so a skill-relative
+spelling can no longer match at the project root. One mutant executed, `__pycache__` purged and
+the child run under `python3 -B`, anchor asserted unique, source restored byte-identical:
+
+| Mutant | Result |
+| --- | --- |
+| offer the stripped candidate to the project root as well | killed by 1 test |
+
+Three tests, because the fix has two ways to be wrong and only one of them is the filed defect:
+the project's decoy must lose, an ordinary project-relative path must still resolve at the root,
+and a project that genuinely VENDORS the skill must still resolve to its vendored copy. The
+second and third are controls - a narrowing that broke either would trade one wrong answer for
+another.
+
+The reviewer at the goal review noted AC2 is non-discriminating on its own, returning the same
+result on the broken code and on either candidate fix. That is correct and it is why it is
+labelled a control rather than counted as coverage: AC1 is the criterion that discriminates.
 
 ## Impact
 

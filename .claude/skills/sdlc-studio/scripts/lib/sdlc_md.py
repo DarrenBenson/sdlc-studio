@@ -2442,6 +2442,18 @@ def story_epic(source) -> str | None:
 # request lists the units it was decomposed into with `Decomposed-into:`.
 PARENT_FIELD = "Parent"
 DECOMPOSED_FIELD = "Decomposed-into"
+
+#: The metadata fields that may legitimately repeat. Everything else is single-valued, and a
+#: repeated single-valued field is a defect: `extract_field` searches, so it reads FIRST-WINS,
+#: and `transition._set_field` substitutes with `count=1`, so a correction rewrites the first
+#: line and leaves the rest standing - looking like live metadata to a reader while the gate
+#: reads the other one.
+#:
+#: DECLARED, not observed. A guard inferring plurality from the corpus would learn whatever the
+#: corpus happens to contain, so the day a field is wrongly repeated twice it becomes exempt.
+#: `Parent` is plural by design - a shared batch epic delivers more than one request, and
+#: `parent_refs` reads every line - and 23 live epics rely on it.
+PLURAL_FIELDS = frozenset({PARENT_FIELD, DECOMPOSED_FIELD})
 _PARENT_FIELD_RE = re.compile(r"(?m)^>?[^\S\n]*\*\*Parent:\*\*[^\S\n]*(.*)$")
 # The LEGACY upward link an epic carries before the two-backlog `Parent:` convention: the
 # `cr action` workflow stamps `> **Change Request:** [CR-0001](...)` on each epic it creates.
@@ -2940,11 +2952,18 @@ def resolve_affects(root, p: str):
     # A path already written relative to the skill root resolves against it directly; one
     # written repo-relative needs its `.claude/skills/sdlc-studio/` prefix stripped first, which
     # is the spelling the corpus overwhelmingly uses.
+    #
+    # The stripped candidate is SKILL-RELATIVE and is offered to the skill bases only. Offering
+    # it to the project root as well let a consuming project holding its own
+    # `templates/core/story.md` win the resolution of
+    # `.claude/skills/sdlc-studio/templates/core/story.md` - the loop nested base outside
+    # candidate, so the stripped form was tried at the root before either skill base was tried
+    # at all. This repo cannot see it, because the vendored copy wins either way, which is what
+    # made it a defect that reaches consumers first.
     prefix = ".claude/skills/sdlc-studio/"
-    candidates = [p]
-    if p.startswith(prefix):
-        candidates.append(p[len(prefix):])
+    stripped = p[len(prefix):] if p.startswith(prefix) else None
     for base in bases:
+        candidates = [p] if base == root else [p, *([stripped] if stripped else [])]
         for cand_rel in candidates:
             cand = base / cand_rel
             if cand.exists():
