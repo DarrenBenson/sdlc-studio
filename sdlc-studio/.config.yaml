@@ -184,3 +184,9 @@ triage:
   enabled: true
   session_cap: 20
   low_consolidation: true
+
+# D0128: raised from the default 4 because BG0516 made four close rounds unactionable -
+# the close reported an unattributable refusal while the gate named its failing lane.
+# The cap stays and the divergence detector is untouched; revisit when BG0516 lands.
+review:
+  max_rounds: 6
