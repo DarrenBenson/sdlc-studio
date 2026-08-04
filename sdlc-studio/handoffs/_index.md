@@ -59,3 +59,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0044](HO0044-run-01kz5yxm-work-complete-ceremony-blocked-by-bg0516.md) | RUN-01KZ5YXM: work complete, ceremony blocked by BG0516 and BG0517 | 2026-08-04 |
 | [HO-0045](HO0045-run-01kz5yxm-work-complete-run-state-close-blocked.md) | RUN-01KZ5YXM: work complete, run-state close blocked by BG0516 and BG0517 | 2026-08-04 |
 | [HO-0046](HO0046-more-smaller-runs-is-a-command-rather-than.md) | More, smaller runs is a command rather than an intention: a sprint charter is a first-class artefact carrying its own goal, scope rule, appetite and seat review, the next run is materialised from the head charter against the backlog as it stands at that moment, and calling a sprint at a point returns its unstarted remainder to the queue instead of losing it | 2026-08-04 |
+| [HO-0047](HO0047-run-a-paused-the-instrument-cluster-is-done.md) | Run A paused: the instrument cluster is done, the epic units are not | 2026-08-05 |

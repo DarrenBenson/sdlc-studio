@@ -1,6 +1,6 @@
 # BG0514: queue show is blind exactly when an operator uses it - it reuses the materialiser's open-run refusal
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Verification depth:** functional

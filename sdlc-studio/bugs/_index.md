@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
+| Open | 22 |
 | In Progress | 0 |
-| Fixed | 410 |
+| Fixed | 411 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -53,7 +53,7 @@
 | [BG0511](BG0511-the-plan-gate-reports-a-batch-of-bugs.md) | the plan gate reports a batch of bugs groomed when the transition gate refuses them outright | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0512](BG0512-batch-add-epic-and-batch-swap-mutate-a.md) | batch add-epic and batch swap mutate a live batch without the ungroomed census, so a unit the plan gate would refuse can enter a run | Open | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0513](BG0513-run-suite-sh-all-is-intermittently-red-the.md) | run-suite.sh all is intermittently red: the tools suite takes 4.5x longer inside the full runner than alone, and one test fails when it does | Fixed | High | 2026-08-04 | 2026-08-04 |
-| [BG0514](BG0514-queue-show-is-blind-exactly-when-an-operator.md) | queue show is blind exactly when an operator uses it - it reuses the materialiser's open-run refusal | Open | Medium | 2026-08-04 | 2026-08-04 |
+| [BG0514](BG0514-queue-show-is-blind-exactly-when-an-operator.md) | queue show is blind exactly when an operator uses it - it reuses the materialiser's open-run refusal | Fixed | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0515](BG0515-the-charter-queue-has-no-exit-nothing-sets.md) | the charter queue has no exit - nothing sets Spent, and next never opens a run | Open | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0516](BG0516-the-close-reports-a-gate-refusal-it-could.md) | the close reports a gate refusal it could not attribute, where the gate named its failing lane plainly | Open | High | 2026-08-04 | 2026-08-04 |
 | [BG0517](BG0517-the-close-loop-cap-stops-a-loop-that.md) | the close-loop cap stops a loop that has already converged - it counts attempts before it looks at the outstanding set | Fixed | High | 2026-08-04 | 2026-08-04 |
