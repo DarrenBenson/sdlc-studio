@@ -4,6 +4,7 @@
 > **Batch:** BG0419, BG0477, BG0485, BG0494, BG0501, BG0506, US0467
 > **Goal:** A shipped mechanism does what its own record claims: for every unit in this batch the gap between the claim and the behaviour is closed and proven by execution - an executed mutant where the claim is a verifier, a reproduced wrong result where the claim is behaviour.
 > **Delivered:** 7 / 7   **Blocked:** 0
+> **Close-repair-override:** BG0511 - delivered BEFORE this run opened, as the programme prerequisite: it taught the ungroomed census to cover every unit type, and until it landed the census reported 0 ungroomed over a backlog where 16 of 48 units were. Run 1's batch could not honestly be chosen without it. It belongs to no run's batch because no run was open, so it is accounted for here rather than left as a terminal unit no retro names.
 
 ## Delivered
 
