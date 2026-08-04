@@ -1,6 +1,6 @@
 # US0488: sprint next materialises the head charter against the backlog as it is at that moment, and stops when its scope resolves to nothing
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0057
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0489: The queue is inspectable and editable: show the next charter with its goal and resolved contents, insert, cancel, clear and reorder
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0057
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

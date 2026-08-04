@@ -1,6 +1,6 @@
 # US0490: A charter carries its own goal review, and the run records who reviewed the goal and who ran it without refusing when they match
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0057
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

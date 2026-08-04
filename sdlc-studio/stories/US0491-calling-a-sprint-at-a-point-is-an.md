@@ -1,6 +1,6 @@
 # US0491: Calling a sprint at a point is an honest close: the unstarted remainder is descoped with a reason and returns to the backlog
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0057
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

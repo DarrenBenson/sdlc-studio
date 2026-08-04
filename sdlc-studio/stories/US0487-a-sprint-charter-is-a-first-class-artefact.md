@@ -1,6 +1,6 @@
 # US0487: A sprint charter is a first-class artefact: goal, scope rule and appetite, with a tool-allocated id and an index row
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0057
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

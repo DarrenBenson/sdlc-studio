@@ -102,3 +102,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0090](RETRO0090-out-of-sprint-maintenance-the-archival-sweep-and.md) | Out-of-sprint maintenance: the archival sweep, and the guards that refused it | 2026-08-03 | -- | -- |
 | [RETRO-0091](RETRO0091-the-close-converges-and-its-findings-count-the.md) | The close converges and its findings count: the sprint that reviewed itself at the boundary | 2026-08-03 | -- | -- |
 | [RETRO-0092](RETRO0092-run-01kz56m6-a-shipped-mechanism-does-what-its.md) | RUN-01KZ56M6: a shipped mechanism does what its record claims - seven units, four inert verifiers repaired | 2026-08-04 | -- | -- |
+| [RETRO-0093](RETRO0093-run-01kz5yxm-the-charter-queue-more-smaller-runs.md) | RUN-01KZ5YXM: the charter queue - more, smaller runs becomes a command | 2026-08-04 | -- | -- |

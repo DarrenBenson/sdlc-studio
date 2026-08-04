@@ -325,9 +325,11 @@ looks precise and is not.
 
 `call` and `stop` are different acts. `stop` ABANDONS a run - it did not reach its goal and
 says so. `call` FINISHES one: the units nobody started leave the batch, and the close chain then runs
-against the Sprint Goal - so `call` completes what it starts rather than telling you to. It
-takes the same `--retro` the close does, and without one it scaffolds a retro and stops, exactly
-as `sprint close` does. The remainder returns to the
+against the Sprint Goal - so `call` completes what it starts rather than telling you to. It takes
+the close's own flags - `--retro`, `--goal-verdict`, `--note`, `--apply-signoff`, `--principal` -
+and forwards them, so the close's messages never name a flag this verb rejects. Without a
+`--retro` it scaffolds one and stops, exactly as `sprint close` does. The bounded exit
+(`--file-and-close`) is not among them: reach it with `sprint close` after the descope. The remainder returns to the
 BACKLOG, never forward to the next charter - attaching it forward would make the next run
 inherit a batch it never approved. Each descoped unit keeps its own status, because a drop
 judges THIS BATCH and not the work.

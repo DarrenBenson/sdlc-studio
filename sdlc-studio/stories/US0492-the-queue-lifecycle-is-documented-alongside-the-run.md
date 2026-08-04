@@ -1,6 +1,6 @@
 # US0492: The queue lifecycle is documented alongside the run lifecycle, with every invocation shown taken from the shipped parser
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0057
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
