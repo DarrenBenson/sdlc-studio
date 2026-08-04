@@ -1386,8 +1386,11 @@ class GroomingDemandTests(unittest.TestCase):
             self.assertIn("item 2", str(cm.exception))
             self.assertEqual(self._bugs(repo), [], "a partial batch reached disk")
 
-    def test_a_created_bug_is_plannable(self) -> None:
-        # The round trip through the OTHER creator: created here, and the planner accepts it.
+    def test_a_created_bug_is_plannable_on_its_footprint(self) -> None:
+        # The round trip through the OTHER creator: created here, and the planner accepts its
+        # FOOTPRINT. BG0511 narrowed this from "accepts it" - a freshly created bug carries no
+        # authored criteria, and the planner now says so rather than admitting a unit nobody can
+        # judge. What the creator is answerable for is what the creator knows: Affects and Points.
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
@@ -1397,7 +1400,10 @@ class GroomingDemandTests(unittest.TestCase):
             path = Path(r["path"])
             self.assertEqual(sdlc_md.affects_files(path.read_text(encoding="utf-8")),
                              ["src/a.py", "src/b.py"])
-            self.assertEqual(self._plan_verdict(repo, path, "bug")["ungroomed"], [])
+            bd = self._plan_verdict(repo, path, "bug")
+            gaps = " ".join(bd["ungroomed"][0]["missing"]) if bd["ungroomed"] else ""
+            self.assertNotIn("Affects", gaps)
+            self.assertNotIn("Points", gaps)
 
     def test_a_created_cr_is_plannable_on_every_template(self) -> None:
         # The full template grafts a rich body over the same head. A CR whose size the planner
@@ -1412,8 +1418,16 @@ class GroomingDemandTests(unittest.TestCase):
                                   "affects": "src/gate.py", "size": "L",
                                   "template": template})
                 path = Path(r["path"])
-                self.assertEqual(self._plan_verdict(repo, path, "cr")["ungroomed"], [],
+                # Footprint only, per BG0511: every template renders its criteria section as a
+                # `{{...}}` scaffold, and the census now reads that shape on a CR as it always
+                # did on a story. The unfilled scaffold IS a grooming debt; what this test is
+                # about is that the SIZE and the FILES survive every rendering.
+                bd = self._plan_verdict(repo, path, "cr")
+                gaps = " ".join(bd["ungroomed"][0]["missing"]) if bd["ungroomed"] else ""
+                self.assertNotIn("Affects", gaps,
                                  f"{template}: the planner refuses a CR this creator wrote")
+                self.assertNotIn("Size", gaps, f"{template}: the size did not read back")
+                self.assertNotIn("Points", gaps, f"{template}: the size did not read back")
 
 
 # --- US0306: the sweep (L-0154 - a defect found in one writer is swept across its siblings) ---
@@ -1928,7 +1942,7 @@ class DuplicateCheckTests(unittest.TestCase):
         (d / f"{cid}-x.md").write_text(
             f"# {cid}: {title}\n\n> **Status:** {status}\n> **Severity:** High\n"
             f"> **Points:** 2\n> **Affects:** {affects}\n\n## Summary\n\ns\n\n"
-            "## Steps to Reproduce\n\ns\n\n## Proposed Fix\n\nf\n", encoding="utf-8")
+            "## Steps to Reproduce\n\ns\n\n## Proposed Fix\n\nf\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
 
     def _repo(self) -> tuple[Path, tempfile.TemporaryDirectory]:
         td = tempfile.TemporaryDirectory()
@@ -1990,7 +2004,7 @@ class DuplicateCheckTests(unittest.TestCase):
             (repo / "sdlc-studio" / "change-requests" / "CR0001-x.md").write_text(
                 f"# CR-0001: {self.EXISTING}\n\n> **Status:** Open\n> **Priority:** P1\n"
                 "> **Type:** Improvement\n> **Size:** M\n> **Affects:** src/thing.py\n\n"
-                "## Summary\n\ns\n\n## Impact\n\ni\n", encoding="utf-8")
+                "## Summary\n\ns\n\n## Impact\n\ni\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
             r = artifact.new(repo, "bug", self.REFILING,
                              {"severity": "High", "points": 2, "affects": "src/thing.py"})
             self.assertEqual(r.get("duplicate_warnings"), None, r.get("duplicate_warnings"))

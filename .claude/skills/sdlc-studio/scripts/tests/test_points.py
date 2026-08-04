@@ -245,9 +245,12 @@ class TheRoundTripFiledThenPlannable(unittest.TestCase):
             self.assertEqual(sdlc_md.extract_field(text, "Points"), "5")
             bd = sprint.breakdown(root, [{"id": filed.stem.split("-")[0], "type": "bug",
                                           "path": str(filed)}], skip_personas=True)
-            self.assertEqual(bd["ungroomed"], [],
+            # The claim is about the SIZE round-tripping, so it is the size gap that must be
+            # absent. Since BG0511 a freshly filed bug is still ungroomed on its criteria - a
+            # real debt, owed at plan time, and not evidence that the points failed to read back.
+            gaps = " ".join(bd["ungroomed"][0]["missing"]) if bd["ungroomed"] else ""
+            self.assertNotIn("Points", gaps,
                              "the planner refused an artefact the filer sized")
-            self.assertTrue(bd["ok"])
 
     def test_a_cr_carries_its_tshirt_size_where_the_parser_finds_it(self) -> None:
         # A CR is a REQUEST, sized by a T-shirt Size (not story points), and that Size must be a

@@ -65,27 +65,39 @@ def _affect(root, rel):
     p.write_text("", encoding="utf-8")
 
 
+#: A groomed unit's criteria, for the fixtures. BG0511: the census now asks EVERY type whether
+#: its criteria are authored, so a fixture claiming `groomed=True` while writing none was
+#: asserting something untrue - and 101 tests rested on the census being unable to notice. The
+#: criterion is deliberately minimal and deliberately real: an `### ACn` heading with a `Verify:`
+#: line, which is what `validate._has_criteria` and `file_finding.is_derived_criterion` between
+#: them accept as authored.
+_GROOMED_AC = ("\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n"
+               "- **Given** the recorded state\n- **Verify:** shell true\n")
+
+
 def _bug(root, num, status="Open", severity="Medium", groomed=True, points=FIXTURE_POINTS):
     d = root / "sdlc-studio" / "bugs"
     d.mkdir(parents=True, exist_ok=True)
-    meta = ""
+    meta = ac = ""
     if groomed:
         _affect(root, f"src/bg{num:04d}.py")
         meta = f"> **Affects:** src/bg{num:04d}.py\n> **Points:** {points}\n"
+        ac = _GROOMED_AC
     (d / f"BG{num:04d}-x.md").write_text(
-        f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n{meta}",
+        f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n{meta}{ac}",
         encoding="utf-8")
 
 
 def _cr(root, num, status="Proposed", priority="Medium", groomed=True, points=FIXTURE_POINTS):
     d = root / "sdlc-studio" / "change-requests"
     d.mkdir(parents=True, exist_ok=True)
-    meta = ""
+    meta = ac = ""
     if groomed:
         _affect(root, f"src/cr{num:04d}.py")
         meta = f"> **Affects:** src/cr{num:04d}.py\n> **Points:** {points}\n"
+        ac = _GROOMED_AC
     (d / f"CR{num:04d}-x.md").write_text(
-        f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n{meta}",
+        f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n{meta}{ac}",
         encoding="utf-8")
 
 
@@ -182,7 +194,7 @@ class NoDepsHintTests(unittest.TestCase):
         _affect(root, f"src/us{num:04d}.py")  # BG0144: the Affects path must resolve on disk
         (d / f"US{num:04d}-x.md").write_text(
             f"# US{num:04d}: s\n\n> **Status:** {status}\n{dep}"
-            f"> **Affects:** src/us{num:04d}.py\n> **Points:** 3\n", encoding="utf-8")
+            f"> **Affects:** src/us{num:04d}.py\n> **Points:** 3\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
 
     def test_plan_flags_no_declared_deps(self) -> None:
         # >1 unit, no Depends on anywhere -> deps_declared False, one flat parallel wave.
@@ -923,7 +935,7 @@ class MixedBatchTests(unittest.TestCase):
             _affect(root, "src/us0002.py")  # BG0144: the Affects path must resolve on disk
             (sd / "US0002-x.md").write_text(
                 "# US0002: s\n\n> **Status:** Draft\n"
-                "> **Affects:** src/us0002.py\n> **Points:** 2\n", encoding="utf-8")
+                "> **Affects:** src/us0002.py\n> **Points:** 2\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
             # stdout captured: a green suite must print nothing, or a real error
             # hides in the noise (the repo's test-noise budget enforces it).
             with contextlib.redirect_stdout(io.StringIO()):
@@ -1252,7 +1264,7 @@ class PreflightSurvivesAllOrdersTests(unittest.TestCase):
         _affect(work, "src/bg0002.py")  # BG0144: the Affects path must resolve on disk
         (bgd / "BG0002-local.md").write_text(
             "# BG0002: local\n\n> **Status:** Open\n> **Severity:** Medium\n"
-            "> **Affects:** src/bg0002.py\n> **Points:** 2\n",   # groomed: the gate is not the subject here
+            "> **Affects:** src/bg0002.py\n> **Points:** 2\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n",   # groomed: the gate is not the subject here
             encoding="utf-8")
         (bgd / "_index.md").write_text(
             "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | 1 |\n"
@@ -1652,7 +1664,7 @@ def _groomed_cr(root: Path, num: int, affects: str, points: int = 3,
     d.mkdir(parents=True, exist_ok=True)
     (d / f"CR{num:04d}-x.md").write_text(
         f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n"
-        f"> **Affects:** {affects}\n> **Points:** {points}\n", encoding="utf-8")
+        f"> **Affects:** {affects}\n> **Points:** {points}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
 
 
 def _groomed_bug(root: Path, num: int, affects: str, points: int = 3,
@@ -1662,7 +1674,7 @@ def _groomed_bug(root: Path, num: int, affects: str, points: int = 3,
     d.mkdir(parents=True, exist_ok=True)
     (d / f"BG{num:04d}-x.md").write_text(
         f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n"
-        f"> **Affects:** {affects}\n> **Points:** {points}\n", encoding="utf-8")
+        f"> **Affects:** {affects}\n> **Points:** {points}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
 
 
 def _src(root: Path, rel: str) -> str:
@@ -1689,7 +1701,7 @@ class TriageInPlanTests(unittest.TestCase):
         d.mkdir(parents=True, exist_ok=True)
         (d / f"BG{num:04d}-x.md").write_text(
             f"# BG{num:04d}: {title}\n\n> **Status:** Open\n> **Severity:** Medium\n"
-            f"> **Affects:** {affects}\n> **Points:** 3\n\n## Summary\n\n{summary}\n",
+            f"> **Affects:** {affects}\n> **Points:** 3\n\n## Summary\n\n{summary}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n",
             encoding="utf-8")
 
     def test_a_duplicate_pair_is_surfaced_in_the_plan_not_refused(self) -> None:
@@ -1781,7 +1793,7 @@ class BreakdownGateTests(unittest.TestCase):
             d2 = root / "sdlc-studio" / "bugs"
             (d2 / "BG0002-x.md").write_text(
                 "# BG0002: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
-                "> **Affects:** src/a.py\n", encoding="utf-8")
+                "> **Affects:** src/a.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
             rc, out, err = self._plan(root)
             self.assertNotEqual(rc, 0)
             self.assertIn("BG0002", err)
@@ -2053,7 +2065,7 @@ def _pointed_cr(root: Path, num: int, points, affects: str = None, priority: str
     aff = affects if affects is not None else _src(root, f"src/cr{num:04d}.py")
     pts = f"> **Points:** {points}\n" if points is not None else ""
     (d / f"CR{num:04d}-x.md").write_text(
-        f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n"
+        f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n"
         f"> **Affects:** {aff}\n{pts}", encoding="utf-8")
 
 
@@ -2065,7 +2077,7 @@ def _pointed_bug(root: Path, num: int, points, affects: str = None, severity: st
     aff = affects if affects is not None else _src(root, f"src/bg{num:04d}.py")
     pts = f"> **Points:** {points}\n" if points is not None else ""
     (d / f"BG{num:04d}-x.md").write_text(
-        f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n"
+        f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n"
         f"> **Affects:** {aff}\n{pts}", encoding="utf-8")
 
 
@@ -3151,7 +3163,7 @@ def _pointed_story(root: Path, num: int, points: int, status: str = "Ready") -> 
     aff = _src(root, f"src/us{num:04d}.py")
     (d / f"US{num:04d}-x.md").write_text(
         f"# US{num:04d}: s\n\n> **Status:** {status}\n> **Priority:** Medium\n"
-        f"> **Affects:** {aff}\n> **Points:** {points}\n", encoding="utf-8")
+        f"> **Affects:** {aff}\n> **Points:** {points}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
 
 
 def _seats(root: Path, roles: tuple[str, ...] = ("product", "engineering", "qa")) -> None:
@@ -4909,7 +4921,7 @@ class UnblockedWorkBlocksTheStopTests(unittest.TestCase):
                     parents=True, exist_ok=True)
                 (root / "sdlc-studio" / "stories" / f"US{num:04d}-x.md").write_text(
                     f"# US{num:04d}: s\n\n> **Status:** Ready\n> **Priority:** Medium\n"
-                    f"> **Affects:** src/shared.py\n", encoding="utf-8")
+                    f"> **Affects:** src/shared.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
             mod = _load()
             self._defer(mod, root, unit="US0101")
             self.assertEqual(mod.blocked_by_pending(root)["unblocked"], ["US0102"])
@@ -4947,7 +4959,7 @@ class StopAwaitingSignoffTests(unittest.TestCase):
         for uid, status in statuses.items():
             (d / f"{uid}-x.md").write_text(
                 f"# {uid}: s\n\n> **Status:** {status}\n> **Priority:** Medium\n"
-                f"> **Affects:** src/a.py\n", encoding="utf-8")
+                f"> **Affects:** src/a.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
         if evidence:
             import critic
             for uid, status in statuses.items():
@@ -7432,7 +7444,7 @@ class RefusedPlanLeavesNothingTests(unittest.TestCase):
         (d / "src" / "a.py").write_text("# marker\n")
         (d / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
             "# BG0001: x\n\n> **Status:** Open\n> **Severity:** High\n> **Points:** 2\n"
-            "> **Affects:** src/a.py\n", encoding="utf-8")
+            "> **Affects:** src/a.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
         return d
 
     def _plan(self, s, root, *argv):
@@ -7494,7 +7506,7 @@ class SeatBriefFreshnessTests(unittest.TestCase):
         d = self._repo(plan_count=19, outcome="goal-reached")
         f = d / "sdlc-studio" / "stories" / "US0001-x.md"
         f.write_text("# US0001: x\n\n> **Status:** Draft\n> **Points:** 2\n"
-                     "> **Affects:** scripts/m.py\n", encoding="utf-8")
+                     "> **Affects:** scripts/m.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
         wl = d / "wl.txt"
         wl.write_text("US0001\n", encoding="utf-8")
         brief = s.seat_brief(d, worklist=str(wl))
@@ -8012,7 +8024,7 @@ Covers `auth.py`.
             self.TSD if tsd is None else tsd, encoding="utf-8")
         for uid, affects in units.items():
             (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
-                f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** {affects}\n",
+                f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** {affects}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n",
                 encoding="utf-8")
         return root
 
@@ -12048,7 +12060,7 @@ class LoopTerminationTests(unittest.TestCase):
             (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
             (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
                 "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
-                "> **Affects:** src/a.py\n", encoding="utf-8")
+                "> **Affects:** src/a.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
             (root / "sdlc-studio" / "retros" / "RETRO0001-r.md").write_text(
                 "# RETRO0001: r\n\n> **Status:** Draft\n", encoding="utf-8")
             # FOUR attempts: the declared cap is reached, so the rule says stop.
@@ -12390,7 +12402,7 @@ class ReviewBatchFieldsFileTests(unittest.TestCase):
             (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
             (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
                 "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
-                "> **Affects:** src/a.py\n", encoding="utf-8")
+                "> **Affects:** src/a.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
             (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
                 json.dumps({"run_id": "RUN-T", "batch": ["US0001"], "outcome": "running"}),
                 encoding="utf-8")
@@ -12562,7 +12574,7 @@ class CloseFixedPointTests(unittest.TestCase):
         stories.mkdir(parents=True)
         (stories / "US0101-widget.md").write_text(
             "# US0101: widget\n\n> **Status:** Review\n> **Epic:** EP0100\n"
-            "> **Points:** 2\n> **Affects:** src/widget.py\n", encoding="utf-8")
+            "> **Points:** 2\n> **Affects:** src/widget.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
         subprocess.run(["git", "add", "-A"], cwd=root, check=True, env=clean)
         subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
                         "commit", "-qm", "seed"], cwd=root, check=True, env=clean)
@@ -12906,6 +12918,138 @@ class PreflightCoverageCountsTests(unittest.TestCase):
         self.assertIn("US0009", detail,
                       f"the single genuinely unreviewed unit is not named:\n{detail}")
 
+
+
+class UngroomedCensusCoversEveryTypeTests(unittest.TestCase):
+    """BG0511. The ungroomed census asked `conformance.story_is_ungroomed` only of STORIES, on
+    the reasoning that "a bug carries no user-story scaffold". True of the scaffold; false of the
+    two shapes that matter for a bug. A 17-unit batch was reported `0 ungroomed` while five of
+    its bugs had no `## Acceptance Criteria` section at all - the exact state
+    `transition.py set --status Fixed` refuses - and four more carried only the criteria
+    `file_finding` derives from a finding's own prose. The planner admitted 33 of 58 points the
+    deliverer could not terminate, and two review seats had to read the bugs by hand to find it.
+
+    MUTANTS these tests must kill:
+      1. restore `it["type"] == "story"` in `sprint.breakdown` -> a bug is never examined.
+      2. drop the `no-criteria` leg of `conformance.unit_is_ungroomed` -> the five return.
+      3. drop the `derived-only` leg -> the four return.
+      4. return `()` from `file_finding._derived_openings` -> derived text reads as authored.
+      5. make `unit_is_ungroomed` always True -> an authored bug is a false positive."""
+
+    _DERIVED = ("- [ ] The behaviour described is corrected: the thing is wrong.\n"
+                "- [ ] The proposed fix lands, pinned by a test: make it right.\n")
+    _AUTHORED = ("### AC1: it refuses the bad input\n\n- **Given** a bad input\n"
+                 "- **Verify:** shell true\n")
+
+    def _bug_with(self, d: Path, bid: str, ac_section: str) -> dict:
+        bd = d / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True, exist_ok=True)
+        (bd / "x.py").write_text("", encoding="utf-8")
+        path = bd / f"{bid}-x.md"
+        path.write_text(
+            f"# {bid}: b\n\n> **Status:** Open\n> **Severity:** Medium\n> **Points:** 3\n"
+            f"> **Affects:** sdlc-studio/bugs/x.py\n\n## Summary\n\nsomething\n"
+            f"{ac_section}", encoding="utf-8")
+        return {"id": bid, "type": "bug", "path": str(path)}
+
+    def test_a_bug_with_no_criteria_is_ungroomed(self) -> None:
+        """Kills mutants 1 and 2. The state is not hypothetical: it is what BG0488, BG0491,
+        BG0493, BG0495 and BG0497 were in when the census called them groomed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = sprint.breakdown(root, [self._bug_with(root, "BG0001", "")])
+            self.assertFalse(bd["ok"])
+            self.assertEqual([u["id"] for u in bd["ungroomed"]], ["BG0001"])
+            self.assertIn("none at all", " ".join(bd["ungroomed"][0]["missing"]))
+
+    def test_all_derived_criteria_are_not_authored(self) -> None:
+        """Kills mutants 1, 3 and 4. This is the shape that READS like content: it satisfies
+        `validate._has_criteria` and `story_is_ungroomed` both, which is why it survived every
+        check in the repo while being unjudgeable."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            unit = self._bug_with(root, "BG0002",
+                                  f"\n## Acceptance Criteria\n\n{self._DERIVED}")
+            bd = sprint.breakdown(root, [unit])
+            self.assertFalse(bd["ok"])
+            self.assertEqual([u["id"] for u in bd["ungroomed"]], ["BG0002"])
+            self.assertIn("tool-derived", " ".join(bd["ungroomed"][0]["missing"]))
+
+    def test_one_authored_criterion_beside_a_derived_one_is_enough(self) -> None:
+        """The bar is "nothing here is authored", not "everything here is authored". A partly
+        groomed bug is a judgeable bug, and refusing it would make the honest move - sharpening
+        one criterion at a time - the one the gate punishes."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            unit = self._bug_with(
+                root, "BG0003",
+                f"\n## Acceptance Criteria\n\n{self._DERIVED}\n{self._AUTHORED}")
+            bd = sprint.breakdown(root, [unit])
+            self.assertEqual(bd["ungroomed"], [])
+
+    def test_an_authored_bug_is_not_reported_and_the_predicate_is_shared(self) -> None:
+        """Kills mutant 5, and pins that the census consults the SAME `_has_criteria` the
+        transition gate consults - two predicates answering one question is how the planner and
+        the deliverer came to disagree about identical bytes."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            unit = self._bug_with(root, "BG0004",
+                                  f"\n## Acceptance Criteria\n\n{self._AUTHORED}")
+            bd = sprint.breakdown(root, [unit])
+            self.assertEqual(bd["ungroomed"], [])
+            self.assertEqual(bd["groomed"], ["BG0004"])
+        import conformance
+        import validate
+        no_ac = "# BG0005: b\n\n> **Status:** Open\n\n## Summary\n\nx\n"
+        self.assertFalse(validate._has_criteria(no_ac))
+        self.assertEqual(conformance.unit_is_ungroomed("bug", no_ac), (True, "no-criteria"))
+
+    def test_a_type_the_deliverer_never_asks_is_not_refused_for_criteria(self) -> None:
+        """The other polarity of the same drift, and the finding that REJECTed round 1.
+
+        `transition` demands criteria only where `sdlc_md.executes_verifiers` holds - story and
+        bug. The first draft asked every type, so the planner refused 57 of 57 RFCs and 114 of
+        207 epics on the live tree, with a message saying a terminal status would refuse them
+        when `transition.py set --id CR0001 --status Complete` in fact succeeds. Refusing what
+        the deliverer admits is the same defect as admitting what the deliverer refuses.
+
+        MUTANT: drop the `executes_verifiers` guard in `conformance.unit_is_ungroomed`."""
+        import conformance
+        from lib import sdlc_md as md
+        no_ac = "# X0001: t\n\n> **Status:** Proposed\n\n## Summary\n\nx\n"
+        for type_ in ("cr", "rfc", "epic"):
+            self.assertFalse(md.executes_verifiers(type_),
+                             f"{type_} is expected to be outside the criteria demand")
+            self.assertEqual(conformance.unit_is_ungroomed(type_, no_ac), (False, ""),
+                             f"{type_} was refused for criteria the deliverer never asks for")
+        for type_ in ("story", "bug"):
+            self.assertTrue(md.executes_verifiers(type_))
+            self.assertEqual(conformance.unit_is_ungroomed(type_, no_ac), (True, "no-criteria"))
+
+    def test_a_fallback_shaped_authored_criterion_is_not_called_derived(self) -> None:
+        """`_CRITERION_FALLBACK` is "The recorded {field} is satisfied: {gist}". Matched by its
+        PREFIX it degenerates to the two words "The recorded", which would classify an authored
+        criterion opening with those words as tool-derived. Whole-form matching is the fix.
+
+        MUTANT: match on the form's prefix instead of the whole form."""
+        import file_finding
+        self.assertFalse(file_finding.is_derived_criterion(
+            "- [ ] The recorded outage no longer reproduces once the retry budget is exhausted"))
+        self.assertTrue(file_finding.is_derived_criterion(
+            "- [ ] The recorded impact is satisfied: users cannot log in"))
+
+    def test_the_derived_openings_are_read_from_the_writer_not_copied(self) -> None:
+        """Kills mutant 4 directly, and pins the derivation: a criterion form ADDED to
+        `_CRITERION_FORM` must be recognised without anyone editing the detector. An enumerated
+        copy of these strings would silently exempt whatever it forgot."""
+        import file_finding
+        self.assertTrue(file_finding._derived_patterns())
+        for form in file_finding._CRITERION_FORM.values():
+            self.assertTrue(
+                file_finding.is_derived_criterion(f"- [ ] {form.format(gist='anything')}"),
+                f"a form this module writes is not recognised as derived: {form}")
+        self.assertFalse(file_finding.is_derived_criterion(
+            "- [ ] **AC1: the gate refuses an unsigned batch**"))
 
 
 if __name__ == "__main__":

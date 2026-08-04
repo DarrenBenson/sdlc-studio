@@ -223,7 +223,7 @@ class TheModelIsStrictlyLinearInPoints(unittest.TestCase):
         src.write_text("def f():\n    return 1\n", encoding="utf-8")
         (d / f"CR{num:04d}-x.md").write_text(
             f"# CR-{num:04d}: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
-            f"> **Affects:** src{num}.py\n> **Points:** {points}\n", encoding="utf-8")
+            f"> **Affects:** src{num}.py\n> **Points:** {points}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
 
     def test_doubling_the_points_doubles_the_forecast_exactly(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -258,7 +258,7 @@ class TheOldModelWouldHaveFailedThisSuite(unittest.TestCase):
         (root / f"src{num}.py").write_text("def f():\n    return 1\n", encoding="utf-8")
         (d / f"CR{num:04d}-x.md").write_text(
             f"# CR-{num:04d}: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
-            f"> **Affects:** src{num}.py\n> **Points:** {points}\n", encoding="utf-8")
+            f"> **Affects:** src{num}.py\n> **Points:** {points}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
 
     def _bug(self, root: Path, num: int, points: int) -> None:
         d = root / "sdlc-studio" / "bugs"
@@ -266,7 +266,7 @@ class TheOldModelWouldHaveFailedThisSuite(unittest.TestCase):
         (root / f"src{num}.py").write_text("def f():\n    return 1\n", encoding="utf-8")
         (d / f"BG{num:04d}-x.md").write_text(
             f"# BG{num:04d}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
-            f"> **Affects:** src{num}.py\n> **Points:** {points}\n", encoding="utf-8")
+            f"> **Affects:** src{num}.py\n> **Points:** {points}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
 
     def test_a_small_unit_and_a_big_one_no_longer_forecast_the_same_number(self) -> None:
         with tempfile.TemporaryDirectory() as d:

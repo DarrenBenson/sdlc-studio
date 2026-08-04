@@ -686,9 +686,23 @@ class GroomingGateTests(unittest.TestCase):
             self.assertEqual(self._bugs(root), [])
             self.assertIn("--points", msg)
 
-    def test_the_round_trip_filed_then_plannable(self) -> None:
-        # THE bug. File it the way the tool now allows, and the planner must accept it - a
-        # filed artefact the planner still refuses is not a fix.
+    def test_the_round_trip_filed_then_plannable_on_its_footprint(self) -> None:
+        # THE bug. File it the way the tool now allows, and the planner must not refuse it for
+        # anything the FILER could have prevented - a filed artefact refused on its footprint is
+        # not a fix.
+        #
+        # BG0511 narrowed this deliberately, and the narrowing is the point rather than a
+        # concession. The contract used to be "filed, therefore plannable", full stop, and that
+        # is precisely what let sixteen units reach a plannable backlog carrying criteria nobody
+        # could judge - five with no criteria at all, which `transition` then refused outright.
+        # The filer writes what the evidence supports: a criterion derived from the finding's own
+        # prose, or a stated absence when even that is unsupported. Neither is a criterion a
+        # reviewer can rule on, and both are the RIGHT thing to write at capture time.
+        #
+        # So the boundary now sits where the knowledge does. Footprint - `Affects`, `Points` -
+        # is known at filing and is refused at filing. Criteria are authored at grooming and are
+        # refused at planning. Two gates, each asking for something its caller can actually
+        # supply.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "bug")
@@ -700,8 +714,23 @@ class GroomingGateTests(unittest.TestCase):
             # the field is not just present - the planner's own parser reads it back
             self.assertEqual(sdlc_md.affects_files(text), ["src/thing.py", "src/other.py"])
             bd = self._breakdown(root, filed)
-            self.assertEqual(bd["ungroomed"], [], "the planner refused an artefact the filer wrote")
-            self.assertTrue(bd["ok"])
+            gaps = " ".join(bd["ungroomed"][0]["missing"]) if bd["ungroomed"] else ""
+            self.assertNotIn("Affects", gaps, "the planner refused the footprint the filer wrote")
+            self.assertNotIn("Points", gaps, "the planner refused the size the filer wrote")
+
+    def test_a_freshly_filed_finding_still_owes_its_criteria_at_plan_time(self) -> None:
+        """The other half of the narrowed contract, pinned so it cannot quietly revert. A filed
+        finding is capture; it is not yet plannable work. If this ever passes as groomed, the
+        census is back to admitting units nobody can judge - which is BG0511."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rc, _ = self._file(root, "--affects", "src/thing.py", "--points", "3")
+            self.assertEqual(rc, 0)
+            bd = self._breakdown(root, self._bugs(root)[0])
+            self.assertEqual([u["id"] for u in bd["ungroomed"]], ["BG0001"])
+            self.assertIn("Acceptance Criteria", " ".join(bd["ungroomed"][0]["missing"]))
+            self.assertFalse(bd["ok"])
 
     def test_an_affects_the_planner_cannot_read_is_refused(self) -> None:
         # The filer asks the PLANNER, so a value that is not a readable path list counts as no

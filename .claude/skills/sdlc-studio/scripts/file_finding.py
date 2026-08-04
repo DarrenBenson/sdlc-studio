@@ -194,10 +194,12 @@ _GROOM_FLAG = {
 
 
 def grooming_gaps(repo_root: Path | str, type_: str, text: str) -> tuple[list[str], bool]:
-    """What `sprint plan`'s breakdown gate would find missing on this artefact-to-be, and
-    whether the gate is blocking.
+    """What `sprint plan`'s breakdown gate would find missing on this artefact-to-be that the
+    CREATOR could have supplied, and whether the gate is blocking.
 
-    Judged by `sprint.breakdown` itself - the ONE definition of groomed - over the exact body
+    Judged by `sprint.breakdown` itself - the ONE definition of groomed - then narrowed to the
+    creation contract by dropping the criteria gaps, which are grooming debt rather than a
+    creation defect. Over the exact body
     that is about to be written, as a batch of one. `skip_personas`: a review seat's estimate is
     keyed by an id this artefact does not have yet, so the only size available to it is the one
     the author writes on it, which is precisely what is being asked for."""
@@ -209,14 +211,41 @@ def grooming_gaps(repo_root: Path | str, type_: str, text: str) -> tuple[list[st
         preview.write_text(text, encoding="utf-8")
         bd = sprint.breakdown(repo_root, [{"id": "PREVIEW", "type": type_,
                                            "path": str(preview)}], skip_personas=True)
-    missing = list(bd["ungroomed"][0]["missing"]) if bd["ungroomed"] else []
+    if not bd["ungroomed"]:
+        return [], bool(bd["blocking"])
+    row = bd["ungroomed"][0]
+    # CREATION is not PLANNING, and criteria are a GROOMING concern by definition - they are
+    # authored after the finding exists, which is why grooming is unpriced work in this model.
+    # This module writes what the evidence supports and no more: a criterion derived from the
+    # finding's own prose, or, when the evidence is too thin even for that, a stated absence.
+    # The planner now (correctly) refuses both shapes. Borrowing that verdict wholesale would
+    # make the filer refuse every finding it is capable of writing - including the ones filed
+    # mid-review, where capture matters more than polish and where losing the finding is the
+    # worse failure. So the creation gate keeps its original contract: the FOOTPRINT (Affects,
+    # Points), which the author does know at filing time. The criteria debt is real, it is owed
+    # at PLAN time, and `sprint breakdown` is where it is now collected.
+    # WHETHER to filter is decided by the reason CODE; WHICH gaps get dropped is still a prose
+    # match on a message `sprint` owns. That coupling is real and is stated rather than claimed
+    # away: rewording `sprint._AC_MISS` breaks this loudly (44 tests here go red), never
+    # silently, which is the property that makes it tolerable rather than a second authority.
+    # A NON-criteria gap is still refused here.
+    missing = list(row["missing"])
+    if row.get("ac_why"):
+        missing = [m for m in missing if not m.startswith("Acceptance Criteria")]
+    if not missing:
+        return [], bool(bd["blocking"])
     return missing, bool(bd["blocking"])
 
 
 def check_groomed(repo_root: Path | str, type_: str, text: str) -> None:
     """Refuse - BEFORE an id is allocated or a byte written - an artefact `sprint plan` would
-    then refuse to PLAN. Called from BOTH creation paths (the finding filer and `artifact new` /
-    `artifact batch`), so neither can mint a unit the other end of the pipeline rejects.
+    then refuse to PLAN ON ITS FOOTPRINT. Called from BOTH creation paths (the finding filer
+    and `artifact new` / `artifact batch`), so neither can mint a unit whose Affects or size
+    the other end of the pipeline rejects.
+
+    CRITERIA are deliberately outside this gate. A creator writes what the evidence
+    supports and criteria are authored later, at grooming, so `sprint breakdown` is where the
+    criteria debt is collected - see `grooming_gaps`.
 
     Under the recorded opt-out (`sprint.breakdown: judgement`) the creator warns instead of
     refusing, exactly as the gate reports instead of blocking - one decision, honoured at both
@@ -571,6 +600,65 @@ _CRITERION_FORM = {
 }
 _CRITERION_FALLBACK = "The recorded {field} is satisfied: {gist}"
 _GIST_MAX = 160
+
+
+def _derived_patterns() -> tuple[re.Pattern, ...]:
+    """A matcher for every criterion form this module writes, DERIVED from the forms themselves
+    so a form added to `_CRITERION_FORM` is recognised from the moment it is added.
+
+    Whole-form patterns, not prefixes. A prefix is what the first draft used, and
+    `_CRITERION_FALLBACK` ("The recorded {field} is satisfied: {gist}") degenerates to the
+    two-word prefix "The recorded" - which would have classified an authored criterion opening
+    "The recorded impact no longer follows" as tool-derived. A form whose placeholder comes
+    first degenerates to nothing at all, and would have matched everything or nothing depending
+    on which way the empty string was handled."""
+    pats = []
+    for form in (*_CRITERION_FORM.values(), _CRITERION_FALLBACK):
+        pats.append(re.compile("^" + "".join(
+            ".+?" if part.startswith("{") else re.escape(part)
+            for part in re.split(r"(\{[^}]*\})", form) if part)))
+    return tuple(pats)
+
+
+def is_derived_criterion(line: str) -> bool:
+    """True when a criterion line is one THIS MODULE wrote from a finding's prose, rather than
+    one an author wrote.
+
+    A derived criterion restates the finding: "The behaviour described is corrected: <the first
+    160 characters of the summary>". It is a placeholder that reads like content - it satisfies
+    every "has criteria" check in the repo while being unjudgeable, because nothing in it says
+    what passing looks like. Nine bugs reached a plannable batch in that state.
+
+    Matched against the whole form, read from `_CRITERION_FORM` rather than copied, so the
+    writer and the detector cannot drift apart."""
+    body = line.lstrip().lstrip("-*").lstrip()
+    for mark in ("[ ]", "[x]", "[X]"):
+        if body.startswith(mark):
+            body = body[len(mark):].lstrip()
+            break
+    body = body.replace("**", "").strip()
+    return any(pat.match(body) for pat in _derived_patterns())
+
+
+def criteria_are_all_derived(text: str) -> bool:
+    """True when a unit HAS criteria and every one of them is tool-derived.
+
+    False when it has none at all - that is a different state with a different fix, and the
+    caller is expected to ask `validate._has_criteria` for it. Reporting both through one
+    boolean is what let the two hide behind each other."""
+    _md = sdlc_md
+    lines, in_ac = [], False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_ac = "acceptance criteria" in line.lower()
+            continue
+        if not in_ac or not line.strip():
+            continue
+        if _md.UNGROOMED_AC_TOKEN in line or line.lstrip().startswith(">"):
+            continue
+        if line.lstrip()[:1] in ("-", "*") or _md.AC_HEADING_RE.match(line):
+            lines.append(line)
+    return bool(lines) and all(is_derived_criterion(ln) for ln in lines)
 
 
 def evidence_fields(type_: str) -> tuple[str, ...]:

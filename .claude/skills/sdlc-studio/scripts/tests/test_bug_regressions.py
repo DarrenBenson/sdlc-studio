@@ -41,9 +41,14 @@ class AffectsResolveGroomingTests(unittest.TestCase):
     will create), because a real change almost always touches at least one file that exists."""
 
     def _bug(self, root: Path, num: int, affects: str) -> dict:
+        # Criteria included so these tests isolate AFFECTS RESOLUTION, which is their subject.
+        # Without them the census (correctly, since BG0511) calls every fixture here ungroomed
+        # and the class stops testing the thing it is named for.
         _write(root / "sdlc-studio" / "bugs" / f"BG{num:04d}-x.md",
                f"# BG{num:04d}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
-               f"> **Affects:** {affects}\n> **Points:** 2\n")
+               f"> **Affects:** {affects}\n> **Points:** 2\n\n"
+               f"## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n"
+               f"- **Given** the recorded state\n- **Verify:** shell true\n")
         return {"id": f"BG{num:04d}", "type": "bug",
                 "path": str(root / "sdlc-studio" / "bugs" / f"BG{num:04d}-x.md")}
 

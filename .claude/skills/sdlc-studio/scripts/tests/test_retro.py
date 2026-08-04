@@ -2396,6 +2396,13 @@ GROOMED_BUG = """# BG{num}: a unit
 
 ## Summary
 A unit of work.
+
+## Acceptance Criteria
+
+### AC1: it behaves as recorded
+
+- **Given** the recorded state
+- **Verify:** shell true
 """
 
 

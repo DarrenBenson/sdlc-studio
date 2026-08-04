@@ -104,7 +104,7 @@ def _bug(root: Path, num: int, status: str = "Open", points: int = 2) -> None:
     f.write_text("", encoding="utf-8")
     _bug_path(root, num).write_text(
         f"# BG{num:04d}: b{num}\n\n> **Status:** {status}\n> **Severity:** Medium\n"
-        f"> **Affects:** src/bg{num:04d}.py\n> **Points:** {points}\n", encoding="utf-8")
+        f"> **Affects:** src/bg{num:04d}.py\n> **Points:** {points}\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
     idx = d / "_index.md"
     idx.write_text(idx.read_text(encoding="utf-8")
                    + f"| [BG{num:04d}](BG{num:04d}-x.md) | b{num} | {status} |\n",

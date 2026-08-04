@@ -1733,22 +1733,38 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         # or the bare `{{role}}/{{capability}}` scaffold - was certified GROOMED as long as it
         # declared files and a size. Four such stories and 15 points were planned into a sprint
         # on that green, in enforcing blocking mode, whose entire purpose is to refuse them.
-        # `conformance.story_is_ungroomed` already reads both shapes and already had this right;
-        # nothing asked it. Stories only: a bug or CR carries no user-story scaffold.
+        # `conformance.unit_is_ungroomed` already reads every shape and already had this right;
+        # nothing asked it. EVERY TYPE, not stories: the predecessor restricted this to stories
+        # because "a bug carries no user-story scaffold", which is true of the scaffold and false
+        # of the other two shapes - so five bugs with no criteria at all, and four more carrying
+        # only tool-derived text, were certified GROOMED by the very census whose job is to say
+        # whether a batch is worth planning. `transition` refused those same five outright.
         import conformance  # noqa: PLC0415 - deferred; one definition of "ungroomed", never a second
-        placeholder_ac = (it["type"] == "story" and _enforced("grooming.acs")
-                          and conformance.story_is_ungroomed(sdlc_md.read_text_safe(it["path"])))
+        ungroomed_ac, ac_why = (conformance.unit_is_ungroomed(
+            it["type"], sdlc_md.read_text_safe(it["path"]))
+            if _enforced("grooming.acs") else (False, ""))
+        _AC_MISS = {
+            "no-criteria": "Acceptance Criteria (none at all - a terminal status will refuse it)",
+            "placeholder": "Acceptance Criteria (still the grooming placeholder)",
+            "derived-only": "Acceptance Criteria (every one tool-derived from the finding's own "
+                            "prose - restates the summary, so nothing states what passing is)",
+        }
         missing = (([] if declared or not _enforced("grooming.affects") else ["Affects"])
                    + ([] if sized or not _enforced("grooming.points") else [size_field])
-                   + (["Acceptance Criteria (still the grooming placeholder)"]
-                      if placeholder_ac else []))
+                   + ([_AC_MISS[ac_why]] if ungroomed_ac else []))
         # All declared paths unresolvable = a fictional Affects. Named so the author can
         # fix the typo. Not applied when Affects is absent (that is the plainer "Affects" miss).
         if declared and len(unresolvable) == len(declared) and _enforced("grooming.affects"):
             missing = missing + [f"Affects (no declared path resolves: {', '.join(unresolvable)})"]
         if missing:
+            # `ac_why` is carried as a CODE beside the prose so a caller with a different
+            # contract can filter on it without string-matching the message. `file_finding`
+            # is that caller: it legitimately writes `derived-only` criteria, so refusing them
+            # at CREATION would make filing a finding impossible, while refusing them at
+            # PLANNING is the whole point. Two contracts, one definition, no second predicate.
             ungroomed.append({"id": it["id"], "type": it["type"], "path": it["path"],
-                              "missing": missing, "unresolvable": unresolvable})
+                              "missing": missing, "unresolvable": unresolvable,
+                              "ac_why": ac_why})
         elif points is not None and points > ceiling and _enforced("grooming.split"):
             # Only a POINTED unit can be over the split ceiling; a T-shirt Size has no number to
             # be above it. A legacy CR carrying points is judged by the same ceiling it always was.

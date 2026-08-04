@@ -75,14 +75,19 @@ def _bug(root: Path, num: int, status: str = "Open", points: int = 2,
     would test the gate rather than the boundary."""
     d = root / "sdlc-studio" / "bugs"
     d.mkdir(parents=True, exist_ok=True)
-    meta = ""
+    meta = ac = ""
     if groomed:
         f = root / f"src/bg{num:04d}.py"
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text("", encoding="utf-8")
         meta = f"> **Affects:** src/bg{num:04d}.py\n> **Points:** {points}\n"
+        # BG0511: groomed now means criteria too, for a bug as much as a story. Without this the
+        # fixture claims groomed and the census correctly disagrees, and every test here starts
+        # exercising the grooming gate instead of the boundary it is about.
+        ac = ("\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n"
+              "- **Given** the recorded state\n- **Verify:** shell true\n")
     (d / f"BG{num:04d}-x.md").write_text(
-        f"# BG{num:04d}: b{num}\n\n> **Status:** {status}\n> **Severity:** Medium\n{meta}",
+        f"# BG{num:04d}: b{num}\n\n> **Status:** {status}\n> **Severity:** Medium\n{meta}{ac}",
         encoding="utf-8")
     idx = d / "_index.md"
     if idx.is_file():

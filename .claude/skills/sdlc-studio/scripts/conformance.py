@@ -204,6 +204,53 @@ def story_is_ungroomed(text: str) -> bool:
     return not has_real_ac
 
 
+def unit_is_ungroomed(type_: str, text: str) -> tuple[bool, str]:
+    """Whether a unit of ANY type still owes grooming, and in one word why. THE one definition.
+
+    Three shapes, each with a different fix, so the reason is returned rather than folded into a
+    bare boolean:
+
+    - `no-criteria`   - no `## Acceptance Criteria` content at all. Asked of `validate._has_criteria`,
+      the SAME predicate `transition` consults, so the planner and the deliverer cannot disagree
+      about identical bytes - they did, and a batch was planned in which 21 of 58 points could
+      not reach a terminal status.
+    - `placeholder`   - the `refine` marker or the bare `{{...}}` scaffold, story-shaped.
+    - `derived-only`  - every criterion is one `file_finding` wrote from the finding's own prose.
+      This is the shape that reads like content and is not; it passed every check in the repo.
+
+    Type-agnostic on purpose. The predecessor asked only about stories, on the reasoning that
+    "a bug carries no user-story scaffold" - true of the scaffold, and false of the other two
+    shapes, which is how nine bugs reached a plannable batch unjudgeable."""
+    # SCOPED TO THE TYPES THE DELIVERER ASKS. `transition` demands criteria only where
+    # `executes_verifiers` holds - story and bug - so applying the demand to every type made the
+    # planner refuse what the deliverer admits, which is the same drift in the opposite
+    # direction. It refused 57 of 57 RFCs and 114 of 207 epics on this tree, with a message
+    # ("a terminal status will refuse it") that was false for all of them: `transition
+    # CR0001 -> Complete` succeeds. The criteria question is asked of exactly the types that
+    # answer for criteria.
+    if sdlc_md.executes_verifiers(type_):
+        try:
+            import validate as _validate  # noqa: PLC0415 - deferred; one predicate, never a second
+            has_criteria = _validate._has_criteria(text)
+        except Exception:  # noqa: BLE001 - matches the deliverer's own construct at
+            # `transition.py`: an unimportable validator leaves the demand unenforced rather than
+            # failing every batch. It IS a fail-open, and it is the same fail-open on both sides,
+            # which is the property that matters here - a guard the two ends disagree about is
+            # worse than one they are both missing.
+            has_criteria = True
+        if not has_criteria:
+            return True, "no-criteria"
+    if story_is_ungroomed(text):
+        return True, "placeholder"
+    # NOT wrapped in a bare except. The first draft was, and the import inside it failed - the
+    # leg was inert while every other test in the class passed, which is the shape this whole
+    # unit exists to catch. An unimportable writer is a broken install, not a groomed batch.
+    import file_finding as _ff  # noqa: PLC0415 - the writer owns the shape it writes
+    if _ff.criteria_are_all_derived(text):
+        return True, "derived-only"
+    return False, ""
+
+
 def carry_forward_covers(root, review, findings) -> bool:
     """EP0113: under the carry-forward policy a sprint-level REJECT does not block the close,
     provided every finding is filed or explicitly waived. Returns True when the REJECT is
