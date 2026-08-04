@@ -3849,6 +3849,32 @@ class CorpusReadOnceTests(unittest.TestCase):
                         f"reads grew {ratio:.1f}x when the corpus doubled - that is per-unit "
                         f"reading, not per-run")
 
+    def test_the_PRODUCTION_sweep_holds_the_cache_open(self) -> None:
+        """BG0419 AC4. Every test above builds its OWN sweep and opens `corpus_cache()` inside
+        the fixture, so they prove the cache works and never that `reconcile.detect_all` uses
+        it. Replacing the `with sdlc_md.corpus_cache():` in `detect_all` with a null context
+        left all eleven of them passing - the production wrapper was unpinned for its whole
+        life, which is the mechanism-with-no-caller shape one level up: the caller is what was
+        untested, not the mechanism.
+
+        This drives `detect_all` itself and holds it to a read count that only the cache can
+        meet.
+
+        MUTANT: replace `with sdlc_md.corpus_cache():` in `reconcile.detect_all` with a null
+        context. This test must redden; none of its siblings can."""
+        import reconcile
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root, 30)
+            reads = self._count_reads(lambda: reconcile.detect_all(root))
+        # MEASURED, not guessed. Over these 31 artefacts `detect_all` reads 157 files with the
+        # cache held open and 283 with it neutered - about 5x the corpus against about 9x. The
+        # ceiling sits between the two, so it discriminates; a looser one passes both and pins
+        # nothing, which is how the first draft of this very test survived its own mutant.
+        self.assertLess(reads, 31 * 7,
+                        f"{reads} reads over 31 artefacts - `detect_all` is not holding the "
+                        f"corpus cache open, so every detector re-reads the tree")
+
     def test_the_sweep_fixture_ISSUES_a_lookup_per_unit(self) -> None:
         """BG0456. The precondition the ratio pin above silently depends on, asserted directly.
 

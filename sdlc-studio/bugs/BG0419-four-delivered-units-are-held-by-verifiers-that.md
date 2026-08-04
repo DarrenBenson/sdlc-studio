@@ -58,7 +58,7 @@ The common cause is one sentence: **each test asserts the pure helper, or the po
     postcondition - which also holds when every write is attempted and every write fails
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::InertVerifierRepairTests::test_no_write_is_attempted_not_merely_that_none_landed
 
-- [ ] **AC4: US0532's sweep scales its lookups with the unit count, so its threshold discriminates.**
+- [x] **AC4: US0532's sweep scales its lookups with the unit count, so its threshold discriminates.**
   - **Then** removing the corpus cache reddens it, where today the harness makes a fixed twelve
     lookups regardless of workspace size and then discards the only discriminating signal by
     taking a ratio - 1.95 both ways
@@ -120,6 +120,21 @@ One defect in the first draft of that test, found by running it: the fixture's l
 carried a run id the close did not use, so the close correctly reported UNMEASURED and the test
 asserted against a figure computed from a different id. It was passing on the wrong evidence
 before it was corrected to fail on the right one.
+
+**AC4 is delivered, and the defect was sharper than filed.** The eleven existing tests each
+build their OWN sweep and open `corpus_cache()` inside the fixture, so they prove the cache
+works and never that `reconcile.detect_all` uses it. That is why neutering the production
+wrapper left all eleven passing: the mechanism was tested and its CALLER was not, which is the
+no-caller shape one level up.
+
+`test_the_PRODUCTION_sweep_holds_the_cache_open` drives `detect_all` itself. Its ceiling is
+MEASURED rather than guessed - over 31 artefacts the sweep reads 157 files with the cache held
+open and 283 with it neutered, about 5x the corpus against about 9x - so the ceiling sits
+between the two and discriminates. The first draft used a looser bound and SURVIVED its own
+mutant, which is the same defect this unit exists to repair, caught in the repair itself before
+it shipped.
+
+Re-running the named mutant: **KILLED**, where it previously left all eleven passing.
 
 **What this establishes for the repair.** Three of the four verifiers this unit exists to fix are
 confirmed unable to fail, on the current tree, by execution rather than by the filed report - so
