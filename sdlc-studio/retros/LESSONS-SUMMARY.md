@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0295: Two readers of one file will disagree eventually, and the second one is written by whoever did not know the first existed.**
+- **L-0294: A ceiling you guessed is a ceiling that passes both cases.**
+- **L-0293: A postcondition cannot express an ordering.**
+- **L-0292: A test that opens the mechanism itself proves the mechanism and never its CALLER.**
 - **L-0291: **A guard reddening a fixture is evidence about the fixture as often as about the guard.** Seven rolling tests went red because they never...**
 - **L-0290: **Fixing the row an operator does not read is not fixing it.** `US0624` changed a checklist resolver while the preflight - the command an...**
 - **L-0289: **A matching rule that is convenient is a gate that is optional.** The repair record's closure-to-finding match was bidirectional substring...**
