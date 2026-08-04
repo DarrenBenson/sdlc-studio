@@ -1,6 +1,6 @@
 # BG0513: run-suite.sh all is intermittently red: the tools suite takes 4.5x longer inside the full runner than alone, and one test fails when it does
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Verification depth:** functional

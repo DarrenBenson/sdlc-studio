@@ -307,6 +307,30 @@ class SuiteVerdictFailOpenTests(unittest.TestCase):
             "the green suite verdict is recorded before the tool-tests lane has run, so a "
             "failing tool lane still writes `status green` and the retry reuses it")
 
+    def test_nothing_that_can_still_set_fail_sits_below_the_verdict_write(self) -> None:
+        """MUTANT: append any `fail=1` assignment after the `--record-suite-verdict` block.
+
+        The general rule, rather than the third instance of it. BG0423 wrote the verdict
+        unconditionally, BG0489 wrote it between the lanes, BG0507 wrote it above the scope
+        check - three findings, one shape: something could still set `fail` after the verdict
+        was on disk, so a blocked commit left a reusable green behind.
+
+        The executing tests pin the three doors that were actually found. This pins the
+        PROPERTY, so door four fails here when it is written rather than when it is exploited -
+        an enumeration of a rule is a lower bound, not a boundary (LL0043).
+        """
+        text = self.HOOK.read_text(encoding="utf-8")
+        verdict = text.index("--record-suite-verdict")
+        after = text[verdict:]
+        offenders = [ln.strip() for ln in after.splitlines()
+                     if "fail=1" in ln and not ln.strip().startswith("#")]
+        self.assertEqual(
+            offenders, [],
+            "these lines can still set `fail` AFTER the suite verdict has been written, so a "
+            "commit they block leaves a reusable green verdict at that HEAD and the "
+            f"byte-identical retry skips the suites: {offenders}. The verdict must be the LAST "
+            "thing a passing hook does - move the write below them.")
+
     def test_a_failing_tool_lane_also_leaves_its_output_behind(self) -> None:
         """MUTANT: drop the tool lane's log capture.
 

@@ -3,7 +3,8 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 2
-> **Affects:** .githooks/commit-msg, tools/tests/test_commit_msg_hook.py
+> **Verification depth:** functional
+> **Affects:** .githooks/commit-msg, tools/tests/test_commit_msg_hook.py, tools/tests/test_precommit_lane_order.py
 > **Evidence:** Found by the independent boundary review of BG0489 (RUN-01KZ3V4D), demonstrated by execution against the shipped hook with a stubbed collapsing gate_timing.py: the hook exits 1 AND sdlc-studio/.local/gate-suite-verdict.json holds status green. The hook is byte-identical at the run base ref 130898ae, so this predates the run.
 > **Created:** 2026-08-03
 > **Created-by:** sdlc-studio file
@@ -29,11 +30,11 @@ Move the verdict write below the collapse check too, or make the collapse set `f
 
 ## Acceptance Criteria
 
-- [ ] Executing `.githooks/commit-msg` with a `gate_timing.py` stub that reports a collapse (rc 3) leaves NO green verdict at that HEAD. Today the hook exits 1 and `sdlc-studio/.local/gate-suite-verdict.json` still holds `status: green`; after the fix the record is absent or not-green, checked by reading the file the next `pre-commit` would read
-- [ ] The byte-identical retry re-runs the suites rather than skipping them. Demonstrated end-to-end - collapse, retry, observe the suites execute - not by asserting on source order, because source order is what the current defect already satisfies
-- [ ] The mutant is the ordering: restoring the write to its position above the collapse check reddens the new test. Named before the test is written, and applied to prove it
-- [ ] BG0489's failing-lane test passes unchanged, so the third door is closed without reopening either of the first two
-- [ ] The verdict write is the last act of a passing hook by construction, not by inspection: any check that can still set `fail` sits above it, and the test that pins this fails if a new check is appended below
+- [x] Executing `.githooks/commit-msg` with a `gate_timing.py` stub that reports a collapse (rc 3) leaves NO green verdict at that HEAD. Today the hook exits 1 and `sdlc-studio/.local/gate-suite-verdict.json` still holds `status: green`; after the fix the record is absent or not-green, checked by reading the file the next `pre-commit` would read
+- [x] The byte-identical retry re-runs the suites rather than skipping them. Demonstrated end-to-end - collapse, retry, observe the suites execute - not by asserting on source order, because source order is what the current defect already satisfies
+- [x] The mutant is the ordering: restoring the write to its position above the collapse check reddens the new test. Named before the test is written, and applied to prove it
+- [x] BG0489's failing-lane test passes unchanged, so the third door is closed without reopening either of the first two
+- [x] The verdict write is the last act of a passing hook by construction, not by inspection: any check that can still set `fail` sits above it, and the test that pins this fails if a new check is appended below
 
 ## Impact
 

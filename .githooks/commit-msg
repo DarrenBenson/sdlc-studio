@@ -303,20 +303,6 @@ if [ "$fail" -ne 0 ] && [ "${skill_fail:-0}" -eq 0 ]; then
   printf '%s\n' "$last_run_out" > sdlc-studio/.local/gate-suite-last.log 2>/dev/null || true
   printf '  %ssuite output saved to sdlc-studio/.local/gate-suite-last.log%s\n' "$Y" "$N" >&2
 fi
-# Record the green so a later commit over an unchanged surface can reuse it. Without this call
-# no verdict is ever written, read_suite_verdict is always None, and the skip branch is
-# unreachable in production however well it is tested.
-#
-# ONLY when BOTH lanes passed, and therefore only HERE, below both. This ran unconditionally
-# once, so a FAILING skill lane still wrote `status green`; moving it under `$fail` fixed that
-# half but left it sitting BETWEEN the lanes, where `fail` still carried only the skill lane's
-# verdict - so a green skill lane beside a failing tool lane wrote `status green` just the same,
-# and the byte-identical retry reused it and ran no tests. That is the fail-open this guard
-# exists to close, and it is closed by the placement as much as by the condition.
-if [ "$fail" -eq 0 ]; then
-  python3 "$skill/gate.py" --root . --record-suite-verdict "$(git rev-parse HEAD 2>/dev/null || echo pending)" \
-    --status green --verdict-mode "$([ -n "$selectors" ] && echo selected || echo full)" 2>/dev/null || true
-fi
 tool_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
 printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
 # Both lanes together are what a code commit pays for, so the scope check reads their sum.
@@ -375,6 +361,29 @@ else
   # Said out loud, never silent: a skipped recording that looks like a normal commit is how
   # the series quietly stops meaning anything.
   [ -n "$scope_note" ] && printf '  %s%s%s\n' "$Y" "$scope_note" "$N"
+fi
+
+# Record the green so a later commit over an unchanged surface can reuse it. Without this call
+# no verdict is ever written, read_suite_verdict is always None, and the skip branch is
+# unreachable in production however well it is tested.
+#
+# ONLY when BOTH lanes passed, and therefore only HERE - BELOW EVERYTHING THAT CAN STILL SET
+# `fail`. This ran unconditionally once, so a FAILING skill lane still wrote `status green`;
+# moving it under `$fail` fixed that half but left it BETWEEN the lanes, where `fail` carried
+# only the skill lane's verdict, so a green skill lane beside a failing tool lane wrote green
+# just the same. That was BG0489. It then sat ABOVE the scope check, which is the third door
+# (BG0507): a suite that had COLLAPSED - far fewer tests run than the surface demands - blocked
+# the commit on `scope_rc` 3 and still left `status green` at that HEAD, and because pre-commit
+# skips the suites when a current green verdict covers the surface, the byte-identical retry
+# landed the collapsed suite.
+#
+# The rule that closes all three, and the one to keep: the verdict is the LAST thing a passing
+# hook does. Anything that can still set `fail` belongs above this block. Placement is the
+# guard here as much as the condition is, which is why it is pinned by executing the hook
+# rather than by reading its source - a source-order grep was green on two of these shapes.
+if [ "$fail" -eq 0 ]; then
+  python3 "$skill/gate.py" --root . --record-suite-verdict "$(git rev-parse HEAD 2>/dev/null || echo pending)" \
+    --status green --verdict-mode "$([ -n "$selectors" ] && echo selected || echo full)" 2>/dev/null || true
 fi
 
 if [ "$fail" -ne 0 ]; then
