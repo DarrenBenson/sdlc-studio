@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0299: A file-disjoint unit is not necessarily an independent one.**
+- **L-0298: A mutant that removes ONE of two sufficient fixes measures less than it appears to.**
+- **L-0297: A stub is not the shipped entry point.**
+- **L-0296: Satisfying a gate is not the same as satisfying the criterion, and when the two pull apart the criterion wins.**
 - **L-0295: Two readers of one file will disagree eventually, and the second one is written by whoever did not know the first existed.**
 - **L-0294: A ceiling you guessed is a ceiling that passes both cases.**
 - **L-0293: A postcondition cannot express an ordering.**
