@@ -9283,14 +9283,27 @@ def cmd_call(args: argparse.Namespace) -> int:
         print(f"  descoped {u['id']} ({u['status']}) - back in the backlog, unchanged")
     print(f"  {res['detail']}")
     # AC1 is the whole distinction from `stop`: a called sprint is CLOSED against its goal, not
-    # abandoned. Printing an instruction and returning 0 left the run open and the criterion
-    # unmet - and the independent review caught it. The close chain runs here, with this
-    # command's own arguments, so `call` finishes what it started.
-    args.retro = getattr(args, "retro", None)
-    args.apply_signoff = getattr(args, "apply_signoff", False)
-    args.principal = getattr(args, "principal", None)
+    # abandoned.
+    #
+    # RE-ENTERED THROUGH `main`, never by handing `cmd_close` this command's namespace. The
+    # second review round caught exactly that: `cmd_close` reads `args.goal_verdict` and
+    # `args.note` directly, `call` defines neither, and every invocation that reached the close
+    # died on an AttributeError - a verb that could not execute at all, green through the suite,
+    # `verify_ac` and the gate. Building an argv makes argparse supply every default, so the
+    # close cannot depend on which caller assembled the namespace. `_boundary_close_down` has
+    # delegated this way since the rolling cycle shipped; this now does the same.
+    argv = ["close", "--root", str(args.root)]
+    if getattr(args, "retro", None):
+        argv += ["--retro", args.retro]
+    if getattr(args, "apply_signoff", False):
+        argv.append("--apply-signoff")
+    if getattr(args, "principal", None):
+        argv += ["--principal", args.principal]
+    if getattr(args, "goal_verdict", None):
+        argv += ["--goal-verdict", args.goal_verdict,
+                 "--note", getattr(args, "note", "") or ""]
     print("  closing against the Sprint Goal - `call` finishes the run, it does not abandon it")
-    return cmd_close(args)
+    return main(argv)
 
 
 def cmd_queue(args: argparse.Namespace) -> int:
@@ -9544,6 +9557,10 @@ def build_parser() -> argparse.ArgumentParser:
     cl.add_argument("--apply-signoff", action="store_true",
                     help="fan a recorded reviewer-of-record approval into per-unit sign-offs")
     cl.add_argument("--principal", default=None, help="the reviewer of record, for --apply-signoff")
+    # Forwarded to the close, so its own messages do not name flags this verb rejects.
+    cl.add_argument("--goal-verdict", choices=("achieved", "partial", "missed"), default=None,
+                    help="judge the Sprint Goal in the same act, as `sprint close` accepts it")
+    cl.add_argument("--note", default=None, help="the reasoning behind --goal-verdict")
     cl.add_argument("--root", default=".", help="Repo root (default: .)")
     cl.set_defaults(func=cmd_call)
 

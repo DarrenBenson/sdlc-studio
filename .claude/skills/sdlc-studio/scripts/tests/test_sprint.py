@@ -13600,6 +13600,51 @@ class CallItHereTests(unittest.TestCase):
                                           "run-state.json").read_text(encoding="utf-8"))["batch"]],
                              ["BG0001"], "the descoped unit did not leave the approved batch")
 
+    def test_call_REACHES_THE_REAL_CLOSE_without_stubbing_it(self) -> None:
+        """The test that would have caught what round 2 rejected, and the one I did not write.
+
+        Round 1's repair wired `cmd_close(args)` and its verifier STUBBED `cmd_close` - so it
+        proved the close was CALLED and could not see that it exploded. `cmd_close` reads
+        `args.goal_verdict` and `args.note` directly, `call` defined neither, and every
+        invocation that reached the close died on an AttributeError. Green through the suite,
+        `verify_ac`, the lane-check and the gate, over a verb that could not run.
+
+        So this drives the real thing: no stub, no patch, `main` end to end. It does not assert
+        the close SUCCEEDS - a fixture has no retro and the close is entitled to refuse - it
+        asserts the close was REACHED and returned an exit code rather than a traceback. That
+        distinction is the whole finding.
+
+        MUTANT: hand `cmd_close` this command's namespace instead of re-entering through `main`
+        with a built argv. This test must redden."""
+        sprint = _load()
+        for argv_extra in ([], ["--retro", "RETRO9001"]):
+            with self.subTest(extra=argv_extra), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._bug(root, "BG0001", status="Fixed")
+                self._bug(root, "BG0002", status="Open")
+                self._run(root, ["BG0001", "BG0002"])
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                    try:
+                        rc = sprint.main(["call", "--reason", "out of appetite",
+                                          "--root", str(root), *argv_extra])
+                    except Exception as exc:            # noqa: BLE001 - the finding IS the crash
+                        self.fail(f"`sprint call` raised {type(exc).__name__}: {exc}. The close "
+                                  f"must be REACHED with a namespace it can read - a verb that "
+                                  f"tracebacks is not a verb that closes.")
+                printed = out.getvalue()
+                # ANY exit code the close itself produces is fine - 0 closed, 1 stopped at a
+                # step, 2 refused a prerequisite. The assertion is that the verb REACHED the
+                # close and got an answer from it, not that a bare fixture can satisfy a close.
+                self.assertIn(rc, (0, 1, 2), f"unexpected exit {rc}: {printed[:400]}")
+                self.assertIn("closing against the Sprint Goal", printed,
+                              "the close was never reached")
+                # It got INTO the chain: the close either ran its steps or refused on its own
+                # terms, rather than dying on the namespace it was handed.
+                self.assertTrue(
+                    any(m in printed for m in ("close ", "retro", "pre-flight", "scaffold")),
+                    f"nothing in the output shows the close chain ran: {printed[:400]}")
+
     def test_call_RUNS_THE_CLOSE_it_does_not_merely_advise_one(self) -> None:
         """AC1's load-bearing half, and the one the first delivery missed. `call` FINISHES a run:
         the close chain runs. The first version descoped, printed `now close it against the
