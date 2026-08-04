@@ -9519,7 +9519,9 @@ def build_parser() -> argparse.ArgumentParser:
     cl = sub.add_parser("call",
                         help="Call the sprint at this point: descope the unstarted remainder "
                              "back to the BACKLOG and close honestly against the goal. Unlike "
-                             "`stop`, which abandons a run, this finishes one.")
+                             "`stop`, which abandons a run, this finishes one. Part of the "
+                             "charter queue lifecycle - the remainder returns to the backlog "
+                             "for a later charter, never forward to the next one.")
     cl.add_argument("--reason", required=True,
                     help="why it is being called - a descope nobody explained is "
                          "indistinguishable from work that was forgotten")
