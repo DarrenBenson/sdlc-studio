@@ -1233,6 +1233,59 @@ def _section_text(text: str, heading: str) -> str:
 _RANK_FIELD = "Queue rank"
 
 
+def call_it_here(repo_root: Path | str, reason: str) -> dict:
+    """Call the sprint at this point: descope the unstarted remainder and close HONESTLY.
+
+    The distinction from `stop` is the whole unit. `stop` ABANDONS a run - it did not reach its
+    goal and says so. `call` finishes one: what was delivered is judged against the Sprint Goal
+    and the close paperwork runs, while the units nobody started leave the batch.
+
+    The remainder goes back to the BACKLOG, not forward to the next charter. Attaching it to the
+    following charter would couple two sprints - the next run would inherit a batch it never
+    approved, which is the thing the single-slot rule and the approved-batch record exist to
+    prevent. Back in the backlog, the next charter's scope query picks the units up if they
+    still match, and does not if they no longer do. That is the same late-materialising rule the
+    queue is built on, applied to the tail of a run.
+
+    Each descoped unit keeps its own status untouched: `drop_from_batch` judges THIS BATCH, not
+    the work. A unit that was Ready is still Ready, and nothing marks it as having failed.
+    """
+    root = Path(repo_root)
+    if not str(reason or "").strip():
+        raise ValueError(
+            "calling the sprint needs a reason - the same reason `batch drop` already "
+            "requires, because a descope nobody explained is indistinguishable from work "
+            "that was forgotten")
+    state = run_state.read(root) or {}
+    if (state.get("outcome") or "").strip().lower() != "running":
+        raise ValueError("no run is open to call")
+    batch = [sdlc_md.norm_id(u) for u in (state.get("batch") or [])]
+    unstarted, delivered = [], []
+    for uid in batch:
+        found = sdlc_md.find_by_id(root, uid)
+        if not found:
+            unstarted.append({"id": uid, "status": "unresolved"})
+            continue
+        path, type_ = found[0], found[1]
+        text = sdlc_md.read_text_safe(path) or ""
+        status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
+                                          sdlc_md.status_vocab(type_, root)) or ""
+        # The DELIVERED test is the handoff's own: terminal by the type's vocabulary. A unit
+        # that is terminal-but-not-delivered (Won't Fix) is not descoped by a call - it was
+        # already decided, and re-dropping it would rewrite a decision somebody made.
+        if status and status in sdlc_md.terminal_statuses(type_):
+            delivered.append(uid)
+        else:
+            unstarted.append({"id": uid, "status": status or "unknown"})
+    for u in unstarted:
+        run_state.drop_from_batch(root, u["id"], f"called at this point: {reason.strip()}")
+    return {"called": True, "reason": reason.strip(), "delivered": delivered,
+            "descoped": unstarted, "run_id": state.get("run_id"),
+            "detail": (f"called at {len(delivered)} delivered, {len(unstarted)} descoped. The "
+                       f"remainder returns to the BACKLOG at its own status - not to the next "
+                       f"charter, which would couple two sprints.")}
+
+
 def charter_review(text: str) -> list:
     """The seat verdicts recorded ON a charter, as [{seat, verdict, note}].
 
@@ -9217,6 +9270,22 @@ def cmd_decision(args) -> int:
     return 0
 
 
+def cmd_call(args: argparse.Namespace) -> int:
+    """Call the sprint at this point - descope the remainder, then close honestly."""
+    try:
+        res = call_it_here(args.root, args.reason)
+    except (ValueError, run_state.RunStateError) as exc:
+        print(f"sprint call refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"called {res['run_id']}: {len(res['delivered'])} delivered, "
+          f"{len(res['descoped'])} descoped")
+    for u in res["descoped"]:
+        print(f"  descoped {u['id']} ({u['status']}) - back in the backlog, unchanged")
+    print(f"  {res['detail']}")
+    print(f"  now close it against the goal: sprint.py close --retro RETROxxxx")
+    return 0
+
+
 def cmd_queue(args: argparse.Namespace) -> int:
     """Inspect and edit the charter queue."""
     try:
@@ -9446,6 +9515,16 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--format", choices=("text", "json"), default="text")
     r.add_argument("--root", default=".", help="Repo root (default: .)")
     r.set_defaults(func=cmd_report)
+
+    cl = sub.add_parser("call",
+                        help="Call the sprint at this point: descope the unstarted remainder "
+                             "back to the BACKLOG and close honestly against the goal. Unlike "
+                             "`stop`, which abandons a run, this finishes one.")
+    cl.add_argument("--reason", required=True,
+                    help="why it is being called - a descope nobody explained is "
+                         "indistinguishable from work that was forgotten")
+    cl.add_argument("--root", default=".", help="Repo root (default: .)")
+    cl.set_defaults(func=cmd_call)
 
     q = sub.add_parser("queue", help="Inspect and edit the sprint charter queue.")
     qs = q.add_subparsers(dest="qcmd", required=True)

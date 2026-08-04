@@ -13557,5 +13557,124 @@ class CharterReviewTests(unittest.TestCase):
                           "the CLI did not report that reviewer and runner matched")
 
 
+class CallItHereTests(unittest.TestCase):
+    """US0491. `stop` ABANDONS a run - it did not reach its goal and says so. `call` FINISHES
+    one: what was delivered is judged against the Sprint Goal, and the units nobody started
+    leave the batch and go back to the BACKLOG.
+
+    MUTANTS:
+      1. drop the reason requirement -> a descope nobody explained.
+      2. attach the remainder to the next charter -> two sprints coupled.
+      3. change a descoped unit's own status -> the work is judged, not the batch.
+    """
+
+    def _run(self, root, batch):
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps({"run_id": "RUN-CALL", "outcome": "running", "batch": batch,
+                        "sprint_goal": "a goal", "started_at": "2026-08-04T09:00:00Z"}),
+            encoding="utf-8")
+
+    def _bug(self, root, bid, status="Open"):
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / f"{bid}.py").write_text("", encoding="utf-8")
+        (d / f"{bid}-x.md").write_text(
+            f"# {bid}: b\n\n> **Status:** {status}\n> **Severity:** Medium\n> **Points:** 2\n"
+            f"> **Affects:** src/{bid}.py\n\n## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+            f"- **Given** a thing\n- **Verify:** shell true\n", encoding="utf-8")
+
+    def test_calling_the_sprint_closes_it_against_the_goal(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, "BG0001", status="Fixed")     # delivered
+            self._bug(root, "BG0002", status="Open")      # never started
+            self._run(root, ["BG0001", "BG0002"])
+            res = sprint.call_it_here(root, "the remaining work needs a design decision")
+            self.assertEqual(res["delivered"], ["BG0001"])
+            self.assertEqual([u["id"] for u in res["descoped"]], ["BG0002"])
+            # the run is still OPEN and closeable - call does not abandon it the way stop does
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+            self.assertEqual(state["outcome"], "running",
+                             "call must leave the run closeable against its goal, not abandon it")
+            self.assertEqual([sprint.sdlc_md.norm_id(u) for u in state["batch"]], ["BG0001"],
+                             "the descoped unit did not leave the approved batch")
+
+    def test_a_descope_without_a_reason_is_refused(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, "BG0001")
+            self._run(root, ["BG0001"])
+            for empty in ("", "   "):
+                with self.assertRaises(ValueError) as caught:
+                    sprint.call_it_here(root, empty)
+                self.assertIn("needs a reason", str(caught.exception))
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+            self.assertEqual([sprint.sdlc_md.norm_id(u) for u in state["batch"]], ["BG0001"],
+                             "a refused call still changed the batch")
+
+    def test_descoped_units_return_to_the_backlog_uncoupled(self) -> None:
+        """AC3, and the design decision inside it: the remainder goes BACKWARD to the backlog,
+        never forward to the next charter. Attaching it forward would make the next run inherit
+        a batch it never approved."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "charters").mkdir(parents=True)
+            (root / "sdlc-studio" / "charters" / "SC0001-x.md").write_text(
+                "# SC0001: the next run\n\n> **Status:** Queued\n"
+                "> **Scope query:** --bugs Open\n\n## Sprint Goal\n\ng\n\n"
+                "## Scope rule\n\ns\n\n## Seat review\n\n_Not yet reviewed._\n",
+                encoding="utf-8")
+            self._bug(root, "BG0002", status="Open")
+            self._run(root, ["BG0002"])
+            sprint.call_it_here(root, "out of appetite")
+            # its own status is UNTOUCHED - drop judges the batch, not the work
+            body = (root / "sdlc-studio" / "bugs" / "BG0002-x.md").read_text(encoding="utf-8")
+            self.assertIn("> **Status:** Open", body,
+                          "the descoped unit's own status was changed - a call judges the "
+                          "batch, not the work")
+            # and NOTHING attached it to the following charter
+            charter = (root / "sdlc-studio" / "charters" / "SC0001-x.md").read_text(
+                encoding="utf-8")
+            self.assertNotIn("BG0002", charter,
+                             "the remainder was coupled to the next charter - the next run "
+                             "would inherit a batch it never approved")
+            # It is simply in the backlog again, where the NEXT charter's scope will reach it
+            # if it still matches. Asserted against the selector the charter would use rather
+            # than through `next`, which correctly refuses while this run is still open - the
+            # claim is about the unit's availability, not about being able to start a second
+            # run before finishing the first.
+            selected = [u["id"] for u in sprint.select_batches(
+                root, [("bug", "Open")], skip_personas=True)]
+            self.assertIn("BG0002", selected,
+                          "the descoped unit is not back in the backlog for a later charter")
+
+    def test_call_reaches_the_SHIPPED_ENTRY_POINT(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, "BG0001", status="Fixed")
+            self._bug(root, "BG0002", status="Open")
+            self._run(root, ["BG0001", "BG0002"])
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                rc = sprint.main(["call", "--reason", "out of appetite", "--root", str(root)])
+            printed = out.getvalue()
+            self.assertEqual(rc, 0, printed)
+            self.assertIn("BG0002", printed, "the CLI never named what it descoped")
+            self.assertIn("back in the backlog", printed)
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = sprint.main(["call", "--reason", "   ", "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("needs a reason", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -309,6 +309,9 @@ python3 <skill>/scripts/sprint.py next --runner "<who>"
 # see the queue, and what the HEAD resolves to against the backlog right now
 python3 <skill>/scripts/sprint.py queue show
 
+# call the sprint at this point: descope the remainder BACK to the backlog, then close
+python3 <skill>/scripts/sprint.py call --reason "<why the rest is not being done>"
+
 # correct a plan somebody wrote: rank one to the head, withdraw one, or clear the lot
 python3 <skill>/scripts/sprint.py queue reorder --charter SC0002 --rank 1
 python3 <skill>/scripts/sprint.py queue cancel --charter SC0003 --reason "<why>"
@@ -318,6 +321,13 @@ python3 <skill>/scripts/sprint.py queue clear --reason "<why>"
 Only the HEAD is resolved by `queue show`. Resolving every charter would be arithmetic over a
 backlog the earlier runs will have changed before the later charters are reached - a number that
 looks precise and is not.
+
+`call` and `stop` are different acts. `stop` ABANDONS a run - it did not reach its goal and
+says so. `call` FINISHES one: what was delivered is judged against the Sprint Goal, the close
+paperwork runs, and the units nobody started leave the batch. The remainder returns to the
+BACKLOG, never forward to the next charter - attaching it forward would make the next run
+inherit a batch it never approved. Each descoped unit keeps its own status, because a drop
+judges THIS BATCH and not the work.
 
 A charter's goal review lives ON the charter, under `## Seat review`, not in `.local/`. Local
 state does not travel: a charter pulled into another working copy must arrive carrying the review
