@@ -1,6 +1,6 @@
 # BG0485: the goal-review panel maps a seat's no to partial, and fans a whole-goal answer across every clause
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

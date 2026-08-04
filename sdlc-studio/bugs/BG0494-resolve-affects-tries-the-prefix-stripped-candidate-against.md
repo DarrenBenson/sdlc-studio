@@ -1,6 +1,6 @@
 # BG0494: resolve_affects tries the prefix-stripped candidate against the repo root first, so a consuming project's own file wins
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood

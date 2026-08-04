@@ -1,6 +1,6 @@
 # BG0506: a repeated single-valued metadata field is accepted, read first-wins, and corrected first-only - so a gate can read one of two contradictory claims
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, sdlc-studio/change-requests/CR0138-mixed-batch-sprint-tranches-bugs-plus-crs-first-class.md, sdlc-studio/change-requests/CR0218-the-converged-seat-home-retire-amigos-precedence-one.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
@@ -9,6 +9,7 @@
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
 > **Raised-in-batch:** none open - raised outside a delivery batch
+> **Verification depth:** functional
 
 ## Summary
 

@@ -1,6 +1,6 @@
 # BG0477: refine mints stories nothing can plan: placeholder acceptance criteria, unfilled user-story fields, and a persona that is no seat
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Verification depth:** functional

@@ -1,6 +1,6 @@
 # US0467: status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0440
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
