@@ -13296,5 +13296,151 @@ class SprintNextTests(unittest.TestCase):
             self.assertIn(expect, str(caught.exception))
 
 
+class QueueCrudTests(unittest.TestCase):
+    """US0489. A queue somebody planned five runs ago must be correctable without hand-editing
+    state or throwing the whole thing away.
+
+    MUTANTS:
+      1. sort unranked charters BEFORE ranked ones -> an unranked charter jumps the queue.
+      2. drop the membership check from cancel/reorder -> an operation succeeds over nothing.
+      3. resolve the head once and cache it -> AC3's recomputation is frozen.
+    """
+
+    def _charter(self, root, cid, query="--bugs Open", rank=None, status="Queued"):
+        d = root / "sdlc-studio" / "charters"
+        d.mkdir(parents=True, exist_ok=True)
+        rk = f"> **Queue rank:** {rank}\n" if rank is not None else ""
+        (d / f"{cid}-x.md").write_text(
+            f"# {cid}: charter {cid}\n\n> **Status:** {status}\n> **Appetite:** 480min/8units\n"
+            f"> **Scope query:** {query}\n{rk}\n## Sprint Goal\n\ngoal of {cid}\n\n"
+            f"## Scope rule\n\nprose for {cid}\n", encoding="utf-8")
+        idx = d / "_index.md"
+        if not idx.exists():
+            idx.write_text("# Sprint Charter Queue\n\n| ID | Title | Status |\n| --- | --- | --- |\n",
+                           encoding="utf-8")
+        idx.write_text(idx.read_text(encoding="utf-8") + f"| [{cid}]({cid}-x.md) | c | {status} |\n",
+                       encoding="utf-8")
+
+    def _bug(self, root, bid, status="Open"):
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / f"{bid}.py").write_text("", encoding="utf-8")
+        (d / f"{bid}-x.md").write_text(
+            f"# {bid}: b\n\n> **Status:** {status}\n> **Severity:** Medium\n> **Points:** 2\n"
+            f"> **Affects:** src/{bid}.py\n\n## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+            f"- **Given** a thing\n- **Verify:** shell true\n", encoding="utf-8")
+
+    def test_showing_the_next_charter_reports_its_goal_and_resolved_contents(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root, "SC0001")
+            self._bug(root, "BG0001")
+            res = sprint.queue_show(root, skip_personas=True)
+            head = res["queue"][0]
+            self.assertEqual(head["id"], "SC0001")
+            self.assertIn("goal of SC0001", head["goal"])
+            self.assertIn("prose for SC0001", head["scope"])
+            self.assertEqual(head["appetite"], "480min/8units")
+            self.assertTrue(res["head"]["ok"], res["head"].get("detail"))
+            self.assertEqual(res["head"]["ids"], ["BG0001"],
+                             "showing the head must resolve it against the CURRENT backlog")
+
+    def test_insert_cancel_and_clear_change_the_queue_and_are_recorded(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            for cid in ("SC0001", "SC0002", "SC0003"):
+                self._charter(root, cid)
+            # insert: an explicit rank puts SC0003 at the head, ahead of the unranked pair
+            sprint.queue_reorder(root, "SC0003", 1)
+            self.assertEqual([c["id"] for c in sprint.queued_charters(root)][0], "SC0003")
+            # cancel: leaves the queue, KEEPS its record and its reason
+            sprint.queue_cancel(root, "SC0002", "superseded by the close-cost charter")
+            ids = [c["id"] for c in sprint.queued_charters(root)]
+            self.assertNotIn("SC0002", ids)
+            body = (root / "sdlc-studio" / "charters" / "SC0002-x.md").read_text(encoding="utf-8")
+            self.assertIn("Withdrawn", body)
+            self.assertIn("superseded by the close-cost charter", body,
+                          "a cancelled plan must keep the reason it was cancelled")
+            # clear: every remaining charter withdrawn, each with the reason
+            sprint.queue_clear(root, "re-planning the programme")
+            self.assertEqual(sprint.queued_charters(root), [])
+            for cid in ("SC0001", "SC0003"):
+                kept = (root / "sdlc-studio" / "charters" / f"{cid}-x.md").read_text(encoding="utf-8")
+                self.assertIn("re-planning the programme", kept)
+
+    def test_wsjf_order_is_recomputed_at_each_next(self) -> None:
+        """AC3. The head's CONTENTS are resolved every time, so a queue does not carry a
+        ranking of a backlog that has since moved."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root, "SC0001")
+            self._bug(root, "BG0001")
+            first = sprint.queue_show(root, skip_personas=True)["head"]
+            self.assertEqual(first["ids"], ["BG0001"])
+            self._bug(root, "BG0002")
+            self._bug(root, "BG0001", status="Fixed")
+            again = sprint.queue_show(root, skip_personas=True)["head"]
+            self.assertEqual(again["ids"], ["BG0002"],
+                             "the head's contents were frozen rather than recomputed")
+
+    def test_an_operation_on_an_absent_charter_is_refused(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root, "SC0001")
+            for call in (lambda: sprint.queue_cancel(root, "SC9999", "why"),
+                         lambda: sprint.queue_reorder(root, "SC9999", 1)):
+                with self.assertRaises(ValueError) as caught:
+                    call()
+                self.assertIn("SC9999", str(caught.exception))
+                self.assertIn("SC0001", str(caught.exception),
+                              "the refusal should say what the queue DOES hold")
+            with self.assertRaises(ValueError) as caught:
+                sprint.queue_cancel(root, "SC0001", "   ")
+            self.assertIn("needs a reason", str(caught.exception))
+
+    def test_an_unranked_charter_does_not_jump_a_ranked_one(self) -> None:
+        """Absence is not rank zero. An unranked charter sorts AFTER every ranked one, so
+        ranking one charter does not silently reshuffle the rest."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root, "SC0001")           # unranked, but first by id
+            self._charter(root, "SC0002", rank=5)   # ranked, later id
+            self.assertEqual([c["id"] for c in sprint.queued_charters(root)],
+                             ["SC0002", "SC0001"])
+
+    def test_the_queue_reaches_the_SHIPPED_ENTRY_POINT(self) -> None:
+        """The wiring, pinned - this lane has refused three units in two runs already."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root, "SC0001")
+            self._bug(root, "BG0001")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                rc = sprint.main(["queue", "show", "--skip-personas", "--root", str(root)])
+            printed = out.getvalue()
+            self.assertEqual(rc, 0, printed)
+            self.assertIn("SC0001", printed)
+            self.assertIn("BG0001", printed, "the CLI never showed what the head resolves to")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = sprint.main(["queue", "cancel", "--charter", "SC9999",
+                                  "--reason", "x", "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("SC9999", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

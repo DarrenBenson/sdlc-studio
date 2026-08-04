@@ -305,7 +305,25 @@ python3 <skill>/scripts/artifact.py new --type charter --title "<what this run i
 
 # run the head of the queue
 python3 <skill>/scripts/sprint.py next
+
+# see the queue, and what the HEAD resolves to against the backlog right now
+python3 <skill>/scripts/sprint.py queue show
+
+# correct a plan somebody wrote: rank one to the head, withdraw one, or clear the lot
+python3 <skill>/scripts/sprint.py queue reorder --charter SC0002 --rank 1
+python3 <skill>/scripts/sprint.py queue cancel --charter SC0003 --reason "<why>"
+python3 <skill>/scripts/sprint.py queue clear --reason "<why>"
 ```
+
+Only the HEAD is resolved by `queue show`. Resolving every charter would be arithmetic over a
+backlog the earlier runs will have changed before the later charters are reached - a number that
+looks precise and is not.
+
+A charter with no `Queue rank` sits in authoring order, which its id already carries, and an
+unranked charter sorts AFTER every ranked one: absence is not rank zero, so ranking one charter
+does not silently reshuffle the rest. `cancel` and `clear` withdraw rather than delete, each
+keeping its reason, because a cancelled plan is a decision somebody made and the queue's shape
+should stay explicable.
 
 The scope is TWO fields on purpose. `Scope rule` is prose - the intent a reader judges when
 deciding whether a queued run is still worth running. `Scope query` speaks `sprint plan`'s own

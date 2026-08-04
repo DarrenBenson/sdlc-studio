@@ -1198,11 +1198,22 @@ def queued_charters(repo_root: Path | str) -> list[dict]:
         text = sdlc_md.read_text_safe(path) or ""
         if (sdlc_md.extract_field(text, "Status") or "").strip() != "Queued":
             continue
+        raw_rank = (sdlc_md.extract_field(text, _RANK_FIELD) or "").strip()
+        try:
+            rank = int(raw_rank) if raw_rank else None
+        except ValueError:
+            rank = None                    # an unreadable rank is no rank, not rank zero
         out.append({"id": sdlc_md.extract_record_id(path.stem), "path": str(path),
                     "title": sdlc_md.extract_h1_title(text) or path.stem,
                     "goal": _section_text(text, "Sprint Goal"),
                     "scope": _section_text(text, "Scope rule"),
+                    "rank": rank,
+                    "appetite": (sdlc_md.extract_field(text, "Appetite") or "").strip(),
                     "query": (sdlc_md.extract_field(text, _SCOPE_QUERY_FIELD) or "").strip()})
+    # (rank, id). An UNRANKED charter sorts after every ranked one rather than silently jumping
+    # the queue - absence is not rank zero, and a queue nobody reordered still reads in
+    # authoring order because the id carries it.
+    out.sort(key=lambda c: (0, c["rank"]) if c["rank"] is not None else (1, 0))
     return out
 
 
@@ -1213,6 +1224,66 @@ def _section_text(text: str, heading: str) -> str:
     if len(body) < 2:
         return ""
     return body[1].split("\n## ", 1)[0].strip()
+
+
+#: A charter's queue rank. Absent means "authoring order", which is what the id already gives -
+#: so a queue nobody has reordered needs no rank at all, and a rank exists only where somebody
+#: made a decision. `queued_charters` sorts on (rank, id), so an unranked charter falls after a
+#: ranked one rather than silently jumping the queue.
+_RANK_FIELD = "Queue rank"
+
+
+def queue_reorder(repo_root: Path | str, charter: str, rank: int) -> dict:
+    """Give a charter an explicit queue rank. Refuses an id the queue does not hold."""
+    root, cid = Path(repo_root), sdlc_md.norm_id(charter)
+    held = {c["id"]: c for c in queued_charters(root)}
+    if cid not in held:
+        raise ValueError(
+            f"{cid} is not a Queued charter - the queue holds "
+            f"{', '.join(held) or 'nothing'}. Refused rather than succeeding over nothing.")
+    import transition as _tr  # noqa: PLC0415 - lazy sibling import, as elsewhere here
+    _tr.annotate(root, cid, _RANK_FIELD, str(int(rank)))
+    return {"charter": cid, "rank": int(rank)}
+
+
+def queue_cancel(repo_root: Path | str, charter: str, reason: str) -> dict:
+    """Withdraw a charter. It leaves the queue and KEEPS its record - a cancelled plan is a
+    decision somebody made, and deleting it loses the only trace of why the queue looks as it
+    does."""
+    root, cid = Path(repo_root), sdlc_md.norm_id(charter)
+    held = {c["id"] for c in queued_charters(root)}
+    if cid not in held:
+        raise ValueError(
+            f"{cid} is not a Queued charter - the queue holds "
+            f"{', '.join(sorted(held)) or 'nothing'}. Refused rather than succeeding over nothing.")
+    if not str(reason or "").strip():
+        raise ValueError(f"cancelling {cid} needs a reason - a queue whose shape nobody can "
+                         f"explain is a queue nobody trusts")
+    import transition as _tr  # noqa: PLC0415
+    _tr.transition(root, cid, "Withdrawn")
+    _tr.annotate(root, cid, "Withdrawn-because", str(reason).strip())
+    return {"charter": cid, "status": "Withdrawn", "reason": str(reason).strip()}
+
+
+def queue_clear(repo_root: Path | str, reason: str) -> list:
+    """Withdraw every Queued charter, each keeping its own record and reason."""
+    out = []
+    for c in queued_charters(repo_root):
+        out.append(queue_cancel(repo_root, c["id"], reason))
+    return out
+
+
+def queue_show(repo_root: Path | str, skip_personas: bool = False) -> dict:
+    """The queue, head first, with what the HEAD would resolve to against the backlog NOW.
+
+    Only the head is resolved. Resolving every charter would be arithmetic on a backlog that
+    the earlier runs will have changed before the later charters are reached - a number that
+    looks precise and is not.
+    """
+    root = Path(repo_root)
+    queue = queued_charters(root)
+    head = materialise_next(root, skip_personas=skip_personas) if queue else None
+    return {"queue": queue, "head": head}
 
 
 def materialise_next(repo_root: Path | str, order: str = "priority",
@@ -9077,6 +9148,49 @@ def cmd_decision(args) -> int:
     return 0
 
 
+def cmd_queue(args: argparse.Namespace) -> int:
+    """Inspect and edit the charter queue."""
+    try:
+        if args.qcmd == "show":
+            res = queue_show(args.root, skip_personas=getattr(args, "skip_personas", False))
+            if not res["queue"]:
+                print("queue: empty - no Queued charter")
+                return 0
+            print(f"queue: {len(res['queue'])} charter(s), head first")
+            for i, c in enumerate(res["queue"]):
+                mark = "->" if i == 0 else "  "
+                rank = f"rank={c['rank']}" if c["rank"] is not None else "unranked"
+                print(f"  {mark} {c['id']} [{rank}] {c['title']}")
+            head, hr = res["queue"][0], res["head"]
+            print(f"\nhead {head['id']}")
+            print(f"  goal:     {head['goal'] or '(none)'}")
+            print(f"  scope:    {head['scope'] or '(none)'}")
+            print(f"  appetite: {head['appetite'] or 'default'}")
+            if hr and hr.get("ok"):
+                print(f"  resolves to {len(hr['ids'])} unit(s) against the backlog as it stands "
+                      f"now: {', '.join(hr['ids'])}")
+            elif hr:
+                print(f"  resolves to NOTHING runnable: {hr['detail']}")
+            return 0
+        if args.qcmd == "reorder":
+            r = queue_reorder(args.root, args.charter, args.rank)
+            print(f"queue: {r['charter']} rank={r['rank']}")
+            return 0
+        if args.qcmd == "cancel":
+            r = queue_cancel(args.root, args.charter, args.reason)
+            print(f"queue: {r['charter']} Withdrawn - {r['reason']}")
+            return 0
+        if args.qcmd == "clear":
+            done = queue_clear(args.root, args.reason)
+            print(f"queue: {len(done)} charter(s) Withdrawn - {args.reason}"
+                  if done else "queue: already empty")
+            return 0
+    except ValueError as exc:
+        print(f"queue refused: {exc}", file=sys.stderr)
+        return 2
+    return 2
+
+
 def cmd_next(args: argparse.Namespace) -> int:
     """Materialise the head charter against the backlog as it stands, and open its run."""
     res = materialise_next(args.root, order=args.order,
@@ -9260,6 +9374,25 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--format", choices=("text", "json"), default="text")
     r.add_argument("--root", default=".", help="Repo root (default: .)")
     r.set_defaults(func=cmd_report)
+
+    q = sub.add_parser("queue", help="Inspect and edit the sprint charter queue.")
+    qs = q.add_subparsers(dest="qcmd", required=True)
+    qsh = qs.add_parser("show", help="the queue head first, and what the head resolves to NOW")
+    qsh.add_argument("--skip-personas", action="store_true")
+    qro = qs.add_parser("reorder", help="give a charter an explicit queue rank")
+    qro.add_argument("--charter", required=True)
+    qro.add_argument("--rank", type=int, required=True)
+    qca = qs.add_parser("cancel", help="withdraw one charter, keeping its record and its reason")
+    qca.add_argument("--charter", required=True)
+    qca.add_argument("--reason", required=True)
+    qcl = qs.add_parser("clear", help="withdraw every Queued charter, each with the reason")
+    qcl.add_argument("--reason", required=True)
+    for sp in (qsh, qro, qca, qcl):
+        # SUPPRESS, never ".". A per-subcommand default overwrites a `--root X queue clear`
+        # given BEFORE the verb, so the value the caller set is silently dropped and the
+        # command runs against the wrong tree. The grammar conformance guard holds this.
+        sp.add_argument("--root", default=argparse.SUPPRESS, help="Repo root (default: .)")
+    q.set_defaults(func=cmd_queue)
 
     nx = sub.add_parser("next",
                         help="Materialise the head sprint charter against the backlog AS IT IS "

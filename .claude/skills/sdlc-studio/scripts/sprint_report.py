@@ -826,7 +826,7 @@ NON_CEREMONY_VERBS = {
     # queued charter into a batch and opens from it. A close-checklist row would be asking the
     # close to certify something that happened before the run began.
     "sprint": ("appetite", "close", "boundary", "report", "checklist", "preflight",
-               "reopen", "stop", "decision", "batch", "lane", "next"),
+               "reopen", "stop", "decision", "batch", "lane", "next", "queue"),
     "critic": ("brief", "caller-check", "correct", "evidence", "repair", "show",
                "signoff-brief", "supersede"),
     "handoff": ("show",),
