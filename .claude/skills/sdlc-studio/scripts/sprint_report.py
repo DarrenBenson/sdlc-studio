@@ -822,8 +822,11 @@ DERIVED, RECORDED = "derived", "recorded"
 #: somebody adds it. The list can over-report, never under-report - which is the opposite of
 #: an enumerated list that silently exempts what it forgot.
 NON_CEREMONY_VERBS = {
+    # `next` sits with `plan` on the OPENING side of a run, not the closing one: it resolves a
+    # queued charter into a batch and opens from it. A close-checklist row would be asking the
+    # close to certify something that happened before the run began.
     "sprint": ("appetite", "close", "boundary", "report", "checklist", "preflight",
-               "reopen", "stop", "decision", "batch", "lane"),
+               "reopen", "stop", "decision", "batch", "lane", "next"),
     "critic": ("brief", "caller-check", "correct", "evidence", "repair", "show",
                "signoff-brief", "supersede"),
     "handoff": ("show",),

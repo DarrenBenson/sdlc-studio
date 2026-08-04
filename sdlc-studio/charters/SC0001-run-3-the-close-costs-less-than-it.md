@@ -5,6 +5,7 @@
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Appetite:** 480min/8units
+> **Scope query:** --crs Proposed
 
 ## Sprint Goal
 

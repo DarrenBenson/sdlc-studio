@@ -13144,5 +13144,157 @@ class UngroomedCensusCoversEveryTypeTests(unittest.TestCase):
             "- [ ] **AC1: the gate refuses an unsigned batch**"))
 
 
+class SprintNextTests(unittest.TestCase):
+    """US0488. A queue holds INTENT, not a frozen batch. `sprint next` resolves the head
+    charter's scope against the backlog as it stands at that moment, so units created since the
+    charter was written are included and units since delivered are not.
+
+    MUTANTS:
+      1. resolve the batch once and cache it -> AC1's post-authoring unit is missed.
+      2. drop the open-run check -> a charter merges into a run nobody approved.
+      3. treat an empty scope as success -> the charter is silently spent on nothing.
+    """
+
+    def _charter(self, root: Path, cid: str, query: str, status: str = "Queued") -> None:
+        d = root / "sdlc-studio" / "charters"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{cid}-x.md").write_text(
+            f"# {cid}: a planned run\n\n> **Status:** {status}\n"
+            f"> **Scope query:** {query}\n\n## Sprint Goal\n\nthe goal\n\n"
+            f"## Scope rule\n\nthe prose a human reads\n", encoding="utf-8")
+
+    def _bug(self, root: Path, bid: str, status: str = "Open") -> None:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / f"{bid}.py").write_text("", encoding="utf-8")
+        (d / f"{bid}-x.md").write_text(
+            f"# {bid}: b\n\n> **Status:** {status}\n> **Severity:** Medium\n"
+            f"> **Points:** 2\n> **Affects:** src/{bid}.py\n\n## Acceptance Criteria\n\n"
+            f"### AC1: it behaves\n\n- **Given** a thing\n- **Verify:** shell true\n",
+            encoding="utf-8")
+
+    def test_the_head_charter_materialises_against_the_current_backlog(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root, "SC0001", "--bugs Open")
+            self._bug(root, "BG0001")
+            first = sprint.materialise_next(root, skip_personas=True)
+            self.assertTrue(first["ok"], first.get("detail"))
+            self.assertEqual(first["ids"], ["BG0001"])
+            # the backlog MOVES: one unit lands after the charter was written, one is delivered
+            self._bug(root, "BG0002")                      # created since
+            self._bug(root, "BG0001", status="Fixed")      # delivered since
+            again = sprint.materialise_next(root, skip_personas=True)
+            self.assertTrue(again["ok"], again.get("detail"))
+            self.assertEqual(again["ids"], ["BG0002"],
+                             "the batch was not resolved against the backlog as it stands - a "
+                             "queue of frozen batches is what this exists to avoid")
+
+    def test_next_reaches_the_SHIPPED_ENTRY_POINT_not_only_the_library(self) -> None:
+        """The lane-check has refused this shape three times in two runs now - US0467, US0487
+        and this unit - so it is pinned rather than remembered again. `materialise_next` can be
+        perfect while `sprint.py next` reaches it from nowhere: the verb registration, its flags
+        and its exit codes are the wiring a library test does not touch.
+
+        MUTANT: drop the `next` subparser registration, or point it at another handler."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root, "SC0001", "--bugs Open")
+            self._bug(root, "BG0001")
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = sprint.main(["next", "--dry-run", "--skip-personas", "--root", str(root)])
+            printed = out.getvalue() + err.getvalue()
+            self.assertEqual(rc, 0, printed)
+            self.assertIn("SC0001", printed, "the CLI never named the charter it materialised")
+            self.assertIn("BG0001", printed, "the CLI never named the units it resolved")
+            self.assertIn("stays Queued", printed, "a dry run must not spend the charter")
+            body = (root / "sdlc-studio" / "charters" / "SC0001-x.md").read_text(encoding="utf-8")
+            self.assertIn("> **Status:** Queued", body)
+
+        # And the refusal path reaches the CLI too, with a non-zero exit rather than a message
+        # nobody's shell can act on.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps({"run_id": "RUN-OPEN", "outcome": "running", "batch": []}),
+                encoding="utf-8")
+            self._charter(root, "SC0001", "--bugs Open")
+            self._bug(root, "BG0001")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = sprint.main(["next", "--skip-personas", "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("RUN-OPEN", err.getvalue())
+
+    def test_an_empty_scope_stops_and_reports_without_touching_the_queue(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root, "SC0001", "--bugs Open")
+            res = sprint.materialise_next(root, skip_personas=True)
+            self.assertFalse(res["ok"])
+            self.assertEqual(res["reason"], "empty-scope")
+            self.assertIn("SC0001", res["detail"])
+            body = (root / "sdlc-studio" / "charters" / "SC0001-x.md").read_text(encoding="utf-8")
+            self.assertIn("> **Status:** Queued", body,
+                          "an unrunnable charter was dropped rather than left for a later run")
+
+    def test_next_refuses_while_a_run_is_open(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps({"run_id": "RUN-OPEN", "outcome": "running", "batch": ["BG0009"]}),
+                encoding="utf-8")
+            self._charter(root, "SC0001", "--bugs Open")
+            self._bug(root, "BG0001")
+            res = sprint.materialise_next(root, skip_personas=True)
+            self.assertFalse(res["ok"], "a charter was materialised over an open run")
+            self.assertEqual(res["reason"], "run-open")
+            self.assertIn("RUN-OPEN", res["detail"])
+
+    def test_a_prose_only_charter_is_refused_by_name_not_at_creation(self) -> None:
+        """The control for D0127's two-field split: a charter may be QUEUED as intent with only
+        its prose rule, and it is `next` that refuses it, naming which charter and what to add.
+        Refusing at creation would block queueing an intention nobody has yet worked out how to
+        select."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / "charters").mkdir(parents=True)
+            (root / "sdlc-studio" / "charters" / "SC0001-x.md").write_text(
+                "# SC0001: intent only\n\n> **Status:** Queued\n\n## Sprint Goal\n\ng\n\n"
+                "## Scope rule\n\nprose nobody can resolve\n", encoding="utf-8")
+            res = sprint.materialise_next(root, skip_personas=True)
+            self.assertFalse(res["ok"])
+            self.assertEqual(res["reason"], "no-query")
+            self.assertIn("SC0001", res["detail"])
+            self.assertIn("Scope query", res["detail"])
+
+    def test_the_scope_query_speaks_sprint_plans_own_vocabulary(self) -> None:
+        """D0127: one selector vocabulary, not two that drift. A flag `sprint plan` does not
+        know is refused by name rather than silently selecting nothing."""
+        sprint = _load()
+        self.assertEqual(sprint.parse_scope_query("--bugs Open --stories Ready")[0],
+                         [("bug", "Open"), ("story", "Ready")])
+        self.assertEqual(sprint.parse_scope_query("--stories Ready --epic EP0176")[1], {"EP0176"})
+        for bad, expect in (("--widgets Open", "not a selector"),
+                            ("--bugs", "has no value"),
+                            ("--epic EP0176", "selects no unit type")):
+            with self.assertRaises(ValueError) as caught:
+                sprint.parse_scope_query(bad)
+            self.assertIn(expect, str(caught.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

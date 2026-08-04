@@ -477,8 +477,14 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         # acceptance criteria: it delivers nothing itself, and the units it materialises carry
         # their own. What it must carry is everything `sprint next` needs to open a run without
         # asking again - the goal, the rule that selects the batch, and the appetite.
+        # The scope is TWO fields on purpose (D0127): prose for the reader deciding whether a
+        # queued run is still worth running, and a selector `sprint next` can resolve. A charter
+        # may be queued as intent with only the prose - `next` refuses it by name at materialise
+        # time rather than creation refusing an honest placeholder.
+        scope_q = str(f.get("scope_query") or "").strip()
         return (head + f"> **Appetite:** {f.get('appetite') or 'default'}\n"
-                "\n## Sprint Goal\n\n" + _text(f, "goal", "{{the goal this run drives to}}") +
+                + (f"> **Scope query:** {scope_q}\n" if scope_q else "")
+                + "\n## Sprint Goal\n\n" + _text(f, "goal", "{{the goal this run drives to}}") +
                 "\n\n## Scope rule\n\n" + _text(f, "scope", "{{which units this charter selects}}") +
                 "\n\n## Seat review\n\n_Not yet reviewed._\n" + rev)
     if type_ == "epic":
@@ -1414,7 +1420,7 @@ FIELDS_FILE_KEYS: tuple[str, ...] = (*file_finding.COMMON_FIELDS_FILE_KEYS,
                                      "provenance",
                                      # A charter's own three: what the run drives to, the rule
                                      # that selects its batch, and how much of a run it is worth.
-                                     "goal", "scope", "appetite")
+                                     "goal", "scope", "appetite", "scope_query")
 
 
 def cmd_new(args: argparse.Namespace) -> int:

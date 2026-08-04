@@ -285,7 +285,37 @@ python3 <skill>/scripts/sprint.py goal-verdict --verdict achieved --note "<why i
 
 # brief a delegated lane over the run's own batch, or over named units
 python3 <skill>/scripts/sprint.py lane brief --units US0001,US0002
+
+# resolve the head sprint charter against the backlog AS IT IS now, opening nothing
+python3 <skill>/scripts/sprint.py next --dry-run
 ```
+
+## The charter queue {#charter-queue}
+
+A charter is a run that has not happened: its Sprint Goal, the rule that selects its batch, and
+its appetite. `sprint next` materialises the head of the queue **against the backlog as it
+stands at that moment**, never against the backlog as it stood when the charter was written - a
+queue of frozen batches decays, because units land and units are delivered between authoring and
+running.
+
+```bash
+# queue one, with prose for the reader and a query the tool can resolve
+python3 <skill>/scripts/artifact.py new --type charter --title "<what this run is for>" \
+  --fields-file charter.json    # {"goal": "...", "scope": "...", "scope_query": "--bugs Open"}
+
+# run the head of the queue
+python3 <skill>/scripts/sprint.py next
+```
+
+The scope is TWO fields on purpose. `Scope rule` is prose - the intent a reader judges when
+deciding whether a queued run is still worth running. `Scope query` speaks `sprint plan`'s own
+selector vocabulary (`--stories Ready`, `--bugs Open`, `--crs Proposed`, `--epic EPxxxx`), so
+there is one selector grammar in the tool rather than two that drift.
+
+`next` refuses, leaving the queue exactly as it was, when a run is already open, when the head
+charter carries no resolvable `Scope query`, or when its scope selects nothing. A charter that
+cannot be run is left Queued rather than silently spent: an empty scope usually means the work
+was delivered by another run, and that is worth seeing rather than absorbing.
 
 Each control that CHANGES the batch or the ceiling takes a `--reason` and stores it in the run
 record: `batch drop`, `batch swap`, `batch add`, `appetite resize`, `stop` and `reopen`. It is

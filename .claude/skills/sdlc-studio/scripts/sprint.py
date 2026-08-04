@@ -1142,6 +1142,122 @@ def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
     return out
 
 
+
+# --------------------------------------------------------------------------- the charter queue
+#
+# A charter is queued INTENT. Its batch is resolved when the run starts, never when the charter
+# is written, because a queue of frozen batches decays: units land, units are delivered, and a
+# plan authored three runs ago selects a set that no longer exists. `sprint next` therefore
+# materialises the head charter against the backlog AS IT IS at that moment.
+_SCOPE_QUERY_FIELD = "Scope query"
+#: The selector vocabulary a charter's `Scope query` speaks is `sprint plan`'s OWN - the same
+#: `--stories Ready --bugs Open` pairs, parsed here into the same (kind, status) tuples
+#: `select_batches` already takes. One vocabulary, not two that drift (D0127).
+_SCOPE_FLAG_KIND = {"--stories": "story", "--bugs": "bug", "--crs": "cr"}
+
+
+def parse_scope_query(query: str) -> tuple[list, set]:
+    """A charter's `Scope query` as (kind, status) pairs plus an epic filter.
+
+    Raises ValueError naming the offending token, because a scope nobody can parse is a charter
+    that will stop the queue at the moment it reaches the head - and the head is the worst place
+    to discover it.
+    """
+    toks = (query or "").split()
+    queries: list[tuple[str, str]] = []
+    epics: set = set()
+    i = 0
+    while i < len(toks):
+        flag = toks[i]
+        value = toks[i + 1] if i + 1 < len(toks) else None
+        if value is None or value.startswith("--"):
+            raise ValueError(f"`{flag}` in the scope query has no value")
+        if flag in _SCOPE_FLAG_KIND:
+            queries.append((_SCOPE_FLAG_KIND[flag], value))
+        elif flag == "--epic":
+            epics.add(sdlc_md.norm_id(value))
+        else:
+            raise ValueError(
+                f"`{flag}` is not a selector this scope query understands - it speaks "
+                f"`sprint plan`'s vocabulary: {', '.join(sorted(_SCOPE_FLAG_KIND))}, --epic")
+        i += 2
+    if not queries:
+        raise ValueError("the scope query selects no unit type "
+                         f"({', '.join(sorted(_SCOPE_FLAG_KIND))})")
+    return queries, epics
+
+
+def queued_charters(repo_root: Path | str) -> list[dict]:
+    """The Queued charters in queue order - id order, which is authoring order.
+
+    Order is the file's, not a stored rank: a rank is a second thing to keep true, and the queue
+    is short enough that re-ordering is a rename away.
+    """
+    out = []
+    for path in sorted(sdlc_md.artifact_files("charter", Path(repo_root))):
+        text = sdlc_md.read_text_safe(path) or ""
+        if (sdlc_md.extract_field(text, "Status") or "").strip() != "Queued":
+            continue
+        out.append({"id": sdlc_md.extract_record_id(path.stem), "path": str(path),
+                    "title": sdlc_md.extract_h1_title(text) or path.stem,
+                    "goal": _section_text(text, "Sprint Goal"),
+                    "scope": _section_text(text, "Scope rule"),
+                    "query": (sdlc_md.extract_field(text, _SCOPE_QUERY_FIELD) or "").strip()})
+    return out
+
+
+def _section_text(text: str, heading: str) -> str:
+    """The prose under `## <heading>`, or ''. Read rather than parsed: a charter's goal is a
+    sentence, and anything that tried to structure it would be a schema nobody asked for."""
+    body = text.split(f"## {heading}", 1)
+    if len(body) < 2:
+        return ""
+    return body[1].split("\n## ", 1)[0].strip()
+
+
+def materialise_next(repo_root: Path | str, order: str = "priority",
+                     skip_personas: bool = False) -> dict:
+    """Resolve the head charter's scope against the CURRENT backlog. Writes nothing.
+
+    Three refusals, each leaving the queue exactly as it was, because a charter that cannot be
+    run is not a charter that should be silently dropped:
+      - a run is already open (the single-slot rule; merging would make the open run's approved
+        batch a thing nobody approved)
+      - the head charter carries no parseable scope query
+      - the scope resolves to no units against the backlog as it stands
+    """
+    root = Path(repo_root)
+    state = run_state.read(root) or {}
+    if (state.get("outcome") or "").strip().lower() == "running":
+        return {"ok": False, "reason": "run-open", "run_id": state.get("run_id"),
+                "detail": f"run {state.get('run_id')} is still open - close or stop it first. "
+                          f"Merging a charter's batch into an open run would make that run's "
+                          f"approved batch a set nobody approved."}
+    queue = queued_charters(root)
+    if not queue:
+        return {"ok": False, "reason": "empty-queue", "detail": "no Queued charter to run"}
+    head = queue[0]
+    if not head["query"]:
+        return {"ok": False, "reason": "no-query", "charter": head["id"],
+                "detail": f"{head['id']} carries a prose scope rule and no `{_SCOPE_QUERY_FIELD}`, "
+                          f"so nothing can resolve its batch. Add one in `sprint plan`'s own "
+                          f"selector vocabulary."}
+    try:
+        queries, epics = parse_scope_query(head["query"])
+    except ValueError as exc:
+        return {"ok": False, "reason": "bad-query", "charter": head["id"], "detail": str(exc)}
+    units = select_batches(root, queries, order=order, skip_personas=skip_personas,
+                           epics=epics or None)
+    if not units:
+        return {"ok": False, "reason": "empty-scope", "charter": head["id"],
+                "detail": f"{head['id']}'s scope selects no unit against the backlog as it "
+                          f"stands - the work it was written for is delivered, or was never "
+                          f"created. The charter is left Queued, not dropped."}
+    return {"ok": True, "charter": head["id"], "title": head["title"], "goal": head["goal"],
+            "query": head["query"], "units": units,
+            "ids": [u["id"] for u in units], "queued": len(queue)}
+
+
 def select_batches(repo_root: Path | str, queries: list[tuple[str, str]],
                    order: str = "priority", skip_personas: bool = False,
                    epics: set[str] | None = None) -> list[dict]:
@@ -8961,6 +9077,26 @@ def cmd_decision(args) -> int:
     return 0
 
 
+def cmd_next(args: argparse.Namespace) -> int:
+    """Materialise the head charter against the backlog as it stands, and open its run."""
+    res = materialise_next(args.root, order=args.order,
+                           skip_personas=getattr(args, "skip_personas", False))
+    if not res["ok"]:
+        print(f"sprint next: {res['detail']}", file=sys.stderr)
+        return 2
+    print(f"charter {res['charter']}: {res['title']}")
+    print(f"  scope query: {res['query']}")
+    print(f"  materialised {len(res['ids'])} unit(s) against the backlog as it stands now: "
+          f"{', '.join(res['ids'])}")
+    if args.dry_run:
+        print(f"  dry run - nothing opened, {res['charter']} stays Queued "
+              f"({res['queued']} charter(s) in the queue)")
+        return 0
+    print(f"  open it with: sprint.py plan --worklist <file> --write --sprint-goal "
+          f"\"{res['goal'][:60]}...\"" if res["goal"] else "")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio sprint batch selection.")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -9124,6 +9260,16 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--format", choices=("text", "json"), default="text")
     r.add_argument("--root", default=".", help="Repo root (default: .)")
     r.set_defaults(func=cmd_report)
+
+    nx = sub.add_parser("next",
+                        help="Materialise the head sprint charter against the backlog AS IT IS "
+                             "now - a queue holds intent, not a frozen batch.")
+    nx.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")
+    nx.add_argument("--dry-run", action="store_true",
+                    help="resolve and report, open nothing; the charter stays Queued")
+    nx.add_argument("--skip-personas", action="store_true")
+    nx.add_argument("--root", default=".", help="Repo root (default: .)")
+    nx.set_defaults(func=cmd_next)
 
     pf = sub.add_parser("preflight",
                         help="Report EVERY unmet close prerequisite in one read-only pass "
