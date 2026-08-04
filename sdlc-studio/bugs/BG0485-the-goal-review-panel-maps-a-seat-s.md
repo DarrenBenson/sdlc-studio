@@ -30,20 +30,22 @@ Route the seat's answer through `verdict_polarity` so there is ONE mapping, and 
 
 ## Acceptance Criteria
 
-- [ ] **AC1: a seat's answer is mapped in ONE place.**
+- [x] **AC1: a seat's answer is mapped in ONE place.**
   - **Given** a seat verdict of `no`
   - **When** the goal-review panel records it
   - **Then** it is routed through `verdict_polarity` and stored as `no`, not downgraded to
     `partial` by a second mapping - two mappings answering one question is how a refusal became
     a qualified yes
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatAnswerPolarityTests::test_a_no_is_recorded_as_no_through_one_mapping
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AGoalClauseIsNotAnsweredByGuessworkTests::test_a_seat_answering_no_is_recorded_missed_not_partial
+  - **Verified:** yes (2026-08-04)
 
-- [ ] **AC2: a clause no seat answered is UNANSWERED, never inherited.**
+- [x] **AC2: a clause no seat answered is UNANSWERED, never inherited.**
   - **Given** a goal of several clauses and a seat that answered the goal as a whole
   - **When** the per-clause view is derived
   - **Then** each clause the seat did not address reads `unanswered`, because fanning one
     whole-goal answer across every clause reports a verdict nobody gave
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatAnswerPolarityTests::test_an_unanswered_clause_is_not_given_the_whole_goal_answer
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AGoalClauseIsNotAnsweredByGuessworkTests::test_a_whole_goal_answer_is_not_fanned_across_clauses
+  - **Verified:** yes (2026-08-04)
 
 ## Revision History
 
