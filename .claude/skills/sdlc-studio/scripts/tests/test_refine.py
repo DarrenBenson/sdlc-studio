@@ -1190,5 +1190,91 @@ class SeamOwnershipDefectsTests(unittest.TestCase):
         self.assertIn("US9999", err.getvalue())
 
 
+class MintedStoryFieldsTests(unittest.TestCase):
+    """BG0477, re-grounded. The filed summary claimed the request's criteria "were not seeded";
+    they ARE, onto the epic, and commit 7ef88707 removed story-level seeding for a multi-story
+    breakdown deliberately - a breakdown cannot know which criterion belongs to which story. So
+    seeding is not asked for here. What reproduces is narrower and real: the User Story block
+    ships with `{{...}}` fields unfilled, and `refine` reports no price for the grooming it has
+    just created, though authoring those criteria was the largest single piece of one sprint's
+    planning phase.
+
+    MUTANTS:
+      1. drop the `_fill_user_story` call at the mint site -> placeholders survive.
+      2. count the owed stories locally instead of asking `sprint.breakdown` -> AC3 fails when
+         the two definitions of ungroomed drift.
+      3. drop the grooming-owed print -> the price disappears.
+    """
+
+    def _cli(self, argv: list[str]) -> tuple[int, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = refine.main(argv)
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_no_template_placeholder_survives_minting(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied", "and its second criterion too"])
+            res = refine.refine(root, "CR0001", "An epic",
+                                [("First thing", 2, None), ("Second thing", 3, None)])
+            self.assertEqual(len(res["stories"]), 2)
+            for sid in res["stories"]:
+                text = sdlc_md.find_by_id(root, sid)[0].read_text(encoding="utf-8")
+                block = text.split("## User Story", 1)[1].split("##", 1)[0]
+                self.assertNotIn("{{", block, f"{sid} shipped an unfilled field: {block!r}")
+            # and the capability is the story's own title, not a generic filler
+            first = sdlc_md.find_by_id(root, res["stories"][0])[0].read_text(encoding="utf-8")
+            self.assertIn("First thing", first.split("## User Story", 1)[1].split("##", 1)[0])
+
+    def test_refine_reports_the_grooming_it_leaves_owed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            rc, out = self._cli(["apply", "--request", "CR0001", "--epic-title", "An epic",
+                                 "--story", "First thing|2", "--story", "Second thing|3",
+                                 "--root", str(root)])
+            self.assertEqual(rc, 0, out)
+            self.assertIn("owe authored", out, f"no grooming price was reported: {out}")
+            self.assertIn("2 of 2", out, out)
+            self.assertIn("NOT priced", out, out)
+
+    def test_the_reported_count_matches_the_breakdown_census(self) -> None:
+        """AC3. The count is the planner's own census rather than a second one, so the number
+        `refine` prints and the number `sprint plan` refuses on cannot disagree."""
+        import sprint
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            res = refine.refine(root, "CR0001", "An epic",
+                                [("First thing", 2, None), ("Second thing", 3, None)])
+            owed = refine.grooming_owed(root, res["stories"])
+            units = [{"id": s, "type": "story", "path": str(sdlc_md.find_by_id(root, s)[0])}
+                     for s in res["stories"]]
+            bd = sprint.breakdown(root, units, skip_personas=True)
+            census = sum(1 for u in bd["ungroomed"] if str(u.get("ac_why") or ""))
+            self.assertEqual(owed, census)
+            self.assertEqual(owed, 2)
+
+    def test_a_groomed_story_is_not_counted_as_owing(self) -> None:
+        """The control. A count that always equals the story total would pass the two tests
+        above while measuring nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            res = refine.refine(root, "CR0001", "An epic",
+                                [("First thing", 2, None), ("Second thing", 3, None)])
+            path = sdlc_md.find_by_id(root, res["stories"][0])[0]
+            text = path.read_text(encoding="utf-8")
+            head, _, tail = text.partition("## Acceptance Criteria")
+            path.write_text(head + "## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+                            "- **Given** a thing\n- **Verify:** shell true\n\n"
+                            + tail.split("##", 1)[1] if "##" in tail else
+                            head + "## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+                            "- **Given** a thing\n- **Verify:** shell true\n",
+                            encoding="utf-8")
+            self.assertEqual(refine.grooming_owed(root, res["stories"]), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

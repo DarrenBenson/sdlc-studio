@@ -40,15 +40,16 @@ Seed each story's criteria from the parent request's, as `--no-seed-acs` implies
 > `artifact._resolve_persona`, working as designed. What survives is the two defects that
 > reproduce, and the unit is re-priced from 5 to 3 accordingly.
 
-- [ ] **AC1: a minted story carries no unfilled template field.**
+- [x] **AC1: a minted story carries no unfilled template field.**
   - **Given** a breakdown minting three stories from a request
   - **When** `refine.py apply` runs and the stories are read back
   - **Then** no `{{role}}`, `{{capability}}` or `{{benefit}}` placeholder remains in the User
     Story block, because a field the template left for an author to fill is indistinguishable
     from one the author forgot
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::MintedStoryFieldsTests::test_no_template_placeholder_survives_minting
+  - **Verified:** yes (2026-08-04)
 
-- [ ] **AC2: `refine` reports the grooming it leaves owed, in the planner's own units.**
+- [x] **AC2: `refine` reports the grooming it leaves owed, in the planner's own units.**
   - **Given** a completed `refine apply` that minted N stories, all ungroomed by construction
   - **When** it prints its result
   - **Then** it names how many of them still owe authored criteria, so the unpriced work is
@@ -56,13 +57,45 @@ Seed each story's criteria from the parent request's, as `--no-seed-acs` implies
     stories arrived this way in one run and grooming them was the largest single piece of that
     sprint's planning
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::MintedStoryFieldsTests::test_refine_reports_the_grooming_it_leaves_owed
+  - **Verified:** yes (2026-08-04)
 
-- [ ] **AC3: the count it reports is the census's answer, not a second one.**
+- [x] **AC3: the count it reports is the census's answer, not a second one.**
   - **Given** the same minted set
   - **When** the reported count is compared with `sprint.py breakdown` over those ids
   - **Then** they agree, because a creator quoting its own arithmetic is how the planner and the
     creator came to disagree in the first place
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::MintedStoryFieldsTests::test_the_reported_count_matches_the_breakdown_census
+  - **Verified:** yes (2026-08-04)
+
+## Verification evidence
+
+Functional. Three mutants executed, `__pycache__` purged and each child run under `python3 -B`,
+anchors asserted unique, source restored byte-identical:
+
+| Mutant | Result |
+| --- | --- |
+| drop the `_fill_user_story` call at the mint site | killed |
+| count the owed stories locally instead of asking `sprint.breakdown` | killed |
+| drop the grooming-owed report | killed |
+
+The second mutant is the one that matters for AC3: it makes the reported number a second
+arithmetic rather than the planner's own, and the test reddens because the two then disagree the
+moment a story IS groomed. A fourth test is a control - a batch where one story has been groomed
+reports 1, not 2 - because a count that always equalled the story total would pass the other
+three while measuring nothing.
+
+The fill is wired at BOTH mint sites (`refine` and `add`), not just the one the reproduction
+used; the second is the later-slice path, and a fix present at one mint and absent at the other
+is the enumerated-list shape this project keeps meeting.
+
+**Two of the four filed claims were false and are not delivered.** The summary said the request's
+criteria "were not seeded" - they are, onto the epic, and commit `7ef88707` removed story-level
+seeding for a multi-story breakdown deliberately, because a breakdown cannot know which criterion
+belongs to which story; re-seeding them would reinstate the defect that commit removed. The
+`Persona:` claim was also wrong: the value is the declared Primary resolved by
+`artifact._resolve_persona`, working as designed, and `persona_resolve.py` has no name-resolution
+surface for the criterion to have used. Both were established at the plan-time goal review, and
+the unit was re-grounded and re-priced 5 to 3 before any code was written.
 
 ## Revision History
 

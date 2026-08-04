@@ -160,6 +160,46 @@ def _seed_epic_criteria(epic_path: Path, criteria: list[str], rid: str | None = 
     sdlc_md.atomic_write(epic_path, new)
 
 
+
+def _fill_user_story(story_path: Path, title: str, request_id: str) -> None:
+    """Fill the User Story block from what minting already knows, so no `{{...}}` survives.
+
+    A template field left unfilled is indistinguishable from one an author forgot, and twenty
+    stories arrived in one run carrying all three. The values are DERIVED, never invented: the
+    capability is the story's own title, the benefit names the request it delivers, and the role
+    is the persona already resolved onto the story. That is a starting point an author sharpens
+    while grooming - which is what the field is for - rather than a placeholder that reads as an
+    omission.
+    """
+    text = sdlc_md.read_text_safe(story_path) or ""
+    role = (sdlc_md.extract_field(text, "Persona") or "").strip() or "maintainer"
+    for old, new in (("{{persona_name}}", role),
+                     ("{{role}}", role),
+                     ("{{capability}}", title.strip()),
+                     ("{{benefit}}", f"{request_id} is delivered by work that can be planned "
+                                     f"and checked")):
+        text = text.replace(old, new)
+    story_path.write_text(text, encoding="utf-8")
+
+
+def grooming_owed(repo_root: Path | str, story_ids: list[str]) -> int:
+    """How many of the minted stories still owe authored acceptance criteria.
+
+    Asked of `sprint.breakdown` - the planner's OWN census - rather than counted here, so the
+    number `refine` reports and the number `sprint plan` refuses on cannot disagree. A creator
+    quoting its own arithmetic is how the two ends came to disagree in the first place.
+    """
+    import sprint   # local: the writer borrows the planner's census, not its weight
+    units = []
+    for sid in story_ids:
+        found = sdlc_md.find_by_id(Path(repo_root), sid)
+        if found:
+            units.append({"id": sid, "type": "story", "path": str(found[0])})
+    if not units:
+        return 0
+    bd = sprint.breakdown(repo_root, units, skip_personas=True)
+    return sum(1 for u in bd.get("ungroomed") or [] if str(u.get("ac_why") or ""))
+
 def _seed_acs(story_path: Path, criteria: list[str]) -> None:
     """Replace the story's placeholder AC scaffold with one AC block per request
     criterion: the criterion is the TITLE, and Given/When/Then and the Verify stay explicit
@@ -250,6 +290,9 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
             # must be machine-resolvable, not only in the title. A secondary traceability link -
             # the story's Parent stays the epic, so derivation and the link gates are untouched.
             _insert_after_status(Path(s["path"]), f"> **Delivers:** {rid}")
+            # Fill the User Story block from the title and the request, so no `{{...}}` field
+            # ships unfilled - an unfilled field reads as an omission rather than a prompt.
+            _fill_user_story(Path(s["path"]), title, rid)
             # A SINGLE story is the request, so it takes the criteria. A multi-story
             # breakdown cannot know which criterion belongs to which story, so it seeds
             # none of them and the epic carries the list instead (below). Seeding them all
@@ -337,6 +380,9 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
             minted.append(Path(s["path"]))
             story_ids.append(s["id"])
             _insert_after_status(Path(s["path"]), f"> **Delivers:** {rid}")  # originating request
+            # Fill the User Story block from the title and the request, so no `{{...}}` field
+            # ships unfilled - an unfilled field reads as an omission rather than a prompt.
+            _fill_user_story(Path(s["path"]), title, rid)
             # Same rule as `_decompose`: one story is the request and takes the criteria;
             # several cannot be told apart, so the shared epic carries them.
             if idx == 0 and seed_criteria and len(stories) == 1:
@@ -1090,6 +1136,18 @@ def cmd_apply(args: argparse.Namespace) -> int:
     print(f"{verb} {result['request']} -> {result['epic']} ({result['epic_size']}, "
           f"{result['points']} pts) with {len(result['stories'])} story(ies): "
           f"{', '.join(result['stories'])}")
+    # The grooming this mint just created, priced where it is incurred. The points size the
+    # DELIVERY each story describes and never the authoring of its criteria, so a refined batch
+    # reads as ready while owing a body of work nobody budgeted - twenty stories in one run, and
+    # authoring their criteria was the largest single piece of that sprint's planning. The count
+    # is the planner's own census, so it cannot disagree with what `sprint plan` refuses on.
+    if not result["dry_run"]:
+        owed = grooming_owed(args.root, result["stories"])
+        if owed:
+            print(f"  {owed} of {len(result['stories'])} story(ies) still owe authored "
+                  f"acceptance criteria - `sprint plan` refuses a batch holding them. That "
+                  f"grooming is real work and is NOT priced by the {result['points']} points "
+                  f"above, which size the delivery each story describes.")
     if result.get("status"):
         print(f"  {result['request']} moved to {result['status']} - it reaches terminal only by "
               f"derivation, when its children are done")
