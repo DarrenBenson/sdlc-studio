@@ -1,6 +1,6 @@
 # BG0511: the plan gate reports a batch of bugs groomed when the transition gate refuses them outright
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_points.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_rolling.py, .claude/skills/sdlc-studio/scripts/tests/test_bug_regressions.py, .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py, .claude/skills/sdlc-studio/scripts/tests/test_points_model.py

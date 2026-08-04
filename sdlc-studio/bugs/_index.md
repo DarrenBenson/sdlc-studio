@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 25 |
+| Open | 24 |
 | In Progress | 0 |
-| Fixed | 399 |
+| Fixed | 400 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -50,7 +50,7 @@
 | [BG0508](BG0508-the-close-report-s-sibling-imports-sit-outside.md) | the close report's sibling imports sit outside its advisory try, so an ImportError escapes after the run is already stamped closed | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0509](BG0509-the-close-time-repair-split-uses-day-granularity.md) | the close-time-repair split uses day granularity and a global override map, so a same-day terminal is excused and an override never expires | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0510](BG0510-the-plan-review-ledger-has-no-kind-column.md) | the plan-review ledger has no kind column, so a second pre-code gate would be cleared by the first gate's approval | Open | Medium | 2026-08-03 | 2026-08-03 |
-| [BG0511](BG0511-the-plan-gate-reports-a-batch-of-bugs.md) | the plan gate reports a batch of bugs groomed when the transition gate refuses them outright | Open | High | 2026-08-03 | 2026-08-03 |
+| [BG0511](BG0511-the-plan-gate-reports-a-batch-of-bugs.md) | the plan gate reports a batch of bugs groomed when the transition gate refuses them outright | Fixed | High | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 
