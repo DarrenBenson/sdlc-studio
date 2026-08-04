@@ -73,9 +73,8 @@ ruling HOLDS the close, which is the point of being able to make one.
 | BG0512 | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | CR0509 | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | CR0510 | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
-| US0467 AC5's doc verifier is presence-only - survives an anchor rename and an added-but-unemitted documented field | not-stop-ship | claude-opus-5-author | 2026-08-04 |
-| BG0419 AC5 is pinned by a grep over the unit's own prose | not-stop-ship | claude-opus-5-author | 2026-08-04 |
-| `batch add-epic` and `batch swap` mutate a live batch without the ungroomed census | not-stop-ship | claude-opus-5-author | 2026-08-04 |
+| US0467 - AC5's doc verifier is presence-only: it survives an anchor rename and an added-but-unemitted documented field | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
+| BG0419 - AC5 is pinned by a grep over the unit's own prose | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 
 > Every row above is PRE-EXISTING to this run - none is a regression it caused nor a
 > defect it introduced. Under D0125 they are filed and excluded from the v5 release
