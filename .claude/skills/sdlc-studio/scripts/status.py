@@ -247,6 +247,71 @@ def _verify_lane(repo_root: Path) -> dict:
             "manual_acs": manual}
 
 
+
+def open_run(repo_root: Path | str) -> dict | None:
+    """The open run, as the dashboard reports it - or None when none is open.
+
+    AGENTS.md makes `/sdlc-studio status` step two of every session, including after a context
+    reset, and it answered nothing about the run the reader was standing in: no id, no rung, no
+    Sprint Goal, no batch, no remaining count.
+
+    THREE STATES, not two. `None` means no run is open; a dict with `unreadable` set means a
+    run-state file exists and does not parse. Reporting the second as the first orphans the very
+    run it failed to read, so they are kept apart all the way to the renderer.
+
+    Nothing here defines what `remaining` means. `handoff.build` owns that predicate - terminal
+    via `sdlc_md.terminal_statuses`, with terminal-but-not-delivered counted as dropped rather
+    than remaining - and this asks it, so the dashboard and the handoff cannot answer the same
+    question differently. The rung/Sprint-Goal labelling is `sprint.run_opened_line`'s
+    convention, which exists precisely because a bare `goal=` read as either.
+    """
+    root = Path(repo_root)
+    path = root / "sdlc-studio" / ".local" / "run-state.json"
+    if not path.is_file():
+        return None
+    try:
+        # `read_text_safe` swallows the error and returns "", which would make an
+        # unreadable run state indistinguishable from an absent one - the exact
+        # conflation this function exists to prevent, so the read stays loud.
+        raw = json.loads(path.read_text(encoding="utf-8"))  # bare-read-ok: the failure IS the signal - an unreadable run must not read as no run
+        if not isinstance(raw, dict):
+            raise ValueError("run state is not an object")
+    except (OSError, ValueError) as exc:
+        return {"unreadable": True, "path": str(path), "error": str(exc)}
+    if (raw.get("outcome") or "").strip().lower() != "running":
+        return None
+    out = {
+        "unreadable": False,
+        "run_id": raw.get("run_id"),
+        "rung": raw.get("goal") or "unset",
+        "sprint_goal": (raw.get("sprint_goal") or "").strip() or None,
+        "batch": len(raw.get("batch") or []),
+        "remaining": None,
+    }
+    try:
+        import handoff   # local: the dashboard borrows the handoff's predicate, not its weight
+        out["remaining"] = handoff.build(root)["summary"]["remaining"]
+    except Exception:  # noqa: BLE001 - an unreportable remaining count is not a missing run
+        out["remaining"] = None
+    return out
+
+
+def render_run_line(run: dict | None) -> str:
+    """One line naming the run, or stating plainly that there is none.
+
+    An absence is an ANSWER here, not a silence: a dashboard that simply omits the run line
+    leaves a reader unable to tell "no run" from "this build does not report runs".
+    """
+    if run is None:
+        return "Run:          no run open"
+    if run.get("unreadable"):
+        return (f"Run:          UNREADABLE run state at {run['path']} - {run['error']}. "
+                f"A run may be open; this is not the same as none.")
+    goal = f'sprint-goal="{run["sprint_goal"]}"' if run["sprint_goal"] else "sprint-goal=unset"
+    remaining = "unknown" if run["remaining"] is None else run["remaining"]
+    return (f"Run:          {run['run_id']} (rung={run['rung']}, {goal}, "
+            f"batch={run['batch']}, remaining={remaining})")
+
 def gather(repo_root: Path) -> dict:
     """Compute all four pillars from the artifact files and review state."""
     base = repo_root / "sdlc-studio"
@@ -262,6 +327,9 @@ def gather(repo_root: Path) -> dict:
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "config": _config_summary(repo_root),
+        # Explicitly null rather than omitted when no run is open, so a consumer can tell an
+        # absent run from an older schema that never carried the key.
+        "run": open_run(repo_root),
         "requirements": {
             "prd": (base / "prd.md").exists(),
             "personas": (base / "personas.md").exists(),
@@ -300,6 +368,9 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     if args.format == "json":
         print(json.dumps(data, indent=2))
         return 0
+    # FIRST, above the census. The reader arriving after a context reset needs to know which
+    # run they are standing in before they need any of the counts below it.
+    print(render_run_line(data["run"]))
     req = data["requirements"]
     print(f"Requirements: PRD={'yes' if req['prd'] else 'no'} "
           f"personas={'yes' if req['personas'] else 'no'} "

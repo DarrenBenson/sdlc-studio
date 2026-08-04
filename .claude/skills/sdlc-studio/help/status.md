@@ -377,6 +377,44 @@ out-of-vocab status: the finding names the offending status, its artifacts, and 
 `status_vocab.<type>` config remedy directly - see
 `reference-reconcile.md#count-mismatch-diagnosis` and `scripts/validate.py check`.
 
+## The open-run line {#open-run-line}
+
+The dashboard's first line names the run you are standing in, because a reader arriving after a
+context reset needs that before any census below it. It emits exactly these fields:
+
+| Field | Meaning |
+| --- | --- |
+| `run_id` | the open run's id |
+| `rung` | the goal LADDER rung the run was opened at (`triage`/`plan`/`design`/`done`), or `unset` |
+| `sprint-goal` | the Sprint Goal sentence, quoted, or `sprint-goal=unset` |
+| `batch` | how many units the batch holds |
+| `remaining` | how many are not yet terminal |
+
+`rung` and `sprint-goal` carry distinct labels on purpose: a bare `goal=` read as either, and a
+reader who takes `rung=done` for their Sprint Goal re-plans against an already-open run.
+
+`remaining` is not a second definition. It is `handoff build`'s own count - terminal by
+`sdlc_md.terminal_statuses`, with terminal-but-not-delivered (Won't Implement, Rejected) counted
+as dropped rather than remaining - so the dashboard and the handoff cannot answer the same
+question differently.
+
+Three states, not two:
+
+```text
+Run:          RUN-01KZ56M6 (rung=done, sprint-goal="...", batch=7, remaining=2)
+Run:          no run open
+Run:          UNREADABLE run state at sdlc-studio/.local/run-state.json - ...
+```
+
+An unreadable run state is never reported as "no run open". They are different facts, and
+reporting the wrong one orphans the run it failed to read. In `--format json` the key is
+`run`, present and explicitly `null` when none is open, so a consumer can tell an absent run
+from an older schema.
+
+**Re-anchor after a context reset** with this command - see
+[templates/agent-instructions.md#operating-doctrine](../templates/agent-instructions.md#operating-doctrine),
+which carries the session-start and post-compaction instruction.
+
 ## See Also
 
 - `/sdlc-studio hint` - Single actionable next step

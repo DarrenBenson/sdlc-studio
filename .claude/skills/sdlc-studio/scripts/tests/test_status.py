@@ -6,6 +6,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -786,6 +787,156 @@ class PointsCensusTests(unittest.TestCase):
                 rc = mod.main(["points", "--root", str(root)])
         self.assertEqual(0, rc)
         self.assertIn("10", buf.getvalue(), "the command printed no total")
+
+
+class OpenRunLineTests(unittest.TestCase):
+    """US0467. AGENTS.md makes `/sdlc-studio status` step two of every session including after a
+    context reset, and it answered nothing about the run the reader was standing in.
+
+    MUTANTS:
+      1. render the rung from `sprint_goal` instead of `goal` -> AC1 reddens.
+      2. count remaining locally instead of asking `handoff.build` -> AC2 reddens.
+      3. return None for an unreadable run state -> AC4 reddens (it reports "no run open",
+         which is a different fact and orphans the run it failed to read).
+    """
+
+    def _root(self, d, state=None, *, raw=None):
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        if raw is not None:
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(raw, encoding="utf-8")
+        elif state is not None:
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps(state), encoding="utf-8")
+        return root
+
+    def test_run_line_names_id_rung_sprint_goal_batch_and_remaining(self) -> None:
+        for goal, expect_rung in ((None, "unset"), ("design", "design")):
+            with self.subTest(goal=goal), tempfile.TemporaryDirectory() as d:
+                root = self._root(d, {"run_id": "RUN-T1", "outcome": "running", "goal": goal,
+                                      "sprint_goal": "a full sentence of intent",
+                                      "batch": ["BG0001", "BG0002"]})
+                run = status.open_run(root)
+                self.assertEqual(run["run_id"], "RUN-T1")
+                self.assertEqual(run["rung"], expect_rung)
+                self.assertEqual(run["sprint_goal"], "a full sentence of intent")
+                self.assertEqual(run["batch"], 2)
+                line = status.render_run_line(run)
+                self.assertIn("RUN-T1", line)
+                self.assertIn(f"rung={expect_rung}", line)
+                self.assertIn('sprint-goal="a full sentence of intent"', line)
+                self.assertNotIn("rung=a full sentence", line)
+                self.assertIn("batch=2", line)
+                self.assertIn("remaining=", line)
+
+    def test_remaining_matches_handoff_over_done_wont_implement_open_and_batch_dropped(self) -> None:
+        import handoff
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+                "# US0001: s\n\n> **Status:** Done\n", encoding="utf-8")
+            (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
+                "# BG0001: b\n\n> **Status:** Open\n> **Severity:** Low\n", encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps({"run_id": "RUN-T2", "outcome": "running", "goal": "done",
+                            "sprint_goal": "g", "batch": ["US0001", "BG0001"]}),
+                encoding="utf-8")
+            run = status.open_run(root)
+            self.assertEqual(run["remaining"], handoff.build(root)["summary"]["remaining"])
+            self.assertEqual(run["remaining"], 1, "only the Open bug is remaining")
+
+    def test_absence_of_a_run_is_stated_not_silent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:      # no run-state.json at all
+            root = self._root(d)
+            self.assertIsNone(status.open_run(root))
+            self.assertIn("no run open", status.render_run_line(None))
+            self.assertIn("run", status.gather(root))
+            self.assertIsNone(status.gather(root)["run"], "the key must be explicitly null")
+        with tempfile.TemporaryDirectory() as d:      # a CLOSED run, batch still populated
+            root = self._root(d, {"run_id": "RUN-OLD", "outcome": "goal-reached",
+                                  "ended_at": "2026-01-01", "batch": ["BG0001"], "goal": "done"})
+            self.assertIsNone(status.open_run(root))
+            self.assertNotIn("RUN-OLD", status.render_run_line(status.open_run(root)))
+
+    def test_unreadable_run_state_is_named_not_reported_as_no_run(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, raw="{ this is not json")
+            run = status.open_run(root)
+            self.assertIsNotNone(run, "an unreadable state is not the same as no run")
+            self.assertTrue(run["unreadable"])
+            line = status.render_run_line(run)
+            self.assertIn("UNREADABLE", line)
+            self.assertNotIn("no run open", line)
+            self.assertIn("run-state.json", line)
+
+
+    def test_the_run_line_reaches_the_SHIPPED_ENTRY_POINT_not_only_the_library(self) -> None:
+        """The wiring is the part a library test does not exercise. `open_run` and
+        `render_run_line` can both be perfect while `main()` never calls them - four mechanisms
+        shipped that way in one sprint here. This drives `status.main` itself, in both formats.
+
+        MUTANT: remove the `render_run_line(data["run"])` call from `cmd_pillars`, or the
+        `"run"` key from `gather` - this test must redden while every other test in the class
+        still passes."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, {"run_id": "RUN-CLI", "outcome": "running", "goal": "design",
+                                  "sprint_goal": "a goal the CLI must print",
+                                  "batch": ["BG0001"]})
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = status.main(["pillars", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertEqual(rc, 0, out)
+            self.assertIn("RUN-CLI", out, "the CLI never printed the run line")
+            self.assertIn("rung=design", out)
+            self.assertIn('sprint-goal="a goal the CLI must print"', out)
+            self.assertTrue(out.lstrip().startswith("Run:"),
+                            f"the run line must come first, got: {out[:80]!r}")
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = status.main(["pillars", "--root", str(root), "--format", "json"])
+            self.assertEqual(rc, 0)
+            payload = json.loads(buf.getvalue())
+            self.assertEqual(payload["run"]["run_id"], "RUN-CLI")
+            self.assertEqual(payload["run"]["rung"], "design")
+
+
+class RunLineDocTests(unittest.TestCase):
+    """US0467 AC5. The help page must document exactly the fields the run line emits, both
+    ways, so a field added, renamed or dropped in code fails the test rather than the reader."""
+
+    FIELDS = ("run_id", "rung", "sprint-goal", "batch", "remaining")
+
+    def test_help_page_documents_emitted_fields_and_anchors_the_reanchor_instruction(self) -> None:
+        page = (Path(__file__).resolve().parents[2] / "help" / "status.md").read_text(
+            encoding="utf-8")
+        for field in self.FIELDS:
+            self.assertIn(field, page, f"help/status.md does not document `{field}`")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps({"run_id": "RUN-T", "outcome": "running", "goal": "done",
+                            "sprint_goal": "g", "batch": []}), encoding="utf-8")
+            run = status.open_run(root)
+            line = status.render_run_line(run)
+        # BOTH WAYS, against the JSON field set - the criterion's "carries them as fields, not
+        # only a rendered line". Comparing names against the TEXT would pass on `run_id`, which
+        # the line emits as a value under no label, so the check would not see a rename.
+        emitted = {"sprint-goal" if k == "sprint_goal" else k
+                   for k in run if k not in ("unreadable",)}
+        self.assertEqual(emitted, set(self.FIELDS),
+                         "the page documents a field the run record does not carry, or vice versa")
+        for label in ("rung=", "sprint-goal=", "batch=", "remaining="):
+            self.assertIn(label, line, f"the rendered line drops the `{label}` label")
+        self.assertIn("agent-instructions.md#operating-doctrine", page,
+                      "the page must land a reader on the re-anchor instruction")
 
 
 if __name__ == "__main__":
