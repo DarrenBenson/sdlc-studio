@@ -17,7 +17,7 @@ Decomposed from CR0439. Delivers the work CR0439 requested.
 ## Story Breakdown
 
 - [x] [US0466: The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane](../stories/US0466-the-ungroomed-ac-marker-routes-to-the-shape.md)
-- [ ] [US0467: status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses](../stories/US0467-status-names-the-open-run-id-rung-sprint.md)
+- [x] [US0467: status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses](../stories/US0467-status-names-the-open-run-id-rung-sprint.md)
 - [ ] [US0468: help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record](../stories/US0468-help-sprint-md-documents-the-run-lifecycle-batch.md)
 
 ## Revision History

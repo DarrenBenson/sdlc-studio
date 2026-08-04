@@ -1,3 +1,8 @@
+
+<!-- close-status:begin -->
+> **RUN-01KZ56M6 closed goal-reached.** 7 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
 > **Run of record:** RUN-01KZ56M6 - the first run of the backlog-clearing programme.
 > 22 of 22 points delivered across 7 units. Every unit is terminal, covered by an independent
 > pass, and signed off by the operator. The batch review REJECTed round 1 on a regression this
