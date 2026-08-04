@@ -301,5 +301,63 @@ class AddEpicTests(unittest.TestCase):
         self.assertEqual(before, after, "a refused add still changed the batch")
 
 
+class StoryPointsSpellingTests(unittest.TestCase):
+    """BG0501. `_swap_points` hand-rolled `extract_field(text, "Points")`, so an epic whose
+    stories carry the `**Story Points:**` spelling priced at 0 and `batch add-epic` reported a
+    capacity effect of nothing. 20 stories in this corpus carry that spelling.
+
+    MUTANT: restore the hand-rolled `int(extract_field(text, "Points"))` in `_swap_points` -
+    these tests must redden."""
+
+    def _run(self, root, *argv):
+        sprint = _load()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = sprint.main(["batch", *argv, "--root", str(root)])
+        return rc, buf.getvalue()
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        for uid, pts_line in (("US0001", "> **Points:** 5"),
+                              ("US0002", "**Story Points:** 3"),
+                              ("US0003", "**Story Points:** 8")):
+            (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
+                f"# {uid}: a unit\n\n> **Status:** Ready\n> **Epic:** EP0010\n"
+                f"{pts_line}\n> **Affects:** src/a.py\n", encoding="utf-8")
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps({"run_id": "RUN-T", "batch": [], "outcome": "running"}), encoding="utf-8")
+        return root
+
+    def test_add_epic_and_swap_price_through_the_shared_reader(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            rc, out = self._run(root, "add-epic", "--epic", "EP0010", "--status", "Ready",
+                                "--reason", "pricing check")
+            self.assertEqual(rc, 0, out)
+            # 5 + 3 + 8 = 16. The hand-rolled reader saw only the one canonical spelling and
+            # priced this at 5, or at 0 had none of them been canonical.
+            self.assertIn("16", out, f"the epic priced at something other than 16: {out}")
+
+    def test_a_story_carrying_only_the_alternate_spelling_is_not_free(self) -> None:
+        """The sharper case: an epic where NO story uses the canonical spelling priced at
+        exactly 0, and a capacity effect of zero reads as a batch that costs nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "stories" / "US0009-x.md").write_text(
+                "# US0009: a unit\n\n> **Status:** Ready\n> **Epic:** EP0020\n"
+                "**Story Points:** 5\n> **Affects:** src/a.py\n", encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps({"run_id": "RUN-T", "batch": [], "outcome": "running"}),
+                encoding="utf-8")
+            rc, out = self._run(root, "add-epic", "--epic", "EP0020", "--status", "Ready",
+                                "--reason", "pricing check")
+            self.assertEqual(rc, 0, out)
+            self.assertNotIn(" 0 point", out, f"an epic of one 5-point story priced at 0: {out}")
+
+
 if __name__ == "__main__":
     unittest.main()

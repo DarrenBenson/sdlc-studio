@@ -744,6 +744,9 @@ SINGLE_LINE_LIST_FIELDS: tuple[str, ...] = ("acs", "options", "verify")
 # scale IS the estimate, so the refusal is the point. The estimate is RELATIVE ("is this bigger
 # than that one"), never an absolute prediction of time or tokens.
 POINTS_FIELD = "Points"
+#: The alternate spelling the corpus writes on 20 stories. Declared beside the canonical
+#: one so `read_points` is the only place that has to know there are two.
+STORY_POINTS_FIELD = "Story Points"
 POINTS_SCALE: tuple[int, ...] = (1, 2, 3, 5, 8, 13, 20)
 # Above this, a unit MUST be split. Estimator consistency collapses beyond it - in the blind
 # re-estimation the 13s were systematically OVER-estimated (1.9x cheaper per point than every
@@ -804,6 +807,13 @@ def read_points(text: str) -> int | None:
     size at all, exactly as the creators refuse to write one.
     """
     raw = extract_field(text, POINTS_FIELD)
+    if not raw or not raw.strip():
+        # The second spelling this corpus actually writes. 20 stories carry `**Story Points:**`,
+        # and `extract_field(text, "Points")` does not match it - so THE shared reader returned
+        # None for them and every size consumer read them as unsized. Routing another caller
+        # through a reader that cannot read the field is why the first fix for this changed
+        # nothing. Tried second, so `Points` still wins where both are present.
+        raw = extract_field(text, STORY_POINTS_FIELD)
     if not raw or not raw.strip():
         return None
     tok = raw.strip().split()[0].strip("*_`:,;.()")

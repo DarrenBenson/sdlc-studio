@@ -1205,5 +1205,33 @@ class SkillRelativeResolutionTests(unittest.TestCase):
                              vendored.resolve())
 
 
+class StoryPointsSpellingTests(unittest.TestCase):
+    """BG0501. `batch add-epic` and `batch swap` priced stories at 0 because they hand-rolled
+    `extract_field(text, "Points")`. The filed fix - route through the shared reader - would
+    have changed nothing: `read_points` asked for `Points` too, and 20 stories in this corpus
+    carry `**Story Points:**`, which that field name does not match. The reader itself had to
+    learn the spelling; then the caller routes through it.
+
+    MUTANTS:
+      1. drop the `STORY_POINTS_FIELD` fallback in `read_points`.
+      2. try `Story Points` FIRST, so it wins over an explicit `Points`.
+    """
+
+    def test_both_spellings_read_back(self) -> None:
+        self.assertEqual(sdlc_md.read_points("**Story Points:** 5"), 5)
+        self.assertEqual(sdlc_md.read_points("> **Points:** 3"), 3)
+
+    def test_the_canonical_spelling_wins_when_both_are_present(self) -> None:
+        """Order matters: a record carrying both must read as its canonical field, or the fix
+        silently changes what an existing artefact means."""
+        self.assertEqual(sdlc_md.read_points("> **Points:** 5\n**Story Points:** 8"), 5)
+
+    def test_an_unsized_record_is_still_unsized(self) -> None:
+        """The control. A fallback that matched too eagerly would invent a size for a record
+        that declares none, which is worse than the defect."""
+        self.assertIsNone(sdlc_md.read_points("# US0001: a story\n\n> **Status:** Ready\n"))
+        self.assertIsNone(sdlc_md.read_points("we discussed **Story Points:** in the retro"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -6550,11 +6550,13 @@ def _swap_points(root: Path, ids) -> int:
         if not found:
             continue
         text = sdlc_md.read_text_safe(found[0]) or ""
-        raw = (sdlc_md.extract_field(text, "Points") or "").strip()
-        try:
-            total += int(raw)
-        except (TypeError, ValueError):
-            continue
+        # THE shared reader, not a hand-rolled parse. The hand-rolled one asked `extract_field`
+        # for `Points` and matched neither the `Story Points` spelling nor a decorated value, so
+        # `batch add-epic` and `batch swap` priced whole epics at 0 and reported a capacity
+        # effect of nothing.
+        pts = sdlc_md.read_points(text)
+        if pts is not None:
+            total += pts
     return total
 
 
