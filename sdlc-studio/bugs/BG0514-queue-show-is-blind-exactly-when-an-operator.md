@@ -29,8 +29,11 @@ Split the resolution from the open-run guard: give `queue_show` a path that reso
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `queue_show` delegates to `materialise_next`, which refuses first on the single-run-slot guard.
-- [ ] The proposed fix lands, pinned by a test: Split the resolution from the open-run guard: give `queue_show` a path that resolves the head's scope without asking whether a run is open, and leave the guard...
+- [ ] `sprint queue show` reports the head charter's resolved units WITH a run open. The fixture must have a run open - that is precisely the condition US0489's passing verifier lacks, which is how the defect survived a green criterion (LL0020)
+- [ ] The goal-review line travels with it. Today it is suppressed because it sits inside the same `ok` branch, so US0490's "the review travels with the charter" is invisible during a run; after the fix it is visible in both states
+- [ ] The single-run-slot guard still refuses `next`, which WRITES. The guard moves rather than disappears, pinned by a test that runs `next` with a run open and asserts the refusal - otherwise this fix trades a blind read for an unguarded write
+- [ ] The mutant is the shared delegation: re-pointing `queue_show` back through `materialise_next` reddens the new test
+- [ ] Read-only means read-only: `queue show` with a run open writes nothing - no run state, no charter status, no queue reorder - asserted by comparing the tree before and after
 
 ## Impact
 

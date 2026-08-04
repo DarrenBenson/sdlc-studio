@@ -27,8 +27,10 @@ First make the failure NAMEABLE, which is the part currently missing: the runner
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `tools/run-suite.sh all` returned GREEN (5930 passed, 577s) and then RED twice (1159s and 1143s) over trees that differ only by a regenerated index and a...
-- [ ] The proposed fix lands, pinned by a test: First make the failure NAMEABLE, which is the part currently missing: the runner must preserve the failing leg's full output for the run whose verdict it just...
+- [ ] A red leg NAMES its failing test. Executing the runner against a deliberately failing tools test leaves a preserved log containing the `FAIL:` or `ERROR:` header line that names it - the line the streamed output drops today, leaving only `FAILED (failures=1)`
+- [ ] The preserved log belongs to the run whose verdict was written, not to whichever run wrote last. Two runs in succession leave the first run's log still retrievable against its own verdict; `gate-suite-last.log` does not have that property, which is why the real failure was unnameable when it happened
+- [ ] The mutant is the preservation: restoring the single overwritten log path reddens the new test
+- [ ] **The narrowing is recorded.** Nameability is the half this unit delivers. The 4.5x slowdown and the assertion that breaks under it are diagnosed with the named test in hand, and are then either fixed here or carried by their own filed id named in this bug's Revision History. Neither is left implied - that is BG0490's defect class, and this unit is not Fixed while its title's second half is silently undelivered
 
 ## Impact
 

@@ -30,8 +30,11 @@ Decide where the charter is spent and make one place do it. Either `next` opens 
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `Spent` is declared in `lib/sdlc_md.py` as the charter's successful terminal and ships in the versioned schema contract at `reference-schema.md`.
-- [ ] The proposed fix lands, pinned by a test: Decide where the charter is spent and make one place do it.
+- [ ] A charter reaches `Spent`: queue a charter, materialise it, open the run, and the charter's status is Spent. `queue show` no longer names it as head, and the next `next` resolves the charter behind it rather than the same one again
+- [ ] Exactly ONE code path sets it, and which one is a recorded decision. Splitting the lifecycle across `next` and `plan --write` gives two commands that can disagree about whether a charter was consumed (LL0016); the test asserts the single writer, so adding a second reddens it
+- [ ] `Spent` stops being a declared-but-unreachable terminal: a search of `scripts/` for `Spent` finds a setter, not only the declaration in `lib/sdlc_md.py` and the schema contract. This is the exact check that found the defect, so it is the one that must flip
+- [ ] Cancel stays distinct from spent. A cancelled charter still records a withdrawal with its reason and does not read as run - the two terminals mean different things and an operator who ran a charter must not have to lie about it
+- [ ] The mutant is the status write: removing it leaves the charter Queued and reddens the new test. A test that only asserts the run opened would survive that mutant, which is why the assertion is on the charter, not the run
 
 ## Impact
 

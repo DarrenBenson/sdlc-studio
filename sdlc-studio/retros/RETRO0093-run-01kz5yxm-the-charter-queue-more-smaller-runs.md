@@ -4,6 +4,7 @@
 > **Batch:** US0487, US0488, US0489, US0490, US0491, US0492
 > **Goal:** More, smaller runs is a command rather than an intention: a sprint charter is a first-class artefact carrying its own goal, scope rule, appetite and seat review, the next run is materialised from the head charter against the backlog as it stands at that moment, and calling a sprint at a point returns its unstarted remainder to the queue instead of losing it.
 > **Delivered:** 6 / 6   **Blocked:** 0
+> **Close-repair-override:** BG0517 - the defect was IN the close loop that was running this close, and it refused a converged loop: the recorded series was `outstanding: 1,1,1,1,0,0`, so rounds five and six had an empty outstanding set and were stopped on the cap anyway. Filing and deferring it was not available, because deferring it left no round in which this close could terminate. Raising the cap - already done once under D0128 - only moves the number at which a converged loop is refused. Fixed at the close because the close was the thing it was blocking.
 
 ## Delivered
 

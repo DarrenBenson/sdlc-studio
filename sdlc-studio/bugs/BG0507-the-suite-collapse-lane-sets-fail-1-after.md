@@ -29,8 +29,11 @@ Move the verdict write below the collapse check too, or make the collapse set `f
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: BG0489 moved the verdict write below both suite lanes, which closes the fail-open reached through a failing lane.
-- [ ] The proposed fix lands, pinned by a test: Move the verdict write below the collapse check too, or make the collapse set `fail` before the write.
+- [ ] Executing `.githooks/commit-msg` with a `gate_timing.py` stub that reports a collapse (rc 3) leaves NO green verdict at that HEAD. Today the hook exits 1 and `sdlc-studio/.local/gate-suite-verdict.json` still holds `status: green`; after the fix the record is absent or not-green, checked by reading the file the next `pre-commit` would read
+- [ ] The byte-identical retry re-runs the suites rather than skipping them. Demonstrated end-to-end - collapse, retry, observe the suites execute - not by asserting on source order, because source order is what the current defect already satisfies
+- [ ] The mutant is the ordering: restoring the write to its position above the collapse check reddens the new test. Named before the test is written, and applied to prove it
+- [ ] BG0489's failing-lane test passes unchanged, so the third door is closed without reopening either of the first two
+- [ ] The verdict write is the last act of a passing hook by construction, not by inspection: any check that can still set `fail` sits above it, and the test that pins this fails if a new check is appended below
 
 ## Impact
 
