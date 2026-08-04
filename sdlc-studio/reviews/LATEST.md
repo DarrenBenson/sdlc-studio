@@ -1,72 +1,66 @@
+> **Run of record:** RUN-01KZ5YXM - the charter queue. 26 of 26 points across 6 units, every
+> one approved at the third review round and signed off under D0126. Two earlier rounds returned
+> REJECT, and the tooling escalated the second to the operator for non-convergence. That
+> escalation stands: both rejected versions passed every automated check in this repository
+> while being wrong.
 
-<!-- close-status:begin -->
-> **RUN-01KZ56M6 closed goal-reached.** 7 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
-> Stamped by `sprint close` - edit the prose below, not this block.
-<!-- close-status:end -->
-> **Run of record:** RUN-01KZ56M6 - the first run of the backlog-clearing programme.
-> 22 of 22 points delivered across 7 units. Every unit is terminal, covered by an independent
-> pass, and signed off by the operator. The batch review REJECTed round 1 on a regression this
-> run introduced and approved round 2 after it was repaired.
+## Landed: RUN-01KZ5YXM - more, smaller runs becomes a command
 
-## Landed: RUN-01KZ56M6 - a shipped mechanism does what its own record claims
+The goal was that the programme's own re-plan stops being an intention. A charter is now a
+first-class artefact (`SC`, `sdlc-studio/charters/`) whose prefix, create status and terminal set
+are **derived** from the shared registry rather than restated beside the charter code.
 
-The goal was that for every unit the gap between a mechanism's recorded claim and its actual
-behaviour is closed and proven by execution - an executed mutant where the claim is a verifier,
-a reproduced wrong result where the claim is behaviour. Judged **achieved**.
+**`sprint next` resolves the head charter against the backlog as it stands at that moment.** The
+load-bearing test moves the backlog underneath a charter - one unit created since, one delivered
+since - and asserts the second pass returns the new unit and not the delivered one. A cached
+batch passes every other assertion in that class and fails only this.
 
-**Four verifiers that could not fail can now fail.** `BG0419` repaired the close dry run (which
-evaluated only until its first refusal), the close's cost line (whose sole call site could be
-deleted with 34 tests still passing), `critic`'s batch verbs (which asserted that nothing landed
-rather than that nothing was attempted), and `reconcile.detect_all`'s corpus cache (whose eleven
-tests each opened their own cache in a fixture, so they proved the mechanism and never its
-caller). Every mutant was demonstrated to survive the old coverage before the repair and to die
-after it.
+**The queue is inspectable and editable.** `queue show`, `reorder`, `cancel`, `clear`. Cancel
+withdraws rather than deletes and keeps its reason, because a cancelled plan is a decision
+somebody made and deleting it loses the only trace of why the queue looks as it does. An
+unranked charter sorts after every ranked one: absence is not rank zero.
 
-**Three defects that reach consuming projects are fixed.** A skill-relative `Affects` path no
-longer resolves to a consuming project's own file of the same name (`BG0494`). `refine` fills
-the User Story fields it mints and reports the grooming it leaves owed, priced from the
-planner's own census (`BG0477`). The shared points reader learns the `Story Points` spelling
-that 20 stories use, so `batch add-epic` stops pricing whole epics at zero (`BG0501`).
+**A charter carries its own goal review**, under `## Seat review` on the charter rather than in
+`.local/`. The test proves it travels by deleting `sdlc-studio/.local` entirely and reading the
+verdicts back from the file alone. The runner is recorded beside the reviewer and a match is
+stated plainly - separation is recorded, never enforced, because a queue is usually planned and
+run by one person and refusing that would make it unusable.
 
-**And `status` names the open run** on its first line - id, rung, Sprint Goal, batch, remaining -
-so a session re-anchors from the one command AGENTS.md already tells it to run (`US0467`).
+**`sprint call` finishes a run rather than abandoning it**: the unstarted remainder is descoped
+to the **backlog**, never forward to the next charter, and the close chain then runs.
 
 ### What the reviews found, and why it matters
 
-| Finding | Shape |
-| --- | --- |
-| The dashboard died on a structurally malformed run state | a regression this run introduced; base exit 0, HEAD exit 1, taking `hint` with it |
-| `open_run` hand-rolled a second reader of `run-state.json` | the defect `BG0501` repaired elsewhere in the same batch |
-| `BG0501`'s filed fix did not fix `BG0501` | the shared reader could not read the field either |
-| `BG0485`'s premise did not reproduce | its fix shipped four days before the bug was filed |
-| A criterion would have reinstated a deliberate fix | `BG0477` AC1 against commit `7ef88707` |
+| Round | Finding | Why no gate caught it |
+| --- | --- | --- |
+| 1 | `call` printed "now close it against the goal" and did not close | AC1's verifier had been repointed to clear the lane-check |
+| 2 | `call` could not execute at all - uncaught `AttributeError` on every path | the verifier stubbed the collaborator under test |
+| 3 | APPROVE, judged by typing the command in nine argument shapes | - |
 
-The first two came from the independent batch review. The next three came from the plan-time
-goal review, before any code was written - which is where they were cheapest to find.
+Both failures were the same error: **satisfying a gate rather than the criterion.** Both shipped
+green through the full suite, `verify_ac`, the lane-check and `gate.py`. Round 2's version passed
+every automated check in the repository while being a verb that could not run.
 
-Five gates refused this work and were right every time: the lane-check (five verifiers that
-never entered `main()`), the repo-hygiene sweep (a bare artefact read), the verify-ratchet (two
-criteria sharing one selector - the very defect `US0635` exists for), the transition depth gate,
-and the suite-claim lane (a verdict the tree had moved past).
+That is the clearest evidence this programme has produced for the independent pass. Eleven gate
+refusals across the run were all correct and all useful - but no gate caught either of these,
+because in both cases the thing being measured had quietly moved.
 
 ### What is owed
 
 | Item | Where |
 | --- | --- |
-| `batch add-epic` and `batch swap` skip the ungroomed census | `BG0512`, open |
-| `US0467` AC5's doc verifier is presence-only | ruled not-stop-ship; the `BG0457` shape |
-| `BG0419` AC5 is pinned by a grep over its own prose | ruled not-stop-ship; same shape |
-| Twelve pre-existing findings carried under D0125 | filed, excluded from the v5 gate |
+| `queue show` is blind during a run, reusing the materialiser's open-run refusal | `BG0514`, open |
+| The queue has no exit - nothing sets `Spent`, so a charter re-materialises forever | `BG0515`, open |
+| A scope query cannot express a decomposition; `SC0001`'s two scope fields disagree | `CR0531`, open |
+| `run-suite.sh` intermittently red, and the failing test cannot be named | `BG0513`, open |
+| The close reports "could not be attributed" where the gate named its lane plainly | `BG0516`, open |
 
-### The programme, honestly
+### The programme
 
-`D0125` freezes the target at the 66 units open on 2026-08-03 and rules that a pre-existing
-finding raised mid-programme is filed post-v5. Run 1 delivered **22 points in a full cycle**
-including three goal-review rounds and a rejected batch review. The measured five-run mean is
-61. Roughly 235 points remain.
+`D0125` freezes the target at the 66 units open on 2026-08-03. Two runs are closed: 22 points and
+26 points. Roughly 183 points remain, and at this rate that is several more runs - which is the
+shape the operator chose when they re-planned it as more, smaller runs.
 
-Three runs will not clear that, and the operator has decided the programme is re-planned as
-**more, smaller runs** rather than by cutting the ceremony - on this run's evidence, every
-refusal the ceremony produced caught something that would otherwise have shipped, including a
-crash in the very command the run existed to improve. The frozen target does not move; only the
-run count does.
+`SC0001` sits at the head of the queue: **the close costs less than it returns**, the complaint
+raised three times and still unanswered. `CR0531` must land first or its scope query resolves 15
+CRs against an 8-unit appetite.
