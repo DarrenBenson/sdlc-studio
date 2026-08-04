@@ -3,7 +3,7 @@
 > **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, .claude/skills/sdlc-studio/scripts/sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/bugs/BG0419-four-delivered-units-are-held-by-verifiers-that.md
 > **Evidence:** Two independent sign-off reviews, each executing mutants with purged bytecode and diff-confirmed patches. US0555: a break at the first refusing action step loses the second refusal and all 547 sprint tests stay green. US0559: deleting the close's SOLE cost-report call site survives all 547. US0557: removing the up-front refusal leaves its own three tests green - they assert the postcondition, which also holds when every write is attempted and every write fails. US0532: its named verifier passes with the ENTIRE corpus cache removed, ratio 1.95 both ways, because the harness makes a fixed twelve lookups regardless of workspace size and then discards the only discriminating signal by taking a ratio.
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio file

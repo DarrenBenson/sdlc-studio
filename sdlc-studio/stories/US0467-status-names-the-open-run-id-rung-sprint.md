@@ -84,6 +84,39 @@ the fifth. It now compares against the JSON field set, which is what the criteri
 ("carries them as fields, not only a rendered line"), with the rendered labels asserted
 separately.
 
+## Round 2: what the independent review rejected, and what changed
+
+REJECTed with one blocking finding, reproduced by the reviewer in a linked worktree.
+
+**The dashboard died on a run state that parses but is structurally malformed.** `open_run`
+guarded exactly two failure modes - JSON syntax and top-level not-an-object - and read every
+field below unguarded. A `batch` that is not a list, or an `outcome` that is not a string,
+raised straight out into `gather`, taking the whole four-pillar census AND `hint` down with it:
+base exit 0, HEAD exit 1, on `pillars`, `pillars --format json` and the bare command alike. That
+is the command AGENTS.md makes step two of every session, and this story's own reason for
+existing. A FOURTH state, where the docstring insisted there were three.
+
+The contributing cause was sharper than the crash. `open_run` hand-rolled a SECOND reader of
+`run-state.json` - its own path construction and its own parse contract - while `run_state.read`
+already implements exactly those states with a typed `RunStateError`. A path change in
+`run_state` would have made the dashboard report "no run open" forever, silently. That is the
+defect `BG0501` repaired elsewhere in this same batch, so shipping it here would have been the
+sprint contradicting itself in one commit.
+
+`open_run` now reads through `run_state.read`, catches `RunStateError` for the unreadable
+branch, and every field read is total. Three mutants pin it, all killed: restore the unguarded
+`batch` read, restore the unguarded `outcome` read, and hand-roll a second reader.
+
+Also repaired from the non-blocking set: three units over-declared `Affects` (`BG0419`,
+`BG0501`, `BG0477`), and `BG0477`'s second mint site - the `--into` later-slice path - was wired
+but unexercised, so the wiring could have been deleted silently. That is the enumerated-list
+shape the unit exists to repair, left inside the repair; it now has its own test.
+
+Carried, not repaired: AC5's doc verifier is presence-only and survives an anchor rename (though
+`check_links` catches that in a pre-commit lane) and an added-but-unemitted documented field.
+Recorded rather than closed, because a criterion pinned by prose against prose is the `BG0457`
+shape and belongs with it.
+
 ## Revision History
 
 | Date | Author | Change |

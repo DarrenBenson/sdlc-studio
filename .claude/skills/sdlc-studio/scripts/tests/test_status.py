@@ -873,6 +873,50 @@ class OpenRunLineTests(unittest.TestCase):
             self.assertIn("run-state.json", line)
 
 
+    def test_a_structurally_malformed_run_state_is_named_not_fatal(self) -> None:
+        """The blocking finding from the batch review, pinned. `run_state.read` guarantees the
+        file parsed and is an object; it guarantees NOTHING about the shape inside. A `batch`
+        that is not a list, or an `outcome` that is not a string, raised straight out of
+        `open_run` into `gather` and took the whole four-pillar dashboard - and `hint` - down
+        with it. That is the command AGENTS.md makes step two of every session, and US0467's
+        own reason for existing.
+
+        A fourth state, where the docstring insisted there were three.
+
+        MUTANT: restore any unguarded field read, e.g. `len(raw.get("batch") or [])`. Each of
+        these subtests must redden."""
+        import contextlib
+        import io
+        for label, state in (("batch is not sized", {"outcome": "running", "run_id": "R1", "batch": 5}),
+                             ("outcome is not a string", {"outcome": 5, "run_id": "R1", "batch": []}),
+                             ("sprint_goal is not a string",
+                              {"outcome": "running", "run_id": "R1", "batch": [], "sprint_goal": 5})):
+            with self.subTest(label), tempfile.TemporaryDirectory() as d:
+                root = self._root(d, state)
+                run = status.open_run(root)                      # must not raise
+                status.render_run_line(run)                      # nor must the renderer
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    rc = status.main(["pillars", "--root", str(root)])
+                self.assertEqual(rc, 0, f"the dashboard died on a malformed run state: {label}")
+                self.assertIn("Requirements:", buf.getvalue(),
+                              "the four-pillar census was lost to a malformed run state")
+
+    def test_open_run_uses_the_shared_reader_not_a_second_one(self) -> None:
+        """The contributing cause. `open_run` hand-rolled its own path construction and its own
+        parse contract, duplicating `run_state.read` - which already implements exactly these
+        states with a typed error. A path change in `run_state` would have made the dashboard
+        report "no run open" forever, silently. This is the shape BG0501 repaired elsewhere in
+        the same batch, so shipping it here would have been the sprint contradicting itself.
+
+        MUTANT: reintroduce a literal `sdlc-studio/.local/run-state.json` path in `open_run`."""
+        src = (Path(__file__).resolve().parents[1] / "status.py").read_text(encoding="utf-8")
+        body = src.split("def open_run(", 1)[1].split("\ndef ", 1)[0]
+        self.assertIn("run_state.read", body,
+                      "open_run must read through the shared reader")
+        self.assertNotIn('"run-state.json"', body,
+                         "open_run hand-rolls the run-state path - that is a second reader")
+
     def test_the_run_line_reaches_the_SHIPPED_ENTRY_POINT_not_only_the_library(self) -> None:
         """The wiring is the part a library test does not exercise. `open_run` and
         `render_run_line` can both be perfect while `main()` never calls them - four mechanisms

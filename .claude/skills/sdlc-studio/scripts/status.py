@@ -265,27 +265,30 @@ def open_run(repo_root: Path | str) -> dict | None:
     question differently. The rung/Sprint-Goal labelling is `sprint.run_opened_line`'s
     convention, which exists precisely because a bare `goal=` read as either.
     """
+    from lib import run_state   # THE shared reader; this must not be a second one
+
     root = Path(repo_root)
-    path = root / "sdlc-studio" / ".local" / "run-state.json"
-    if not path.is_file():
-        return None
     try:
-        # `read_text_safe` swallows the error and returns "", which would make an
-        # unreadable run state indistinguishable from an absent one - the exact
-        # conflation this function exists to prevent, so the read stays loud.
-        raw = json.loads(path.read_text(encoding="utf-8"))  # bare-read-ok: the failure IS the signal - an unreadable run must not read as no run
-        if not isinstance(raw, dict):
-            raise ValueError("run state is not an object")
-    except (OSError, ValueError) as exc:
-        return {"unreadable": True, "path": str(path), "error": str(exc)}
-    if (raw.get("outcome") or "").strip().lower() != "running":
+        raw = run_state.read(root)
+    except run_state.RunStateError as exc:
+        return {"unreadable": True, "path": str(root / run_state.REL), "error": str(exc)}
+    if not raw:
         return None
+    # STRUCTURALLY malformed is a FOURTH state, and it used to escape. `read` guarantees the
+    # file parsed and is an object; it guarantees nothing about the shape of what is inside.
+    # A `batch` that is not a list, or an `outcome` that is not a string, raised straight out
+    # of here into `gather` and took the whole four-pillar dashboard - and `hint` - down with
+    # it. The command AGENTS.md makes step two of every session must not die on a half-written
+    # record; it must NAME it. Every field read below is therefore total.
+    if str(raw.get("outcome") or "").strip().lower() != "running":
+        return None
+    batch = raw.get("batch")
     out = {
         "unreadable": False,
         "run_id": raw.get("run_id"),
         "rung": raw.get("goal") or "unset",
-        "sprint_goal": (raw.get("sprint_goal") or "").strip() or None,
-        "batch": len(raw.get("batch") or []),
+        "sprint_goal": str(raw.get("sprint_goal") or "").strip() or None,
+        "batch": len(batch) if isinstance(batch, (list, tuple)) else None,
         "remaining": None,
     }
     try:
@@ -309,8 +312,9 @@ def render_run_line(run: dict | None) -> str:
                 f"A run may be open; this is not the same as none.")
     goal = f'sprint-goal="{run["sprint_goal"]}"' if run["sprint_goal"] else "sprint-goal=unset"
     remaining = "unknown" if run["remaining"] is None else run["remaining"]
+    batch = "unknown" if run["batch"] is None else run["batch"]
     return (f"Run:          {run['run_id']} (rung={run['rung']}, {goal}, "
-            f"batch={run['batch']}, remaining={remaining})")
+            f"batch={batch}, remaining={remaining})")
 
 def gather(repo_root: Path) -> dict:
     """Compute all four pillars from the artifact files and review state."""

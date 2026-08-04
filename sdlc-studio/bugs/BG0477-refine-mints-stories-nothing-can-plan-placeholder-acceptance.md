@@ -4,7 +4,7 @@
 > **Severity:** High
 > **Points:** 3
 > **Verification depth:** functional
-> **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, .claude/skills/sdlc-studio/templates/core/story.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

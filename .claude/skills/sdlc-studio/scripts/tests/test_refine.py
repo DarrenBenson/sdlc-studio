@@ -1227,6 +1227,27 @@ class MintedStoryFieldsTests(unittest.TestCase):
             first = sdlc_md.find_by_id(root, res["stories"][0])[0].read_text(encoding="utf-8")
             self.assertIn("First thing", first.split("## User Story", 1)[1].split("##", 1)[0])
 
+    def test_the_SECOND_mint_site_fills_its_fields_too(self) -> None:
+        """The batch review's finding 7. `_fill_user_story` is wired into both `_decompose` and
+        `_decompose_into` (the `--into` later-slice path), and only the first was exercised - so
+        the second wiring could be deleted silently. That is the enumerated-list shape this unit
+        exists to repair, left inside the repair.
+
+        MUTANT: delete the `_fill_user_story` call from the `--into` path."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the first request is satisfied"])
+            _cr(root, "CR0002", ["the second request is satisfied"])
+            epic = refine.refine(root, "CR0001", "Batch epic",
+                                 [("A", 2, None), ("B", 3, None)])["epic"]
+            res = refine.refine(root, "CR0002", None, [("C", 2, None), ("D", 3, None)],
+                                into_epic=epic)
+            for sid in res["stories"]:
+                text = sdlc_md.find_by_id(root, sid)[0].read_text(encoding="utf-8")
+                block = text.split("## User Story", 1)[1].split("##", 1)[0]
+                self.assertNotIn("{{", block,
+                                 f"{sid} came from the --into path with an unfilled field")
+
     def test_refine_reports_the_grooming_it_leaves_owed(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
