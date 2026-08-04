@@ -49,7 +49,7 @@ The common cause is one sentence: **each test asserts the pure helper, or the po
     action step loses the second refusal and all sprint tests stay green
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_both_refusing_action_steps_are_reported
 
-- [ ] **AC2: US0559 is covered by a test that RUNS a close and asserts the cost line in its output.**
+- [x] **AC2: US0559 is covered by a test that RUNS a close and asserts the cost line in its output.**
   - **Then** deleting the close's sole cost-report call site reddens it, where today it survives
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_a_close_emits_its_cost_line
 
@@ -108,6 +108,18 @@ it" is not the same fact as "its own tests caught it".
 
 Every probe ran with `__pycache__` purged, the child under `python3 -B`, the anchor asserted
 unique before patching, and the source verified byte-identical afterwards.
+
+**AC2 is delivered, and its mutant now dies.** `InertVerifierRepairTests::test_a_close_emits_
+its_cost_line` runs a close through `sprint.main` and asserts the cost line carries its MEASURED
+figure - not merely that a line appears, because a line permanently reading "not measured" would
+satisfy a presence check while reporting nothing, which is the same defect one level down.
+Re-running the named mutant against it: **KILLED**, where the same mutant left 34 pre-existing
+cost tests passing.
+
+One defect in the first draft of that test, found by running it: the fixture's ledger row
+carried a run id the close did not use, so the close correctly reported UNMEASURED and the test
+asserted against a figure computed from a different id. It was passing on the wrong evidence
+before it was corrected to fail on the right one.
 
 **What this establishes for the repair.** Three of the four verifiers this unit exists to fix are
 confirmed unable to fail, on the current tree, by execution rather than by the filed report - so

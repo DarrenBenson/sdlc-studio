@@ -12920,6 +12920,49 @@ class PreflightCoverageCountsTests(unittest.TestCase):
 
 
 
+class InertVerifierRepairTests(unittest.TestCase):
+    """BG0419. Delivered mechanisms whose verifiers pass with the mechanism removed.
+
+    Each test here names the mutant it must be killed by, and each mutant was demonstrated to
+    SURVIVE the pre-existing coverage before the test was written - so this class is grounded in
+    execution rather than in the filed report. That distinction is not academic: BG0485, in this
+    same batch, had been filed four days after its own fix shipped.
+    """
+
+    def test_a_close_emits_its_cost_line(self) -> None:
+        """AC2. The close's own cost was RECALLED, never reported, and the mechanism that
+        reports it was covered only by tests that build `close_cost` from a ledger by hand -
+        never by one that runs a close. Deleting the sole call site left 34 cost tests passing.
+
+        MUTANT: replace `print(close_cost_line(close_cost(...)))` in the close with a no-op.
+        This test must redden; it is the only one that can, because it is the only one that
+        reaches the production path rather than the function behind it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, handoff="HO0001", outcome="goal-reached")
+            _close_story(root)
+            _close_retro(root)
+            (root / "sdlc-studio" / ".local" / "test-execution.json").write_text(
+                json.dumps({"runs": [
+                    {"at": "2026-07-29T10:00:00+00:00", "moment": "close", "mode": "full",
+                     "seconds": 398.0, "verdict": "pass", "surface": "H",
+                     "run_id": "RUN-TEST0001", "reused_from": None}]}), encoding="utf-8")
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            printed = out.getvalue() + err.getvalue()
+            self.assertEqual(rc, 0, printed[:400])
+            self.assertIn("close cost:", printed,
+                          "the close emitted no cost line at all")
+            # And it carries the MEASURED figure, not the UNMEASURED fallback - a line that
+            # always says "not measured" would satisfy the presence check while reporting
+            # nothing, which is the same defect one level down.
+            self.assertIn("398s", printed,
+                          f"the cost line carries no measured figure. Printed:\n{printed[:400]}")
+            self.assertNotIn("close cost: no gate event", printed)
+
 class UngroomedCensusCoversEveryTypeTests(unittest.TestCase):
     """BG0511. The ungroomed census asked `conformance.story_is_ungroomed` only of STORIES, on
     the reasoning that "a bug carries no user-story scaffold". True of the scaffold; false of the
