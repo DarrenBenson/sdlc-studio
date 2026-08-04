@@ -90,8 +90,30 @@ close's own cost, and nothing observes it - so the unit that shipped "the close 
 cost" is one edit from silent. Same protocol: bytecode purged, child under `python3 -B`, anchor
 asserted unique, `sprint.py` byte-identical afterwards.
 
-Two of four probed, two confirmed. The remaining two claims (US0555's break-at-first, US0557's
-postcondition-only assertion) are not yet re-verified. Each must be probed the same way
+**All four probed. Three reproduce; one is at least partly pinned already.**
+
+| Claim | Named mutant | Result |
+| --- | --- | --- |
+| US0555 | break at the first refusing action step in the close dry run | **SURVIVED** - 21 dry-run tests pass |
+| US0559 | delete the close's sole cost-report call site | **SURVIVED** - 34 cost tests pass |
+| US0557 | remove the up-front missing-argument refusal | **KILLED** by 1 of 75 |
+| US0532 | neuter the corpus cache | **SURVIVED** - all 11 `CorpusReadOnceTests` pass |
+
+US0557 is the honest partial: something in the broader sign-off selector does catch a removed
+up-front refusal, so the surface is not wholly unguarded. What the filed claim actually says is
+narrower - that US0557's OWN three tests assert the postcondition, which holds equally when
+every write is attempted and every write fails - and that needs the narrow selector to settle.
+It is recorded as unsettled rather than closed either way, because "one of seventy-five caught
+it" is not the same fact as "its own tests caught it".
+
+Every probe ran with `__pycache__` purged, the child under `python3 -B`, the anchor asserted
+unique before patching, and the source verified byte-identical afterwards.
+
+**What this establishes for the repair.** Three of the four verifiers this unit exists to fix are
+confirmed unable to fail, on the current tree, by execution rather than by the filed report - so
+the repairs are grounded rather than taken on trust. That matters here specifically: BG0485 in
+this same batch had been filed four days after its own fix shipped, and AC5 makes a
+demonstrated-dead mutant the acceptance test for every repair in this unit. Each must be probed the same way
 before it is repaired, because BG0485 in this same batch was filed four days after its own fix
 shipped, and this unit's AC5 makes a demonstrated-dead mutant the acceptance test for every
 repair in it.
