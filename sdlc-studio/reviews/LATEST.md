@@ -54,6 +54,28 @@ because in both cases the thing being measured had quietly moved.
 | A scope query cannot express a decomposition; `SC0001`'s two scope fields disagree | `CR0531`, open |
 | `run-suite.sh` intermittently red, and the failing test cannot be named | `BG0513`, open |
 | The close reports "could not be attributed" where the gate named its lane plainly | `BG0516`, open |
+| The close-loop cap stopped a converged loop | `BG0517`, **fixed in this run** |
+
+### The close ceremony refused this run, twice, on its own defects
+
+Run 2's close is worth recording because the ceremony blocked a run that had done everything
+asked of it. The attempt series read `1, 1, 1, 1, 0, 0` - converged - and the loop guard stopped
+it anyway.
+
+Two defects, both filed by this run and one of them fixed by it:
+
+- **`BG0516`** - the close reported `the refusal could not be attributed` while the gate named
+  its failing lane in terms (`review-current`, `LATEST.md` stale). `gate --require-retro` alone
+  exits 0; only the `--require-review` form the close passes fails, so the message sends a reader
+  to the wrong place. Four rounds were unactionable, and the loop guard - reading exactly those
+  four identical rounds - correctly saw no convergence in rounds that were never attempts.
+- **`BG0517`, fixed** - `loop_termination` tested the attempt COUNT before it looked at what the
+  attempts contained, so a loop reporting zero outstanding was refused at whatever the cap
+  happened to be. The cap was raised twice under `D0128` before this was seen for what it is;
+  both raises are now reverted, because a guard whose number keeps moving is one nobody trusts.
+
+`EP0176` is Done and `RFC0057` derived resolved - the whole chain from request to epic to
+stories is terminal.
 
 ### The programme
 
