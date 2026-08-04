@@ -67,6 +67,15 @@ are real invocations.
 Both were found by mutation rather than by review, which is the point of running the mutants on
 a test whose whole subject is whether documentation can be trusted.
 
+**The lane-check advisory on this unit is accepted, not silenced.** It fires because the unit's
+`Affects` names `sprint.py` - the `call` verb had to declare itself as charter-queue work for
+the derivation to see it - while none of the three verifiers calls `main()`. That is correct as
+a heuristic and wrong here: this unit's subject is whether the DOCS match the PARSER, and the
+tests load `build_parser()` out of the shipped script to ask it. Driving `main()` would add a
+process boundary and prove nothing about the question. Recorded rather than worked around,
+because a rule bent quietly is worse than one bent openly - and the alternative, dropping
+`sprint.py` from `Affects`, would understate where the fix landed.
+
 ## Revision History
 
 | Date | Author | Change |

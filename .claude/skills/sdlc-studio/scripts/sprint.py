@@ -9282,8 +9282,15 @@ def cmd_call(args: argparse.Namespace) -> int:
     for u in res["descoped"]:
         print(f"  descoped {u['id']} ({u['status']}) - back in the backlog, unchanged")
     print(f"  {res['detail']}")
-    print(f"  now close it against the goal: sprint.py close --retro RETROxxxx")
-    return 0
+    # AC1 is the whole distinction from `stop`: a called sprint is CLOSED against its goal, not
+    # abandoned. Printing an instruction and returning 0 left the run open and the criterion
+    # unmet - and the independent review caught it. The close chain runs here, with this
+    # command's own arguments, so `call` finishes what it started.
+    args.retro = getattr(args, "retro", None)
+    args.apply_signoff = getattr(args, "apply_signoff", False)
+    args.principal = getattr(args, "principal", None)
+    print("  closing against the Sprint Goal - `call` finishes the run, it does not abandon it")
+    return cmd_close(args)
 
 
 def cmd_queue(args: argparse.Namespace) -> int:
@@ -9331,7 +9338,13 @@ def cmd_queue(args: argparse.Namespace) -> int:
 
 
 def cmd_next(args: argparse.Namespace) -> int:
-    """Materialise the head charter against the backlog as it stands, and open its run."""
+    """Resolve the head charter against the backlog as it stands, and report what it selects.
+
+    It RESOLVES; it does not open. Opening is `sprint plan --write`, which records the approved
+    batch, the appetite and the goal review together - and a resolution that opened a run as a
+    side effect would make `queue show` and `next` differ only in how much they wrote. The
+    docstring claimed otherwise until the batch review caught it.
+    """
     res = materialise_next(args.root, order=args.order,
                            skip_personas=getattr(args, "skip_personas", False),
                            runner=getattr(args, "runner", None))
@@ -9525,6 +9538,12 @@ def build_parser() -> argparse.ArgumentParser:
     cl.add_argument("--reason", required=True,
                     help="why it is being called - a descope nobody explained is "
                          "indistinguishable from work that was forgotten")
+    cl.add_argument("--retro", metavar="RETROxxxx", default=None,
+                    help="the batch retro the close validates against; without it the close "
+                         "scaffolds one and stops, exactly as `sprint close` does")
+    cl.add_argument("--apply-signoff", action="store_true",
+                    help="fan a recorded reviewer-of-record approval into per-unit sign-offs")
+    cl.add_argument("--principal", default=None, help="the reviewer of record, for --apply-signoff")
     cl.add_argument("--root", default=".", help="Repo root (default: .)")
     cl.set_defaults(func=cmd_call)
 
@@ -9552,7 +9571,8 @@ def build_parser() -> argparse.ArgumentParser:
                              "now - a queue holds intent, not a frozen batch.")
     nx.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")
     nx.add_argument("--dry-run", action="store_true",
-                    help="resolve and report, open nothing; the charter stays Queued")
+                    help="say so explicitly in the output; `next` resolves and reports either "
+                         "way, and opening the run is `sprint plan --write`")
     nx.add_argument("--runner", default=None,
                     help="who is running it - recorded beside the charter's reviewer, and a "
                          "match is REPORTED rather than refused")

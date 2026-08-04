@@ -13595,13 +13595,43 @@ class CallItHereTests(unittest.TestCase):
             res = sprint.call_it_here(root, "the remaining work needs a design decision")
             self.assertEqual(res["delivered"], ["BG0001"])
             self.assertEqual([u["id"] for u in res["descoped"]], ["BG0002"])
-            # the run is still OPEN and closeable - call does not abandon it the way stop does
-            state = json.loads(
-                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
-            self.assertEqual(state["outcome"], "running",
-                             "call must leave the run closeable against its goal, not abandon it")
-            self.assertEqual([sprint.sdlc_md.norm_id(u) for u in state["batch"]], ["BG0001"],
-                             "the descoped unit did not leave the approved batch")
+            self.assertEqual([sprint.sdlc_md.norm_id(u) for u in
+                              json.loads((root / "sdlc-studio" / ".local" /
+                                          "run-state.json").read_text(encoding="utf-8"))["batch"]],
+                             ["BG0001"], "the descoped unit did not leave the approved batch")
+
+    def test_call_RUNS_THE_CLOSE_it_does_not_merely_advise_one(self) -> None:
+        """AC1's load-bearing half, and the one the first delivery missed. `call` FINISHES a run:
+        the close chain runs. The first version descoped, printed `now close it against the
+        goal`, and returned 0 with the run still open - and AC1's verifier had been repointed at
+        a CLI test that asserted only rc==0 and some printed strings, so nothing could see it.
+        An independent review caught it.
+
+        MUTANT: replace the `return cmd_close(args)` with the old advisory print + `return 0`.
+        This test must redden."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, "BG0001", status="Fixed")
+            self._bug(root, "BG0002", status="Open")
+            self._run(root, ["BG0001", "BG0002"])
+            calls = []
+            real_close = sprint.cmd_close
+            sprint.cmd_close = lambda a: (calls.append(getattr(a, "retro", None)) or 0)
+            try:
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                    rc = sprint.main(["call", "--reason", "out of appetite",
+                                      "--retro", "RETRO9001", "--root", str(root)])
+            finally:
+                sprint.cmd_close = real_close
+            printed = out.getvalue()
+            self.assertEqual(rc, 0, printed)
+            self.assertEqual(calls, ["RETRO9001"],
+                             "call did not run the close - it only advised one, which is the "
+                             "defect AC1 exists to prevent and `stop` already covers")
+            self.assertNotIn("now close it against the goal", printed,
+                             "call still tells the operator to do what it should have done")
 
     def test_a_descope_without_a_reason_is_refused(self) -> None:
         sprint = _load()
@@ -13662,9 +13692,17 @@ class CallItHereTests(unittest.TestCase):
             self._bug(root, "BG0001", status="Fixed")
             self._bug(root, "BG0002", status="Open")
             self._run(root, ["BG0001", "BG0002"])
-            out = io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
-                rc = sprint.main(["call", "--reason", "out of appetite", "--root", str(root)])
+            # The close is stubbed here: this test is about the CLI reaching the descope and
+            # naming it, and the close chain has its own coverage. Without the stub the verb
+            # correctly runs the close, which refuses in a fixture with no retro.
+            real_close = sprint.cmd_close
+            sprint.cmd_close = lambda a: 0
+            try:
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                    rc = sprint.main(["call", "--reason", "out of appetite", "--root", str(root)])
+            finally:
+                sprint.cmd_close = real_close
             printed = out.getvalue()
             self.assertEqual(rc, 0, printed)
             self.assertIn("BG0002", printed, "the CLI never named what it descoped")

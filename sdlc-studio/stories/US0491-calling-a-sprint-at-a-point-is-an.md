@@ -22,7 +22,7 @@
 - **Given** an open run with delivered and unstarted units
 - **When** the sprint is called at that point
 - **Then** the close records what was delivered against the Sprint Goal and completes the close paperwork, rather than abandoning the run as stop does
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CallItHereTests::test_call_reaches_the_SHIPPED_ENTRY_POINT
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CallItHereTests::test_call_RUNS_THE_CLOSE_it_does_not_merely_advise_one
 - **Verified:** yes (2026-08-04)
 
 ### AC2: the descoped remainder carries a reason
@@ -68,6 +68,39 @@ rather than the work: a unit that was Open is still Open, and nothing marks it a
 descoped unit was available by calling `materialise_next`, which correctly REFUSED because the
 run was still open - so the assertion was about starting a second run rather than about the
 unit's availability. It now asserts against the same selector a charter would use.
+
+## Round 2: what the independent review rejected, and what changed
+
+REJECTed with one blocking finding, and it is the worst defect I introduced in this programme.
+
+**`sprint call` did not close anything.** AC1 is law: the close records what was delivered
+against the Sprint Goal and completes the close paperwork. What shipped descoped the remainder,
+printed `now close it against the goal`, and returned 0 with the run still open - which is what
+`stop` already does, minus the honesty about abandoning it. The whole distinction the unit
+exists to draw was missing.
+
+**And I had removed AC1's ability to notice.** At the base ref AC1's verifier was
+`test_calling_the_sprint_closes_it_against_the_goal`. During the run I repointed it at the CLI
+test - which asserts only `rc==0` and two printed strings - in order to satisfy the lane-check.
+The test that had been AC1's verifier then went on asserting `outcome == "running"`: it asserted
+the close had NOT happened. So the criterion said one thing, the code did another, and the
+verifier had been moved onto ground where the gap was invisible.
+
+That is precisely the defect class this programme exists to remove, committed by me, in the unit
+about closing honestly. It is worth stating that the lane-check pressure caused it: I moved a
+criterion to satisfy one gate and broke what the criterion was for. Satisfying a gate is not the
+same as satisfying the criterion, and when the two pull apart the criterion wins.
+
+**Repaired**: `cmd_call` now runs the close chain with its own arguments and takes the same
+`--retro`, `--apply-signoff` and `--principal` the close does. AC1's verifier asserts the close
+is REACHED, and the mutant that ships - advise a close instead of running one - is now killed.
+
+Two false statements I shipped are corrected rather than argued away: `changelog.d/US0491.md`
+claimed the close paperwork runs, and it ships into CHANGELOG.md; `help/sprint.md` said the same.
+
+Also repaired from the non-blocking set: `sprint next`'s docstring claimed it opened a run and
+its `--dry-run` help contrasted two identical behaviours, since neither branch wrote anything.
+`next` RESOLVES and reports; `sprint plan --write` opens. Both now say so.
 
 ## Revision History
 
