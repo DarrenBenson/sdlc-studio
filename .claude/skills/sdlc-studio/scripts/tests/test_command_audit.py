@@ -8,6 +8,8 @@ from __future__ import annotations
 import ast
 import importlib.util
 import sys
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
@@ -233,8 +235,14 @@ class FixtureAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _skill(root, type_ref=["bug"], help_cmds=["bug"], scripts={"broken": _BROKEN})
-            rc = command_audit.main(["--root", str(root), "--check-tools", "--strict"])
+            # Captured, not printed. A green suite must say nothing, or a real error hides in
+            # the noise - and this call's refusal line was one of the diagnostics the
+            # test-noise budget was counting.
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                rc = command_audit.main(["--root", str(root), "--check-tools", "--strict"])
             self.assertEqual(rc, 1)
+            self.assertIn("broken tool", buf.getvalue())
 
     def test_write_produces_the_audit_document(self) -> None:
         with tempfile.TemporaryDirectory() as d:

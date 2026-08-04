@@ -128,10 +128,16 @@ class CliTests(unittest.TestCase):
     def test_cli_SprintReview_refuses_self_review(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             mod = _load()
-            rc = mod.main(["sprint-review", "--units", "US0017", "--reviewer", "bob",
-                           "--author", "bob", "--verdict", "APPROVE", "--findings", "x",
-                           "--root", d])
+            # Captured, not printed: this call REFUSES by design, so its refusal is noise a
+            # real error could hide behind. Asserted on, which is stronger than letting it
+            # scroll past - the message is now part of the contract rather than a side effect.
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                rc = mod.main(["sprint-review", "--units", "US0017", "--reviewer", "bob",
+                               "--author", "bob", "--verdict", "APPROVE", "--findings", "x",
+                               "--root", d])
             self.assertNotEqual(rc, 0)
+            self.assertIn("self-review", buf.getvalue())
 
     def test_underscores_escaped_to_avoid_md037(self):
         # BG0023: underscored identifiers in the issues text must be escaped so they cannot

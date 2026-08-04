@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 20 |
 | In Progress | 0 |
 | Fixed | 406 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **512** |
+| **Total** | **513** |
 
 ## All Bugs
 
@@ -52,6 +52,7 @@
 | [BG0510](BG0510-the-plan-review-ledger-has-no-kind-column.md) | the plan-review ledger has no kind column, so a second pre-code gate would be cleared by the first gate's approval | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0511](BG0511-the-plan-gate-reports-a-batch-of-bugs.md) | the plan gate reports a batch of bugs groomed when the transition gate refuses them outright | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0512](BG0512-batch-add-epic-and-batch-swap-mutate-a.md) | batch add-epic and batch swap mutate a live batch without the ungroomed census, so a unit the plan gate would refuse can enter a run | Open | Medium | 2026-08-04 | 2026-08-04 |
+| [BG0513](BG0513-run-suite-sh-all-is-intermittently-red-the.md) | run-suite.sh all is intermittently red: the tools suite takes 4.5x longer inside the full runner than alone, and one test fails when it does | Open | High | 2026-08-04 | 2026-08-04 |
 
 ## Archived Releases
 

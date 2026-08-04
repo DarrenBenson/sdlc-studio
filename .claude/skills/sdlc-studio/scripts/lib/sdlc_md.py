@@ -40,11 +40,11 @@ _V3_SUFFIX = r"(?-i:-[0-9A-HJKMNP-TV-Z]{8,})"
 # different, real 4-digit one. The v3 alternative is tried FIRST so an all-digit ULID suffix
 # (`BG-01234567`) is claimed whole by the v3 branch instead of being truncated by the v2 one.
 ID_RE = re.compile(
-    r"^((?:EP|US|PL|BG|TS|WF|RFC|CR|IS)(?:" + _V3_SUFFIX + r"|-?\d{4,}))", re.IGNORECASE)
+    r"^((?:EP|US|PL|BG|TS|WF|SC|RFC|CR|IS)(?:" + _V3_SUFFIX + r"|-?\d{4,}))", re.IGNORECASE)
 # Same, unanchored - finds an ID anywhere (e.g. inside an index table cell
 # `[US0001](US0001-login.md)`). RFC before CR so `RFC-0001` is not read as `CR`.
 ID_SEARCH_RE = re.compile(
-    r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR|IS)(?:" + _V3_SUFFIX + r"|-?\d{4,})", re.IGNORECASE)
+    r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|SC|RFC|CR|IS)(?:" + _V3_SUFFIX + r"|-?\d{4,})", re.IGNORECASE)
 # Acceptance-criterion heading: `### AC1: Title`.
 AC_HEADING_RE = re.compile(r"^###\s+(AC\d+)(?::\s*(.*))?$")
 # Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` / a
@@ -1166,6 +1166,11 @@ ARTIFACT_TYPES: dict[str, tuple[str, str]] = {
     "issue": ("sdlc-studio/issues", "IS"),
     "test-spec": ("sdlc-studio/test-specs", "TS"),
     "workflow": ("sdlc-studio/workflows", "WF"),
+    # A planned-but-not-yet-run sprint. It is a process artefact on NEITHER backlog: it
+    # carries no acceptance criteria of its own and delivers nothing - it is the shape of a
+    # run that has not happened, materialised against whatever the backlog holds at the
+    # moment it is run rather than against whatever it held when it was written.
+    "charter": ("sdlc-studio/charters", "SC"),
 }
 
 # The two backlogs (dual-track: discovery feeds delivery). A DISCOVERY item - an RFC design
@@ -1247,6 +1252,10 @@ STATUS_VOCAB: dict[str, list[str]] = {
         "Created", "Planning", "Testing", "Implementing", "Verifying",
         "Reviewing", "Checking", "Done", "Paused", "Superseded",
     ],
+    # Queued (waiting its turn) -> Spent (a run was opened from it). Withdrawn and Superseded are
+    # the abandonment terminals: a charter the operator dropped, and one another charter replaced.
+    # `Spent` precedes them so a bare close derives the successful terminal, as elsewhere.
+    "charter": ["Queued", "Spent", "Withdrawn", "Superseded"],
 }
 
 # Absorbing (terminal) statuses per type: a unit at one of these is a closed
@@ -1264,6 +1273,10 @@ TERMINAL_STATUS: dict[str, set[str]] = {
     "issue": {"Resolved", "Closed", "Won't Fix", "Superseded"},
     "test-spec": {"Complete", "Superseded"},
     "workflow": {"Done", "Superseded"},
+    # `Spent` is the successful terminal - a run was opened from this charter, so it will
+    # never be run again. `Queued` is deliberately NOT terminal: a charter waiting its turn
+    # is live signal, and the whole point of the queue is that it can still be re-ordered.
+    "charter": {"Spent", "Withdrawn", "Superseded"},
 }
 
 
@@ -1290,6 +1303,7 @@ CREATE_STATUS: dict[str, str] = {
     "issue": "Open",
     "test-spec": "Draft",
     "workflow": "Created",
+    "charter": "Queued",
 }
 
 

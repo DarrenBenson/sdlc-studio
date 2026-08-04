@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-08-02
+**Last Updated:** 2026-08-04
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 12 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 15 |
 | Complete | 477 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **527** |
+| **Total** | **530** |
 
 ## All Changes
 
@@ -78,6 +78,9 @@
 | [CR-0525](CR0525-a-unit-s-test-plan-is-written-and.md) | a unit's test plan is written and reviewed BEFORE its code, because reviewing the test is cheaper than reviewing the code | In Progress | Critical | Improvement | 2026-08-02 | EP0207 |
 | [CR-0526](CR0526-a-sprint-ends-with-nothing-open-a-non.md) | a sprint ends with nothing open - a non-stop-ship finding becomes a bug and its story closes | In Progress | Critical | Improvement | 2026-08-02 | EP0206 |
 | [CR-0527](CR0527-the-close-has-no-fixed-point-so-a.md) | the close has no fixed point, so a repair made during it re-opens the ledger it just satisfied | Complete | Critical | Improvement | 2026-08-02 | EP0204 |
+| [CR-0528](CR0528-the-installed-copy-is-only-reconciled-at-a.md) | the installed copy is only reconciled at a close, so a fix believed shipped is in force nowhere for the length of a run | Proposed | Medium | Improvement | 2026-08-04 | -- |
+| [CR-0529](CR0529-the-prior-art-check-is-scoped-to-the.md) | the prior-art check is scoped to the reviewer, so an author rediscovers by being rejected what one command would have told them | Proposed | Medium | Improvement | 2026-08-04 | -- |
+| [CR-0530](CR0530-the-planner-reports-shared-file-clusters-not-the.md) | the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all | Proposed | Medium | Improvement | 2026-08-04 | -- |
 
 ## Archived Releases
 

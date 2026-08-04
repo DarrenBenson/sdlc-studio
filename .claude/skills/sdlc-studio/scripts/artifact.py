@@ -37,6 +37,7 @@ _DASH = {
     "cr": True,
     "rfc": True,
     "issue": False,
+    "charter": False,
 }
 
 # Per-type create status, terminal (close) status, and disp-id form. The two statuses are
@@ -411,6 +412,33 @@ def _sizing_line(type_: str, f: dict) -> str:
     return file_finding._size_line(f)
 
 
+def check_charter(type_: str, f: dict) -> None:
+    """Refuse - BEFORE an id is allocated or a byte written - a charter no run could be opened
+    from.
+
+    A charter exists to be MATERIALISED: `sprint next` opens a run from it without asking again,
+    so the two things it must answer are what the run drives to and which units it selects. One
+    missing is not a thin charter, it is a charter that will stop the queue at the moment it
+    reaches the head - which is the worst place to discover it, because by then it is the thing
+    standing between the operator and their next run.
+
+    The appetite is deliberately NOT required: an absent one resolves from the project's capacity
+    at materialise time, which is the same rule `sprint plan` already follows.
+    """
+    if type_ != "charter":
+        return
+    missing = [name for name, key in (("a Sprint Goal", "goal"), ("a scope rule", "scope"))
+               if not str(f.get(key) or "").strip()]
+    if missing:
+        raise ValueError(
+            f"charter is missing {' and '.join(missing)} - refused. Nothing was allocated, "
+            f"nothing was written.\n"
+            f"  Why: a charter is materialised into a run without asking again, so one that "
+            f"cannot answer what the run drives to, or which units it selects, stops the queue "
+            f"at the moment it reaches the head.\n"
+            f"  Supply: --fields-file with `goal` and `scope`.")
+
+
 def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     st = f.get("_status") or SPEC[type_]["status"]
     # Provenance stamp - marks this artifact as tool-created (deterministic path). Raised-by is
@@ -444,6 +472,15 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         return (head + f"> **Epic:** {f.get('epic') or '-'}\n" + _sizing_line("story", f) + persona +
                 "\n## User Story\n\n**As a** {{role}}\n**I want** {{capability}}\n"
                 "**So that** {{benefit}}\n\n## Acceptance Criteria\n\n" + _story_acs(f) + rev)
+    if type_ == "charter":
+        # A charter is the SHAPE of a run that has not happened. It deliberately carries no
+        # acceptance criteria: it delivers nothing itself, and the units it materialises carry
+        # their own. What it must carry is everything `sprint next` needs to open a run without
+        # asking again - the goal, the rule that selects the batch, and the appetite.
+        return (head + f"> **Appetite:** {f.get('appetite') or 'default'}\n"
+                "\n## Sprint Goal\n\n" + _text(f, "goal", "{{the goal this run drives to}}") +
+                "\n\n## Scope rule\n\n" + _text(f, "scope", "{{which units this charter selects}}") +
+                "\n\n## Seat review\n\n_Not yet reviewed._\n" + rev)
     if type_ == "epic":
         acs = _list(f, "acs")
         ac_body = ("\n## Acceptance Criteria\n\n" + "".join(f"- [ ] {a}\n" for a in acs)) if acs else ""
@@ -993,6 +1030,8 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     if type_ in file_finding.GROOMED_TYPES:
         preview = _select_render(root, type_, f.get("template"))
         file_finding.check_groomed(root, type_, preview(type_, "PREVIEW", title, f["date"], f))
+    # Same contract, one type along: refused before an id is allocated or a byte written.
+    check_charter(type_, f)
     if type_ == "story":
         if not f.get("epic"):
             # Lite profile has no epic layer: a story sits directly under the PRD. Every
@@ -1372,7 +1411,10 @@ def cmd_promote(args: argparse.Namespace) -> int:
 #: is a field that silently went missing, which is the class the file exists to end.
 FIELDS_FILE_KEYS: tuple[str, ...] = (*file_finding.COMMON_FIELDS_FILE_KEYS,
                                      "epic", "persona", "verify", "target", "template",
-                                     "provenance")
+                                     "provenance",
+                                     # A charter's own three: what the run drives to, the rule
+                                     # that selects its batch, and how much of a run it is worth.
+                                     "goal", "scope", "appetite")
 
 
 def cmd_new(args: argparse.Namespace) -> int:

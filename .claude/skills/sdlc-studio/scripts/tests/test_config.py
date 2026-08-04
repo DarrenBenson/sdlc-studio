@@ -4,6 +4,8 @@ from __future__ import annotations
 import importlib.util
 import re
 import sys
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
@@ -114,8 +116,14 @@ class GracefulDegradeTests(unittest.TestCase):
             override = Path(d) / "sdlc-studio" / ".config.yaml"
             override.parent.mkdir(parents=True, exist_ok=True)
             override.write_text("pricing:\n  opus: [unclosed\n", encoding="utf-8")
-            # must NOT raise - degrade to the supplied default
-            self.assertEqual(config.get(d, "pricing.opus", "DEFAULT"), "DEFAULT")
+            # must NOT raise - degrade to the supplied default. Captured, not printed: the
+            # warn-and-default contract means this call WARNS by design, and a warning a
+            # passing test emits into the suite is noise a real error can hide behind.
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                self.assertEqual(config.get(d, "pricing.opus", "DEFAULT"), "DEFAULT")
+            self.assertIn("could not load", buf.getvalue(),
+                          "the warn half of warn-and-default must still happen")
 
 
 if __name__ == "__main__":

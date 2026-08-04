@@ -49,6 +49,7 @@ EXPECTED: dict[str, tuple[str, str]] = {
     "cr": ("Proposed", "Complete"),
     "rfc": ("Draft", "Accepted"),
     "issue": ("Open", "Resolved"),
+    "charter": ("Queued", "Spent"),
 }
 
 

@@ -62,6 +62,7 @@ selected per project by `schema_version`.
 | `IS` | issue |
 | `TS` | test-spec |
 | `WF` | workflow |
+| `SC` | charter |
 
 **v2 sequential form (schema version 2, legacy projects):** a prefix, an optional dash, then a
 four-digit zero-padded number - `US0001`, `EP0042`, `CR-0007`, `BG0182`. `CR` and `RFC`
@@ -94,6 +95,7 @@ Each artefact type lives in a fixed directory under `sdlc-studio/`:
 | issue | `sdlc-studio/issues/` |
 | test-spec | `sdlc-studio/test-specs/` |
 | workflow | `sdlc-studio/workflows/` |
+| charter | `sdlc-studio/charters/` |
 
 Each directory holds one markdown file per artefact plus a derived `_index.md`. Singleton
 documents live at the workspace root, not in a per-type directory: `prd.md`, `trd.md`,
@@ -139,6 +141,7 @@ into the index and any parent epic; a status is never edited into a file by hand
 | issue | Open, Triaging, Triaged, Resolved, Closed, Won't Fix, Superseded | Resolved, Closed, Won't Fix, Superseded |
 | test-spec | Draft, Ready, In Progress, Complete, Superseded | Complete, Superseded |
 | workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Superseded | Done, Superseded |
+| charter | Queued, Spent, Withdrawn, Superseded | Spent, Withdrawn, Superseded |
 
 The table above is the base vocabulary, shared by both schema eras. A project may extend a
 type's vocabulary with its own statuses via `status_vocab.<type>` in `sdlc-studio/.config.yaml`;

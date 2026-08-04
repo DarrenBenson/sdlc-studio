@@ -217,6 +217,11 @@ class NewTests(unittest.TestCase):
                     fields.update(GROOM)  # a delivery unit is groomed with Points
                 elif t == "cr":
                     fields.update(GROOM_REQUEST)  # a request is groomed with a T-shirt Size
+                elif t == "charter":
+                    # A charter is refused without the two things a run is materialised from,
+                    # so the sweep supplies them - the same reason a story is given an epic.
+                    fields.update({"goal": "a goal this run drives to",
+                                   "scope": "the units this charter selects"})
                 r = artifact.new(repo, t, f"a {t}", fields)
                 p = Path(r["path"])
                 errs = [v for v in validate.validate_file(p, t, repo)
@@ -1019,11 +1024,19 @@ class OrchestratedCloseTests(unittest.TestCase):
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
             r = artifact.new(repo, "bug", "self review probe", {**GROOM, "severity": "Medium"})
-            rc = artifact.main(["close", "--id", r["id"],
-                                "--depth", "functional", "--verdict", "APPROVE",
-                                "--reviewer", "Same One", "--author", "Same One",
-                                "--root", str(repo)])
+            # Captured, not printed: this call REFUSES by design, so its refusal was one of
+            # the diagnostics the test-noise budget counted. Asserted on instead, which makes
+            # the message part of the contract rather than a side effect scrolling past.
+            import contextlib as _ctx
+            import io as _io
+            buf = _io.StringIO()
+            with _ctx.redirect_stdout(buf), _ctx.redirect_stderr(buf):
+                rc = artifact.main(["close", "--id", r["id"],
+                                    "--depth", "functional", "--verdict", "APPROVE",
+                                    "--reviewer", "Same One", "--author", "Same One",
+                                    "--root", str(repo)])
             self.assertNotEqual(rc, 0)
+            self.assertIn("independence is the floor", buf.getvalue())
             body = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("> **Status:** Open", body)  # nothing transitioned
 
@@ -2572,6 +2585,107 @@ class EpicRowAgreementTests(unittest.TestCase):
             row = next(l for l in text.splitlines() if l.startswith(f"| [{r['id']}]"))
             self.assertEqual(sdlc_md.CELL_NOT_STATED, reconcile._split_row_cells(row)[3],
                              "a bug index that happens to carry a Stories column was censused")
+
+
+class SprintCharterTests(unittest.TestCase):
+    """US0487. A charter is the SHAPE of a run that has not happened - goal, scope rule,
+    appetite - so `sprint next` can open a run from it against the backlog as it stands at that
+    moment rather than as it stood when the charter was written.
+
+    MUTANTS:
+      1. drop `charter` from `_DASH` -> the type is unknown to the creator.
+      2. hardcode the charter's statuses beside the charter code instead of deriving them.
+      3. drop the `check_charter` call from the creation path -> a scopeless charter is minted.
+    """
+
+    def _repo(self, d: Path) -> Path:
+        repo = Path(d)
+        (repo / "sdlc-studio" / "charters").mkdir(parents=True)
+        (repo / "sdlc-studio" / "charters" / "_index.md").write_text(
+            "# Sprint Charter Queue\n\n**Last Updated:** 2026-01-01\n\n## Queue\n\n"
+            "| ID | Title | Status | Appetite | Created |\n| --- | --- | --- | --- | --- |\n",
+            encoding="utf-8")
+        return repo
+
+    _FIELDS = {"goal": "the run drives to a measurable close",
+               "scope": "every unit CR0507 decomposes into",
+               "appetite": "480min/8units"}
+
+    def test_a_charter_is_minted_with_an_allocated_id_and_index_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(Path(d))
+            r = artifact.new(repo, "charter", "a planned run", dict(self._FIELDS))
+            self.assertTrue(r["id"].startswith("SC"), r["id"])
+            body = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Status:** Queued", body)
+            self.assertIn("## Sprint Goal", body)
+            self.assertIn("the run drives to a measurable close", body)
+            self.assertIn("## Scope rule", body)
+            self.assertIn("> **Appetite:** 480min/8units", body)
+            index = (repo / "sdlc-studio" / "charters" / "_index.md").read_text(encoding="utf-8")
+            self.assertIn(r["id"], index, "no index row was appended")
+
+    def test_the_charter_reaches_the_SHIPPED_ENTRY_POINT_not_only_the_library(self) -> None:
+        """The lane-check refused the first attempt at this unit for exactly the reason it
+        refused US0467 last run: all three verifiers called `artifact.new` as a library, and the
+        wiring - the CLI verb, its `--type` choice, its field whitelist - is the part a library
+        test does not exercise. Twice in two runs, so it is pinned here rather than remembered.
+
+        MUTANT: drop `charter` from `_DASH` (which builds SPEC, which builds the CLI's `--type`
+        choices) or from `FIELDS_FILE_KEYS`. This test must redden."""
+        import contextlib
+        import io
+        import json as _json
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(Path(d))
+            fields = repo / "fields.json"
+            fields.write_text(_json.dumps(self._FIELDS), encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                rc = artifact.main(["new", "--type", "charter", "--title", "a planned run",
+                                    "--fields-file", str(fields), "--root", str(repo)])
+            printed = out.getvalue()
+            self.assertEqual(rc, 0, printed)
+            self.assertIn("SC0001", printed, "the CLI minted no charter")
+            body = (repo / "sdlc-studio" / "charters" / "SC0001-a-planned-run.md").read_text(
+                encoding="utf-8")
+            self.assertIn("## Sprint Goal", body)
+            self.assertIn("> **Appetite:** 480min/8units", body,
+                          "the CLI's field whitelist dropped a charter field")
+
+    def test_a_charter_without_a_goal_or_scope_is_refused(self) -> None:
+        """Refused BEFORE an id is allocated, so a bad invocation costs a message rather than
+        burning an id - the same contract `check_groomed` holds for a bug."""
+        for label, fields in (("no goal", {"scope": "x"}),
+                              ("no scope", {"goal": "x"}),
+                              ("neither", {})):
+            with self.subTest(label), tempfile.TemporaryDirectory() as d:
+                repo = self._repo(Path(d))
+                with self.assertRaises(ValueError) as caught:
+                    artifact.new(repo, "charter", "a planned run", dict(fields))
+                msg = str(caught.exception)
+                self.assertIn("refused", msg)
+                if "goal" not in fields:
+                    self.assertIn("Sprint Goal", msg)
+                if "scope" not in fields:
+                    self.assertIn("scope rule", msg)
+                minted = list((repo / "sdlc-studio" / "charters").glob("SC*.md"))
+                self.assertEqual(minted, [], "an id was burnt on a refused charter")
+
+    def test_the_status_vocabulary_is_derived_from_the_shared_source(self) -> None:
+        """AC3. The permitted states come from `lib.sdlc_md`, so the charter code and the
+        validator, transition gate and archiver cannot disagree about what Queued or Spent
+        means. Asserted as IDENTITY against the shared source rather than by re-listing the
+        states here - a second list in the test is the same defect as a second list in the code.
+        """
+        self.assertEqual(artifact.SPEC["charter"]["status"], sdlc_md.create_status("charter"))
+        self.assertEqual(artifact.SPEC["charter"]["terminal"],
+                         sdlc_md.default_terminal_status("charter"))
+        vocab = sdlc_md.status_vocab("charter")
+        self.assertIn(artifact.SPEC["charter"]["status"], vocab)
+        self.assertTrue(sdlc_md.terminal_statuses("charter") <= set(vocab),
+                        "a terminal status the vocabulary does not define")
+        self.assertEqual(sdlc_md.ARTIFACT_TYPES["charter"][1], "SC")
 
 
 if __name__ == "__main__":
