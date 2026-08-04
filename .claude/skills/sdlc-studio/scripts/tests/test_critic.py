@@ -3075,6 +3075,36 @@ class ArgumentCompletenessTests(_BatchBase):
             self.assertIsNone(self.mod.signoff_for(self.root, unit),
                               f"{unit} was written despite the refusal")
 
+    def test_no_write_is_attempted_not_merely_that_none_landed(self) -> None:
+        """BG0419 AC3. Its siblings assert the POSTCONDITION - `signoff_for(...) is None` - and
+        that holds equally when every write is ATTEMPTED and every write fails. The claim the
+        story makes is about ORDERING: the refusal arrives before anything is written, once,
+        naming everything missing. A postcondition cannot express an ordering.
+
+        So the write path is observed directly: `record_signoff` is replaced with a counter, and
+        the assertion is that it was never REACHED. That is the difference between "nothing
+        landed" and "nothing was tried", and it is the whole content of the story.
+
+        MUTANT: remove the up-front `missing_arguments` refusal from `_run_batch`, so the
+        missing argument is discovered per unit instead. This test must redden."""
+        calls: list[str] = []
+        real = self.mod.record_signoff
+
+        def counting(root, unit, *a, **kw):
+            calls.append(str(unit))
+            return real(root, unit, *a, **kw)
+
+        self.mod.record_signoff = counting
+        try:
+            rc, _out, err = self._run(["signoff", "--units", "US0001,US0002,US0003",
+                                       "--principal", "operator"])
+        finally:
+            self.mod.record_signoff = real
+        self.assertEqual(2, rc, err)
+        self.assertEqual(calls, [],
+                         f"the write path was REACHED {len(calls)} time(s) before the refusal - "
+                         f"nothing landed, but the refusal did not arrive first")
+
     def test_the_refusal_names_every_missing_argument(self) -> None:
         rc, _, err = self._run(["signoff", "--units", "US0001,US0002"])
         self.assertEqual(2, rc)

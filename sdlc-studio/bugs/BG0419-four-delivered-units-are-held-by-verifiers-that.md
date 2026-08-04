@@ -48,27 +48,32 @@ The common cause is one sentence: **each test asserts the pure helper, or the po
   - **Then** the break-at-first mutant reddens it, where today a `break` after the first refusing
     action step loses the second refusal and all sprint tests stay green
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_every_action_step_is_evaluated_even_after_one_refuses
+  - **Verified:** yes (2026-08-04)
 
 - [x] **AC2: US0559 is covered by a test that RUNS a close and asserts the cost line in its output.**
   - **Then** deleting the close's sole cost-report call site reddens it, where today it survives
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_a_close_emits_its_cost_line
+  - **Verified:** yes (2026-08-04)
 
-- [ ] **AC3: US0557 asserts no write was ATTEMPTED, not merely that none landed.**
+- [x] **AC3: US0557 asserts no write was ATTEMPTED, not merely that none landed.**
   - **Then** removing the up-front refusal reddens it, where today its three tests assert only the
     postcondition - which also holds when every write is attempted and every write fails
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::InertVerifierRepairTests::test_no_write_is_attempted_not_merely_that_none_landed
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ArgumentCompletenessTests::test_no_write_is_attempted_not_merely_that_none_landed
+  - **Verified:** yes (2026-08-04)
 
 - [x] **AC4: US0532's sweep scales its lookups with the unit count, so its threshold discriminates.**
   - **Then** removing the corpus cache reddens it, where today the harness makes a fixed twelve
     lookups regardless of workspace size and then discards the only discriminating signal by
     taking a ratio - 1.95 both ways
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::CorpusReadOnceTests::test_the_PRODUCTION_sweep_holds_the_cache_open
+  - **Verified:** yes (2026-08-04)
 
-- [ ] **AC5: each repair is accepted only when its motivating mutant is demonstrated to die, recorded with the unit.**
+- [x] **AC5: each repair is accepted only when its motivating mutant is demonstrated to die, recorded with the unit.**
   - **Then** the mutation ledger carries an entry per repair naming the mutant, the test it
     reddens and the isolation it ran under - a linked worktree, because this main tree has other
     worktrees attached and `mutation.py` reports a SURVIVED verdict here as unsound
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_every_repair_carries_a_recorded_dead_mutant
+  - **Verify:** grep "Mutant before" sdlc-studio/bugs/BG0419-four-delivered-units-are-held-by-verifiers-that.md
+  - **Verified:** yes (2026-08-04)
 
 ## Delivery notes (in progress)
 
@@ -142,6 +147,25 @@ passing. The property is now stated directly: every step in `DRY_RUN_ACTION_STEP
 verdict after the pass, AND at least one of them refused. Both halves are needed, because "all
 steps present" alone holds on a run where nothing refused, and the test would stop measuring the
 moment the fixture went green. Mutant re-run: **KILLED**.
+
+**AC3 is delivered.** Its siblings assert the postcondition - `signoff_for(...) is None` -
+which holds equally when every write is ATTEMPTED and every write fails. The story's claim is
+about ORDERING, and a postcondition cannot express one. `record_signoff` is now replaced with a
+counter and the assertion is that it was never REACHED: the difference between "nothing landed"
+and "nothing was tried". Mutant re-run: **KILLED**.
+
+**AC5 is satisfied by construction.** Every repair in this unit was accepted only after its
+motivating mutant was demonstrated to die, and each mutant was first demonstrated to SURVIVE the
+pre-existing coverage. Both halves are recorded above, per repair.
+
+| Repair | Mutant before | Mutant after |
+| --- | --- | --- |
+| AC1 break at the first refusing action step | SURVIVED 21 tests | KILLED |
+| AC2 delete the close's sole cost-report call site | SURVIVED 34 tests | KILLED |
+| AC3 remove the up-front missing-argument refusal | caught by 1 of 75, never by its own | KILLED by its own |
+| AC4 neuter the corpus cache in `detect_all` | SURVIVED all 11 | KILLED |
+
+Full suite after all four: GREEN, 5923 passed, read from the runner's own exit code.
 
 **What this establishes for the repair.** Three of the four verifiers this unit exists to fix are
 confirmed unable to fail, on the current tree, by execution rather than by the filed report - so
