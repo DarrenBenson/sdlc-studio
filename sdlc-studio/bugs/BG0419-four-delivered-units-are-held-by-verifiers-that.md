@@ -70,6 +70,25 @@ The common cause is one sentence: **each test asserts the pure helper, or the po
     worktrees attached and `mutation.py` reports a SURVIVED verdict here as unsound
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertVerifierRepairTests::test_every_repair_carries_a_recorded_dead_mutant
 
+## Delivery notes (in progress)
+
+**AC4's premise re-verified by execution, and it still reproduces.** Replacing
+`sdlc_md.corpus_cache()` with a null context in `reconcile.detect_all` and running
+`CorpusReadOnceTests` gives **11 passed** - the whole class is green over a total loss of the
+cache. That is worth stating precisely because the class's own docstring claims the opposite:
+"a return to per-unit reading is a red test rather than a slower gate nobody attributes", and
+records that BG0456 already repaired the lookup scaling this pin depends on. The scaling fix
+landed; the pin still does not discriminate.
+
+Mutant run with `__pycache__` purged, the child under `python3 -B`, the anchor asserted unique,
+and `reconcile.py` verified byte-identical afterwards.
+
+The remaining three claims (US0555's break-at-first, US0559's deleted cost-report call site,
+US0557's postcondition-only assertion) are not yet re-verified. Each must be probed the same way
+before it is repaired, because BG0485 in this same batch was filed four days after its own fix
+shipped, and this unit's AC5 makes a demonstrated-dead mutant the acceptance test for every
+repair in it.
+
 ## Impact
 
 Every one of these units is Done-adjacent with a green verifier, and four of them are held by nothing. Two mechanisms - the dry run's completeness and the close's cost report - are one edit from silently inert, in a project whose central claim is that its records mean something.
