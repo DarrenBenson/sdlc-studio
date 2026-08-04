@@ -303,8 +303,8 @@ running.
 python3 <skill>/scripts/artifact.py new --type charter --title "<what this run is for>" \
   --fields-file charter.json    # {"goal": "...", "scope": "...", "scope_query": "--bugs Open"}
 
-# run the head of the queue
-python3 <skill>/scripts/sprint.py next
+# run the head of the queue, naming who is running it
+python3 <skill>/scripts/sprint.py next --runner "<who>"
 
 # see the queue, and what the HEAD resolves to against the backlog right now
 python3 <skill>/scripts/sprint.py queue show
@@ -318,6 +318,14 @@ python3 <skill>/scripts/sprint.py queue clear --reason "<why>"
 Only the HEAD is resolved by `queue show`. Resolving every charter would be arithmetic over a
 backlog the earlier runs will have changed before the later charters are reached - a number that
 looks precise and is not.
+
+A charter's goal review lives ON the charter, under `## Seat review`, not in `.local/`. Local
+state does not travel: a charter pulled into another working copy must arrive carrying the review
+that justified it, or the next operator cannot tell an examined plan from an unexamined one.
+`next --runner` records who ran it beside who reviewed it and states plainly when they are the
+same. Separation is RECORDED, never enforced - a queue is often planned and run by one person,
+and refusing that would make it unusable for the operator it was built for. What would be
+dishonest is leaving it unsaid.
 
 A charter with no `Queue rank` sits in authoring order, which its id already carries, and an
 unranked charter sorts AFTER every ranked one: absence is not rank zero, so ranking one charter

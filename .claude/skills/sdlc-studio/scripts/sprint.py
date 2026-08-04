@@ -1233,6 +1233,74 @@ def _section_text(text: str, heading: str) -> str:
 _RANK_FIELD = "Queue rank"
 
 
+def charter_review(text: str) -> list:
+    """The seat verdicts recorded ON a charter, as [{seat, verdict, note}].
+
+    Read from the charter's own `## Seat review` section rather than from
+    `.local/goal-review.json`, because local state does not travel: a charter committed to the
+    repository and pulled into another working copy must carry the review that justified it, or
+    the next operator sees a plan nobody can tell was examined.
+    """
+    body = _section_text(text, "Seat review")
+    out = []
+    for line in body.splitlines():
+        line = line.strip()
+        if not line.startswith("- "):
+            continue
+        row = line[2:]
+        if "|" not in row:
+            continue
+        parts = [p.strip() for p in row.split("|")]
+        out.append({"seat": parts[0].strip("* "), "verdict": parts[1] if len(parts) > 1 else "",
+                    "note": " | ".join(parts[2:]) if len(parts) > 2 else ""})
+    return out
+
+
+def record_charter_review(repo_root: Path | str, charter: str, seats: list,
+                          reviewer: str) -> dict:
+    """Write the seat verdicts into the charter itself, replacing its `## Seat review` body."""
+    root, cid = Path(repo_root), sdlc_md.norm_id(charter)
+    found = sdlc_md.find_by_id(root, cid)
+    if not found:
+        raise ValueError(f"{cid} is not a charter this workspace holds")
+    path = found[0]
+    text = sdlc_md.read_text_safe(path) or ""
+    if not seats:
+        raise ValueError(f"recording a review of {cid} with no seat verdict records nothing")
+    rows = "".join(f"- {s['seat']} | {s['verdict']}"
+                   + (f" | {s['note']}" if s.get("note") else "") + "\n" for s in seats)
+    block = (f"\n> **Reviewed-by:** {reviewer}\n\n{rows}")
+    head, sep, tail = text.partition("## Seat review")
+    if not sep:
+        raise ValueError(f"{cid} carries no `## Seat review` section to record into")
+    rest = tail.split("\n## ", 1)
+    remainder = ("\n## " + rest[1]) if len(rest) > 1 else ""
+    path.write_text(head + "## Seat review\n" + block + remainder, encoding="utf-8")
+    return {"charter": cid, "seats": len(seats), "reviewer": reviewer}
+
+
+def charter_review_state(text: str, runner: str | None = None) -> dict:
+    """Whether a charter's goal was reviewed, by whom, and whether the runner is the reviewer.
+
+    SEPARATION IS RECORDED, NEVER ENFORCED. A queue is often planned and run by the same person,
+    and refusing that would make the queue unusable for the operator it was built for. What
+    would be dishonest is leaving it unsaid, so the match is stated plainly and travels with the
+    run.
+    """
+    seats = charter_review(text)
+    reviewer = (sdlc_md.extract_field(text, "Reviewed-by") or "").strip() or None
+    if not seats:
+        return {"reviewed": False, "reviewer": None, "runner": runner, "same": None,
+                "detail": "this charter's goal was never reviewed by a seat - the plan is "
+                          "unexamined, which is different from a review that found nothing"}
+    same = bool(reviewer and runner and reviewer.strip().lower() == runner.strip().lower())
+    return {"reviewed": True, "reviewer": reviewer, "runner": runner, "same": same,
+            "seats": seats,
+            "detail": (f"goal reviewed by {reviewer} ({len(seats)} seat verdict(s))"
+                       + (" - and run by the same identity; separation is recorded here, "
+                          "not enforced" if same else ""))}
+
+
 def queue_reorder(repo_root: Path | str, charter: str, rank: int) -> dict:
     """Give a charter an explicit queue rank. Refuses an id the queue does not hold."""
     root, cid = Path(repo_root), sdlc_md.norm_id(charter)
@@ -1287,7 +1355,7 @@ def queue_show(repo_root: Path | str, skip_personas: bool = False) -> dict:
 
 
 def materialise_next(repo_root: Path | str, order: str = "priority",
-                     skip_personas: bool = False) -> dict:
+                     skip_personas: bool = False, runner: str | None = None) -> dict:
     """Resolve the head charter's scope against the CURRENT backlog. Writes nothing.
 
     Three refusals, each leaving the queue exactly as it was, because a charter that cannot be
@@ -1324,8 +1392,9 @@ def materialise_next(repo_root: Path | str, order: str = "priority",
                 "detail": f"{head['id']}'s scope selects no unit against the backlog as it "
                           f"stands - the work it was written for is delivered, or was never "
                           f"created. The charter is left Queued, not dropped."}
+    review = charter_review_state(sdlc_md.read_text_safe(Path(head["path"])) or "", runner)
     return {"ok": True, "charter": head["id"], "title": head["title"], "goal": head["goal"],
-            "query": head["query"], "units": units,
+            "query": head["query"], "units": units, "review": review,
             "ids": [u["id"] for u in units], "queued": len(queue)}
 
 
@@ -9167,6 +9236,7 @@ def cmd_queue(args: argparse.Namespace) -> int:
             print(f"  scope:    {head['scope'] or '(none)'}")
             print(f"  appetite: {head['appetite'] or 'default'}")
             if hr and hr.get("ok"):
+                print(f"  goal review: {hr['review']['detail']}")
                 print(f"  resolves to {len(hr['ids'])} unit(s) against the backlog as it stands "
                       f"now: {', '.join(hr['ids'])}")
             elif hr:
@@ -9194,12 +9264,14 @@ def cmd_queue(args: argparse.Namespace) -> int:
 def cmd_next(args: argparse.Namespace) -> int:
     """Materialise the head charter against the backlog as it stands, and open its run."""
     res = materialise_next(args.root, order=args.order,
-                           skip_personas=getattr(args, "skip_personas", False))
+                           skip_personas=getattr(args, "skip_personas", False),
+                           runner=getattr(args, "runner", None))
     if not res["ok"]:
         print(f"sprint next: {res['detail']}", file=sys.stderr)
         return 2
     print(f"charter {res['charter']}: {res['title']}")
     print(f"  scope query: {res['query']}")
+    print(f"  goal review: {res['review']['detail']}")
     print(f"  materialised {len(res['ids'])} unit(s) against the backlog as it stands now: "
           f"{', '.join(res['ids'])}")
     if args.dry_run:
@@ -9400,6 +9472,9 @@ def build_parser() -> argparse.ArgumentParser:
     nx.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")
     nx.add_argument("--dry-run", action="store_true",
                     help="resolve and report, open nothing; the charter stays Queued")
+    nx.add_argument("--runner", default=None,
+                    help="who is running it - recorded beside the charter's reviewer, and a "
+                         "match is REPORTED rather than refused")
     nx.add_argument("--skip-personas", action="store_true")
     nx.add_argument("--root", default=".", help="Repo root (default: .)")
     nx.set_defaults(func=cmd_next)

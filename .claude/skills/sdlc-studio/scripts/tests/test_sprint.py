@@ -13442,5 +13442,120 @@ class QueueCrudTests(unittest.TestCase):
             self.assertIn("SC9999", err.getvalue())
 
 
+class CharterReviewTests(unittest.TestCase):
+    """US0490. A charter's goal review must TRAVEL with it. `.local/goal-review.json` is local
+    state: a charter pulled into another working copy would arrive with no way to tell an
+    examined plan from an unexamined one.
+
+    MUTANTS:
+      1. read the review from `.local/goal-review.json` -> it does not travel.
+      2. drop the reviewer/runner comparison -> a match goes unrecorded.
+      3. treat an absent review as reviewed -> unexamined reads the same as examined.
+    """
+
+    def _charter(self, root, cid="SC0001", review=None):
+        d = root / "sdlc-studio" / "charters"
+        d.mkdir(parents=True, exist_ok=True)
+        body = review if review is not None else "_Not yet reviewed._\n"
+        (d / f"{cid}-x.md").write_text(
+            f"# {cid}: a planned run\n\n> **Status:** Queued\n> **Appetite:** 480min/8units\n"
+            f"> **Scope query:** --bugs Open\n\n## Sprint Goal\n\ng\n\n## Scope rule\n\ns\n\n"
+            f"## Seat review\n\n{body}\n## Revision History\n\n| Date | Author | Change |\n"
+            f"| --- | --- | --- |\n", encoding="utf-8")
+        return d / f"{cid}-x.md"
+
+    def _bug(self, root, bid="BG0001"):
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / f"{bid}.py").write_text("", encoding="utf-8")
+        (d / f"{bid}-x.md").write_text(
+            f"# {bid}: b\n\n> **Status:** Open\n> **Severity:** Medium\n> **Points:** 2\n"
+            f"> **Affects:** src/{bid}.py\n\n## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+            f"- **Given** a thing\n- **Verify:** shell true\n", encoding="utf-8")
+
+    def test_the_goal_review_travels_with_the_charter(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            path = self._charter(root)
+            sprint.record_charter_review(root, "SC0001", [
+                {"seat": "engineering", "verdict": "yes", "note": "the batch can reach it"},
+                {"seat": "qa", "verdict": "yes"},
+            ], reviewer="Dani")
+            # The proof it TRAVELS: read it from the file alone, with no .local at all.
+            text = path.read_text(encoding="utf-8")
+            seats = sprint.charter_review(text)
+            self.assertEqual([s["seat"] for s in seats], ["engineering", "qa"])
+            self.assertIn("the batch can reach it", seats[0]["note"])
+            self.assertIn("> **Reviewed-by:** Dani", text)
+            shutil.rmtree(root / "sdlc-studio" / ".local")
+            self.assertTrue(sprint.charter_review_state(text)["reviewed"],
+                            "the review did not survive without local state - it must travel")
+
+    def test_the_run_records_both_identities_and_reports_a_match(self) -> None:
+        """Separation is RECORDED, never enforced: a queue is often planned and run by the same
+        person, and refusing that would make it unusable for the operator it was built for.
+        What would be dishonest is leaving it unsaid."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root)
+            self._bug(root)
+            sprint.record_charter_review(root, "SC0001",
+                                         [{"seat": "engineering", "verdict": "yes"}],
+                                         reviewer="Dani")
+            res = sprint.materialise_next(root, skip_personas=True, runner="Dani")
+            self.assertTrue(res["ok"], res.get("detail"))
+            rv = res["review"]
+            self.assertTrue(rv["reviewed"])
+            self.assertEqual(rv["reviewer"], "Dani")
+            self.assertEqual(rv["runner"], "Dani")
+            self.assertTrue(rv["same"], "the match was not recorded")
+            self.assertIn("same identity", rv["detail"])
+            # ... and the control: a different runner is not reported as a match
+            other = sprint.materialise_next(root, skip_personas=True, runner="Sam")
+            self.assertFalse(other["review"]["same"])
+            self.assertNotIn("same identity", other["review"]["detail"])
+
+    def test_an_unreviewed_goal_is_reported_not_silently_accepted(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root)
+            self._bug(root)
+            res = sprint.materialise_next(root, skip_personas=True, runner="Dani")
+            self.assertTrue(res["ok"], "an unreviewed goal must not BLOCK - it must be reported")
+            rv = res["review"]
+            self.assertFalse(rv["reviewed"])
+            self.assertIn("never reviewed", rv["detail"])
+            self.assertIn("different from a review that found nothing", rv["detail"])
+
+    def test_the_review_reaches_the_SHIPPED_ENTRY_POINT(self) -> None:
+        """The criterion about what the command DOES names the test that runs the command -
+        the practice US0489 wrote down after the lane-check refused four units in a row."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root)
+            self._bug(root)
+            sprint.record_charter_review(root, "SC0001",
+                                         [{"seat": "product", "verdict": "yes"}], reviewer="Dani")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                rc = sprint.main(["next", "--dry-run", "--runner", "Dani",
+                                  "--skip-personas", "--root", str(root)])
+            printed = out.getvalue()
+            self.assertEqual(rc, 0, printed)
+            self.assertIn("goal review:", printed, "the CLI never reported the review state")
+            self.assertIn("Dani", printed)
+            self.assertIn("same identity", printed,
+                          "the CLI did not report that reviewer and runner matched")
+
+
 if __name__ == "__main__":
     unittest.main()
