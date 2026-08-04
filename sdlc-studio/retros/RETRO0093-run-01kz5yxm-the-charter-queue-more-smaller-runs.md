@@ -72,6 +72,9 @@ ruling HOLDS the close, which is the point of being able to make one.
 | BG0512 | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | CR0509 | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | CR0510 | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
+| CR0528 - the installed copy is only reconciled at a close | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
+| CR0529 - the prior-art check is scoped to the reviewer, not the author | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
+| CR0530 - the planner reports clusters, not the parallelisable fraction | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | BG0514 - queue show is blind during a run, reusing the materialiser's open-run refusal | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | BG0515 - the queue has no exit: nothing sets Spent, so a charter re-materialises forever | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | CR0531 - a scope query cannot express a decomposition, so SC0001's two scope fields disagree | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
