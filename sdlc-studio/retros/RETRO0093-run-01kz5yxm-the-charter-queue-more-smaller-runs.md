@@ -75,6 +75,8 @@ ruling HOLDS the close, which is the point of being able to make one.
 | CR0528 - the installed copy is only reconciled at a close | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | CR0529 - the prior-art check is scoped to the reviewer, not the author | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | CR0530 - the planner reports clusters, not the parallelisable fraction | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
+| BG0516 - the close reports a gate refusal it could not attribute, where the gate named its lane | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
+| BG0517 - the close-loop cap stops a loop that has already converged | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | BG0514 - queue show is blind during a run, reusing the materialiser's open-run refusal | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | BG0515 - the queue has no exit: nothing sets Spent, so a charter re-materialises forever | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
 | CR0531 - a scope query cannot express a decomposition, so SC0001's two scope fields disagree | not-stop-ship | Darren Benson (operator, reviewer of record) | 2026-08-04 |
@@ -169,6 +171,8 @@ every EXAMPLE row; a row left in place is reported at the close, and a retro sti
 | The queue has no exit - nothing sets `Spent` | BG0515 |
 | A scope query cannot express a decomposition | CR0531 |
 | `--note` without `--goal-verdict` is silently dropped | declined: pre-existing in `close` and inherited verbatim, not introduced here - it belongs with the close-cost work SC0001 carries |
+| The close could not attribute a gate refusal, burning four rounds | BG0516 |
+| The loop cap stopped a converged close | BG0517 |
 | The bounded `--file-and-close` exit is unreachable in one act from `call` | declined: `sprint close --file-and-close` after the descope is correct and documented; adding a second route would duplicate the close's own flag surface |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
