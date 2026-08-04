@@ -192,3 +192,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: {{tokens}} · Duration: {{duration}} · Critic rejects: {{rejects}}
+
+## Handoff
+
+- [HO-0045](../handoffs/HO0045-run-01kz5yxm-work-complete-run-state-close-blocked.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

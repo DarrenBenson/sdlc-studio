@@ -11,8 +11,8 @@
 | Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 6 |
-| Done | 591 |
+| Review | 0 |
+| Done | 597 |
 | Won't Implement | 2 |
 | Deferred | 0 |
 | Superseded | 2 |
@@ -31,12 +31,12 @@
 | [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Superseded | EP0174 | 2026-07-27 | 2026-07-27 |
-| [US0487](US0487-a-sprint-charter-is-a-first-class-artefact.md) | A sprint charter is a first-class artefact: goal, scope rule and appetite, with a tool-allocated id and an index row | Review | EP0176 | 2026-07-27 | 2026-07-27 |
-| [US0488](US0488-sprint-next-materialises-the-head-charter-against-the.md) | sprint next materialises the head charter against the backlog as it is at that moment, and stops when its scope resolves to nothing | Review | EP0176 | 2026-07-27 | 2026-07-27 |
-| [US0489](US0489-the-queue-is-inspectable-and-editable-show-the.md) | The queue is inspectable and editable: show the next charter with its goal and resolved contents, insert, cancel, clear and reorder | Review | EP0176 | 2026-07-27 | 2026-07-27 |
-| [US0490](US0490-a-charter-carries-its-own-goal-review-and.md) | A charter carries its own goal review, and the run records who reviewed the goal and who ran it without refusing when they match | Review | EP0176 | 2026-07-27 | 2026-07-27 |
-| [US0491](US0491-calling-a-sprint-at-a-point-is-an.md) | Calling a sprint at a point is an honest close: the unstarted remainder is descoped with a reason and returns to the backlog | Review | EP0176 | 2026-07-27 | 2026-07-27 |
-| [US0492](US0492-the-queue-lifecycle-is-documented-alongside-the-run.md) | The queue lifecycle is documented alongside the run lifecycle, with every invocation shown taken from the shipped parser | Review | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0487](US0487-a-sprint-charter-is-a-first-class-artefact.md) | A sprint charter is a first-class artefact: goal, scope rule and appetite, with a tool-allocated id and an index row | Done | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0488](US0488-sprint-next-materialises-the-head-charter-against-the.md) | sprint next materialises the head charter against the backlog as it is at that moment, and stops when its scope resolves to nothing | Done | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0489](US0489-the-queue-is-inspectable-and-editable-show-the.md) | The queue is inspectable and editable: show the next charter with its goal and resolved contents, insert, cancel, clear and reorder | Done | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0490](US0490-a-charter-carries-its-own-goal-review-and.md) | A charter carries its own goal review, and the run records who reviewed the goal and who ran it without refusing when they match | Done | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0491](US0491-calling-a-sprint-at-a-point-is-an.md) | Calling a sprint at a point is an honest close: the unstarted remainder is descoped with a reason and returns to the backlog | Done | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0492](US0492-the-queue-lifecycle-is-documented-alongside-the-run.md) | The queue lifecycle is documented alongside the run lifecycle, with every invocation shown taken from the shipped parser | Done | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Won't Implement | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Ready | EP0191 | 2026-07-29 | 2026-07-29 |

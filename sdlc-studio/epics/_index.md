@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 12 |
+| Draft | 11 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 195 |
+| Done | 196 |
 | **Total** | **207** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -33,7 +33,7 @@
 | [EP0173](EP0173-footprint-and-criterion-checks-bite-instead-of-accumulating.md) | Footprint and criterion checks bite instead of accumulating | Draft | 2 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0174](EP0174-pay-down-the-debt-the-v5-scope-caps.md) | Pay down the debt the v5 scope caps baselined | Draft | 5 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0175](EP0175-detectors-for-the-classes-the-audit-had-to.md) | Detectors for the classes the audit had to find by hand | Done | 3 | -- | 2026-07-27 | 2026-07-27 |
-| [EP0176](EP0176-a-queue-of-planned-sprint-charters-plan-several.md) | A queue of planned sprint charters: plan several, run the next, and let the planner and the runner be different people | Draft | 6 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0176](EP0176-a-queue-of-planned-sprint-charters-plan-several.md) | A queue of planned sprint charters: plan several, run the next, and let the planner and the runner be different people | Done | 6 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0177](EP0177-make-the-discipline-cheaper-than-the-sloppiness-it.md) | Make the discipline cheaper than the sloppiness it replaces: run the tests the change can reach, at the boundaries that matter | Done | 15 | -- | 2026-07-28 | 2026-07-28 |
 | [EP0181](EP0181-reconcile-s-sweeps-read-the-corpus-once-per.md) | reconcile's sweeps read the corpus once per run, not once per unit | Done | 3 | -- | 2026-07-28 | 2026-07-28 |
 | [EP0189](EP0189-the-close-costs-less-than-the-work-it.md) | The close costs less than the work it certifies: earn the gate verdict once, record a batch in one call, and refuse in one pass | Done | 7 | -- | 2026-07-29 | 2026-07-29 |

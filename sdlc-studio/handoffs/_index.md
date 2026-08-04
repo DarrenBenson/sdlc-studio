@@ -56,3 +56,5 @@ next `sprint plan --worklist` reads back.
 | [HO-0041](HO0041-run-01kyzky5-stopped-152-points-delivered-the-batch.md) | RUN-01KYZKY5 stopped - 152 points delivered, the batch did not pass review | 2026-08-02 |
 | [HO-0042](HO0042-a-close-converges-in-one-pass-and-its.md) | A close converges in one pass and its findings count: nothing is repaired inside the close, a repaired REJECT has a route back to covered, and no close gate reports a green it did not earn | 2026-08-03 |
 | [HO-0043](HO0043-a-shipped-mechanism-does-what-its-own-record.md) | A shipped mechanism does what its own record claims: for every unit in this batch the gap between the claim and the behaviour is closed and proven by execution - an executed mutant where the claim is a verifier, a reproduced wrong result where the claim is behaviour | 2026-08-04 |
+| [HO-0044](HO0044-run-01kz5yxm-work-complete-ceremony-blocked-by-bg0516.md) | RUN-01KZ5YXM: work complete, ceremony blocked by BG0516 and BG0517 | 2026-08-04 |
+| [HO-0045](HO0045-run-01kz5yxm-work-complete-run-state-close-blocked.md) | RUN-01KZ5YXM: work complete, run-state close blocked by BG0516 and BG0517 | 2026-08-04 |

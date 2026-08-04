@@ -1,6 +1,6 @@
 # RFC-0057: A queue of planned sprints, so the planner and the runner can be different people
 
-> **Status:** In Review
+> **Status:** Accepted
 > **Decomposed-into:** EP0176
 > **Size:** L
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md
