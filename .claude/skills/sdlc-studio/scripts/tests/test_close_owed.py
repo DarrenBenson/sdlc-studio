@@ -891,5 +891,108 @@ class CloseRepairOverrideTests(CloseOwedBase):
                       "the reason is stored but never shown, so nobody can question it")
 
 
+class HeadlineAndExitCodeAgreeTests(CloseRepairOverrideTests):
+    """BG0518: the first line contradicted the verdict on the one state that matters.
+
+    The exit code was computed from `unaccounted`, the headline from `owed`. `owed` keeps every
+    uncovered terminal unit - including the ones an override fully accounts for, deliberately,
+    because visible and countable is the point. So on a fully-overridden set the tool printed
+    "a sprint close is owed (run the retro, then `gate --require-retro RETROxxxx`)" and exited
+    0. A gate reading the code was right; every human and agent reading the line was told the
+    opposite, and told to do work that was not owed and could not honestly be done - there is
+    no batch left for that retro to account for.
+
+    Inherits the override fixture rather than rebuilding it: this is a claim about how that
+    exact state is REPORTED.
+    """
+
+    OVERRIDE = "BG0005 - the defect was in the close loop that was running this close"
+
+    def test_a_fully_overridden_set_makes_no_claim_that_a_close_is_owed(self) -> None:
+        """MUTANT: compose the headline from `owed` again (restore `n` in the head branches).
+
+        Asserts the CLAIM is absent, not that some word is present, because the units are still
+        named further down and a substring test for "BG0005" passes either way.
+        """
+        r = self._tree(override=self.OVERRIDE)
+        self.assertEqual(r["unaccounted"], [], "the fixture is not a fully-overridden set")
+        head = close_owed.render(r).splitlines()[0]
+        self.assertNotIn("a sprint close is owed", head,
+                         f"the headline claims a close is owed while exiting 0: {head}")
+        self.assertNotIn("--require-retro", head,
+                         f"the headline names a discharge command for an empty ledger: {head}")
+        self.assertFalse(close_owed.is_owed(r), "nothing is owed, so the predicate must be False")
+
+    def test_the_overridden_units_are_still_named(self) -> None:
+        """The control. MUTANT: fix the headline by suppressing the report.
+
+        An override nobody can see is indistinguishable from the inline repair the rule forbids.
+        Quietening the tool is not the fix; agreeing with itself is.
+        """
+        text = close_owed.render(self._tree(override=self.OVERRIDE))
+        self.assertIn("BG0005", text, "the overridden unit is no longer reported at all")
+        self.assertIn("recorded override", text)
+
+    def _unaccounted_tree(self) -> dict:
+        """A unit nobody accounted for: terminal BEFORE the retro was written, so it is not a
+        close-time repair and no override applies to it.
+
+        Dropping the override from `_tree` is NOT this state - the unit there is still a
+        close-time repair, which by CR0527 is reported and deliberately does not hold the exit
+        code. Writing that control first and watching it fail is what showed the difference.
+        """
+        _bug(self.root, "BG0001", "Fixed")
+        close_owed.stamp_baseline(self.root, date="2026-01-01")
+        _bug(self.root, "BG0005", "Fixed")
+        _dated_retro(self.root, "RETRO0002", "BG0001", "2026-02-01",
+                     override="no plan-time forecast for this fixture")
+        _actuals(self.root, "2026-01-15", ["BG0005"])       # BEFORE the retro
+        _run_state(self.root, "stopped")
+        return close_owed.owed(self.root)
+
+    def test_an_unaccounted_unit_still_refuses_and_still_exits_non_zero(self) -> None:
+        """The other control. MUTANT: make `is_owed` return False unconditionally.
+
+        This fix must not buy a quiet tool by silencing a real refusal.
+        """
+        r = self._unaccounted_tree()
+        self.assertEqual([c for c, _ in r["unaccounted"]], ["BG0005"], "the fixture is wrong")
+        self.assertTrue(close_owed.is_owed(r))
+        self.assertIn("a sprint close is owed", close_owed.render(r).splitlines()[0])
+
+    def test_the_headline_and_the_verdict_cannot_disagree(self) -> None:
+        """The property, over both states. MUTANT: derive either one from its own expression.
+
+        One predicate, two consumers. A future branch that reports a debt without holding the
+        exit code - or holds it without saying so - fails here rather than in somebody's
+        session.
+        """
+        for label, build in (("overridden", lambda: self._tree(override=self.OVERRIDE)),
+                             ("repair-only", lambda: self._tree()),
+                             ("unaccounted", self._unaccounted_tree)):
+            with self.subTest(state=label):
+                r = build()
+                claims = "a sprint close is owed" in close_owed.render(r)
+                self.assertEqual(claims, close_owed.is_owed(r),
+                                 "the headline and the exit code disagree about this report")
+
+    def test_the_shipped_command_agrees_too(self) -> None:
+        """MUTANT: fix `render` and leave `cmd_detect` computing its own answer.
+
+        The library functions agreeing proves nothing about the CLI, which is what an operator
+        and a gate actually run - a library test is not a lane test (LL0040). This drives
+        `cmd_detect` itself and reads the exit code it returns, never a pipe's.
+        """
+        import argparse
+        self._tree(override=self.OVERRIDE)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = close_owed.cmd_detect(argparse.Namespace(root=str(self.root), format="text"))
+        head = buf.getvalue().splitlines()[0]
+        self.assertEqual(rc, 0, f"the command refuses a fully-overridden set: {head}")
+        self.assertNotIn("a sprint close is owed", head,
+                         f"the command exits 0 and still claims a close is owed: {head}")
+
+
 if __name__ == "__main__":
     unittest.main()

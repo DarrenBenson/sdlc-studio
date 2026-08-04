@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 25 |
+| Open | 24 |
 | In Progress | 0 |
-| Fixed | 408 |
+| Fixed | 409 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -46,7 +46,7 @@
 | [BG0504](BG0504-seven-repo-guards-read-the-live-index-directly.md) | seven repo guards read the live index directly, so taking reconcile's own archival advice turns the tree red | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0505](BG0505-claim-drift-compares-a-bare-filename-against-full.md) | claim-drift compares a bare filename against full repo paths, so any Verify line naming a test by basename is a guaranteed false positive | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0506](BG0506-a-repeated-single-valued-metadata-field-is-accepted.md) | a repeated single-valued metadata field is accepted, read first-wins, and corrected first-only - so a gate can read one of two contradictory claims | Fixed | Medium | 2026-08-03 | 2026-08-03 |
-| [BG0507](BG0507-the-suite-collapse-lane-sets-fail-1-after.md) | the suite-collapse lane sets fail=1 after the green verdict is already written, so a collapsed suite is reusable | Open | High | 2026-08-03 | 2026-08-03 |
+| [BG0507](BG0507-the-suite-collapse-lane-sets-fail-1-after.md) | the suite-collapse lane sets fail=1 after the green verdict is already written, so a collapsed suite is reusable | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0508](BG0508-the-close-report-s-sibling-imports-sit-outside.md) | the close report's sibling imports sit outside its advisory try, so an ImportError escapes after the run is already stamped closed | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0509](BG0509-the-close-time-repair-split-uses-day-granularity.md) | the close-time-repair split uses day granularity and a global override map, so a same-day terminal is excused and an override never expires | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0510](BG0510-the-plan-review-ledger-has-no-kind-column.md) | the plan-review ledger has no kind column, so a second pre-code gate would be cleared by the first gate's approval | Open | Medium | 2026-08-03 | 2026-08-03 |

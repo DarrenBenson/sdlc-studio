@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
+> **Verification depth:** functional
 > **Affects:** .claude/skills/sdlc-studio/scripts/close_owed.py, .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py
 > **Evidence:** Observed on the live tree at commit fcdfe206 while orienting for Run A on 2026-08-04, immediately after recording BG0517's override in RETRO0093. Both overrides present, `real exit=0`, headline unchanged from the pre-override run.
 > **Created:** 2026-08-04
@@ -38,11 +39,11 @@ Compose the headline AFTER the override pass, from the set that actually remains
 
 ## Acceptance Criteria
 
-- [ ] On a fully-overridden set, `close_owed detect` makes no claim that a close is owed and names no discharge command. With BG0511 and BG0517 both overridden the headline states what is true: N units reached terminal since the baseline and all N are accounted for
-- [ ] The headline and the exit code come from ONE predicate. Not two expressions that happen to agree - derived, so they cannot drift (LL0042). The test asserts the pairing across both states, so a future branch that reports one without the other reddens it
-- [ ] The owing case is untouched: a unit with no override still yields the refusal text AND a non-zero exit. This fix must not buy a quiet tool by silencing a real refusal
-- [ ] The mutant is the composition order: computing the headline before the override pass reddens the new test
-- [ ] Read the exit code by redirection, never through a pipe, in both the test and any manual check - a piped `$?` reports the pager's status and has twice reported a red suite as green in this repo
+- [x] On a fully-overridden set, `close_owed detect` makes no claim that a close is owed and names no discharge command. With BG0511 and BG0517 both overridden the headline states what is true: N units reached terminal since the baseline and all N are accounted for
+- [x] The headline and the exit code come from ONE predicate. Not two expressions that happen to agree - derived, so they cannot drift (LL0042). The test asserts the pairing across both states, so a future branch that reports one without the other reddens it
+- [x] The owing case is untouched: a unit with no override still yields the refusal text AND a non-zero exit. This fix must not buy a quiet tool by silencing a real refusal
+- [x] The mutant is the composition order: computing the headline before the override pass reddens the new test
+- [x] Read the exit code by redirection, never through a pipe, in both the test and any manual check - a piped `$?` reports the pager's status and has twice reported a red suite as green in this repo
 
 ## Impact
 

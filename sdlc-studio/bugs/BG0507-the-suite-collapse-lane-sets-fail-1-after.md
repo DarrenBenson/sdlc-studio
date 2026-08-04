@@ -1,6 +1,6 @@
 # BG0507: the suite-collapse lane sets fail=1 after the green verdict is already written, so a collapsed suite is reusable
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Verification depth:** functional

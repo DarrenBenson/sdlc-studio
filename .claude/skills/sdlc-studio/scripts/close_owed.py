@@ -545,8 +545,38 @@ def stamp_baseline(root: Path, date: str | None = None, note: str | None = None,
     return data
 
 
+def blocking(report: dict) -> dict:
+    """The ONE answer the headline and the exit code are both derived from.
+
+    `owed` is every uncovered terminal unit, including the ones a close-time repair or a
+    recorded override fully accounts for. The exit code has always been computed from
+    `unaccounted` instead - correctly - while the headline was computed from `owed`. Two
+    readers of one question, so on a fully-overridden set the first line announced a debt and
+    named the command to discharge it, and the process exited 0. A gate reading the
+    exit code was right; every human and agent reading the headline was told the opposite.
+
+    Derived here rather than restated at each site, so the two cannot drift apart again
+    (LL0042). `unaccounted` is defaulted from `owed` for the unbaselined and corrupt reports,
+    which do not carry the split.
+    """
+    return {"units": report.get("unaccounted", report.get("owed") or []),
+            "velocity": report.get("velocity_owed") or [],
+            "corrupt": bool(report.get("corrupt"))}
+
+
+def is_owed(report: dict) -> bool:
+    """True when something genuinely holds the close. The exit code IS this predicate."""
+    block = blocking(report)
+    return bool(block["corrupt"]
+                or (report.get("baselined") and (block["units"] or block["velocity"])))
+
+
 def render(report: dict) -> str:
     n = len(report["owed"])
+    # What actually holds the close, as opposed to what merely reached terminal. Every branch
+    # below that makes a CLAIM reads this; the listing lines still read `owed`, because naming
+    # the accounted-for units is the point of reporting them.
+    n_block = len(blocking(report)["units"])
     if report.get("corrupt"):
         return (f"close owed: BASELINE CORRUPT - {report.get('error', BASELINE_FILE)}. "
                 f"The close-down cannot be judged and is BLOCKED until the file is repaired "
@@ -556,18 +586,30 @@ def render(report: dict) -> str:
         head = (f"close owed: UNBASELINED - {n} uncovered terminal unit(s). "
                 f"Run `close_owed baseline` to grandfather the existing tail, "
                 f"then only later work can owe a close.")
-    elif n == 0 and report.get("velocity_owed"):
+    elif n_block == 0 and report.get("velocity_owed"):
         # The unit half is clean and the close is still unfinished. Saying "none" here and
         # listing the missing rows two lines below would be one report contradicting itself.
         head = (f"close owed: {len(report['velocity_owed'])} retro(s) closed without their "
                 f"velocity row - the delivery units are all accounted for, the accuracy write "
                 f"is not.")
-    elif n == 0:
+    elif n_block == 0 and n:
+        # Terminal since the baseline, and every one of them accounted for by a close-time
+        # repair or a recorded override. Nothing is owed, so nothing here may say a close is -
+        # and no discharge command is named, because there is no ledger left to discharge and
+        # running a retro over a batch that does not exist is work that cannot honestly be done.
+        # The units are still named below: visible and countable is the whole point of an
+        # override, and silence would be indistinguishable from the inline repair the rule
+        # forbids.
+        head = (f"close owed: none. {n} unit(s) reached terminal since the baseline and every "
+                f"one is accounted for - named below with the reason each carries. "
+                f"{report['covered']} unit(s) accounted for by retros; "
+                f"{report['grandfathered']} grandfathered.")
+    elif n_block == 0:
         head = (f"close owed: none. {report['covered']} unit(s) accounted for by retros; "
                 f"{report['grandfathered']} grandfathered.")
     else:
-        head = (f"close owed: {n} delivery unit(s) reached terminal since the baseline with no "
-                f"retro accounting for them - a sprint close is owed "
+        head = (f"close owed: {n_block} delivery unit(s) reached terminal since the baseline "
+                f"with no retro accounting for them - a sprint close is owed "
                 f"(run the retro, then `gate --require-retro RETROxxxx`).")
     lines = [head]
     # The two states named apart. "Fixed after the account was written" and "nobody accounted
@@ -636,10 +678,9 @@ def cmd_detect(args: argparse.Namespace) -> int:
     # visible and countable, which the report above does; gating on it would re-create the
     # unconvergeable close from the other side - the ceremony would refuse precisely because the
     # close had done its job carefully. What holds the gate is work nobody accounted for.
-    unaccounted = report.get("unaccounted", report["owed"])
-    return 1 if (report.get("corrupt")
-                 or (report["baselined"]
-                     and (unaccounted or report.get("velocity_owed")))) else 0
+    # `is_owed` is the shared predicate `render` composes its headline from, so the line the
+    # reader sees and the code a gate branches on cannot disagree.
+    return 1 if is_owed(report) else 0
 
 
 def cmd_baseline(args: argparse.Namespace) -> int:
