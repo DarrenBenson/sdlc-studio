@@ -33,10 +33,15 @@ Usage: tools/run-suite.sh scripts|tools|all
 Runs a suite, prints one verdict line, and writes the full verdict to
 sdlc-studio/.local/suite-verdict.json:
 
-  {suite, exit_code, passed, failed, duration, head_sha, tree_hash}
+  {suite, exit_code, passed, failed, duration, head_sha, tree_hash, log}
 
 Exits with the SUITE's status, so a caller that checks $? is still correct.
 Read the file rather than the output - that is the point.
+
+`log` is this run's OWN full output, kept under sdlc-studio/.local/suite-logs/
+rather than a rolling file a later run overwrites. A red run prints the failing
+test NAMES to stderr before the tail, because a count without a name cannot be
+acted on. The ten most recent logs are kept.
 
 --check confirms a verdict is current and covers the suite asked about. With no
 suite named it requires `all`, because an unqualified claim of greenness is a
@@ -202,8 +207,34 @@ CMD="${SUITE_CMD_OVERRIDE:-$CMD}"
 cd "$PROJECT_ROOT" || exit 2
 mkdir -p "$(dirname "$VERDICT_REL")"
 
-OUT="$(mktemp)"
-trap 'rm -f "$OUT"' EXIT
+# The failing test's NAME is what a red run must leave behind, and until BG0513 this script
+# destroyed it: the full output went to a `mktemp` file removed by an EXIT trap, and only
+# `tail -25` reached stderr. unittest prints its `FAIL:` headers well above the closing
+# `FAILED (failures=1)` line, so the tail carried the COUNT and never the NAME. That is why an
+# intermittent red in the full runner went unnamed across five invocations - the evidence was
+# captured and then deleted, every time.
+#
+# The log is per-RUN, not one rolling file. A rolling log belongs to whichever run wrote last,
+# so the log a verdict points at stops describing that verdict the moment another run starts -
+# and the moment you read it is precisely when a later run has already happened. The verdict
+# records its own log path, so "the output behind THIS verdict" stays answerable.
+#
+# It lives under .local/, which `tree_state` drops from its index, so preserving it cannot move
+# the tree hash the verdict binds itself to.
+LOG_DIR_REL="sdlc-studio/.local/suite-logs"
+mkdir -p "$LOG_DIR_REL"
+LOG_REL="$LOG_DIR_REL/${SUITE}-$(date +%s)-$$.log"
+OUT="$PROJECT_ROOT/$LOG_REL"
+
+# Bounded, or a directory of full-suite logs grows without limit. Newest kept, by mtime, and
+# only within this directory - the names are generated here and hold no spaces or newlines.
+prune_suite_logs() {
+    local keep=10
+    # shellcheck disable=SC2012 # our own generated filenames; no unsafe characters
+    ls -1t "$LOG_DIR_REL"/*.log 2>/dev/null | tail -n "+$((keep + 1))" | while read -r old; do
+        rm -f "$old"
+    done
+}
 
 START="$(date +%s)"
 # Bytecode is purged so a same-length mutant cannot be served from a cached .pyc - the false
@@ -239,16 +270,32 @@ cat > "$VERDICT_REL" <<EOF
   "failed": $FAILED,
   "duration": $DURATION,
   "head_sha": "$HEAD_SHA",
-  "tree_hash": "$TREE_HASH"
+  "tree_hash": "$TREE_HASH",
+  "log": "$LOG_REL"
 }
 EOF
+
+prune_suite_logs
 
 if [[ $RC -eq 0 ]]; then
     echo "suite $SUITE: GREEN (${PASSED} passed, ${DURATION}s) -> $VERDICT_REL"
 else
-    # The tail of the output goes to STDERR on failure only: a red run is the one time the
-    # detail is worth seeing, and stderr keeps stdout to the single verdict line.
+    # The detail goes to STDERR on failure only: a red run is the one time it is worth seeing,
+    # and stderr keeps stdout to the single verdict line.
     echo "suite $SUITE: RED (exit $RC, ${DURATION}s) -> $VERDICT_REL"
+    # NAMES first, then the tail. Both runners are matched because the batch runs both and a
+    # red can come from either: unittest emits `FAIL: test_x (mod.Class)`, pytest's short
+    # summary emits `FAILED path::Class::test_x - AssertionError`. Reporting the count without
+    # the name is the whole of BG0513.
+    NAMED="$(grep -E '^(FAIL|ERROR): |^FAILED ' "$OUT" || true)"
+    if [[ -n "$NAMED" ]]; then
+        printf '  failing test(s):\n%s\n' "$NAMED" >&2
+    else
+        # Stated rather than left blank. "No header matched" and "no failure" are different
+        # facts, and a silent absence here reads as the second.
+        printf '  no FAIL:/ERROR: header matched - the full log is the only record\n' >&2
+    fi
+    printf '  full output: %s\n' "$LOG_REL" >&2
     tail -25 "$OUT" >&2
 fi
 exit $RC

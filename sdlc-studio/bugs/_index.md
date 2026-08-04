@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 24 |
+| Open | 26 |
 | In Progress | 0 |
 | Fixed | 407 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **518** |
+| **Total** | **520** |
 
 ## All Bugs
 
@@ -58,6 +58,8 @@
 | [BG0516](BG0516-the-close-reports-a-gate-refusal-it-could.md) | the close reports a gate refusal it could not attribute, where the gate named its failing lane plainly | Open | High | 2026-08-04 | 2026-08-04 |
 | [BG0517](BG0517-the-close-loop-cap-stops-a-loop-that.md) | the close-loop cap stops a loop that has already converged - it counts attempts before it looks at the outstanding set | Fixed | High | 2026-08-04 | 2026-08-04 |
 | [BG0518](BG0518-close-owed-detect-prints-a-sprint-close-is.md) | close_owed detect prints "a sprint close is owed" on the run where it exits 0, so its headline contradicts its own verdict | Open | Medium | 2026-08-04 | 2026-08-04 |
+| [BG0519](BG0519-the-tools-leg-s-remaining-slowdown-inside-the.md) | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed | Open | Medium | 2026-08-04 | 2026-08-04 |
+| [BG0520](BG0520-the-triage-session-cap-is-a-lifetime-cap.md) | the triage session cap is a LIFETIME cap: the session key defaults to a constant, so the counter never resets and filing eventually refuses for good | Open | Medium | 2026-08-04 | 2026-08-04 |
 
 ## Archived Releases
 

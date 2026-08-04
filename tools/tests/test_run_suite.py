@@ -450,5 +450,116 @@ class CommitClaimLaneTests(unittest.TestCase):
                                 f"the lane would fire on unrelated prose: {innocent!r}")
 
 
+class RedRunNamesItsFailureTests(unittest.TestCase):
+    """BG0513: a red leg reported a COUNT and never a NAME, so an intermittent failure in the
+    full runner went unnamed across five invocations.
+
+    The output was captured to a `mktemp` file and removed by an EXIT trap; only `tail -25`
+    reached stderr, and unittest prints its `FAIL:` headers well above the closing
+    `FAILED (failures=1)` line. The evidence existed on every run and was deleted every time.
+    """
+
+    def test_a_red_run_prints_the_failing_test_name(self) -> None:
+        """MUTANT: drop the `FAIL:`/`FAILED ` grep and print only the tail.
+
+        The stub puts the header far enough above the summary that a 25-line tail cannot
+        reach it - which is the real shape, not a contrived one: the header is separated from
+        the summary by the traceback and by every later test's output. Asserting on the NAME
+        rather than on the word "FAIL" is what makes the mutant fail, because the tail still
+        contains `FAILED (failures=1)`.
+        """
+        filler = "; ".join(f"echo pad{i}" for i in range(40))
+        cmd = ("echo 'FAIL: test_the_named_one (mod.Case)'; "
+               f"{filler}; echo 'FAILED (failures=1)'; exit 1")
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = _run(root, "tools", cmd=cmd)
+        self.assertEqual(1, r.returncode)
+        self.assertNotIn("test_the_named_one", r.stdout,
+                         "stdout must stay the single verdict line")
+        self.assertIn("test_the_named_one", r.stderr,
+                      "the red run does not name the test that failed - only its count")
+
+    def test_a_pytest_style_failure_is_named_too(self) -> None:
+        """MUTANT: match only unittest's `FAIL:` and drop `^FAILED `.
+
+        The batch runs both runners, so a red can come from either. pytest's short summary
+        uses a different prefix, and a pattern that knows only one silently exempts the other
+        (LL0013).
+        """
+        filler = "; ".join(f"echo pad{i}" for i in range(40))
+        cmd = ("echo 'FAILED tools/tests/test_x.py::Case::test_pytest_one - AssertionError'; "
+               f"{filler}; exit 1")
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = _run(root, "tools", cmd=cmd)
+        self.assertIn("test_pytest_one", r.stderr,
+                      "a pytest-style failure is not named")
+
+    def test_the_verdict_records_a_log_that_holds_the_full_output(self) -> None:
+        """MUTANT: stop recording `log`, or keep writing the output to a mktemp path.
+
+        Asserts the recorded path RESOLVES and holds a line the 25-line tail could not have
+        carried. A test that only checked the field's presence would survive a `log` pointing
+        at a file the EXIT trap had already removed.
+        """
+        filler = "; ".join(f"echo pad{i}" for i in range(40))
+        cmd = f"echo FIRST_LINE_MARKER; {filler}; exit 1"
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            _run(root, "tools", cmd=cmd)
+            rec = json.loads((root / VERDICT_REL).read_text(encoding="utf-8"))
+            self.assertIn("log", rec, "the verdict records no log path")
+            log = root / rec["log"]
+            self.assertTrue(log.is_file(), f"the recorded log {rec['log']} does not exist")
+            self.assertIn("FIRST_LINE_MARKER", log.read_text(encoding="utf-8"),
+                          "the log does not hold output from above the tail window")
+
+    def test_a_later_run_does_not_overwrite_an_earlier_run_s_log(self) -> None:
+        """MUTANT: write to one rolling `suite-last.log` instead of a per-run path.
+
+        This is the criterion that decides the design, and the one the shipped rolling log
+        fails. The moment you read a red run's log is precisely the moment a later run has
+        already happened, so a log tied to "most recent" describes the wrong run exactly when
+        it matters.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            _run(root, "tools", cmd="echo RUN_ONE_MARKER; exit 1")
+            first = json.loads((root / VERDICT_REL).read_text(encoding="utf-8"))["log"]
+            _run(root, "tools", cmd="echo RUN_TWO_MARKER; exit 1")
+            second = json.loads((root / VERDICT_REL).read_text(encoding="utf-8"))["log"]
+            self.assertNotEqual(first, second, "both runs wrote to one rolling log path")
+            self.assertIn("RUN_ONE_MARKER", (root / first).read_text(encoding="utf-8"),
+                          "the first run's log was overwritten by the second")
+
+    def test_the_log_directory_is_bounded(self) -> None:
+        """MUTANT: remove the prune, or raise the cap without bound.
+
+        A directory of full-suite logs grows on every invocation. Asserts the cap holds after
+        exceeding it, rather than asserting the exact keep count, so tightening the cap later
+        does not redden a test about boundedness.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            for i in range(14):
+                _run(root, "tools", cmd=f"echo run{i}; exit 0")
+            logs = list((root / "sdlc-studio" / ".local" / "suite-logs").glob("*.log"))
+        self.assertLessEqual(len(logs), 10,
+                             f"the log directory is unbounded - {len(logs)} logs kept")
+
+    def test_a_green_run_still_prints_only_the_verdict_line(self) -> None:
+        """MUTANT: print the log path unconditionally rather than on red.
+
+        The control. The single-line stdout contract is what makes the verdict readable, and
+        a fix for the red path must not spend it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = _run(root, "tools", cmd="echo noise; exit 0")
+        self.assertEqual(1, len([ln for ln in r.stdout.splitlines() if ln.strip()]),
+                         f"stdout is no longer one line: {r.stdout!r}")
+
+
 if __name__ == "__main__":
     unittest.main()

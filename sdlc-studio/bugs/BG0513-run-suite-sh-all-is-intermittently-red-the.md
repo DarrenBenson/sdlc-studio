@@ -3,7 +3,8 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
-> **Affects:** tools/run-suite.sh, tools/tests/test_run_suite.py
+> **Verification depth:** functional
+> **Affects:** tools/run-suite.sh, tools/tests/test_run_suite.py, tools/tests/test_skill_tests_env.py
 > **Evidence:** Observed across five full-runner invocations on 2026-08-04 while delivering US0487: GREEN at 577s, RED at 1159s, RED at 1143s, against trees differing only by a regenerated charter index and three lines of reference-schema.md. The first slow run was caused by the author running two suites concurrently; the later two were not, so contention does not account for them.
 > **Created:** 2026-08-04
 > **Created-by:** sdlc-studio file
@@ -27,10 +28,10 @@ First make the failure NAMEABLE, which is the part currently missing: the runner
 
 ## Acceptance Criteria
 
-- [ ] A red leg NAMES its failing test. Executing the runner against a deliberately failing tools test leaves a preserved log containing the `FAIL:` or `ERROR:` header line that names it - the line the streamed output drops today, leaving only `FAILED (failures=1)`
-- [ ] The preserved log belongs to the run whose verdict was written, not to whichever run wrote last. Two runs in succession leave the first run's log still retrievable against its own verdict; `gate-suite-last.log` does not have that property, which is why the real failure was unnameable when it happened
-- [ ] The mutant is the preservation: restoring the single overwritten log path reddens the new test
-- [ ] **The narrowing is recorded.** Nameability is the half this unit delivers. The 4.5x slowdown and the assertion that breaks under it are diagnosed with the named test in hand, and are then either fixed here or carried by their own filed id named in this bug's Revision History. Neither is left implied - that is BG0490's defect class, and this unit is not Fixed while its title's second half is silently undelivered
+- [x] A red leg NAMES its failing test. Executing the runner against a deliberately failing tools test leaves a preserved log containing the `FAIL:` or `ERROR:` header line that names it - the line the streamed output drops today, leaving only `FAILED (failures=1)`
+- [x] The preserved log belongs to the run whose verdict was written, not to whichever run wrote last. Two runs in succession leave the first run's log still retrievable against its own verdict; `gate-suite-last.log` does not have that property, which is why the real failure was unnameable when it happened
+- [x] The mutant is the preservation: restoring the single overwritten log path reddens the new test
+- [x] **The narrowing is recorded.** Nameability is the half this unit delivers. The 4.5x slowdown and the assertion that breaks under it are diagnosed with the named test in hand, and are then either fixed here or carried by their own filed id named in this bug's Revision History. Neither is left implied - that is BG0490's defect class, and this unit is not Fixed while its title's second half is silently undelivered
 
 ## Impact
 
@@ -41,3 +42,4 @@ This blocks every commit that touches shared surface, because the suite-claim la
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-04 | sdlc-studio | Filed |
+| 2026-08-04 | Claude Opus 5 | **Delivered NARROWED under RUN-01KZ79C1, and the residue is BG0519.** Shipped: a red leg now names its failing test, and the runner keeps this run's own output at `sdlc-studio/.local/suite-logs/`, recorded as the verdict's `log` field, rather than a rolling file a later run overwrites. Four named mutants applied and killed. Also fixed one real contributor to the slowdown: `ScrubSiteSweepTests._sites` post-filtered `REPO.rglob("*")` and so walked 112,025 paths to keep 3,377, `.claude/worktrees/` being 90% of the walk, three times per run - now pruned, `_sites` 2.15s to 0.05s. NOT delivered, and carried by BG0519: that the sweep accounts for the 4.5x (it is about 1% of the gap on a warm cache), which assertion fails, and whether the flake is gone - it reproduced three times in five invocations, so no green run here can show its absence. |

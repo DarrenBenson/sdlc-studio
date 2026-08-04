@@ -301,11 +301,32 @@ class ScrubSiteSweepTests(unittest.TestCase):
         nested.write_text("y\n", encoding="utf-8")
         self.assertTrue(ScrubSiteSweepTests._skipped(nested, root))
 
+    @classmethod
+    def _walk(cls, root: Path):
+        """Every file under `root`, with excluded directories PRUNED rather than post-filtered.
+
+        `rglob("*")` descends into an excluded directory and discards the result afterwards.
+        Measured on this repo that walked 112,025 paths to keep 3,377: `.claude/worktrees/`
+        holds whole checkout copies and accounted for 90% of everything walked, and the cost is
+        paid three times over because three tests call `_sites`. It grows with whatever the
+        skill suite left behind, which is why the tools leg is slower inside the full runner
+        than alone (BG0513).
+
+        The prune asks `_skipped`, so the exclusion rule has ONE definition. Restating it as a
+        name check here would be a second reader of the same rule, and the second reader is
+        always written by whoever did not know the first existed (LL0016).
+        """
+        for dirpath, dirnames, filenames in os.walk(root):
+            here = Path(dirpath)
+            dirnames[:] = [d for d in dirnames if not cls._skipped(here / d, root)]
+            for name in sorted(filenames):
+                yield here / name
+
     def _sites(self) -> dict[str, int]:
         """`{repo-relative path: how many repo-locating names it mentions}` for code files."""
         found: dict[str, int] = {}
-        for path in sorted(REPO.rglob("*")):
-            if not path.is_file() or self._skipped(path, REPO):
+        for path in sorted(self._walk(REPO)):
+            if not path.is_file():
                 continue
             # Extension-less tracked hooks are named, not inferred: `commit-msg` now carries
             # the scrub the tool-tests lane needs, and a selector keyed on `pre-commit`
@@ -352,6 +373,41 @@ class ScrubSiteSweepTests(unittest.TestCase):
     def test_every_registry_entry_states_what_pins_it(self) -> None:
         blank = sorted(k for k, v in SCRUB_SITES.items() if not v.strip())
         self.assertEqual(blank, [], f"registry entries with no reason: {blank}")
+
+    def test_the_sweep_never_descends_into_an_excluded_directory(self) -> None:
+        """MUTANT: post-filter with `sorted(root.rglob("*"))` instead of pruning in `_walk`.
+
+        A prune and a post-filter return the SAME files, so no assertion on the result can
+        tell them apart - which is why this asserts on what was VISITED. The excluded subtree
+        here is one file deep; the real one is `.claude/worktrees/`, 100,944 paths that were
+        walked and thrown away on every call, three calls per run (BG0513).
+        """
+        import unittest.mock
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "tools").mkdir()
+            (root / "tools" / "keep.py").write_text("x\n", encoding="utf-8")
+            deep = root / "worktrees" / "agent-x" / "nested"
+            deep.mkdir(parents=True)
+            (deep / "buried.py").write_text("y\n", encoding="utf-8")
+
+            visited: list[str] = []
+            real_walk = os.walk
+
+            def recording_walk(top, *a, **kw):
+                for dirpath, dirnames, filenames in real_walk(top, *a, **kw):
+                    visited.append(dirpath)
+                    yield dirpath, dirnames, filenames
+
+            with unittest.mock.patch.object(os, "walk", recording_walk):
+                found = sorted(p.relative_to(root).as_posix()
+                               for p in ScrubSiteSweepTests._walk(root))
+
+        self.assertEqual(["tools/keep.py"], found,
+                         "the walk returned the wrong files")
+        buried = [v for v in visited if "agent-x" in v]
+        self.assertEqual(buried, [],
+                         f"the walk descended into an excluded directory: {buried}")
 
 
 if __name__ == "__main__":
