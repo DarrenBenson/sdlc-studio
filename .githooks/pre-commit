@@ -255,6 +255,11 @@ run "warning-ratchet" \
   "repair the instance named above, or record it with a reason in sdlc-studio/.validate-warning-baseline.json (validate.py warning-ratchet --stamp --reason ...) - a repaired entry is reported stale and removable, never re-spendable" \
   -- python3 .claude/skills/sdlc-studio/scripts/validate.py warning-ratchet
 
+run "runbook" \
+  "the sprint-toolchain runbook keeps its step order, per-step command coverage and verb freshness" \
+  "fix the row named above in .claude/skills/sdlc-studio/reference-sprint-toolchain.md: every step names the one command that performs it, and a verb it names must still exist" \
+  -- python3 tools/runbook.py
+
 run "lens-signatures" \
   "every audit lens names a detector that resolves, or declares manual with a real reason" \
   "fix the signature cell in the pack named above: a mechanical one names a target that exists (path first for python3/bash, last for rg, an npm scripts key for npm run), and an absent one is 'manual - <why no search singles the class out>'" \

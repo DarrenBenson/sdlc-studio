@@ -85,5 +85,52 @@ class RunbookTests(unittest.TestCase):
                          "the shipped runbook is refused by its own guard")
 
 
+class RunbookGuardRunsInTheGateTests(unittest.TestCase):
+    """BG0500: the guard existed and ran in no lane.
+
+    `test_a_missing_command_fails_the_guard` above already proves the guard REFUSES. It said
+    nothing about whether anything invokes it, and nothing did: the guard appeared in neither
+    `.githooks/pre-commit` nor `package.json`, so it ran only when the whole tools suite ran.
+    A gate belongs in the command people actually run, not in the step they are told to run
+    (LL0027) - and the runbook is the document every agent is told to read before each sprint
+    step, so it is exactly the file that rots quietly between suite runs.
+    """
+
+    HOOK = REPO / ".githooks" / "pre-commit"
+
+    def test_the_guard_is_invoked_by_the_pre_commit_lane(self) -> None:
+        """MUTANT: delete the `run "runbook"` lane from the hook."""
+        hook = self.HOOK.read_text(encoding="utf-8")
+        self.assertIn('run "runbook"', hook, "the runbook guard runs in no pre-commit lane")
+        i = hook.index('run "runbook"')
+        self.assertIn("tools/runbook.py", hook[i:i + 700],
+                      "the lane is declared but invokes something other than the guard")
+
+    def test_the_npm_chain_checks_what_the_hook_checks(self) -> None:
+        """MUTANT: add the hook lane and leave `npm run lint` behind.
+
+        The two drifting apart is how a contributor without the hooks enabled - or CI - stops
+        checking something the hook checks, silently.
+        """
+        import json
+        pkg = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
+        self.assertIn("lint:runbook", pkg["scripts"], "no npm script for the runbook guard")
+        self.assertIn("runbook.py", pkg["scripts"]["lint:runbook"])
+        self.assertIn("lint:runbook", pkg["scripts"]["lint"],
+                      "the script exists but the `lint` chain never runs it")
+
+    def test_the_repo_s_own_lane_roster_names_the_guard(self) -> None:
+        """MUTANT: wire the lane and leave AGENTS.md's roster stale.
+
+        That roster is the repo's written account of its own gates, and a guard nobody has
+        written down is one nobody notices losing - which is why AGENTS.md keeps the list at
+        all. This is the half of the AC that is about the document rather than the hook.
+        """
+        agents = (REPO / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("runbook.py", agents,
+                      "AGENTS.md's pre-commit lane roster does not name the runbook guard")
+
+
+
 if __name__ == "__main__":
     unittest.main()

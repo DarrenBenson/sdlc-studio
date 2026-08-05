@@ -56,7 +56,7 @@ _GIT_ENV_VARS = (
 #: saying so here. A derived version of this would assert only that the hook agrees with
 #: itself.
 EXPECTED_LANES = (
-    "style", "links", "skill-spec", "versions", "verify-ratchet", "warning-ratchet",
+    "style", "links", "skill-spec", "versions", "verify-ratchet", "warning-ratchet", "runbook",
     "lens-signatures",
     "spec-claims",
     "script-tests", "budgets",

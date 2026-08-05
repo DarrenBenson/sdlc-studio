@@ -1,6 +1,6 @@
 # BG0515: the charter queue has no exit - nothing sets Spent, and next never opens a run
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Verification depth:** functional

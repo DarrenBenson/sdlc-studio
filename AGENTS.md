@@ -56,7 +56,7 @@ gates incomplete, and a guard nobody has written down is one nobody notices losi
 prints each lane's rule and fix on failure, so this is the roster, not the manual:
 `lint-style.sh`, `check_links.py`, `check_budgets.py`, `check_versions.py`,
 `check_spec_claims.py`, `check_script_tests.py`, `check_neutrality.py`,
-`check_action_pins.sh`, `validate_skill.py`, `verify_ac.py`, `readiness.py`, plus `gate.py`'s
+`check_action_pins.sh`, `validate_skill.py`, `verify_ac.py`, `readiness.py`, `runbook.py`, plus `gate.py`'s
 own block (conformance, reconcile, validate, integrity, duplicate-id, docs) and markdownlint.
 One lane is ADVISORY and cannot fail a commit: `claim-drift`, which reports where a diff's
 code and the diff's own prose disagree. It ships advisory while its yield is measured,

@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
+> **Verification depth:** functional
 > **Affects:** tools/runbook.py, .githooks/pre-commit, package.json, tools/tests/test_runbook.py
 > **Evidence:** Found by the independent closing-review pass on US0613 during the RUN-01KYZKY5 close.
 > **Created:** 2026-08-03
@@ -24,7 +25,7 @@ Add it as a pre-commit lane, diff-scoped to the runbook file so it costs nothing
 
 ## Acceptance Criteria
 
-- [ ] A commit that blanks a runbook step's command column is refused by the pre-commit gate, and the lane roster in AGENTS.md names the guard.
+- [x] A commit that blanks a runbook step's command column is refused by the pre-commit gate, and the lane roster in AGENTS.md names the guard.
 
 ## Impact
 
