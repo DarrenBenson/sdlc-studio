@@ -9,6 +9,48 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
+## IN FLIGHT: RUN-01KZ79C1 - the instruments are honest, and the baselined debt is paid
+
+**This run is OPEN. 10 of 15 units delivered, 31 of 52 points.** The close-status block above
+still describes RUN-01KZ5YXM; it is stamped by `sprint close` and this run has not closed.
+
+Delivered and committed, each with a green full suite at its own commit, `verify_ac` passing
+where it applies, and every named mutant applied and killed:
+
+| Unit | Pts | |
+| --- | --- | --- |
+| BG0513 | 3 | a red suite leg names its failing test and keeps a per-run log (NARROWED - BG0519 carries the residue) |
+| BG0507 | 2 | a collapsed suite leaves no reusable green - third door into one fail-open, now pinned as a property |
+| BG0518 | 2 | `close_owed`'s headline and its exit code come from one predicate |
+| BG0514 | 2 | `queue show` is readable during a run, which is when it is used |
+| BG0515 | 3 | the charter queue has an exit - `plan --write --charter` spends it |
+| BG0500 | 2 | the runbook guard runs in a lane, not only in the tools suite |
+| US0468 | 5 | `help/sprint.md` bound to the shipped parser - **EP0170 has no work left** |
+| US0480 | 5 | the Affects/Verify family ratcheted by instance, 371 recorded |
+| US0481 | 5 | `sprint plan` validates its batch's units - **EP0173 has no work left** |
+| US0637 | 2 | unanswerable duplicate groups derived and named one by one |
+
+**Owed, and why.** `sprint preflight` reports 17 unmet prerequisites. One is cleared: the
+installed copy is back in sync (14 files). The other 16 reduce to two facts - no independent
+review covers any unit, and no reviewer-of-record sign-off exists. Both are structurally
+unavailable to the authoring session, which is the gate working rather than failing.
+
+**Still open in the batch:** US0635, US0636 (8 pts, and all-or-nothing on AC1 - 20 new
+discriminating tests, not a tidy-up), BG0406, BG0421, BG0463 (15 pts, each a bundle of ~20
+findings behind one id).
+
+**Do not start BG0406 casually.** Its smallest coherent slice is AC4+AC5 and they cannot be
+separated: fixing the header re-pin makes the detector active, and an active detector without
+AC5 reports 16 TRUE cells as drift and tells the operator to blank them. AC5 means teaching
+`children_of` the `RFC:` link spelling - core machinery that `close_owed`, `transition` and
+epic derivation all read to decide status across the corpus.
+
+**Carry into any re-forecast of Run B.** A new gate lane costs two roster updates plus npm
+parity, not five - the five on US0480 fired because `validate.py` also became a writer and a
+new test file appeared. Mutation caught defects in freshly written work three times in this
+run that the passing tests could not, twice on the same unit; budget for the second and third
+attempt at a test, because the first version is often the one that does not discriminate.
+
 ## Landed: RUN-01KZ5YXM - more, smaller runs becomes a command
 
 The goal was that the programme's own re-plan stops being an intention. A charter is now a
