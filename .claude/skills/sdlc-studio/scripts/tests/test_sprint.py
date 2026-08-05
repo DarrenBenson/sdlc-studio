@@ -13442,6 +13442,113 @@ class QueueCrudTests(unittest.TestCase):
             self.assertIn("SC9999", err.getvalue())
 
 
+class CharterIsSpentWhenItsRunOpensTests(unittest.TestCase):
+    """BG0515: the charter queue had no exit.
+
+    `Spent` shipped in the charter vocabulary and in the versioned schema contract with NO code
+    path setting it, so a charter stayed Queued forever and re-materialised at the head of every
+    later `next`. An operator who had run it could only cancel - which records a withdrawal, a
+    different and misleading fact.
+
+    ONE writer, and it is `plan --write`, because opening a run is what spends a charter and
+    that is the command which opens one. Putting it in `next` too would give the lifecycle a
+    second writer that could disagree about whether a charter was consumed.
+    """
+
+    def _charter(self, root, cid="SC0001", status="Queued"):
+        d = root / "sdlc-studio" / "charters"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{cid}-x.md").write_text(
+            f"# {cid}: charter {cid}\n\n> **Status:** {status}\n"
+            f"> **Appetite:** 480min/8units\n> **Scope query:** --bugs Open\n\n"
+            f"## Sprint Goal\n\ngoal of {cid}\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Sprint Charter Queue\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [{cid}]({cid}-x.md) | c | {status} |\n", encoding="utf-8")
+
+    def _status(self, root, cid="SC0001"):
+        import glob as _g
+        return _load().sdlc_md.extract_field(
+            Path(_g.glob(str(root / "sdlc-studio" / "charters" / f"{cid}-*.md"))[0])
+            .read_text(encoding="utf-8"), "Status").strip()
+
+    def test_opening_a_run_from_a_charter_spends_it(self) -> None:
+        """MUTANT: drop the spend_charter call, or leave the status write out of it.
+
+        Asserts the CHARTER, not the run: a test that only checked the run opened would survive
+        the mutant entirely, which is how `Spent` shipped unreachable in the first place.
+        """
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root)
+            _bug(root, 1)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = sprint.main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                                  "--sprint-goal", "g", "--charter", "SC0001",
+                                  "--root", str(root)])
+            text = out.getvalue() + err.getvalue()
+            self.assertEqual(rc, 0, text)
+            self.assertEqual(self._status(root), "Spent",
+                             "the charter its run was opened from is still Queued")
+        self.assertIn("SC0001", text)
+
+    def test_a_plan_with_no_charter_touches_no_charter(self) -> None:
+        """The control. MUTANT: spend the head charter whenever a run opens.
+
+        A run planned from a worklist has no charter behind it, and spending the head of the
+        queue on its account would consume a plan nobody ran.
+        """
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root)
+            _bug(root, 1)
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                rc = sprint.main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                                  "--sprint-goal", "g", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertEqual(self._status(root), "Queued",
+                             "a plan with no --charter spent one anyway")
+
+    def test_a_charter_that_is_not_queued_is_left_alone_and_said_so(self) -> None:
+        """MUTANT: re-spend any charter named, whatever its status.
+
+        A Withdrawn charter re-spent by a later run would rewrite a decision somebody made.
+        The run still opens - it is already open by then - so this REPORTS rather than fails.
+        """
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root, status="Withdrawn")
+            _bug(root, 1)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = sprint.main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                                  "--sprint-goal", "g", "--charter", "SC0001",
+                                  "--root", str(root)])
+            text = out.getvalue() + err.getvalue()
+            self.assertEqual(rc, 0, text)
+            self.assertEqual(self._status(root), "Withdrawn", "a Withdrawn charter was re-spent")
+        self.assertIn("not Queued", text, f"the run said nothing about skipping it:\n{text}")
+
+    def test_Spent_is_reachable_from_the_shipped_code_at_all(self) -> None:
+        """MUTANT: delete the writer and leave the vocabulary entry.
+
+        The exact state this bug was: `Spent` declared in the charter vocabulary and in the
+        schema contract, and found nowhere else outside the tests. This asserts the terminal has
+        a setter, which is the check that found the defect.
+        """
+        src = (Path(_load().__file__).parent / "sprint.py").read_text(encoding="utf-8")
+        self.assertIn('"Spent"', src,
+                      "no shipped module sets the charter terminal, so the queue has no exit")
+
+
 class BatchValidationTests(unittest.TestCase):
     """US0481: the plan validates the UNITS in its batch, not only their index rows.
 

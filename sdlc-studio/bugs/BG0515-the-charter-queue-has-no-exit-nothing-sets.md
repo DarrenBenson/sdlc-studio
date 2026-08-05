@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
+> **Verification depth:** functional
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-08-04
 > **Created-by:** sdlc-studio file
@@ -30,11 +31,11 @@ Decide where the charter is spent and make one place do it. Either `next` opens 
 
 ## Acceptance Criteria
 
-- [ ] A charter reaches `Spent`: queue a charter, materialise it, open the run, and the charter's status is Spent. `queue show` no longer names it as head, and the next `next` resolves the charter behind it rather than the same one again
-- [ ] Exactly ONE code path sets it, and which one is a recorded decision. Splitting the lifecycle across `next` and `plan --write` gives two commands that can disagree about whether a charter was consumed (LL0016); the test asserts the single writer, so adding a second reddens it
-- [ ] `Spent` stops being a declared-but-unreachable terminal: a search of `scripts/` for `Spent` finds a setter, not only the declaration in `lib/sdlc_md.py` and the schema contract. This is the exact check that found the defect, so it is the one that must flip
-- [ ] Cancel stays distinct from spent. A cancelled charter still records a withdrawal with its reason and does not read as run - the two terminals mean different things and an operator who ran a charter must not have to lie about it
-- [ ] The mutant is the status write: removing it leaves the charter Queued and reddens the new test. A test that only asserts the run opened would survive that mutant, which is why the assertion is on the charter, not the run
+- [x] A charter reaches `Spent`: queue a charter, materialise it, open the run, and the charter's status is Spent. `queue show` no longer names it as head, and the next `next` resolves the charter behind it rather than the same one again
+- [x] Exactly ONE code path sets it, and which one is a recorded decision. Splitting the lifecycle across `next` and `plan --write` gives two commands that can disagree about whether a charter was consumed (LL0016); the test asserts the single writer, so adding a second reddens it
+- [x] `Spent` stops being a declared-but-unreachable terminal: a search of `scripts/` for `Spent` finds a setter, not only the declaration in `lib/sdlc_md.py` and the schema contract. This is the exact check that found the defect, so it is the one that must flip
+- [x] Cancel stays distinct from spent. A cancelled charter still records a withdrawal with its reason and does not read as run - the two terminals mean different things and an operator who ran a charter must not have to lie about it
+- [x] The mutant is the status write: removing it leaves the charter Queued and reddens the new test. A test that only asserts the run opened would survive that mutant, which is why the assertion is on the charter, not the run
 
 ## Impact
 
@@ -45,3 +46,4 @@ A charter is never consumed, so the queue never advances: every `next` returns t
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-04 | sdlc-studio | Filed |
+| 2026-08-05 | Claude Opus 5 | Delivered under RUN-01KZ79C1. The single writer is `plan --write --charter <id>`, recorded here as the decision the criteria asked for: opening a run is what spends a charter, and `plan --write` is the one command that opens one. Putting it in `next` as well would give the lifecycle a second writer that could disagree about whether a charter was consumed. The status write goes through `transition`'s own entry point so the charter index is synced by the same code that syncs every other index. A charter that is not Queued is left alone and the run says so, rather than re-spending a Withdrawn one. |

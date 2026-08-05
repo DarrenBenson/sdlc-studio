@@ -3155,6 +3155,41 @@ def batch_selection_message() -> str:
             "status is optional), --worklist <file>, or --prd <file>")
 
 
+def spend_charter(repo_root: Path | str, charter_id: str, run_id: str) -> dict:
+    """Mark the charter this run was materialised from as `Spent`. The queue's only exit.
+
+    Refuses rather than guesses: a charter that does not resolve, or is not Queued, leaves the
+    queue untouched and says so. Spending a charter twice is not an error worth failing a run
+    for - the run is already open - so it is REPORTED, never silently ignored.
+    """
+    root = Path(repo_root)
+    cid = sdlc_md.norm_id(charter_id)
+    hit = sdlc_md.find_by_id(root, cid)
+    if not hit:
+        return {"ok": False, "detail": f"{cid}: no charter on disk resolves to this id - the run "
+                                       f"is open and the queue is untouched"}
+    path = Path(hit[0])
+    text = sdlc_md.read_text_safe(path) or ""
+    status = (sdlc_md.extract_field(text, "Status") or "").strip()
+    if status != "Queued":
+        return {"ok": False, "detail": f"{cid} is {status or 'unreadable'}, not Queued - left "
+                                       f"as it is rather than re-spent by this run"}
+    try:
+        import transition  # noqa: PLC0415 - deferred sibling; the one status writer
+        # Through transition's own entry point, not around it: it is what syncs the index and
+        # runs the status gates, and a second writer that skipped those would leave the charter
+        # index disagreeing with the charter.
+        rc = transition.main(["set", cid, "Spent", "--root", str(root)])
+        if rc != 0:
+            return {"ok": False, "detail": f"{cid} was refused by transition (rc {rc}) - the run "
+                                           f"is open; resolve that, or the queue will re-offer it"}
+    except Exception as exc:  # noqa: BLE001 - a charter write must not lose an opened run
+        sdlc_md.debug("sprint.spend_charter", exc)
+        return {"ok": False, "detail": f"{cid} could not be marked Spent ({exc}) - the run is "
+                                       f"open; mark it by hand or the queue will re-offer it"}
+    return {"ok": True, "detail": f"{cid} is Spent - consumed by {run_id}, so the queue advances"}
+
+
 def run_opened_line(state: dict, appetite: dict) -> str:
     """The run-opened confirmation. Names the Sprint Goal and the `--goal` LADDER RUNG with
     DISTINCT labels, so a reader never reads `rung=done` as their Sprint Goal failing to take and
@@ -8268,6 +8303,20 @@ def cmd_plan(args: argparse.Namespace) -> int:
                               "policy_run_id": state["run_id"]}
         state = run_state.update(args.root, **extra)
         print(f"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}")
+        # THE QUEUE'S EXIT, and the ONE place that writes it. `Spent` shipped in the charter
+        # vocabulary and in the schema contract with no code path setting it, so a charter stayed
+        # Queued forever and re-materialised at the head of every later `next` - an operator who
+        # had run it could only cancel, which records a withdrawal, a different and misleading
+        # fact.
+        #
+        # It belongs HERE rather than in `next` because opening a run is what spends a charter,
+        # and `plan --write` is the one command that opens one. Putting it in `next` would give
+        # the charter lifecycle a second writer that could disagree with this one about whether a
+        # charter was consumed, and two readers of one fact drift apart.
+        charter = (getattr(args, "charter", "") or "").strip()
+        if charter:
+            spent = spend_charter(args.root, charter, state["run_id"])
+            print(f"  {spent['detail']}")
         # BG0385: the PLAN end of the bookend goal review. `goal-review record` asks whether the
         # goal looks achievable; this asks the different question US0545 specifies - will THIS
         # content deliver it - and records the answer so the close can score its own judgement
@@ -9488,6 +9537,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "(what the increment is judged against at the closing review). Distinct "
                         "from --goal, which is a pipeline rung. Optional: prompted when "
                         "interactive; absent is recorded as none, never invented")
+    p.add_argument("--charter", default="",
+                   help="The charter this batch was materialised from. With --write, opening the "
+                        "run marks it Spent - the queue's only exit.")
     p.add_argument("--write", action="store_true",
                    help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json AND "
                         "open the run (id, start time, approved batch, goal) in "
