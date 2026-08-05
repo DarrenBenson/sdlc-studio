@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0307: A fixture that always supplies the thing under test hides the refusal that depends on its absence.**
+- **L-0306: A sample drawn from the head of a sorted corpus is not a sample of the corpus.**
+- **L-0305: Widening a table by INSERTING a column shifts every historical row; appending one does not.**
+- **L-0304: An absent value and a defaulted one must be distinguishable in the record, or a rule applied later reinterprets history.**
+- **L-0303: A guard whose deletion changes no behaviour is dead code, however reasonable it reads.**
 - **L-0302: **Fixing the instance leaves the class.** BG0500 added `runbook.py` to the AGENTS.md lane roster; four commits later the same batch shipped...**
 - **L-0301: **Reviewing the test costs two orders of magnitude less than reviewing the code.** Measured this run, by accident, on the first hand-run...**
 - **L-0300: **A mutant derived from the implementation is the mutant the test was built to catch.** Five AC-named mutants did not kill their tests, on...**

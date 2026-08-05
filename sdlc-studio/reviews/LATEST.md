@@ -9,6 +9,67 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
+## RUN-01KZ9315 - ceremony is proportional to blast radius, and the fixes were already built
+
+**12 of 12 units, 41 of 41 points, all committed with a green full suite at each commit.** The
+sprint's thesis was CR0510's second finding rather than its first: the accelerators were built,
+tested, and switched off. Three of the twelve units are wiring, not building.
+
+| Unit | Pts | |
+| --- | --- | --- |
+| US0638 | 3 | the close pre-flight runs the compulsory checklist - the one chain step it never asked about |
+| US0639 | 2 | every gate the close runs is recorded; a pre-flight verdict cannot be reused by the chain's wider gate |
+| BG0495 | 5 | the velocity row reports what a sprint WROTE beside what was ACCEPTED |
+| BG0520 | 2 | the triage session cap is a per-session budget again, not a lifetime one |
+| BG0510 | 3 | a plan-review verdict records WHICH artefact it judged - **this unblocks EP0207** |
+| BG0525 | 2 | US0629 AC2 restated in decidable terms, before anything was built against it |
+| US0640 | 2 | `plan_review.enabled` decouples the gate from the schema version |
+| US0641 | 8 | the review tier is DERIVED from the risk band, RECORDED, and READ by coverage |
+| US0642 | 5 | a low-band unit gets a bounded brief; the claim-inventory pass runs only at full tier |
+| US0643 | 5 | `sprint plan --write` assigns the sign-off panel, making a built path reachable |
+| US0644 | 2 | a sign-off records the capacity it was given in, as a field a filter can read |
+| US0645 | 2 | `sprint_report.py operator-summary`, derived wholly from the ledgers |
+
+**`route.py`'s own header said "Advisory only - no gate reads a tier". That is now false.**
+Measured through the shipped CLI: a low-band unit's brief is 6,146 characters and omits the
+claim-inventory pass; a high-band unit's is 8,415 and carries it. Over this run's own batch the
+tiering splits 3 light to 9 full; over the whole corpus of 1,171 units it bands medium 821, low
+177, high 167, trivial 6.
+
+**CR0532 turned out to be mostly built.** Panel sign-off ships today with three distinct contexts
+enforced, the signer read from the run rather than named at signing time, and a
+brief-provenance interlock. What was missing was reachability: nothing but a hand-run command
+recorded the assignment, so a run that forgot it could not be signed off at all.
+
+### What the discipline bought, and what it cost
+
+**45 named mutants applied, 45 killed** - against five that survived on the previous run. The
+difference is that every mutant here was written from the criterion before the code existed.
+Four needed a second attempt and each found something real: a dead guard clause in
+`conformance.tier_covers` (the same defect this sprint filed against `gate.py:3170` while
+planning it), an explicit `--tier light` that would have silently cleared the gate its derived
+twin does not, a reader that would have un-signed every historical sign-off when the table
+widened, and the panel's brief-provenance interlock, which no fixture reached.
+
+The gates caught four author defects before any reviewer: two units whose verifiers never
+entered the shipped entry point, a `close --dry-run` contract broken by the cost recording, a
+test that passed in isolation and failed under the suite, and two test classes appended below a
+`__main__` guard.
+
+**The cost, stated plainly.** Six full suites at seven minutes each. The gate's own budget lane
+reported OVER on every commit - 383s, 445s, 392s against a 380s ceiling already raised once from
+120s. That is CR0510's headline evidence worsening while CR0510's first slice was being built.
+
+### What is owed
+
+Nothing in this sprint was live during this sprint. The measurable claim is the NEXT run's
+tokens per point against **RETRO0094's 353,810**, recorded in RETRO0095 as the before figure so
+the comparison is against a stated baseline rather than a remembered one.
+
+**No independent review covers any unit, and no reviewer-of-record sign-off exists.** Both are
+structurally unavailable to the authoring session - the gate working, not failing. US0643 is
+what makes the next run able to answer this without waiting.
+
 ## CLOSED: RUN-01KZ79C1 - the instruments are honest; the review found what the gates could not
 
 **Called at 6 delivered, 15 descoped, goal verdict PARTIAL.** Four further units shipped their
