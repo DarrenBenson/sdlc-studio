@@ -130,6 +130,12 @@ ruling HOLDS the close, which is the point of being able to make one.
 | BG0523 | not-stop-ship | Five acceptance criteria are pinned by verifiers that cannot fail on w - raised by this run's own boundary review or during it; filed, named against its units, and carried under D0129 - tracked work, not a gate on the run that found it | 2026-08-05 |
 | BG0524 | not-stop-ship | warning-ratchet reports a stale baseline as clean and exits 0, contrad - raised by this run's own boundary review or during it; filed, named against its units, and carried under D0129 - tracked work, not a gate on the run that found it | 2026-08-05 |
 | BG0525 | not-stop-ship | US0629 AC2 asks derive to detect a polarity-flipped restatement, which - raised by this run's own boundary review or during it; filed, named against its units, and carried under D0129 - tracked work, not a gate on the run that found it | 2026-08-05 |
+| CR0509 | not-stop-ship | a review worktree opens at a stale base - process improvement, not a defect in shipped behaviour | 2026-08-05 |
+| CR0510 | not-stop-ship | ceremony proportional to blast radius - the THROUGHPUT fix this run's retro names as the next thing to build; it is the answer to the finding rate, not a blocker on shipping | 2026-08-05 |
+| CR0528 | not-stop-ship | the installed copy is only reconciled at a close - mitigated here by forward-porting before the close, and the copy is verified in sync | 2026-08-05 |
+| CR0529 | not-stop-ship | the prior-art check is scoped to the reviewer - a review-efficiency improvement, no shipped behaviour depends on it | 2026-08-05 |
+| CR0530 | not-stop-ship | the planner reports shared-file clusters rather than the parallelisable fraction - reporting granularity, and this run was sequential regardless | 2026-08-05 |
+| CR0531 | not-stop-ship | a charter's scope query cannot express a decomposition - blocks SC0001's materialisation, which is queued and not started, so it holds nothing this run shipped | 2026-08-05 |
 
 ## Estimate vs actual
 
@@ -173,7 +179,9 @@ sprints fits noise.
 
 **0 of 6 unit(s) measured; 6 of 6 forecast at plan time.**
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Sprint tokens/point: 353,810** (4,953,336 tokens over 14 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity: 1.09 points/elapsed-hour** (14 points over 12.893h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: BG0507, BG0513, BG0500, BG0514, BG0515, BG0518. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
@@ -214,3 +222,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: {{tokens}} · Duration: {{duration}} · Critic rejects: {{rejects}}
+
+## Handoff
+
+- [HO-0049](../handoffs/HO0049-every-verdict-this-repo-s-gate-writes-can.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
