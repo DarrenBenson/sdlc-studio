@@ -46,6 +46,13 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
   **BG0507 AC2** demands the retry be demonstrated end to end: collapse, retry, observe the suites execute. The shipped tests assert only that the verdict file is absent. The author closed the chain by running `gate.py --suite-decision` by hand, which is not a test - and the fixture cannot host one, because `--suite-decision` answers `run` inside it regardless of whether a verdict exists (its surface cannot be hashed). So any AC2 test written in that fixture would pass vacuously.
 
   **BG0513's `test_the_sweep_never_descends_into_an_excluded_directory`** patches `os.walk` to record visited directories. `Path.rglob` uses `os.scandir` and never calls `os.walk`, so under a faithful post-filter mutant the recorder collects nothing and `assertEqual(buried, [])` passes trivially. The naive mutant was killed only incidentally, because `rglob` also yields directories. The prune itself is correct: `_sites()` returns an identical 14-entry set at HEAD and at the base ref.
+- **gate.py's suite-reuse branch is disabled by a literal False, and its comment describes a rule the branch above already enforces more strongly**: `gate.py:3170` reads `elif False and recorded_mode != "full":`. The branch is unreachable. Its comment calls it "the coverage half of the boundary rule" and states that a green earned by a partial run must not stand in for a boundary's coverage.
+
+  VERIFIED, because the obvious reading is wrong and I nearly filed it as a live fail-open: the branch immediately above it, `elif at_boundary:` at :3162, refuses reuse at EVERY boundary unconditionally, whatever the recorded mode. So the boundary coverage rule IS enforced, and more strongly than the dead branch would enforce it.
+
+  What enabling the branch would actually do is refuse reuse of a selected-earned green on ORDINARY commits as well - which would make every commit run the full suites and would remove most of the value of selection. That is almost certainly why it was disabled, and the disabling looks deliberate.
+
+  The defect is therefore not coverage loss. It is that a reader cannot tell any of this from the code: the `False` records no reason, the comment describes a rule as though this branch carried it, and nothing says whether the disabling was a decision or an accident left behind. `git log -S 'elif False and recorded_mode'` is the only way to find out, which is the state AGENTS.md's own doctrine says a guard should never be in.
 
 ## Revision History
 

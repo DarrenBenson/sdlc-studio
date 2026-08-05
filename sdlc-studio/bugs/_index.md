@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 25 |
+| Open | 26 |
 | In Progress | 0 |
 | Fixed | 413 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **525** |
+| **Total** | **526** |
 
 ## All Bugs
 
@@ -65,6 +65,7 @@
 | [BG0523](BG0523-five-acceptance-criteria-are-pinned-by-verifiers-that.md) | Five acceptance criteria are pinned by verifiers that cannot fail on what they claim | Open | High | 2026-08-05 | 2026-08-05 |
 | [BG0524](BG0524-warning-ratchet-reports-a-stale-baseline-as-clean.md) | warning-ratchet reports a stale baseline as clean and exits 0, contradicting US0480 AC4 and its own docstring | Open | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0525](BG0525-us0629-ac2-asks-derive-to-detect-a-polarity.md) | US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written | Open | Medium | 2026-08-05 | 2026-08-05 |
+| [BG0526](BG0526-loop-guard-budget-has-no-programmatic-caller-the.md) | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers | Open | Medium | 2026-08-05 | 2026-08-05 |
 
 ## Archived Releases
 
