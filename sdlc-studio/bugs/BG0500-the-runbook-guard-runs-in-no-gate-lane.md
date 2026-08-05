@@ -1,6 +1,6 @@
 # BG0500: the runbook guard runs in no gate lane, so the runbook can rot between tool-suite runs
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Verification depth:** functional

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
+| Open | 20 |
 | In Progress | 0 |
-| Fixed | 412 |
+| Fixed | 413 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -39,7 +39,7 @@
 | [BG0495](BG0495-the-velocity-row-understates-twice-it-counts-only.md) | the velocity row understates twice - it counts only accepted points, over a wall-clock with no idle deducted | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0497](BG0497-three-units-ship-a-check-whose-own-criterion.md) | three units ship a check whose own criterion names the mechanism that was not implemented | Open | High | 2026-08-02 | 2026-08-02 |
 | [BG0499](BG0499-panel-escalation-reads-a-different-ledger-from-the.md) | panel escalation reads a different ledger from the one review-batch writes, so two REJECT rounds through the CLI notify nobody | Closed | High | 2026-08-03 | 2026-08-03 |
-| [BG0500](BG0500-the-runbook-guard-runs-in-no-gate-lane.md) | the runbook guard runs in no gate lane, so the runbook can rot between tool-suite runs | Open | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0500](BG0500-the-runbook-guard-runs-in-no-gate-lane.md) | the runbook guard runs in no gate lane, so the runbook can rot between tool-suite runs | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0501](BG0501-batch-add-epic-and-batch-swap-price-stories.md) | batch add-epic and batch swap price stories at zero because they hand-roll the points reader instead of using the shared one | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0502](BG0502-a-close-sealed-by-file-and-close-tells.md) | a close sealed by --file-and-close tells the operator nothing, because cmd_close returns before the report | Closed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0503](BG0503-an-epic-whose-every-child-is-terminal-stays.md) | an epic whose every child is terminal stays Draft, and no reconcile detector says so: 15 of 30 open epics are already delivered | Fixed | Medium | 2026-08-03 | 2026-08-03 |
