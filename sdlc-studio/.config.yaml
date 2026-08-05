@@ -79,6 +79,19 @@ review:
   # evidence AND an independent reviewer-of-record sign-off (critic.py evidence/signoff).
   # Under it, Done means signed off - units hold at Review until the close ceremony.
   two_role_after: 192
+  # D0130: the reviewer of record may be a NAMED SEAT, held disjoint from the adversarial ones.
+  # The operator's framing, recorded because it is the whole argument: "human in the loop is too
+  # slow for true AI speed; human in the lead is the best approach." The independence rule is
+  # unchanged - it is about SEPARATE CONTEXT AND SEPARATE INCENTIVES, which a fresh seat has and
+  # a tired person rubber-stamping ten units at the end of a long day does not.
+  #
+  # What this does NOT relax: three distinct contexts are still enforced (author, adversarial
+  # reviewer, signer), the signer is READ from the run's recorded assignment rather than named at
+  # signing time, and a panel may not ratify a verdict carrying no brief provenance. The record
+  # states plainly that a seat signed - `capacity: seat` - so no reader can mistake it for a
+  # person's signature, and `sprint_report.py operator-summary` derives the page the operator
+  # leads from. Adopted on RUN-01KZ9315, the sprint that made the path reachable (US0643).
+  signoff: panel
 
 engagement_floor:
   # The mechanical engagement floor is grandfathered forward-only, like conformance/provenance.

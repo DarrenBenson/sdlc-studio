@@ -194,7 +194,7 @@ sdlc-studio/
 ## Options
 
 | Option | Description | Default |
-|--------|-------------|---------|
+| --- | --- | --- |
 | `--detect` | Auto-detect all settings | false |
 | `--force` | Overwrite existing config | false |
 | `--accept-tailoring` | Apply the stack-derived DoR/DoD suggestions (with `--detect`); otherwise they are only offered | false |

@@ -38,19 +38,19 @@ and from per-project memory (project-specific facts).
 | [LL0023](LL0023-a-gate-that-checks-an-artefact-exists-not-what-is-in-it-is-satisfied-by-touch.md) | A gate that checks an artefact exists, not what is in it, is satisfied by touch | gate, false-green, ceremony, bug-class, silent-failure, process |
 | [LL0024](LL0024-a-tool-that-silently-rewrites-its-caller-s-input-is-indistinguishable-from-one-that-corrupts-it.md) | A hazard found by calling a private helper directly may already be guarded at the only call site that matters | testing, false-positive, review, tooling, bug-class, humility |
 | [LL0025](LL0025-a-narrow-sample-can-make-a-variable-look-constant-widen-the-range-before-concluding.md) | A narrow sample can make a variable look constant - widen the range before concluding | measurement, calibration, evidence, false-conclusion, bug-class, humility |
-| [LL0026](LL0026-a-model-s-fit-against-the-data-it-was-fitted-to-is-not-validation-and-a-forecast-re-derived-at-judgement-time-is-not-a-prediction.md) | A model's fit against the data it was fitted to is not validation, and a forecast re-derived at judgement time is not a prediction |  |
-| [LL0027](LL0027-a-gate-belongs-in-the-command-people-actually-run-not-in-the-step-they-are-told-to-run.md) | A gate belongs in the command people actually run, not in the step they are told to run |  |
-| [LL0028](LL0028-verify-a-fix-by-attacking-it-not-by-re-reading-it.md) | Verify a fix by attacking it, not by re-reading it |  |
-| [LL0029](LL0029-a-record-kept-in-a-gitignored-working-directory-is-not-a-record.md) | A record kept in a gitignored working directory is not a record |  |
-| [LL0030](LL0030-a-plausible-story-fitted-to-a-real-pattern-is-not-a-finding-test-it-against-the-data-already-on-disk.md) | A plausible story fitted to a real pattern is not a finding - test it against the data already on disk |  |
-| [LL0031](LL0031-before-tuning-a-coefficient-check-that-its-input-correlates-with-the-target-at-all.md) | Before tuning a coefficient, check that its input correlates with the target at all |  |
-| [LL0032](LL0032-size-work-on-volume-complexity-and-uncertainty-and-measure-the-complexity-of-the-change-not-of-the-file.md) | Size work on volume, complexity and uncertainty - and measure the complexity of the CHANGE, not of the file |  |
-| [LL0033](LL0033-a-population-average-is-not-a-ceiling-and-a-compulsory-estimate-is-not-an-estimate.md) | A population average is not a ceiling, and a compulsory estimate is not an estimate |  |
-| [LL0034](LL0034-derive-what-you-can-record-only-judgement-and-record-it-as-a-date-never-a-boolean.md) | Derive what you can; record only judgement - and record it as a date, never a boolean |  |
-| [LL0035](LL0035-a-signal-that-flips-sign-between-cohorts-is-not-a-predictor-whatever-its-pooled-correlation-says.md) | A signal that flips sign between cohorts is not a predictor, whatever its pooled correlation says |  |
-| [LL0036](LL0036-set-the-bar-before-you-measure-it-is-what-makes-a-negative-result-possible.md) | Set the bar before you measure - it is what makes a negative result possible |  |
-| [LL0037](LL0037-a-relative-fibonacci-estimate-predicts-cost-a-computed-metric-does-not.md) | A relative Fibonacci estimate predicts cost; a computed metric does not |  |
-| [LL0038](LL0038-decomposition-does-not-just-make-done-checkable-it-makes-the-estimate-accurate.md) | Decomposition does not just make Done checkable - it makes the estimate accurate |  |
+| [LL0026](LL0026-a-model-s-fit-against-the-data-it-was-fitted-to-is-not-validation-and-a-forecast-re-derived-at-judgement-time-is-not-a-prediction.md) | A model's fit against the data it was fitted to is not validation, and a forecast re-derived at judgement time is not a prediction | |
+| [LL0027](LL0027-a-gate-belongs-in-the-command-people-actually-run-not-in-the-step-they-are-told-to-run.md) | A gate belongs in the command people actually run, not in the step they are told to run | |
+| [LL0028](LL0028-verify-a-fix-by-attacking-it-not-by-re-reading-it.md) | Verify a fix by attacking it, not by re-reading it | |
+| [LL0029](LL0029-a-record-kept-in-a-gitignored-working-directory-is-not-a-record.md) | A record kept in a gitignored working directory is not a record | |
+| [LL0030](LL0030-a-plausible-story-fitted-to-a-real-pattern-is-not-a-finding-test-it-against-the-data-already-on-disk.md) | A plausible story fitted to a real pattern is not a finding - test it against the data already on disk | |
+| [LL0031](LL0031-before-tuning-a-coefficient-check-that-its-input-correlates-with-the-target-at-all.md) | Before tuning a coefficient, check that its input correlates with the target at all | |
+| [LL0032](LL0032-size-work-on-volume-complexity-and-uncertainty-and-measure-the-complexity-of-the-change-not-of-the-file.md) | Size work on volume, complexity and uncertainty - and measure the complexity of the CHANGE, not of the file | |
+| [LL0033](LL0033-a-population-average-is-not-a-ceiling-and-a-compulsory-estimate-is-not-an-estimate.md) | A population average is not a ceiling, and a compulsory estimate is not an estimate | |
+| [LL0034](LL0034-derive-what-you-can-record-only-judgement-and-record-it-as-a-date-never-a-boolean.md) | Derive what you can; record only judgement - and record it as a date, never a boolean | |
+| [LL0035](LL0035-a-signal-that-flips-sign-between-cohorts-is-not-a-predictor-whatever-its-pooled-correlation-says.md) | A signal that flips sign between cohorts is not a predictor, whatever its pooled correlation says | |
+| [LL0036](LL0036-set-the-bar-before-you-measure-it-is-what-makes-a-negative-result-possible.md) | Set the bar before you measure - it is what makes a negative result possible | |
+| [LL0037](LL0037-a-relative-fibonacci-estimate-predicts-cost-a-computed-metric-does-not.md) | A relative Fibonacci estimate predicts cost; a computed metric does not | |
+| [LL0038](LL0038-decomposition-does-not-just-make-done-checkable-it-makes-the-estimate-accurate.md) | Decomposition does not just make Done checkable - it makes the estimate accurate | |
 | [LL0039](LL0039-a-symlink-farm-turns-any-shell-redirect-into-a-write-into-the-source-tree.md) | A symlink farm turns any shell redirect into a write into the source tree | safety, tooling, review |
 | [LL0040](LL0040-a-library-test-is-not-a-lane-test.md) | A library test is not a lane test | review, testing |
 | [LL0041](LL0041-a-repair-masks-the-defect-beside-it.md) | A repair masks the defect beside it | review, mutation |
