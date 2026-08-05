@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 5
+> **Verification depth:** functional
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/critic.py, tools/check_spec_claims.py, tools/check_script_tests.py, tools/tests/test_check_versions.py, tools/tests/test_porting_doctrine.py, sdlc-studio/tsd.md, sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, tools/tests/test_check_spec_claims.py, tools/tests/test_check_script_tests.py
 > **Evidence:** Independent adversarial review of RUN-01KYTKA1, seven tranches, three seats, isolated worktrees. Every item below was reported as explicitly NON-blocking by the seat that found it.
 > **Created:** 2026-07-31
@@ -47,8 +48,8 @@ Take them as one grooming pass rather than twenty. The counts want deriving, not
 ## Acceptance Criteria
 
 - [ ] Every stale countable claim listed is either derived from the thing it counts or removed, so it cannot drift again silently
-- [ ] Every dead pattern listed is deleted, with the mechanism that actually implements its route named where it stood
-- [ ] Both truncated renders carry a `(+N more)` marker, matching the sibling row that already does
+- [x] Every dead pattern listed is deleted, with the mechanism that actually implements its route named where it stood
+- [x] Both truncated renders carry a `(+N more)` marker, matching the sibling row that already does
 - [ ] Each over-claiming docstring and comment states what the code does, and the three tests whose names promise more than they assert are either strengthened to match their names or renamed to match their assertions
 
 ## Revision History
@@ -56,3 +57,4 @@ Take them as one grooming pass rather than twenty. The counts want deriving, not
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-31 | Claude Opus 5 | Filed |
+| 2026-08-05 | Claude Opus 5 | **Delivered NARROWED under RUN-01KZ79C1, and most of this bug was already repaired.** VERIFIED rather than assumed, item by item: `_FENCE_RE` has no references left, the `covered[:6]` row already carries its marker, and the DRIFT_KINDS counts were fixed by US0458, which made the TRD cite `reconcile.DRIFT_KINDS` instead of restating it - the surviving 'tuple of 17' is in US0458's own changelog fragment, a historical record of that change and not a live claim, so it is left alone. Genuinely still broken and now fixed: the impediments row's `bits[:12]` dropped everything past twelve unmarked while its sibling row marked it (pinned by a fixture-backed test - a dict fixture skipped silently and asserted nothing); `_RESOLVED_Q_RE` was defined and never referenced, so the 'moved under Resolved Questions' route worked by OMISSION while a pattern beside it read as though something enforced it, now deleted with the real route named where it stood; and `cycle_drift` took a `root` parameter it never read, now removed - every caller already passed nothing. NOT delivered: the remaining stale-count and over-claiming-prose items, and the contract-drift and regression-cover halves. This unit stays Open. |

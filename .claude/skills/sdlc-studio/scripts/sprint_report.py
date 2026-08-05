@@ -1370,8 +1370,10 @@ def _ck_impediments(ctx: dict) -> tuple:
 
     bits = [_blocker(u) for u in blocked]
     bits += [f"open question on {d.get('unit')}: {d.get('question')}" for d in pending]
+    dropped_from_view = max(len(bits) - 12, 0)
     return (ANSWERED, f"{len(blocked)} blocked, {len(pending)} open question(s)",
-            "; ".join(bits[:12]))
+            "; ".join(bits[:12])
+            + (f" (+{dropped_from_view} more)" if dropped_from_view else ""))
 
 
 def _ck_known_issues(ctx: dict) -> tuple:
@@ -1569,7 +1571,7 @@ def scope_tail_error(scope: str) -> str | None:
     return None
 
 
-def cycle_drift(root: Path | str | None = None) -> dict:
+def cycle_drift() -> dict:
     """`{unresolved, uncovered, unverifiable}` - how the checklist and the cycle come apart.
 
     `unresolved`: a checklist row whose holding command no longer resolves to a shipped script

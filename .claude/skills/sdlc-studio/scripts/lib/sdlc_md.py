@@ -1751,7 +1751,10 @@ def depth_retracted(text: str) -> bool:
 #: (deferred)` anchored to `$` was invisible to the detector, so one token of author edit
 #: turned the gate off for the whole section - and read as a clean artefact, not a refusal.
 _OPEN_Q_RE = re.compile(r"^#+\s*Open Questions\b[^\n]*$(.*?)(?=^#+\s|\Z)", re.M | re.S)
-_RESOLVED_Q_RE = re.compile(r"^#+\s*Resolved Questions\s*$(.*?)(?=^#+\s|\Z)", re.M | re.S)
+# A `## Resolved Questions` band needs no pattern of its own: the open-questions pattern is
+# anchored to `## Open Questions`, so moving a question under Resolved takes it out of scope
+# by not matching. The route works by OMISSION, and a pattern defined beside it and never
+# referenced read as though something enforced it.
 _Q_ITEM_RE = re.compile(r"^\s*[-*]\s*\[( |x|X)\]\s*(.+)$", re.M)
 
 

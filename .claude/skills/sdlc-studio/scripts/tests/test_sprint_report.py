@@ -1822,5 +1822,34 @@ class CloseReportTests(unittest.TestCase):
                         f"an absent cost was silently dropped:\n{out}")
 
 
+class TruncationIsMarkedTests(unittest.TestCase):
+    """BG0463: a silent cap reads as "that is all there was".
+
+    Two rows render a slice and only one said so. The impediments row dropped everything past
+    twelve with no marker, so an operator could not tell a batch with twelve blockers from one
+    with forty. Its sibling - the review-coverage row - already appends the marker; this is the
+    same fact rendered two ways in one report.
+    """
+
+    def test_the_impediments_row_marks_what_it_dropped(self) -> None:
+        """MUTANT: drop the `(+N more)` suffix, restoring the bare slice.
+
+        Twenty blocked units on disk, because the row derives them by reading each unit's
+        status rather than taking a list - a dict fixture skipped silently and asserted nothing.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            ids = [f"BG{i:04d}" for i in range(1, 21)]
+            for uid in ids:
+                (bugs / f"{uid}-x.md").write_text(
+                    f"# {uid}: b\n\n> **Status:** Blocked\n> **Points:** 2\n", encoding="utf-8")
+            ctx = {"root": root, "units": ids, "run": {"pending_decisions": []}}
+            state, value, detail = sr._ck_impediments(ctx)
+        self.assertIn("(+8 more)", detail,
+                      f"20 blocked units rendered 12 with no marker: {detail}")
+
+
 if __name__ == "__main__":
     unittest.main()
