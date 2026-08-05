@@ -1,6 +1,6 @@
 # US0637: The duplicate groups no collection can answer are derived from the resolver and named one by one
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0445
 > **Supersedes:** US0482
 > **Created:** 2026-08-03

@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 20 |
-| Ready | 13 |
+| Ready | 12 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 3 |
+| Review | 4 |
 | Done | 597 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -76,7 +76,7 @@
 | [US0634](US0634-the-cost-is-measured-over-one-run-and.md) | the cost is measured over one run and reported: passes spent on test-plan review versus on code review | Draft | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0635](US0635-the-thirteen-story-side-duplicate-verify-groups-are.md) | The thirteen story-side duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
 | [US0636](US0636-the-seven-bug-side-duplicate-verify-groups-are.md) | The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
-| [US0637](US0637-the-duplicate-groups-no-collection-can-answer-are.md) | The duplicate groups no collection can answer are derived from the resolver and named one by one | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
+| [US0637](US0637-the-duplicate-groups-no-collection-can-answer-are.md) | The duplicate groups no collection can answer are derived from the resolver and named one by one | Review | EP0174 | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 
