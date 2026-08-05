@@ -70,6 +70,44 @@ store. A ranking is a fact about the past; this is a decision, re-made every ret
 | BG0522 | deferred | Claude Opus 5 (author) | 2026-08-05 |
 | BG0523 | deferred | Claude Opus 5 (author) | 2026-08-05 |
 | BG0524 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| BG0457 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| BG0463 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| BG0469 | not-stop-ship | Claude Opus 5 (author) | 2026-08-05 |
+| BG0486 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| BG0508 | not-stop-ship | Claude Opus 5 (author) | 2026-08-05 |
+| BG0509 | not-stop-ship | Claude Opus 5 (author) | 2026-08-05 |
+| BG0512 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| BG0516 | not-stop-ship | Claude Opus 5 (author) | 2026-08-05 |
+| BG0519 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| CR0509 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| CR0510 | not-stop-ship | Claude Opus 5 (author) | 2026-08-05 |
+| CR0528 | not-stop-ship | Claude Opus 5 (author) | 2026-08-05 |
+| CR0529 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| CR0530 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| CR0531 | deferred | Claude Opus 5 (author) | 2026-08-05 |
+| CR0532 | not-stop-ship | Claude Opus 5 (author) | 2026-08-05 |
+
+**How these were ruled, since a table of one-word verdicts explains nothing.** `not-stop-ship`
+is for a defect whose failure mode is a MISLEADING REPORT rather than wrong behaviour: BG0469
+(a close reported as already happened), BG0508 (an import escaping an advisory block), BG0509
+(a same-day repair split at day granularity), BG0516 (a refusal reported as unattributable
+where the gate named its lane). Each misleads a reader and none of them ships a wrong artefact.
+
+`deferred` is for a defect that is real, understood, and larger than a ruling: BG0457 (four
+guards pinning prose to prose), BG0463 (twenty findings behind one id), BG0486 (duplicate
+verifiers grouped on a normalised string), BG0512 (batch mutation without the census), BG0519
+(unattributed slowdown in the tools leg), BG0526 (`loop_guard budget` has no caller). None is a
+judgement that they do not matter; each needs its own unit.
+
+BG0510, BG0520, BG0525 and BG0495 were on this list at the first pre-flight and are not carried:
+they were DELIVERED by this sprint and moved to Fixed.
+
+CR0510 and CR0532 are ruled `not-stop-ship` because this sprint delivered their FIRST SLICE and
+each stays In Progress by derivation until its remaining children are done - an open parent
+whose children shipped is not an unaddressed defect. CR0528 (the installed copy is reconciled
+only at a close) is `not-stop-ship` for the same reason it is uncomfortable: this close
+forward-ported 15 files, which is the manual act CR0528 exists to remove, and doing it by hand
+means the risk it names did not materialise here.
 
 ## Estimate vs actual
 

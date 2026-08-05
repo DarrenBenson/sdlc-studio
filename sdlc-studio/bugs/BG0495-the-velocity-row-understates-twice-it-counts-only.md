@@ -1,6 +1,6 @@
 # BG0495: the velocity row understates twice - it counts only accepted points, over a wall-clock with no idle deducted
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood

@@ -1,6 +1,6 @@
 # BG0525: US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2

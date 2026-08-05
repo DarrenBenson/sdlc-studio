@@ -1,6 +1,6 @@
 # BG0520: the triage session cap is a LIFETIME cap: the session key defaults to a constant, so the counter never resets and filing eventually refuses for good
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 26 |
+| Open | 22 |
 | In Progress | 0 |
-| Fixed | 413 |
+| Fixed | 417 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -36,7 +36,7 @@
 | [BG0492](BG0492-the-suite-verdict-binds-to-head-rather-than.md) | the suite verdict binds to HEAD rather than the tree, and --check ignores which suite ran | Closed | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0493](BG0493-four-more-verifiers-pass-on-a-delivery-that.md) | four more verifiers pass on a delivery that has been made inert | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0494](BG0494-resolve-affects-tries-the-prefix-stripped-candidate-against.md) | resolve_affects tries the prefix-stripped candidate against the repo root first, so a consuming project's own file wins | Fixed | Medium | 2026-08-02 | 2026-08-02 |
-| [BG0495](BG0495-the-velocity-row-understates-twice-it-counts-only.md) | the velocity row understates twice - it counts only accepted points, over a wall-clock with no idle deducted | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0495](BG0495-the-velocity-row-understates-twice-it-counts-only.md) | the velocity row understates twice - it counts only accepted points, over a wall-clock with no idle deducted | Fixed | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0497](BG0497-three-units-ship-a-check-whose-own-criterion.md) | three units ship a check whose own criterion names the mechanism that was not implemented | Open | High | 2026-08-02 | 2026-08-02 |
 | [BG0499](BG0499-panel-escalation-reads-a-different-ledger-from-the.md) | panel escalation reads a different ledger from the one review-batch writes, so two REJECT rounds through the CLI notify nobody | Closed | High | 2026-08-03 | 2026-08-03 |
 | [BG0500](BG0500-the-runbook-guard-runs-in-no-gate-lane.md) | the runbook guard runs in no gate lane, so the runbook can rot between tool-suite runs | Fixed | Medium | 2026-08-03 | 2026-08-03 |
@@ -49,7 +49,7 @@
 | [BG0507](BG0507-the-suite-collapse-lane-sets-fail-1-after.md) | the suite-collapse lane sets fail=1 after the green verdict is already written, so a collapsed suite is reusable | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0508](BG0508-the-close-report-s-sibling-imports-sit-outside.md) | the close report's sibling imports sit outside its advisory try, so an ImportError escapes after the run is already stamped closed | Open | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0509](BG0509-the-close-time-repair-split-uses-day-granularity.md) | the close-time-repair split uses day granularity and a global override map, so a same-day terminal is excused and an override never expires | Open | Medium | 2026-08-03 | 2026-08-03 |
-| [BG0510](BG0510-the-plan-review-ledger-has-no-kind-column.md) | the plan-review ledger has no kind column, so a second pre-code gate would be cleared by the first gate's approval | Open | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0510](BG0510-the-plan-review-ledger-has-no-kind-column.md) | the plan-review ledger has no kind column, so a second pre-code gate would be cleared by the first gate's approval | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0511](BG0511-the-plan-gate-reports-a-batch-of-bugs.md) | the plan gate reports a batch of bugs groomed when the transition gate refuses them outright | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0512](BG0512-batch-add-epic-and-batch-swap-mutate-a.md) | batch add-epic and batch swap mutate a live batch without the ungroomed census, so a unit the plan gate would refuse can enter a run | Open | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0513](BG0513-run-suite-sh-all-is-intermittently-red-the.md) | run-suite.sh all is intermittently red: the tools suite takes 4.5x longer inside the full runner than alone, and one test fails when it does | Fixed | High | 2026-08-04 | 2026-08-04 |
@@ -59,12 +59,12 @@
 | [BG0517](BG0517-the-close-loop-cap-stops-a-loop-that.md) | the close-loop cap stops a loop that has already converged - it counts attempts before it looks at the outstanding set | Fixed | High | 2026-08-04 | 2026-08-04 |
 | [BG0518](BG0518-close-owed-detect-prints-a-sprint-close-is.md) | close_owed detect prints "a sprint close is owed" on the run where it exits 0, so its headline contradicts its own verdict | Fixed | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0519](BG0519-the-tools-leg-s-remaining-slowdown-inside-the.md) | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed | Open | Medium | 2026-08-04 | 2026-08-04 |
-| [BG0520](BG0520-the-triage-session-cap-is-a-lifetime-cap.md) | the triage session cap is a LIFETIME cap: the session key defaults to a constant, so the counter never resets and filing eventually refuses for good | Open | Medium | 2026-08-04 | 2026-08-04 |
+| [BG0520](BG0520-the-triage-session-cap-is-a-lifetime-cap.md) | the triage session cap is a LIFETIME cap: the session key defaults to a constant, so the counter never resets and filing eventually refuses for good | Fixed | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0521](BG0521-us0481-ships-a-config-key-that-does-nothing.md) | US0481 ships a config key that does nothing at plan time, and batch add writes the unit before it refuses it | Open | High | 2026-08-05 | 2026-08-05 |
 | [BG0522](BG0522-bg0515-s-fix-reproduces-bg0515-a-charter-with.md) | BG0515's fix reproduces BG0515: a charter with an unresolved Open Question leaves the run open and the charter Queued | Open | High | 2026-08-05 | 2026-08-05 |
 | [BG0523](BG0523-five-acceptance-criteria-are-pinned-by-verifiers-that.md) | Five acceptance criteria are pinned by verifiers that cannot fail on what they claim | Open | High | 2026-08-05 | 2026-08-05 |
 | [BG0524](BG0524-warning-ratchet-reports-a-stale-baseline-as-clean.md) | warning-ratchet reports a stale baseline as clean and exits 0, contradicting US0480 AC4 and its own docstring | Open | Medium | 2026-08-05 | 2026-08-05 |
-| [BG0525](BG0525-us0629-ac2-asks-derive-to-detect-a-polarity.md) | US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written | Open | Medium | 2026-08-05 | 2026-08-05 |
+| [BG0525](BG0525-us0629-ac2-asks-derive-to-detect-a-polarity.md) | US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written | Fixed | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0526](BG0526-loop-guard-budget-has-no-programmatic-caller-the.md) | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers | Open | Medium | 2026-08-05 | 2026-08-05 |
 
 ## Archived Releases

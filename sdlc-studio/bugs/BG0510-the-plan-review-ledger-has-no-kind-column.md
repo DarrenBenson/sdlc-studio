@@ -1,6 +1,6 @@
 # BG0510: the plan-review ledger has no kind column, so a second pre-code gate would be cleared by the first gate's approval
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
