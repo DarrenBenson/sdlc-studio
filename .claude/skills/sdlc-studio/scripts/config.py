@@ -92,6 +92,35 @@ def get(repo_root: Path | str, dotted: str, default=None):
     return cur
 
 
+def feature_enabled(repo_root: Path | str, feature: str) -> bool:
+    """Is `<feature>.enabled` in force? THE one resolution of knob-then-schema, shared.
+
+    `<feature>.enabled` when the project states one, and the schema version otherwise. Two
+    reasons for a knob rather than the schema gate alone, both learned rather than designed.
+
+    The v3 gate BUNDLES. A project wanting one control had to adopt plan-review, spec-guard, the
+    inbox status and the v3 id format in a single act across every artefact it holds, so the
+    controls stayed unreachable in practice: the project that BUILT the triage session cap filed
+    801 findings in a month with that cap sitting unused, and hand-rolled the consolidation the
+    fold does automatically. And the schema version describes the shape of artefacts, which is
+    not what any of these features is about.
+
+    ONE definition, called by both adopters. Two copies of this resolution are two answers to the
+    question "is this on", and they drift the moment either is touched - which is the class of
+    defect this repository files against itself most often.
+
+    An unset knob keeps the previous behaviour exactly, so no consuming project changes.
+    """
+    try:
+        stated = get(repo_root, f"{feature}.enabled", None)
+    except Exception:  # noqa: BLE001 - config must never break a feature check
+        stated = None
+    if stated is None:
+        from lib import sdlc_md  # noqa: PLC0415 - deferred; avoids a config->sdlc_md import cycle
+        return sdlc_md.is_schema_v3(repo_root)
+    return bool(stated)
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     """Print the resolved config, or a single dotted key."""
     if args.key:

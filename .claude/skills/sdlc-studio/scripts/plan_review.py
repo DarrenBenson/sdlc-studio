@@ -187,19 +187,46 @@ def _has_independent_plan_approval(root, story_id: str, text: str) -> bool:
     fingerprint (recorded via `record_review`), it must match the story's CURRENT ACs - a
     stale approval against edited ACs does not count. A hash-less verdict (the bare
     `critic record --phase plan-review` form) is honoured for back-compatibility."""
-    v = critic.verdict_for(root, story_id, phase="plan-review")
+    # THE `spec` KIND, named rather than assumed. This gate is the US0090 pre-implementation
+    # AC-vs-spec check, and it must not be discharged by an approval of some other pre-code
+    # artefact - a test-plan review, say - that its reviewer never read. Naming the kind is what
+    # makes the column load-bearing instead of decorative, which is the state `critic brief
+    # --tier` was already in.
+    v = critic.verdict_for(root, story_id, phase="plan-review", kind=critic.DEFAULT_PLAN_KIND)
     if not (v and v["verdict"] == critic.APPROVE and critic.is_independent(v)):
         return False
     m = _HASH_RE.search(v.get("issues", "") or "")
     return m.group(1) == ac_fingerprint(text) if m else True
 
 
+def active(root) -> bool:
+    """Is the plan-review gate live for this project?
+
+    `plan_review.enabled` when stated, the schema version otherwise - THE shared resolution in
+    `config.feature_enabled`, the same one `triage_noise.active` uses.
+
+    This gate was hard-gated on `is_schema_v3` with no knob at all, which made it unreachable
+    without adopting the v3 id format, the inbox status and spec-guard across every artefact a
+    project holds. It is a review policy and has nothing to do with the shape of artefacts, and
+    it is the model the rest of the ceremony work copies - a deterministic, risk-proportional
+    gate that `--force` cannot bypass - so leaving it dormant left the model unexercised.
+    """
+    return config.feature_enabled(root, "plan_review")
+
+
 def gate(root, story_id: str, path: Path | str | None = None) -> dict:
     """Evaluate the plan-review gate for a story. Returns {ok, reason, fired, override,
-    signals}. A no-op (ok True) unless the project is schema v3."""
+    signals}. A no-op (ok True) unless `active(root)` - see there for what decides it."""
     root = Path(root)
-    if not sdlc_md.is_schema_v3(root):
-        return {"ok": True, "reason": "dormant (schema v2)", "fired": False,
+    if not active(root):
+        # The reason names the KNOB when a project stated one, and the schema version otherwise,
+        # because a reader has to be sent to the thing that actually decided. Reporting "schema
+        # v2" to a project that deliberately set `plan_review.enabled: false` would send them to
+        # a migration they do not need for a decision they already made.
+        stated = config.get(root, "plan_review.enabled", None)
+        why = ("dormant (plan_review.enabled: false)" if stated is not None
+               else "dormant (schema v2)")
+        return {"ok": True, "reason": why, "fired": False,
                 "override": None, "signals": []}
     p = Path(path) if path else _resolve_story(root, story_id)
     if p is None or not p.exists():

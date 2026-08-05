@@ -6583,6 +6583,31 @@ class PreflightChecklistTests(ClosePreflightTests):
                              "the checklist's ruling")
             self.assertTrue(res["ready"], res["blockers"])
 
+    def test_the_shipped_preflight_verb_reports_the_checklist(self) -> None:
+        """THE LANE TEST. Every other case here calls `close_preflight` directly, and the gate's
+        own lane-check said so: a library test does not exercise the wiring (LL0040). This drives
+        `sprint.py preflight` - the verb an operator types - and asserts the checklist blocker
+        reaches the printed page and the exit code.
+
+        Mutant: leave the checklist out of the pre-flight's composition, or stop rendering the
+        `checklist` stage - both redden here, and only here would a missing render be caught.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            checklist={"items": [{"id": "seat-review", "title": "seat review",
+                                                  "value": "not run", "detail": "run it"}],
+                                       "outstanding": ["seat-review"]})
+            rid = self._retro(root)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["preflight", "--retro", rid, "--root", str(root)])
+            page = out.getvalue() + err.getvalue()
+            self.assertEqual(rc, 1, page)
+            self.assertIn("seat-review", page)
+            self.assertIn("run it", page)
+
     def test_no_retro_named_reports_the_missing_retro_once_and_no_checklist_row(self) -> None:
         """A checklist is composed FOR a retro. With none named the retro blocker already says
         so, and a second blocker would be one fact reported twice. Mutant: call the checklist
@@ -6668,6 +6693,28 @@ class CloseCostRecordingTests(ClosePreflightTests):
                 res = mod.close_preflight(root, None)
             self.assertIn("gate", self._stages(res), res["blockers"])
             self.assertIn("could NOT be recorded", err.getvalue())
+
+    def test_the_shipped_preflight_verb_records_its_gate(self) -> None:
+        """THE LANE TEST, and the claim this unit is actually about. Driving `close_preflight`
+        proves the function records; driving `sprint.py preflight` proves the VERB an operator
+        runs does - which is where the 148.8s row measured against RUN-01KZ9315 came from, and
+        where the six unrecorded gate runs were lost.
+
+        Mutant: record from `cmd_close` instead of from the pre-flight itself - the function
+        tests still pass and this reddens, because a bare `preflight` never reaches a close.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance",), units=["US0101"])
+            _close_state(root, batch=["US0101"], run_id="RUN-TEST01")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                rc = mod.main(["preflight", "--root", str(root)])
+            self.assertEqual(rc, 1)
+            rows = self._ledger(mod, root)
+            self.assertEqual(len(rows), 1, rows)
+            self.assertEqual((rows[0]["moment"], rows[0]["mode"], rows[0]["run_id"]),
+                             ("close", "preflight", "RUN-TEST01"))
 
     def test_the_dry_run_records_no_cost_row(self) -> None:
         """A `close --dry-run` leaves the tree byte-identical - stricter than the pre-flight's

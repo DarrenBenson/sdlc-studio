@@ -31,13 +31,25 @@
 
 ### AC2: each row names a concrete production edit, and a row that merely restates its criterion is refused
 
-- **Given** a derived plan whose mutant field for a criterion is blank, or is that criterion's own text with the polarity flipped
+> **RESTATED under BG0525**, before implementation, because the original wording was not
+> mechanically decidable. It asked `derive` to refuse a mutant that is "that criterion's own text
+> with the polarity flipped", and an independent seat produced the mutant that defeats it: a field
+> reading ``in `verify_ac.py`, make it so the plan does not have exactly one row per criterion``
+> names a real file, names an edit, and IS the criterion with its polarity flipped. Every proxy -
+> path presence, negation words, token overlap - either accepts it or needs a tuned threshold.
+> Implementing the old wording would have produced BG0523's class exactly: a criterion marked
+> Verified against a verifier pinning a proxy rather than the property.
+
+- **Given** a derived plan whose mutant field for a criterion is (a) blank, (b) names no path drawn from the unit's own `Affects`, (c) carries no edit verb, or (d) shares more than **60%** of its meaningful tokens with that criterion's own `Then` clause
 - **When** the plan is written
-- **Then** `derive` refuses that row, naming the criterion and demanding a named file plus the edit to make in it, because a mutant is a change to production code and "the feature does not work" is not one
+- **Then** `derive` refuses that row, naming the criterion and which of the four properties it failed, because a mutant is a change to production code and "the feature does not work" is not one
+- **The discriminating pair, stated here rather than left to the implementer.** REFUSE: `in verify_ac.py, make it so the plan does not have exactly one row per criterion` - a real path, a real edit verb, and 71% token overlap with its criterion. ACCEPT: `in verify_ac.py, delete the len(rows) == len(criteria) equality` - the same path and verb, 24% overlap. The two differ in ONE property, which is what makes the threshold the thing under test rather than the example
+- **The near-miss ACCEPT is required, not optional.** A legitimate mutant that happens to share the criterion's vocabulary must still be accepted, or `derive` becomes a guard that refuses honest work while its refusal test passes for exactly that reason
+- **The 60% ceiling is a stated number with a stated basis**, following `_reason_substance` in `verify_ac.py:2264` - measure substance after filler and punctuation come off, never raw text. That helper carries the scar of a one-character `-` passing a non-blank check, which is the same failure a raw-text comparison would repeat here
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanDeriveTests::test_a_restated_criterion_is_not_a_mutant
 - **Caller:** `verify_ac.py testplan derive`
 - **Verification target:** functional
-- **Mutation-checked:** to be recorded at delivery - accepting a blank mutant field must turn this test red
+- **Mutation-checked:** to be recorded at delivery - accepting a blank mutant field, and accepting the 71% restatement, must each turn this test red
 - **Verified:** no
 
 ### AC3: the plan lives in the unit's own file, so it travels with the unit and files stay truth
@@ -98,25 +110,34 @@ mismatch at all - `parse_story` builds the block from the heading alone, so the 
 gone green having exercised nothing. And the "injected row set", which is a library-level
 fabrication unreachable from the CLI verb: the `brief_fingerprint(brief(...))` failure recommitted.
 
-### AC2 - BLOCKED on BG0525, not implemented in this pass
+### AC2 - UNBLOCKED: BG0525 restated the criterion in decidable terms
 
-The criterion asks `derive` to refuse a mutant that is "that criterion's own text with the
-polarity flipped". That is not mechanically decidable, and the seat produced the mutant that
-proves it: a field reading ``in `verify_ac.py`, make it so the plan does not have exactly one
-row per criterion`` names a real file, names an edit, and IS the criterion with its polarity
-flipped. Every proxy - path presence, negation words, token overlap - accepts it or needs a
-tuned threshold with boundary rows on both sides.
+Revision 2 recorded AC2 as blocked, because the criterion asked `derive` to refuse a mutant that
+is "that criterion's own text with the polarity flipped" and no implementation can decide that.
+BG0525 has now restated it on four checkable properties: a blank field, a path not drawn from the
+unit's own `Affects`, no edit verb, or more than 60% meaningful-token overlap with the criterion's
+own `Then` clause.
 
-**BG0525 carries the restatement.** Implementing AC2 against the current wording would produce
-precisely the BG0523 defect: a criterion marked Verified against a verifier pinning a proxy
-rather than the property. The blank-field half is decidable and could ship alone, but shipping
-half of AC2 while ticking it whole is BG0490's class, so the row waits.
+**Tests, and each names the property it pins.** One per refusal limb, each asserting the refusal
+NAMES which property failed rather than merely that it refused - a guard that refuses for the
+wrong reason passes a bare-refusal assertion.
 
-When BG0525 restates it, the plan needs: the minimal discriminating pair (genuine mutant naming
-`verify_ac.py` -> ACCEPT; restatement naming `verify_ac.py` -> REFUSE, differing in one property
-only), plus a **near-miss accept** - a legitimate mutant that happens to share the criterion's
-vocabulary must still be accepted, or `derive` becomes a guard that refuses honest work while
-its refusal test passes for that reason.
+**The discriminating pair is on the criterion, not chosen here.** REFUSE at 71% overlap, ACCEPT
+at 24%, both naming `verify_ac.py` and both carrying an edit verb, so the pair differs in exactly
+one property and the THRESHOLD is what is under test.
+
+**The near-miss ACCEPT is a test in its own right.** A legitimate mutant sharing the criterion's
+vocabulary must be accepted. Without it, a threshold tuned to refuse everything passes every
+refusal row for exactly the wrong reason - which is the shape of the defect this whole revision
+exists to avoid.
+
+**Mutants to apply.** (a) accept a blank field; (b) accept the 71% restatement; (c) drop the
+`Affects` constraint so any path-shaped token passes - the seat's defeating mutant relied on
+naming a REAL file, so a rule that checks path SHAPE rather than membership still accepts it.
+
+**Substance, not raw text.** The overlap is measured after filler and punctuation come off,
+following `_reason_substance` (`verify_ac.py:2264`) and its scar: a one-character `-` passed a
+non-blank check there, and a raw-text comparison would repeat it here.
 
 ### AC3 - the plan lives in the unit's file; idempotent; authored mutants preserved
 

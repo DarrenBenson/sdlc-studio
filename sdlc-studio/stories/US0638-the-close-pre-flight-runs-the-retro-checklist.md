@@ -27,6 +27,15 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightChecklistTests::test_an_unanswered_checklist_item_is_a_preflight_blocker
 - **Verified:** yes (2026-08-05)
 
+### AC6: the shipped verb reports it, not only the function
+
+- **Given** the same retro
+- **When** `sprint.py preflight --retro RETROxxxx` is driven as an operator types it
+- **Then** the checklist blocker reaches the printed page and the non-zero exit code
+- **Mutant:** leave the checklist out of the composition, or stop rendering the `checklist` stage - a missing render is caught here and nowhere else, because a library test does not exercise the wiring
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightChecklistTests::test_the_shipped_preflight_verb_reports_the_checklist
+- **Verified:** yes (2026-08-05)
+
 ### AC2: one authority for the checklist, not a second copy of its rules
 
 - **Given** a compulsory item added to `sprint_report.checklist` and nothing changed in `sprint.py`

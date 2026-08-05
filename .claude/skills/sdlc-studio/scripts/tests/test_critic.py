@@ -83,6 +83,148 @@ class RecordTests(unittest.TestCase):
             self.assertIn("US0003", units)
 
 
+class PlanReviewKindTests(unittest.TestCase):
+    """BG0510: a plan-review verdict was keyed by unit and phase only.
+
+    Today only one kind of plan review exists - the US0090 AC-vs-spec check - so nothing in the
+    tree is wrong. What is wrong is that the ledger's shape makes the mistake the DEFAULT for
+    the next author: the moment a second pre-code artefact is reviewed through the same phase,
+    one approval discharges both gates and neither reviewer read the other's artefact. Found
+    while planning EP0207, whose US0630 proposed exactly that second gate; the criterion as
+    drafted read "an APPROVE row in plan-review-verdicts.md", which a design-plan approval
+    satisfies with no test plan ever written. Two independent seats found it by reading the
+    source, and the criterion was withdrawn rather than shipped.
+    """
+
+    def test_a_plan_review_row_records_its_kind(self) -> None:
+        """Mutant: keep the seven-column schema - the field is absent on read-back."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            mod.record_verdict(root, "US0017", "approve", reviewer="qa", author="dev",
+                               phase="plan-review", kind="test-plan")
+            v = mod.verdict_for(root, "US0017", phase="plan-review")
+            self.assertEqual(v["kind"], "test-plan")
+            self.assertIn("| Kind |",
+                          mod.verdicts_path(root, "plan-review").read_text(encoding="utf-8"))
+
+    def test_a_spec_approval_does_not_satisfy_a_test_plan_lookup(self) -> None:
+        """THE defect. Mutant: ignore the kind in the lookup - one approval discharges both
+        gates and neither reviewer read the other's artefact."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            mod.record_verdict(root, "US0017", "approve", reviewer="qa", author="dev",
+                               phase="plan-review", kind="spec")
+            self.assertIsNone(mod.verdict_for(root, "US0017", phase="plan-review",
+                                              kind="test-plan"))
+            self.assertIsNotNone(mod.verdict_for(root, "US0017", phase="plan-review",
+                                                 kind="spec"))
+            # ...and each query returns its OWN row once both exist
+            mod.record_verdict(root, "US0017", "reject", reviewer="qa", author="dev",
+                               phase="plan-review", kind="test-plan")
+            self.assertEqual(
+                mod.verdict_for(root, "US0017", phase="plan-review", kind="spec")["verdict"],
+                "APPROVE")
+            self.assertEqual(
+                mod.verdict_for(root, "US0017", phase="plan-review",
+                                kind="test-plan")["verdict"], "REJECT")
+
+    def test_a_caller_that_names_no_kind_still_sees_every_row(self) -> None:
+        """The back-compatibility control: a caller that does not care must behave exactly as it
+        did before the column. Mutant: filter on the default when no kind is named - a
+        test-plan verdict becomes invisible to every existing reader."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            mod.record_verdict(root, "US0017", "reject", reviewer="qa", author="dev",
+                               phase="plan-review", kind="test-plan")
+            self.assertEqual(
+                mod.verdict_for(root, "US0017", phase="plan-review")["verdict"], "REJECT")
+
+    def test_an_existing_row_defaults_to_spec(self) -> None:
+        """Mutant: read an absent kind as unknown - every historical approval stops counting and
+        `transition` refuses units it passes today. The pad is `spec` because only one kind was
+        ever reviewed, which makes it a fact about those rows, not an assumption."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            path = mod.verdicts_path(root, "plan-review")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Plan-Review Verdicts\n\n"
+                "| Unit | Verdict | Reviewer | Author | Date | Brief | Issues |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n"
+                "| US0017 | APPROVE | qa | dev | 2026-07-01 | abc123abc123 | - |\n",
+                encoding="utf-8")
+            v = mod.verdict_for(root, "US0017", phase="plan-review", kind="spec")
+            self.assertIsNotNone(v, "a historical approval stopped counting")
+            self.assertEqual(v["kind"], "spec")
+
+    def test_the_legacy_table_is_widened_and_its_cells_keep_their_values(self) -> None:
+        """LL0028: the migration is ATTACKED, not re-read. Mutant: rewrite the table instead of
+        padding it - a recorded judgement moves column, exactly as adding a column to
+        VELOCITY.md shifted every historical row in this same sprint."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            path = mod.verdicts_path(root, "plan-review")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Plan-Review Verdicts\n\n"
+                "| Unit | Verdict | Reviewer | Author | Date | Brief | Issues |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n"
+                "| US0017 | APPROVE | qa | dev | 2026-07-01 | abc123abc123 | it read fine |\n",
+                encoding="utf-8")
+            mod.record_verdict(root, "US0018", "approve", reviewer="qa", author="dev",
+                               phase="plan-review", kind="test-plan")
+            rows = {r["unit"]: r for r in mod.read_verdicts(root, "plan-review")}
+            self.assertEqual(rows["US0017"]["reviewer"], "qa")
+            self.assertEqual(rows["US0017"]["brief"], "abc123abc123")
+            self.assertEqual(rows["US0017"]["issues"], "it read fine")
+            self.assertEqual(rows["US0017"]["kind"], "spec")
+            self.assertEqual(rows["US0018"]["kind"], "test-plan")
+            # the table is still one valid markdown table: every row has the header's width
+            lines = [ln for ln in path.read_text(encoding="utf-8").splitlines()
+                     if ln.startswith("|")]
+            widths = {len(mod.sdlc_md.table_cells(ln)) for ln in lines
+                      if not set(ln.strip()) <= set("|-: ")}
+            self.assertEqual(widths, {8}, lines)
+
+    def test_an_unknown_kind_is_refused_at_write_time(self) -> None:
+        """Mutant: accept any string - a misspelt kind silently creates a row no gate will ever
+        match, which is a gate nobody can satisfy and nobody can see."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            with self.assertRaises(ValueError) as ctx:
+                mod.record_verdict(root, "US0017", "approve", reviewer="qa", author="dev",
+                                   phase="plan-review", kind="testplan")
+            self.assertIn("unknown plan-review kind", str(ctx.exception))
+            self.assertIn("test-plan", str(ctx.exception))
+            self.assertFalse(mod.verdicts_path(root, "plan-review").exists())
+
+    def test_a_kind_on_the_delivery_phase_is_refused(self) -> None:
+        """A delivery verdict judges the diff; a kind has no meaning there. Mutant: accept and
+        ignore it - a caller believes it recorded a distinction the record does not hold."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            with self.assertRaises(ValueError) as ctx:
+                mod.record_verdict(root, "US0017", "approve", reviewer="qa", author="dev",
+                                   phase="delivery", kind="spec")
+            self.assertIn("no meaning on", str(ctx.exception))
+
+    def test_the_shipped_verb_records_the_kind(self) -> None:
+        """THE LANE TEST (LL0040). The flag has to reach `record_verdict` from the parser, and
+        a library test never exercises that wiring. Mutant: add the argument and forget to pass
+        it - every case above still passes and this reddens."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["record", "--unit", "US0017", "--verdict", "APPROVE",
+                               "--reviewer", "qa", "--author", "dev",
+                               "--phase", "plan-review", "--kind", "test-plan",
+                               "--brief", "abc123abc123", "--root", str(root)])
+            self.assertEqual(rc, 0, out.getvalue() + err.getvalue())
+            self.assertEqual(
+                mod.verdict_for(root, "US0017", phase="plan-review")["kind"], "test-plan")
+
+
 class CliTests(unittest.TestCase):
     def test_cli_record(self) -> None:
         with tempfile.TemporaryDirectory() as d:

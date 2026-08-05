@@ -40,6 +40,19 @@ _FILE = {"delivery": "critic-verdicts.md", "plan-review": "plan-review-verdicts.
 # change); plan-review has its own title/prose. Both share the row schema.
 _TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Issues |\n"
           "| --- | --- | --- | --- | --- | --- | --- |\n")
+#: The plan-review table carries one more column: WHICH pre-code artefact was judged. Without
+#: it a verdict is keyed by unit and phase alone, so the moment a second pre-code gate exists
+#: one approval discharges both and neither reviewer read the other's artefact. Nothing in the
+#: tree is wrong today - there is only one kind - but the ledger's shape makes that mistake the
+#: default for the next author, and two independent seats found it only by reading the source.
+_PLAN_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Kind | Issues |\n"
+               "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+#: The artefacts a plan review can judge. An unknown value is REFUSED at write time: a misspelt
+#: kind creates a row no gate will ever match, which is a gate that can never be satisfied.
+PLAN_REVIEW_KINDS = ("spec", "test-plan")
+#: What a row written before the column existed means. Only one kind was ever reviewed, so this
+#: is a fact about those rows rather than an assumption about them.
+DEFAULT_PLAN_KIND = "spec"
 _HEADERS = {
     "delivery": (
         "# Critic Verdicts\n\n"
@@ -51,8 +64,9 @@ _HEADERS = {
         "# Plan-Review Verdicts\n\n"
         "> Append-only. The independent non-author plan reviewer's verdict per unit -\n"
         "> the pre-implementation AC-vs-spec check (US0090). Latest row per unit wins.\n"
-        "> Reviewer must differ from the plan author - a self-review never clears the gate.\n\n"
-        + _TABLE),
+        "> Reviewer must differ from the plan author - a self-review never clears the gate.\n"
+        "> Kind names WHICH pre-code artefact was judged; a gate asks for its own kind.\n\n"
+        + _PLAN_TABLE),
 }
 
 
@@ -62,6 +76,7 @@ def _header(phase: str) -> str:
 
 HEADER = _HEADERS["delivery"]
 _COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "issues")
+_PLAN_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "kind", "issues")
 
 
 
@@ -126,7 +141,8 @@ def _clean(value: str) -> str:
 
 def record_verdict(repo_root: Path | str, unit: str, verdict: str,
                    reviewer: str = "independent-critic", author: str = "",
-                   issues: str = "", phase: str = "delivery", brief: str = "") -> Path:
+                   issues: str = "", phase: str = "delivery", brief: str = "",
+                   kind: str | None = None) -> Path:
     """Append a critic verdict for a unit (creating the table if absent).
 
     `author` is the authoring seat / delegation instance id that produced the diff
@@ -134,9 +150,27 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
     reviewer != author - independence you cannot verify is independence you do not have.
     `phase` routes the verdict to its own log (delivery vs plan-review) so neither
     satisfies the other's gate.
+
+    `kind` names WHICH pre-code artefact a plan review judged, and belongs to that phase alone.
+    Without it a plan-review verdict is keyed by unit and phase only, so the moment a second
+    pre-code gate exists one approval discharges both and neither reviewer read the other's
+    artefact. An unknown kind is REFUSED here rather than recorded: a misspelt value creates a
+    row no gate will ever match, which is a gate nobody can satisfy and nobody can see.
     """
     if phase not in PHASES:
         raise ValueError(f"unknown critic phase {phase!r} - expected one of {PHASES}")
+    if phase == "plan-review":
+        kind = kind or DEFAULT_PLAN_KIND
+        if kind not in PLAN_REVIEW_KINDS:
+            raise ValueError(
+                f"unknown plan-review kind {kind!r} - expected one of "
+                f"{', '.join(PLAN_REVIEW_KINDS)}. A kind names the artefact the review judged; "
+                f"a value outside the vocabulary would record a row no gate can ever match.")
+    elif kind is not None:
+        raise ValueError(
+            f"`kind` names which PRE-CODE artefact a plan review judged and has no meaning on "
+            f"the {phase!r} phase - a delivery verdict judges the diff. Drop it, or record the "
+            f"verdict with phase='plan-review'.")
     path = verdicts_path(repo_root, phase)
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
@@ -146,10 +180,14 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
     # row passed as independently reviewed. Flooring here means the empty case is visible in the
     # log as well as refused by the predicate - a reader can see the cell is blank rather than
     # meeting a row that merely looks unremarkable.
+    kind_cell = f"{_clean(kind)} | " if phase == "plan-review" else ""
     row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer) or '-'} | "
            f"{_clean(author) or '-'} | "
-           f"{sdlc_md.now_date()} | {_clean(brief) or '-'} | {_clean(issues) or '-'} |\n")
+           f"{sdlc_md.now_date()} | {_clean(brief) or '-'} | {kind_cell}"
+           f"{_clean(issues) or '-'} |\n")
     _ensure_brief_column(path)
+    if phase == "plan-review":
+        _ensure_kind_column(path)
     _write_verdict_row(path, row)
     return path
 
@@ -187,6 +225,41 @@ def _ensure_brief_column(path: Path) -> None:
             body = body[:-1].rstrip() if body.endswith("|") else body
             head, _, last = body.rpartition("|")
             lines[j] = f"{head}| - |{last.rstrip()} |\n"
+        path.write_text("".join(lines), encoding="utf-8")
+        return
+
+
+def _ensure_kind_column(path: Path) -> None:
+    """Widen a pre-Kind plan-review table in place, padding existing rows with `spec`.
+
+    The SAME migration shape as `_ensure_brief_column`, and for the same reason: the header is
+    written once, so a log created before the column keeps a seven-column header while new rows
+    carry eight - not a valid markdown table, and markdownlint MD056 refuses the commit.
+
+    The pad is `spec`, not `-`. Only one kind of plan review has ever existed, so that is a FACT
+    about those rows rather than an assumption about them, and it is what keeps every historical
+    approval counting: padding `-` would stop `plan_review.gate` recognising approvals it honours
+    today and refuse units it currently passes.
+    """
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if not line.lstrip().startswith("| Unit |"):
+            continue
+        if "| Kind |" in line:
+            return
+        lines[i] = line.replace("| Issues |", "| Kind | Issues |", 1)
+        if i + 1 < len(lines) and set(lines[i + 1].strip()) <= set("|-: "):
+            lines[i + 1] = lines[i + 1].replace("| --- |", "| --- | --- |", 1)
+        for j in range(i + 2, len(lines)):
+            if not lines[j].lstrip().startswith("|"):
+                break
+            if len(sdlc_md.table_cells(lines[j])) != 7:
+                continue
+            body = lines[j].rstrip("\n").rstrip()
+            body = body[:-1].rstrip() if body.endswith("|") else body
+            head, _, last = body.rpartition("|")
+            lines[j] = f"{head}| {DEFAULT_PLAN_KIND} |{last.rstrip()} |\n"
         path.write_text("".join(lines), encoding="utf-8")
         return
 
@@ -235,8 +308,17 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
         cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
         if not cells or cells[0] in ("Unit",):
             continue
-        if len(cells) == 7:
-            out.append(dict(zip(_COLS, cells)))
+        if len(cells) == 8 and phase == "plan-review":
+            out.append(dict(zip(_PLAN_COLS, cells)))
+        elif len(cells) == 7:
+            row = dict(zip(_COLS, cells))
+            if phase == "plan-review":
+                # A row written before the Kind column existed. Only one kind was ever
+                # reviewed, so `spec` is a fact about these rows rather than an assumption -
+                # and reading them as UNKNOWN would stop every historical approval counting
+                # and make `transition` refuse units it passes today.
+                row["kind"] = DEFAULT_PLAN_KIND
+            out.append(row)
         elif len(cells) == 6:  # pre-brief: Unit, Verdict, Reviewer, Author, Date, Issues.
             # Read, never rewritten. Every verdict recorded before the brief column existed is a
             # real judgement somebody made, and dropping it to "unparseable" would retire the
@@ -245,10 +327,14 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
             # those rows cannot distinguish about themselves.
             older = dict(zip(("unit", "verdict", "reviewer", "author", "date", "issues"), cells))
             older["brief"] = ""
+            if phase == "plan-review":
+                older["kind"] = DEFAULT_PLAN_KIND
             out.append(older)
         elif len(cells) == 5:  # legacy: Unit, Verdict, Reviewer, Date, Issues
             legacy = dict(zip(("unit", "verdict", "reviewer", "date", "issues"), cells))
             legacy["author"] = ""
+            if phase == "plan-review":
+                legacy["kind"] = DEFAULT_PLAN_KIND
             out.append(legacy)
         else:
             # A row that is neither current (6 cols) nor legacy (5) - a torn write from a
@@ -287,7 +373,8 @@ def seat_verdicts(repo_root: Path | str, unit: str, phase: str = "delivery") -> 
     return out
 
 
-def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
+def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
+                kind: str | None = None):
     """The latest LIVE recorded verdict for a unit in `phase`, or None. Defaults to the
     delivery log, so the conformance `critiqued` gate is unaffected by plan-review rows.
 
@@ -311,6 +398,11 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
     latest = None
     for v in read_verdicts(repo_root, phase):
         if sdlc_md.norm_id(v["unit"]) != target:
+            continue
+        # THE DISCRIMINATION. A gate asks for an approval of the artefact it cares about, so a
+        # `spec` approval cannot discharge a `test-plan` gate. Asked only when a kind is named:
+        # a caller that does not care sees every row, exactly as it did before the column.
+        if kind is not None and (v.get("kind") or DEFAULT_PLAN_KIND) != kind:
             continue
         if v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
                                     or _is_principal_superseded(repo_root, unit, v)):
@@ -3167,7 +3259,8 @@ def cmd_record(args: argparse.Namespace) -> int:
                       f"briefed, or the value did not come from `critic.py brief`.",
                       file=sys.stderr)
         path = record_verdict(args.root, unit, args.verdict, args.reviewer,
-                              args.author, args.issues, args.phase, brief)
+                              args.author, args.issues, args.phase, brief,
+                              kind=getattr(args, "kind", None))
         note = ("" if _id(args.author) != _id(args.reviewer)
                 else "  (WARNING: self-review - blocked at the gate)")
         print(f"recorded {sdlc_md.norm_id(unit)} {args.verdict.upper()} "
@@ -3506,6 +3599,11 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--phase", choices=PHASES, default="delivery",
                    help="delivery (default, the conformance critique gate) or plan-review "
                         "(the pre-implementation AC-vs-spec check); each has its own log")
+    r.add_argument("--kind", choices=PLAN_REVIEW_KINDS, default=None,
+                   help="PLAN-REVIEW ONLY: which pre-code artefact was judged (default "
+                        f"{DEFAULT_PLAN_KIND}). A gate asks for an approval of ITS artefact, so "
+                        "a spec approval cannot discharge a test-plan gate. Refused on the "
+                        "delivery phase, where a verdict judges the diff")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_record)
     b = sub.add_parser("brief", help="Print the assembled seat-review prompt for a unit "

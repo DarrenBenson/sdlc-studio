@@ -25,6 +25,7 @@
 - **Then** it evaluates the triggers rather than returning `dormant (schema v2)`
 - **Mutant:** read the schema version alone - the gate stays dormant and the whole slice is inert
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::EnablementKeyTests::test_the_knob_switches_the_gate_on_under_schema_v2
+- **Verified:** yes (2026-08-05)
 
 ### AC2: the knob switches it off under schema v3
 
@@ -33,6 +34,7 @@
 - **Then** the gate is a no-op and its reason names the knob, not the schema version, so a reader is sent to the thing that actually decided
 - **Mutant:** honour the knob only in the permissive direction - a project that deliberately turned it off gets it anyway
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::EnablementKeyTests::test_the_knob_switches_the_gate_off_under_schema_v3
+- **Verified:** yes (2026-08-05)
 
 ### AC3: an unset knob changes nothing for any existing project
 
@@ -41,6 +43,7 @@
 - **Then** the results equal today's schema-gated behaviour exactly, so no consuming project moves
 - **Mutant:** default the knob to true - every v2 project acquires a gate nobody adopted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::EnablementKeyTests::test_an_unset_knob_preserves_the_schema_gated_behaviour
+- **Verified:** yes (2026-08-05)
 
 ### AC4: one enablement predicate, shared, so the two adopters cannot disagree
 
@@ -49,6 +52,7 @@
 - **Then** exactly one definition exists and both call it, because two copies are two answers to one question that drift apart
 - **Mutant:** give `plan_review` its own copy of the resolution - the single-definition assertion reddens
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::EnablementKeyTests::test_one_shared_enablement_predicate_serves_both_adopters
+- **Verified:** yes (2026-08-05)
 
 ## Revision History
 

@@ -276,6 +276,120 @@ class PhaseRecordTests(unittest.TestCase):
             self.assertFalse(pr.gate(root, "US0002")["ok"])
 
 
+class EnablementKeyTests(unittest.TestCase):
+    """US0640: `plan_review.gate` hard-returned `dormant (schema v2)` with no config key at all.
+
+    So the one hard, deterministic, risk-proportional gate this codebase has - the model the
+    rest of the ceremony work copies, and the one `--force` cannot bypass - was reachable only
+    by adopting the v3 id format, the inbox status and spec-guard across every artefact a
+    project holds. It is a REVIEW POLICY and has nothing to do with the shape of artefacts.
+    `triage_noise` was given exactly this knob for exactly this reason; this does the same, and
+    shares the one resolution rather than copying it.
+    """
+
+    def _cfg(self, root: Path, body: str) -> None:
+        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
+
+    def test_the_knob_switches_the_gate_on_under_schema_v2(self) -> None:
+        """Mutant: read the schema version alone - the gate stays dormant and the whole slice is
+        inert, which is the state it has been in since it was built."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), v3=False)
+            _story(root, sid="US0002", affects="docs/prd.md")
+            # ONE `plan_review:` mapping - a second one would silently replace the first in YAML.
+            self._cfg(root, "schema_version: 2\nplan_review:\n  enabled: true\n"
+                            "  affects_files_threshold: 99\n  min_difficulty: extreme\n")
+            res = pr.gate(root, "US0002")
+            self.assertTrue(res["fired"], res)
+            self.assertFalse(res["ok"], res)
+
+    def test_the_knob_switches_the_gate_off_under_schema_v3(self) -> None:
+        """Mutant: honour the knob only in the permissive direction - a project that
+        deliberately turned it off gets it anyway. And the reason must name the KNOB, because a
+        reader sent to a schema migration they do not need cannot act on it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), v3=True)
+            _story(root, sid="US0002", affects="docs/prd.md")
+            self._cfg(root, "schema_version: 3\nplan_review:\n  enabled: false\n"
+                            "  affects_files_threshold: 99\n  min_difficulty: extreme\n")
+            res = pr.gate(root, "US0002")
+            self.assertTrue(res["ok"], res)
+            self.assertFalse(res["fired"], res)
+            self.assertIn("plan_review.enabled", res["reason"])
+            self.assertNotIn("schema", res["reason"])
+
+    def test_an_unset_knob_preserves_the_schema_gated_behaviour(self) -> None:
+        """Mutant: default the knob to true - every v2 project acquires a gate nobody adopted,
+        and the upgrade moves the bar under them."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), v3=False, cfg_extra=_ISOLATE)
+            _story(root, sid="US0002", affects="docs/prd.md")
+            res = pr.gate(root, "US0002")
+            self.assertTrue(res["ok"], res)
+            self.assertEqual(res["reason"], "dormant (schema v2)")
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), v3=True, cfg_extra=_ISOLATE)
+            _story(root, sid="US0002", affects="docs/prd.md")
+            self.assertTrue(pr.gate(root, "US0002")["fired"], "v3 with no knob must still fire")
+
+    def test_one_shared_enablement_predicate_serves_both_adopters(self) -> None:
+        """LL0016. Mutant: give `plan_review` its own copy of the knob-then-schema resolution -
+        two answers to one question, and they drift the moment either is touched. Proved by
+        MOVING the shared predicate: if either adopter carries its own copy, one of them keeps
+        answering while the shared one is broken."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), v3=False)
+            self._cfg(root, "schema_version: 2\nplan_review:\n  enabled: true\n"
+                            "triage:\n  enabled: true\n")
+            # Patch the config module EACH ADOPTER ACTUALLY IMPORTED, not `import config` in
+            # this test. Under the full suite the sibling test modules load their subjects via
+            # importlib under distinct names, so `import config` here can resolve to a different
+            # module object than `plan_review.config` - and the patch then lands on nothing while
+            # the test still passes in isolation. Found by the full suite doing exactly that.
+            import triage_noise as tn_mod
+            for holder in (pr, tn_mod):
+                self.addCleanup(setattr, holder.config, "feature_enabled",
+                                holder.config.feature_enabled)
+                holder.config.feature_enabled = lambda r, f: False
+            self.assertFalse(pr.active(root), "plan_review does not ask the shared predicate")
+            self.assertFalse(tn_mod.active(root), "triage_noise does not ask it either")
+
+
+class PlanReviewKindTests(unittest.TestCase):
+    """BG0510, the consumer half: the one live gate asks for ITS artefact's approval."""
+
+    def test_the_gate_asks_for_the_spec_kind_and_its_behaviour_is_unchanged(self) -> None:
+        """Every case this gate passes and refuses today it still passes and refuses, AND a
+        test-plan approval no longer discharges it. Mutant: leave the gate asking for any kind -
+        the column exists and nothing reads it, which is the state `critic brief --tier` is
+        already in and the reason this bug is worth fixing rather than noting."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cfg_extra=_ISOLATE)
+            _story(root, sid="US0002", affects="docs/prd.md")
+            self.assertFalse(pr.gate(root, "US0002")["ok"], "the trigger must fire, or this "
+                                                            "test proves nothing about kinds")
+            # a TEST-PLAN approval must not clear the SPEC gate
+            critic.record_verdict(root, "US0002", "APPROVE", reviewer="qa", author="dev",
+                                  phase="plan-review", kind="test-plan")
+            self.assertFalse(pr.gate(root, "US0002")["ok"],
+                             "a test-plan approval discharged the AC-vs-spec gate")
+            # ...and the SPEC approval does
+            critic.record_verdict(root, "US0002", "APPROVE", reviewer="qa", author="dev",
+                                  phase="plan-review", kind="spec")
+            self.assertTrue(pr.gate(root, "US0002")["ok"], pr.gate(root, "US0002"))
+
+    def test_an_approval_recorded_before_the_column_existed_still_clears_the_gate(self) -> None:
+        """The back-compatibility control, at the gate rather than at the reader. Mutant: read
+        an absent kind as unknown - `transition` starts refusing units it passes today, across
+        the whole corpus, for a latent defect that costs nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cfg_extra=_ISOLATE)
+            _story(root, sid="US0002", affects="docs/prd.md")
+            critic.record_verdict(root, "US0002", "APPROVE", reviewer="qa", author="dev",
+                                  phase="plan-review")        # no kind named, as before
+            self.assertTrue(pr.gate(root, "US0002")["ok"], pr.gate(root, "US0002"))
+
+
 class TelemetryTests(unittest.TestCase):
     """US0091 AC3: a plan-review verdict emits a telemetry event (id, verdict, independence)."""
 

@@ -72,6 +72,15 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseCostRecordingTests::test_a_preflight_verdict_is_not_reusable_by_the_chain
 - **Verified:** yes (2026-08-05)
 
+### AC7: the shipped verb records it, not only the function (with AC1)
+
+- **Given** an open run
+- **When** `sprint.py preflight` is driven as an operator types it
+- **Then** exactly one close row is appended, carrying the run id and the `preflight` mode
+- **Mutant:** record from `cmd_close` instead of from the pre-flight itself - every function test still passes and this reddens, because a bare `preflight` never reaches a close
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseCostRecordingTests::test_the_shipped_preflight_verb_records_its_gate
+- **Verified:** yes (2026-08-05)
+
 ## Revision History
 
 | Date | Author | Change |

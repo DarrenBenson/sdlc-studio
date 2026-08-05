@@ -19,6 +19,7 @@ needs it to have read `schema_version: 3`).
 """
 from __future__ import annotations
 
+import datetime
 import json
 import os
 import re
@@ -52,22 +53,12 @@ def _cfg(root, key: str, default):
 def active(root) -> bool:
     """Are the triage controls live for this project?
 
-    `triage.enabled` when the project states one, and the schema version otherwise. Two
-    reasons for a knob rather than the schema gate alone.
-
-    The controls are creation-time noise limits and have nothing to do with the artefact
-    schema; they were reachable only through a v3 bump that also switches on plan-review,
-    spec-guard and the inbox status, so adopting a session cap meant adopting four unrelated
-    things. And the gate made them unreachable in practice: this project filed 801 findings in
-    one month with a cap of 20 sitting unused, and hand-rolled the consolidation the fold does
-    automatically - one artefact in this tree is twenty findings bundled by hand.
-
-    An unset knob keeps the previous behaviour exactly, so no consuming project changes.
+    ONE line, because the knob-then-schema resolution now lives in `config.feature_enabled` and
+    is shared with plan-review. It used to be spelled out here, and a second adopter copying it
+    would have been two answers to one question (LL0016). The reasoning that earned the knob is
+    recorded on the shared predicate.
     """
-    stated = _cfg(root, "enabled", None)
-    if stated is None:
-        return sdlc_md.is_schema_v3(root)
-    return bool(stated)
+    return config.feature_enabled(root, "triage")
 
 
 def session_cap(root) -> int:
@@ -86,8 +77,42 @@ def is_low(severity: str | None) -> bool:
     return (severity or "").strip().lower() in _LOW_TOKENS
 
 
-def _session_key() -> str:
-    return os.environ.get("SDLC_TRIAGE_SESSION", "default")
+def _session_key(root=None) -> str:
+    """What "this session" MEANS, as a value that actually changes when a session does.
+
+    Three sources, in order, and the order is the whole fix:
+
+    1. `SDLC_TRIAGE_SESSION` when set - the documented explicit exit, and consuming projects
+       may already rely on it.
+    2. The OPEN RUN's id. A run is the unit an operator reasons about and is already recorded,
+       so the cap becomes per-run: the semantics the docstring has always described.
+    3. The DATE. Outside a run there is no natural session, and a date at least bounds the
+       counter to a day.
+
+    It previously returned the constant `"default"`, and nothing in the skill ever set the
+    variable - not the sprint, not the run, not any entry point. So every session in a
+    project's whole life shared one key, the counter climbed monotonically to the cap and
+    stayed there, and `file_finding` then refused EVERY finding, permanently, on a project that
+    had done nothing wrong. Observed live at exactly 20, mid-run, while filing the residue of a
+    unit whose own criteria required that residue to be filed.
+
+    There is no fallback to a constant. A constant is what made a per-session budget a lifetime
+    one, and re-introducing it for the no-run case would put the wall back for exactly the
+    sessions that file most.
+    """
+    stated = os.environ.get("SDLC_TRIAGE_SESSION")
+    if stated:
+        return stated
+    if root is not None:
+        try:
+            from lib import run_state  # noqa: PLC0415 - only this path needs it
+            state = run_state.read(root) or {}
+            rid = str(state.get("run_id") or "").strip()
+            if rid:
+                return rid
+        except Exception:  # noqa: BLE001 - an unreadable run must never break filing
+            pass
+    return f"date:{datetime.date.today().isoformat()}"
 
 
 def _state_path(root) -> Path:
@@ -102,7 +127,7 @@ def session_count(root) -> int:
         return 0
     try:
         d = json.loads(p.read_text(encoding="utf-8"))
-        return int(d.get("count", 0)) if d.get("session") == _session_key() else 0
+        return int(d.get("count", 0)) if d.get("session") == _session_key(root) else 0
     except Exception:  # noqa: BLE001 - a corrupt counter must not break filing
         return 0
 
@@ -116,8 +141,12 @@ def enforce_session_cap(root) -> None:
     if session_count(root) >= cap:
         raise ValueError(
             f"triage session cap reached ({cap} findings filed this session) - refusing to file "
-            "more. Fail loud, not silent drop: triage the backlog, raise triage.session_cap, or "
-            "start a new session (set the SDLC_TRIAGE_SESSION environment variable).")
+            f"more. Fail loud, not silent drop. The counter is keyed on {_session_key(root)!r}, "
+            f"and it resets when that key moves: close this run and open the next, or set "
+            f"SDLC_TRIAGE_SESSION to name a session of your own. Raising triage.session_cap "
+            f"moves the wall rather than removing it. Triaging the backlog does NOT help - it "
+            f"decrements nothing, and offering it as an exit was false at the moment it was "
+            f"read.")
 
 
 def record_creation(root) -> int:
@@ -128,7 +157,10 @@ def record_creation(root) -> int:
     cur = session_count(root)
     p = _state_path(root)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps({"session": _session_key(), "count": cur + 1}), encoding="utf-8")
+    # The SAME key the reader resolves, from the same root. A writer stamping one key while
+    # the reader resolves another is a counter that never matches and therefore never fires.
+    p.write_text(json.dumps({"session": _session_key(root), "count": cur + 1}),
+                 encoding="utf-8")
     return cur + 1
 
 

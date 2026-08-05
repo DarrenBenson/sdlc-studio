@@ -6,8 +6,11 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import datetime
 import importlib.util
 import inspect
+import json
+import os
 import re
 import sys
 import tempfile
@@ -254,6 +257,114 @@ class SessionCapTests(unittest.TestCase):
             for t in ("nit a", "nit b", "nit c", "nit d"):
                 ff.file_finding(root, "bug", t, _bug("low"))
             self.assertEqual(tn.session_count(root), 1)              # only the CR open counted
+
+
+class SessionKeyTests(unittest.TestCase):
+    """BG0520: the session cap was a LIFETIME cap.
+
+    `_session_key()` returned `os.environ.get("SDLC_TRIAGE_SESSION", "default")`, and nothing in
+    the skill ever set that variable. So every session in a project's whole life shared the key
+    `default`, the counter climbed monotonically and stayed at the cap, and filing was then
+    refused permanently on a project that had done nothing wrong. Hit live at exactly 20,
+    mid-run, while filing the residue of a unit whose own criteria required it to be filed.
+    """
+
+    def _run(self, root: Path, run_id: str | None) -> None:
+        p = root / "sdlc-studio" / ".local" / "run-state.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        if run_id is None:
+            p.unlink(missing_ok=True)
+            return
+        p.write_text(json.dumps({
+            "schema": 1, "run_id": run_id, "started_at": "2026-08-05T00:00:00Z",
+            "ended_at": None, "outcome": "running", "goal": "done", "batch": ["US0001"]}),
+            encoding="utf-8")
+
+    def setUp(self) -> None:
+        # The documented explicit exit must not be in force, or every case below reads its value
+        # instead of the key under test - a fixture that supplies the thing under test.
+        self._prior = os.environ.pop("SDLC_TRIAGE_SESSION", None)
+        if self._prior is not None:
+            self.addCleanup(os.environ.__setitem__, "SDLC_TRIAGE_SESSION", self._prior)
+
+    def test_the_count_resets_across_a_run_boundary(self) -> None:
+        """AC1, and the defect itself. Mutant: restore the `default` fallback - the count
+        survives the boundary and filing is refused for good."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cap=2)
+            self._run(root, "RUN-AAAA")
+            ff.file_finding(root, "bug", "one", _bug("medium"))
+            ff.file_finding(root, "bug", "two", _bug("medium"))
+            self.assertEqual(tn.session_count(root), 2)
+            self._run(root, "RUN-BBBB")                    # the next run opens
+            self.assertEqual(tn.session_count(root), 0,
+                             "the counter survived a real session boundary")
+            ff.file_finding(root, "bug", "three", _bug("medium"))   # and filing works again
+
+    def test_the_cap_still_fires_within_one_run(self) -> None:
+        """AC2, the positive control. Mutant: key on something unique per call - the cap never
+        fires and the noise control this exists for is gone, while AC1 still passes."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cap=2)
+            self._run(root, "RUN-AAAA")
+            ff.file_finding(root, "bug", "one", _bug("medium"))
+            ff.file_finding(root, "bug", "two", _bug("medium"))
+            with self.assertRaises(ValueError) as ctx:
+                ff.file_finding(root, "bug", "three", _bug("medium"))
+            self.assertIn("session cap reached", str(ctx.exception).lower())
+
+    def test_no_open_run_keys_on_the_date(self) -> None:
+        """AC3. Mutant: fall back to a constant when no run is open - the lifetime cap returns
+        by the back door for exactly the sessions that file most, which is how this began."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cap=2)
+            self._run(root, None)
+            key = tn._session_key(root)
+            self.assertTrue(key.startswith("date:"), key)
+            self.assertIn(datetime.date.today().isoformat(), key)
+            self.assertNotEqual(key, "default")
+
+    def test_an_explicit_session_variable_still_wins(self) -> None:
+        """AC4: the documented exit keeps working, over an open run, because consuming projects
+        may rely on it. Mutant: consult the run first - an operator who named a session is
+        silently given the run's instead."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cap=2)
+            self._run(root, "RUN-AAAA")
+            os.environ["SDLC_TRIAGE_SESSION"] = "mine"
+            self.addCleanup(os.environ.pop, "SDLC_TRIAGE_SESSION", None)
+            self.assertEqual(tn._session_key(root), "mine")
+
+    def test_the_refusal_names_only_exits_that_work(self) -> None:
+        """AC5. The message offered three exits and only one worked: triaging decrements
+        nothing, so the first suggestion was false at the moment it was read - and the message
+        is the only thing an operator has at that point. Mutant: leave the wording alone - the
+        tool tells them to do something that cannot help.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cap=1)
+            self._run(root, "RUN-AAAA")
+            ff.file_finding(root, "bug", "one", _bug("medium"))
+            with self.assertRaises(ValueError) as ctx:
+                ff.file_finding(root, "bug", "two", _bug("medium"))
+            msg = str(ctx.exception)
+            self.assertNotIn("triage the backlog", msg)
+            self.assertIn("RUN-AAAA", msg, "the key in force is what tells them how to move it")
+            self.assertIn("SDLC_TRIAGE_SESSION", msg)
+
+    def test_the_writer_and_the_reader_resolve_the_same_key(self) -> None:
+        """A counter stamped under one key and read under another never matches, so the cap
+        never fires - the opposite failure, and just as silent. Mutant: drop `root` from the
+        writer's call - it stamps the date key while the reader resolves the run id, and the
+        count reads 0 forever."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cap=5)
+            self._run(root, "RUN-AAAA")
+            ff.file_finding(root, "bug", "one", _bug("medium"))
+            stored = json.loads(
+                (root / "sdlc-studio" / ".local" / "triage-session.json").read_text())
+            self.assertEqual(stored["session"], tn._session_key(root))
+            self.assertEqual(tn.session_count(root), 1)
 
 
 class ConsolidationSlugTests(unittest.TestCase):
