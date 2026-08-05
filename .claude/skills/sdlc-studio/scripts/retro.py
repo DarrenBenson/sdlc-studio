@@ -629,6 +629,14 @@ The Points are the sizes the PLAN recorded, never the sizes on the artefacts tod
 revised once the outcome was known is not an estimate, and the whole point of the column is
 that it was written down before anyone knew.
 
+POINTS IS THE ACCEPTED FIGURE; WRITTEN IS WHAT THE SPRINT PRODUCED. Points counts units in a
+terminal status - the agile velocity, and the denominator the rate is derived from. Written
+adds the points of units whose code shipped and was reviewed but not accepted. Read the two
+together: a sprint that wrote 148 and had 72 rejected is a REJECTED sprint, and a row showing
+only the 76 reads as a slow one. Rows written before the Written column exists record no
+written figure - that is an absence, not a claim that nothing was rejected, and they are left
+exactly as they were rather than recomputed under the new definition.
+
 The Estimate column is the forecast AS RECORDED AT PLAN TIME, and the Constants column names
 the estimator that produced it. Neither is ever recomputed. A row re-derived from whatever the
 constants say today is not a record of a prediction, and a history of those cannot falsify the
@@ -683,8 +691,8 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 -->
 # Velocity history
 
-| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Overhead | Unattributed (s) | Constants | Sample | Model | Note | Source |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Retro | Date | Units | Measured | Forecast | Points | Written | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Overhead | Unattributed (s) | Constants | Sample | Model | Note | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 """
 
 # The history is parsed by COLUMN NAME, not position, so a row written before the plan-time
@@ -699,7 +707,11 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 # derived number read back as though it were a measurement is how a rate escapes its evidence.
 VELOCITY_COLUMNS = (
     ("retro", "id"), ("date", "date"), ("units", "units"), ("measured", "measured"),
-    ("forecast", "forecast"), ("points", "points"), ("estimate", "estimate"),
+    ("forecast", "forecast"), ("points", "points"),
+    # ADDED, never back-filled: an older row records no written figure and reads as one that
+    # does not know, which is what it is.
+    ("written", "written_points"),
+    ("estimate", "estimate"),
     ("actual", "actual_tokens"), ("ratio", "ratio"), ("oversized", "oversized"),
     ("wall", "wall_time_s"),
     # The overhead split, so the instrument that computes it once per sprint stops forgetting
@@ -794,6 +806,56 @@ def _delivered_points(root, unit_ids) -> int:
     return total
 
 
+def _points_split(root, unit_ids) -> dict:
+    """`{"accepted", "written", "unaccepted", "unaccepted_ids"}` - the two numerators, apart.
+
+    ACCEPTED is `_delivered_points`: points in a terminal status, which is what an agile
+    velocity means and what every existing reader of this figure expects.
+
+    WRITTEN adds the points of units whose code demonstrably shipped and was not accepted - a
+    non-terminal unit carrying a recorded delivery-phase review verdict. Somebody reviewed that
+    unit's diff, so the diff exists; a unit nobody has reviewed has nothing to show for itself
+    and is not counted, whatever its status says.
+
+    STATUS ALONE CANNOT TELL THEM APART, which is why the verdict record is the test. A story
+    the review REJECTED goes back to `Ready`, where it is indistinguishable from a story nobody
+    has started - and that is precisely the case that raised this: RETRO0089 reported 76 points
+    over 15.3 hours for a run that wrote 148, with 72 points of committed, working code sitting
+    at `Ready` because the review had rejected it. The row read as a slow run rather than a
+    rejected one, and those are different facts.
+    """
+    accepted = written = 0
+    unaccepted_ids: list[str] = []
+    try:
+        import critic  # noqa: PLC0415 - deferred; a velocity read must not pay for it upfront
+    except Exception:  # noqa: BLE001 - an unreadable critic costs the split, not the retro
+        critic = None
+    for uid in unit_ids:
+        hit = sdlc_md.find_by_id(root, uid)
+        if not hit:
+            continue
+        path, type_ = hit
+        text = sdlc_md.read_text_safe(path)
+        status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
+                                          sdlc_md.status_vocab(type_, root))
+        pts = sdlc_md.read_points(text)
+        if not (isinstance(pts, int) and pts > 0):
+            continue
+        if sdlc_md.is_terminal_status(type_, status or ""):
+            accepted += pts
+            written += pts
+            continue
+        try:
+            reviewed = bool(critic and critic.verdict_for(root, uid))
+        except Exception:  # noqa: BLE001 - a bad verdict row must not break the velocity
+            reviewed = False
+        if reviewed:
+            written += pts
+            unaccepted_ids.append(sdlc_md.norm_id(uid))
+    return {"accepted": accepted, "written": written, "unaccepted": written - accepted,
+            "unaccepted_ids": unaccepted_ids}
+
+
 def _worker_hours(root, unit_ids) -> float | None:
     """Summed runner worker-time (`wall_time_s`) over the batch's measured units, in hours - the
     SECONDARY velocity's denominator. None when NO unit carries a wall-time record: an interactive
@@ -837,7 +899,7 @@ def retro_units(root, retro_id: str) -> list[str]:
     return batch_ids(path.read_text(encoding="utf-8")) if path else []
 
 
-def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
+def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None, int]:
     """Wall-clock hours the run was OPEN - the PRIMARY velocity's denominator, ceremony included -
     read from the run-state (`started_at` -> `ended_at`, or now if still open). Returns
     `(hours, source)`.
@@ -853,9 +915,9 @@ def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
         from lib import run_state
         st = run_state.read(root)
     except Exception:  # noqa: BLE001 - a velocity read must never break the retro
-        return None, None
+        return None, None, 0
     if not _run_covers(st, unit_ids):
-        return None, None  # the run-state does not cover this sprint - its elapsed is not ours
+        return None, None, 0  # the run-state does not cover this sprint - its elapsed is not ours
     # The idle deduction is `telemetry`'s, CALLED rather than re-derived (D0052). Two copies of
     # a duration rule is how one sprint comes to have two elapsed figures, and the published
     # points-per-hour is then set by whichever reader the close happens to ask. `hours` is None
@@ -864,7 +926,12 @@ def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
     # warns about. It reads UNMEASURED until the operator supplies a real figure.
     span = telemetry.elapsed_excluding_idle(st.get("started_at"), st.get("ended_at"), st)
     hours = span.get("hours")
-    return (hours, "run-state") if hours else (None, None)
+    # The GAP COUNT travels with the figure, because it is what decides whether this is working
+    # time or a calendar span. `sprint stop` reported "15.312h wall-clock less 0.0h idle INSIDE
+    # it, from 0 recorded gap(s)" for an interactive session holding six nine-minute suite runs
+    # and several long periods with nobody at the keyboard, and the row published it as though
+    # idle had been deducted. Zero gaps is not zero idle; it is no measurement of idle.
+    return (hours, "run-state", len(span.get("gaps") or [])) if hours else (None, None, 0)
 
 
 def _run_rung(root, unit_ids) -> str:
@@ -1083,9 +1150,12 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
     # run-state must never silently override the figure the operator supplied. Only when none is
     # supplied does the run-state provide the elapsed.
     if isinstance(elapsed_hours, (int, float)) and elapsed_hours > 0:
-        elapsed, elapsed_source = round(float(elapsed_hours), 3), "supplied"
+        # An operator's figure is a claim about working time, so the idle question is theirs and
+        # is not asked here: None means "not applicable", never "no gaps recorded".
+        elapsed, elapsed_source, elapsed_gaps = round(float(elapsed_hours), 3), "supplied", None
     else:
-        elapsed, elapsed_source = _elapsed_hours(root, [u["id"] for u in units])
+        elapsed, elapsed_source, elapsed_gaps = _elapsed_hours(root, [u["id"] for u in units])
+    split = _points_split(root, [u["id"] for u in units])
     worker_hours = _worker_hours(root, [u["id"] for u in units])
     # The rung of the run these units were delivered by - resolved ONCE, from that run's own
     # record, and used for both the reported rung and the rate it gates.
@@ -1147,7 +1217,19 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             # Was a sprint total supplied at all? The writer needs the distinction between
             # "no --tokens" (preserve what is recorded) and "--tokens 0" (clear it).
             "sprint_tokens_supplied": sprint_tokens_supplied,
+            # THE TWO NUMERATORS, APART. `accepted_points` is the planning velocity (terminal
+            # work); `written_points` adds the code that shipped and was rejected. The gap is
+            # the most interesting number on the row, and reporting only the first read as a
+            # slow sprint rather than a rejected one. `delivered_points` is retained with its
+            # existing meaning - the accepted figure - because every reader of this block and
+            # every historical VELOCITY.md row already means that by it; changing what a
+            # published key means underneath its readers is how one number becomes two.
+            "accepted_points": split["accepted"],
+            "written_points": split["written"],
+            "unaccepted_points": split["unaccepted"],
+            "unaccepted_ids": split["unaccepted_ids"],
             "delivered_points": delivered_points,
+            "sprint_elapsed_idle_gaps": elapsed_gaps,
             # US0401 / CR0407: a run driven to a rung OTHER than `done` (a design/plan run)
             # records its token actual but leaves the tokens-per-point BLANK - a non-build rung
             # terminates few units, so tokens/terminal-points is the 834,008/pt garbage the
@@ -1285,9 +1367,24 @@ def _points_lines(res: dict) -> list[str]:
     if dp:
         if b.get("points_per_elapsed_hour"):
             src = "run-state" if b.get("elapsed_source") == "run-state" else "operator-supplied"
+            # THE DENOMINATOR'S OWN QUALIFIER. A run-state span with no recorded gap has had no
+            # idle deducted, and calling that "elapsed" invites it to be read as working time.
+            span_kind = (" - a CALENDAR SPAN with no idle deducted, since the run recorded no "
+                         "gap; it is not working time"
+                         if b.get("elapsed_source") == "run-state"
+                         and not b.get("sprint_elapsed_idle_gaps") else "")
+            # THE OTHER NUMERATOR, beside the one the ratio uses. Naming the rejected points is
+            # what separates a slow sprint from a rejected one; without it the row understates
+            # and hides its own most interesting fact.
+            wrote = b.get("written_points")
+            unacc = b.get("unaccepted_points")
+            gap = (f" It WROTE {wrote} point(s): {unacc} more shipped and were not accepted "
+                   f"({', '.join(b.get('unaccepted_ids') or [])}), so this rate measures "
+                   f"acceptance, not output." if unacc else "")
             out.append(
                 f"**Velocity: {b['points_per_elapsed_hour']} points/elapsed-hour** "
-                f"({dp} points over {b['sprint_elapsed_hours']}h, {src}, ceremony included). This is "
+                f"({dp} points ACCEPTED over {b['sprint_elapsed_hours']}h, {src}{span_kind}, "
+                f"ceremony included).{gap} This is "
                 f"the planning number - points per SESSION within the observed single-session "
                 f"envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or "
                 f"100-point sprint, and it is descriptive, never a target.")
@@ -1680,6 +1777,10 @@ def velocity_history(root) -> list[dict]:
                     # and back-filling one from the artefacts as they stand today would be
                     # inventing a prediction after the fact.
                     "points": _velocity_num(cell("points")),
+                    # The other numerator. Absent on a row written before the column existed,
+                    # and absent on a row whose sprint had nothing rejected - a cell here means
+                    # "some work shipped and was not accepted", never a repeat of Points.
+                    "written_points": _velocity_num(cell("written_points")),
                     "oversized": _velocity_num(cell("oversized")),
                     # A recorded 0 reads as ABSENT, for the same reason the Actual cell beside
                     # it does: it can only be the empty rated-unit sum the old writer published,
@@ -2148,6 +2249,11 @@ def record_velocity(root, res: dict) -> Path:
            # carry no points. The ratio columns keep their forecast gate - an unforecast unit
            # says nothing about the estimator, but its points were still delivered.
            "points": b.get("delivered_points") or b.get("points") or None,
+           # WRITTEN: what the sprint produced, beside what was accepted. Absent rather than
+           # zero when the two are equal, so a cell means "some work was rejected" and never
+           # merely repeats the column to its left.
+           "written_points": (b.get("written_points")
+                              if (b.get("unaccepted_points") or 0) > 0 else None),
            "oversized": len(b.get("oversized") or []),
            # The Actual cell: the per-unit sum for a measured (runner) sprint; the sprint-level
            # harness total for an interactive one that has no per-unit actuals. Never both
@@ -2232,6 +2338,7 @@ def record_velocity(root, res: dict) -> Path:
         lines.append(f"| {r['id']} | {r['date'] or '-'} | {_fmt(r['units'])} | "
                      f"{_fmt(r['measured'])} | "
                      f"{_fmt(r.get('forecast'))} | {_fmt(r.get('points'))} | "
+                     f"{_fmt(r.get('written_points'))} | "
                      f"{_fmt(r['estimate'])} | "
                      f"{_fmt(r['actual_tokens'])} | {ratio} | {_fmt(rate)} | "
                      f"{_fmt(r.get('oversized'))} | {_fmt(r['wall_time_s'])} | "

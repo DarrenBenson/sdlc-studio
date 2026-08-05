@@ -666,9 +666,14 @@ def _overhead_lines(rep: dict) -> list[str]:
                 f"ratio and the delivery figure flatter the loop."
                 if ov["unmeasured"] else "")
     floor = "at least " if ov.get("bound") == "lower" else ""
+    # The ratio said "at least" and the delivery figure beside it said a bare number, so the
+    # same sentence carried a qualified claim and an unqualified one about the same arithmetic.
+    # Delivery is TOTAL MINUS OVERHEAD: every minute the instruments failed to attribute lands
+    # in it, which makes it an upper bound by exactly the amount the ratio is a lower one.
+    ceiling = "at most " if ov.get("bound") == "lower" else ""
     return [f"Overhead vs delivery: {floor}{ov['ratio']}:1 - {ov['overhead_s'] / 60:,.0f} min of "
-            f"gate, review and repair against {ov['delivery_s'] / 60:,.0f} min of delivery, "
-            f"within a measured {ov['total_s'] / 60:,.0f} min run.{excludes}",
+            f"gate, review and repair against {ceiling}{ov['delivery_s'] / 60:,.0f} min of "
+            f"delivery, within a measured {ov['total_s'] / 60:,.0f} min run.{excludes}",
             *_overhead_component_lines(ov)]
 
 

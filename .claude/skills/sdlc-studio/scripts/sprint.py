@@ -4774,7 +4774,12 @@ def reusable_close_verdict(root, surface: str | None) -> dict | None:
     for row in reversed(read_execution_ledger(root)):
         if row.get("moment") != "close":
             continue
-        if row.get("verdict") != "pass" or row.get("mode") == "reuse":
+        # ONLY a `full` run is reusable. A `reuse` row carries no verdict of its own, and a
+        # `preflight` row was earned by a DIFFERENT gate: the pre-flight scopes conformance to
+        # the run's batch, the chain's gate does not. Reusing the narrower verdict for the wider
+        # gate would be a fail-open, and an allow-list is the only spelling of this rule that
+        # stays right when a third mode is added.
+        if row.get("verdict") != "pass" or row.get("mode") != "full":
             return None
         return row if row.get("surface") and row["surface"] == surface else None
     return None
@@ -6164,7 +6169,7 @@ def coverage_blockers(root, state) -> list:
                         "clear it")}]
 
 
-def close_preflight(root, retro_id: str | None = None) -> dict:
+def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = True) -> dict:
     """Every unmet close prerequisite, in ONE read-only pass.
 
     The close is a chain that stops at its first failure, and the sign-off prerequisites are not
@@ -6173,10 +6178,20 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
     and it read as the tool moving the goalposts. Every fact below was available before the
     first attempt.
 
-    READ-ONLY BY CONSTRUCTION. It scaffolds no retro, regenerates no summary and records no
+    PERFORMS NO STEP OF THE CLOSE. It scaffolds no retro, regenerates no summary and records no
     verdict, so it can be asked the question without committing to a close. That is also why it
     cannot simply run the chain with a dry-run flag: three of the chain's steps exist to DO
     something, and a preview that performed half a close would be a worse answer than none.
+
+    It makes exactly ONE write, and it is a measurement rather than an action: the seconds its
+    own gate run cost, appended to the test-execution ledger. `record_cost=False` suppresses
+    even that, for the ONE caller whose contract is stricter still - `close --dry-run`, a
+    preview that must leave the tree byte-identical. The default is to record, so a caller that
+    forgets fails towards a measured close rather than an unmeasured one. Every attempt used to run a full
+    gate and record nothing, so the close's cost report was the chain's single run standing for
+    all of them. The `preflight` mode keeps that row out of the reuse path - see
+    `reusable_close_verdict`, where only a `full` run is reusable, because the pre-flight's gate
+    scopes conformance to the batch and the chain's does not.
 
     Returns {"ready": bool, "blockers": [{"stage", "detail", "remedy"}],
     "gate_ran": bool}. `gate_ran` is load-bearing: the dry run reports the gate's
@@ -6225,12 +6240,27 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
         block("retro", "no retro named",
               "`sprint.py close` scaffolds one and stops, or pass --retro RETROxxxx")
 
+    # The compulsory checklist - chain step 6, and until now the one chain step the pre-flight
+    # never asked about. It ran the gate, the coverage rules and the sign-off prerequisites, said
+    # READY, and the close then died at step 6 on rows that had been readable from the first
+    # attempt. Measured on the run that paid for this: the close attempts recorded 1, 1, 1, 1, 0
+    # outstanding across six rounds, three of them reporting a single gate item and then stopping
+    # on checklist rows nothing had looked at.
+    #
+    # Only with a retro named, because the checklist is composed FOR one - and when none is named
+    # the retro blocker above already says so, so a second blocker would be one fact twice.
+    if retro_id:
+        for entry in _checklist_blockers(root, retro_id, state):
+            block(entry["stage"], entry["detail"], entry["remedy"])
+
     # The gate block, which already reports all of its lanes at once. Conformance is scoped to
     # THIS run's batch: on a clean tree the diff scope is empty, so the unscoped lane judges the
     # whole workspace and an out-of-batch unit's debt - a different author, a different epic -
     # blocks a fully delivered in-batch close. The batch is what this close owns.
     batch_scope = {sdlc_md.norm_id(b) for b in (state.get("batch") or [])}
     gate_ran = False
+    import time  # noqa: PLC0415 - local, only this path measures
+    started = time.monotonic()
     try:
         report = gate.run_gate(str(root), require_retro=retro_id, require_review=True,
                                conformance_scope=batch_scope)
@@ -6238,6 +6268,20 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
         block("gate", f"gate could not run: {exc}", "run `gate.py` directly for detail")
     else:
         gate_ran = True
+        # THE PRE-FLIGHT'S OWN GATE, MEASURED. Every attempt ran one and recorded none, so
+        # `close_cost` reported the chain's single run as the whole cost of a close: one row of
+        # 77.6s stood for 21m27s of actual attempts on RUN-01KZ79C1. A cost report that is a
+        # sixth of the truth is worse than none, because it is believed.
+        #
+        # This is the one write the pre-flight makes, and it is a MEASUREMENT of work that has
+        # already happened rather than a step of the close: no retro is scaffolded, no summary
+        # regenerated, no verdict recorded. `record_execution_run` never raises into the caller,
+        # so an unwritable ledger costs the cost figure and nothing else.
+        if record_cost:
+            record_execution_run(root, moment="close", mode="preflight",
+                                 seconds=time.monotonic() - started,
+                                 verdict="pass" if report.get("ok") else "fail",
+                                 run_id=(state or {}).get("run_id"))
         for c in report.get("checks", []):
             if c.get("status") == "fail" and c.get("blocking"):
                 block("gate", f"{c['check']}: {c.get('detail', '')}",
@@ -6263,6 +6307,54 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
 
     blockers.extend(_signoff_preflight(root, state))
     return {"ready": not blockers, "blockers": blockers, "gate_ran": gate_ran}
+
+
+def _checklist_blockers(root: Path, retro_id: str, state: dict) -> list[dict]:
+    """Every compulsory checklist row the close would stop on, ASKED of the one authority.
+
+    `sprint_report.checklist` decides what is outstanding and what a waiver has answered; this
+    function translates its rows into the pre-flight's blocker shape and decides nothing. A
+    pre-flight enumerating the rows itself would be a second answer to the question the chain
+    already answers, and the two drift the moment a row is added - which is the case the test
+    pins by adding one and changing nothing here.
+
+    READ-ONLY, like everything else in the pre-flight: `checklist` composes and returns.
+
+    A resolver that raises is reported as its own blocker rather than allowed to propagate. The
+    pre-flight's whole value is reporting every unmet prerequisite in ONE pass, and an exception
+    escaping here would take the other blockers with it - the caller would learn one fact and
+    lose the rest, which is the behaviour this pass exists to replace.
+    """
+    try:
+        import sprint_report  # noqa: PLC0415 - deferred, like the close path's other siblings
+        units = [sdlc_md.norm_id(b) for b in (state.get("batch") or [])]
+        ck = sprint_report.checklist(root, retro_id, unit_ids=units or None)
+    except Exception as exc:  # noqa: BLE001 - a step that cannot check must not report a pass
+        return [{"stage": "checklist",
+                 "detail": f"the sprint checklist could not be composed: "
+                           f"{type(exc).__name__}: {exc}",
+                 "remedy": f"see it directly with `sprint_report.py checklist --id {retro_id}`"}]
+    out: list[dict] = []
+    # ANSWERED, and the answer stops the ship - held separately because the remedy is the
+    # opposite one. An unanswered item needs somebody to look; a stop-ship ruling needs the
+    # defect fixed or the ruling revised by whoever made it.
+    for item in ck.get("stop_ship") or []:
+        out.append({"stage": "checklist",
+                    "detail": f"{item} is ruled STOP-SHIP in the retro's carried-issues table",
+                    "remedy": "fix the finding, or have the ruler revise the ruling in the "
+                              "retro - a close that proceeds over a stop-ship ruling makes "
+                              "every future ruling a note"})
+    rows = {r["id"]: r for r in (ck.get("items") or [])}
+    for item_id in ck.get("outstanding") or []:
+        row = rows.get(item_id, {})
+        detail = f"{item_id}: {row.get('title', '')} - {row.get('value', '')}".rstrip(" -")
+        out.append({"stage": "checklist", "detail": detail,
+                    "remedy": row.get("detail")
+                              or ("run the stage it names, or record a waiver naming it "
+                                  f"(`decisions.py waive --subject "
+                                  f"{sprint_report.WAIVER_SUBJECT}:{item_id} "
+                                  f"--rationale '<why>'`)")})
+    return out
 
 
 def _signoff_preflight(root: Path, state: dict) -> list[dict]:
@@ -6404,7 +6496,10 @@ def close_dry_run(root, retro_id: str | None = None) -> dict:
     def note(step: str, status: str, detail: str = "", remedy: str = "") -> None:
         steps.append({"step": step, "status": status, "detail": detail, "remedy": remedy})
 
-    pre = close_preflight(root, retro_id)
+    # A DRY RUN LEAVES THE TREE BYTE-IDENTICAL, which is stricter than the pre-flight's own
+    # contract: this is a preview, and a preview that wrote to the real tree would be a close.
+    # So the cost row is suppressed here and only here.
+    pre = close_preflight(root, retro_id, record_cost=False)
     for blocker in pre["blockers"]:
         note(blocker["stage"], "refuse", blocker.get("detail", ""), blocker.get("remedy", ""))
     if pre["ready"]:

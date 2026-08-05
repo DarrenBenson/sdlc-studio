@@ -690,6 +690,51 @@ class OverheadRatioTests(ReportBase):
         # ...beside the figures the report already carries
         self.assertIn("8 points", text)
 
+    def test_an_unmeasured_component_is_not_credited_to_delivery(self) -> None:
+        """BG0495. Delivery is TOTAL MINUS OVERHEAD, so every minute the instruments failed to
+        attribute lands in the delivery figure - it is an upper bound by exactly the amount the
+        ratio is a lower one. The ratio already said "at least"; the delivery figure beside it
+        said a bare number, so one sentence carried a qualified claim and an unqualified one
+        about the same arithmetic.
+
+        Mutant: print the delivery figure unqualified while the ratio stays qualified - the
+        reader is told the ratio is a floor and left to assume the delivery minutes are exact,
+        which is the direction that flatters the loop.
+        """
+        self._run()
+        self._ledger([{"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 3600,
+                       "verdict": "pass", "moment": "commit"}])
+        # no mutation series recorded, so one component is UNMEASURED
+        rep = self._report()
+        ov = rep["overhead"]
+        self.assertIn("mutation", ov["unmeasured"])
+        self.assertEqual(ov["bound"], "lower")
+        line = next(ln for ln in sr.render(rep).splitlines()
+                    if ln.startswith("Overhead vs delivery"))
+        self.assertIn("at least", line, "the ratio is a floor and must say so")
+        self.assertIn("at most", line,
+                      "the delivery figure is a CEILING for the same reason, and said so with "
+                      "no qualifier at all")
+
+    def test_the_two_qualifiers_come_from_one_decision(self) -> None:
+        """The negative control, and the reason it is shaped this way: `bound == "exact"` is not
+        reachable through a real run here - the review-and-repair component is a floor by
+        construction, so every measured sprint is already a lower bound. What CAN be pinned is
+        that the ratio's qualifier and the delivery figure's are derived from the same `bound`
+        rather than written beside each other.
+
+        Mutant: hard-code either qualifier - one fires without the other and this reddens. The
+        exact case is exercised on the renderer directly, because no fixture reaches it.
+        """
+        exact = {"measured": True, "ratio": 3.0, "overhead_s": 27000.0, "delivery_s": 9000.0,
+                 "total_s": 36000.0, "components": [], "unmeasured": [], "bound": "exact"}
+        line = sr._overhead_lines({"overhead": exact})[0]
+        self.assertNotIn("at least", line)
+        self.assertNotIn("at most", line)
+        lower = sr._overhead_lines({"overhead": {**exact, "bound": "lower"}})[0]
+        self.assertIn("at least", lower)
+        self.assertIn("at most", lower)
+
     def test_the_components_are_derived_not_estimated(self) -> None:
         """US0523 AC2: every component traces to a record the run wrote. Proved by MOVING the
         record - a figure invented at close would not follow it."""

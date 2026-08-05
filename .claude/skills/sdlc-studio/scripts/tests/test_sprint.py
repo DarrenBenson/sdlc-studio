@@ -6126,12 +6126,23 @@ class ClosePreflightTests(unittest.TestCase):
     """
 
     def _mod(self, root, *, lanes=(), units=None, verdicts=None, evidence=(), signoffs=(),
-             covered=()):
+             covered=(), checklist=None):
         """sprint module with the gate and critic stubbed, so these run in milliseconds and
-        assert the PRE-FLIGHT's composition rather than re-testing the gate."""
+        assert the PRE-FLIGHT's composition rather than re-testing the gate.
+
+        `checklist` stubs `sprint_report.checklist` the same way and for the same reason: these
+        tests assert what the pre-flight DOES with the checklist's ruling, and composing a real
+        one over a three-line fixture would report a dozen unrelated rows outstanding. What the
+        ruling itself should be is `sprint_report`'s question, pinned by its own tests.
+        """
         mod = _load()
         import gate as gate_mod
         import critic as critic_mod
+        import sprint_report as report_mod
+        self.addCleanup(setattr, report_mod, "checklist", report_mod.checklist)
+        clean = {"items": [], "outstanding": [], "stop_ship": [], "pending_in_close": []}
+        ck = {**clean, **(checklist or {})}
+        report_mod.checklist = lambda r, rid, **kw: ck
         self.addCleanup(setattr, gate_mod, "run_gate", gate_mod.run_gate)
         for name in ("verdict_for", "evidence_for", "signoff_for",
                      "is_independent_signoff", "sprint_review_for",
@@ -6214,15 +6225,30 @@ class ClosePreflightTests(unittest.TestCase):
             self.assertIn("sign-off", stages)
             self.assertGreaterEqual(len(res["blockers"]), 5)
 
-    def test_preflight_writes_nothing(self) -> None:
-        """AC2: it answers the question without committing to a close."""
+    def test_preflight_performs_no_step_of_the_close(self) -> None:
+        """AC2: it answers the question without committing to a close.
+
+        US0639 gave the pre-flight ONE write - the seconds its own gate cost, on the
+        test-execution ledger. That is a measurement of work already done, not a step of the
+        close, so this test now states the invariant precisely instead of relaxing it: every
+        other path in the tree is byte-identical, and the ledger's delta is exactly one row of
+        the expected shape. Anything the pre-flight starts writing beyond that reddens here.
+        """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, lanes=("conformance",))
-            before = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            ledger = root / mod.EXECUTION_LEDGER_REL
+            before = {p: p.read_bytes() for p in root.rglob("*")
+                      if p.is_file() and p != ledger}
+            rows_before = mod.read_execution_ledger(root)
             mod.close_preflight(root, None)
-            after = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
-            self.assertEqual(before, after, "the pre-flight wrote to the tree")
+            after = {p: p.read_bytes() for p in root.rglob("*")
+                     if p.is_file() and p != ledger}
+            self.assertEqual(before, after, "the pre-flight wrote outside the cost ledger")
+            rows = mod.read_execution_ledger(root)
+            self.assertEqual(len(rows), len(rows_before) + 1, rows)
+            self.assertEqual(rows[-1]["moment"], "close")
+            self.assertEqual(rows[-1]["mode"], "preflight")
 
     def test_preflight_reports_ready_when_nothing_is_unmet(self) -> None:
         """AC3: ready is a positive answer, not merely the absence of output."""
@@ -6424,6 +6450,260 @@ class ClosePreflightTests(unittest.TestCase):
                 mod._close_retro_validate = original
             self.assertEqual(reached, [1],
                              "an unmet pre-flight stopped the close instead of only reporting")
+
+
+class PreflightChecklistTests(ClosePreflightTests):
+    """US0638: the pre-flight ran every close prerequisite EXCEPT the compulsory checklist.
+
+    Chain step 6 (`_CLOSE_CHAIN`) was the one step nothing asked about ahead of time, so a close
+    cleared the pre-flight and then stopped on rows that had been readable from the first
+    attempt. RUN-01KZ79C1 took six rounds for that reason, three of them reporting a single
+    outstanding gate item and then dying on the checklist.
+
+    Inherits the fixture, and DELIBERATELY re-runs the parent's cases under it: every assertion
+    there is about the pre-flight's composition, and adding a step to that composition is exactly
+    the change that could break them. A mixin would have hidden that.
+    """
+
+    def test_an_unanswered_checklist_item_is_a_preflight_blocker(self) -> None:
+        """AC1. Mutant: delete the checklist call - the pre-flight reads ready while the chain
+        would stop at step 6, which is the behaviour this unit replaces."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            checklist={"items": [{"id": "seat-review", "title": "seat review",
+                                                  "value": "not run", "detail": "run it"}],
+                                       "outstanding": ["seat-review"]})
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            self.assertFalse(res["ready"], res["blockers"])
+            named = [b for b in res["blockers"] if b["stage"] == "checklist"]
+            self.assertEqual(len(named), 1, res["blockers"])
+            self.assertIn("seat-review", named[0]["detail"])
+            self.assertIn("seat review", named[0]["detail"])
+            self.assertEqual(named[0]["remedy"], "run it")
+
+    def test_a_row_added_to_the_checklist_is_reported_without_touching_the_preflight(self) -> None:
+        """AC2. The row id here exists nowhere in sprint.py. Mutant: enumerate the known item
+        names in the pre-flight - a row the checklist grows later goes unreported, and the two
+        answers to 'what is outstanding' drift silently apart."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            novel = "a-row-invented-after-the-preflight-was-written"
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            checklist={"items": [{"id": novel, "title": "something new",
+                                                  "value": "unanswered", "detail": ""}],
+                                       "outstanding": [novel]})
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            named = [b for b in res["blockers"] if b["stage"] == "checklist"]
+            self.assertEqual(len(named), 1, res["blockers"])
+            self.assertIn(novel, named[0]["detail"])
+            # And the remedy is derived, not blank, when the row carries no detail of its own.
+            self.assertIn("waive", named[0]["remedy"])
+            self.assertIn(novel, named[0]["remedy"])
+            self.assertNotIn(novel, Path(mod.__file__).read_text(encoding="utf-8"),
+                             "the pre-flight names this row, so it is enumerating rather than "
+                             "asking the checklist")
+
+    def test_every_outstanding_item_is_reported_in_one_pass(self) -> None:
+        """AC3. Mutant: return after the first checklist blocker - the count reads 1 and a close
+        needs three more attempts to learn what was knowable at the first."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ids = ["one", "two", "three"]
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            checklist={"items": [{"id": i, "title": i, "value": "unanswered",
+                                                  "detail": ""} for i in ids],
+                                       "outstanding": ids})
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            named = [b for b in res["blockers"] if b["stage"] == "checklist"]
+            self.assertEqual(len(named), 3, res["blockers"])
+            self.assertEqual({i for i in ids},
+                             {b["detail"].split(":")[0] for b in named})
+
+    def test_a_stop_ship_ruling_is_its_own_blocker_with_the_opposite_remedy(self) -> None:
+        """A stop-ship row is ANSWERED and the answer stops the ship, so its remedy is the
+        opposite of an unanswered row's. Mutant: fold it into the outstanding list - the
+        operator is told to answer an item somebody has already ruled on."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            checklist={"stop_ship": ["BG0999"]})
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            named = [b for b in res["blockers"] if b["stage"] == "checklist"]
+            self.assertEqual(len(named), 1, res["blockers"])
+            self.assertIn("BG0999", named[0]["detail"])
+            self.assertIn("STOP-SHIP", named[0]["detail"])
+            self.assertIn("revise the ruling", named[0]["remedy"])
+
+    def test_a_raising_checklist_is_a_blocker_and_hides_nothing(self) -> None:
+        """AC4. Mutant: let the exception propagate - the pre-flight dies and the caller learns
+        nothing at all, which is strictly worse than the behaviour being replaced."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance",), units=["US0101"])
+            import sprint_report as report_mod
+            def boom(*a, **k):
+                raise RuntimeError("the ledger is unreadable")
+            report_mod.checklist = boom
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            stages = self._stages(res)
+            named = [b for b in res["blockers"] if b["stage"] == "checklist"]
+            self.assertEqual(len(named), 1, res["blockers"])
+            self.assertIn("the ledger is unreadable", named[0]["detail"])
+            self.assertIn("sprint_report.py checklist", named[0]["remedy"])
+            # and the OTHER blockers still arrived - that is the whole point of one pass
+            self.assertIn("gate", stages)
+            self.assertIn("sign-off", stages)
+
+    def test_an_item_the_checklist_does_not_call_outstanding_is_not_a_blocker(self) -> None:
+        """AC5. Mutant: block on every row whose value looks unanswered - a waived row blocks a
+        closeable run, and the pre-flight and the chain disagree about what is outstanding."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            checklist={"items": [{"id": "waived-row", "title": "a waived row",
+                                                  "value": "unanswered",
+                                                  "detail": "waived by D0001"}],
+                                       "outstanding": [],
+                                       "pending_in_close": ["the sign-off fan-out"]})
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            self.assertEqual([b for b in res["blockers"] if b["stage"] == "checklist"], [],
+                             "the pre-flight re-derived what is outstanding instead of reading "
+                             "the checklist's ruling")
+            self.assertTrue(res["ready"], res["blockers"])
+
+    def test_no_retro_named_reports_the_missing_retro_once_and_no_checklist_row(self) -> None:
+        """A checklist is composed FOR a retro. With none named the retro blocker already says
+        so, and a second blocker would be one fact reported twice. Mutant: call the checklist
+        with a None id - it raises, and the pre-flight reports a spurious composition failure
+        beside the real blocker."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"])
+            res = mod.close_preflight(root, None)
+            stages = self._stages(res)
+            self.assertEqual(stages.count("retro"), 1, res["blockers"])
+            self.assertNotIn("checklist", stages, res["blockers"])
+
+
+class CloseCostRecordingTests(ClosePreflightTests):
+    """US0639: `close_preflight` ran a full gate on every attempt and recorded none of them.
+
+    `test-execution.json` held ONE close row for RUN-01KZ79C1 - 77.6s - against 21m27s of actual
+    close attempts, so `close_cost_line` reported about a sixth of what the close cost. The
+    figure was not wrong in a way anybody could see; it was simply the chain's single run
+    standing for six pre-flights that had each paid the same price.
+    """
+
+    def _ledger(self, mod, root):
+        return mod.read_execution_ledger(root)
+
+    def test_a_preflight_gate_run_is_recorded_with_its_seconds(self) -> None:
+        """AC1. Mutant: drop the record call - the ledger holds no row for a gate that
+        demonstrably ran, which is the state this unit found."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance",), units=["US0101"])
+            _close_state(root, batch=["US0101"], run_id="RUN-TEST01")
+            mod.close_preflight(root, None)
+            rows = self._ledger(mod, root)
+            self.assertEqual(len(rows), 1, rows)
+            self.assertEqual(rows[0]["moment"], "close")
+            self.assertEqual(rows[0]["mode"], "preflight")
+            self.assertEqual(rows[0]["run_id"], "RUN-TEST01")
+            self.assertEqual(rows[0]["verdict"], "fail")   # a failing lane was stubbed
+            self.assertIsInstance(rows[0]["seconds"], float)
+
+    def test_every_gate_the_close_ran_is_counted(self) -> None:
+        """AC2. Two pre-flights and one chain gate is THREE measured runs. Mutant: filter the
+        preflight rows out of the cost - the count reads 1 and the seconds under-report, which
+        is exactly the 77.6s-for-21m27s figure that raised this."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance",), units=["US0101"])
+            _close_state(root, batch=["US0101"], run_id="RUN-TEST01")
+            mod.close_preflight(root, None)
+            mod.close_preflight(root, None)
+            mod.record_execution_run(root, moment="close", mode="full", seconds=12.0,
+                                     verdict="pass", run_id="RUN-TEST01")
+            cost = mod.close_cost(root, "RUN-TEST01")
+            self.assertEqual(cost["measured_runs"], 3, self._ledger(mod, root))
+            self.assertEqual(cost["gate_runs"], 3)
+            self.assertGreaterEqual(cost["gate_seconds"], 12.0)
+            self.assertIn("3 run(s)", mod.close_cost_line(cost))
+
+    def test_a_preflight_that_never_reached_the_gate_records_nothing(self) -> None:
+        """AC3. Mutant: record on entry - a run that never ran a gate reports gate seconds, and
+        a cost report that invents runs is worse than one that misses them."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"])
+            (root / "sdlc-studio" / ".local" / "run-state.json").unlink()
+            res = mod.close_preflight(root, None)
+            self.assertFalse(res["gate_ran"])
+            self.assertEqual(self._ledger(mod, root), [])
+
+    def test_an_unwritable_ledger_warns_and_does_not_break_the_preflight(self) -> None:
+        """AC4. Mutant: let the OSError propagate - a reporting loss becomes a close that
+        cannot run at all."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance",), units=["US0101"])
+            # A DIRECTORY where the ledger file goes: the write fails, the read does too.
+            (root / mod.EXECUTION_LEDGER_REL).parent.mkdir(parents=True, exist_ok=True)
+            (root / mod.EXECUTION_LEDGER_REL).mkdir()
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                res = mod.close_preflight(root, None)
+            self.assertIn("gate", self._stages(res), res["blockers"])
+            self.assertIn("could NOT be recorded", err.getvalue())
+
+    def test_the_dry_run_records_no_cost_row(self) -> None:
+        """A `close --dry-run` leaves the tree byte-identical - stricter than the pre-flight's
+        own contract, because a preview that wrote to the real tree would be a close. Found by
+        the full suite, which is why the recording is an explicit opt-OUT at one call site
+        rather than a silent write everywhere.
+
+        Mutant: record unconditionally - the three dry-run tests redden. Mutant the other way:
+        default `record_cost` to False - AC1 reddens, so neither direction passes silently.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance",), units=["US0101"])
+            mod.close_preflight(root, None, record_cost=False)
+            self.assertEqual(self._ledger(mod, root), [])
+            mod.close_preflight(root, None)
+            self.assertEqual(len(self._ledger(mod, root)), 1,
+                             "recording is the DEFAULT - a caller that forgets must fail "
+                             "towards a measured close, not an unmeasured one")
+
+    def test_a_preflight_verdict_is_not_reusable_by_the_chain(self) -> None:
+        """AC5. The pre-flight scopes conformance to the run's batch; the chain's gate does not.
+        Mutant: treat any non-reuse row as reusable - the chain skips its own gate on the
+        strength of a check that judged less, which is a fail-open in the close's last gate."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"])
+            mod.record_execution_run(root, moment="close", mode="preflight", seconds=9.0,
+                                     verdict="pass", surface="abc", run_id="RUN-TEST01")
+            self.assertIsNone(mod.reusable_close_verdict(root, "abc"),
+                              "a preflight verdict was offered to the chain's wider gate")
+            # The positive control: a FULL row with the same surface IS reusable, so this is a
+            # test of which modes are reusable and not of reuse being switched off.
+            mod.record_execution_run(root, moment="close", mode="full", seconds=9.0,
+                                     verdict="pass", surface="abc", run_id="RUN-TEST01")
+            self.assertIsNotNone(mod.reusable_close_verdict(root, "abc"))
 
 
 class CarryForwardCloseTests(unittest.TestCase):

@@ -25,6 +25,7 @@
 - **Then** it returns not-ready with a blocker whose stage is `checklist`, naming the item and its remedy
 - **Mutant:** delete the checklist call from the pre-flight - the run reads ready while the chain would stop at step 6
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightChecklistTests::test_an_unanswered_checklist_item_is_a_preflight_blocker
+- **Verified:** yes (2026-08-05)
 
 ### AC2: one authority for the checklist, not a second copy of its rules
 
@@ -33,6 +34,7 @@
 - **Then** the new item is reported, because the pre-flight asks the checklist rather than restating its rows
 - **Mutant:** enumerate the item names inside the pre-flight - the added row goes unreported and this test reddens
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightChecklistTests::test_a_row_added_to_the_checklist_is_reported_without_touching_the_preflight
+- **Verified:** yes (2026-08-05)
 
 ### AC3: every outstanding item in one pass, not the first one
 
@@ -41,6 +43,7 @@
 - **Then** all three are reported together, so a second attempt is not needed to discover the second item
 - **Mutant:** return after the first checklist blocker - the count assertion reddens
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightChecklistTests::test_every_outstanding_item_is_reported_in_one_pass
+- **Verified:** yes (2026-08-05)
 
 ### AC4: still read-only, and a broken checklist does not hide the other blockers
 
@@ -49,14 +52,16 @@
 - **Then** the failure is reported as its own blocker and every other blocker is still returned, and the retro's recorded answers are unchanged on disk
 - **Mutant:** let the exception propagate - the pre-flight dies and reports nothing at all
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightChecklistTests::test_a_raising_checklist_is_a_blocker_and_hides_nothing
+- **Verified:** yes (2026-08-05)
 
-### AC5: waivers are honoured here exactly as the chain honours them
+### AC5: what is outstanding is the checklist's ruling, never re-derived here
 
-- **Given** an item answered by a recorded waiver naming it
+- **Given** a checklist row present in `items` but absent from `outstanding` - the shape a waiver or a completed stage produces
 - **When** the pre-flight runs
-- **Then** it is not reported, because a close that would proceed must not be told it cannot
-- **Mutant:** treat every non-answered row as outstanding - a waived item blocks a closeable run
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightChecklistTests::test_a_waived_item_is_not_a_blocker
+- **Then** it is not a blocker, because the pre-flight reads the ruling rather than inspecting the row and deciding for itself. Whether a waiver answers a row is `sprint_report.checklist`'s question and is pinned by its own tests
+- **Mutant:** block on every row whose state is not-run or unanswered - a waived item blocks a closeable run, and the two answers disagree
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightChecklistTests::test_an_item_the_checklist_does_not_call_outstanding_is_not_a_blocker
+- **Verified:** yes (2026-08-05)
 
 ## Revision History
 

@@ -22,6 +22,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import retro  # noqa: E402
+from lib import sdlc_md  # noqa: E402  (table_cells, for the column-count pin)
 import telemetry  # noqa: E402  (the one implementation of the idle-gap deduction)
 from lib import run_state  # noqa: E402  (the run a close's token spend is attributed to)
 
@@ -1429,7 +1430,7 @@ class TokenCaptureIsTiedToTheRetroItRecords(InteractiveSprintFixture):
         meter = self._session("s1.jsonl", {"input_tokens": 900_000})
         self._state(["OLD1", "OLD2", "BG0001"], tokens=100_000, source=meter)
         self.assertEqual(retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]),
-                         (None, None), "one carried-over unit is not this sprint's run")
+                         (None, None, 0), "one carried-over unit is not this sprint's run")
         cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
                                           transcripts_dir=self.transcripts)
         self.assertIsNone(cap["tokens"], "and it is not this sprint's spend either")
@@ -1441,7 +1442,9 @@ class TokenCaptureIsTiedToTheRetroItRecords(InteractiveSprintFixture):
         meter = self._session("s1.jsonl", {"input_tokens": 900_000})
         self._state(["OLDER", "BG0001", "BG0002"], tokens=100_000, source=meter)
         self.assertEqual(retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]),
-                         (2.0, "run-state"))
+                         (2.0, "run-state", 0),
+                         "and the gap COUNT travels with the figure: zero gaps recorded is what "
+                         "makes this a calendar span rather than measured working time")
         cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
                                           transcripts_dir=self.transcripts)
         self.assertEqual(cap["tokens"], 800_000)
@@ -1458,8 +1461,8 @@ class TokenCaptureIsTiedToTheRetroItRecords(InteractiveSprintFixture):
                                        "to": "2026-07-16T01:30:00Z", "reason": "operator away"}]
         run_state.write(str(self.root), state)
         self.assertEqual(
-            retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]), (1.0, "run-state"),
-            "a 2h run holding a recorded 1h idle gap worked for 1h")
+            retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]), (1.0, "run-state", 1),
+            "a 2h run holding a recorded 1h idle gap worked for 1h, over 1 recorded gap")
         self.assertEqual(
             telemetry.elapsed_excluding_idle("2026-07-16T00:00:00Z", "2026-07-16T02:00:00Z",
                                              state)["hours"], 1.0,
@@ -1471,7 +1474,7 @@ class TokenCaptureIsTiedToTheRetroItRecords(InteractiveSprintFixture):
         meter = self._session("s1.jsonl", {"input_tokens": 900_000})
         self._state(["OLDER", "BG0001", "BG0002"], tokens=100_000, source=meter)
         self.assertEqual(retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]),
-                         (2.0, "run-state"))
+                         (2.0, "run-state", 0))
 
     def test_an_open_run_reports_no_elapsed_AND_no_source(self) -> None:
         """Found by a surviving mutant. An open run has no measured elapsed, and the SOURCE must
@@ -1485,7 +1488,7 @@ class TokenCaptureIsTiedToTheRetroItRecords(InteractiveSprintFixture):
         del state["ended_at"]
         run_state.write(str(self.root), state)
         self.assertEqual(retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]),
-                         (None, None), "no hours means no source either")
+                         (None, None, 0), "no hours means no source either")
 
     def test_the_coverage_rule_is_a_strict_majority(self) -> None:
         covers = retro._run_covers
@@ -2204,6 +2207,185 @@ class PartialMeasurementIsExcludedFromTheRate(AccuracyBase):
         self.assertIsNone(rate["tokens_per_point"],
                           "1 of 3 measured: the tokens describe a subset of the points")
         self.assertEqual(rate["by_model"], {})
+
+
+class VelocityRowTests(unittest.TestCase):
+    """BG0495: the velocity row understated twice, and in the same direction both times.
+
+    RETRO0089 published 4.96 points/elapsed-hour for a run planned at 152 points over about 15
+    hours. The numerator counted only ACCEPTED points - 76 of 148, with 72 points of committed,
+    working code sitting at `Ready` because the review had rejected it - so a rejected sprint
+    read as a slow one. The denominator was a 15.3h span reporting `0.0h idle INSIDE it, from 0
+    recorded gap(s)` for an interactive session containing six nine-minute suite runs and long
+    periods with nobody at the keyboard: zero gaps is no measurement of idle, not an absence of
+    it. Together they pushed the ratio far below the operator's own felt heuristic, which is
+    what made it visible.
+    """
+
+    RETRO = """# RETRO-9600: a rejected sprint
+
+> **Date:** 2026-08-05
+> **Batch:** BG0601, BG0602
+> **Goal:** measure it honestly
+
+## Delivered
+- BG0601 - accepted
+## What went well
+- it shipped
+## What was hard / what stalled
+- one unit was rejected
+## Lessons
+- report both numerators
+## Actions raised
+| Finding | Disposition |
+| --- | --- |
+| nothing | declined: clean |
+"""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+        for d in ("retros", "bugs", "reviews", ".local"):
+            (self.root / "sdlc-studio" / d).mkdir(parents=True, exist_ok=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO9600-t.md").write_text(
+            self.RETRO, encoding="utf-8")
+
+    def _bug(self, uid: str, status: str, points: int) -> None:
+        (self.root / "sdlc-studio" / "bugs" / f"{uid}-a.md").write_text(
+            f"# {uid}: a unit\n\n> **Status:** {status}\n> **Severity:** Medium\n"
+            f"> **Points:** {points}\n\n## Summary\nA unit.\n", encoding="utf-8")
+
+    def _verdict(self, uid: str) -> None:
+        """A recorded delivery verdict - the evidence that this unit's diff EXISTS. Status
+        cannot say so: a rejected story returns to `Ready`, where it is indistinguishable from
+        one nobody has started."""
+        import critic
+        critic.record_verdict(str(self.root), uid, "REJECT", reviewer="seat-a",
+                              author="seat-b", issues="it did not discriminate")
+
+    def _run(self, *, ended: str | None = "2026-08-05T02:00:00Z", gaps=None) -> None:
+        state = {"schema": 1, "run_id": "RUN-9600", "started_at": "2026-08-05T00:00:00Z",
+                 "ended_at": ended, "outcome": "closed", "goal": "done",
+                 "batch": ["BG0601", "BG0602"]}
+        if gaps:
+            import telemetry
+            state[telemetry.IDLE_GAPS] = gaps
+        p = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        p.write_text(json.dumps(state), encoding="utf-8")
+
+    def _acc(self) -> dict:
+        return retro.accuracy(str(self.root), "RETRO9600")
+
+    def test_delivered_and_accepted_points_are_reported_separately(self) -> None:
+        """AC1. Mutant: report the terminal sum alone under the bare label `points` - a sprint
+        that wrote 8 and had 5 rejected reads as one that delivered 3."""
+        self._bug("BG0601", "Fixed", 3)
+        self._bug("BG0602", "Open", 5)
+        self._verdict("BG0602")
+        self._run()
+        b = self._acc()["batch"]
+        self.assertEqual(b["accepted_points"], 3)
+        self.assertEqual(b["written_points"], 8)
+        self.assertEqual(b["unaccepted_points"], 5)
+        self.assertEqual(b["unaccepted_ids"], ["BG0602"])
+        # and the row an operator reads names both, with the rejected unit
+        text = "\n".join(retro._points_lines(self._acc()))
+        self.assertIn("ACCEPTED", text)
+        self.assertIn("WROTE 8", text)
+        self.assertIn("BG0602", text)
+
+    def test_a_unit_nobody_reviewed_is_not_counted_as_written(self) -> None:
+        """The negative control, without which `written` is just `planned` renamed. A unit that
+        was never reviewed has no diff to show for itself, whatever its status says. Mutant:
+        count every non-terminal unit - an unstarted story inflates the output figure, and the
+        row over-claims in exactly the direction this bug exists to stop."""
+        self._bug("BG0601", "Fixed", 3)
+        self._bug("BG0602", "Open", 5)          # no verdict recorded
+        self._run()
+        b = self._acc()["batch"]
+        self.assertEqual((b["accepted_points"], b["written_points"]), (3, 3))
+        self.assertEqual(b["unaccepted_ids"], [])
+
+    def test_a_zero_idle_span_is_labelled_a_calendar_span(self) -> None:
+        """AC2. Mutant: keep the unqualified label - a 2h calendar span with no idle deducted
+        is published as though it measured working time."""
+        self._bug("BG0601", "Fixed", 3)
+        self._bug("BG0602", "Fixed", 5)
+        self._run()
+        b = self._acc()["batch"]
+        self.assertEqual(b["sprint_elapsed_idle_gaps"], 0)
+        self.assertIn("CALENDAR SPAN", "\n".join(retro._points_lines(self._acc())))
+
+    def test_a_recorded_gap_is_not_labelled_a_calendar_span(self) -> None:
+        """The positive control for AC2: a run that DID measure its idle must not be told its
+        figure is unqualified. Mutant: print the qualifier unconditionally - it becomes noise
+        and stops distinguishing anything."""
+        self._bug("BG0601", "Fixed", 3)
+        self._bug("BG0602", "Fixed", 5)
+        self._run(gaps=[{"from": "2026-08-05T00:30:00Z", "to": "2026-08-05T01:00:00Z",
+                         "reason": "operator away"}])
+        b = self._acc()["batch"]
+        self.assertEqual(b["sprint_elapsed_idle_gaps"], 1)
+        self.assertNotIn("CALENDAR SPAN", "\n".join(retro._points_lines(self._acc())))
+
+    def test_a_row_without_wall_clock_reports_unmeasured(self) -> None:
+        """AC3. This behaviour PREDATES the bug and is pinned rather than built: no VELOCITY.md
+        row since RETRO0027 carries a wall-clock, so absence is the common case and must stay
+        visible. Mutant: divide by a defaulted elapsed - every unmeasured run acquires a
+        velocity nobody measured."""
+        self._bug("BG0601", "Fixed", 3)
+        self._bug("BG0602", "Fixed", 5)
+        self._run(ended=None)                    # an OPEN run has no measured elapsed
+        b = self._acc()["batch"]
+        self.assertIsNone(b["points_per_elapsed_hour"])
+        self.assertIn("UNMEASURED", "\n".join(retro._points_lines(self._acc())))
+
+    def test_historical_rows_are_preserved_and_marked(self) -> None:
+        """AC5. The Written column is ADDED, never back-filled: a row written before it exists
+        records no written figure, and that is an absence rather than a claim that nothing was
+        rejected. Mutant: recompute the file on write - the before-and-after baseline this
+        sprint is judged on disappears, and LL0028 says a migration is attacked, not re-read."""
+        legacy = (
+            "# Velocity history\n\n"
+            "| Retro | Date | Units | Measured | Forecast | Points | "
+            "Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Wall (s) | "
+            "Constants | Sample | Model |\n"
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+            "| RETRO0024 | 2026-07-14 | 6 | 6 | 6 | 12 | 1,285,000 | 384,278 | 3.34x | 1,848 | "
+            "base=50000 tpc=5000 | in-sample | claude-opus-4-8 |\n")
+        retro.velocity_path(str(self.root)).write_text(legacy, encoding="utf-8")
+        self._bug("BG0601", "Fixed", 3)
+        self._bug("BG0602", "Open", 5)
+        self._verdict("BG0602")
+        self._run()
+        retro.record_velocity(str(self.root), self._acc())
+        rows = {r["id"]: r for r in retro.velocity_history(str(self.root))}
+        old = rows["RETRO0024"]
+        self.assertEqual((old["units"], old["points"], old["estimate"], old["actual_tokens"]),
+                         (6, 12, 1_285_000, 384_278),
+                         "the legacy row's numbers shifted when the column was added")
+        self.assertIsNone(old.get("written_points"), "a written figure was invented for a row "
+                                                     "that recorded none")
+        self.assertEqual(rows["RETRO9600"]["written_points"], 8)
+
+    def test_the_header_and_the_row_writer_enumerate_the_same_columns(self) -> None:
+        """LL0013, found the hard way while adding this column: the header row and the writer's
+        f-string are two enumerations of one schema, and nothing made them agree. Adding
+        `Written` to the header alone silently shifted every cell after it in every historical
+        row - the estimate column read back the actual, and the actual read back the ratio.
+        Mutant: drop one cell from the writer - the counts differ and this reddens.
+        """
+        header = [c for c in retro.VELOCITY_HEADER.splitlines() if c.startswith("| Retro |")][0]
+        self._bug("BG0601", "Fixed", 3)
+        self._bug("BG0602", "Fixed", 5)
+        self._run()
+        retro.record_velocity(str(self.root), self._acc())
+        written = retro.velocity_path(str(self.root)).read_text(encoding="utf-8")
+        row = [ln for ln in written.splitlines() if ln.startswith("| RETRO9600 |")][0]
+        self.assertEqual(len(sdlc_md.table_cells(header)), len(sdlc_md.table_cells(row)),
+                         "the header and the row writer disagree about how many columns "
+                         "VELOCITY.md has")
 
 
 class VelocityIsMeasuredInPoints(AccuracyBase):
