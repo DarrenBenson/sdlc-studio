@@ -8321,6 +8321,36 @@ def cmd_plan(args: argparse.Namespace) -> int:
             # drift-free index, and a warning on someone's terminal answers that for nobody.
             if preplan.get("preplan_reconcile"):
                 state = run_state.update(args.root, **preplan)
+            # THE SIGN-OFF PANEL, ASSIGNED BY THE COMMAND THAT OPENS THE RUN. Panel sign-off
+            # ships fully built - the two roles held disjoint, the signer read from the run
+            # rather than named at signing time, the brief-provenance interlock - and is
+            # reachable only if somebody remembers to run `persona_resolve.py panel --ceremony
+            # signoff` by hand first. A run that forgets it cannot sign at all, so the whole
+            # path stays theoretical. That is LL0027: a gate belongs in the command people run.
+            #
+            # REFUSED AT PLAN TIME when the seats cannot supply two disjoint roles, because
+            # discovering that at the close strands a delivered run behind a sign-off nobody can
+            # give. The run is torn down rather than half-opened, exactly as a failed plan write
+            # is below.
+            import critic as critic_mod  # noqa: PLC0415 - deferred, like the close path's
+            if critic_mod.signoff_policy(args.root) == critic_mod.PANEL_MARKER:
+                try:
+                    import persona_resolve  # noqa: PLC0415 - deferred, like the close path's
+                    panel = persona_resolve.signoff_panel(
+                        args.root, skip_personas=getattr(args, "skip_personas", False),
+                        record=True)
+                except Exception as exc:  # noqa: BLE001 - report, never half-open a run
+                    _abandon_open_run(args.root, state)
+                    print(f"plan refused: `review.signoff: panel` is in force and this run's "
+                          f"sign-off panel could not be assigned ({exc}). The run that had just "
+                          f"been opened was removed. Fix the seats, or set `review.signoff: "
+                          f"operator` - a run opened without an assignment cannot be signed off "
+                          f"at all, and that is only discovered at the close.", file=sys.stderr)
+                    return 2
+                state = run_state.read(args.root)
+                adv = ", ".join(s["role"] for s in panel["adversarial"])
+                print(f"sign-off panel assigned: adversarial {adv}; signing "
+                      f"{panel['signer']['role']} - recorded on the run")
         except run_state.DisjointBatchError as exc:
             print(str(exc), file=sys.stderr)
             return 2

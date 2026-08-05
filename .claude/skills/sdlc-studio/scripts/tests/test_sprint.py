@@ -626,6 +626,97 @@ class AuthoringPlanTests(unittest.TestCase):
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
 
+class SignoffPanelAssignmentTests(unittest.TestCase):
+    """US0643: panel sign-off ships fully built and is unreachable in practice.
+
+    `record_signoff` already refuses a principal equal to the author, refuses one drawn from the
+    unit's recorded reviewers, refuses a signing seat that is also an adversarial seat, and
+    refuses a panel ratifying a verdict with no brief provenance. `persona_resolve.signoff_panel`
+    assigns the two roles disjointly and `critic.py signoff --panel` READS the assignment from
+    the run rather than taking it from the caller. None of that fires unless somebody remembers
+    to run `persona_resolve.py panel --ceremony signoff` by hand first - so a run that forgets it
+    reaches its close and cannot be signed off at all. LL0027: a gate belongs in the command
+    people actually run.
+    """
+
+    def _seats(self, root: Path, roles=("engineering", "product", "qa")) -> None:
+        d = root / "sdlc-studio" / "personas" / "seats"
+        d.mkdir(parents=True, exist_ok=True)
+        for r in roles:
+            (d / f"{r}.md").write_text(f"# A Person - {r.title()} amigo\n\ncharter\n",
+                                       encoding="utf-8")
+
+    def _cfg(self, root: Path, body: str) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
+
+    def _plan(self, root: Path):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["plan", "--bugs", "Open", "--write", "--no-fetch",
+                               "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_opening_a_run_records_the_signoff_panel(self) -> None:
+        """Mutant: leave the assignment to the operator's memory - the run opens, the close
+        arrives, and `signoff --panel` refuses for want of a record. That is today."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, status="Open")
+            self._seats(root)
+            self._cfg(root, "review:\n  signoff: panel\n")
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0, err)
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            panel = state.get("signoff_panel")
+            self.assertTrue(panel, state)
+            self.assertTrue(panel["adversarial"], panel)
+            self.assertNotIn(panel["signer"], panel["adversarial"],
+                             "the signer was drawn from the adversarial set")
+            self.assertIn("sign-off panel assigned", out)
+
+    def test_the_operator_policy_records_no_panel(self) -> None:
+        """The shipped default is `operator`. Mutant: assign unconditionally - every consuming
+        project silently acquires a panel it never decided on, which is the upgrade moving the
+        bar under somebody."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, status="Open")
+            self._seats(root)
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0, err)
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertIsNone(state.get("signoff_panel"), state)
+            self.assertNotIn("sign-off panel", out)
+
+    def test_an_unassignable_panel_refuses_at_plan_time_and_leaves_no_run(self) -> None:
+        """Mutant: swallow the resolution error and open the run anyway - the failure surfaces
+        hours later, at a close that cannot be satisfied, over a batch already delivered. And a
+        HALF-opened run is worse than none: the next plan of any other batch is refused as
+        disjoint against it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, status="Open")
+            self._seats(root)
+            self._cfg(root, "review:\n  signoff: panel\n")
+            # The seat RESOLVER fails - a project whose cards cannot be rendered. Patched one
+            # level BELOW `signoff_panel`, so its own disjointness logic still runs and this
+            # tests the plan's handling of a failure rather than a stub of the thing under test.
+            import persona_resolve as pres
+            self.addCleanup(setattr, pres, "amigo_panel", pres.amigo_panel)
+            def unresolvable(*a, **k):
+                raise pres.RenderError("no seat card could be rendered")
+            pres.amigo_panel = unresolvable
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 2, out)
+            self.assertIn("sign-off panel could not be assigned", err)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists(),
+                             "a run was left half-opened behind a panel that cannot be built")
+
+
 class SeatWsjfTests(unittest.TestCase):
     """CR0099: seat-scored WSJF ordering, with graceful fallback."""
 

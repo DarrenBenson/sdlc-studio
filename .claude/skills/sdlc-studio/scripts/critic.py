@@ -38,8 +38,24 @@ PHASES = ("delivery", "plan-review")
 _FILE = {"delivery": "critic-verdicts.md", "plan-review": "plan-review-verdicts.md"}
 # Delivery header is byte-identical to the original (a freshly created delivery log must not
 # change); plan-review has its own title/prose. Both share the row schema.
-_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Issues |\n"
-          "| --- | --- | --- | --- | --- | --- | --- |\n")
+_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
+          "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+#: The review depths. `full` is the adversarial pass - mutations, boundaries, silent-failure
+#: paths, claims verified by execution. `light` is the bounded pass a low-risk unit earns.
+TIERS = ("full", "light")
+#: What an operator's explicit `--tier` records, so their choice is distinguishable from a
+#: derived one. A tier nobody chose and a tier somebody chose are different facts about a
+#: review, and a record that cannot tell them apart cannot be used to judge the derivation.
+EXPLICIT_SUFFIX = " (explicit)"
+#: The band-to-tier table, declared ONCE. `route.estimate` bands every unit trivial / low /
+#: medium / high / extreme; only the bottom two earn the bounded pass. Measured over this
+#: repository's 1,171 stories and bugs the split is 183 light to 988 full, which is what makes
+#: this a gate rather than a config key wearing the appearance of one.
+BAND_TIER = {"trivial": "light", "low": "light",
+             "medium": "full", "high": "full", "extreme": "full"}
+#: An unresolvable band tiers FULL. Unknown risk fails towards the deeper review, because the
+#: cost of a needless full pass is tokens and the cost of a needless light one is a defect.
+UNKNOWN_BAND_TIER = "full"
 #: The plan-review table carries one more column: WHICH pre-code artefact was judged. Without
 #: it a verdict is keyed by unit and phase alone, so the moment a second pre-code gate exists
 #: one approval discharges both and neither reviewer read the other's artefact. Nothing in the
@@ -75,8 +91,16 @@ def _header(phase: str) -> str:
 
 
 HEADER = _HEADERS["delivery"]
+#: The seven-column shape both logs shared before either grew its eighth column. Still the
+#: reader for any row written then - and the row is complete, not damaged: it simply predates
+#: the distinction its phase now records.
 _COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "issues")
+_DELIVERY_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "tier", "issues")
 _PLAN_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "kind", "issues")
+#: Each phase's own eight-column shape. The two logs diverge because they record different
+#: facts - a delivery verdict has a review DEPTH, a plan review has an ARTEFACT - and forcing
+#: one schema on both would put a meaningless column in each.
+_COLS_BY_PHASE = {"delivery": _DELIVERY_COLS, "plan-review": _PLAN_COLS}
 
 
 
@@ -142,7 +166,8 @@ def _clean(value: str) -> str:
 def record_verdict(repo_root: Path | str, unit: str, verdict: str,
                    reviewer: str = "independent-critic", author: str = "",
                    issues: str = "", phase: str = "delivery", brief: str = "",
-                   kind: str | None = None) -> Path:
+                   kind: str | None = None, tier: str | None = None,
+                   tier_explicit: bool = False) -> Path:
     """Append a critic verdict for a unit (creating the table if absent).
 
     `author` is the authoring seat / delegation instance id that produced the diff
@@ -166,6 +191,10 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
                 f"unknown plan-review kind {kind!r} - expected one of "
                 f"{', '.join(PLAN_REVIEW_KINDS)}. A kind names the artefact the review judged; "
                 f"a value outside the vocabulary would record a row no gate can ever match.")
+        if tier is not None:
+            raise ValueError(
+                "`tier` is the DELIVERY review's depth and has no meaning on a plan review, "
+                "which judges an artefact rather than a diff.")
     elif kind is not None:
         raise ValueError(
             f"`kind` names which PRE-CODE artefact a plan review judged and has no meaning on "
@@ -180,14 +209,24 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
     # row passed as independently reviewed. Flooring here means the empty case is visible in the
     # log as well as refused by the predicate - a reader can see the cell is blank rather than
     # meeting a row that merely looks unremarkable.
-    kind_cell = f"{_clean(kind)} | " if phase == "plan-review" else ""
+    if phase == "delivery" and tier is not None and tier not in TIERS:
+        raise ValueError(f"unknown review tier {tier!r} - expected one of {', '.join(TIERS)}")
+    if phase == "plan-review":
+        extra_cell = f"{_clean(kind)} | "
+    else:
+        # ABSENT is `-`, not a defaulted `full`. A verdict recorded without a tier genuinely
+        # cannot say at what depth it was taken, and reading absence as `full` would let every
+        # historical row claim a depth nobody recorded - the exact over-claim the Brief column
+        # was added to stop.
+        recorded = f"{tier}{EXPLICIT_SUFFIX if tier_explicit else ''}" if tier else "-"
+        extra_cell = f"{_clean(recorded)} | "
     row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer) or '-'} | "
            f"{_clean(author) or '-'} | "
-           f"{sdlc_md.now_date()} | {_clean(brief) or '-'} | {kind_cell}"
+           f"{sdlc_md.now_date()} | {_clean(brief) or '-'} | {extra_cell}"
            f"{_clean(issues) or '-'} |\n")
     _ensure_brief_column(path)
-    if phase == "plan-review":
-        _ensure_kind_column(path)
+    _ensure_eighth_column(path, "Kind" if phase == "plan-review" else "Tier",
+                          DEFAULT_PLAN_KIND if phase == "plan-review" else "-")
     _write_verdict_row(path, row)
     return path
 
@@ -229,26 +268,63 @@ def _ensure_brief_column(path: Path) -> None:
         return
 
 
-def _ensure_kind_column(path: Path) -> None:
-    """Widen a pre-Kind plan-review table in place, padding existing rows with `spec`.
+def _ensure_trailing_column(path: Path, first_cell: str, name: str, pad: str) -> None:
+    """Widen a table by APPENDING a column, padding existing rows with `pad`.
 
-    The SAME migration shape as `_ensure_brief_column`, and for the same reason: the header is
-    written once, so a log created before the column keeps a seven-column header while new rows
-    carry eight - not a valid markdown table, and markdownlint MD056 refuses the commit.
+    The sibling of `_ensure_eighth_column`, which inserts before a named column. Appending is
+    what lets `_read_rows` keep reading a short row: every column this family has gained went on
+    the end, so a row missing trailing cells is one written before the newest column rather than
+    a damaged one. Inserting in the middle would make a short row unreadable - and silently
+    un-signing every historical sign-off is exactly the kind of quiet loss this repository files
+    bugs about.
+    """
+    if not path.exists():
+        return
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if not line.lstrip().startswith(f"| {first_cell} |"):
+            continue
+        if f"| {name} |" in line:
+            return
+        width = len(sdlc_md.table_cells(line))
+        lines[i] = line.rstrip("\n").rstrip() + f" {name} |\n"
+        if i + 1 < len(lines) and set(lines[i + 1].strip()) <= set("|-: "):
+            lines[i + 1] = lines[i + 1].rstrip("\n").rstrip() + " --- |\n"
+        for j in range(i + 2, len(lines)):
+            if not lines[j].lstrip().startswith("|"):
+                break
+            if len(sdlc_md.table_cells(lines[j])) != width:
+                continue
+            lines[j] = lines[j].rstrip("\n").rstrip() + f" {pad} |\n"
+        path.write_text("".join(lines), encoding="utf-8")
+        return
 
-    The pad is `spec`, not `-`. Only one kind of plan review has ever existed, so that is a FACT
-    about those rows rather than an assumption about them, and it is what keeps every historical
-    approval counting: padding `-` would stop `plan_review.gate` recognising approvals it honours
-    today and refuse units it currently passes.
+
+def _ensure_eighth_column(path: Path, name: str, pad: str) -> None:
+    """Widen a seven-column verdict table in place, padding existing rows with `pad`.
+
+    ONE migration for both logs, because they grew their eighth column for the same reason and
+    would otherwise carry two copies of this loop (LL0016). `name` is `Kind` on the plan-review
+    log and `Tier` on the delivery one; `pad` is what a row written before the column honestly
+    means - `spec` for a kind, because only one kind was ever reviewed, and `-` for a tier,
+    because a verdict taken before the column genuinely cannot say at what depth it was taken.
+
+    The header is written once, when a log is created, so a log that predates the column keeps a
+    seven-column header while new rows carry eight - not a valid markdown table, and markdownlint
+    MD056 refuses the commit.
+
+    This PADS rather than rewrites: every recorded cell keeps its value and its position. This
+    sprint already watched a column added to VELOCITY.md shift every historical row, so that the
+    estimate column read back the actual - the same mistake, one file over.
     """
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines(keepends=True)
     for i, line in enumerate(lines):
         if not line.lstrip().startswith("| Unit |"):
             continue
-        if "| Kind |" in line:
+        if f"| {name} |" in line:
             return
-        lines[i] = line.replace("| Issues |", "| Kind | Issues |", 1)
+        lines[i] = line.replace("| Issues |", f"| {name} | Issues |", 1)
         if i + 1 < len(lines) and set(lines[i + 1].strip()) <= set("|-: "):
             lines[i + 1] = lines[i + 1].replace("| --- |", "| --- | --- |", 1)
         for j in range(i + 2, len(lines)):
@@ -259,7 +335,7 @@ def _ensure_kind_column(path: Path) -> None:
             body = lines[j].rstrip("\n").rstrip()
             body = body[:-1].rstrip() if body.endswith("|") else body
             head, _, last = body.rpartition("|")
-            lines[j] = f"{head}| {DEFAULT_PLAN_KIND} |{last.rstrip()} |\n"
+            lines[j] = f"{head}| {pad} |{last.rstrip()} |\n"
         path.write_text("".join(lines), encoding="utf-8")
         return
 
@@ -308,8 +384,8 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
         cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
         if not cells or cells[0] in ("Unit",):
             continue
-        if len(cells) == 8 and phase == "plan-review":
-            out.append(dict(zip(_PLAN_COLS, cells)))
+        if len(cells) == 8:
+            out.append(dict(zip(_COLS_BY_PHASE[phase], cells)))
         elif len(cells) == 7:
             row = dict(zip(_COLS, cells))
             if phase == "plan-review":
@@ -318,6 +394,10 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
                 # and reading them as UNKNOWN would stop every historical approval counting
                 # and make `transition` refuse units it passes today.
                 row["kind"] = DEFAULT_PLAN_KIND
+            else:
+                # A tier is UNKNOWN on such a row, never `full`. Absent and full are different
+                # facts, and only absent is true of a verdict taken before the column existed.
+                row["tier"] = ""
             out.append(row)
         elif len(cells) == 6:  # pre-brief: Unit, Verdict, Reviewer, Author, Date, Issues.
             # Read, never rewritten. Every verdict recorded before the brief column existed is a
@@ -329,12 +409,16 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
             older["brief"] = ""
             if phase == "plan-review":
                 older["kind"] = DEFAULT_PLAN_KIND
+            else:
+                older["tier"] = ""
             out.append(older)
         elif len(cells) == 5:  # legacy: Unit, Verdict, Reviewer, Date, Issues
             legacy = dict(zip(("unit", "verdict", "reviewer", "date", "issues"), cells))
             legacy["author"] = ""
             if phase == "plan-review":
                 legacy["kind"] = DEFAULT_PLAN_KIND
+            else:
+                legacy["tier"] = ""
             out.append(legacy)
         else:
             # A row that is neither current (6 cols) nor legacy (5) - a torn write from a
@@ -633,14 +717,25 @@ _SIGNOFF_HEADER = (
     "> Append-only. The independent principal's sign-off per unit. The principal is\n"
     "> never the author nor an authoring-session subagent; a delegated sign-off\n"
     "> records the chain (delegator -> delegate, trust boundary named).\n\n"
-    "| Unit | Principal | Chain | Author | Date | Note |\n"
-    "| --- | --- | --- | --- | --- | --- |\n")
+    "> Capacity says WHO judged: `human` for a person, `seat` for a named amigo seat.\n\n"
+    "| Unit | Principal | Chain | Author | Date | Note | Capacity |\n"
+    "| --- | --- | --- | --- | --- | --- | --- |\n")
 _EVIDENCE_COLS = ("unit", "reviewer", "author", "date", "findings")
 #: A REPAIR answers a REJECT. `closed` carries one `<finding> -> <evidence>` item per finding
 #: the repair closes, and `disposition` records fixed-vs-filed per item; both ride on the text
 #: for the same reason `--issues` does - the writers keep one channel in step, not two.
 _REPAIR_COLS = ("unit", "verdict_date", "author", "date", "closed", "outstanding")
-_SIGNOFF_COLS = ("unit", "principal", "chain", "author", "date", "note")
+_SIGNOFF_COLS = ("unit", "principal", "chain", "author", "date", "note", "capacity")
+#: In what CAPACITY the reviewer of record signed. A panel sign-off was distinguishable only by
+#: string-matching the `panel(...)` marker inside the free-text chain - a fact a reader can find
+#: and a filter cannot rely on. The point is transparency about WHO judged, not a simulation of
+#: a human having done it, and transparency a machine cannot read is transparency in name only.
+CAPACITY_SEAT = "seat"
+CAPACITY_HUMAN = "human"
+#: What a row written before the column existed reads as. UNKNOWN, never `seat`: the direction
+#: this must not fail in is a machine's signature being taken for a person's, and every such row
+#: predates seat sign-off entirely.
+CAPACITY_UNKNOWN = ""
 
 
 def evidence_path(repo_root: Path | str) -> Path:
@@ -702,11 +797,19 @@ def _read_rows(path: Path, cols: tuple[str, ...]) -> list[dict]:
     out: list[dict] = []
     for line in path.read_text(encoding="utf-8").splitlines():
         cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
-        if not cells or len(cells) != len(cols):
+        # A row SHORT by trailing columns is read, with those columns absent. Every column this
+        # family has ever gained was appended, so a short row is one written before the newest
+        # column and is complete for its own era. Requiring an exact width dropped such a row
+        # entirely - which for the sign-off log would have silently un-signed every unit signed
+        # before the Capacity column, and the two-role gate would have started refusing them.
+        if not cells or not (len(cols) - 1 <= len(cells) <= len(cols)):
             continue
-        if tuple(c.strip().lower() for c in cells) == header:
+        if tuple(c.strip().lower() for c in cells) == header[:len(cells)]:
             continue
-        out.append(dict(zip(cols, cells)))
+        row = dict(zip(cols, cells))
+        for missing in cols[len(cells):]:
+            row[missing] = ""
+        out.append(row)
     return out
 
 
@@ -1079,7 +1182,8 @@ def _seat_role(who: str) -> str:
 
 def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str,
                    delegate: str | None = None, boundary: str | None = None,
-                   note: str = "", panel: list | None = None) -> Path:
+                   note: str = "", panel: list | None = None,
+                   capacity: str | None = None) -> Path:
     """Append the reviewer-of-record sign-off for a unit.
 
     Direct form: `principal` (the operator by default) signs; chain is `-`.
@@ -1171,9 +1275,17 @@ def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str
             f"principal {effective!r} is an authoring-session subagent (a recorded "
             "reviewer on this unit) - the reviewer of record must sit outside the "
             "author's control, or be recorded as a disclosed delegation; refused")
+    # DERIVED, not asked for, unless the caller states it: a panel signs as a seat and anyone
+    # else signs as a human. A caller that had to remember to pass it would eventually forget,
+    # and the value it forgot would be the one that matters.
+    who = capacity or (CAPACITY_SEAT if panel else CAPACITY_HUMAN)
+    if who not in (CAPACITY_SEAT, CAPACITY_HUMAN):
+        raise ValueError(f"unknown sign-off capacity {who!r} - expected "
+                         f"{CAPACITY_SEAT!r} or {CAPACITY_HUMAN!r}")
+    _ensure_trailing_column(signoff_path(repo_root), "Unit", "Capacity", "-")
     return _append_row(signoff_path(repo_root), _SIGNOFF_HEADER,
                        (sdlc_md.norm_id(unit), _clean(effective), _clean(chain),
-                        _clean(author), sdlc_md.now_date(), _clean(note) or "-"))
+                        _clean(author), sdlc_md.now_date(), _clean(note) or "-", who))
 
 
 def signoff_for(repo_root: Path | str, unit: str):
@@ -2487,6 +2599,35 @@ def assert_brief_claim_pass(brief_text: str) -> None:
                              f"is marked TRUE, FALSE or UNVERIFIABLE; refused")
 
 
+def tier_for(repo_root: Path | str, unit: str) -> str:
+    """The review depth this unit's RISK earns, derived from `route.estimate`'s band.
+
+    `route.py` says it in its own header - "Advisory only - no gate reads a tier" - and that has
+    been true since the score was built: a deterministic 0-100 difficulty with bands and a
+    confidence, stamped on every unit at plan time and consumed by nothing but `plan_review`.
+    This is the consumer. A unit whose blast radius is small stops paying a large unit's review,
+    which is the whole of CR0510's thesis in one function.
+
+    `plan_review._difficulty_band` is REUSED rather than reimplemented. It already resolves the
+    band for a unit whether or not the unit is on disk, and a second resolver here would be two
+    answers to "how risky is this", drifting the moment either is touched.
+
+    Fails towards `full`: an unresolvable band, an unknown band name, an unreadable unit. The
+    cost of a needless full pass is tokens; the cost of a needless light one is a defect that
+    ships. That asymmetry decides the default, not neatness.
+    """
+    try:
+        import plan_review  # noqa: PLC0415 - deferred; brief() must not pay for it unused
+        found = sdlc_md.find_by_id(Path(repo_root), unit)
+        if not found:
+            return UNKNOWN_BAND_TIER
+        path, _type = found
+        band = plan_review._difficulty_band(Path(repo_root), sdlc_md.read_text_safe(path), path)  # noqa: SLF001
+    except Exception:  # noqa: BLE001 - a difficulty read must never break a brief
+        return UNKNOWN_BAND_TIER
+    return BAND_TIER.get(band or "", UNKNOWN_BAND_TIER)
+
+
 def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> str:
     """The seat-review prompt, assembled deterministically.
 
@@ -2511,11 +2652,20 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
     affects = sdlc_md.affects_files(text)
     scope = (", ".join(affects) if affects
              else "(no Affects declared - derive the scope from git status)")
+    full_tier = tier == "full"
     depth = ("Full adversarial pass: try to make each test FAIL (mutations), probe "
              "boundaries and silent-failure paths, verify claims by EXECUTION, not reading."
-             if tier == "full" else
+             if full_tier else
              "Lighter independent pass (mechanical/doc-tier unit): check the change does "
              "what its ACs say and nothing else; run the named suite once.")
+    # THE BOUNDED BRIEF. The claim-inventory pass reads every Resolution, docstring, comment and
+    # CHANGELOG line in scope and rules on each - a finding generator by construction, and the
+    # single largest block in this prompt. On a low-band unit it costs more than the unit does.
+    #
+    # Derived from the SAME `tier` value as the depth line above, deliberately: a brief that
+    # announced a lighter pass while carrying the full claim inventory would be two decisions
+    # where there is one, and they would disagree the first time either moved.
+    inventory = f"{_CLAIM_INVENTORY_BLOCK}\n\n" if full_tier else ""
     unit_id = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
     title = sdlc_md.extract_h1_title(text) or unit_id
     return f"""You are the {seat} review seat. Read and adopt the charter at
@@ -2536,9 +2686,7 @@ Acceptance criteria (canonical - judge against THESE, not a paraphrase):
 
 Review depth: {depth}
 
-{_CLAIM_INVENTORY_BLOCK}
-
-{_REVIEW_PRACTICES_BLOCK}
+{inventory}{_REVIEW_PRACTICES_BLOCK}
 
 {_RETURN_CONTRACT}"""
 
@@ -3043,16 +3191,26 @@ def cmd_brief(args: argparse.Namespace) -> int:
             src = args.rejoinder
             prior = (sys.stdin.read() if src == "-"
                      else Path(src).read_text(encoding="utf-8"))
-            print(rejoinder_brief(args.root, args.unit, args.seat, prior, args.tier))
+            print(rejoinder_brief(args.root, args.unit, args.seat, prior,
+                                  args.tier or tier_for(args.root, args.unit)))
         else:
-            text = brief(args.root, args.unit, args.seat, args.tier)
+            # DERIVED unless the operator named one. `--tier` no longer defaults to `full`
+            # in the parser: a default there is indistinguishable from a choice, and the
+            # record has to be able to tell them apart to judge whether the derivation works.
+            explicit = args.tier is not None
+            tier = args.tier or tier_for(args.root, args.unit)
+            text = brief(args.root, args.unit, args.seat, tier)
             print(text)
             # On stderr so the brief itself stays pipeable, and stated as the next command so
-            # a reviewer does not have to know the flag exists.
-            print(f"\nbrief fingerprint: {brief_fingerprint(text)}\n"
+            # a reviewer does not have to know the flag exists. The tier is carried INTO that
+            # command: a tier printed and not recorded is the state this whole flag was in.
+            how = "chosen" if explicit else "derived from the unit's risk band"
+            print(f"\nreview tier: {tier} ({how})\n"
+                  f"brief fingerprint: {brief_fingerprint(text)}\n"
                   f"  record the verdict with:  critic.py record --unit "
                   f"{sdlc_md.norm_id(args.unit)} --verdict <APPROVE|REJECT> "
-                  f"--brief {brief_fingerprint(text)} ...", file=sys.stderr)
+                  f"--brief {brief_fingerprint(text)} --tier {tier}"
+                  f"{' --tier-explicit' if explicit else ''} ...", file=sys.stderr)
     except (OSError, ValueError) as exc:
         print(f"brief refused: {exc}", file=sys.stderr)
         return 2
@@ -3260,7 +3418,9 @@ def cmd_record(args: argparse.Namespace) -> int:
                       file=sys.stderr)
         path = record_verdict(args.root, unit, args.verdict, args.reviewer,
                               args.author, args.issues, args.phase, brief,
-                              kind=getattr(args, "kind", None))
+                              kind=getattr(args, "kind", None),
+                              tier=getattr(args, "tier", None),
+                              tier_explicit=getattr(args, "tier_explicit", False))
         note = ("" if _id(args.author) != _id(args.reviewer)
                 else "  (WARNING: self-review - blocked at the gate)")
         print(f"recorded {sdlc_md.norm_id(unit)} {args.verdict.upper()} "
@@ -3599,6 +3759,13 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--phase", choices=PHASES, default="delivery",
                    help="delivery (default, the conformance critique gate) or plan-review "
                         "(the pre-implementation AC-vs-spec check); each has its own log")
+    r.add_argument("--tier", choices=TIERS, default=None,
+                   help="DELIVERY ONLY: the depth this review was taken at, as `critic.py "
+                        "brief` reported it. A light verdict does not cover a unit the risk "
+                        "band tiers full; an absent tier is UNKNOWN and covers, so no "
+                        "historical verdict is retrospectively downgraded")
+    r.add_argument("--tier-explicit", action="store_true",
+                   help="mark the tier as an operator's choice rather than a derived one")
     r.add_argument("--kind", choices=PLAN_REVIEW_KINDS, default=None,
                    help="PLAN-REVIEW ONLY: which pre-code artefact was judged (default "
                         f"{DEFAULT_PLAN_KIND}). A gate asks for an approval of ITS artefact, so "
@@ -3610,7 +3777,11 @@ def build_parser() -> argparse.ArgumentParser:
                                      "(charter + ACs + scope + return contract).")
     b.add_argument("--unit", required=True)
     b.add_argument("--seat", required=True, help="a card under sdlc-studio/personas/seats/")
-    b.add_argument("--tier", choices=("full", "light"), default="full")
+    b.add_argument("--tier", choices=TIERS, default=None,
+                   help="override the tier DERIVED from the unit's risk band. Omit it and the "
+                        "band decides: a low-band unit gets a bounded brief, a medium-or-worse "
+                        "one gets the full adversarial pass. An explicit choice is recorded as "
+                        "one, so the derivation can be judged against the reviews it produced")
     b.add_argument("--rejoinder", metavar="FILE|-", default=None,
                    help="emit the RE-REVIEW brief from the prior verdict file (or stdin "
                         "with -): prior verdict quoted verbatim, re-execute-your-probes "

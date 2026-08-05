@@ -308,6 +308,11 @@ def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:
 HALF_VERDICT = "independent APPROVE verdict"
 HALF_EVIDENCE = "adversarial-pass evidence"
 HALF_SIGNOFF = "reviewer-of-record sign-off"
+#: Named separately from HALF_VERDICT because the remedy is different in kind. A missing
+#: verdict needs somebody to review; a light verdict on a high-band unit needs the SAME
+#: reviewer to go deeper, and telling them "no independent APPROVE verdict" when one is
+#: sitting in the log would send them to look for something that is already there.
+HALF_TIER = "a review at the depth this unit's risk band demands"
 
 
 def two_role_applies_to(rid: str, two_role_cutoff: int | None) -> bool:
@@ -346,10 +351,43 @@ def verdict_half_ok(root, rid, sprint_covers: bool) -> bool:
     per_unit_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
                    and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
     if per_unit_ok:
-        return True
+        return tier_covers(root, rid, verdict)
     if verdict and str(verdict.get("verdict") or "").upper() == critic.REJECT:
         return critic.repair_state(root, rid)["state"] == "complete"
     return verdict is None and sprint_covers
+
+
+def tier_covers(root, rid, verdict: dict | None) -> bool:
+    """Does this verdict's review DEPTH match what the unit's risk band demands?
+
+    This is what stops `critic brief --tier` being cosmetic. The flag has existed since the
+    tiering was built and substituted one sentence into a prompt: never recorded, never read,
+    never checked - so a reviewer could take the bounded pass on the riskiest unit in a batch
+    and nothing downstream could tell. Deriving the tier and recording it buys nothing until
+    something REFUSES on it, and this is that something.
+
+    Three answers, and the direction of each is chosen rather than incidental:
+
+      * no recorded tier -> COVERS. Every verdict written before the column exists is in this
+        state, and applying the rule backwards would re-open every closed unit in the corpus
+        for a fact nobody could have recorded.
+      * a tier at least as deep as the band demands -> COVERS.
+      * a `light` verdict on a unit the band tiers `full` -> DOES NOT cover.
+
+    A band that cannot be resolved demands `full`, so an unreadable unit fails towards
+    demanding the deeper review rather than accepting the shallower one.
+    """
+    # ONE condition, stated positively: only a recorded `light` can fail. Every other value
+    # covers, and that is deliberate rather than incidental - it is what makes the two spellings
+    # of absent (`-` from the current writer, nothing at all from a row that predates the
+    # column) and any future tier name all fail in the SAFE direction without a branch each.
+    #
+    # The first version guarded absence explicitly and one of those guards was unreachable. A
+    # mutation pass found it: deleting it changed no behaviour, which is the definition of dead
+    # code, and dead code beside a comment describing it as load-bearing is what this repository
+    # files bugs about.
+    depth = str((verdict or {}).get("tier") or "").strip().split(" ")[0]
+    return not (depth == "light" and critic.tier_for(root, rid) == "full")
 
 
 def critiqued_unmet(root, rid, two_role_cutoff: int | None,
@@ -375,7 +413,13 @@ def critiqued_unmet(root, rid, two_role_cutoff: int | None,
     # lane accepts, which is the same two-answers-to-one-question defect pointing the other way.
     # The vocabulary is shared either way, which is what stops the two drifting.
     if critic_required and not verdict_ok and not two_role_only:
-        unmet.append(HALF_VERDICT)
+        # WHICH of the two it is, so the remedy fits. An APPROVE that is independent and fails
+        # only on depth is a different state from no approval at all.
+        approve_but_shallow = (bool(verdict) and verdict["verdict"] == critic.APPROVE
+                               and (critic.is_independent(verdict)
+                                    or critic.is_pre_gate(verdict))
+                               and not tier_covers(root, rid, verdict))
+        unmet.append(HALF_TIER if approve_but_shallow else HALF_VERDICT)
     if two_role_applies_to(rid, two_role_cutoff):
         if not (bool(critic.evidence_for(root, rid)) or sprint_covers):
             unmet.append(HALF_EVIDENCE)

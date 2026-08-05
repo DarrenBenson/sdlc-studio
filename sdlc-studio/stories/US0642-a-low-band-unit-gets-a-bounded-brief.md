@@ -25,6 +25,7 @@
 - **Then** the full brief carries the claim-inventory block and the light brief does not
 - **Mutant:** emit the block unconditionally - the light assertion reddens and the bounded brief buys nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BoundedBriefTests::test_the_claim_inventory_runs_at_full_tier_and_not_at_light
+- **Verified:** yes (2026-08-05)
 
 ### AC2: the depth line and the omissions come from one decision
 
@@ -33,6 +34,7 @@
 - **Then** a brief that announces a lighter pass never carries a section the light tier omits, because the two are derived from the same tier value rather than written beside each other
 - **Mutant:** hard-code the depth sentence independently of the section switch - a brief says light and reads full
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BoundedBriefTests::test_the_depth_line_and_the_sections_agree
+- **Verified:** yes (2026-08-05)
 
 ### AC3: bounding the light tier does not weaken the full one
 
@@ -41,6 +43,7 @@
 - **Then** the existing refusal still fires and names the missing surface
 - **Mutant:** relax the full-tier validation while adding the light path - the enumeration guard stops guarding
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BoundedBriefTests::test_the_full_tier_enumeration_refusal_still_fires
+- **Verified:** yes (2026-08-05)
 
 ### AC4: what a light brief keeps is stated, not left to whatever survived
 
@@ -49,6 +52,7 @@
 - **Then** it still carries the seat charter, the bounded diff scope, the canonical acceptance criteria and the return contract, because those four are what make it a briefed review rather than a hand-written prompt
 - **Mutant:** drop the criteria from the light brief - a light review judges against a paraphrase, which is the failure the shipped brief exists to prevent
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BoundedBriefTests::test_a_light_brief_keeps_the_four_load_bearing_parts
+- **Verified:** yes (2026-08-05)
 
 ## Revision History
 

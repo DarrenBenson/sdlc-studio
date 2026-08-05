@@ -1429,7 +1429,124 @@ class ThreeStateCoverageTests(unittest.TestCase):
                          "(independent APPROVE verdict)` - the same words used for a unit "
                          "nobody opened")
 
+class TierCoverageTests(unittest.TestCase):
+    """US0641: the third step, and the only one that makes the other two worth anything.
 
+    Deriving a tier and recording it buys nothing until something REFUSES on it. `critic brief
+    --tier` was never recorded, never read and never checked, so a reviewer could take the
+    bounded pass on the riskiest unit in a batch and no gate downstream could tell.
+    """
+
+    def _unit(self, root: Path, uid: str, *, heavy: bool) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        if heavy:
+            for i in range(5):
+                fp = root / f"src/mod{i}.py"
+                fp.parent.mkdir(parents=True, exist_ok=True)
+                fp.write_text("def f():\n" + "    if True:\n        pass\n" * 40,
+                              encoding="utf-8")
+            affects = ", ".join(f"src/mod{i}.py" for i in range(5))
+            points = 13
+        else:
+            fp = root / "docs" / "note.md"
+            fp.parent.mkdir(parents=True, exist_ok=True)
+            fp.write_text("a note\n", encoding="utf-8")
+            affects, points = "docs/note.md", 1
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: sample\n\n> **Status:** Done\n> **Affects:** {affects}\n"
+            f"> **Points:** {points}\n\n## Acceptance Criteria\n\n### AC1: works\n"
+            f"- **Given** a thing\n- **Verify:** shell echo ok\n"
+            f"- **Verified:** yes (2026-01-01)\n", encoding="utf-8")
+
+    def test_a_light_verdict_does_not_cover_a_full_tier_unit(self) -> None:
+        """Mutant: ignore the tier in coverage - the light verdict reads as coverage, and the
+        whole of the deriving and recording buys exactly nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root, "US0002", heavy=True)
+            self.assertEqual(mod.critic.tier_for(root, "US0002"), "full",
+                             "the fixture does not band high - it proves nothing")
+            mod.critic.record_verdict(root, "US0002", "approve", reviewer="qa", author="dev",
+                                      tier="light")
+            v = mod.critic.verdict_for(root, "US0002")
+            self.assertFalse(mod.tier_covers(root, "US0002", v))
+            self.assertFalse(mod.verdict_half_ok(root, "US0002", sprint_covers=False))
+            # ...and the operator is told WHICH thing is missing, not sent to look for an
+            # approval that is sitting in the log
+            unmet = mod.critiqued_unmet(root, "US0002", two_role_cutoff=None)
+            self.assertIn(mod.HALF_TIER, unmet)
+            self.assertNotIn(mod.HALF_VERDICT, unmet)
+
+    def test_an_explicitly_chosen_light_tier_still_does_not_cover(self) -> None:
+        """An operator's `--tier light` records a CHOICE, and the choice is visible - but it does
+        not stand the gate down. A gate an operator can disarm with an undeclared flag is not a
+        gate; standing it down is what a recorded decision is for.
+
+        Mutant: compare the cell without splitting the `(explicit)` suffix off - `light
+        (explicit)` stops matching `light`, and an explicit choice silently clears the gate that
+        the identical derived choice does not. Found by mutation; no test reached this cell
+        shape before.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root, "US0002", heavy=True)
+            mod.critic.record_verdict(root, "US0002", "approve", reviewer="qa", author="dev",
+                                      tier="light", tier_explicit=True)
+            self.assertIn("explicit", mod.critic.verdict_for(root, "US0002")["tier"])
+            self.assertFalse(mod.verdict_half_ok(root, "US0002", sprint_covers=False))
+
+    def test_a_full_verdict_covers_a_full_tier_unit(self) -> None:
+        """The positive control. Without it a predicate that refuses every tiered verdict
+        passes the criterion above for the wrong reason."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root, "US0002", heavy=True)
+            mod.critic.record_verdict(root, "US0002", "approve", reviewer="qa", author="dev",
+                                      tier="full")
+            self.assertTrue(mod.verdict_half_ok(root, "US0002", sprint_covers=False))
+
+    def test_a_light_verdict_covers_a_low_band_unit(self) -> None:
+        """The point of the whole slice: a small unit stops paying a large unit's review.
+        Mutant: demand `full` everywhere - the tiering is a no-op wearing a config key."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root, "US0003", heavy=False)
+            self.assertEqual(mod.critic.tier_for(root, "US0003"), "light")
+            mod.critic.record_verdict(root, "US0003", "approve", reviewer="qa", author="dev",
+                                      tier="light")
+            self.assertTrue(mod.verdict_half_ok(root, "US0003", sprint_covers=False))
+
+    def test_a_verdict_recorded_without_a_tier_still_covers(self) -> None:
+        """Mutant: treat absent as light - the rule applies backwards, every historical verdict
+        on a medium-or-worse unit stops covering, and the gate re-opens the closed corpus for a
+        fact nobody could have recorded.
+
+        BOTH spellings of absent, because they are written by different eras and only testing
+        one leaves the other reachable: the current writer puts this file's `-` ABSENT marker in
+        the cell, and a row from before the column existed carries no cell at all. The first
+        version of this test covered only the `-` case, and the mutation pass found it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root, "US0002", heavy=True)
+            mod.critic.record_verdict(root, "US0002", "approve", reviewer="qa", author="dev")
+            self.assertEqual(mod.critic.verdict_for(root, "US0002")["tier"], "-")
+            self.assertTrue(mod.verdict_half_ok(root, "US0002", sprint_covers=False))
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root, "US0002", heavy=True)
+            path = mod.critic.verdicts_path(root, "delivery")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Critic Verdicts\n\n"
+                "| Unit | Verdict | Reviewer | Author | Date | Brief | Issues |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n"
+                "| US0002 | APPROVE | qa | dev | 2026-07-01 | abc123abc123 | - |\n",
+                encoding="utf-8")
+            self.assertEqual(mod.critic.verdict_for(root, "US0002")["tier"], "")
+            self.assertTrue(mod.verdict_half_ok(root, "US0002", sprint_covers=False),
+                            "a verdict from before the column existed stopped covering")
 
 if __name__ == "__main__":
     unittest.main()

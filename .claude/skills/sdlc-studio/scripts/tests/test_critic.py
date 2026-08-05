@@ -489,6 +489,426 @@ def _workspace(root: Path) -> None:
     (seats / "qa.md").write_text("# Sam - QA seat\n\ncharter text\n", encoding="utf-8")
 
 
+def _banded_unit(root: Path, uid: str, *, heavy: bool) -> None:
+    """A unit that bands LOW or HIGH under `route.estimate`, on disk.
+
+    Two knobs move the band without touching the estimator: the number of resolvable Affects
+    paths (the scope subscore) and the declared Points (the spec subscore). A heavy unit
+    declares five real files and 13 points; a light one declares a single doc file and 1 point.
+    Both are ordinary artefacts - nothing here supplies the band itself, which would make every
+    assertion below a statement about the fixture rather than about `route.estimate`.
+    """
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    if heavy:
+        files = [f"src/mod{i}.py" for i in range(5)]
+        for f in files:
+            fp = root / f
+            fp.parent.mkdir(parents=True, exist_ok=True)
+            fp.write_text("def f():\n" + "    if True:\n        pass\n" * 40, encoding="utf-8")
+        affects, points = ", ".join(files), 13
+        acs = "".join(
+            f"### AC{i}: does thing {i}\n\n- **Given** x\n- **When** y\n- **Then** z\n"
+            f"- **Verify:** shell true\n\n" for i in range(1, 10))
+    else:
+        fp = root / "docs" / "note.md"
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        fp.write_text("a note\n", encoding="utf-8")
+        affects, points = "docs/note.md", 1
+        acs = ("### AC1: works\n\n- **Given** x\n- **When** y\n- **Then** z\n"
+               "- **Verify:** shell true\n")
+    (d / f"{uid}-x.md").write_text(
+        f"# {uid}: the thing\n\n> **Status:** In Progress\n"
+        f"> **Affects:** {affects}\n> **Points:** {points}\n\n"
+        f"## Acceptance Criteria\n\n{acs}", encoding="utf-8")
+    seats = root / "sdlc-studio" / "personas" / "seats"
+    seats.mkdir(parents=True, exist_ok=True)
+    (seats / "qa.md").write_text("# Sam - QA seat\n\ncharter text\n", encoding="utf-8")
+
+
+class PanelSignoffCliTests(unittest.TestCase):
+    """US0643 AC4/AC5: the refusals hold through the VERB, not only in the library.
+
+    `critic.py signoff --panel` reads the assignment off the run and refuses a signer other than
+    the one assigned - a check that lives in the CLI path and is invisible to any test that
+    calls `record_signoff` directly. That is LL0040, and it is the failure that let
+    `brief_fingerprint(brief(...))` pass in-process for a whole sprint while the verb printed
+    nothing.
+    """
+
+    def _repo(self, root: Path, mod):
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  signoff: panel\n", encoding="utf-8")
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "US0017-x.md").write_text(
+            "# US0017: a unit\n\n> **Status:** Review\n> **Points:** 3\n\n"
+            "## Acceptance Criteria\n\n- [ ] it behaves\n", encoding="utf-8")
+        # The adversarial verdict, WITH brief provenance - a panel may not ratify a review
+        # nothing can prove was properly briefed.
+        mod.record_verdict(root, "US0017", "approve", reviewer="engineering", author="dev",
+                           brief="abc123abc123")
+        import persona_resolve
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "schema": 1, "run_id": "RUN-PANEL", "started_at": "2026-08-05T00:00:00Z",
+            "ended_at": None, "outcome": "running", "goal": "done", "batch": ["US0017"]}),
+            encoding="utf-8")
+        persona_resolve.signoff_panel(root, record=True)
+        return persona_resolve.recorded_signoff_panel(root)
+
+    def _signoff(self, mod, root, principal, author):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                rc = mod.main(["signoff", "--unit", "US0017", "--principal", principal,
+                               "--author", author, "--panel", "--root", str(root)])
+            except SystemExit as exc:      # argparse-level refusals
+                rc = exc.code
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_the_three_refusals_hold_through_the_shipped_verb(self) -> None:
+        """Mutant: call `record_signoff` directly instead of driving the verb - the assignment
+        lookup is bypassed entirely and the assigned-signer refusal goes untested."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            rec = self._repo(root, mod)
+            signer, adversarial = rec["signer"], rec["adversarial"]
+            for principal, author, why in (
+                (signer, signer, "the author signing"),
+                (adversarial[0], "dev", "an adversarial seat signing"),
+                ("someone-else", "dev", "a signer the run did not assign"),
+            ):
+                rc, page = self._signoff(mod, root, principal, author)
+                self.assertNotEqual(rc, 0, f"{why} was accepted:\n{page}")
+            self.assertFalse(mod.signoff_path(root).exists(),
+                             "a refused sign-off appended a row")
+
+    def test_a_panel_cannot_ratify_a_verdict_with_no_brief_provenance(self) -> None:
+        """The fourth refusal, and the one a fixture that always supplies a brief never reaches -
+        found by mutation, not by reading. It is pre-existing behaviour (the interlock), pinned
+        here because this unit is what makes the panel path reachable: without it the panel
+        LAUNDERS missing provenance instead of catching it, and the sign-off would rest on a
+        review run off a hand-written prompt carrying neither the seat charter, the bounded diff
+        scope, nor the criteria as law.
+
+        Mutant: drop the interlock - an unbriefed verdict is ratified and this reddens.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            rec = self._repo(root, mod)
+            # A LATER verdict with no brief supersedes the briefed one as the latest row
+            mod.record_verdict(root, "US0017", "approve", reviewer="engineering", author="dev")
+            rc, page = self._signoff(mod, root, rec["signer"], "dev")
+            self.assertNotEqual(rc, 0, page)
+            self.assertIn("brief provenance", page)
+            self.assertFalse(mod.signoff_path(root).exists())
+
+    def test_a_correctly_separated_panel_signs(self) -> None:
+        """THE positive control. Without it, an implementation that refuses every panel sign-off
+        passes the criterion above for exactly the wrong reason - and a gate that refuses
+        everything is the failure mode this whole slice is trying to avoid."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            rec = self._repo(root, mod)
+            rc, page = self._signoff(mod, root, rec["signer"], "dev")
+            self.assertEqual(rc, 0, page)
+            row = mod.signoff_for(root, "US0017")
+            self.assertIsNotNone(row, page)
+            self.assertEqual(row["capacity"], mod.CAPACITY_SEAT)
+            self.assertIn("PANEL sign-off in force", page)
+            self.assertTrue(mod.is_independent_signoff(root, "US0017", row))
+
+
+class SignoffCapacityTests(unittest.TestCase):
+    """US0644: a panel sign-off was distinguishable only by string-matching `panel(...)` inside
+    the free-text chain - a fact a reader can find and a filter cannot rely on. The point of
+    recording a seat sign-off is transparency about WHO judged, and transparency a machine
+    cannot read is transparency in name only.
+    """
+
+    def _panel_ready(self, root: Path, mod, uid: str) -> None:
+        """A unit whose adversarial verdict carries brief provenance and whose project has
+        adopted the panel policy - everything `record_signoff(panel=...)` demands."""
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  signoff: panel\n", encoding="utf-8")
+        mod.record_verdict(root, uid, "approve", reviewer="qa", author="dev",
+                           brief="abc123abc123")
+
+    def test_a_panel_signoff_records_capacity_seat(self) -> None:
+        """Mutant: keep the marker in `chain` alone - the field is absent on read-back and a
+        consuming project is back to parsing prose."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._panel_ready(root, mod, "US0017")
+            mod.record_signoff(root, "US0017", principal="product", author="dev",
+                               panel=["engineering"])
+            row = mod.signoff_for(root, "US0017")
+            self.assertEqual(row["capacity"], mod.CAPACITY_SEAT)
+            self.assertIn("| Capacity |",
+                          mod.signoff_path(root).read_text(encoding="utf-8"))
+
+    def test_a_human_signoff_records_capacity_human(self) -> None:
+        """Mutant: write the capacity only for panels - "not a seat" and "a row from before the
+        column" become the same answer, and the filter cannot tell them apart."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            mod.record_signoff(root, "US0017", principal="darren", author="dev")
+            self.assertEqual(mod.signoff_for(root, "US0017")["capacity"], mod.CAPACITY_HUMAN)
+
+    def test_an_absent_capacity_never_reads_as_seat(self) -> None:
+        """The direction this must not fail in is a machine's signature being taken for a
+        person's. Mutant: default an absent capacity to `seat` - every historical sign-off in
+        the corpus starts reading as an AI's."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            path = mod.signoff_path(root)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Reviewer-of-Record Sign-offs\n\n"
+                "| Unit | Principal | Chain | Author | Date | Note |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| US0017 | darren | - | dev | 2026-07-01 | looked fine |\n",
+                encoding="utf-8")
+            row = mod.signoff_for(root, "US0017")
+            self.assertIsNotNone(row, "a historical sign-off stopped being readable")
+            self.assertNotEqual(row["capacity"], mod.CAPACITY_SEAT)
+            self.assertEqual(row["capacity"], mod.CAPACITY_UNKNOWN)
+
+    def test_the_existing_columns_still_parse_and_the_gate_still_reads_them(self) -> None:
+        """A row SHORT by the new trailing column must still be read, or widening the table
+        silently UN-SIGNS every unit signed before it and the two-role gate starts refusing
+        them. Mutant: require an exact width in `_read_rows` - the historical row vanishes and
+        `is_independent_signoff` reports it unsigned."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            path = mod.signoff_path(root)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Reviewer-of-Record Sign-offs\n\n"
+                "| Unit | Principal | Chain | Author | Date | Note |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| US0017 | darren | - | dev | 2026-07-01 | looked fine |\n",
+                encoding="utf-8")
+            row = mod.signoff_for(root, "US0017")
+            self.assertEqual((row["principal"], row["author"], row["chain"], row["note"]),
+                             ("darren", "dev", "-", "looked fine"))
+            self.assertTrue(mod.is_independent_signoff(root, "US0017", row))
+            # ...and a NEW sign-off widens the table without moving a cell of the old row
+            mod.record_signoff(root, "US0018", principal="darren", author="dev")
+            again = mod.signoff_for(root, "US0017")
+            self.assertEqual((again["principal"], again["note"]), ("darren", "looked fine"))
+            lines = [ln for ln in path.read_text(encoding="utf-8").splitlines()
+                     if ln.startswith("|") and not set(ln.strip()) <= set("|-: ")]
+            self.assertEqual({len(mod.sdlc_md.table_cells(ln)) for ln in lines}, {7}, lines)
+
+    def test_an_unknown_capacity_is_refused(self) -> None:
+        """Mutant: accept any string - the one field a reader trusts to say who judged becomes
+        free text again."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0017", principal="p", author="dev",
+                                   capacity="robot")
+
+
+class BriefTierTests(unittest.TestCase):
+    """US0641: `route.py` says it plainly - "Advisory only - no gate reads a tier".
+
+    A deterministic 0-100 difficulty with bands and a confidence has been stamped on every unit
+    at plan time since it was built, and `plan_review` is its only consumer. `critic brief
+    --tier` existed and was cosmetic: one substituted sentence, never recorded, never read,
+    never checked. These pin the three steps that make it real - derived, recorded, READ.
+    """
+
+    def _band(self, root, uid):
+        import importlib.util as _ilu
+        spec = _ilu.spec_from_file_location("route", SCRIPT.parent / "route.py")
+        route = _ilu.module_from_spec(spec)
+        sys.modules["route"] = route
+        spec.loader.exec_module(route)
+        path = next((root / "sdlc-studio" / "stories").glob(f"{uid}-*.md"))
+        return route.estimate(root, path)["difficulty_band"]
+
+    def test_the_tier_is_derived_from_the_band_when_none_is_given(self) -> None:
+        """Mutant: keep the `full` default and ignore the band - both units brief full, and the
+        tiering is exactly as cosmetic as it was."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            _banded_unit(root, "US0001", heavy=False)
+            _banded_unit(root, "US0002", heavy=True)
+            # the fixture must actually band differently, or nothing below discriminates
+            self.assertNotEqual(self._band(root, "US0001"), self._band(root, "US0002"),
+                                "the fixture bands both units the same - it proves nothing")
+            self.assertEqual(mod.tier_for(root, "US0001"), "light")
+            self.assertEqual(mod.tier_for(root, "US0002"), "full")
+
+    def test_an_unresolvable_band_tiers_full(self) -> None:
+        """Mutant: treat a missing band as low - an unestimable unit gets the lighter review,
+        which is the wrong direction for an unknown risk."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            _banded_unit(root, "US0001", heavy=False)
+            self.assertEqual(mod.tier_for(root, "US9999"), "full", "an unknown unit")
+            import plan_review as pr_mod
+            self.addCleanup(setattr, pr_mod, "_difficulty_band", pr_mod._difficulty_band)
+            pr_mod._difficulty_band = lambda *a, **k: None
+            self.assertEqual(mod.tier_for(root, "US0001"), "full", "an unresolvable band")
+            def boom(*a, **k):
+                raise RuntimeError("the estimator died")
+            pr_mod._difficulty_band = boom
+            self.assertEqual(mod.tier_for(root, "US0001"), "full", "a raising estimator")
+
+    def test_the_tier_is_a_parsed_field_on_the_verdict(self) -> None:
+        """Mutant: write the tier into the issues prose - the field is empty on read-back and
+        nothing downstream can act on it, which is where `--tier` already was."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            mod.record_verdict(root, "US0001", "approve", reviewer="qa", author="dev",
+                               tier="light")
+            self.assertEqual(mod.verdict_for(root, "US0001")["tier"], "light")
+            self.assertIn("| Tier |",
+                          mod.verdicts_path(root, "delivery").read_text(encoding="utf-8"))
+
+    def test_a_verdict_recorded_without_a_tier_reads_as_absent_not_full(self) -> None:
+        """Absent and `full` are different facts, and only absent is true of a verdict taken
+        before the column existed. Mutant: default the cell to `full` - every historical row
+        claims a depth nobody recorded, which is the over-claim the Brief column was added to
+        stop, repeated one column along."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            mod.record_verdict(root, "US0001", "approve", reviewer="qa", author="dev")
+            self.assertEqual(mod.verdict_for(root, "US0001")["tier"], "-")
+
+    def test_an_explicit_tier_overrides_the_derivation_and_is_recorded_as_explicit(self) -> None:
+        """Mutant: let the derivation win over the flag - an operator cannot ask for a deeper
+        pass than the band demands, and the record cannot tell a choice from a default."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            _banded_unit(root, "US0001", heavy=False)          # bands LOW -> derives light
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                mod.main(["brief", "--unit", "US0001", "--seat", "qa", "--tier", "full",
+                          "--root", str(root)])
+            self.assertIn("Full adversarial pass", out.getvalue())
+            self.assertIn("chosen", err.getvalue())
+            mod.record_verdict(root, "US0001", "approve", reviewer="qa", author="dev",
+                               tier="full", tier_explicit=True)
+            self.assertIn("explicit", mod.verdict_for(root, "US0001")["tier"])
+
+    def test_the_shipped_brief_verb_derives_the_tier_and_prints_it(self) -> None:
+        """THE LANE TEST (LL0040). `--tier` used to default to `full` in the PARSER, so a
+        derivation added in the library would never be reached. Mutant: restore that default -
+        every library case above still passes and this reddens."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            _banded_unit(root, "US0001", heavy=False)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["brief", "--unit", "US0001", "--seat", "qa",
+                               "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            self.assertIn("review tier: light (derived", err.getvalue())
+            self.assertIn("--tier light", err.getvalue(),
+                          "the recording command must carry the tier, or it is printed and lost")
+
+    def test_the_corpus_spans_more_than_one_band(self) -> None:
+        """The no-op guard. A band that always resolves the same way is a config key wearing the
+        appearance of a gate, and every other test here would still pass. Measured over THIS
+        repository rather than a fixture, because a fixture proves only that the estimator can
+        be made to move. Mutant: map every band to `full` - the split assertion reddens.
+        """
+        import importlib.util as _ilu
+        spec = _ilu.spec_from_file_location("route", SCRIPT.parent / "route.py")
+        route = _ilu.module_from_spec(spec)
+        sys.modules["route"] = route
+        spec.loader.exec_module(route)
+        mod = _load()
+        repo = SCRIPT.parent.parent.parent.parent.parent
+        # STRIDED across the whole corpus, stories and bugs alike. The first N bugs by id are
+        # the OLDEST bugs, and taking them banded 60 of 60 the same way - a sample that would
+        # have reported this gate as degenerate when it is not. `route.estimate` costs about
+        # 0.3s a unit, so the sample is bounded at 24 rather than run over all 1,171.
+        units = (sorted((repo / "sdlc-studio" / "stories").glob("US*.md"))
+                 + sorted((repo / "sdlc-studio" / "bugs").glob("BG*.md")))
+        if len(units) < 100:
+            self.skipTest("not enough corpus units to characterise the distribution")
+        units = units[::max(1, len(units) // 24)][:24]
+        tiers = []
+        for u in units:
+            try:
+                band = route.estimate(repo, u)["difficulty_band"]
+            except Exception:      # noqa: BLE001 - an unreadable unit is not this test's subject
+                continue
+            tiers.append(mod.BAND_TIER.get(band, "full"))
+        self.assertGreaterEqual(len(tiers), 20, "too few units resolved to characterise")
+        self.assertGreater(tiers.count("light"), 0,
+                           f"no unit in {len(tiers)} bands light - the tiering is a no-op")
+        self.assertGreater(tiers.count("full"), 0,
+                           f"every unit in {len(tiers)} bands light - the tiering is a no-op "
+                           f"in the dangerous direction")
+
+
+class BoundedBriefTests(unittest.TestCase):
+    """US0642: the claim-inventory pass is the largest block in the brief and, in CR0510's
+    words, a finding generator by construction. On a low-band unit it costs more than the unit.
+    """
+
+    def test_the_claim_inventory_runs_at_full_tier_and_not_at_light(self) -> None:
+        """Mutant: emit the block unconditionally - the light assertion reddens and the bounded
+        brief buys nothing, which is the whole slice."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            _workspace(root)
+            full = mod.brief(root, "US0001", "qa", tier="full")
+            light = mod.brief(root, "US0001", "qa", tier="light")
+            self.assertIn("CLAIM INVENTORY", full)
+            self.assertNotIn("CLAIM INVENTORY", light)
+            self.assertLess(len(light), len(full))
+
+    def test_the_depth_line_and_the_sections_agree(self) -> None:
+        """Mutant: hard-code the depth sentence independently of the section switch - a brief
+        says light and reads full, which is two decisions where there is one."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            _workspace(root)
+            for tier, says_full in (("full", True), ("light", False)):
+                text = mod.brief(root, "US0001", "qa", tier=tier)
+                self.assertEqual("Full adversarial pass" in text, says_full, tier)
+                self.assertEqual("CLAIM INVENTORY" in text, says_full, tier)
+
+    def test_the_full_tier_enumeration_refusal_still_fires(self) -> None:
+        """Bounding the light tier must not weaken the full one. Mutant: relax the full-tier
+        validation while adding the light path - the guard that refuses a claim-inventory pass
+        omitting one of its four prose surfaces stops guarding."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            _workspace(root)
+            # The positive control first: a real FULL brief must still pass its own guard, or
+            # the four refusals below could be passing because the guard refuses everything.
+            mod.assert_brief_claim_pass(mod.brief(root, "US0001", "qa", tier="full"))
+            for surface in mod.CLAIM_SURFACES:
+                damaged = mod.brief(root, "US0001", "qa", tier="full").replace(
+                    surface, "SOMETHINGELSE")
+                with self.assertRaises(ValueError, msg=surface):
+                    mod.assert_brief_claim_pass(damaged)
+
+    def test_a_light_brief_keeps_the_four_load_bearing_parts(self) -> None:
+        """What a light brief KEEPS is stated, not left to whatever survived. Mutant: drop the
+        criteria from the light brief - a light review judges against a paraphrase, which is
+        the failure the shipped brief exists to prevent in the first place."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            _workspace(root)
+            light = mod.brief(root, "US0001", "qa", tier="light")
+            self.assertIn("personas/seats/qa.md", light)        # the seat charter
+            self.assertIn("src/a.py", light)                    # the bounded diff scope
+            self.assertIn("### AC1: works", light)              # the criteria, as law
+            self.assertIn("VERDICT: APPROVE or REJECT", light)  # the return contract
+
+
 class BriefTests(unittest.TestCase):
     """US0189: critic brief assembles the seat-review prompt deterministically."""
 

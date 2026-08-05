@@ -29,6 +29,7 @@
 - **Then** the returned record carries a capacity of `seat` and names the signing seat, without any caller parsing prose
 - **Mutant:** keep the marker in `chain` alone - the field is absent and the read-back assertion reddens
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffCapacityTests::test_a_panel_signoff_records_capacity_seat
+- **Verified:** yes (2026-08-05)
 
 ### AC2: a human sign-off is distinguishable in the same field
 
@@ -37,6 +38,7 @@
 - **Then** the capacity is `human`, so a consuming project filters on one field rather than on the absence of a marker
 - **Mutant:** write the capacity only for panels - "not a seat" and "old record" become the same answer
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffCapacityTests::test_a_human_signoff_records_capacity_human
+- **Verified:** yes (2026-08-05)
 
 ### AC3: a historical row with no capacity never reads as a seat
 
@@ -45,6 +47,7 @@
 - **Then** the capacity reads as unknown or human, never as `seat`, because the direction this must not fail in is a machine's signature being taken for a person's
 - **Mutant:** default an absent capacity to `seat` - every historical sign-off in the corpus reads as an AI's
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffCapacityTests::test_an_absent_capacity_never_reads_as_seat
+- **Verified:** yes (2026-08-05)
 
 ### AC4: the added column does not break the existing reader
 
@@ -52,7 +55,8 @@
 - **When** every existing sign-off consumer reads it
 - **Then** each still resolves the unit, principal, author and chain it read before
 - **Mutant:** append the column without widening the declared column tuple - the parser mis-aligns every field after it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffCapacityTests::test_the_existing_columns_still_parse
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffCapacityTests::test_the_existing_columns_still_parse_and_the_gate_still_reads_them
+- **Verified:** yes (2026-08-05)
 
 ## Revision History
 

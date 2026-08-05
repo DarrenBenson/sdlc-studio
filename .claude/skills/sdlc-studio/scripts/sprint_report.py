@@ -1671,6 +1671,100 @@ def render_checklist(ck: dict) -> str:
     return "\n".join(lines)
 
 
+def operator_summary(root: Path, retro_id: str, rep: dict | None = None) -> dict:
+    """The decision-grade page an operator LEADS from, derived entirely from the record.
+
+    Human-in-the-lead rather than human-in-the-loop: the seats judge at their speed, and the
+    operator reads what happened and reverses what they disagree with, at theirs. That only
+    works if the summary is a READ of the ledgers - what shipped, what was rejected, what is
+    carried and where it is filed, what it cost - and never prose the signing party composes
+    about its own decision. A seat writing its own summary is a seat marking its own homework,
+    and the operator would be leading from an account with a stake in the answer.
+
+    So every field here comes from `report`, the sign-off log, the verdict log and the findings
+    scan. There is NO parameter through which anybody's free text reaches this page, which is
+    the property the test pins by varying a verdict's `issues` and asserting the summary does
+    not move.
+
+    A component with no record reads UNMEASURED. Omitting it would let a run that measured
+    nothing read as a run that cost nothing.
+    """
+    rep = rep if rep is not None else report(root, retro_id)
+    if not rep.get("ok"):
+        return {"ok": False, "id": retro_id, "errors": rep.get("errors") or []}
+    root = Path(root)
+    units = list(rep.get("units") or [])
+    run = _run_record(root, units)
+    filed, still_open = _open_findings(root, run)
+    import critic  # noqa: PLC0415 - deferred, like the report's other ledger reads
+
+    shipped, rejected, reversal = [], [], []
+    for uid in units:
+        v = critic.verdict_for(root, uid)
+        signoff = critic.signoff_for(root, uid)
+        capacity = str((signoff or {}).get("capacity") or "").strip() or "unrecorded"
+        verdict = str((v or {}).get("verdict") or "").upper()
+        if verdict == critic.REJECT:
+            rejected.append({"unit": uid, "state": critic.repair_state(root, uid)["state"]})
+            # A REJECT that was repaired is the single likeliest thing an operator would rule
+            # differently: somebody said this was wrong, and somebody else then said the repair
+            # answered it. Naming it is what makes leading a bounded act.
+            reversal.append({"unit": uid, "why": "rejected, then repaired - the repair was "
+                                                 "judged to answer the finding"})
+        elif verdict == critic.APPROVE:
+            shipped.append({"unit": uid, "signed_by": capacity})
+        if capacity == critic.CAPACITY_SEAT:
+            reversal.append({"unit": uid, "why": "signed off by a SEAT, not a person"})
+
+    cost = _sprint_cost_line(rep)
+    return {
+        "ok": True, "id": retro_id, "run_id": (run or {}).get("run_id"),
+        "sprint_goal": rep.get("sprint_goal"),
+        "goal_verdict": (rep.get("sprint_goal_verdict") or {}).get("verdict"),
+        "shipped": shipped,
+        "rejected": rejected,
+        # CARRIED, with the id it was filed under. "Some findings were carried" is not something
+        # an operator can act on; a list of ids is.
+        "carried": list(still_open or []),
+        "filed": list(filed or []),
+        "cost": cost,
+        "reversal_candidates": reversal,
+    }
+
+
+def _sprint_cost_line(rep: dict) -> dict:
+    """What the sprint cost, or a STATED absence for each component that was not measured."""
+    tokens = rep.get("sprint_actual_tokens")
+    vel = rep.get("velocity") or {}
+    ov = rep.get("overhead") or {}
+    return {
+        "tokens": tokens if tokens else "UNMEASURED",
+        "delivered_points": rep.get("delivered_points"),
+        "elapsed_hours": vel.get("elapsed_hours") or "UNMEASURED",
+        "overhead_ratio": ov.get("ratio") if ov.get("measured") else "UNMEASURED",
+    }
+
+
+def render_operator_summary(s: dict) -> str:
+    """The summary as a page. Every line is a read; nothing here is composed about anybody."""
+    if not s.get("ok"):
+        return f"operator summary unavailable: {'; '.join(s.get('errors') or ['unknown'])}"
+    lines = [f"# Operator summary - {s['id']}" + (f" ({s['run_id']})" if s.get("run_id") else ""),
+             "", f"Sprint goal: {s.get('sprint_goal') or 'none recorded'}",
+             f"Goal verdict: {s.get('goal_verdict') or 'unjudged'}", ""]
+    lines.append(f"Shipped ({len(s['shipped'])}): " + (", ".join(
+        f"{r['unit']} [signed: {r['signed_by']}]" for r in s["shipped"]) or "none"))
+    lines.append(f"Rejected ({len(s['rejected'])}): " + (", ".join(
+        f"{r['unit']} [{r['state']}]" for r in s["rejected"]) or "none"))
+    lines.append(f"Carried, still open: " + (", ".join(s["carried"]) or "none"))
+    c = s["cost"]
+    lines.append(f"Cost: {c['tokens']} tokens over {c['delivered_points']} points, "
+                 f"{c['elapsed_hours']} elapsed hours, overhead {c['overhead_ratio']}")
+    lines += ["", "What to overturn if you disagree:"]
+    lines += [f"  - {r['unit']}: {r['why']}" for r in s["reversal_candidates"]] or ["  - nothing"]
+    return "\n".join(lines)
+
+
 def render(rep: dict) -> str:
     if not rep.get("ok"):
         return f"sprint report {rep['id']}: unavailable ({'; '.join(rep.get('errors', []))})"
@@ -1772,6 +1866,12 @@ def cmd_show(args: argparse.Namespace) -> int:
     return 0 if rep.get("ok") else 1
 
 
+def cmd_operator_summary(args: argparse.Namespace) -> int:
+    s = operator_summary(Path(args.root), args.id)
+    print(json.dumps(s, indent=2) if args.format == "json" else render_operator_summary(s))
+    return 0 if s.get("ok") else 1
+
+
 def cmd_checklist(args: argparse.Namespace) -> int:
     """The compulsory checklist alone, without the cost and velocity page around it.
 
@@ -1788,6 +1888,14 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="The end-of-sprint report: delivered, cost, velocity.")
     p.add_argument("--root", default=".")
     sub = p.add_subparsers(dest="cmd", required=True)
+    o = sub.add_parser("operator-summary",
+                       help="The decision-grade page an operator leads from: what shipped, "
+                            "what was rejected, what is carried and where it is filed, what it "
+                            "cost, and what to overturn. Derived from the record - no party to "
+                            "the decision writes a word of it.")
+    o.add_argument("--id", required=True, metavar="RETROxxxx")
+    o.add_argument("--format", choices=["text", "json"], default="text")
+    o.set_defaults(func=cmd_operator_summary)
     c = sub.add_parser("checklist",
                        help="The compulsory sprint checklist: one row per stage of the cycle "
                             "plus the figures a close re-derives. Non-zero while any item is "

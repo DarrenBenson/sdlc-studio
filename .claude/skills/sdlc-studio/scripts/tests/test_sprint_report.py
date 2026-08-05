@@ -1895,6 +1895,85 @@ class TruncationIsMarkedTests(unittest.TestCase):
         self.assertIn("(+8 more)", detail,
                       f"20 blocked units rendered 12 with no marker: {detail}")
 
+class OperatorSummaryTests(ReportBase):
+    """US0645: human in the LEAD, not human in the loop.
+
+    The seats judge at their speed; the operator reads what happened and reverses what they
+    disagree with, at theirs. That only works if the summary is a READ of the ledgers rather
+    than prose the signing party composes about its own decision - a seat writing its own
+    summary is a seat marking its own homework, and the operator would then be leading from an
+    account with a stake in the answer.
+    """
+
+    def _verdict(self, uid, verdict, **kw):
+        import critic
+        critic.record_verdict(self.root, uid, verdict, reviewer="qa", author="dev", **kw)
+
+    def test_an_unrecorded_component_reads_unmeasured(self) -> None:
+        """Mutant: substitute zero for an unrecorded component - the cheapest close on file is
+        one that measured nothing, which is the direction a cost report must never fail in."""
+        with contextlib.redirect_stderr(io.StringIO()):
+            s = sr.operator_summary(self.root, "RETRO9100")
+        self.assertTrue(s["ok"], s)
+        self.assertEqual(s["cost"]["overhead_ratio"], "UNMEASURED")
+        self.assertEqual(s["cost"]["elapsed_hours"], "UNMEASURED")
+
+    def test_the_signing_seat_contributes_no_prose(self) -> None:
+        """THE property. Mutant: interpolate the verdict's note into the summary - a seat marks
+        its own homework, and the two summaries differ."""
+        self._verdict("US0001", "APPROVE", issues="I judged this excellent work of mine")
+        with contextlib.redirect_stderr(io.StringIO()):
+            first = sr.operator_summary(self.root, "RETRO9100")
+        self._verdict("US0001", "APPROVE", issues="something entirely different, at length")
+        with contextlib.redirect_stderr(io.StringIO()):
+            second = sr.operator_summary(self.root, "RETRO9100")
+        self.assertEqual(first, second,
+                         "a party to the decision reached the operator's page")
+
+    def test_the_reversal_candidates_are_named_with_their_ids(self) -> None:
+        """Leading is a bounded act only if the summary says where to look. Mutant: list the
+        delivered units alone - the summary is a manifest, and the operator must re-read the
+        whole batch to lead it."""
+        import critic
+        self._verdict("US0001", "REJECT", issues="the test could not fail")
+        critic.record_signoff(self.root, "US0002", principal="product", author="dev",
+                              capacity=critic.CAPACITY_SEAT)
+        with contextlib.redirect_stderr(io.StringIO()):
+            s = sr.operator_summary(self.root, "RETRO9100")
+        why = {r["unit"]: r["why"] for r in s["reversal_candidates"]}
+        self.assertIn("US0001", why)
+        self.assertIn("rejected", why["US0001"])
+        self.assertIn("US0002", why)
+        self.assertIn("SEAT", why["US0002"])
+        page = sr.render_operator_summary(s)
+        self.assertIn("What to overturn", page)
+        self.assertIn("US0001", page)
+
+    def test_the_summary_is_generated_for_a_human_signoff_too(self) -> None:
+        """Mutant: generate it only on the panel path - the human close and the seat close
+        diverge, and a second code path is one that drifts."""
+        import critic
+        self._verdict("US0001", "APPROVE")
+        critic.record_signoff(self.root, "US0001", principal="darren", author="dev")
+        with contextlib.redirect_stderr(io.StringIO()):
+            s = sr.operator_summary(self.root, "RETRO9100")
+        shipped = {r["unit"]: r["signed_by"] for r in s["shipped"]}
+        self.assertEqual(shipped.get("US0001"), critic.CAPACITY_HUMAN)
+        self.assertNotIn("US0001", [r["unit"] for r in s["reversal_candidates"]],
+                         "a human sign-off is not a thing to overturn on those grounds")
+
+    def test_the_shipped_verb_prints_it(self) -> None:
+        """THE LANE TEST (LL0040). A summary reachable only from a library call is one no
+        operator can read. Mutant: add the function and forget the subparser."""
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            # `--root` is a TOP-LEVEL argument on this parser, so it precedes the verb. A lane
+            # test that guesses the argument order tests the guess, not the wiring.
+            rc = sr.main(["--root", str(self.root), "operator-summary",
+                          "--id", "RETRO9100"])
+        self.assertEqual(rc, 0, err.getvalue())
+        self.assertIn("Operator summary", out.getvalue())
+        self.assertIn("What to overturn", out.getvalue())
 
 if __name__ == "__main__":
     unittest.main()
