@@ -15,7 +15,7 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Do a sprint to deliver all the open bugs" | `/sdlc-studio sprint --bugs Open --goal done` |
 | "Plan and break down the next sprint, but don't write code" | `/sdlc-studio sprint --crs Proposed --goal design` |
 | "Build out epic 7 from end to end" | `/sdlc-studio sprint --epic EP0007 --goal done` |
-| "Turn this PRD into epics and stories" | `/sdlc-studio sprint plan --prd prd.md --goal design` |
+| "Turn this PRD into epics and stories" | `/sdlc-studio sprint prd.md --goal design` |
 | "Select and estimate a sprint, then stop for my sign-off" | `/sdlc-studio sprint --crs Proposed --goal plan` |
 | "Run the whole thing unattended" | `/sdlc-studio sprint --bugs Open --autonomous` |
 
@@ -37,7 +37,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint --epic EP0007 --goal done       # deliver an epic
 /sdlc-studio sprint --crs Proposed --goal design    # just the backlog (no code)
 /sdlc-studio sprint --crs Proposed --goal plan       # select+sequence+estimate a sprint, stop
-/sdlc-studio sprint plan --prd prd.md --goal design  # greenfield: PRD -> epics -> stories
+/sdlc-studio sprint prd.md --goal design             # greenfield: PRD -> epics -> stories
 /sdlc-studio sprint <worklist.md> --order wsjf       # a tranche file, WSJF order
 /sdlc-studio sprint --bugs Open --autonomous         # unattended: deterministic guardrails on
 /sdlc-studio sprint decision defer --unit US0001 --question "..." --option "a|..." --option "b|..."  # set the unit aside, batch continues
@@ -50,7 +50,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint plan --cycles 3 --goal done      # a standing policy: roll 3 cycles, regenerating the plan each time
 /sdlc-studio sprint boundary --retro RETRO0001       # close this cycle down and open the next from the live backlog
 /sdlc-studio sprint report --id RETRO0001             # the end-of-sprint report (the close draws it too)
-python3 <skill>/scripts/sprint_report.py checklist --id RETRO0001   # the compulsory checklist alone; non-zero while an item is outstanding
+/sdlc-studio sprint checklist --id RETRO0001          # the compulsory checklist alone; non-zero while an item is outstanding
 ```
 
 **`/sdlc-studio sprint report --id RETROxxxx`** composes the end-of-sprint report - delivered units
@@ -235,185 +235,6 @@ artefact says so rather than being attributed to the last one.
 
 `sprint close` refuses a batch carrying units no independent pass covered, and names them:
 **the close asserts that coverage exists, it does not perform the review.**
-
-## In-flight controls: changing a run without lying about it
-
-A run is a controllable object, not a train you either ride or abandon. Each control below is
-RECORDED, so the close can say what the delivered batch was and why it differs from the plan.
-
-```bash
-# the goal, reviewed by the seats BEFORE the run opens (plan refuses an unreviewed goal)
-python3 <skill>/scripts/sprint.py goal-review record \
-  --goal "<the sprint goal>" \
-  --seat "engineering|yes|what done means|one increment?|optional note"
-
-# trade units: one recorded decision, not a drop that happens to sit beside an add
-python3 <skill>/scripts/sprint.py batch swap --out US0001,US0002 --in US0003 \
-  --reason "the blocking one first"
-
-# pull a unit from the batch the done-gate reads (NOT Deferred, which leaves it gated)
-python3 <skill>/scripts/sprint.py batch drop US0001 --reason "premise unbuilt"
-
-# put one in, under the same gates as the rest
-python3 <skill>/scripts/sprint.py batch add US0004
-
-# put an EPIC's stories in as one priced set - the growth is one number, not five entries
-python3 <skill>/scripts/sprint.py batch add-epic --epic EP0010 --status Ready
-
-# raise the ceiling ON THE RECORD - the standing pair stays, so the close still reports the
-# overage rather than a run that fitted
-python3 <skill>/scripts/sprint.py appetite resize --units 16 --reason "an epic joined the batch"
-
-# end a run that will not reach its goal - the handoff records what is carried
-python3 <skill>/scripts/sprint.py stop --reason "the dependency slipped"
-
-# resume a stopped run rather than minting a fresh one over the same work
-python3 <skill>/scripts/sprint.py reopen --reason "the dependency landed"
-```
-
-### What a batch change puts on the record
-
-Every `batch` call appends one entry to the run's `batch_changes` ledger. An entry carries
-`action` (drop, add or the two halves of a swap), `id` (the unit, normalised), `at` (when), and
-`reason` where one was given. `drop` REQUIRES `--reason` and refuses without one; `add` accepts
-one and stores it. Adding a unit already in the batch is not an error and not a duplicate - it
-records a `note` saying it was already there, because the call still happened and the history
-should say so.
-
-**A drop is not `Deferred`, and the difference is the point.** Dropping removes the unit from
-the `batch` the done-gate reads and leaves its own status untouched, so it returns to the
-backlog as ordinary work. Marking it Deferred keeps it in place and still blocks the close.
-Dropping judges THIS batch; Deferred judges the work.
-
-### Stopping, and what `--force` records
-
-`stop` ends a run that will not reach its goal, and refuses while any unit remains that the
-pending decisions do not account for - stopping over live work would leave the handoff naming
-units nobody ruled on. `--force` overrides that refusal and writes what could have proceeded
-onto the record, so the close reports a run stopped over work that was still moving rather than
-one that had run out.
-
-### Appetite: the circuit breaker
-
-The appetite is resolved once at plan time and stamped on the run. It is set by
-`--appetite-minutes` and `--appetite-units` on `plan`, and zero on an axis means unbounded.
-
-The record keeps two pairs, not one. `units` and `minutes` are the ACCEPTED pair the breaker
-stops on. `standing_units` and `standing_minutes` are the sprint capacity it was measured
-against, and `over_appetite` flags when the accepted exceeds the standing on either axis. Both
-pairs are kept so that `appetite resize` raises the ceiling **on the record**: the standing pair
-does not move, so the close still reports the overage instead of a run that appears to have
-fitted its budget all along.
-
-### Rolling runs
-
-`--cycles N` runs N sprints back to back, and `--stop-on empty-backlog` ends the sequence early
-when nothing is left to select. The `boundary` verb is where each cycle turns over.
-
-A rolling run **regenerates the plan at each boundary** against the backlog as it stands then -
-it does not queue plans up front. If you want a queue of runs planned in advance, that is the
-charter queue below, which is a different thing: a charter is a run somebody intends, resolved
-only when its turn comes.
-
-The read-only verbs, which change nothing and are safe to run at any point:
-
-```bash
-# the census the planner reads: how many units, how many ungroomed, which share files
-python3 <skill>/scripts/sprint.py breakdown --stories Ready --bugs Open
-
-# every refusal the close would raise, in one pass, writing nothing
-python3 <skill>/scripts/sprint.py preflight
-
-# record the Sprint Goal judgement at the close (achieved | partial | missed)
-python3 <skill>/scripts/sprint.py goal-verdict --verdict achieved --note "<why it holds>"
-
-# brief a delegated lane over the run's own batch, or over named units
-python3 <skill>/scripts/sprint.py lane brief --units US0001,US0002
-
-# resolve the head sprint charter against the backlog AS IT IS now, opening nothing
-python3 <skill>/scripts/sprint.py next --dry-run
-```
-
-## The charter queue {#charter-queue}
-
-A charter is a run that has not happened: its Sprint Goal, the rule that selects its batch, and
-its appetite. `sprint next` materialises the head of the queue **against the backlog as it
-stands at that moment**, never against the backlog as it stood when the charter was written - a
-queue of frozen batches decays, because units land and units are delivered between authoring and
-running.
-
-```bash
-# queue one, with prose for the reader and a query the tool can resolve
-python3 <skill>/scripts/artifact.py new --type charter --title "<what this run is for>" \
-  --fields-file charter.json    # {"goal": "...", "scope": "...", "scope_query": "--bugs Open"}
-
-# resolve the head of the queue against the backlog now, naming who is running it.
-# `next` REPORTS what it selects; `sprint plan --write` is what opens the run.
-python3 <skill>/scripts/sprint.py next --runner "<who>"
-
-# see the queue, and what the HEAD resolves to against the backlog right now
-python3 <skill>/scripts/sprint.py queue show
-
-# call the sprint at this point: descope the remainder BACK to the backlog, then close
-python3 <skill>/scripts/sprint.py call --reason "<why the rest is not being done>" --retro RETROxxxx
-
-# correct a plan somebody wrote: rank one to the head, withdraw one, or clear the lot
-python3 <skill>/scripts/sprint.py queue reorder --charter SC0002 --rank 1
-python3 <skill>/scripts/sprint.py queue cancel --charter SC0003 --reason "<why>"
-python3 <skill>/scripts/sprint.py queue clear --reason "<why>"
-```
-
-Only the HEAD is resolved by `queue show`. Resolving every charter would be arithmetic over a
-backlog the earlier runs will have changed before the later charters are reached - a number that
-looks precise and is not.
-
-`call` and `stop` are different acts. `stop` ABANDONS a run - it did not reach its goal and
-says so. `call` FINISHES one: the units nobody started leave the batch, and the close chain then runs
-against the Sprint Goal - so `call` completes what it starts rather than telling you to. It takes
-the close's own flags - `--retro`, `--goal-verdict`, `--note`, `--apply-signoff`, `--principal` -
-and forwards them, so the close's messages never name a flag this verb rejects. Without a
-`--retro` it scaffolds one and stops, exactly as `sprint close` does. The bounded exit
-(`--file-and-close`) is not among them: reach it with `sprint close` after the descope. The remainder returns to the
-BACKLOG, never forward to the next charter - attaching it forward would make the next run
-inherit a batch it never approved. Each descoped unit keeps its own status, because a drop
-judges THIS BATCH and not the work.
-
-A charter's goal review lives ON the charter, under `## Seat review`, not in `.local/`. Local
-state does not travel: a charter pulled into another working copy must arrive carrying the review
-that justified it, or the next operator cannot tell an examined plan from an unexamined one.
-`next --runner` records who ran it beside who reviewed it and states plainly when they are the
-same. Separation is RECORDED, never enforced - a queue is often planned and run by one person,
-and refusing that would make it unusable for the operator it was built for. What would be
-dishonest is leaving it unsaid.
-
-A charter with no `Queue rank` sits in authoring order, which its id already carries, and an
-unranked charter sorts AFTER every ranked one: absence is not rank zero, so ranking one charter
-does not silently reshuffle the rest. `cancel` and `clear` withdraw rather than delete, each
-keeping its reason, because a cancelled plan is a decision somebody made and the queue's shape
-should stay explicable.
-
-The scope is TWO fields on purpose. `Scope rule` is prose - the intent a reader judges when
-deciding whether a queued run is still worth running. `Scope query` speaks `sprint plan`'s own
-selector vocabulary (`--stories Ready`, `--bugs Open`, `--crs Proposed`, `--epic EPxxxx`), so
-there is one selector grammar in the tool rather than two that drift.
-
-`next` refuses, leaving the queue exactly as it was, when a run is already open, when the head
-charter carries no resolvable `Scope query`, or when its scope selects nothing. A charter that
-cannot be run is left Queued rather than silently spent: an empty scope usually means the work
-was delivered by another run, and that is worth seeing rather than absorbing.
-
-Each control that CHANGES the batch or the ceiling takes a `--reason` and stores it in the run
-record: `batch drop`, `batch swap`, `batch add`, `appetite resize`, `stop` and `reopen`. It is
-required on the ones where a silent change would be unexplainable - drop, swap, resize, stop -
-and optional on `add`. `goal-review record` takes no reason: its seat verdicts ARE the reasons.
-
-An earlier version of this line claimed every control took a stored reason. It did not: several
-verbs rejected the flag outright, and `batch add` accepted it and discarded it silently. Both
-are corrected - a flag that is accepted and dropped is worse than one that refuses, because
-nothing tells you it went nowhere.
-
-A change nobody recorded is a change the close cannot explain, and the difference between the
-planned batch and the delivered one is the thing a retro is actually for.
 
 ## Prerequisites
 

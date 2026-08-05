@@ -23,6 +23,7 @@
 - **When** each verb is required in invocation form - /sdlc-studio sprint <verb> or sprint.py <verb> - rather than as a bare substring, and each run-lifecycle verb (batch, stop, reopen, boundary) is additionally required to have its own heading
 - **Then** every verb matches on the rewritten page, the derived verb set is asserted non-empty, and the SAME check run over the pre-rewrite fixture FAILS naming batch, stop, reopen, preflight, breakdown, goal-verdict and goal-review - proving it discriminates, because a substring match passes today on stop (8 occurrences), batch (23) and report (13) while none of the three is documented as a verb
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_help_structure.py::SprintSurfaceTests::test_every_shipped_verb_appears_in_invocation_form_and_the_pre_rewrite_page_fails
+- **Verified:** yes (2026-08-05)
 
 ### AC2: the batch-mutation and stop sections are bound to what the run record does
 
@@ -30,6 +31,7 @@
 - **When** the page's batch-mutation and stop sections are compared with those, the keys read from the record the module actually writes and the required --reason read from the `batch` subparser rather than named in the test
 - **Then** the sections name every batch_changes key, state that a drop needs a reason and is recorded, state that a drop is NOT Deferred and why, and state stop's refusal condition and what --force puts on the record; a key added or renamed in batch_changes fails the test
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_help_structure.py::SprintSurfaceTests::test_batch_and_stop_sections_name_every_recorded_key_and_the_drop_versus_deferred_rule
+- **Verified:** yes (2026-08-05)
 
 ### AC3: no documented invocation is fictional, in either class
 
@@ -37,6 +39,7 @@
 - **When** verb-first examples are parsed against build_parser, flag-first examples against the `plan` subparser, and any flag no parser owns is looked for in help/arguments.md
 - **Then** each parses or resolves; a flag owned by neither a parser nor the argument reference fails. --autonomous is the live case: it is on NO sprint.py parser and absent from help/arguments.md, resting only on reference-sprint.md's Autonomous mode section, so this story gives it its help/arguments.md row rather than leaving a flag the page's own table documents unlisted in the argument reference. The test asserts a non-zero parsed count in EACH class, so an over-tight filter cannot report coverage it never achieved
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_help_structure.py::SprintSurfaceTests::test_every_documented_invocation_resolves_across_verb_first_and_flag_first_classes
+- **Verified:** yes (2026-08-05)
 
 ### AC4: the appetite and rolling sections name every field and flag the code owns
 
@@ -44,6 +47,7 @@
 - **When** the page's appetite and rolling sections are checked for each of them
 - **Then** the appetite section names every recorded key and both flags, states what the appetite bounds, where it is set, and that it is fixed once the plan is written until CR0441 changes that; the rolling section names both rolling flags and the boundary verb and states that a rolling run regenerates the plan at each boundary rather than queueing plans, so a reader looking for a sprint queue finds the current answer and the reason; a key or flag added or renamed fails
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_help_structure.py::SprintSurfaceTests::test_appetite_and_rolling_sections_name_every_recorded_field_and_flag
+- **Verified:** yes (2026-08-05)
 
 ### AC5: the binder fails loud rather than passing vacuously
 
@@ -51,6 +55,7 @@
 - **When** the surface binder runs over each
 - **Then** it fails naming what it could not read and never reports coverage from a page it did not find; and on the real page every check asserts its matched-item count is non-zero, so an absent page and a page with nothing wrong in it can never read the same
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_help_structure.py::SprintSurfaceTests::test_binder_fails_loud_when_the_page_or_section_is_missing
+- **Verified:** yes (2026-08-05)
 
 ## Revision History
 

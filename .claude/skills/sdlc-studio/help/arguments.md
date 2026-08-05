@@ -101,6 +101,11 @@ re-runnable, so a refusal at a later gate never loses the earlier steps.
 | `--bugs` | Sprint batch: bugs by state (e.g. `--bugs open`); repeatable and combinable, `--bugs Open --bugs Blocked` merges both states | - |
 | `--crs` | Sprint batch: CRs by state (e.g. `--crs proposed`); repeatable and combinable, `--crs Proposed --crs Deferred` merges both states | - |
 | `--stories` | Sprint batch: stories by state (e.g. `--stories ready`); repeatable and combinable | - |
+| `--autonomous` | Sprint: run unattended, with the deterministic guardrails on. Not a `sprint.py` parser flag - the goal ladder owns the stop condition (`--goal`), and this is the slash-command form the skill reads. See `reference-sprint.md` | off |
+| `--appetite-minutes` | Sprint plan: wall-clock ceiling stamped on the run as the ACCEPTED appetite; `0` is unbounded. The standing capacity it is measured against does not move, so an `appetite resize` is reported as an overage rather than a run that fitted | capacity |
+| `--appetite-units` | Sprint plan: unit-count ceiling stamped on the run as the ACCEPTED appetite; `0` is unbounded | capacity |
+| `--cycles` | Sprint: run N sprints back to back, regenerating the plan at each `boundary` against the backlog as it stands then - not a queue of plans made up front | 1 |
+| `--stop-on` | Sprint `--cycles`: end the sequence early on a named condition (`empty-backlog`) | none |
 | `--only` | Gate: run only these checks (comma-separated) | all |
 | `--skip` | Gate: skip these checks (comma-separated) | none |
 | `--release` | Gate: the pre-tag form - the standard gate plus an executing pass over every story's `Verify:` expression, as one exit code (read-only: no back-annotation, no report rewrite). Deselecting the `verify` lane under it is refused | off |
