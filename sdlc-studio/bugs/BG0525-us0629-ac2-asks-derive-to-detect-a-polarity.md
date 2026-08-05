@@ -1,6 +1,7 @@
 # BG0525: US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written
 
 > **Status:** Open
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** sdlc-studio/stories/US0629-a-test-plan-is-derived-from-the-unit.md
@@ -30,8 +31,11 @@ Restate AC2 in decidable terms before implementing it. The seat's proposal, whic
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: AC2 requires `derive` to refuse a mutant field that is "that criterion's own text with the polarity flipped".
-- [ ] The proposed fix lands, pinned by a test: Restate AC2 in decidable terms before implementing it.
+- [ ] **US0629 AC2 is restated in mechanically decidable terms.** The replacement wording demands three checkable properties of a mutant field - a path drawn from the unit's own `Affects`, an edit verb, and a stated overlap ceiling against the criterion's own text - rather than asking for a judgement about polarity. *Mutant:* keep any clause that requires deciding whether two sentences mean opposite things - the criterion is still undecidable and implementing it produces BG0523's class, a criterion marked Verified against a verifier pinning a proxy.
+- [ ] **The restatement carries its own discriminating pair.** It names one genuine mutant and one restatement that differ in exactly one of the three properties, so the criterion states the boundary it is judged at rather than leaving it to the implementer. *Mutant:* give only the refusal example - a guard that refuses everything satisfies the criterion.
+- [ ] **A near-miss ACCEPT is required by the wording.** A legitimate mutant that happens to share the criterion's vocabulary must be accepted, or `derive` becomes a guard that refuses honest work while its refusal test passes for that reason. *Mutant:* drop the accept row - the threshold can be tuned to refuse everything and every remaining row still passes.
+- [ ] **The overlap ceiling is a stated number with a stated basis.** It is recorded on the criterion, not chosen at implementation time, and the precedent it follows (`_reason_substance` in `verify_ac.py`) is named. *Mutant:* leave it as "sufficiently different" - the implementer picks the threshold that makes their tests pass.
+- [ ] **US0629's Test Plan section is updated to match**, so the plan the seat already reviewed does not go on describing a criterion that no longer exists. *Mutant:* restate the AC alone - the story carries two incompatible accounts of what AC2 demands.
 
 ## Impact
 

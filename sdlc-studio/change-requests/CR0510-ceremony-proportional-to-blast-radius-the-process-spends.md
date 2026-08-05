@@ -1,6 +1,7 @@
 # CR-0510: Ceremony proportional to blast radius: the process spends gate-grade rigour on prose-grade changes, and the machinery that would stop it is built and switched off
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0208
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** L

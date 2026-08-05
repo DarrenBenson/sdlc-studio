@@ -1,6 +1,7 @@
 # CR-0532: The reviewer of record is an AI seat, and the human gets a summary to lead from - human in the LEAD, not human in the loop
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0209
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** L

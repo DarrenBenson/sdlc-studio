@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-08-02
+**Last Updated:** 2026-08-05
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 9 |
+| Draft | 11 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 198 |
-| **Total** | **207** |
+| **Total** | **209** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -53,6 +53,8 @@
 | [EP0205](EP0205-a-reject-whose-findings-were-repaired-has-a.md) | A REJECT whose findings were repaired has a route back to covered, so a repaired batch stops reading like an unreviewed one | Done | 5 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0206](EP0206-a-sprint-ends-with-nothing-open-a-non.md) | A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it | Draft | 4 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0207](EP0207-a-unit-s-test-plan-is-written-and.md) | A unit's test plan is written and reviewed before its code, because reviewing the test is cheaper than reviewing the code | Draft | 6 | -- | 2026-08-02 | 2026-08-02 |
+| [EP0208](EP0208-ceremony-proportional-to-blast-radius-the-close-converges.md) | Ceremony proportional to blast radius: the close converges and the risk band drives the review | Draft | 5 | -- | 2026-08-05 | 2026-08-05 |
+| [EP0209](EP0209-the-reviewer-of-record-can-be-a-named.md) | The reviewer of record can be a named seat, and the operator leads from a derived summary | Draft | 3 | -- | 2026-08-05 | 2026-08-05 |
 
 ## Archived Releases
 

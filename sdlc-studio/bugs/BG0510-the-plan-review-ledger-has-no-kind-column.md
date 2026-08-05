@@ -1,6 +1,7 @@
 # BG0510: the plan-review ledger has no kind column, so a second pre-code gate would be cleared by the first gate's approval
 
 > **Status:** Open
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/plan_review.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -26,8 +27,11 @@ Give a plan-review row a KIND (the artefact judged - spec, test-plan, whatever f
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: A plan-review verdict is keyed by unit and phase only - `critic.verdict_for(root, unit, phase='plan-review')` returns the latest row for that pair, and...
-- [ ] The proposed fix lands, pinned by a test: Give a plan-review row a KIND (the artefact judged - spec, test-plan, whatever follows) and make the lookup take it.
+- [ ] **A plan-review row records the kind of artefact it judged**, written by `critic record` and read back as a parsed field rather than as prose in the issues column. *Mutant:* keep the six-column schema - the field is absent and the read-back assertion reddens. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewKindTests::test_a_plan_review_row_records_its_kind
+- [ ] **The lookup discriminates on kind.** A `spec` approval does not satisfy a lookup for `test-plan`: two rows exist for one unit, and each query returns its own. *Mutant:* ignore the kind in the lookup - one approval discharges both gates and neither reviewer read the other's artefact, which is the defect. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewKindTests::test_a_spec_approval_does_not_satisfy_a_test_plan_lookup
+- [ ] **Existing rows default to the spec kind, so no history is reinterpreted.** A row written before this change answers a `spec` lookup exactly as it does today. *Mutant:* treat an absent kind as unknown - every historical approval stops counting and `transition` refuses units it passes now. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewKindTests::test_an_existing_row_defaults_to_spec
+- [ ] **The one live consumer is unchanged in behaviour.** `plan_review.gate` asks for the `spec` kind and every case it passes and refuses today it still passes and refuses. *Mutant:* leave the gate asking for any kind - the column exists and nothing reads it, which is the state `critic brief --tier` is already in. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::PlanReviewKindTests::test_the_gate_asks_for_the_spec_kind_and_its_behaviour_is_unchanged
+- [ ] **An unknown kind is refused at write time**, naming the vocabulary, so a typo becomes a row nothing will ever match. *Mutant:* accept any string - a misspelt kind silently creates a gate that can never be satisfied. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewKindTests::test_an_unknown_kind_is_refused_at_write_time
 
 ## Impact
 

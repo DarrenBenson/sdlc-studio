@@ -1,6 +1,7 @@
 # BG0520: the triage session cap is a LIFETIME cap: the session key defaults to a constant, so the counter never resets and filing eventually refuses for good
 
 > **Status:** Open
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/triage_noise.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py
@@ -33,8 +34,11 @@ Also correct the refusal message: do not offer 'triage the backlog' as an exit w
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `triage.session_cap` is documented as a per-session budget: one session may file at most N findings.
-- [ ] The proposed fix lands, pinned by a test: Give the session key a value that actually changes when a session does.
+- [ ] **The counter reads zero across a real session boundary with nothing exported.** File to the cap under one run, close it, open another, and `session_count` is 0 - the key moved because the run did. *Mutant:* keep the `default` fallback - the count survives the boundary and this test reddens, which is the whole defect. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::SessionKeyTests::test_the_count_resets_across_a_run_boundary
+- [ ] **Within one run the cap still fires.** Filing N findings under a single run id refuses the N+1th, so fixing the reset does not remove the budget. *Mutant:* make the key unique per call - the cap never fires and the noise control is gone. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::SessionKeyTests::test_the_cap_still_fires_within_one_run
+- [ ] **Outside a run the key is bounded to a day, not to the project's lifetime.** With no run open the key carries the date, so an unbounded key can never re-appear. *Mutant:* fall back to a constant when no run is open - the lifetime cap returns by the back door for exactly the sessions that file most. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::SessionKeyTests::test_no_open_run_keys_on_the_date
+- [ ] **The explicit environment override still wins where it is set**, because it is the documented exit and consuming projects may rely on it. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::SessionKeyTests::test_an_explicit_session_variable_still_wins
+- [ ] **The refusal message no longer offers an exit that does not work.** It stops naming "triage the backlog", because triaging does not decrement the counter and the suggestion is false at the moment it is read. The remaining exits are each true of the code. *Mutant:* leave the message alone - the tool tells an operator to do something that cannot help. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::SessionKeyTests::test_the_refusal_names_only_exits_that_work
 
 ## Impact
 
