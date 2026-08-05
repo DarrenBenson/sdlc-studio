@@ -7,6 +7,7 @@ config switch gates RENDERING only - never recording.
 import contextlib
 import io
 import json
+import pathlib
 import sys
 import tempfile
 import unittest
@@ -1895,6 +1896,116 @@ class TruncationIsMarkedTests(unittest.TestCase):
         self.assertIn("(+8 more)", detail,
                       f"20 blocked units rendered 12 with no marker: {detail}")
 
+class ExecutionModeAgreementTests(ReportBase):
+    """The regression an independent seat found: US0639 added a fifth ledger mode and only ONE
+    of the two readers learned about it.
+
+    `_RAN_MODES` was an allow-list of ("full", "selected", "none"). Six `preflight` rows carrying
+    623.2 measured seconds were reported by `sprint_report` as "none carries a duration", while
+    `sprint.close_cost` read the same six rows and reported 623.2s. The report's sentence was
+    false about the bytes on disk - and because `_overhead_ratio` derives delivery by
+    SUBTRACTION, 600 seconds of measured, attributed gate time was credited to delivery.
+
+    These pin the PROPERTY (the two readers agree) rather than the enumeration, because pinning
+    the list is what failed: a test asserting the tuple's contents would have passed unchanged
+    while the ledger grew a mode underneath it.
+    """
+
+    def _ledger(self, rows):
+        (self.root / "sdlc-studio" / ".local" / "test-execution.json").write_text(
+            json.dumps({"runs": rows}), encoding="utf-8")
+
+    def _run(self):
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-MODES", "batch": ["US0001", "US0002"], "outcome": "running",
+            "started_at": "2026-07-28T08:00:00Z", "ended_at": "2026-07-28T18:00:00Z"}),
+            encoding="utf-8")
+
+    def test_a_mode_this_reader_has_never_heard_of_still_counts_its_seconds(self) -> None:
+        """THE property, and the reason it is written this way: the mode below is invented here
+        and appears nowhere in the source. Mutant: restore an allow-list - an unknown mode's real
+        seconds are discarded and reported as NOT CAPTURED."""
+        self._run()
+        self._ledger([{"at": "2026-07-28T10:00:00Z", "mode": "a-mode-invented-in-this-test",
+                       "seconds": 300.0, "verdict": "pass", "moment": "commit"}])
+        with contextlib.redirect_stderr(io.StringIO()):
+            act = sr._execution_actuals(self.root, ["US0001", "US0002"])
+        self.assertTrue(act["measured"], act)
+        self.assertEqual(act["seconds"], 300.0)
+        self.assertNotIn("a-mode-invented-in-this-test",
+                         pathlib.Path(sr.__file__).read_text(encoding="utf-8"),
+                         "the reader names this mode, so it is enumerating what counts rather "
+                         "than excluding what does not")
+
+    def test_the_report_and_close_cost_agree_on_one_ledger(self) -> None:
+        """Two readers of one ledger must not disagree (LL0016). Mutant: exclude any mode from
+        one reader and not the other - the two figures diverge and this reddens.
+
+        `preflight` is named explicitly here because it is the mode that actually broke this,
+        but the assertion is an EQUALITY between the readers, not a check that the list contains
+        the right strings."""
+        self._run()
+        self._ledger([
+            {"at": "2026-07-28T10:00:00Z", "mode": "preflight", "seconds": 300.0,
+             "verdict": "fail", "moment": "close", "run_id": "RUN-MODES"},
+            {"at": "2026-07-28T11:00:00Z", "mode": "preflight", "seconds": 300.0,
+             "verdict": "fail", "moment": "close", "run_id": "RUN-MODES"},
+            {"at": "2026-07-28T12:00:00Z", "mode": "full", "seconds": 77.6,
+             "verdict": "pass", "moment": "close", "run_id": "RUN-MODES"},
+        ])
+        import sprint as sprint_mod
+        with contextlib.redirect_stderr(io.StringIO()):
+            act = sr._execution_actuals(self.root, ["US0001", "US0002"])
+        cost = sprint_mod.close_cost(self.root, "RUN-MODES")
+        self.assertEqual(act["seconds"], cost["gate_seconds"],
+                         "the report and the close cost read the same ledger differently")
+        self.assertEqual(act["seconds"], 677.6)
+
+    def test_a_reuse_row_is_counted_apart_and_not_as_cost(self) -> None:
+        """The negative control, and it is DEFENSIVE rather than live - said plainly because a
+        test that hides which it is misleads the next reader.
+
+        The shipped writer records `seconds: 0.0` on a reuse row, so counting one today adds
+        nothing and the exclusion changes no number. The row below carries 999s deliberately, to
+        pin the INTENT against a future writer that records the seconds a reuse SAVED: folding
+        those in would publish a saving as a cost, which is the direction a cost report must
+        never fail in. A fixture using the shipped 0.0 would let that mutant survive - it did,
+        on the first attempt at this test.
+
+        Mutant: count every mode without exception - 999 saved seconds are billed as spent."""
+        self._run()
+        self._ledger([
+            {"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 100.0,
+             "verdict": "pass", "moment": "commit"},
+            {"at": "2026-07-28T11:00:00Z", "mode": "reuse", "seconds": 999.0,
+             "verdict": "pass", "moment": "close"},
+        ])
+        with contextlib.redirect_stderr(io.StringIO()):
+            act = sr._execution_actuals(self.root, ["US0001", "US0002"])
+        self.assertEqual(act["seconds"], 100.0)
+        self.assertEqual(act["reused_runs"], 1)
+
+    def test_measured_gate_time_is_not_credited_to_delivery(self) -> None:
+        """The consequence, pinned where it actually hurt. Delivery is total MINUS overhead, so
+        a component the reader discards is silently added to delivery. Mutant: discard the
+        preflight seconds - the overhead ratio collapses towards zero and the delivery figure
+        absorbs ten minutes of measured gate time."""
+        self._run()
+        self._ledger([
+            {"at": "2026-07-28T10:00:00Z", "mode": "preflight", "seconds": 300.0,
+             "verdict": "fail", "moment": "close"},
+            {"at": "2026-07-28T11:00:00Z", "mode": "preflight", "seconds": 300.0,
+             "verdict": "fail", "moment": "close"},
+        ])
+        with contextlib.redirect_stderr(io.StringIO()):
+            act = sr._execution_actuals(self.root, ["US0001", "US0002"])
+            ov = sr._overhead_ratio(self.root, ["US0001", "US0002"], act, {"measured": False})
+        self.assertEqual(act["seconds"], 600.0)
+        self.assertGreaterEqual(ov["overhead_s"], 600.0,
+                                "measured gate time went missing from overhead, which means it "
+                                "was credited to delivery by subtraction")
+
+
 class OperatorSummaryTests(ReportBase):
     """US0645: human in the LEAD, not human in the loop.
 
@@ -1917,6 +2028,47 @@ class OperatorSummaryTests(ReportBase):
         self.assertTrue(s["ok"], s)
         self.assertEqual(s["cost"]["overhead_ratio"], "UNMEASURED")
         self.assertEqual(s["cost"]["elapsed_hours"], "UNMEASURED")
+
+    def test_a_measured_component_reports_its_value_not_the_word(self) -> None:
+        """THE POSITIVE CONTROL, and its absence was a blocking review finding: reducing the
+        whole of `_sprint_cost_line` to four constants passed 124 tests, because every existing
+        assertion only checked that something read UNMEASURED - which a constant makes trivially
+        true. The incident is not hypothetical: a commit carrying exactly that mutant reached
+        `main` and passed the pre-commit suites green.
+
+        So this asserts the DERIVATION: every field tracks the report it is read from, and none
+        of the four is a constant. Mutant: hard-code any one of them - that field stops tracking
+        and this reddens on it by name.
+        """
+        rep = {"ok": True, "sprint_actual_tokens": 1_234_567, "delivered_points": 41,
+               "velocity": {"elapsed_hours": 3.5}, "overhead": {"measured": True, "ratio": 2.5}}
+        cost = sr._sprint_cost_line(rep)
+        self.assertEqual(cost["tokens"], 1_234_567)
+        self.assertEqual(cost["delivered_points"], 41)
+        self.assertEqual(cost["elapsed_hours"], 3.5)
+        self.assertEqual(cost["overhead_ratio"], 2.5)
+        # ...and it TRACKS: move every input and every output must move with it
+        moved = sr._sprint_cost_line({"ok": True, "sprint_actual_tokens": 999,
+                                      "delivered_points": 7,
+                                      "velocity": {"elapsed_hours": 1.0},
+                                      "overhead": {"measured": True, "ratio": 9.9}})
+        self.assertEqual([moved["tokens"], moved["delivered_points"],
+                          moved["elapsed_hours"], moved["overhead_ratio"]], [999, 7, 1.0, 9.9])
+        self.assertNotEqual(set(cost.values()) & set(moved.values()), set(cost.values()),
+                            "a field did not move when its input did - it is a constant")
+
+    def test_a_measured_run_reaches_the_rendered_page(self) -> None:
+        """The lane half: a derivation that is correct and never printed is the state `critic
+        brief --tier` was in for a whole sprint. Mutant: drop the cost line from the renderer -
+        the figures are right and the operator never sees them."""
+        rep = {"ok": True, "id": "RETRO9100", "run_id": "RUN-X", "sprint_goal": "g",
+               "goal_verdict": "achieved", "shipped": [], "rejected": [], "carried": [],
+               "filed": [], "reversal_candidates": [],
+               "cost": {"tokens": 1_234_567, "delivered_points": 41,
+                        "elapsed_hours": 3.5, "overhead_ratio": 2.5}}
+        page = sr.render_operator_summary(rep)
+        self.assertIn("1234567", page.replace(",", ""))
+        self.assertIn("41 points", page)
 
     def test_the_signing_seat_contributes_no_prose(self) -> None:
         """THE property. Mutant: interpolate the verdict's note into the summary - a seat marks
@@ -1948,6 +2100,31 @@ class OperatorSummaryTests(ReportBase):
         page = sr.render_operator_summary(s)
         self.assertIn("What to overturn", page)
         self.assertIn("US0001", page)
+
+    def test_a_finding_carried_under_the_policy_is_named_with_its_id(self) -> None:
+        """AC3's Given names "a finding filed under the carry-forward policy", and no test
+        touched it - a review seat emptied both `carried` and `filed` and 124 tests passed.
+
+        Under D0129 a REJECT files its findings and the run ships, so the carried list IS the
+        operator's action list: "some findings were carried" is not something anybody can act
+        on, and a list of ids is. Mutant: empty either list - this reddens on the id.
+        """
+        run_started = "2026-07-28T08:00:00Z"
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-CARRY", "batch": ["US0001", "US0002"], "outcome": "running",
+            "started_at": run_started, "ended_at": "2026-07-28T18:00:00Z"}), encoding="utf-8")
+        d = self.root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "BG0901-carried.md").write_text(
+            "# BG0901: a finding this run filed and did not fix\n\n"
+            "> **Status:** Open\n> **Severity:** Medium\n> **Points:** 2\n"
+            "> **Raised-in-batch:** RUN-CARRY 2026-07-28T09:00:00Z\n\n"
+            "## Summary\nA carried finding.\n", encoding="utf-8")
+        with contextlib.redirect_stderr(io.StringIO()):
+            s = sr.operator_summary(self.root, "RETRO9100")
+        self.assertIn("BG0901", s["filed"], s)
+        self.assertIn("BG0901", s["carried"], s)
+        self.assertIn("BG0901", sr.render_operator_summary(s))
 
     def test_the_summary_is_generated_for_a_human_signoff_too(self) -> None:
         """Mutant: generate it only on the panel path - the human close and the seat close

@@ -736,6 +736,24 @@ CAPACITY_HUMAN = "human"
 #: this must not fail in is a machine's signature being taken for a person's, and every such row
 #: predates seat sign-off entirely.
 CAPACITY_UNKNOWN = ""
+#: The THIRD spelling of absent, and the one that bit. A row written before the column reads
+#: `""` (it has no cell); a row PADDED by the migration reads `-`, this file's absent marker.
+#: Both mean "nobody recorded a capacity" and neither may ever read as a seat. A review seat
+#: found that changing the migration pad to `seat` passed 406 tests - and with that pad, the
+#: first new sign-off widens the table and every historical HUMAN sign-off starts reading as a
+#: machine's, which is verbatim the failure this column exists to prevent.
+CAPACITY_ABSENT = (CAPACITY_UNKNOWN, "-")
+
+
+def signed_by_seat(signoff: dict | None) -> bool:
+    """Did a SEAT sign this? THE predicate, so no reader has to know the spellings of absent.
+
+    Stated positively and narrowly: only the exact `seat` marker answers yes. Every other value
+    - the two absent spellings, `human`, or anything a future writer adds - answers no, which is
+    the safe direction: a machine's signature must never be mistaken for a person's, and the
+    cost of the opposite error is only that a seat sign-off reads as unrecorded.
+    """
+    return str((signoff or {}).get("capacity") or "").strip() == CAPACITY_SEAT
 
 
 def evidence_path(repo_root: Path | str) -> Path:
@@ -1282,7 +1300,9 @@ def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str
     if who not in (CAPACITY_SEAT, CAPACITY_HUMAN):
         raise ValueError(f"unknown sign-off capacity {who!r} - expected "
                          f"{CAPACITY_SEAT!r} or {CAPACITY_HUMAN!r}")
-    _ensure_trailing_column(signoff_path(repo_root), "Unit", "Capacity", "-")
+    # The pad is an ABSENT marker, taken from the declared tuple rather than typed here: a
+    # literal at this call site is what let a mutant change it to `seat` unnoticed.
+    _ensure_trailing_column(signoff_path(repo_root), "Unit", "Capacity", CAPACITY_ABSENT[1])
     return _append_row(signoff_path(repo_root), _SIGNOFF_HEADER,
                        (sdlc_md.norm_id(unit), _clean(effective), _clean(chain),
                         _clean(author), sdlc_md.now_date(), _clean(note) or "-", who))

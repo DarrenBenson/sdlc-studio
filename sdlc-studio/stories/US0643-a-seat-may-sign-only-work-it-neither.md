@@ -54,13 +54,22 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SignoffPanelAssignmentTests::test_an_unassignable_panel_refuses_at_plan_time_and_leaves_no_run
 - **Verified:** yes (2026-08-05)
 
-### AC4: the three refusals hold through the shipped CLI, not only in the library
+### AC4: each refusal that the CLI can reach is refused for ITS OWN reason
 
-- **Given** a unit with a recorded adversarial verdict
-- **When** `critic.py signoff --panel` is driven for each of - the author signing, the adversarial seat signing, a signer other than the one the run assigned
-- **Then** each is refused with its own message and no row is appended
-- **Mutant:** call `record_signoff` directly instead of the verb - the assignment lookup is bypassed and every refusal that lives in the CLI path goes untested
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PanelSignoffCliTests::test_the_three_refusals_hold_through_the_shipped_verb
+> **RESTATED after an independent seat rejected the original.** It demanded that three
+> refusals (the author signing, an adversarial seat signing, and a signer the run did not
+> assign) each be reachable through the verb with its own message. Two cannot be told apart, and
+> that is correct layering rather than a defect: `signoff_panel` assigns the signer DISJOINTLY
+> from the adversarial seats, so an adversarial principal always trips the assigned-signer check
+> first and returns its message. The criterion asked for a distinction the design makes
+> impossible, and the test written to it asserted only a non-zero exit - which is why deleting
+> the disjointness guard entirely passed 1,114 tests.
+
+- **Given** a unit with a recorded adversarial verdict and an assigned panel
+- **When** `critic.py signoff --panel` is driven for the author signing, and for a signer the run did not assign
+- **Then** each is refused with a message naming ITS OWN reason, and no row is appended
+- **Mutant:** neuter either guard - the case that names it reddens, and only that case. A bare non-zero assertion cannot see the difference, which is the defect this restatement removes
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PanelSignoffCliTests::test_the_refusals_hold_through_the_shipped_verb_with_DISTINCT_messages
 - **Verified:** yes (2026-08-05)
 
 ### AC5: the positive control - a correctly separated panel signs
@@ -79,6 +88,15 @@
 - **Then** it is refused, because a panel that ratifies an unprovable review LAUNDERS the missing provenance instead of catching it
 - **Mutant:** drop the interlock - an unbriefed verdict is ratified. Found by mutation: the fixture supplied a brief in every other case, so no test reached this refusal
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PanelSignoffCliTests::test_a_panel_cannot_ratify_a_verdict_with_no_brief_provenance
+- **Verified:** yes (2026-08-05)
+
+### AC7: the disjointness guard is tested where it IS reachable (with AC4)
+
+- **Given** a caller supplying its own panel, which is the path the guard backstops
+- **When** the principal is one of the adversarial seats
+- **Then** `record_signoff` refuses, naming the seat - with the positive control beside it, a disjoint principal on the identical call being accepted
+- **Mutant:** delete the raise - this reddens and nothing else in the tree does
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PanelSignoffCliTests::test_an_adversarial_seat_cannot_ratify_its_own_evidence
 - **Verified:** yes (2026-08-05)
 
 ## Revision History

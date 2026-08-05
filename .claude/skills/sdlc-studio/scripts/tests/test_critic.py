@@ -568,22 +568,55 @@ class PanelSignoffCliTests(unittest.TestCase):
                 rc = exc.code
         return rc, out.getvalue() + err.getvalue()
 
-    def test_the_three_refusals_hold_through_the_shipped_verb(self) -> None:
-        """Mutant: call `record_signoff` directly instead of driving the verb - the assignment
-        lookup is bypassed entirely and the assigned-signer refusal goes untested."""
+    def test_the_refusals_hold_through_the_shipped_verb_with_DISTINCT_messages(self) -> None:
+        """The first version of this asserted only `rc != 0`, and an independent seat showed that
+        was a proxy: two of the three cases returned a BYTE-IDENTICAL message, because the
+        assigned-signer check fires first and masks whatever else is wrong. Deleting the
+        disjointness guard entirely passed 1,114 tests.
+
+        So each case now asserts the message that names ITS OWN reason. A refusal that fires for
+        a different reason than the one under test is a guard that could be deleted unnoticed.
+
+        Mutant: neuter any one of these guards - the case that names it reddens, and only that
+        case, which is what a per-reason assertion buys over a bare non-zero exit.
+        """
         with tempfile.TemporaryDirectory() as d:
             root, mod = Path(d), _load()
             rec = self._repo(root, mod)
-            signer, adversarial = rec["signer"], rec["adversarial"]
-            for principal, author, why in (
-                (signer, signer, "the author signing"),
-                (adversarial[0], "dev", "an adversarial seat signing"),
-                ("someone-else", "dev", "a signer the run did not assign"),
+            signer = rec["signer"]
+            for principal, author, marker, why in (
+                (signer, signer, "author", "the author signing their own work"),
+                ("someone-else", "dev", "assigned", "a signer the run did not assign"),
             ):
                 rc, page = self._signoff(mod, root, principal, author)
                 self.assertNotEqual(rc, 0, f"{why} was accepted:\n{page}")
+                self.assertIn(marker, page.lower(), f"{why} was refused for the WRONG reason")
             self.assertFalse(mod.signoff_path(root).exists(),
                              "a refused sign-off appended a row")
+
+    def test_an_adversarial_seat_cannot_ratify_its_own_evidence(self) -> None:
+        """US0598's disjointness guard, tested WHERE IT IS REACHABLE - which the CLI is not.
+
+        `signoff_panel` assigns the signer disjointly from the adversarial seats, so through the
+        verb an adversarial principal always trips the assigned-signer check first and this guard
+        never runs. That is correct layering, not a defect: the assignment makes the case
+        impossible. But it means the CLI cannot test the guard, and the criterion as originally
+        written claimed it could - restated on the artefact with this reason.
+
+        The guard is the backstop for a caller that supplies its own panel, so it is exercised
+        there. Mutant: delete the raise at `record_signoff` - this reddens, and nothing else does.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._repo(root, mod)
+            with self.assertRaises(ValueError) as ctx:
+                mod.record_signoff(root, "US0017", principal="engineering", author="dev",
+                                   panel=["engineering", "qa"])
+            self.assertIn("also one of the adversarial", str(ctx.exception))
+            # the positive control: the SAME call with a disjoint principal is accepted
+            mod.record_signoff(root, "US0017", principal="product", author="dev",
+                               panel=["engineering", "qa"])
+            self.assertEqual(mod.signoff_for(root, "US0017")["capacity"], mod.CAPACITY_SEAT)
 
     def test_a_panel_cannot_ratify_a_verdict_with_no_brief_provenance(self) -> None:
         """The fourth refusal, and the one a fixture that always supplies a brief never reaches -
@@ -704,6 +737,46 @@ class SignoffCapacityTests(unittest.TestCase):
                      if ln.startswith("|") and not set(ln.strip()) <= set("|-: ")]
             self.assertEqual({len(mod.sdlc_md.table_cells(ln)) for ln in lines}, {7}, lines)
 
+    def test_the_MIGRATED_table_never_reads_a_historical_row_as_a_seat(self) -> None:
+        """The review finding, and the one with real harm behind it. Every earlier test read the
+        UN-widened table; a seat changed the migration pad from `-` to `seat` and 406 tests
+        passed. With that pad, the first new sign-off widens the table and EVERY historical human
+        sign-off starts reading as a machine's - verbatim the failure this column exists to stop.
+
+        So this asserts the state AFTER migration, which is the state that ships. It also pins
+        the third spelling of absent: `""` on a short row, `-` on a padded one. Mutant: pad with
+        `seat`, or drop either spelling from `CAPACITY_ABSENT` - this reddens.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            path = mod.signoff_path(root)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Reviewer-of-Record Sign-offs\n\n"
+                "| Unit | Principal | Chain | Author | Date | Note |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| US0017 | darren | - | dev | 2026-07-01 | a human signed this |\n",
+                encoding="utf-8")
+            # the act that widens it: a new sign-off arriving after the column exists
+            mod.record_signoff(root, "US0018", principal="darren", author="dev")
+            historical = mod.signoff_for(root, "US0017")
+            self.assertIn(historical["capacity"], mod.CAPACITY_ABSENT, historical)
+            self.assertFalse(mod.signed_by_seat(historical),
+                             "a historical HUMAN sign-off reads as a seat after migration")
+            self.assertEqual(historical["note"], "a human signed this", "a cell moved")
+
+    def test_signed_by_seat_answers_no_for_every_spelling_of_absent(self) -> None:
+        """THE predicate, so no reader carries its own copy of the spellings. Stated positively:
+        only the exact marker answers yes. Mutant: make it a negation (`!= human`) - both absent
+        spellings start answering yes, which is the unsafe direction."""
+        mod = _load()
+        for absent in mod.CAPACITY_ABSENT:
+            self.assertFalse(mod.signed_by_seat({"capacity": absent}), repr(absent))
+        self.assertFalse(mod.signed_by_seat({"capacity": mod.CAPACITY_HUMAN}))
+        self.assertFalse(mod.signed_by_seat(None))
+        self.assertFalse(mod.signed_by_seat({}))
+        self.assertTrue(mod.signed_by_seat({"capacity": mod.CAPACITY_SEAT}))
+
     def test_an_unknown_capacity_is_refused(self) -> None:
         """Mutant: accept any string - the one field a reader trusts to say who judged becomes
         free text again."""
@@ -813,6 +886,60 @@ class BriefTierTests(unittest.TestCase):
             self.assertIn("review tier: light (derived", err.getvalue())
             self.assertIn("--tier light", err.getvalue(),
                           "the recording command must carry the tier, or it is printed and lost")
+
+    def test_the_shipped_record_verb_carries_the_tier_and_its_explicitness(self) -> None:
+        """THE LANE TEST that was missing, and its absence was fail-open: dropping `tier` and
+        `tier_explicit` from `cmd_record`'s call passed 359 tests. An unrecorded tier writes `-`,
+        `tier_covers` reads absent as COVERS, and the entire US0641 gate silently disarms with
+        nothing reddening anywhere.
+
+        The inconsistency is what makes it a finding rather than an oversight: the identical lane
+        IS tested for `--kind` and for `brief --tier`. This is the third of three and it was the
+        one omitted.
+
+        Mutant: drop either kwarg from the `record_verdict` call in `cmd_record` - this reddens
+        and nothing else does.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["record", "--unit", "US0017", "--verdict", "APPROVE",
+                               "--reviewer", "qa", "--author", "dev", "--tier", "light",
+                               "--brief", "abc123abc123", "--root", str(root)])
+            self.assertEqual(rc, 0, out.getvalue() + err.getvalue())
+            self.assertEqual(mod.verdict_for(root, "US0017")["tier"], "light")
+            # and the EXPLICIT marker travels too, or an operator's choice reads as a default
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                mod.main(["record", "--unit", "US0018", "--verdict", "APPROVE",
+                          "--reviewer", "qa", "--author", "dev", "--tier", "full",
+                          "--tier-explicit", "--brief", "abc123abc123", "--root", str(root)])
+            self.assertIn("explicit", mod.verdict_for(root, "US0018")["tier"])
+
+    def test_a_verb_recorded_tier_reaches_the_coverage_gate(self) -> None:
+        """End to end, across the module boundary: the verb writes it and `conformance` refuses
+        on it. Each half was tested and the join was not, which is where a fail-open hides.
+
+        Mutant: any break in the chain - the verb not passing the tier, the reader not parsing
+        it, coverage not consulting it - and a light review of a high-band unit reads as covered.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            _banded_unit(root, "US0002", heavy=True)
+            self.assertEqual(mod.tier_for(root, "US0002"), "full")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                mod.main(["record", "--unit", "US0002", "--verdict", "APPROVE",
+                          "--reviewer", "qa", "--author", "dev", "--tier", "light",
+                          "--brief", "abc123abc123", "--root", str(root)])
+            import importlib.util as _ilu
+            spec = _ilu.spec_from_file_location("conformance", SCRIPT.parent / "conformance.py")
+            conf = _ilu.module_from_spec(spec)
+            sys.modules["conformance"] = conf
+            spec.loader.exec_module(conf)
+            self.assertFalse(conf.verdict_half_ok(root, "US0002", sprint_covers=False),
+                             "a light verdict recorded through the VERB covered a full-band unit")
 
     def test_the_corpus_spans_more_than_one_band(self) -> None:
         """The no-op guard. A band that always resolves the same way is a config key wearing the

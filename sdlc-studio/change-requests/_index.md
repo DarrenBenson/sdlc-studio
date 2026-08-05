@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 15 |
+| Proposed | 16 |
 | Approved | 0 |
 | In Progress | 12 |
 | Complete | 482 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **532** |
+| **Total** | **533** |
 
 ## All Changes
 
@@ -83,6 +83,7 @@
 | [CR-0530](CR0530-the-planner-reports-shared-file-clusters-not-the.md) | the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all | Proposed | Medium | Improvement | 2026-08-04 | -- |
 | [CR-0531](CR0531-a-charter-s-scope-query-cannot-express-a.md) | a charter's scope query cannot express a decomposition, so the only queued charter's two scope fields disagree | Proposed | Medium | Improvement | 2026-08-04 | -- |
 | [CR-0532](CR0532-the-reviewer-of-record-is-an-ai-seat.md) | The reviewer of record is an AI seat, and the human gets a summary to lead from - human in the LEAD, not human in the loop | In Progress | High | Improvement | 2026-08-05 | EP0209 |
+| [CR-0533](CR0533-a-production-hunk-whose-reversion-leaves-the-suite.md) | A production hunk whose reversion leaves the suite green is uncovered: make the gate prove coverage rather than assume it | Proposed | High | Improvement | 2026-08-05 | -- |
 
 ## Archived Releases
 

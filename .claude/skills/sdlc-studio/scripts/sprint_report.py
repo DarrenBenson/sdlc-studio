@@ -391,10 +391,23 @@ def _mutation_lines(m: dict | None) -> list[str]:
             f"yield {cur['yield']} filed artefact(s) ({filed}){per}.{qualifier}", *trailing]
 
 
-#: Modes that count as having RUN something. `reuse` ran nothing and is counted apart: folding
-#: it into the full-run count would report a saving as a cost, and dropping it would hide that
-#: a decision was taken at all.
-_RAN_MODES = ("full", "selected", "none")
+#: The ONE mode that ran nothing. Everything else ran something and its seconds count.
+#:
+#: STATED AS AN EXCLUSION, not as a list of what counts. It was `("full", "selected", "none")`,
+#: and US0639 then added a fifth mode - `preflight` - to the ledger without this reader learning
+#: of it. Six preflight rows carrying 623.2 measured seconds were reported as "6 execution
+#: event(s) ... none carries a duration", while `sprint.close_cost` read the same six rows and
+#: reported 623.2s. Two readers of one ledger disagreeing, and the report's sentence was false
+#: about the bytes on disk. Worse than silent: `_overhead_ratio` derives delivery by SUBTRACTION,
+#: so 600s of measured, attributed gate time was credited to delivery.
+#:
+#: LL0043 - an enumeration of a rule is a lower bound, not a boundary. An allow-list must be
+#: extended by whoever adds a mode; an exclusion is right by default, and the direction it fails
+#: in is counting a new mode's real seconds rather than discarding them.
+#:
+#: `reuse` is excluded because it ran nothing: folding it into the run count would report a
+#: saving as a cost, and it is still counted separately so a reader can see a decision was taken.
+_REUSE_MODE = "reuse"
 
 
 def _execution_actuals(root: Path, unit_ids: list[str]) -> dict:
@@ -434,7 +447,7 @@ def _execution_actuals(root: Path, unit_ids: list[str]) -> dict:
         return {**empty, "why": "no test execution was recorded inside this run's window, so "
                                 "what the suites cost is NOT CAPTURED - which is not the same "
                                 "as a sprint that ran none, and is not zero"}
-    counted = [r for r in mine if str(r.get("mode")) in _RAN_MODES]
+    counted = [r for r in mine if str(r.get("mode")) != _REUSE_MODE]
     seconds = [float(r["seconds"]) for r in counted
                if isinstance(r.get("seconds"), (int, float))]
     return {
@@ -1702,7 +1715,13 @@ def operator_summary(root: Path, retro_id: str, rep: dict | None = None) -> dict
     for uid in units:
         v = critic.verdict_for(root, uid)
         signoff = critic.signoff_for(root, uid)
-        capacity = str((signoff or {}).get("capacity") or "").strip() or "unrecorded"
+        # ASKED of critic, never re-derived here. A second copy of "what counts as a seat"
+        # would drift from the first, and this reader is where the answer becomes visible to
+        # the operator - the one place a wrong answer is acted on.
+        capacity = (critic.CAPACITY_SEAT if critic.signed_by_seat(signoff)
+                    else str((signoff or {}).get("capacity") or "").strip())
+        if capacity in critic.CAPACITY_ABSENT:
+            capacity = "unrecorded"
         verdict = str((v or {}).get("verdict") or "").upper()
         if verdict == critic.REJECT:
             rejected.append({"unit": uid, "state": critic.repair_state(root, uid)["state"]})
@@ -1713,7 +1732,7 @@ def operator_summary(root: Path, retro_id: str, rep: dict | None = None) -> dict
                                                  "judged to answer the finding"})
         elif verdict == critic.APPROVE:
             shipped.append({"unit": uid, "signed_by": capacity})
-        if capacity == critic.CAPACITY_SEAT:
+        if critic.signed_by_seat(signoff):
             reversal.append({"unit": uid, "why": "signed off by a SEAT, not a person"})
 
     cost = _sprint_cost_line(rep)
