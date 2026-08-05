@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-04
+**Last Updated:** 2026-08-05
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 20 |
+| Open | 25 |
 | In Progress | 0 |
 | Fixed | 413 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **520** |
+| **Total** | **525** |
 
 ## All Bugs
 
@@ -60,6 +60,11 @@
 | [BG0518](BG0518-close-owed-detect-prints-a-sprint-close-is.md) | close_owed detect prints "a sprint close is owed" on the run where it exits 0, so its headline contradicts its own verdict | Fixed | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0519](BG0519-the-tools-leg-s-remaining-slowdown-inside-the.md) | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed | Open | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0520](BG0520-the-triage-session-cap-is-a-lifetime-cap.md) | the triage session cap is a LIFETIME cap: the session key defaults to a constant, so the counter never resets and filing eventually refuses for good | Open | Medium | 2026-08-04 | 2026-08-04 |
+| [BG0521](BG0521-us0481-ships-a-config-key-that-does-nothing.md) | US0481 ships a config key that does nothing at plan time, and batch add writes the unit before it refuses it | Open | High | 2026-08-05 | 2026-08-05 |
+| [BG0522](BG0522-bg0515-s-fix-reproduces-bg0515-a-charter-with.md) | BG0515's fix reproduces BG0515: a charter with an unresolved Open Question leaves the run open and the charter Queued | Open | High | 2026-08-05 | 2026-08-05 |
+| [BG0523](BG0523-five-acceptance-criteria-are-pinned-by-verifiers-that.md) | Five acceptance criteria are pinned by verifiers that cannot fail on what they claim | Open | High | 2026-08-05 | 2026-08-05 |
+| [BG0524](BG0524-warning-ratchet-reports-a-stale-baseline-as-clean.md) | warning-ratchet reports a stale baseline as clean and exits 0, contradicting US0480 AC4 and its own docstring | Open | Medium | 2026-08-05 | 2026-08-05 |
+| [BG0525](BG0525-us0629-ac2-asks-derive-to-detect-a-polarity.md) | US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written | Open | Medium | 2026-08-05 | 2026-08-05 |
 
 ## Archived Releases
 

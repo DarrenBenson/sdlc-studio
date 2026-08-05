@@ -1,6 +1,6 @@
 # US0632: at delivery each planned mutant is EXECUTED against the shipped test and its death recorded
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0525
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
