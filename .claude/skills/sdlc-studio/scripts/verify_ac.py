@@ -2477,12 +2477,36 @@ def cmd_lint(args: argparse.Namespace) -> int:
                 flagged += 1
                 print(f"{p.name}: {expr!r}\n    -> {availability}")
     dupes = duplicate_verifiers(paths)
+    # UNANSWERABLE groups, derived here by asking the resolver - never read from a list in a
+    # document. `selector_resolves` answers None for a verifier whose selector no collection can
+    # decide (`manual`, `grep`, `shell`, an absent runner), and a group of those cannot be split
+    # into discriminating halves because nothing can say what either half selects. Deriving it at
+    # lint time means a group that becomes answerable - or stops being - moves in and out of the
+    # set without anybody editing prose, which a hand-kept list could never manage.
+    unanswerable = []
+    for d in dupes:
+        if selector_resolves(d["verifier"]) is None:
+            unanswerable.append(d)
+    unanswerable_keys = {d["verifier"] for d in unanswerable}
     for d in dupes:
         flagged += 1
+        if d["verifier"] in unanswerable_keys:
+            continue
         print(f"duplicate verifier across {len(d['acs'])} ACs: {d['verifier']!r}\n"
               f"    -> {', '.join(d['acs'])}\n"
               f"    -> two ACs sharing a selector cannot both discriminate - a regression in "
               f"either fails both, and neither says which")
+    if unanswerable:
+        # ONE LINE PER MEMBER, with the verb that makes it unanswerable and every AC claiming
+        # it. A count cannot be taken apart: a reader told "6 groups are exempt" cannot see
+        # which, so cannot tell an exemption that is still true from one that quietly stopped
+        # being. Each line is the whole fact.
+        print(f"unanswerable duplicate group(s) - no collection can decide what these select, "
+              f"so they cannot be split into discriminating halves:")
+        for d in unanswerable:
+            verb = (d["verifier"].split() or ["?"])[0]
+            print(f"    [{verb}] {d['verifier']!r}\n"
+                  f"        claimed by: {', '.join(d['acs'])}")
     print(f"verify-lint: {flagged} suspicious Verify line(s) (advisory)")
     if getattr(args, "stamp", False):
         return _stamp_dup_baseline(repo_root, paths)

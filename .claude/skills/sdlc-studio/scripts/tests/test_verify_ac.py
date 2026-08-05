@@ -3783,5 +3783,94 @@ class LaneCheckTests(unittest.TestCase):
                          "lane - the original defect shape is no longer reported")
 
 
+class UnanswerableGroupTests(unittest.TestCase):
+    """US0637: the duplicate groups no collection can answer are named one by one.
+
+    A group whose selector `selector_resolves` answers None for - `manual`, `grep`, `shell`, an
+    absent runner - cannot be split into discriminating halves, because nothing can say what
+    either half selects. Those groups are genuinely exempt from the burn-down, and the reader
+    needs to see WHICH: a count cannot be taken apart, so an exemption that quietly stopped
+    being true is indistinguishable from one that still holds.
+    """
+
+    def _lint(self, root) -> str:
+        mod = verify_ac
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            mod.main(["lint", "--root", str(root)])
+        return out.getvalue() + err.getvalue()
+
+    def _story(self, root, sid, verifier, acs=2):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        body = "".join(
+            f"\n### AC{i}: it behaves {i}\n\n- **Given** a thing\n- **When** it runs\n"
+            f"- **Then** it works\n- **Verify:** {verifier}\n" for i in range(1, acs + 1))
+        (d / f"{sid}-x.md").write_text(
+            f"# {sid}: a story\n\n> **Status:** Ready\n> **Epic:** EP0100\n> **Points:** 2\n"
+            f"\n## Acceptance Criteria\n{body}", encoding="utf-8")
+
+    def test_the_set_is_derived_from_the_resolver_at_lint_time(self) -> None:
+        """MUTANT: read the exempt set from a hard-coded list instead of calling the resolver.
+
+        Two groups, identical in shape, differing ONLY in whether their selector is resolvable.
+        A hard-coded list cannot tell them apart; the resolver can. That is the whole claim.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            self._story(root, "US0001", "shell npm run lint:links")
+            # THE DISCRIMINATING CASE, and it took two attempts to find. A missing pytest FILE
+            # is not unanswerable - the resolver answers False for it, which is `stale`, a
+            # different fact. What it answers None for is an ABSENT RUNNER: `jest` is not
+            # installed here, so the resolver cannot decide what the selector selects even
+            # though the verb reads as perfectly resolvable. Without a case like this the test
+            # passes against an implementation that just groups by verb, and the claim - that
+            # the set is DERIVED from the resolver - is unheld. A hard-coding mutant survived
+            # the first version for exactly that reason.
+            self._story(root, "US0005", "jest some/spec.test.js -t a thing")
+            text = self._lint(root)
+        self.assertIn("unanswerable", text, "no unanswerable section was produced")
+        exempt = text.split("unanswerable", 1)[1]
+        self.assertIn("US0001", exempt,
+                      "the manual group was not derived as unanswerable")
+        self.assertIn("US0005", exempt,
+                      "a selector whose RUNNER is absent was not reported exempt - the set is "
+                      "being guessed from the verb rather than derived from the resolver")
+
+    def test_each_member_is_named_with_its_verb_and_claimants(self) -> None:
+        """MUTANT: print a count of exempt groups instead of a line each.
+
+        Asserts the verb AND every claiming AC appear, because a reader who cannot see which
+        ACs claim a group cannot judge whether the exemption is still honest.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            self._story(root, "US0003", "shell npm run lint:links", acs=3)
+            text = self._lint(root)
+        exempt = text.split("unanswerable", 1)[1]
+        self.assertIn("[shell]", exempt, "the verb making it unanswerable is not named")
+        for ac in ("US0003 AC1", "US0003 AC2", "US0003 AC3"):
+            with self.subTest(ac=ac):
+                self.assertIn(ac, exempt, f"{ac} claims the group but is not named")
+
+    def test_an_unanswerable_group_is_not_also_reported_as_splittable(self) -> None:
+        """MUTANT: report every group in both places.
+
+        Telling an author to split a group that cannot be split is advice they cannot take, and
+        it is how a report stops being read.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            self._story(root, "US0004", "shell npm run lint:links")
+            text = self._lint(root)
+        splittable = text.split("unanswerable", 1)[0]
+        self.assertNotIn("US0004", splittable,
+                         "an unanswerable group was also told to split into discriminating halves")
+
+
+
 if __name__ == "__main__":
     unittest.main()

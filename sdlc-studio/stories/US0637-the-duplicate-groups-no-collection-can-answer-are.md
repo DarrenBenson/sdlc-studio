@@ -41,6 +41,7 @@ quoting it long after the set has changed.
   that becomes answerable - or stops being - moves in and out of it without anybody editing a
   document
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::UnanswerableGroupTests::test_the_set_is_derived_from_the_resolver_at_lint_time
+- **Verified:** yes (2026-08-05)
 
 ### AC2: each member is reported individually, with its verb and its claimants
 
@@ -50,6 +51,7 @@ quoting it long after the set has changed.
   AC claiming it, so the reader sees which groups are exempt rather than a count they cannot
   take apart
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::UnanswerableGroupTests::test_each_member_is_named_with_its_verb_and_claimants
+- **Verified:** yes (2026-08-05)
 
 ## Revision History
 
