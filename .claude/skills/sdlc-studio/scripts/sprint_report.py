@@ -1738,10 +1738,10 @@ def _sprint_cost_line(rep: dict) -> dict:
     vel = rep.get("velocity") or {}
     ov = rep.get("overhead") or {}
     return {
-        "tokens": "UNMEASURED",
-        "delivered_points": None,
-        "elapsed_hours": "UNMEASURED",
-        "overhead_ratio": "UNMEASURED",
+        "tokens": tokens if tokens else "UNMEASURED",
+        "delivered_points": rep.get("delivered_points"),
+        "elapsed_hours": vel.get("elapsed_hours") or "UNMEASURED",
+        "overhead_ratio": ov.get("ratio") if ov.get("measured") else "UNMEASURED",
     }
 
 
