@@ -23,6 +23,7 @@
 - **When** sprint plan runs
 - **Then** it names that unit and the missing path in its pre-flight output
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BatchValidationTests::test_the_plan_names_a_unit_with_an_undeclared_verify_target
+- **Verified:** yes (2026-08-05)
 
 ### AC2: the scope is the batch, never the corpus
 
@@ -30,6 +31,7 @@
 - **When** a plan whose own units are clean runs
 - **Then** it reports nothing and does not refuse, because a defect in work nobody is planning cannot block a plan
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BatchValidationTests::test_instances_outside_the_batch_do_not_block_the_plan
+- **Verified:** yes (2026-08-05)
 
 ### AC3: a unit added to an open run afterwards is covered too
 
@@ -37,6 +39,7 @@
 - **When** a unit with an undeclared verify target is added with batch add
 - **Then** the same check runs and reports it, so joining a batch late is not a way past the gate
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BatchValidationTests::test_a_late_added_unit_is_checked_too
+- **Verified:** yes (2026-08-05)
 
 ### AC4: whether it blocks or warns is configurable and its default is documented
 
@@ -44,6 +47,7 @@
 - **When** a plan with an offending unit runs under each
 - **Then** the behaviour follows the setting, the shipped default is the one help/sprint.md states, and the help text and the code agree
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BatchValidationTests::test_block_or_warn_follows_config_and_the_documented_default
+- **Verified:** yes (2026-08-05)
 
 ## Revision History
 

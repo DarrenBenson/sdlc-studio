@@ -293,6 +293,20 @@ units nobody ruled on. `--force` overrides that refusal and writes what could ha
 onto the record, so the close reports a run stopped over work that was still moving rather than
 one that had run out.
 
+### When a unit's `Affects` contradicts its own content
+
+`sprint plan` reports any unit in ITS BATCH whose `Verify:` lines target a file the unit's
+`Affects` omits, or whose `Affects` names a path not on disk. `sprint batch add` runs the same
+check on the unit it adds, so joining a batch late is not a way past it.
+
+Scoped to the batch, never the corpus: a defect in work nobody is planning cannot block a plan.
+The standing tail is held by `validate.py warning-ratchet` instead.
+
+`sprint.affects_check` decides what a finding does. The shipped default is `warn` - it reports
+and refuses nothing, because a declaration naming a file the unit will CREATE is legitimate.
+Set it to `block` once your tail is paid down and you want it kept at zero. An unknown value
+falls back to `warn`.
+
 ### Appetite: the circuit breaker
 
 The appetite is resolved once at plan time and stamped on the run. It is set by

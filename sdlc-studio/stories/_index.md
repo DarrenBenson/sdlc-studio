@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 20 |
-| Ready | 15 |
+| Ready | 14 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 1 |
+| Review | 2 |
 | Done | 597 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -28,7 +28,7 @@
 | [US0469](US0469-every-sprint-batch-change-reports-its-capacity-effect.md) | Every sprint batch change reports its capacity effect through the plan-time renderer: points and token forecast against capacity.tokens, unit count against the appetite | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0474](US0474-review-prep-derives-the-rv-record-and-stamps.md) | review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
-| [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
+| [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Review | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Superseded | EP0174 | 2026-07-27 | 2026-07-27 |
 | [US0487](US0487-a-sprint-charter-is-a-first-class-artefact.md) | A sprint charter is a first-class artefact: goal, scope rule and appetite, with a tool-allocated id and an index row | Done | EP0176 | 2026-07-27 | 2026-07-27 |

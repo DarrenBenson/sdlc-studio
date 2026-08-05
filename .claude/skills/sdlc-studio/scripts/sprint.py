@@ -3529,6 +3529,38 @@ def _render_clusters(data: dict) -> None:
                       f"`Depends on:` so the waves say so.", file=sys.stderr)
 
 
+#: Whether an `Affects` a unit's own content contradicts REPORTS or REFUSES. Default `warn`,
+#: because a declaration naming a file the unit will CREATE is legitimate and refusing it would
+#: refuse ordinary work. `block` is for a project that has paid its tail down and wants it kept
+#: at zero. Read here and stated in `help/sprint.md`; the two are pinned to agree.
+AFFECTS_CHECK_DEFAULT = "warn"
+
+
+def affects_check_mode(repo_root: Path | str) -> str:
+    mode = str(config.get(repo_root, "sprint.affects_check", AFFECTS_CHECK_DEFAULT)
+               or AFFECTS_CHECK_DEFAULT).strip().lower()
+    return mode if mode in ("warn", "block") else AFFECTS_CHECK_DEFAULT
+
+
+def affects_findings(repo_root: Path | str, unit_ids) -> list[dict]:
+    """`[{id, unresolvable, undeclared}]` for the units named, and for NOBODY else.
+
+    Scoped to the batch on purpose. The corpus carries a standing tail this unit is not for -
+    a defect in work nobody is planning cannot block a plan, and a check that refused on it
+    would be switched off within a day. `validate.py warning-ratchet` is what holds the tail.
+    """
+    root = Path(repo_root)
+    out: list[dict] = []
+    for uid in unit_ids:
+        hit = sdlc_md.find_by_id(root, sdlc_md.norm_id(uid))
+        if not hit:
+            continue
+        mism = affects_mismatch(root, sdlc_md.read_text_safe(hit[0]) or "")
+        if mism["unresolvable"] or mism["undeclared"]:
+            out.append({"id": sdlc_md.norm_id(uid), **mism})
+    return out
+
+
 def _render_affects_advisories(data: dict) -> None:
     """A declaration the unit's own content contradicts. ADVISORY - it names what looks wrong
     and refuses nothing, because a path to a file the unit will create is legitimate.
@@ -7100,6 +7132,19 @@ def cmd_batch(args: argparse.Namespace) -> int:
         note = " (already present)" if change.get("note") else ""
         print(f"added {change['id']} to the batch{note}; batch is now "
               f"{len(state.get('batch') or [])} unit(s), held to the same gates as the rest.")
+        # The SAME check the plan ran over the original batch. Without it, joining a batch after
+        # the plan was printed is a way past a gate every other unit in that batch passed.
+        for it in affects_findings(root, [change["id"]]):
+            if it.get("unresolvable"):
+                print(f"  {it['id']}: Affects declares path(s) not on disk - "
+                      f"{', '.join(it['unresolvable'])} (a file the unit CREATES is fine)")
+            if it.get("undeclared"):
+                print(f"  {it['id']}: targeted by its own Verify lines but undeclared - "
+                      f"{', '.join(it['undeclared'])}")
+            if affects_check_mode(root) == "block":
+                print("  sprint.affects_check is `block`, so this unit is refused - declare the "
+                      "path or correct the Verify line.", file=sys.stderr)
+                return 2
     return 0
 
 

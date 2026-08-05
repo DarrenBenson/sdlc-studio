@@ -13442,6 +13442,104 @@ class QueueCrudTests(unittest.TestCase):
             self.assertIn("SC9999", err.getvalue())
 
 
+class BatchValidationTests(unittest.TestCase):
+    """US0481: the plan validates the UNITS in its batch, not only their index rows.
+
+    A unit whose own `Verify:` lines target a file its `Affects` omits travels that wrong
+    declaration into the collision analysis and the engagement floor, both of which read
+    `Affects`. The check is scoped to the batch on purpose: a defect in work nobody is planning
+    cannot block a plan, and a check that refused on the standing corpus tail would be switched
+    off within a day - `validate.py warning-ratchet` is what holds that tail.
+    """
+
+    def _unit(self, root: Path, uid: str, *, declared: str, verified: str) -> None:
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        for rel in {declared, verified}:
+            f = root / rel
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text("x\n", encoding="utf-8")
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: b\n\n> **Status:** Open\n> **Severity:** Medium\n> **Points:** 2\n"
+            f"> **Affects:** {declared}\n\n## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+            f"- **Given** a thing\n- **When** it runs\n- **Then** it works\n"
+            f"- **Verify:** pytest {verified}\n", encoding="utf-8")
+
+    def _tree(self, d):
+        sprint = _load()
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        return sprint, root
+
+    def test_the_plan_names_a_unit_with_an_undeclared_verify_target(self) -> None:
+        """MUTANT: stop collecting the mismatch, or report only when EVERY path fails."""
+        with tempfile.TemporaryDirectory() as d:
+            sprint, root = self._tree(d)
+            self._unit(root, "BG0001", declared="src/declared.py", verified="src/verified.py")
+            found = sprint.affects_findings(root, ["BG0001"])
+        self.assertEqual([f["id"] for f in found], ["BG0001"])
+        self.assertIn("src/verified.py", found[0]["undeclared"],
+                      "the finding does not name the missing path")
+
+    def test_instances_outside_the_batch_do_not_block_the_plan(self) -> None:
+        """MUTANT: judge the corpus instead of the batch.
+
+        The offending unit exists on disk and is NOT in the batch asked about. A corpus-scoped
+        check would report it and refuse a plan whose own units are clean.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            sprint, root = self._tree(d)
+            self._unit(root, "BG0001", declared="src/a.py", verified="src/a.py")      # clean
+            self._unit(root, "BG0002", declared="src/b.py", verified="src/other.py")  # dirty
+            found = sprint.affects_findings(root, ["BG0001"])
+        self.assertEqual(found, [], f"a unit outside the batch was judged: {found}")
+
+    def test_a_late_added_unit_is_checked_too(self) -> None:
+        """MUTANT: run the check at plan time only.
+
+        Joining a batch after the plan was printed must not be a way past a gate every other
+        unit in that batch passed. Driven through the shipped `batch add` verb rather than the
+        helper, because the wiring is the part a library test does not exercise.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            sprint, root = self._tree(d)
+            self._unit(root, "BG0001", declared="src/declared.py", verified="src/verified.py")
+            from lib import run_state
+            run_state.write(root, {"run_id": "RUN-TEST01", "outcome": "running", "batch": []})
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = sprint.main(["batch", "add", "BG0001", "--root", str(root)])
+            text = out.getvalue() + err.getvalue()
+        self.assertEqual(rc, 0, text)
+        self.assertIn("BG0001", text)
+        self.assertIn("src/verified.py", text,
+                      f"batch add did not run the check on the unit it added:\n{text}")
+
+    def test_block_or_warn_follows_config_and_the_documented_default(self) -> None:
+        """MUTANT: default to `block`, or let an unknown mode fall through to it.
+
+        The shipped default must be the one help/sprint.md states, and the help and the code are
+        asserted against each other rather than each against my memory of the other.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            sprint, root = self._tree(d)
+            cfg = root / "sdlc-studio" / ".config.yaml"
+            self.assertEqual(sprint.affects_check_mode(root), "warn",
+                             "the absent setting does not default to warn")
+            cfg.write_text("sprint:\n  affects_check: block\n", encoding="utf-8")
+            self.assertEqual(sprint.affects_check_mode(root), "block")
+            cfg.write_text("sprint:\n  affects_check: nonsense\n", encoding="utf-8")
+            self.assertEqual(sprint.affects_check_mode(root), "warn",
+                             "an unknown mode does not fall back to the documented default")
+        help_page = (Path(__file__).resolve().parents[2] / "help" / "sprint.md").read_text(
+            encoding="utf-8")
+        self.assertIn("sprint.affects_check", help_page,
+                      "the setting is undocumented in help/sprint.md")
+        self.assertRegex(help_page, r"affects_check[^\n]*\n(?:[^\n]*\n){0,12}?[^\n]*`warn`",
+                         "help/sprint.md does not state `warn` as the shipped default")
+
+
 class QueueShowIsReadableDuringARunTests(unittest.TestCase):
     """BG0514: `queue show` was blind at exactly the moment an operator uses it.
 
