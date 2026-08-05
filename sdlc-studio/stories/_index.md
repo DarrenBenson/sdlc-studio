@@ -11,8 +11,8 @@
 | Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 4 |
-| Done | 597 |
+| Review | 0 |
+| Done | 601 |
 | Won't Implement | 2 |
 | Deferred | 0 |
 | Superseded | 2 |
@@ -24,12 +24,12 @@
 | ID | Title | Status | Epic | Created | Updated |
 | --- | --- | --- | --- | --- | --- |
 | [US0467](US0467-status-names-the-open-run-id-rung-sprint.md) | status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses | Done | EP0170 | 2026-07-27 | 2026-07-27 |
-| [US0468](US0468-help-sprint-md-documents-the-run-lifecycle-batch.md) | help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record | Review | EP0170 | 2026-07-27 | 2026-07-27 |
+| [US0468](US0468-help-sprint-md-documents-the-run-lifecycle-batch.md) | help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record | Done | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0469](US0469-every-sprint-batch-change-reports-its-capacity-effect.md) | Every sprint batch change reports its capacity effect through the plan-time renderer: points and token forecast against capacity.tokens, unit count against the appetite | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0474](US0474-review-prep-derives-the-rv-record-and-stamps.md) | review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
-| [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Review | EP0173 | 2026-07-27 | 2026-07-27 |
-| [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Review | EP0173 | 2026-07-27 | 2026-07-27 |
+| [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Done | EP0173 | 2026-07-27 | 2026-07-27 |
+| [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Done | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Superseded | EP0174 | 2026-07-27 | 2026-07-27 |
 | [US0487](US0487-a-sprint-charter-is-a-first-class-artefact.md) | A sprint charter is a first-class artefact: goal, scope rule and appetite, with a tool-allocated id and an index row | Done | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0488](US0488-sprint-next-materialises-the-head-charter-against-the.md) | sprint next materialises the head charter against the backlog as it is at that moment, and stops when its scope resolves to nothing | Done | EP0176 | 2026-07-27 | 2026-07-27 |
@@ -76,7 +76,7 @@
 | [US0634](US0634-the-cost-is-measured-over-one-run-and.md) | the cost is measured over one run and reported: passes spent on test-plan review versus on code review | Ready | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0635](US0635-the-thirteen-story-side-duplicate-verify-groups-are.md) | The thirteen story-side duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
 | [US0636](US0636-the-seven-bug-side-duplicate-verify-groups-are.md) | The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
-| [US0637](US0637-the-duplicate-groups-no-collection-can-answer-are.md) | The duplicate groups no collection can answer are derived from the resolver and named one by one | Review | EP0174 | 2026-08-03 | 2026-08-03 |
+| [US0637](US0637-the-duplicate-groups-no-collection-can-answer-are.md) | The duplicate groups no collection can answer are derived from the resolver and named one by one | Done | EP0174 | 2026-08-03 | 2026-08-03 |
 
 ## Archived Releases
 

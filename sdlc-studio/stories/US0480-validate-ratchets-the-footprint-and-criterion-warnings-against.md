@@ -1,6 +1,8 @@
 # US0480: validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances
 
-> **Status:** Review
+> **Status:** Done
+> **Also carried:** BG0524 - the stale-baseline state reports clean, and this unit's AC2 contradicts its AC4.
+> **Closed with findings in:** BG0523 - a criterion of this unit is pinned by a verifier that cannot fail on what it claims. Signed off under D0129 with the finding filed, not waived.
 > **Delivers:** CR0443
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

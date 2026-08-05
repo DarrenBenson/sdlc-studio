@@ -1,6 +1,6 @@
 # CR-0440: An open sprint run is invisible to status, the one command the doctrine names for session-start re-anchoring
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0170
 > **Priority:** Medium
 > **Type:** Improvement

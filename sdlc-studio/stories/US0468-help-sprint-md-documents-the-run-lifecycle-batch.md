@@ -1,6 +1,7 @@
 # US0468: help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record
 
-> **Status:** Review
+> **Status:** Done
+> **Closed with findings in:** BG0523 - a criterion of this unit is pinned by a verifier that cannot fail on what it claims. Signed off under D0129 with the finding filed, not waived.
 > **Delivers:** CR0442
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

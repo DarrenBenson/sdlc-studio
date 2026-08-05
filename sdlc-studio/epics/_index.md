@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 11 |
+| Draft | 9 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 196 |
+| Done | 198 |
 | **Total** | **207** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -27,10 +27,10 @@
 | [EP0167](EP0167-derivable-spec-claims-are-checked-against-the-repo.md) | Derivable spec claims are checked against the repo, so the TRD and TSD cannot quietly stop being true | Done | 3 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0168](EP0168-make-the-spec-true-again-every-prd-trd.md) | Make the spec true again: every PRD, TRD and TSD claim the shipped code contradicts, repaired behind a guard that reddens on relapse | Done | 6 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0169](EP0169-evidence-that-can-fail-discriminating-verifiers-findings-that.md) | Evidence that can fail: discriminating verifiers, findings that become detectors, and no terminal artefact with open questions | Done | 6 | -- | 2026-07-27 | 2026-07-27 |
-| [EP0170](EP0170-the-shipped-surface-is-the-documented-surface-grooming.md) | The shipped surface is the documented surface: grooming, the open run and the run lifecycle | Draft | 3 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0170](EP0170-the-shipped-surface-is-the-documented-surface-grooming.md) | The shipped surface is the documented surface: grooming, the open run and the run lifecycle | Done | 3 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0171](EP0171-in-flight-sprint-controls-and-a-close-review.md) | In-flight sprint controls and a close review derived from one recorded entry | Draft | 7 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0172](EP0172-dead-surfaces-the-supersession-record-the-epic-index.md) | Dead surfaces: the supersession record, the epic-index columns and the flag that does nothing | Done | 4 | -- | 2026-07-27 | 2026-07-27 |
-| [EP0173](EP0173-footprint-and-criterion-checks-bite-instead-of-accumulating.md) | Footprint and criterion checks bite instead of accumulating | Draft | 2 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0173](EP0173-footprint-and-criterion-checks-bite-instead-of-accumulating.md) | Footprint and criterion checks bite instead of accumulating | Done | 2 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0174](EP0174-pay-down-the-debt-the-v5-scope-caps.md) | Pay down the debt the v5 scope caps baselined | Draft | 5 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0175](EP0175-detectors-for-the-classes-the-audit-had-to.md) | Detectors for the classes the audit had to find by hand | Done | 3 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0176](EP0176-a-queue-of-planned-sprint-charters-plan-several.md) | A queue of planned sprint charters: plan several, run the next, and let the planner and the runner be different people | Done | 6 | -- | 2026-07-27 | 2026-07-27 |

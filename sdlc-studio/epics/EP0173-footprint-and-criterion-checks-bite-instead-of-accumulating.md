@@ -1,6 +1,6 @@
 # EP0173: Footprint and criterion checks bite instead of accumulating
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0444
 > **Derived Point Total:** 10
 > **Parent:** CR0443
@@ -15,8 +15,8 @@ Decomposed from CR0443. Delivers the work CR0443 requested.
 
 ## Story Breakdown
 
-- [ ] [US0480: validate ratchets the footprint and criterion warnings against a baseline derived from the corpus](../stories/US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md)
-- [ ] [US0481: sprint plan validates the units in its batch, not only their index rows](../stories/US0481-sprint-plan-validates-the-units-in-its-batch.md)
+- [x] [US0480: validate ratchets the footprint and criterion warnings against a baseline derived from the corpus](../stories/US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md)
+- [x] [US0481: sprint plan validates the units in its batch, not only their index rows](../stories/US0481-sprint-plan-validates-the-units-in-its-batch.md)
 
 ## Revision History
 

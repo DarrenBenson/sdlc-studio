@@ -1,6 +1,6 @@
 # CR-0443: The Affects and Verify warning family is advisory at 398 instances, so a new one is invisible
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0173
 > **Priority:** Medium
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # CR-0442: The run lifecycle beyond plan and close is undocumented: batch mutation, appetite and the rolling policy have no help page
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0170
 > **Priority:** Medium
 > **Type:** Improvement

@@ -1,20 +1,20 @@
 # Change Request Index
 
-**Last Updated:** 2026-08-04
+**Last Updated:** 2026-08-05
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 16 |
+| Proposed | 17 |
 | Approved | 0 |
-| In Progress | 15 |
-| Complete | 477 |
+| In Progress | 10 |
+| Complete | 482 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **531** |
+| **Total** | **532** |
 
 ## All Changes
 
@@ -35,12 +35,12 @@
 | [CR-0436](CR0436-epic-index-stories-and-deps-columns-are-dead.md) | Epic index Stories and Deps columns are dead for 156 of 165 epics and unchecked by reconcile | Complete | Low | Improvement | 2026-07-27 | EP0172 |
 | [CR-0437](CR0437-gate-py-verify-batch-is-a-dead-flag.md) | gate.py --verify-batch is a dead flag: run_gate accepts verify_batch and never reads it | Complete | Low | Improvement | 2026-07-27 | EP0172 |
 | [CR-0438](CR0438-done-stories-carry-unresolved-open-questions-with-no.md) | Done stories carry unresolved Open Questions with no gate requiring resolution before terminal status (14 stories) | Complete | Low | Improvement | 2026-07-27 | EP0169 |
-| [CR-0439](CR0439-grooming-a-refine-minted-skeleton-has-no-help.md) | Grooming a refine-minted skeleton has no help page and no pointer to the AC shape, so each groom re-derives it | In Progress | Medium | Improvement | 2026-07-27 | EP0170 |
-| [CR-0440](CR0440-an-open-sprint-run-is-invisible-to-status.md) | An open sprint run is invisible to status, the one command the doctrine names for session-start re-anchoring | In Progress | Medium | Improvement | 2026-07-27 | EP0170 |
+| [CR-0439](CR0439-grooming-a-refine-minted-skeleton-has-no-help.md) | Grooming a refine-minted skeleton has no help page and no pointer to the AC shape, so each groom re-derives it | Complete | Medium | Improvement | 2026-07-27 | EP0170 |
+| [CR-0440](CR0440-an-open-sprint-run-is-invisible-to-status.md) | An open sprint run is invisible to status, the one command the doctrine names for session-start re-anchoring | Complete | Medium | Improvement | 2026-07-27 | EP0170 |
 | [CR-0441](CR0441-in-flight-sprint-controls-capacity-aware-swap-bulk.md) | In-flight sprint controls: capacity-aware swap, bulk add by epic, and a resizable appetite | In Progress | High | Improvement | 2026-07-27 | EP0171 |
-| [CR-0442](CR0442-the-run-lifecycle-beyond-plan-and-close-is.md) | The run lifecycle beyond plan and close is undocumented: batch mutation, appetite and the rolling policy have no help page | In Progress | Medium | Improvement | 2026-07-27 | EP0170 |
-| [CR-0443](CR0443-the-affects-and-verify-warning-family-is-advisory.md) | The Affects and Verify warning family is advisory at 398 instances, so a new one is invisible | In Progress | Medium | Improvement | 2026-07-27 | EP0173 |
-| [CR-0444](CR0444-sprint-plan-validates-the-batch-it-is-about.md) | sprint plan validates the batch it is about to plan, not only its index rows | In Progress | High | Improvement | 2026-07-27 | EP0173 |
+| [CR-0442](CR0442-the-run-lifecycle-beyond-plan-and-close-is.md) | The run lifecycle beyond plan and close is undocumented: batch mutation, appetite and the rolling policy have no help page | Complete | Medium | Improvement | 2026-07-27 | EP0170 |
+| [CR-0443](CR0443-the-affects-and-verify-warning-family-is-advisory.md) | The Affects and Verify warning family is advisory at 398 instances, so a new one is invisible | Complete | Medium | Improvement | 2026-07-27 | EP0173 |
+| [CR-0444](CR0444-sprint-plan-validates-the-batch-it-is-about.md) | sprint plan validates the batch it is about to plan, not only its index rows | Complete | High | Improvement | 2026-07-27 | EP0173 |
 | [CR-0445](CR0445-burn-down-the-19-duplicate-verify-selector-groups.md) | Burn down the 19 duplicate Verify selector groups the ratchet baselines | In Progress | Medium | Improvement | 2026-07-27 | EP0174 |
 | [CR-0447](CR0447-reconcile-reports-a-supersession-only-one-side-records.md) | reconcile reports a supersession only one side records | Complete | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0448](CR0448-command-audit-reports-a-flag-whose-destination-is.md) | command_audit reports a flag whose destination is never read - and is proven on verify_batch | Complete | Medium | Improvement | 2026-07-27 | EP0175 |
@@ -82,6 +82,7 @@
 | [CR-0529](CR0529-the-prior-art-check-is-scoped-to-the.md) | the prior-art check is scoped to the reviewer, so an author rediscovers by being rejected what one command would have told them | Proposed | Medium | Improvement | 2026-08-04 | -- |
 | [CR-0530](CR0530-the-planner-reports-shared-file-clusters-not-the.md) | the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all | Proposed | Medium | Improvement | 2026-08-04 | -- |
 | [CR-0531](CR0531-a-charter-s-scope-query-cannot-express-a.md) | a charter's scope query cannot express a decomposition, so the only queued charter's two scope fields disagree | Proposed | Medium | Improvement | 2026-08-04 | -- |
+| [CR-0532](CR0532-the-reviewer-of-record-is-an-ai-seat.md) | The reviewer of record is an AI seat, and the human gets a summary to lead from - human in the LEAD, not human in the loop | Proposed | High | Improvement | 2026-08-05 | -- |
 
 ## Archived Releases
 

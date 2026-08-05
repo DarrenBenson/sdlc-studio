@@ -1,6 +1,7 @@
 # US0637: The duplicate groups no collection can answer are derived from the resolver and named one by one
 
-> **Status:** Review
+> **Status:** Done
+> **Closed with findings in:** BG0523 - a criterion of this unit is pinned by a verifier that cannot fail on what it claims. Signed off under D0129 with the finding filed, not waived.
 > **Delivers:** CR0445
 > **Supersedes:** US0482
 > **Created:** 2026-08-03

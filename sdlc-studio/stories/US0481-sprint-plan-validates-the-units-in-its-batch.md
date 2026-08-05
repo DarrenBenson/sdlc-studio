@@ -1,6 +1,7 @@
 # US0481: sprint plan validates the units in its batch, not only their index rows
 
-> **Status:** Review
+> **Status:** Done
+> **Closed with findings in:** BG0521 - AC4's behaviour is absent: sprint.affects_check is inert for sprint plan, and batch add writes the unit before it refuses it. Signed off under D0129 with the finding filed, not waived.
 > **Delivers:** CR0444
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
