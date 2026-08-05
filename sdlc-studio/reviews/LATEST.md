@@ -9,7 +9,43 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
-## IN FLIGHT: RUN-01KZ79C1 - the instruments are honest, and the baselined debt is paid
+## CLOSED: RUN-01KZ79C1 - the instruments are honest; the review found what the gates could not
+
+**Called at 6 delivered, 15 descoped, goal verdict PARTIAL.** Four further units shipped their
+code and rest at Review, awaiting the reviewer-of-record sign-off the two-role gate reserves for
+the operator: US0468, US0480, US0481, US0637.
+
+Terminal: BG0513, BG0507, BG0518, BG0514, BG0515, BG0500. BG0463 delivered narrowed, stays Open.
+
+**The finding that matters is not any defect.** Ten units passed every automated gate - full
+suite, `verify_ac`, lane-check, mutation as the author ran it - and two independent seats,
+briefed with `critic.py brief`, both REJECTed on 11 blocking findings and produced IDENTICAL
+unit-level splits. Five AC-named mutants did not kill their tests, on units committed claiming
+they had. The generative defect: each mutant was written after the code, from the code, so it
+was the mutant the test was already built to catch. The criterion stated the real mutant in
+every case.
+
+**Carried under D0129 (`review.policy: carry-forward`), all filed, none waived:**
+
+| Finding | Filed |
+| --- | --- |
+| `affects_check` inert at plan time; `batch add` writes before it refuses; JSON path skips it | BG0521 |
+| BG0515's fix reproduces BG0515 through the terminal Open-Questions gate | BG0522 |
+| Five criteria pinned by verifiers that cannot fail | BG0523 |
+| Stale baseline reports clean; US0480 AC2 contradicts AC4 | BG0524 |
+| US0629 AC2 is not mechanically decidable | BG0525 |
+| Low-severity test debt | CR0511 |
+
+**Two numbers for planning.** Ten units delivered produced eight filed findings - at that ratio
+a blocking policy cannot converge, which is why D0129 exists and why CR0510 (ceremony by blast
+radius) is the next thing to build. And reviewing a TEST PLAN cost 55k tokens against roughly
+400k for the same class of finding after the code shipped - measured here on the first hand-run
+use of EP0207's mechanism, which rejected all three rows of US0629's plan.
+
+**Next run leads with EP0207**, descoped intact from this one: build test-plan-before-code, then
+turn it on the carried findings so the repairs are held by evidence that can fail.
+
+## Superseded in-flight note: RUN-01KZ79C1 - the instruments are honest, and the baselined debt is paid
 
 **This run is OPEN. 10 of 15 units delivered, 31 of 52 points.** The close-status block above
 still describes RUN-01KZ5YXM; it is stamped by `sprint close` and this run has not closed.

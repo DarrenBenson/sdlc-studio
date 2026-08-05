@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0302: **Fixing the instance leaves the class.** BG0500 added `runbook.py` to the AGENTS.md lane roster; four commits later the same batch shipped...**
+- **L-0301: **Reviewing the test costs two orders of magnitude less than reviewing the code.** Measured this run, by accident, on the first hand-run...**
+- **L-0300: **A mutant derived from the implementation is the mutant the test was built to catch.** Five AC-named mutants did not kill their tests, on...**
 - **L-0299: A file-disjoint unit is not necessarily an independent one.**
 - **L-0298: A mutant that removes ONE of two sufficient fixes measures less than it appears to.**
 - **L-0297: A stub is not the shipped entry point.**

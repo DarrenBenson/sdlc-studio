@@ -68,6 +68,12 @@ conformance:
   adopt_after: 82
 
 review:
+  # D0129: a REJECT files its findings and the run SHIPS, rather than holding until the tree is
+  # clean. Adopted on RUN-01KZ79C1, where two seats REJECTed a 10-unit batch on 11 real findings
+  # and `block` would have held six delivered gate fixes hostage to a sprint's worth of repair.
+  # Every finding must still be filed or explicitly waived - nothing is discarded. Revisit once
+  # CR0510 (ceremony by blast radius) and EP0207 (test-plan-before-code) are in force.
+  policy: carry-forward
   # Two-role review gate (RFC0044/CR0323), forward-only from the sprint that built it:
   # units past US0192 clear `critiqued` only with the adversarial pass recorded as
   # evidence AND an independent reviewer-of-record sign-off (critic.py evidence/signoff).
