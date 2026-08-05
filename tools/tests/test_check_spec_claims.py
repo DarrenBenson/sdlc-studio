@@ -112,8 +112,26 @@ class GateLaneTests(unittest.TestCase):
         self.assertIn("lint:spec-claims", pkg, "no npm lint script for the checker")
         self.assertIn("lint:spec-claims", pkg["lint"],
                       "the checker is not chained into `npm run lint`")
-        self.assertIn("check_spec_claims.py", (repo / "AGENTS.md").read_text(encoding="utf-8"),
+        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("check_spec_claims.py", agents,
                       "AGENTS.md's guard table does not document the checker")
+        # EVERY blocking lane, derived from the hook rather than restated here - AGENTS.md says
+        # extend the pinning when you add a lane, or the list silently exempts what it forgot
+        # (LL0013). Two lanes reached this roster late: `runbook.py` was filed as BG0500, and
+        # `validate.py`'s warning ratchet shipped in the same batch and was missed until an
+        # independent seat named it.
+        hook = (repo / ".githooks" / "pre-commit").read_text(encoding="utf-8")
+        import re as _re
+        for key, script in _re.findall(
+                r'run\s+"([^"]+)"(?:[^\n]*\n){1,4}?\s*--\s+\S+\s+(\S+)', hook):
+            name = script.rsplit("/", 1)[-1]
+            if not name.endswith((".py", ".sh")):
+                continue
+            with self.subTest(lane=key):
+                self.assertIn(name, agents,
+                              f"the `{key}` lane runs {name} and AGENTS.md's roster does not "
+                              f"name it - a guard nobody has written down is one nobody "
+                              f"notices losing")
 
     def test_the_checker_exits_non_zero_on_a_contradiction(self) -> None:
         """The lane is only a lane if the command it runs can fail."""
