@@ -2689,5 +2689,177 @@ class RepeatedFieldTests(unittest.TestCase):
         self.assertEqual(hits, [], f"{len(hits)} repeated single-valued field(s) in the corpus")
 
 
+def _ratchet_story(root: Path, sid: str, verify_target: str, affects: str) -> None:
+    """A story whose `Verify:` line targets a file its `Affects` omits - one
+    `affects-undeclared` instance, with the target under our control."""
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    for rel in {verify_target, affects}:
+        f = root / rel
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("x\n", encoding="utf-8")
+    (d / f"{sid}-x.md").write_text(
+        f"# {sid}: a story\n\n> **Status:** Ready\n> **Epic:** EP0100\n> **Points:** 2\n"
+        f"> **Affects:** {affects}\n\n## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+        f"- **Given** a thing\n- **When** it runs\n- **Then** it works\n"
+        f"- **Verify:** pytest {verify_target}\n", encoding="utf-8")
+
+
+def _stamp(root: Path, instances, reason: str = "recorded at adoption") -> None:
+    (root / validate.WARNING_RATCHET_FILE).parent.mkdir(parents=True, exist_ok=True)
+    (root / validate.WARNING_RATCHET_FILE).write_text(json.dumps({
+        "stamped": "2026-01-01",
+        "entries": [{"id": i, "rule": r, "target": tgt, "reason": reason}
+                    for i, r, tgt in instances]}, indent=2) + "\n", encoding="utf-8")
+
+
+class WarningRatchetTests(unittest.TestCase):
+    """US0480: the Affects/Verify warning family stops accumulating.
+
+    It stood at 371 instances and was purely advisory, so a new one was indistinguishable from
+    the standing tail. A COUNT cannot fix that - it says a number moved and never which instance
+    is new, and it lets a repair in one place pay for a regression in another. The reference is
+    therefore a SET of instance identities, each with a stated reason, and it may only shrink.
+    """
+
+    def test_an_unrecorded_instance_refuses_while_the_recorded_ones_pass(self) -> None:
+        """MUTANT: compare totals instead of identities."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
+            _stamp(root, sorted(validate.ratchet_instances(root)))
+            self.assertTrue(validate.warning_ratchet(root)["ok"], "the recorded set does not pass")
+
+            _ratchet_story(root, "US0002", "src/b.py", "src/other.py")
+            rep = validate.warning_ratchet(root)
+        self.assertFalse(rep["ok"], "an unrecorded instance did not refuse")
+        self.assertEqual([i for i, _r, _t in rep["new"]], ["US0002"],
+                         f"the refusal does not name the new instance alone: {rep['new']}")
+        self.assertIn("affects-undeclared", {r for _i, r, _t in rep["new"]})
+        self.assertIn("src/b.py", {t for _i, _r, t in rep["new"]},
+                      "the refusal does not name the specific target")
+
+    def test_a_swap_that_keeps_the_total_flat_is_still_refused(self) -> None:
+        """MUTANT: consult a recomputed total anywhere in the comparison.
+
+        One instance repaired, one introduced: the total is unchanged, so a count-based ratchet
+        reports clean. The repaired entry must also be reported stale, so it cannot be spent
+        again to admit a third.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
+            before = sorted(validate.ratchet_instances(root))
+            _stamp(root, before)
+            (root / "sdlc-studio" / "stories" / "US0001-x.md").unlink()   # repaired
+            _ratchet_story(root, "US0002", "src/b.py", "src/other.py")    # and a new one
+            rep = validate.warning_ratchet(root)
+        self.assertEqual(len(rep["new"]), len(rep["stale"]),
+                         "the fixture is not a flat swap, so it proves nothing about totals")
+        self.assertFalse(rep["ok"], "a flat swap passed - the ratchet is counting, not comparing")
+        self.assertEqual([i for i, _r, _t in rep["new"]], ["US0002"])
+        self.assertEqual([i for i, _r, _t in rep["stale"]], ["US0001"],
+                         "the repaired entry is not reported as stale and removable")
+
+    def test_a_kind_paid_down_elsewhere_cannot_mask_another(self) -> None:
+        """MUTANT: make the rule a per-kind tally rather than part of each identity."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
+            # two instances of a DIFFERENT kind, which the change below repairs
+            d2 = root / "sdlc-studio" / "stories"
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (d2 / "US0003-x.md").write_text(
+                "# US0003: a story\n\n> **Status:** Ready\n> **Epic:** EP0100\n"
+                "> **Points:** 2\n> **Affects:** src/gone-one.py, src/gone-two.py\n\n"
+                "## Acceptance Criteria\n\n### AC1: it behaves\n\n- **Given** a thing\n"
+                "- **When** it runs\n- **Then** it works\n- **Verify:** shell true\n",
+                encoding="utf-8")
+            _stamp(root, sorted(validate.ratchet_instances(root)))
+            (d2 / "US0003-x.md").unlink()                                  # two repaired
+            _ratchet_story(root, "US0002", "src/b.py", "src/other.py")     # one introduced
+            rep = validate.warning_ratchet(root)
+        self.assertFalse(rep["ok"],
+                         "a surplus repaired in one kind masked a regression in another")
+        self.assertEqual({r for _i, r, _t in rep["new"]}, {"affects-undeclared"})
+
+    def test_no_untrustworthy_baseline_reports_clean(self) -> None:
+        """MUTANT: treat an absent, unreadable or reasonless baseline as an empty one.
+
+        Four workspaces, four distinct states, none of them clean. "I could not establish the
+        reference" must never render as "there is nothing new".
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+
+            rep = validate.warning_ratchet(root)                     # no file
+            self.assertEqual(rep["state"], "not-baselined")
+            self.assertFalse(rep["ok"])
+
+            (root / validate.WARNING_RATCHET_FILE).write_text("{not json", encoding="utf-8")
+            rep = validate.warning_ratchet(root)                     # unreadable
+            self.assertEqual(rep["state"], "corrupt")
+            self.assertFalse(rep["ok"])
+
+            live = sorted(validate.ratchet_instances(root))
+            _stamp(root, live + [("US9999", "affects-undeclared", "src/never.py")])
+            rep = validate.warning_ratchet(root)                     # records a vanished instance
+            self.assertEqual(rep["state"], "ok")
+            self.assertIn("US9999", [i for i, _r, _t in rep["stale"]],
+                          "a recorded instance no artefact carries is not reported stale")
+
+            _stamp(root, live, reason="   ")
+            rep = validate.warning_ratchet(root)                     # entry with no reason
+            self.assertEqual(rep["state"], "reasonless")
+            self.assertFalse(rep["ok"], "an unjustified tolerated instance reported clean")
+
+    def test_a_workspace_with_no_instances_and_no_baseline_is_clean(self) -> None:
+        """MUTANT: refuse `not-baselined` unconditionally.
+
+        Caught by the shipped gate's own fixture, not by these tests: every fixture here had
+        instances, so the empty workspace - a fresh project, or a consuming one with nothing to
+        tolerate - was never exercised, and the lane refused its first commit. An empty
+        tolerated set needs no file to record it; the first instance to appear is new against it
+        and refuses then, which is the ratchet working rather than failing.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            rep = validate.warning_ratchet(root)
+        self.assertTrue(rep["ok"], f"an empty workspace was refused: {rep}")
+        self.assertEqual(rep["live"], 0)
+
+    def test_the_first_instance_in_an_unbaselined_workspace_still_refuses(self) -> None:
+        """The control for the case above. MUTANT: treat every not-baselined state as clean.
+
+        That would make the empty-workspace relaxation into a blanket exemption, and the lane
+        would never fire on a project that simply never stamped one.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
+            rep = validate.warning_ratchet(root)
+        self.assertFalse(rep["ok"], "an unbaselined workspace WITH an instance reported clean")
+        self.assertEqual(rep["state"], "not-baselined")
+
+    def test_the_render_names_the_offending_instance_in_every_refusing_state(self) -> None:
+        """MUTANT: report a bare count with no identities.
+
+        A refusal an author cannot act on is the advisory this replaces.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
+            _stamp(root, sorted(validate.ratchet_instances(root)))
+            _ratchet_story(root, "US0002", "src/b.py", "src/other.py")
+            text = validate.render_ratchet(validate.warning_ratchet(root))
+        self.assertIn("US0002", text)
+        self.assertIn("src/b.py", text)
+        self.assertIn("affects-undeclared", text)
+
+
+
 if __name__ == "__main__":
     unittest.main()

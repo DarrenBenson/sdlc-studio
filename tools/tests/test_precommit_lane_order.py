@@ -68,7 +68,8 @@ def _lane_keys(hook: Path = HOOK) -> list[str]:
 #: deliberate exception, and the guard below refuses a new hand-copied list so the distinction
 #: stays a decision rather than a habit.
 EXPECTED_LANES = {
-    "style", "links", "skill-spec", "versions", "verify-ratchet", "lens-signatures",
+    "style", "links", "skill-spec", "versions", "verify-ratchet", "warning-ratchet",
+    "lens-signatures",
     "spec-claims",
     "script-tests", "budgets",
     "neutrality",

@@ -1640,7 +1640,9 @@ SAFE_INPUT_WRITERS = {"file_finding.py", "artifact.py",
                       # gained --fields-file (shared file_finding.resolve_prose_fields loader):
                       "critic.py", "close_owed.py", "sprint.py",
                       # ...and the four the six original flag spellings could not see at all:
-                      "decisions.py", "lessons.py", "ledger.py", "handoff.py"}
+                      "decisions.py", "lessons.py", "ledger.py", "handoff.py",
+                      # ...and validate.py, whose warning-ratchet --stamp takes a reason:
+                      "validate.py"}
 
 #: The sibling prose writers the sweep found and could NOT reach in this batch, each with the
 #: reason. D0052 ruled the sweep WIDER than the two files CR0384 names, and these four carry the

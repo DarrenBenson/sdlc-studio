@@ -378,7 +378,11 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 f"delivered, so it is not among the types whose verifiers run "
                 f"(`sdlc_md.EXECUTES_VERIFIERS`). "
                 f"Restate it as the observable outcome; executable proof belongs on the stories "
-                f"this is actioned into. Offending line: {line.strip()}")
+                f"this is actioned into. Offending line: {line.strip()}",
+                # The COMMAND, not the line number: a line number moves when unrelated prose is
+                # edited above it, and an identity that moves makes the ratchet demand a restamp
+                # for a change that touched nothing it judges.
+                targets=[cmd])
 
     # An `Affects` the artefact's OWN content contradicts: a declared path with nothing behind it,
     # or a file its `Verify:` lines target but the declaration omits. THE PREDICATE IS THE
@@ -407,11 +411,13 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
             add(SEVERITY_WARNING, "affects-unresolvable",
                 "`Affects` names path(s) not on disk: "
                 f"{', '.join(mism['unresolvable'])} - the unit is {_canon}, so the file it "
-                "declared should exist by now (a typo, or a claim about code that never landed)")
+                "declared should exist by now (a typo, or a claim about code that never landed)",
+                targets=sorted(mism["unresolvable"]))
         if mism["undeclared"]:
             add(SEVERITY_WARNING, "affects-undeclared",
                 "the artefact's own `Verify:` lines target file(s) its `Affects` omits: "
-                f"{', '.join(mism['undeclared'])}")
+                f"{', '.join(mism['undeclared'])}",
+                targets=sorted(mism["undeclared"]))
 
     # Schema-v3 team-schema: a typed, resolvable `raised_by`. v2 artefacts are exempt, so the
     # rule cannot fail an existing sequential-id project until it opts into v3.
@@ -819,6 +825,181 @@ def check_dor_dod(root: Path) -> list[dict]:
                                    f"its criterion silently unenforced; use the exact form "
                                    f"[check: <id>]"})
     return out
+
+
+# THE WARNING RATCHET.
+#
+# The `Affects`/`Verify` warning family stood at 299 instances across this repo and was purely
+# advisory, so a new one was indistinguishable from the standing tail and nothing stopped the
+# tail growing. A COUNT could not fix that: it says a number moved and never which instance is
+# new, and a repair in one place silently pays for a regression in another.
+#
+# So the reference is a SET of instance identities, each entry carrying a stated reason. The
+# tolerated set only ever shrinks: a fixed instance is reported as stale and removable rather
+# than left as credit that could admit a different one later.
+WARNING_RATCHET_FILE = "sdlc-studio/.validate-warning-baseline.json"
+
+#: The rules the ratchet judges. Each one names the specific paths or commands it is about, so
+#: an instance has an identity finer than "this artefact has a warning of this kind".
+RATCHET_RULES = ("affects-undeclared", "affects-unresolvable", "pseudo-verify")
+
+
+def ratchet_instances(repo_root: Path | str) -> set[tuple[str, str, str]]:
+    """`{(unit_id, rule, target)}` for every ratcheted warning in the workspace.
+
+    Identity is (artefact, rule, the thing the warning names) - never a per-kind tally. A tally
+    lets a surplus in one kind offset a regression in another, which is the exact masking this
+    exists to refuse.
+
+    Read from the finding's own `targets`, which the checker attaches, rather than parsed back
+    out of its message: the message is prose for a human and would drift from the identity the
+    gate compares (`LL0042`).
+    """
+    root = Path(repo_root)
+    out: set[tuple[str, str, str]] = set()
+    for type_ in sdlc_md.ARTIFACT_TYPES:
+        for path in sdlc_md.artifact_files(type_, root):
+            rec = sdlc_md.extract_record_id(path.stem)
+            if not rec:
+                continue
+            for v in validate_file(path, type_, root):
+                if v.get("rule") not in RATCHET_RULES:
+                    continue
+                for target in v.get("targets") or []:
+                    out.add((sdlc_md.norm_id(rec), v["rule"], str(target)))
+    return out
+
+
+def read_warning_baseline(repo_root: Path | str) -> dict:
+    """The recorded reference, or a state saying why there is none.
+
+    Four untrustworthy states, each distinct and each non-zero, because "I could not establish
+    the reference" must never render as "clean":
+      * `not-baselined` - no file. An absent reference is not an empty one.
+      * `corrupt` - unreadable or wrong-shaped. Loud, never a silent pass.
+      * `reasonless` - an entry with no stated reason. A tolerated instance nobody justified is
+        the silent tolerance the ratchet replaces.
+      * `stale` - an entry no artefact still carries (computed by the caller, which has both sets).
+    """
+    path = Path(repo_root) / WARNING_RATCHET_FILE
+    if not path.exists():
+        return {"state": "not-baselined", "entries": {}}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        rows = data["entries"]
+        if not isinstance(rows, list):
+            raise ValueError("entries is not a list")
+    except Exception as exc:  # noqa: BLE001 - a corrupt reference must fail loud
+        return {"state": "corrupt", "entries": {}, "error": str(exc)}
+    entries: dict[tuple[str, str, str], str] = {}
+    reasonless: list[tuple[str, str, str]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            return {"state": "corrupt", "entries": {}, "error": f"entry is not an object: {row!r}"}
+        key = (sdlc_md.norm_id(str(row.get("id", ""))), str(row.get("rule", "")),
+               str(row.get("target", "")))
+        reason = str(row.get("reason", "")).strip()
+        if not reason:
+            reasonless.append(key)
+        entries[key] = reason
+    if reasonless:
+        return {"state": "reasonless", "entries": entries, "reasonless": sorted(reasonless)}
+    return {"state": "ok", "entries": entries}
+
+
+def warning_ratchet(repo_root: Path | str) -> dict:
+    """Compare the live instance set against the recorded one. Pure; writes nothing."""
+    live = ratchet_instances(repo_root)
+    base = read_warning_baseline(repo_root)
+    # NOTHING TOLERATED IS NOT AN UNESTABLISHED REFERENCE. A workspace carrying no instance at
+    # all has an empty tolerated set, and the empty set needs no file to record it: the first
+    # instance to appear is new against it and refuses then, which is exactly the ratchet
+    # working. Refusing here instead would fail the first commit of every fresh project and
+    # every consuming one that has not stamped a baseline it does not need - a guard that
+    # refuses always is a guard that gets switched off.
+    if base["state"] == "not-baselined" and not live:
+        return {"ok": True, "state": "ok", "live": 0, "new": [], "stale": [], "reasonless": []}
+    if base["state"] != "ok":
+        return {"ok": False, "state": base["state"], "live": len(live),
+                "new": sorted(live), "stale": [], "reasonless": base.get("reasonless", []),
+                "error": base.get("error", "")}
+    recorded = set(base["entries"])
+    new = sorted(live - recorded)
+    stale = sorted(recorded - live)
+    # STALE does not hold the gate on its own: a repaired instance is good news, and refusing
+    # the commit that repaired it would teach an author to stop repairing. It is reported as
+    # removable so the tolerated set shrinks, and it can never be spent to admit a new one -
+    # that is decided by `new`, which is computed against the RECORDED set, not against a total.
+    return {"ok": not new, "state": "ok", "live": len(live),
+            "new": new, "stale": stale, "reasonless": []}
+
+
+def render_ratchet(report: dict) -> str:
+    state = report["state"]
+    if state == "not-baselined":
+        return (f"warning-ratchet: NOT BASELINED - no {WARNING_RATCHET_FILE}. "
+                f"{report['live']} tolerated instance(s) exist and none is recorded, so nothing "
+                f"can say which is new. Stamp one: `validate.py warning-ratchet --stamp`, then "
+                f"give every entry a reason.")
+    if state == "corrupt":
+        return (f"warning-ratchet: BASELINE CORRUPT - {report.get('error') or WARNING_RATCHET_FILE}. "
+                f"Refusing rather than assuming: an unreadable reference cannot say what is new. "
+                f"Restore it from git.")
+    if state == "reasonless":
+        rows = "\n".join(f"    {i} {r} {tgt}" for i, r, tgt in report["reasonless"])
+        return ("warning-ratchet: ENTRIES WITH NO REASON - a tolerated instance nobody justified "
+                "is the silent tolerance this replaces. Give each a reason:\n" + rows)
+    lines = []
+    if report["new"]:
+        lines.append(f"warning-ratchet: {len(report['new'])} instance(s) the baseline does not "
+                     f"record - the tolerated set may only shrink:")
+        lines += [f"    {i} {r} {tgt}" for i, r, tgt in report["new"]]
+    else:
+        lines.append(f"warning-ratchet: clean. {report['live']} recorded instance(s), none new.")
+    if report["stale"]:
+        lines.append(f"  {len(report['stale'])} recorded instance(s) no artefact still carries - "
+                     f"REPAIRED, and removable from the baseline (they cannot be spent to admit "
+                     f"a new one):")
+        lines += [f"    {i} {r} {tgt}" for i, r, tgt in report["stale"]]
+    return "\n".join(lines)
+
+
+def cmd_warning_ratchet(args: argparse.Namespace) -> int:
+    root = sdlc_md.resolve_root(args)
+    if getattr(args, "stamp", False):
+        live = sorted(ratchet_instances(root))
+        existing = read_warning_baseline(root)
+        keep = existing["entries"] if existing["state"] in ("ok", "reasonless") else {}
+        # A blank reason is filled from --reason, never invented. An adoption baseline has one
+        # honest justification for its whole tail - "this predates the ratchet" - and writing
+        # 371 individually-worded variations of that sentence would be ceremony, not evidence.
+        # A LATER entry, added when somebody tolerates a NEW instance, is the case that needs
+        # its own sentence, and the lane still refuses until it has one.
+        # A reason is free prose, and free prose on a command line is command substitution
+        # waiting to happen - backticks and `$(` are evaluated by the shell before this process
+        # sees them, and a filing in this repo once ran `git commit -a` against the live tree
+        # that way. `--fields-file` is the non-shell path: the value is read off disk verbatim.
+        fill = (getattr(args, "reason", "") or "").strip()
+        # The SHARED loader, not a second JSON read: one resolver for every prose flag in the
+        # toolchain means the file form and the flag form cannot diverge in what they accept.
+        fill = str(file_finding.resolve_prose_fields(
+            getattr(args, "fields_file", None) or None,
+            {"reason": fill}, allowed=("reason",)).get("reason", "") or "").strip()
+        rows = [{"id": i, "rule": r, "target": tgt,
+                 "reason": keep.get((i, r, tgt), "") or fill} for i, r, tgt in live]
+        (Path(root) / WARNING_RATCHET_FILE).write_text(
+            json.dumps({"stamped": sdlc_md.now_date(), "entries": rows}, indent=2) + "\n",
+            encoding="utf-8")
+        blank = sum(1 for row in rows if not row["reason"])
+        print(f"warning-ratchet: stamped {len(rows)} instance(s) -> {WARNING_RATCHET_FILE}"
+              + (f"; {blank} still need a reason before the lane will pass" if blank else ""))
+        return 0
+    report = warning_ratchet(root)
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(report, indent=2, default=list))
+    else:
+        print(render_ratchet(report))
+    return 0 if report["ok"] else 1
 
 
 def cmd_check(args: argparse.Namespace) -> int:
@@ -1550,6 +1731,21 @@ def build_parser() -> argparse.ArgumentParser:
         description="Validate sdlc-studio artifact structure.",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
+    wr = sub.add_parser("warning-ratchet",
+                        help="Refuse a warning instance the baseline does not record.")
+    wr.add_argument("--stamp", action="store_true",
+                    help="Rewrite the baseline from the live instance set, keeping the reasons "
+                         "already recorded. Every new entry needs a reason before the lane passes.")
+    wr.add_argument("--reason", default="",
+                    help="With --stamp: the reason recorded against every entry that has none. "
+                         "Prefer --fields-file for any reason containing backticks or `$(`.")
+    wr.add_argument("--fields-file", default="",
+                    help="THE SAFE PATH. A JSON object carrying `reason`, read straight off "
+                         "disk so the value never crosses a shell.")
+    wr.add_argument("--root", default=".", help="Repo root (default: .)")
+    wr.add_argument("--format", choices=("text", "json"), default="text")
+    wr.set_defaults(func=cmd_warning_ratchet)
+
     c = sub.add_parser("check", help="Validate artifacts.")
     c.add_argument("--type", choices=sorted(sdlc_md.ARTIFACT_TYPES),
                    help="Limit to one artifact type (default: all)")

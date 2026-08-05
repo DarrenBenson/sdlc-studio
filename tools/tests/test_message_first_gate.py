@@ -27,7 +27,10 @@ import shutil
 import subprocess
 import tempfile
 import time
+import json
 import unittest
+
+import hookutil
 from collections import Counter
 from pathlib import Path
 
@@ -53,7 +56,8 @@ _GIT_ENV_VARS = (
 #: saying so here. A derived version of this would assert only that the hook agrees with
 #: itself.
 EXPECTED_LANES = (
-    "style", "links", "skill-spec", "versions", "verify-ratchet", "lens-signatures",
+    "style", "links", "skill-spec", "versions", "verify-ratchet", "warning-ratchet",
+    "lens-signatures",
     "spec-claims",
     "script-tests", "budgets",
     "neutrality",
@@ -522,6 +526,104 @@ class TotalSpansBothHooksTests(BudgetAcrossThePairTests):
             total, self.CHEAP_COST_SECONDS - 1,
             f"the recorded total ({total}s) is too small to include pre-commit's share - "
             "the budget series has silently started measuring only the second hook")
+
+
+class WarningRatchetLaneTests(unittest.TestCase):
+    """US0480 AC5: the warning-ratchet verdict reaches a lane that refuses a REAL commit.
+
+    A ratchet only a unit test invokes changes nothing - the point of the unit is that the
+    Affects/Verify warning family stops accumulating in the gate people actually run.
+
+    It also guards the specific way this verdict could be discarded: `gate.py._validate` filters
+    findings to `severity == "error"`, so a warning-severity refusal routed through it would be
+    swallowed. The lane invokes `validate.py warning-ratchet` directly for that reason, and this
+    is what would notice if it were re-routed.
+
+    Lives HERE rather than in a module of its own: this is the module that runs `git commit`
+    against a fixture with the shipped hooks enabled, and a new file could not be attributed to
+    any `tools/` module, which the test census refuses rather than baselines.
+    """
+
+    def _fixture(self, tmp: Path) -> Path:
+        root = tmp
+        (root / ".githooks").mkdir(parents=True)
+        for hook in ("pre-commit", "commit-msg"):
+            dst = root / ".githooks" / hook
+            dst.write_text((REPO / ".githooks" / hook).read_text(encoding="utf-8"),
+                           encoding="utf-8")
+            dst.chmod(0o755)
+        dest = root / ".claude" / "skills" / "sdlc-studio"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.symlink_to(SKILL_SCRIPTS.parent, target_is_directory=True)
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        _git(root, "init", "-q")
+        _git(root, "config", "user.email", "t@t")
+        _git(root, "config", "user.name", "t")
+        hookutil.seed_verify_baseline(root)
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "--no-verify", "-m", "fixture")
+        _git(root, "config", "core.hooksPath", ".githooks")
+        return root
+
+    def _offending_story(self, root: Path) -> None:
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "declared.py").write_text("x = 1\n", encoding="utf-8")
+        (root / "src" / "verified.py").write_text("x = 1\n", encoding="utf-8")
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "US0900-x.md").write_text(
+            "# US0900: a story\n\n> **Status:** Ready\n> **Epic:** EP0100\n> **Points:** 2\n"
+            "> **Affects:** src/declared.py\n\n## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+            "- **Given** a thing\n- **When** it runs\n- **Then** it works\n"
+            "- **Verify:** pytest src/verified.py\n", encoding="utf-8")
+
+    def test_a_commit_carrying_an_unrecorded_instance_is_refused(self) -> None:
+        """MUTANT: remove the `warning-ratchet` lane from `.githooks/pre-commit`.
+
+        The staged story's `Verify:` targets a file its `Affects` omits - one
+        `affects-undeclared` instance - against a baseline recording none. The commit must not
+        land, the lane must be NAMED, and the instance must be named so it can be acted on.
+
+        The baseline records the EMPTY set, so the refusal is about the new instance rather than
+        about the not-baselined state, which refuses for a different reason entirely.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(Path(d))
+            (root / "sdlc-studio" / ".validate-warning-baseline.json").write_text(
+                json.dumps({"stamped": "2026-01-01", "entries": []}, indent=2) + "\n",
+                encoding="utf-8")
+            self._offending_story(root)
+            _git(root, "add", "-A")
+            before = _git(root, "rev-parse", "HEAD").stdout.strip()
+            out = _git(root, "commit", "-m", "feat(US0900): a story")
+            after = _git(root, "rev-parse", "HEAD").stdout.strip()
+            text = out.stdout + out.stderr
+        self.assertNotEqual(out.returncode, 0, f"the commit landed despite a new instance:\n{text}")
+        self.assertEqual(before, after, "HEAD moved - the commit was not refused")
+        self.assertIn("warning-ratchet", text, f"the refusal names no lane:\n{text}")
+        self.assertIn("US0900", text, f"the refusal names no instance:\n{text}")
+
+    def test_the_same_commit_lands_once_the_instance_is_recorded(self) -> None:
+        """The control. MUTANT: make the lane refuse unconditionally.
+
+        A lane that refuses every commit is not a ratchet. The same tree, with the instance
+        recorded and reasoned, must not be refused BY THIS LANE - so the refusal above is
+        attributable to the instance rather than to the fixture.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(Path(d))
+            self._offending_story(root)
+            (root / "sdlc-studio" / ".validate-warning-baseline.json").write_text(
+                json.dumps({"stamped": "2026-01-01", "entries": [
+                    {"id": "US0900", "rule": "affects-undeclared", "target": "src/verified.py",
+                     "reason": "recorded by the control test"}]}, indent=2) + "\n",
+                encoding="utf-8")
+            _git(root, "add", "-A")
+            out = _git(root, "commit", "-m", "feat(US0900): a story")
+            text = out.stdout + out.stderr
+        self.assertNotIn("FAIL warning-ratchet", text,
+                         f"the ratchet lane refused a recorded instance:\n{text}")
+
 
 
 if __name__ == "__main__":

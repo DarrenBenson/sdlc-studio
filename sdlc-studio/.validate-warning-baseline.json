@@ -1,0 +1,2231 @@
+{
+  "stamped": "2026-08-05",
+  "entries": [
+    {
+      "id": "BG0138",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/test-specs/TS0001-core-artifact-lifecycle.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0142",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0144",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_bug_regressions.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0145",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_complexity.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0146",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_bug_regressions.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0155",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/hooks/close_guard.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0184",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0201",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0203",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0212",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0212",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0262",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0263",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0268",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0270",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0279",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0283",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_inflight_guard.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0284",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0285",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0286",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0287",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0310",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_spec_versions_tracked.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0311",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0311",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0313",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0332",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_spec_counts_are_not_pinned.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0333",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_seat_examples_quote_real_goals.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0352",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_pytest_collection.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0353",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_telemetry.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0354",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0355",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0356",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0357",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_mutation.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0358",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0359",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0361",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_decisions.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0362",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0363",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0364",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_telemetry.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0367",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_baselines_only_shrink.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0373",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0374",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_precommit_markdown_scope.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0377",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0382",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0423",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_precommit_lane_order.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0439",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_command_audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0440",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_mutation.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0468",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_dependency_advisories.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0478",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0478",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/templates/core/change-request.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0479",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_claim_drift_replay.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0482",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/stories/US0597-the-claim-drift-premise-is-replayed-against-the.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0010",
+      "rule": "affects-unresolvable",
+      "target": "prd.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0011",
+      "rule": "affects-unresolvable",
+      "target": "prd.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0012",
+      "rule": "affects-unresolvable",
+      "target": "trd.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0013",
+      "rule": "affects-unresolvable",
+      "target": "trd.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0014",
+      "rule": "affects-unresolvable",
+      "target": "tsd.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0015",
+      "rule": "affects-unresolvable",
+      "target": "tsd.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0016",
+      "rule": "affects-unresolvable",
+      "target": "CR0002-add-deterministic-duplicate-id-collision-detector.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0017",
+      "rule": "affects-unresolvable",
+      "target": "CR0005-verify-ac-py-writes-no-report-in-dry-run-and-overw.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0018",
+      "rule": "affects-unresolvable",
+      "target": "new sdlc-studio/retros/",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0018",
+      "rule": "affects-unresolvable",
+      "target": "reference-autosprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0019",
+      "rule": "affects-unresolvable",
+      "target": "templates/indexes/*",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0020",
+      "rule": "affects-unresolvable",
+      "target": "help/autosprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0020",
+      "rule": "affects-unresolvable",
+      "target": "reference-autosprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0021",
+      "rule": "affects-unresolvable",
+      "target": "help/autosprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0021",
+      "rule": "affects-unresolvable",
+      "target": "reference-autosprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0021",
+      "rule": "affects-unresolvable",
+      "target": "scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0021",
+      "rule": "affects-unresolvable",
+      "target": "scripts/integrity.py (CR0003",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0022",
+      "rule": "affects-unresolvable",
+      "target": "reference-autosprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0022",
+      "rule": "affects-unresolvable",
+      "target": "scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0023",
+      "rule": "affects-unresolvable",
+      "target": "reference-autosprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0025",
+      "rule": "affects-unresolvable",
+      "target": "scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0027",
+      "rule": "affects-unresolvable",
+      "target": "scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0033",
+      "rule": "affects-unresolvable",
+      "target": "reference-test-pitfalls.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0034",
+      "rule": "affects-unresolvable",
+      "target": "templates/personas/stakeholders/",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0034",
+      "rule": "affects-unresolvable",
+      "target": "templates/personas/team/",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0037",
+      "rule": "affects-unresolvable",
+      "target": "audit-classify.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0037",
+      "rule": "affects-unresolvable",
+      "target": "audit-refute.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0046",
+      "rule": "affects-unresolvable",
+      "target": "templates/ci/",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0048",
+      "rule": "affects-unresolvable",
+      "target": "scripts/pvd.py (new) or pvd workflow",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0049",
+      "rule": "affects-unresolvable",
+      "target": "scripts/product_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0051",
+      "rule": "affects-unresolvable",
+      "target": "reference-autosprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0051",
+      "rule": "affects-unresolvable",
+      "target": "scripts/transition.py / close cascade",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0052",
+      "rule": "affects-unresolvable",
+      "target": "scripts/artifact.py / file_finding.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0052",
+      "rule": "affects-unresolvable",
+      "target": "scripts/remake.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0130",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0138",
+      "rule": "affects-unresolvable",
+      "target": "scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0141",
+      "rule": "affects-unresolvable",
+      "target": "scripts/product_reconcile.py (`parse_feature_map",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0142",
+      "rule": "affects-unresolvable",
+      "target": "scripts/product_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0142",
+      "rule": "affects-unresolvable",
+      "target": "scripts/tests/test_product_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0154",
+      "rule": "affects-unresolvable",
+      "target": "next_id/duplicate-id",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0154",
+      "rule": "affects-unresolvable",
+      "target": "scripts/lib/sdlc_md.py (`artifact_files`) - consumed by validate",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0155",
+      "rule": "affects-unresolvable",
+      "target": "scripts/audit.py (`_bug_underspecified",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0156",
+      "rule": "affects-unresolvable",
+      "target": "transition.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0158",
+      "rule": "affects-unresolvable",
+      "target": "audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0158",
+      "rule": "affects-unresolvable",
+      "target": "reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0158",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/.config.yaml schema",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0254",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0254",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit_check.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0255",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/review_generate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0256",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/review_generate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0284",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/hooks/close_guard.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0288",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/rfcs/RFC0038-*.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0292",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/personas/amigos/engineering.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0292",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/personas/amigos/product.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0292",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/personas/amigos/qa.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0294",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/stories/US0163-*.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0295",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/rfcs/RFC0035-*.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0295",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/rfcs/RFC0037-*.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0295",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/rfcs/RFC0038-*.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0295",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/rfcs/RFC0039-*.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0295",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/rfcs/RFC0042-*.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0331",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0361",
+      "rule": "affects-unresolvable",
+      "target": "tools/pre-commit.sh",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0362",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/templates/core/retro.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0382",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0403",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0414",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0415",
+      "rule": "pseudo-verify",
+      "target": "pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BuildToolingCouplingTests::test_a_gate_touching_unit_is_not_offered_parallel",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0415",
+      "rule": "pseudo-verify",
+      "target": "pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BuildToolingCouplingTests::test_the_tooling_set_is_declared_and_extensible",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0416",
+      "rule": "pseudo-verify",
+      "target": "pytest tools/tests/test_commit_msg_hook.py::UnnamedUnitAttributionTests::test_a_file_owned_by_an_unnamed_unit_is_reported",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0416",
+      "rule": "pseudo-verify",
+      "target": "pytest tools/tests/test_commit_msg_hook.py::UnnamedUnitAttributionTests::test_a_shared_or_unowned_file_does_not_refuse",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0519",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_run_suite.sh",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0001",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0002",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0002",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0003",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0003",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0004",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_status.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0005",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_next_id.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0006",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_duplicate_id.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0007",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0008",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0009",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_ledger.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0010",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0011",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/help/sprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0011",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-project.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0011",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-sprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0012",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_integrity.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0013",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-sprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0013",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_readiness.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0014",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep_staleness.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0015",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_config.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0016",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-epic.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0016",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_resume.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0017",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0017",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0018",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0019",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0020",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0021",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-rfc.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0021",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_rfc.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0022",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0022",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0022",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_integrity.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0022",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_readiness.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0022",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0022",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0023",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0024",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0025",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0026",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_complexity.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0026",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_repo_map.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0027",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_complexity.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0028",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0029",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0030",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_version_check.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0031",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0032",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_pvd_template.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0033",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_pvd.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0035",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0036",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_telemetry.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0037",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0038",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_provenance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0039",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-sprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0039",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0039",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0039",
+      "rule": "affects-undeclared",
+      "target": "documented",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0040",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_index_archive.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0041",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_next_id.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0042",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0043",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0044",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0049",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0050",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0055",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0055",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_concurrency.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0055",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0055",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0056",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_migrate_v3.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0057",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_github_sync.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0058",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_invariants.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0058",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0059",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_trd_freshness.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0060",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_backfill_authorship.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0060",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0061",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0062",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0063",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_audit_check.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0064",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_invariants.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0065",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0066",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_triage_sampling.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0067",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0068",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_status.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0068",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0069",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_concurrency.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0070",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_review_generate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0071",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_lite_profile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0074",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_bench_runner.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0076",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0077",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_github_sync.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0077",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0078",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/archive.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0078",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0079",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_github_sync.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0079",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_check_action_pins.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0080",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0081",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0082",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_digest.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0083",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_route.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0084",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-agent-prompt-template.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0084",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0085",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_telemetry.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0086",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_bench_runner.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0088",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_audit_quiz.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0088",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_bench_runner.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0089",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_benchmark_protocol.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0090",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-scripts.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0090",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_plan_review.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0091",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_plan_review.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0092",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-scripts.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0092",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_spec_guard.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0096",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0096",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_check_budgets.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0097",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0099",
+      "rule": "affects-undeclared",
+      "target": "fetch",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0106",
+      "rule": "affects-undeclared",
+      "target": "sdlc-studio/reviews/v4-migration-rehearsal.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0113",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0113",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_status.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0114",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0115",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-sprint.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0116",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/help/arguments.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0116",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0116",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0116",
+      "rule": "affects-undeclared",
+      "target": "annotate",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0117",
+      "rule": "affects-undeclared",
+      "target": "install.sh",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0117",
+      "rule": "affects-undeclared",
+      "target": "swap_install",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0117",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_install_atomic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0118",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_github_sync.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0119",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_concurrency.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0119",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0120",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0120",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0121",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0122",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0123",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0124",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0124",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0125",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0126",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0127",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0128",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0129",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0130",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0131",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0132",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0133",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0134",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_migrate_sizing.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0135",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_migrate_sizing.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0191",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-rfc.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0208",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0239",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0241",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/review.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0241",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/review_generate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0258",
+      "rule": "affects-undeclared",
+      "target": "CHANGELOG.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0259",
+      "rule": "affects-undeclared",
+      "target": "CHANGELOG.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0261",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0262",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0263",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0264",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0265",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0266",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0267",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0268",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_precommit_lane_order.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0269",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0270",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0271",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0272",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0272",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0273",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0274",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0275",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0277",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_mutation.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0278",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_mutation.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0279",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0279",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0280",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0281",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0282",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0283",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0288",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_close_guard.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0288",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_close_owed.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0289",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0290",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0291",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0292",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0292",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0297",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0298",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0299",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0300",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0303",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0305",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/reference-scripts.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0309",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0310",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0311",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0312",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0312",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/templates/reviewer-brief.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0313",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0314",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0315",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0318",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0319",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0320",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0321",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0322",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0329",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0332",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0332",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0333",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0334",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0335",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0339",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0340",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0341",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0343",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0344",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0345",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_readiness.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0345",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0345",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/audit_check.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0346",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_readiness.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0346",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_audit.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0347",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_check_versions.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0348",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0352",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/xrepo.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0356",
+      "rule": "affects-unresolvable",
+      "target": "sdlc-studio/rfcs/RFC0017-agent-persona-selection.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0360",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0365",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0366",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/templates/retro-template.md",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0369",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0370",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0396",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0397",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0397",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0410",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0411",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_conformance.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0411",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0417",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_commit_msg_hook.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0425",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0428",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0536",
+      "rule": "affects-undeclared",
+      "target": "fragment",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0542",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0549",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0558",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0561",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0563",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0568",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0590",
+      "rule": "affects-undeclared",
+      "target": "tools/tests/test_doctrine_tooling.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0595",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0602",
+      "rule": "affects-undeclared",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
+      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    }
+  ]
+}

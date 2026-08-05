@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 20 |
-| Ready | 16 |
+| Ready | 15 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 1 |
 | Done | 597 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -24,7 +24,7 @@
 | ID | Title | Status | Epic | Created | Updated |
 | --- | --- | --- | --- | --- | --- |
 | [US0467](US0467-status-names-the-open-run-id-rung-sprint.md) | status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses | Done | EP0170 | 2026-07-27 | 2026-07-27 |
-| [US0468](US0468-help-sprint-md-documents-the-run-lifecycle-batch.md) | help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
+| [US0468](US0468-help-sprint-md-documents-the-run-lifecycle-batch.md) | help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record | Review | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0469](US0469-every-sprint-batch-change-reports-its-capacity-effect.md) | Every sprint batch change reports its capacity effect through the plan-time renderer: points and token forecast against capacity.tokens, unit count against the appetite | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0474](US0474-review-prep-derives-the-rv-record-and-stamps.md) | review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |

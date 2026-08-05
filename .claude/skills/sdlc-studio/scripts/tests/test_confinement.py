@@ -411,6 +411,7 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
                       "release-gate green marker it owns under .local",
     "provenance.py": "writes the provenance record it owns",
     "close_owed.py": "writes the close-owed report it owns",
+    "validate.py": "writes ONE file it owns, and only under `warning-ratchet --stamp`: the\n                    warning-ratchet baseline at `sdlc-studio/.validate-warning-baseline.json`.\n                    Every other verb is read-only",
     "loop_guard.py": "writes the loop-guard state it owns",
     "resume.py": "writes the resume record it owns",
     "review_prep.py": "writes the review-prep record it owns",

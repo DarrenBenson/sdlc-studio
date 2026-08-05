@@ -250,6 +250,11 @@ run "verify-ratchet" \
   "split the selector so each criterion discriminates, or record the group with a reason in sdlc-studio/.verify-lint-baseline.json - the tolerated set may only shrink" \
   -- python3 .claude/skills/sdlc-studio/scripts/verify_ac.py lint --ratchet --bugs
 
+run "warning-ratchet" \
+  "no NEW Affects/Verify warning instance: the tolerated set may only shrink" \
+  "repair the instance named above, or record it with a reason in sdlc-studio/.validate-warning-baseline.json (validate.py warning-ratchet --stamp --reason ...) - a repaired entry is reported stale and removable, never re-spendable" \
+  -- python3 .claude/skills/sdlc-studio/scripts/validate.py warning-ratchet
+
 run "lens-signatures" \
   "every audit lens names a detector that resolves, or declares manual with a real reason" \
   "fix the signature cell in the pack named above: a mechanical one names a target that exists (path first for python3/bash, last for rg, an npm scripts key for npm run), and an absent one is 'manual - <why no search singles the class out>'" \
