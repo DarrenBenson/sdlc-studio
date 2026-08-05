@@ -1,6 +1,6 @@
 # US0481: sprint plan validates the units in its batch, not only their index rows
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0444
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
