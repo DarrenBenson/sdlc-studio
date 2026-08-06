@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 16 |
-| Ready | 10 |
+| Ready | 9 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 1 |
 | Done | 615 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -41,7 +41,7 @@
 | [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Review | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0573](US0573-an-uncommitted-changed-surface-is-reported-as-that.md) | an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence | Ready | EP0193 | 2026-07-30 | 2026-07-30 |
 | [US0581](US0581-a-finding-matching-an-open-bug-or-cr.md) | A finding matching an open Bug or CR is annotated with that id automatically and never blocks | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
 | [US0586](US0586-every-skill-script-records-the-artefact-it-touched.md) | Every skill script records the artefact it touched and the action it performed, per run | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
