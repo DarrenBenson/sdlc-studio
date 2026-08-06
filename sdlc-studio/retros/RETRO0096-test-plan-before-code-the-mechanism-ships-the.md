@@ -23,7 +23,9 @@
 
 ## Lessons
 
-- EXAMPLE - replace this. A lesson is a transferable claim with the evidence that produced it, not a task: "a test that asserts a label rather than the value proves the tool named its state, not that it reached it - two of this sprint's three mutation survivors were exactly that". <!-- example -->
+- **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment block left `**Verified:** yes` on the line the tooling reads - `verify_ac` re-stamped it green from a test that does not exercise the property, so every mechanical reader still saw the criterion met. Setting the marker by hand did not survive either. The honest fix was to split the undelivered limb into a criterion with NO verifier, so the tool reports it unverified because it is. Write the retraction where the machine looks, or it has not happened.
+- **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the previous close, when twenty blockers named review coverage, sign-off and Done gates while the real fault was eight units still at `Ready`. It reproduced here exactly - and cost one command, because the message named it. Filing the diagnosis gap was worth more than fixing the instance.
+- **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the author's claims, and two of them were false: a mutant asserted killed had survived 2,137 tests, and a criterion's own rationale was factually wrong about the engine it described. Mutation results are claims until somebody else runs them.
 - {{lesson}}   <!-- record it: lessons add (project tier). Promote with --global only what generalises beyond this repo -->
 
 ## Carried lessons
@@ -32,11 +34,11 @@ The 5 that matter most for the NEXT batch, chosen now rather than ranked from th
 store. A ranking is a fact about the past; this is a decision, re-made every retro. Bullets,
 not a numbered list, and drop one for each you add (`lessons carry --displaces`).
 
-- EXAMPLE - replace this. A mechanism that reaches no caller is inert, however well it is tested. <!-- example -->
-- EXAMPLE - replace this. An absence is not an answer: an empty result and an unanswerable question are different facts. <!-- example -->
-- EXAMPLE - replace this. A repair breaks its neighbours, and a rename is cross-unit coupling. <!-- example -->
-- EXAMPLE - replace this. An enumerated list silently exempts what it forgot. <!-- example -->
-- EXAMPLE - replace this. Verify the premise before building on it. <!-- example -->
+- A retraction written only in prose is not a retraction - write it where the machine looks.
+- A test that passes for the wrong reason is worse than no test: force the failure at the boundary the guard actually holds.
+- A repair breaks its neighbours, so after fixing one instance go looking for its twin.
+- An enumerated list silently exempts what it forgot - derive the set, do not list it.
+- Verify the premise before building on it, especially a premise about code you did not read.
 
 ## Known issues carried
 
@@ -51,7 +53,40 @@ ruling HOLDS the close, which is the point of being able to make one.
 
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
-| BG0000 | not-stop-ship | EXAMPLE - replace this row | 2026-01-01 <!-- example --> |
+| BG0457 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0463 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0469 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0486 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0508 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0509 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0512 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0516 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0519 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0521 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0522 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0523 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0524 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0526 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0528 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0530 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0531 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0532 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0533 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0115 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0350 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0355 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0406 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0421 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0488 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0490 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0491 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0493 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0497 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0500 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0507 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0511 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0533 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0534 | deferred | Claude Opus 5 (author) | 2026-08-06 |
 
 ## Estimate vs actual
 
@@ -82,6 +117,23 @@ implies, and change the constants only on evidence a human has looked at - a fit
 sprints fits noise.
 
 <!-- accuracy:begin (generated by retro.py accuracy --write) -->
+
+| Unit | Points | Estimate (plan-time) | Actual | Ratio (est/actual) | Tokens/pt | Size | Wall | Model |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
+
+**0 of 0 unit(s) measured; 0 of 0 forecast at plan time.**
+
+Review passes, by phase - read from the two verdict ledgers:
+
+  test-plan review: NOT IN FORCE for this run - no verdict of that phase covers any of its units, which is not the same as a run that held them and spent nothing
+
+  code review: NOT IN FORCE for this run - no verdict of that phase covers any of its units, which is not the same as a run that held them and spent nothing
+No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
+
+Forecast by `-`, recorded at plan time. UNFORECAST: no plan-time forecast was recorded, so there is no prediction to judge. Nothing is re-derived to fill the gap.
+
+Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-forecast. Nothing is re-fitted here - see VELOCITY.md for the trend across sprints, and change the constants only on evidence a human has looked at.
 <!-- accuracy:end -->
 
 - {{what the ratio implies - which units the estimate missed, and why}}
@@ -106,9 +158,17 @@ every EXAMPLE row; a row left in place is reported at the close, and a retro sti
 
 | Finding | Disposition |
 | --- | --- |
-| EXAMPLE - replace this. A defect worth its own artefact | BG0123 <!-- example --> |
-| EXAMPLE - replace this. A defect repaired inside this sprint | fixed-in: a1b2c3d <!-- example --> |
-| EXAMPLE - replace this. A finding not worth acting on | declined: the cost lands on a path this project does not use <!-- example --> |
+| The mutation engine applies a mutant at a different line from the one it enumerates | BG0533 |
+| `verify_ac` reports a unit whose criteria it cannot parse as a clean pass | BG0530 |
+| A delivered unit left at `Ready` is invisible to every close gate | BG0528 |
+| `alias_map` decodes every artefact with a bare read_text | BG0532 |
+| A hand-applied mutant is registered with no assertion its anchor was unique | BG0531 |
+| `testplan derive` destroyed a hand-authored prose plan | fixed-in: ba543ee2 |
+| Both new gates swallowed every exception and returned PASS | fixed-in: ba543ee2, 1573a8e7 |
+| The plan-review brief printed no fingerprint while `record` demanded one | fixed-in: ba543ee2 |
+| A judged batch could still be grown by an overlapping re-plan | fixed-in: ba543ee2 |
+| An unreadable `.config.yaml` switched both new gates off | fixed-in: 1573a8e7 |
+| US0632 AC4 - the mutant must be applied where it was enumerated | carried UNMET: BG0533 |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
 

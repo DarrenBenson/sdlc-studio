@@ -2,200 +2,200 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
-- **L-0307: A fixture that always supplies the thing under test hides the refusal that depends on its absence.**
-- **L-0306: A sample drawn from the head of a sorted corpus is not a sample of the corpus.**
-- **L-0305: Widening a table by INSERTING a column shifts every historical row; appending one does not.**
-- **L-0304: An absent value and a defaulted one must be distinguishable in the record, or a rule applied later reinterprets history.**
-- **L-0303: A guard whose deletion changes no behaviour is dead code, however reasonable it reads.**
-- **L-0302: **Fixing the instance leaves the class.** BG0500 added `runbook.py` to the AGENTS.md lane roster; four commits later the same batch shipped...**
-- **L-0301: **Reviewing the test costs two orders of magnitude less than reviewing the code.** Measured this run, by accident, on the first hand-run...**
-- **L-0300: **A mutant derived from the implementation is the mutant the test was built to catch.** Five AC-named mutants did not kill their tests, on...**
-- **L-0299: A file-disjoint unit is not necessarily an independent one.**
-- **L-0298: A mutant that removes ONE of two sufficient fixes measures less than it appears to.**
-- **L-0297: A stub is not the shipped entry point.**
-- **L-0296: Satisfying a gate is not the same as satisfying the criterion, and when the two pull apart the criterion wins.**
-- **L-0295: Two readers of one file will disagree eventually, and the second one is written by whoever did not know the first existed.**
-- **L-0294: A ceiling you guessed is a ceiling that passes both cases.**
-- **L-0293: A postcondition cannot express an ordering.**
-- **L-0292: A test that opens the mechanism itself proves the mechanism and never its CALLER.**
-- **L-0291: **A guard reddening a fixture is evidence about the fixture as often as about the guard.** Seven rolling tests went red because they never...**
-- **L-0290: **Fixing the row an operator does not read is not fixing it.** `US0624` changed a checklist resolver while the preflight - the command an...**
-- **L-0289: **A matching rule that is convenient is a gate that is optional.** The repair record's closure-to-finding match was bidirectional substring...**
-- **L-0288: **A mechanism verified only in fixtures is verified only in fixtures.** Two of this sprint's own deliveries were inert on the real...**
-- **L-0287: **A cascade that ticks a checkbox is not a status cascade.** `_cascade_epic` ticks the story's line in its parent's Story Breakdown and...**
-- **L-0286: **An operation the tooling advises on every run, and that nobody can commit, accumulates silently and is invisible in the advisory...**
-- **L-0285: **A guard that reads the live index treats "what nobody has archived yet" as the corpus.** Both failing guards asserted floors - `> 150`...**
-- **L-0284: **A mutation-killed test proves the test can fail, not that production takes that path.** `US0604` needed four rounds.**
-- **L-0283: **A review exists when the ledger says so, not when it happened.** Fifteen of this run's verdicts were produced and never recorded, and...**
-- **L-0282: **An advisory detector that fires on the author changes nothing.** `lane-check`'s yield is no longer a question: 7 flagged, 6 independently...**
-- **L-0281: **"Broken" and "unproven" are different facts and want different words.** Roughly 13 of the 27 rejections were a feature that does not...**
-- **L-0280: **Reviewing the test is cheaper than reviewing the code.** This run spent five adversarial passes and roughly 800k tokens to discover...**
-- **L-0279: **A test that asserts the shape of a change cannot fail when the change is deleted.** The weakness was not random: it clustered at the end...**
-- **L-0278: Two copies of a rule drift apart: the coverage rule was restated in three modules and this diff falsified all three at once.**
-- **L-0277: Reading a command's verdict through a pipe reports the pipe's status.**
-- **L-0276: A premise measured on one instance is an anecdote.**
-- **L-0275: A review that fails every unit carries the same information as one that passes every unit.**
-- **L-0274: A library test cannot see a missing lane: the wiring between entry point and function is exactly the part it does not exercise, and it is...**
-- **L-0273: **Stopping is a delivery decision, and it is cheaper than half-building.** BG0448 was left untouched rather than part-built, because its...**
-- **L-0272: **Check the criterion's verifier can FAIL before ticking it.** Two criteria here were `Verified: yes` over tests that passed at the commit...**
-- **L-0271: **A selected test run cannot tell you the tree is green.** Six commits passed a gate that never ran the test my first commit broke.**
-- **L-0270: **An assertion over the set of every possible value holds nothing.** `assertIn(status, {"ok", "refuse", "unevaluated"})` cannot fail, and...**
-- **L-0269: **A test asserting against a fixture it built itself proves the reader, not the file.** BG0372's criteria passed against a hand-written...**
-- **L-0268: **Two components that measure the same thing will disagree, and both will look green.** BG0415: the budget lane and the planner differed by...**
-- **L-0267: **A guard whose only consequence is a missing record is not a guard.** BG0413's scope floor computed the right verdict for a 91% test loss...**
-- **L-0266: **A plan flagged as over-appetite at plan time is over-appetite.** The velocity record said 107-112 points and the previous sprint...**
-- **L-0265: A floor tolerates the failure it was written to catch.**
-- **L-0264: The grade of authority a correction needs should scale with the direction its mistake fails.**
-- **L-0263: A whole-file substring assertion over a document that also carries a Revision History is satisfied by the Revision History row describing...**
-- **L-0262: A guard that reads a document and compares it against a projection of itself can never fail in the reverse direction.**
-- **L-0261: A ratio or threshold test cannot report its own inertness, so the property that makes it meaningful needs its own assertion.**
-- **L-0260: **A speed-up test measures the wrong memo unless each is isolated.** Four mutants survived the corpus-cache work because the read-count...**
-- **L-0259: **Verify the premise before repairing it, and record it when it does not hold.** Three findings this sprint did not reproduce.**
-- **L-0258: **A guard that answers a narrower question than it claims reports the narrow answer as the broad one.** Eight of RV0024's residue bugs were...**
-- **L-0257: **An empty measurement is not a finding.** A Batch line naming no units meant "unreadable", and the report said "delivered nothing"; a...**
-- **L-0256: **A contradicting pair is decided ONCE, in one place.** BG0356/BG0360 were satisfiable in opposite directions.**
-- **L-0255: **Verify the premise before filing, not just before fixing.** Two bug reports were wrong about the code they described.**
-- **L-0254: **A guard that cannot fail is not evidence, and mutation is how you find out.** Three survivors this sprint, two of them tests I had just...**
-- **L-0253: **Verifying the premise beat trusting it three times in one afternoon**, twice against findings this author had filed hours earlier.**
-- **L-0252: **In-lane verification changed what review found, not how much.** 20 majors on 33 units last sprint, 17 on 31 this sprint: the rate barely...**
-- **L-0251: **Enforcing a rule is not obeying it.** The batch that built the criteria floor put four bugs into Fixed with no criteria, and the batch...**
-- **L-0250: **A guard that cannot fail is not evidence, and its greenness is the tell.** `caller_resolves` approved `unknown` and `nothing at all` and...**
-- **L-0249: **One truth held in two places diverges, and the looser copy is the one that runs.** Two of the four serious findings were this shape...**
-- **L-0248: **A review that only reads the diff misses what HEAD has become.** The finding that mattered most in the previous sprint was a repair...**
-- **L-0247: **An empty measurement is an unanswered question, not an answer of "nothing".** 57 of 162 suite modules measured an empty read set because...**
-- **L-0246: **Ship the wiring in the same unit as the mechanism, or it is inert.** Twice in one sprint a correct mechanism reached nothing: the surface...**
-- **L-0245: **A measured proxy is the wrong instrument for "did anything change".** The surface hash was computed over the set of files the suites were...**
-- **L-0244: **The strongest evidence a fail-loud fix works is that it refuses its own repository.** Three did.**
-- **L-0243: **Put the evidence where the tooling actually reads it.** A `Verify:` line on a bug executes nothing - only a story's does.**
-- **L-0242: **Per-lane green is not suite green.** Parallel file-disjoint delivery removes file collisions, not semantic ones: a lane that changes a...**
-- **L-0241: **A widened check must not block on the backlog it reveals.** Widening the placeholder sweep was correct and immediately surfaced 31...**
-- **L-0240: Meeting the user where their fingers already are (the natural CLI form) removes a friction that a help string never fully fixes - accept...**
-- **L-0239: A regression test for an exemption must assert the input trips the rule WITHOUT the exemption, in the test itself - or a benign fixture...**
-- **L-0238: Evidence is a PASSING verdict, not a marker's presence: a gate that accepts "any `**Verified:**` line" accepts a human recording failure.**
-- **L-0237: A directive assembled from a conditional (brownfield adds "detected stack") needs the NEGATIVE case pinned too - the mutation making it...**
-- **L-0236: A read on the orientation hot path (`status`/`hint`) must never crash on a hand-mangled runtime file: degrade to absent and self-heal.**
-- **L-0235: An "offer the exit" affordance must be honest about what the exit actually does: `--file-and-close` refuses hard correctness lanes, so...**
-- **L-0234: A batch-scoping or record-based "make-it-pass-here" gate change must be proven it cannot make a genuinely-broken close pass.**
-- **L-0233: **A `Verify:` line is not verified until it is run.** Three delivered units carried `Verify:` references to test nodes that did not exist...**
-- **L-0232: **A destructive default must be opt-in.** `changelog compose` folded and DELETED the whole pending fragment set by default; run out of...**
-- **L-0231: **Verify the premise before building the fix.** BG0296 was filed blaming the mutation tool for being blind to guard clauses; checking it...**
-- **L-0230: **A measurement instrument that always reads the same is off, whatever it says.** The capacity ceiling reported OVER BUDGET on every plan...**
-- **L-0229: **A pre-check is an enumeration, and an enumeration is a lower bound.** Testing the anchors before writing them reduced three vacuous...**
-- **L-0228: **Deciding a request is not the same as reducing the backlog.** Four rulings converted 9 discovery items into 17 delivery units.**
-- **L-0227: **A wrong diagnosis does not fail loudly - it produces a workaround that fails silently.** BG0290's first diagnosis was plausible, fitted...**
-- **L-0226: **A verifier that matches text already in the tree proves nothing, and reading it will not tell you.** Three of 41 passed here and a fourth...**
-- **L-0225: **Scoping a check to a diff disables it wherever there is no diff.** An empty changed-set is not an empty scope; a clean tree must judge...**
-- **L-0224: **Fixing an ordering defect can create its mirror image.** The BG0268 repair moved `open_run` first and invented the opposite leak.**
-- **L-0223: **An acceptance criterion can specify a vulnerability, and a passing test will then defend it.** US0375 asked for the sign-off gate to...**
+- **L-0307: A fixture that always supplies the thing under test hides the refusal that depends on its absence**
+- **L-0306: A sample drawn from the head of a sorted corpus is not a sample of the corpus**
+- **L-0305: Widening a table by INSERTING a column shifts every historical row; appending one does not**
+- **L-0304: An absent value and a defaulted one must be distinguishable in the record, or a rule applied later reinterprets history**
+- **L-0303: A guard whose deletion changes no behaviour is dead code, however reasonable it reads**
+- **L-0302: **Fixing the instance leaves the class.** BG0500 added `runbook.py` to the AGENTS.md lane roster; four commits later the same batch shipped**
+- **L-0301: **Reviewing the test costs two orders of magnitude less than reviewing the code.** Measured this run, by accident, on the first hand-run**
+- **L-0300: **A mutant derived from the implementation is the mutant the test was built to catch.** Five AC-named mutants did not kill their tests, on**
+- **L-0299: A file-disjoint unit is not necessarily an independent one**
+- **L-0298: A mutant that removes ONE of two sufficient fixes measures less than it appears to**
+- **L-0297: A stub is not the shipped entry point**
+- **L-0296: Satisfying a gate is not the same as satisfying the criterion, and when the two pull apart the criterion wins**
+- **L-0295: Two readers of one file will disagree eventually, and the second one is written by whoever did not know the first existed**
+- **L-0294: A ceiling you guessed is a ceiling that passes both cases**
+- **L-0293: A postcondition cannot express an ordering**
+- **L-0292: A test that opens the mechanism itself proves the mechanism and never its CALLER**
+- **L-0291: **A guard reddening a fixture is evidence about the fixture as often as about the guard.** Seven rolling tests went red because they never**
+- **L-0290: **Fixing the row an operator does not read is not fixing it.** `US0624` changed a checklist resolver while the preflight - the command an**
+- **L-0289: **A matching rule that is convenient is a gate that is optional.** The repair record's closure-to-finding match was bidirectional substring**
+- **L-0288: **A mechanism verified only in fixtures is verified only in fixtures.** Two of this sprint's own deliveries were inert on the real**
+- **L-0287: **A cascade that ticks a checkbox is not a status cascade.** `_cascade_epic` ticks the story's line in its parent's Story Breakdown and**
+- **L-0286: **An operation the tooling advises on every run, and that nobody can commit, accumulates silently and is invisible in the advisory**
+- **L-0285: **A guard that reads the live index treats "what nobody has archived yet" as the corpus.** Both failing guards asserted floors - `> 150`**
+- **L-0284: **A mutation-killed test proves the test can fail, not that production takes that path.** `US0604` needed four rounds**
+- **L-0283: **A review exists when the ledger says so, not when it happened.** Fifteen of this run's verdicts were produced and never recorded, and**
+- **L-0282: **An advisory detector that fires on the author changes nothing.** `lane-check`'s yield is no longer a question: 7 flagged, 6 independently**
+- **L-0281: **"Broken" and "unproven" are different facts and want different words.** Roughly 13 of the 27 rejections were a feature that does not**
+- **L-0280: **Reviewing the test is cheaper than reviewing the code.** This run spent five adversarial passes and roughly 800k tokens to discover**
+- **L-0279: **A test that asserts the shape of a change cannot fail when the change is deleted.** The weakness was not random: it clustered at the end**
+- **L-0278: Two copies of a rule drift apart: the coverage rule was restated in three modules and this diff falsified all three at once**
+- **L-0277: Reading a command's verdict through a pipe reports the pipe's status**
+- **L-0276: A premise measured on one instance is an anecdote**
+- **L-0275: A review that fails every unit carries the same information as one that passes every unit**
+- **L-0274: A library test cannot see a missing lane: the wiring between entry point and function is exactly the part it does not exercise, and it is**
+- **L-0273: **Stopping is a delivery decision, and it is cheaper than half-building.** BG0448 was left untouched rather than part-built, because its**
+- **L-0272: **Check the criterion's verifier can FAIL before ticking it.** Two criteria here were `Verified: yes` over tests that passed at the commit**
+- **L-0271: **A selected test run cannot tell you the tree is green.** Six commits passed a gate that never ran the test my first commit broke**
+- **L-0270: **An assertion over the set of every possible value holds nothing.** `assertIn(status, {"ok", "refuse", "unevaluated"})` cannot fail, and**
+- **L-0269: **A test asserting against a fixture it built itself proves the reader, not the file.** BG0372's criteria passed against a hand-written**
+- **L-0268: **Two components that measure the same thing will disagree, and both will look green.** BG0415: the budget lane and the planner differed by**
+- **L-0267: **A guard whose only consequence is a missing record is not a guard.** BG0413's scope floor computed the right verdict for a 91% test loss**
+- **L-0266: **A plan flagged as over-appetite at plan time is over-appetite.** The velocity record said 107-112 points and the previous sprint**
+- **L-0265: A floor tolerates the failure it was written to catch**
+- **L-0264: The grade of authority a correction needs should scale with the direction its mistake fails**
+- **L-0263: A whole-file substring assertion over a document that also carries a Revision History is satisfied by the Revision History row describing**
+- **L-0262: A guard that reads a document and compares it against a projection of itself can never fail in the reverse direction**
+- **L-0261: A ratio or threshold test cannot report its own inertness, so the property that makes it meaningful needs its own assertion**
+- **L-0260: **A speed-up test measures the wrong memo unless each is isolated.** Four mutants survived the corpus-cache work because the read-count**
+- **L-0259: **Verify the premise before repairing it, and record it when it does not hold.** Three findings this sprint did not reproduce**
+- **L-0258: **A guard that answers a narrower question than it claims reports the narrow answer as the broad one.** Eight of RV0024's residue bugs were**
+- **L-0257: **An empty measurement is not a finding.** A Batch line naming no units meant "unreadable", and the report said "delivered nothing"; a**
+- **L-0256: **A contradicting pair is decided ONCE, in one place.** BG0356/BG0360 were satisfiable in opposite directions**
+- **L-0255: **Verify the premise before filing, not just before fixing.** Two bug reports were wrong about the code they described**
+- **L-0254: **A guard that cannot fail is not evidence, and mutation is how you find out.** Three survivors this sprint, two of them tests I had just**
+- **L-0253: **Verifying the premise beat trusting it three times in one afternoon**, twice against findings this author had filed hours earlier**
+- **L-0252: **In-lane verification changed what review found, not how much.** 20 majors on 33 units last sprint, 17 on 31 this sprint: the rate barely**
+- **L-0251: **Enforcing a rule is not obeying it.** The batch that built the criteria floor put four bugs into Fixed with no criteria, and the batch**
+- **L-0250: **A guard that cannot fail is not evidence, and its greenness is the tell.** `caller_resolves` approved `unknown` and `nothing at all` and**
+- **L-0249: **One truth held in two places diverges, and the looser copy is the one that runs.** Two of the four serious findings were this shape**
+- **L-0248: **A review that only reads the diff misses what HEAD has become.** The finding that mattered most in the previous sprint was a repair**
+- **L-0247: **An empty measurement is an unanswered question, not an answer of "nothing".** 57 of 162 suite modules measured an empty read set because**
+- **L-0246: **Ship the wiring in the same unit as the mechanism, or it is inert.** Twice in one sprint a correct mechanism reached nothing: the surface**
+- **L-0245: **A measured proxy is the wrong instrument for "did anything change".** The surface hash was computed over the set of files the suites were**
+- **L-0244: **The strongest evidence a fail-loud fix works is that it refuses its own repository.** Three did**
+- **L-0243: **Put the evidence where the tooling actually reads it.** A `Verify:` line on a bug executes nothing - only a story's does**
+- **L-0242: **Per-lane green is not suite green.** Parallel file-disjoint delivery removes file collisions, not semantic ones: a lane that changes a**
+- **L-0241: **A widened check must not block on the backlog it reveals.** Widening the placeholder sweep was correct and immediately surfaced 31**
+- **L-0240: Meeting the user where their fingers already are (the natural CLI form) removes a friction that a help string never fully fixes - accept**
+- **L-0239: A regression test for an exemption must assert the input trips the rule WITHOUT the exemption, in the test itself - or a benign fixture**
+- **L-0238: Evidence is a PASSING verdict, not a marker's presence: a gate that accepts "any `**Verified:**` line" accepts a human recording failure**
+- **L-0237: A directive assembled from a conditional (brownfield adds "detected stack") needs the NEGATIVE case pinned too - the mutation making it**
+- **L-0236: A read on the orientation hot path (`status`/`hint`) must never crash on a hand-mangled runtime file: degrade to absent and self-heal**
+- **L-0235: An "offer the exit" affordance must be honest about what the exit actually does: `--file-and-close` refuses hard correctness lanes, so**
+- **L-0234: A batch-scoping or record-based "make-it-pass-here" gate change must be proven it cannot make a genuinely-broken close pass**
+- **L-0233: **A `Verify:` line is not verified until it is run.** Three delivered units carried `Verify:` references to test nodes that did not exist**
+- **L-0232: **A destructive default must be opt-in.** `changelog compose` folded and DELETED the whole pending fragment set by default; run out of**
+- **L-0231: **Verify the premise before building the fix.** BG0296 was filed blaming the mutation tool for being blind to guard clauses; checking it**
+- **L-0230: **A measurement instrument that always reads the same is off, whatever it says.** The capacity ceiling reported OVER BUDGET on every plan**
+- **L-0229: **A pre-check is an enumeration, and an enumeration is a lower bound.** Testing the anchors before writing them reduced three vacuous**
+- **L-0228: **Deciding a request is not the same as reducing the backlog.** Four rulings converted 9 discovery items into 17 delivery units**
+- **L-0227: **A wrong diagnosis does not fail loudly - it produces a workaround that fails silently.** BG0290's first diagnosis was plausible, fitted**
+- **L-0226: **A verifier that matches text already in the tree proves nothing, and reading it will not tell you.** Three of 41 passed here and a fourth**
+- **L-0225: **Scoping a check to a diff disables it wherever there is no diff.** An empty changed-set is not an empty scope; a clean tree must judge**
+- **L-0224: **Fixing an ordering defect can create its mirror image.** The BG0268 repair moved `open_run` first and invented the opposite leak**
+- **L-0223: **An acceptance criterion can specify a vulnerability, and a passing test will then defend it.** US0375 asked for the sign-off gate to**
 - **L-0222: My tests verify the piece I just wrote, not the system it lives in**
-- **L-0221: **A library function that prints leaks into every test that calls it.** refine's SEEDED note printed from the library; 69 leaks.**
-- **L-0220: **A `--no-verify` commit in a worktree defers the gate to whoever merges it.** Two agents' bypassed leaks became the first full-tree hook's...**
-- **L-0219: **A test that asserts a label, not the value, proves the tool named its state - not that it reached it.** US0400 relabelled the marginal...**
-- **L-0218: **A parallel fan-out is worth offering by default, but only when a real file-disjoint decomposition exists** - CR0411, the operator's...**
-- **L-0217: **A guard that forces --no-verify trains the bypass it exists to prevent.** A tree-walking test must anchor its exclusions to the repo...**
-- **L-0216: **Mutation-proving at build time is what let the delivery code pass review in two waves, not ten rounds.** The rigour the design rung...**
-- **L-0215: **Count test files as coupling before fanning out.** File-disjoint means disjoint including tests; two agents editing one test file...**
-- **L-0214: **Check whether the tool you are about to build already exists.** CR0405 asserted CHANGELOG had no helper; `changelog.py` had been there...**
-- **L-0213: **The plan gate belongs before the repair, and the evidence is now in this repo.** Round 1's plan was refuted in full.**
-- **L-0212: **A counterfactual bar cannot be checked by any run, so it needs a ledger beside it.** The goal asked whether criteria "would fail if the...**
-- **L-0211: **Derive the whole behaviour, not the half you were looking at.** Round 2 derived the parse from the runner and left the walk restated...**
-- **L-0210: **A -k selector matching nothing reports NO TESTS RAN, which is not a pass.** Hit by the author directly, and it is also how BG0256's story...**
-- **L-0209: **Check what a two-point fit cannot tell you** - see Estimate vs actual.**
-- **L-0208: **`grep` cannot verify a claim about meaning.** Four ACs passed on prose asserting the exact opposite of their criteria, because `grep` is...**
-- **L-0207: **An estimator's identity is the parameters it takes, not the values they were measured at.** `sample_class` compared constants by value...**
-- **L-0206: **A repair can mask the defect beside it.** If a mutant survives, test that branch in ISOLATION before believing it.**
-- **L-0205: **A library test is not a lane test.** The author fixed the engagement floor's false clean, mutation-tested it, and wrote "mutation-proven"...**
-- **L-0204: **An operator ruling before the build is cheaper than a review rejection after it.** Three forks were ruled in advance; one of the rulings...**
-- **L-0203: **A number that looks like a successful measurement is more dangerous than an obvious absence.** Three closes reported not-attributable and...**
-- **L-0202: **Check what a measurement EXCLUDES before drawing a conclusion from it.** The first attributable token figure this project ever produced...**
-- **L-0201: **Do not diagnose from a diff taken while another process is mid-edit.** A transient mutation window looked exactly like a reviewer failing...**
-- **L-0200: **Check the incentive a new reporting path creates, not just its correctness.** Registering a SURVIVED mutant moves a file from "no...**
-- **L-0199: **A fix that rescues the value can leave the reason with the original defect.** BG0244 taught the velocity row to preserve a measured...**
-- **L-0198: **Say "not applied" rather than counting it as survived.** One mutant in the repair round hit an ambiguous two-occurrence anchor and did...**
-- **L-0197: **Fix the prose AND the thing the prose was wrong about.** MINOR 4 was a docstring claiming a bound the code did not provide.**
-- **L-0196: **Repeating someone else's unverified claim makes it yours.** The reviewer reported that `raw capture 5,672,289` existed nowhere else, and...**
-- **L-0195: **A self-report is not a measurement, and a ledger that cannot tell them apart is worse than one that holds neither.** Recording provenance...**
-- **L-0194: **Fixing a column obliges you to look at the one beside it.** `Actual` and `Estimate` are written by the same code in the same row from the...**
-- **L-0193: **Prove containment against a fixture that can actually fail.** The first victim repo had a worktree matching its index, so `git add -A`...**
-- **L-0192: **Count before sizing, and count with a pattern that survives an alias.** A naive `subprocess.run(["git"` grep found 24 of 35 sites because...**
-- **L-0191: **A gate whose input is derived from history cannot judge the commit that creates the history.** The engagement floor reads `git log...**
-- **L-0190: **Two numbers that look related can come from different sources, and "obviously connected" is not evidence.** The measured-rate counter and...**
-- **L-0189: **When a gate reports an absence, check whether the absence is real before filling it.** The first reflex at this close was a blanket...**
-- **L-0188: **A lane that reads red when the policy was followed will be ignored**, and is indistinguishable from a broken one.**
-- **L-0187: **Building the recorder is not the same as recording.** BG0238 made mutation evidence able to accumulate, and the sprint still closed with...**
-- **L-0186: **Reproduction steps are executable content and must never be passed through a shell.** The field most likely to contain commands is the...**
-- **L-0185: **Prose that justifies code is the least-reviewed code in the repo** - four sprints running now.**
-- **L-0184: **A literal count in prose rots.** "206 tests" was true when written, wrong when the reviewer read it, and wrong again an hour later.**
-- **L-0183: **Refuse a total rather than return a short one.** A skipped malformed record yields a quietly low sum, and a low baseline inflates every...**
-- **L-0182: **Do not judge a measurement by the history of that same measurement.** BG0239's filed fix suggested a duration band to validate a...**
-- **L-0181: **A guard every caller already short-circuits is not covered by its callers' tests.** Hit twice this sprint, by different authors.**
-- **L-0180: **Deleting a guard requires evidence from the surface the guard protects.** The `if not refused` check was removed because the ledger...**
-- **L-0179: **A rule enforced in the producer is not enforced in the consumer.** BG0238's ledger applied the verdict rule correctly and the gate then...**
-- **L-0178: **The harness token capture (5,672,289 -> 472,691/pt) is NOT this sprint's cost and was blanked from the VELOCITY row as...**
-- **L-0177: **A protection built for one suite does not cover the suite beside it.** `skill-tests.sh` has scrubbed 11 git variables since the...**
-- **L-0176: **Restoring a global you patched can cost the guarantee the patch was for.** A `tearDownModule` was added so an unrelated module would not...**
-- **L-0175: **A correction has to be propagated to the decision of record, not just the file it was found in.** Retiring the 93.1s baseline in...**
-- **L-0174: **A test can look behavioural and still never enter the branch it names.** Round 2 killed the two hook tests written to close round 1's...**
-- **L-0173: **Prose written to justify code is code that has not been reviewed - for the third sprint running.** Two of this review's three MAJORs were...**
-- **L-0172: **A baseline the check cannot itself reproduce is not a baseline.** 93.1s was a hand-sum of three separately timed runs; the hook's own...**
-- **L-0171: **A guard must be tested for the MECHANISM, not the spelling that prompted it.** The structural check matched one literal call form; the...**
-- **L-0170: **Narrowing an exception clause is a behaviour change, not a tidy-up.** Moving a read out of a broad `except` and catching only `OSError`...**
-- **L-0169: **A trend against a dated baseline catches what a ceiling cannot.** `test_gate.py` grew 28% in two days while under every threshold in...**
-- **L-0168: **Ask where the data lives before deciding where the check lives.** A check placed away from the data it reads is not wrong so much as...**
-- **L-0167: **Read the binding rules of the thing you intend to inject before designing a test around injecting it.** A default argument binds at...**
-- **L-0166: **Profile inside the file before optimising it.** The file-level table said "attack test_gate.py"; the profile said "two tests".**
-- **L-0165: **Vacuity is not gated on exit 0.** A runner that ran nothing proves nothing whatever its exit code; pytest signals it with codes 4 and 5...**
-- **L-0164: **A point-in-time acceptance criterion is manual by nature.** An executable check that re-asserts a snapshot state ('zero advisories at...**
-- **L-0163: **A characterisation test still needs mutation to earn its keep.** BG0232's 15 tests all passed on first write because the code was already...**
-- **L-0162: **An AC's freshness must cover whether its verifier still exists.** US0097 read `Verified: yes` for weeks after the test it named was...**
-- **L-0161: **A test-selection filter is part of the test harness and can silently exclude the tests you are relying on.** A `-k` pattern that matches...**
-- **L-0160: **Scope a mutation run to product code with a scoped test command.** Mutating test files produces expected-vacuous survivors, and a...**
-- **L-0159: **A guard unreachable through the public path cannot be tested through it.** It still reads as coverage.**
-- **L-0158: **A bug about environment pollution must never be reproduced next to a live repo.** The filed reproduction was followed literally and...**
-- **L-0157: A mutant that lands in a test file and survives is expected, not a finding: stubbing a test's body makes the suite pass vacuously by...**
-- **L-0156: An upsert that rewrites the whole record can erase the very field it was told not to overwrite: "do not overwrite" must be implemented as...**
-- **L-0155: The hook environment is part of the test environment: a suite green in a shell can fail under `git commit -a` because the hook inherits...**
-- **L-0154: A root-relative defect found in one writer must be swept across every sibling writer before the run closes: BG0219 (`lessons.py`) had an...**
-- **L-0153: A pre-flight is worth building where a gate is a chain: the information is nearly always available before the first attempt, and serial...**
-- **L-0152: A fixture missing a config key can silently disable the whole branch under test.**
-- **L-0151: When a defect is fixed, the tests that were passing because of it will fail.**
-- **L-0150: A plan's premises decay.**
-- **L-0149: Check whether the work is already done before building it.**
-- **L-0148: **A drift kind whose advertised remedy cannot clear it is worse than no hint** - it sends the operator round a loop with no exit.**
-- **L-0147: **Fixture noise hides vacuous assertions.** The shared story fixture wrote an unrewritable placeholder status, so every apply in the class...**
-- **L-0146: **Prose written to justify code is code that has not been reviewed.** Three sessions running, the surviving defect has been in a comment or...**
-- **L-0145: **A test-runner error is not a test failure.** `FAILED (errors=1)` from a mis-named test class looks exactly like a kill.**
-- **L-0144: **Establish the baseline before the mutant, and restore from a source the mutant cannot have touched.** A timed-out mutation harness leaves...**
-- **L-0143: **The gate cost is concentrated, not diffuse.** Three test files are 62 per cent of the suite runtime and 14 per cent of the tests.**
-- **L-0142: **Rebuild structure from data, never from prose.** `requirements` re-parsed a sentence the ladder had just built from a list.**
-- **L-0141: **A fixture can satisfy an assertion for a reason unrelated to the property under test.** The round-1 test asserted "two items" against a...**
-- **L-0140: **A test that cannot fail is worse than no test, because it reads as coverage.** The round-2 test named the exact defect in its docstring...**
-- **L-0139: **Round 2's findings are made by round 1's repair, and this is now three runs in a row.** Every new finding this round was created by the...**
-- **L-0138: **A new guard needs a test of its MECHANISM, not just of the case that prompted it.** The line that closed this review's MAJOR could be...**
-- **L-0137: **Forgiving an unsatisfiable demand must surface its cause.** Dropping a dead id silently would trade a false debt for a hidden defect...**
-- **L-0136: **A finding is a hypothesis, not a fact.** Two of six bugs in this batch were wrong in their specifics and both were worth more once...**
-- **L-0135: **A sweep that checks many things in one process can be satisfied by the first one.** Shared interpreter state - `sys.path`, `sys.modules`...**
-- **L-0134: **A narrow test command over-reports absence.** A mutation run scoped below its target's real coverage manufactures survivors, which then...**
-- **L-0133: **When two checks answer the same question, the stricter one silently wins.** A presence check looser than the mutation regex meant a field...**
-- **L-0132: **A close that performs every step except the record still leaves no record.** CR0322's close ran a two-role review, a repair round, a...**
-- **L-0131: **A checker that passes on input it cannot parse reports coverage it does not have** (US0179's `personas.md`-only vacuous pass).**
-- **L-0130: **A detector firing on a real gap is only worth what the response to it is worth.** The close-owed detector correctly reported this sprint...**
-- **L-0129: **A fix's own argument constrains its implementation.** BG0208's case is that the archive is the permanent record - so re-stamping...**
-- **L-0128: **When two code paths answer the same question, extract before the second answer drifts.** The H1-strip rule had three private copies and...**
-- **L-0127: **A test that passes for an incidental reason is not coverage.** Twice this sprint a guard looked covered because the path around it...**
+- **L-0221: **A library function that prints leaks into every test that calls it.** refine's SEEDED note printed from the library; 69 leaks**
+- **L-0220: **A `--no-verify` commit in a worktree defers the gate to whoever merges it.** Two agents' bypassed leaks became the first full-tree hook's**
+- **L-0219: **A test that asserts a label, not the value, proves the tool named its state - not that it reached it.** US0400 relabelled the marginal**
+- **L-0218: **A parallel fan-out is worth offering by default, but only when a real file-disjoint decomposition exists** - CR0411, the operator's**
+- **L-0217: **A guard that forces --no-verify trains the bypass it exists to prevent.** A tree-walking test must anchor its exclusions to the repo**
+- **L-0216: **Mutation-proving at build time is what let the delivery code pass review in two waves, not ten rounds.** The rigour the design rung**
+- **L-0215: **Count test files as coupling before fanning out.** File-disjoint means disjoint including tests; two agents editing one test file**
+- **L-0214: **Check whether the tool you are about to build already exists.** CR0405 asserted CHANGELOG had no helper; `changelog.py` had been there**
+- **L-0213: **The plan gate belongs before the repair, and the evidence is now in this repo.** Round 1's plan was refuted in full**
+- **L-0212: **A counterfactual bar cannot be checked by any run, so it needs a ledger beside it.** The goal asked whether criteria "would fail if the**
+- **L-0211: **Derive the whole behaviour, not the half you were looking at.** Round 2 derived the parse from the runner and left the walk restated**
+- **L-0210: **A -k selector matching nothing reports NO TESTS RAN, which is not a pass.** Hit by the author directly, and it is also how BG0256's story**
+- **L-0209: **Check what a two-point fit cannot tell you** - see Estimate vs actual**
+- **L-0208: **`grep` cannot verify a claim about meaning.** Four ACs passed on prose asserting the exact opposite of their criteria, because `grep` is**
+- **L-0207: **An estimator's identity is the parameters it takes, not the values they were measured at.** `sample_class` compared constants by value**
+- **L-0206: **A repair can mask the defect beside it.** If a mutant survives, test that branch in ISOLATION before believing it**
+- **L-0205: **A library test is not a lane test.** The author fixed the engagement floor's false clean, mutation-tested it, and wrote "mutation-proven"**
+- **L-0204: **An operator ruling before the build is cheaper than a review rejection after it.** Three forks were ruled in advance; one of the rulings**
+- **L-0203: **A number that looks like a successful measurement is more dangerous than an obvious absence.** Three closes reported not-attributable and**
+- **L-0202: **Check what a measurement EXCLUDES before drawing a conclusion from it.** The first attributable token figure this project ever produced**
+- **L-0201: **Do not diagnose from a diff taken while another process is mid-edit.** A transient mutation window looked exactly like a reviewer failing**
+- **L-0200: **Check the incentive a new reporting path creates, not just its correctness.** Registering a SURVIVED mutant moves a file from "no**
+- **L-0199: **A fix that rescues the value can leave the reason with the original defect.** BG0244 taught the velocity row to preserve a measured**
+- **L-0198: **Say "not applied" rather than counting it as survived.** One mutant in the repair round hit an ambiguous two-occurrence anchor and did**
+- **L-0197: **Fix the prose AND the thing the prose was wrong about.** MINOR 4 was a docstring claiming a bound the code did not provide**
+- **L-0196: **Repeating someone else's unverified claim makes it yours.** The reviewer reported that `raw capture 5,672,289` existed nowhere else, and**
+- **L-0195: **A self-report is not a measurement, and a ledger that cannot tell them apart is worse than one that holds neither.** Recording provenance**
+- **L-0194: **Fixing a column obliges you to look at the one beside it.** `Actual` and `Estimate` are written by the same code in the same row from the**
+- **L-0193: **Prove containment against a fixture that can actually fail.** The first victim repo had a worktree matching its index, so `git add -A`**
+- **L-0192: **Count before sizing, and count with a pattern that survives an alias.** A naive `subprocess.run(["git"` grep found 24 of 35 sites because**
+- **L-0191: **A gate whose input is derived from history cannot judge the commit that creates the history.** The engagement floor reads `git log**
+- **L-0190: **Two numbers that look related can come from different sources, and "obviously connected" is not evidence.** The measured-rate counter and**
+- **L-0189: **When a gate reports an absence, check whether the absence is real before filling it.** The first reflex at this close was a blanket**
+- **L-0188: **A lane that reads red when the policy was followed will be ignored**, and is indistinguishable from a broken one**
+- **L-0187: **Building the recorder is not the same as recording.** BG0238 made mutation evidence able to accumulate, and the sprint still closed with**
+- **L-0186: **Reproduction steps are executable content and must never be passed through a shell.** The field most likely to contain commands is the**
+- **L-0185: **Prose that justifies code is the least-reviewed code in the repo** - four sprints running now**
+- **L-0184: **A literal count in prose rots.** "206 tests" was true when written, wrong when the reviewer read it, and wrong again an hour later**
+- **L-0183: **Refuse a total rather than return a short one.** A skipped malformed record yields a quietly low sum, and a low baseline inflates every**
+- **L-0182: **Do not judge a measurement by the history of that same measurement.** BG0239's filed fix suggested a duration band to validate a**
+- **L-0181: **A guard every caller already short-circuits is not covered by its callers' tests.** Hit twice this sprint, by different authors**
+- **L-0180: **Deleting a guard requires evidence from the surface the guard protects.** The `if not refused` check was removed because the ledger**
+- **L-0179: **A rule enforced in the producer is not enforced in the consumer.** BG0238's ledger applied the verdict rule correctly and the gate then**
+- **L-0178: **The harness token capture (5,672,289 -> 472,691/pt) is NOT this sprint's cost and was blanked from the VELOCITY row as**
+- **L-0177: **A protection built for one suite does not cover the suite beside it.** `skill-tests.sh` has scrubbed 11 git variables since the**
+- **L-0176: **Restoring a global you patched can cost the guarantee the patch was for.** A `tearDownModule` was added so an unrelated module would not**
+- **L-0175: **A correction has to be propagated to the decision of record, not just the file it was found in.** Retiring the 93.1s baseline in**
+- **L-0174: **A test can look behavioural and still never enter the branch it names.** Round 2 killed the two hook tests written to close round 1's**
+- **L-0173: **Prose written to justify code is code that has not been reviewed - for the third sprint running.** Two of this review's three MAJORs were**
+- **L-0172: **A baseline the check cannot itself reproduce is not a baseline.** 93.1s was a hand-sum of three separately timed runs; the hook's own**
+- **L-0171: **A guard must be tested for the MECHANISM, not the spelling that prompted it.** The structural check matched one literal call form; the**
+- **L-0170: **Narrowing an exception clause is a behaviour change, not a tidy-up.** Moving a read out of a broad `except` and catching only `OSError`**
+- **L-0169: **A trend against a dated baseline catches what a ceiling cannot.** `test_gate.py` grew 28% in two days while under every threshold in**
+- **L-0168: **Ask where the data lives before deciding where the check lives.** A check placed away from the data it reads is not wrong so much as**
+- **L-0167: **Read the binding rules of the thing you intend to inject before designing a test around injecting it.** A default argument binds at**
+- **L-0166: **Profile inside the file before optimising it.** The file-level table said "attack test_gate.py"; the profile said "two tests"**
+- **L-0165: **Vacuity is not gated on exit 0.** A runner that ran nothing proves nothing whatever its exit code; pytest signals it with codes 4 and 5**
+- **L-0164: **A point-in-time acceptance criterion is manual by nature.** An executable check that re-asserts a snapshot state ('zero advisories at**
+- **L-0163: **A characterisation test still needs mutation to earn its keep.** BG0232's 15 tests all passed on first write because the code was already**
+- **L-0162: **An AC's freshness must cover whether its verifier still exists.** US0097 read `Verified: yes` for weeks after the test it named was**
+- **L-0161: **A test-selection filter is part of the test harness and can silently exclude the tests you are relying on.** A `-k` pattern that matches**
+- **L-0160: **Scope a mutation run to product code with a scoped test command.** Mutating test files produces expected-vacuous survivors, and a**
+- **L-0159: **A guard unreachable through the public path cannot be tested through it.** It still reads as coverage**
+- **L-0158: **A bug about environment pollution must never be reproduced next to a live repo.** The filed reproduction was followed literally and**
+- **L-0157: A mutant that lands in a test file and survives is expected, not a finding: stubbing a test's body makes the suite pass vacuously by**
+- **L-0156: An upsert that rewrites the whole record can erase the very field it was told not to overwrite: "do not overwrite" must be implemented as**
+- **L-0155: The hook environment is part of the test environment: a suite green in a shell can fail under `git commit -a` because the hook inherits**
+- **L-0154: A root-relative defect found in one writer must be swept across every sibling writer before the run closes: BG0219 (`lessons.py`) had an**
+- **L-0153: A pre-flight is worth building where a gate is a chain: the information is nearly always available before the first attempt, and serial**
+- **L-0152: A fixture missing a config key can silently disable the whole branch under test**
+- **L-0151: When a defect is fixed, the tests that were passing because of it will fail**
+- **L-0150: A plan's premises decay**
+- **L-0149: Check whether the work is already done before building it**
+- **L-0148: **A drift kind whose advertised remedy cannot clear it is worse than no hint** - it sends the operator round a loop with no exit**
+- **L-0147: **Fixture noise hides vacuous assertions.** The shared story fixture wrote an unrewritable placeholder status, so every apply in the class**
+- **L-0146: **Prose written to justify code is code that has not been reviewed.** Three sessions running, the surviving defect has been in a comment or**
+- **L-0145: **A test-runner error is not a test failure.** `FAILED (errors=1)` from a mis-named test class looks exactly like a kill**
+- **L-0144: **Establish the baseline before the mutant, and restore from a source the mutant cannot have touched.** A timed-out mutation harness leaves**
+- **L-0143: **The gate cost is concentrated, not diffuse.** Three test files are 62 per cent of the suite runtime and 14 per cent of the tests**
+- **L-0142: **Rebuild structure from data, never from prose.** `requirements` re-parsed a sentence the ladder had just built from a list**
+- **L-0141: **A fixture can satisfy an assertion for a reason unrelated to the property under test.** The round-1 test asserted "two items" against a**
+- **L-0140: **A test that cannot fail is worse than no test, because it reads as coverage.** The round-2 test named the exact defect in its docstring**
+- **L-0139: **Round 2's findings are made by round 1's repair, and this is now three runs in a row.** Every new finding this round was created by the**
+- **L-0138: **A new guard needs a test of its MECHANISM, not just of the case that prompted it.** The line that closed this review's MAJOR could be**
+- **L-0137: **Forgiving an unsatisfiable demand must surface its cause.** Dropping a dead id silently would trade a false debt for a hidden defect**
+- **L-0136: **A finding is a hypothesis, not a fact.** Two of six bugs in this batch were wrong in their specifics and both were worth more once**
+- **L-0135: **A sweep that checks many things in one process can be satisfied by the first one.** Shared interpreter state - `sys.path`, `sys.modules`**
+- **L-0134: **A narrow test command over-reports absence.** A mutation run scoped below its target's real coverage manufactures survivors, which then**
+- **L-0133: **When two checks answer the same question, the stricter one silently wins.** A presence check looser than the mutation regex meant a field**
+- **L-0132: **A close that performs every step except the record still leaves no record.** CR0322's close ran a two-role review, a repair round, a**
+- **L-0131: **A checker that passes on input it cannot parse reports coverage it does not have** (US0179's `personas.md`-only vacuous pass)**
+- **L-0130: **A detector firing on a real gap is only worth what the response to it is worth.** The close-owed detector correctly reported this sprint**
+- **L-0129: **A fix's own argument constrains its implementation.** BG0208's case is that the archive is the permanent record - so re-stamping**
+- **L-0128: **When two code paths answer the same question, extract before the second answer drifts.** The H1-strip rule had three private copies and**
+- **L-0127: **A test that passes for an incidental reason is not coverage.** Twice this sprint a guard looked covered because the path around it**
 - **L-0126: A fail-closed fallback is not the main path with one rule removed**
 - **L-0125: Round 2 findings are usually created by the round 1 repair**
 - **L-0124: File the friction, not just the blockers**
-- **L-0123: **L-0113** An AC asserting the committed state cannot be green in the working tree.**
-- **L-0122: **L-0112** The author cannot close the loop: build-to-Done needs the reviewer of record.**
-- **L-0121: **L-0111** Story points size the diff, not the discovery.**
-- **L-0120: **L-0110** A new writer must join the atomicity and confinement rosters, not just work.**
-- **L-0119: **L-0109** Delegating by `Affects` reproduces whatever is wrong with the `Affects`.**
-- **L-0118: **L-0108** Build the gate first, then let it tell you the size of the backlog it guards.**
-- **L-0117: **L-0107** An AC that runs the repo's standing guards is green before the work starts.**
-- **L-0116: **L-0106** A same-length mutant is the mutation check's own blind spot.**
-- **L-0115: **L-0105** Suppressing a cache write does not stop a cache read.**
-- **L-0114: **L-0104** A readiness gate that recognises one hardcoded placeholder recognises none.**
+- **L-0123: **L-0113** An AC asserting the committed state cannot be green in the working tree**
+- **L-0122: **L-0112** The author cannot close the loop: build-to-Done needs the reviewer of record**
+- **L-0121: **L-0111** Story points size the diff, not the discovery**
+- **L-0120: **L-0110** A new writer must join the atomicity and confinement rosters, not just work**
+- **L-0119: **L-0109** Delegating by `Affects` reproduces whatever is wrong with the `Affects`**
+- **L-0118: **L-0108** Build the gate first, then let it tell you the size of the backlog it guards**
+- **L-0117: **L-0107** An AC that runs the repo's standing guards is green before the work starts**
+- **L-0116: **L-0106** A same-length mutant is the mutation check's own blind spot**
+- **L-0115: **L-0105** Suppressing a cache write does not stop a cache read**
+- **L-0114: **L-0104** A readiness gate that recognises one hardcoded placeholder recognises none**
 - **L-0113: An AC asserting the committed state cannot be green in the working tree**
 - **L-0112: The author cannot close the loop: build-to-Done needs the reviewer of record**
 - **L-0111: Story points size the diff, not the discovery**
@@ -206,103 +206,103 @@ Rolling digest of still-valid project lessons, read at sprint start. The full lo
 - **L-0106: A same-length mutant is the mutation check's own blind spot**
 - **L-0105: Suppressing a cache write does not stop a cache read**
 - **L-0104: A readiness gate that recognises one hardcoded placeholder recognises none**
-- **L-0103: A no-result signal from a per-unit runner (`go` per package, `jest` per project) means "the whole run was empty" only when every unit says...**
-- **L-0102: A frequency threshold over "how widely is this shared" must exclude the owner, or the owner's own correct usage suppresses detection of...**
-- **L-0101: A comment justifying a mechanism is a claim, and it needs the same evidence as the code: two false claims about frequency suppression...**
-- **L-0100: Stale bytecode silently invalidates a mutation check when the mutant is the same byte length: purge `__pycache__` and run `python3 -B`, or...**
-- **L-0099: A guard that unrelated output can switch off is worse than the false alarm it replaced: prefer a narrow false positive to a silent false...**
-- **L-0098: A `-k` test filter that matches nothing exits 0 having run zero tests, so a renamed class silently converts an executable AC into a green...**
-- **L-0097: Monkeypatching a module reached through `sys.modules` leaks across the whole test process; patch and register the undo together...**
-- **L-0096: A truthiness guard on a scope filter (`if wanted and ...`) fails open: an empty scope silently becomes an unbounded one.**
-- **L-0095: Deriving a terminal status is an assertion about work, so it must be scoped to what the run actually touched and must refuse on incomplete...**
-- **L-0094: A helper that SKIPS what it cannot resolve is safe for detection and unsafe for derivation: `_breakdown_units` silently drops an...**
-- **L-0093: Build a close-ceremony feature by orchestrating the existing tested primitives (sign-off, close, transition, velocity), not a parallel path...**
-- **L-0092: Correcting a wrong constant can activate dead code that only ever "worked" because the constant was wrong.**
-- **L-0091: Verify lines must use the DSL verbs (`grep`/`shell`/`pytest`/`file`/`http`/`eval`), never a backtick-wrapped raw `python3 ...`; the `grep`...**
-- **L-0090: **A create-only `Affects` is a real grooming gap, not a gate bug.** Name at least one existing file the unit also touches (here...**
-- **L-0089: **Machine-guard every vocabulary a self-describing contract claims to cover.** The v3 `inbox` lane shipped as prose the guard did not check...**
-- **L-0088: **A public contract's version stamp must anchor to what new consumers actually meet.** Tying the masthead to the fallback file made the...**
-- **L-0087: **Verify which file a "default" actually comes from before documenting it as the default.** New projects are seeded from...**
-- **L-0086: A bounded mutation run with a low ceiling on a large multi-function file samples early-file lines (peripheral helpers), not the diff -...**
-- **L-0085: A worktree subagent branches from a base SHA, so `git diff main..branch` shows the other side "reverted" and misleads; a three-way merge is...**
-- **L-0084: The `documented` conformance stage is a GLOBAL floor: one uncatalogued command fails it for every unit.**
-- **L-0083: A fix's test must exercise the failure mode the fix could *introduce*, not only the one it removes: BG0181's fix passed its...**
-- **L-0082: A composed evidence line must carry its source report's failure state (baseline/errors/truncation), not only its successes - otherwise the...**
-- **L-0081: When a gate's requirement has independently-downgradable halves, compose them independently and test the partial-tag matrix, not just...**
-- **L-0080: Never run two tree-mutating verifiers concurrently: a mutation harness owns the working tree while it runs, a kill mid-mutant strands a...**
+- **L-0103: A no-result signal from a per-unit runner (`go` per package, `jest` per project) means "the whole run was empty" only when every unit says**
+- **L-0102: A frequency threshold over "how widely is this shared" must exclude the owner, or the owner's own correct usage suppresses detection of**
+- **L-0101: A comment justifying a mechanism is a claim, and it needs the same evidence as the code: two false claims about frequency suppression**
+- **L-0100: Stale bytecode silently invalidates a mutation check when the mutant is the same byte length: purge `__pycache__` and run `python3 -B`, or**
+- **L-0099: A guard that unrelated output can switch off is worse than the false alarm it replaced: prefer a narrow false positive to a silent false**
+- **L-0098: A `-k` test filter that matches nothing exits 0 having run zero tests, so a renamed class silently converts an executable AC into a green**
+- **L-0097: Monkeypatching a module reached through `sys.modules` leaks across the whole test process; patch and register the undo together**
+- **L-0096: A truthiness guard on a scope filter (`if wanted and ...`) fails open: an empty scope silently becomes an unbounded one**
+- **L-0095: Deriving a terminal status is an assertion about work, so it must be scoped to what the run actually touched and must refuse on incomplete**
+- **L-0094: A helper that SKIPS what it cannot resolve is safe for detection and unsafe for derivation: `_breakdown_units` silently drops an**
+- **L-0093: Build a close-ceremony feature by orchestrating the existing tested primitives (sign-off, close, transition, velocity), not a parallel path**
+- **L-0092: Correcting a wrong constant can activate dead code that only ever "worked" because the constant was wrong**
+- **L-0091: Verify lines must use the DSL verbs (`grep`/`shell`/`pytest`/`file`/`http`/`eval`), never a backtick-wrapped raw `python3 ...`; the `grep`**
+- **L-0090: **A create-only `Affects` is a real grooming gap, not a gate bug.** Name at least one existing file the unit also touches (here**
+- **L-0089: **Machine-guard every vocabulary a self-describing contract claims to cover.** The v3 `inbox` lane shipped as prose the guard did not check**
+- **L-0088: **A public contract's version stamp must anchor to what new consumers actually meet.** Tying the masthead to the fallback file made the**
+- **L-0087: **Verify which file a "default" actually comes from before documenting it as the default.** New projects are seeded from**
+- **L-0086: A bounded mutation run with a low ceiling on a large multi-function file samples early-file lines (peripheral helpers), not the diff -**
+- **L-0085: A worktree subagent branches from a base SHA, so `git diff main..branch` shows the other side "reverted" and misleads; a three-way merge is**
+- **L-0084: The `documented` conformance stage is a GLOBAL floor: one uncatalogued command fails it for every unit**
+- **L-0083: A fix's test must exercise the failure mode the fix could *introduce*, not only the one it removes: BG0181's fix passed its**
+- **L-0082: A composed evidence line must carry its source report's failure state (baseline/errors/truncation), not only its successes - otherwise the**
+- **L-0081: When a gate's requirement has independently-downgradable halves, compose them independently and test the partial-tag matrix, not just**
+- **L-0080: Never run two tree-mutating verifiers concurrently: a mutation harness owns the working tree while it runs, a kill mid-mutant strands a**
 - **L-0079: Backticks in shell-quoted artifact text are command substitutions**
-- **L-0078: A CLI flag is only shipped when a test exercises the CLI path: API-level tests stayed green while `--parent` was silently dropped at the...**
-- **L-0077: Text that flows into `re.sub` is data, never a template: the same replacement-expansion class surfaced twice in one sprint (AC seeding, and...**
-- **L-0076: A reviewer must execute the mutant, not admire the test: two "killing tests" in one unit were proven vacuous by running the actual mutants...**
+- **L-0078: A CLI flag is only shipped when a test exercises the CLI path: API-level tests stayed green while `--parent` was silently dropped at the**
+- **L-0077: Text that flows into `re.sub` is data, never a template: the same replacement-expansion class surfaced twice in one sprint (AC seeding, and**
+- **L-0076: A reviewer must execute the mutant, not admire the test: two "killing tests" in one unit were proven vacuous by running the actual mutants**
 - **L-0075: A sign-off request must carry the evidence it asks the principal to judge**
-- **L-0074: A shared measurement helper (`flow.terminal_date`) grown for one status class (terminal) needs its assumptions re-checked per caller: the...**
-- **L-0073: A reporting cap is a refusal in disguise: any bounded simulation/measurement that can hit its bound must refuse or flag at the bound, never...**
-- **L-0072: Calibrate an instrument's units to the measured process, not the literature's default: the MC forecast shipped with ISO-week buckets from...**
-- **L-0071: Dogfooding a measurement feature on real project data finds confounders a fixture never will: the stale-run-state elapsed (43h from an...**
-- **L-0070: A configured number is an input, not a fact: a price from config must be range-checked (a negative price subtracts, a zero is...**
-- **L-0069: When two subsystems each claim to be the honest one (here: the estimate-vs-actual ratio and the spend report), they must read the SAME...**
-- **L-0068: A "last-touched" date read as `max(every date in the file)` is defeated by any future or prose date (a deadline in the summary).**
-- **L-0067: A grandfather/coherence check that resolves ids against a PARTIAL set (only the triage-type, non-terminal backlog) will false-flag anything...**
-- **L-0066: But fixing ONE enumerator is not fixing the invariant: sibling code paths (`reconcile.file_census` and a dozen direct `read_text` calls)...**
-- **L-0065: A crash inside a shared file-walk (`iter_artifact_files`) is not a local bug in the feature that tripped it - it is a latent fault in every...**
-- **L-0064: When an external contract is ambiguous (the Stop hook's `stop_hook_active` / exit codes), write to the intersection of the plausible...**
-- **L-0063: A test suite that passes is evidence only about the cases it runs.**
-- **L-0062: A grandfather baseline for "work done before adoption" must be the **set** of ids that existed, not a highest-id/date cutoff.**
-- **L-0061: A mandated ceremony with no mechanical enforcement is a silent control - it fires only when someone remembers, which under delivery...**
-- **L-0060: A silence in one measurement path is not proof the quantity is unmeasurable.**
-- **L-0059: A false negative in a test suite is a fixture-coverage gap, not proof of correctness: BG0151 shipped because every fixture used the NEW...**
-- **L-0058: Orchestrate existing, tested primitives before building new ones.**
-- **L-0057: Monkeypatch through the module under test, not a re-import.**
-- **L-0056: Compute-once, read-many on a hot path: the hint recomputed a full-repo scan the dashboard had already done.**
-- **L-0055: A generated artefact must only assert what it verified.**
-- **L-0054: A predicate that looks like an existing one may need DIFFERENT exemptions - do not copy the exemption set.**
-- **L-0053: Wiring dormant machinery is a real deliverable.**
-- **L-0052: Text written into a structurally-delimited section must be sanitised against the delimiter.**
-- **L-0051: Extract a shared definition before the second caller: the `Parent:`/`Decomposed-into:` link writers moved to `lib.sdlc_md`...**
-- **L-0050: A dry-run pre-flight is only a safety net if it takes the SAME branch as the real mint on every configuration the real mint branches on.**
-- **L-0049: A migration must report what it cannot convert, never guess.**
-- **L-0048: Extract a shared definition BEFORE writing the second caller, not after.**
-- **L-0047: Fix the friction the last retro logged, and log the new friction you hit.**
-- **L-0046: Reusing a hardened core is how a new feature inherits fixes instead of re-introducing bugs.**
-- **L-0045: The independence gate earns its cost on exactly the bugs the author cannot see: both this sprint's blocking bugs were invisible to the...**
-- **L-0044: A multi-step create is atomic only if EVERY input is validated before the first write.**
-- **L-0043: A gate on a live workflow must default OFF for existing projects and be opt-in, or an upgrade breaks them.**
-- **L-0042: A bug's stated scope can be overtaken by an earlier change: BG0145 part (1) named a CLI restriction that RFC0038 had already removed.**
-- **L-0041: A gate on the canonical creation path ripples into every test that used the old creation shortcut as a fixture (the Affects-resolve gate...**
-- **L-0040: The migration story for a breaking model change is part of the change, not an afterthought.**
-- **L-0039: Decomposition makes the estimate accurate (LL0038 again): a single-shot CR sized 8 decomposed to 14, the same 1.75x the prior experiment...**
-- **L-0038: A gate that changes the canonical creation path ripples into every test that used the old path as a generic fixture.**
-- **L-0037: A worked-around symptom is a bug you have not found yet.**
-- **L-0036: A cross-cohort figure must be refused, not pooled - now enforced in code (`collate` refuses a rate across `(project, model)` cells), so the...**
-- **L-0035: A single-estimator one-shot size read off an artefact is a weak input.**
-- **L-0034: Decomposition makes the estimate accurate, not only the Done checkable.**
-- **L-0033: Counting is not a worse estimator than modelling; it is the honest one when no signal exists.**
-- **L-0032: Merging units to dodge a file collision destroys per-unit measurement.**
-- **L-0031: Setting the bar BEFORE measuring is what makes a negative result possible.**
-- **L-0030: The presence of a field is not a measurement.**
-- **L-0029: A signal that flips sign between cohorts is not a predictor, however good its pooled correlation looks.**
-- **L-0028: A plausible story fitted to a real pattern is not a finding.**
-- **L-0027: Before tuning a coefficient, check that its input correlates with the target at all.**
-- **L-0026: A resolved-but-inapplicable signal is more dangerous than an absent one.**
-- **L-0025: A decoy field beats a correct one: `templates/core/cr.md` carried a placeholder `**Effort:**` above the real one, and `extract_field` takes...**
-- **L-0024: The tool that measures a sprint cannot be built by that sprint.**
-- **L-0023: A record kept in a gitignored working directory is not a record.**
-- **L-0022: Verify a fix by ATTACKING it, not by re-reading it.**
-- **L-0021: RETRACTED - A calibration fitted to work delivered under one standard does not survive a change in the standard.**
-- **L-0020: When two tools judge the same artefact, they must agree on what a COMPLETE one is.**
-- **L-0019: A gate belongs in the command people actually run, not in a step they are told to run.**
-- **L-0018: Reporting a model's fit against the same data it was fitted to is training error, not validation.**
-- **L-0017: An estimate re-derived at judgement time from the constants it is meant to be judging is not a prediction, and a loop built on one cannot...**
-- **L-0016: Verify a subagent's work through the public path before trusting the report.**
-- **L-0015: Sweep for the class, do not fix the enumerated list.**
-- **L-0014: A narrow sample can make a variable look constant; widen the RANGE before concluding.**
-- **L-0013: When two code paths express the same filter (`review_prep`'s two persona-index excludes), give them one shared definition or they drift -...**
-- **L-0012: A gate that enforces a ceremony should be run against its own delivery as the acceptance test: CR0253 flagging its own sprint's stale...**
-- **L-0011: A false finding is not free: under a disposition gate that turns findings into work, a confident wrong one manufactures work for everyone...**
-- **L-0010: Marking a work item Complete while part of its acceptance criteria is unwired is the same failure as a tool reporting a success it did not...**
-- **L-0009: A guard that branches on invocation mode must be tested in every invocation mode; assert on output, not the exit code, when the failure...**
-- **L-0008: A gate that checks an artefact exists, not what is in it, is satisfied by `touch`.**
-- **L-0007: A hazard found by calling a private helper directly may already be guarded at the only call site that matters - reproduce through the...**
+- **L-0074: A shared measurement helper (`flow.terminal_date`) grown for one status class (terminal) needs its assumptions re-checked per caller: the**
+- **L-0073: A reporting cap is a refusal in disguise: any bounded simulation/measurement that can hit its bound must refuse or flag at the bound, never**
+- **L-0072: Calibrate an instrument's units to the measured process, not the literature's default: the MC forecast shipped with ISO-week buckets from**
+- **L-0071: Dogfooding a measurement feature on real project data finds confounders a fixture never will: the stale-run-state elapsed (43h from an**
+- **L-0070: A configured number is an input, not a fact: a price from config must be range-checked (a negative price subtracts, a zero is**
+- **L-0069: When two subsystems each claim to be the honest one (here: the estimate-vs-actual ratio and the spend report), they must read the SAME**
+- **L-0068: A "last-touched" date read as `max(every date in the file)` is defeated by any future or prose date (a deadline in the summary)**
+- **L-0067: A grandfather/coherence check that resolves ids against a PARTIAL set (only the triage-type, non-terminal backlog) will false-flag anything**
+- **L-0066: But fixing ONE enumerator is not fixing the invariant: sibling code paths (`reconcile.file_census` and a dozen direct `read_text` calls)**
+- **L-0065: A crash inside a shared file-walk (`iter_artifact_files`) is not a local bug in the feature that tripped it - it is a latent fault in every**
+- **L-0064: When an external contract is ambiguous (the Stop hook's `stop_hook_active` / exit codes), write to the intersection of the plausible**
+- **L-0063: A test suite that passes is evidence only about the cases it runs**
+- **L-0062: A grandfather baseline for "work done before adoption" must be the **set** of ids that existed, not a highest-id/date cutoff**
+- **L-0061: A mandated ceremony with no mechanical enforcement is a silent control - it fires only when someone remembers, which under delivery**
+- **L-0060: A silence in one measurement path is not proof the quantity is unmeasurable**
+- **L-0059: A false negative in a test suite is a fixture-coverage gap, not proof of correctness: BG0151 shipped because every fixture used the NEW**
+- **L-0058: Orchestrate existing, tested primitives before building new ones**
+- **L-0057: Monkeypatch through the module under test, not a re-import**
+- **L-0056: Compute-once, read-many on a hot path: the hint recomputed a full-repo scan the dashboard had already done**
+- **L-0055: A generated artefact must only assert what it verified**
+- **L-0054: A predicate that looks like an existing one may need DIFFERENT exemptions - do not copy the exemption set**
+- **L-0053: Wiring dormant machinery is a real deliverable**
+- **L-0052: Text written into a structurally-delimited section must be sanitised against the delimiter**
+- **L-0051: Extract a shared definition before the second caller: the `Parent:`/`Decomposed-into:` link writers moved to `lib.sdlc_md`**
+- **L-0050: A dry-run pre-flight is only a safety net if it takes the SAME branch as the real mint on every configuration the real mint branches on**
+- **L-0049: A migration must report what it cannot convert, never guess**
+- **L-0048: Extract a shared definition BEFORE writing the second caller, not after**
+- **L-0047: Fix the friction the last retro logged, and log the new friction you hit**
+- **L-0046: Reusing a hardened core is how a new feature inherits fixes instead of re-introducing bugs**
+- **L-0045: The independence gate earns its cost on exactly the bugs the author cannot see: both this sprint's blocking bugs were invisible to the**
+- **L-0044: A multi-step create is atomic only if EVERY input is validated before the first write**
+- **L-0043: A gate on a live workflow must default OFF for existing projects and be opt-in, or an upgrade breaks them**
+- **L-0042: A bug's stated scope can be overtaken by an earlier change: BG0145 part (1) named a CLI restriction that RFC0038 had already removed**
+- **L-0041: A gate on the canonical creation path ripples into every test that used the old creation shortcut as a fixture (the Affects-resolve gate**
+- **L-0040: The migration story for a breaking model change is part of the change, not an afterthought**
+- **L-0039: Decomposition makes the estimate accurate (LL0038 again): a single-shot CR sized 8 decomposed to 14, the same 1.75x the prior experiment**
+- **L-0038: A gate that changes the canonical creation path ripples into every test that used the old path as a generic fixture**
+- **L-0037: A worked-around symptom is a bug you have not found yet**
+- **L-0036: A cross-cohort figure must be refused, not pooled - now enforced in code (`collate` refuses a rate across `(project, model)` cells), so the**
+- **L-0035: A single-estimator one-shot size read off an artefact is a weak input**
+- **L-0034: Decomposition makes the estimate accurate, not only the Done checkable**
+- **L-0033: Counting is not a worse estimator than modelling; it is the honest one when no signal exists**
+- **L-0032: Merging units to dodge a file collision destroys per-unit measurement**
+- **L-0031: Setting the bar BEFORE measuring is what makes a negative result possible**
+- **L-0030: The presence of a field is not a measurement**
+- **L-0029: A signal that flips sign between cohorts is not a predictor, however good its pooled correlation looks**
+- **L-0028: A plausible story fitted to a real pattern is not a finding**
+- **L-0027: Before tuning a coefficient, check that its input correlates with the target at all**
+- **L-0026: A resolved-but-inapplicable signal is more dangerous than an absent one**
+- **L-0025: A decoy field beats a correct one: `templates/core/cr.md` carried a placeholder `**Effort:**` above the real one, and `extract_field` takes**
+- **L-0024: The tool that measures a sprint cannot be built by that sprint**
+- **L-0023: A record kept in a gitignored working directory is not a record**
+- **L-0022: Verify a fix by ATTACKING it, not by re-reading it**
+- **L-0021: RETRACTED - A calibration fitted to work delivered under one standard does not survive a change in the standard**
+- **L-0020: When two tools judge the same artefact, they must agree on what a COMPLETE one is**
+- **L-0019: A gate belongs in the command people actually run, not in a step they are told to run**
+- **L-0018: Reporting a model's fit against the same data it was fitted to is training error, not validation**
+- **L-0017: An estimate re-derived at judgement time from the constants it is meant to be judging is not a prediction, and a loop built on one cannot**
+- **L-0016: Verify a subagent's work through the public path before trusting the report**
+- **L-0015: Sweep for the class, do not fix the enumerated list**
+- **L-0014: A narrow sample can make a variable look constant; widen the RANGE before concluding**
+- **L-0013: When two code paths express the same filter (`review_prep`'s two persona-index excludes), give them one shared definition or they drift -**
+- **L-0012: A gate that enforces a ceremony should be run against its own delivery as the acceptance test: CR0253 flagging its own sprint's stale**
+- **L-0011: A false finding is not free: under a disposition gate that turns findings into work, a confident wrong one manufactures work for everyone**
+- **L-0010: Marking a work item Complete while part of its acceptance criteria is unwired is the same failure as a tool reporting a success it did not**
+- **L-0009: A guard that branches on invocation mode must be tested in every invocation mode; assert on output, not the exit code, when the failure**
+- **L-0008: A gate that checks an artefact exists, not what is in it, is satisfied by `touch`**
+- **L-0007: A hazard found by calling a private helper directly may already be guarded at the only call site that matters - reproduce through the**
 - **L-0006: A security fix needs a leading/trailing/interior placement matrix, not just a character list**
 - **L-0005: Editing a shared template obliges you to run its renderer's tests**
 - **L-0004: Add a closing full-diff pass when units share a file**
