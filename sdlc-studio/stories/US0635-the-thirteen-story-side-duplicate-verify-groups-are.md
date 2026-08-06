@@ -8,6 +8,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** sdlc-studio/stories, sdlc-studio/.verify-lint-baseline.json, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Epic:** EP0174
+> **Depends on:** BG0530
 > **Points:** 3
 > **Persona:** Maya Okafor
 

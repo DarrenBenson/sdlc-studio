@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Epic:** EP0197
+> **Depends on:** BG0516, BG0521
 > **Points:** 5
 
 ## User Story

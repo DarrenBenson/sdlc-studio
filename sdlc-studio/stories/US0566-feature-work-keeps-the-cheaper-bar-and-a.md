@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Epic:** EP0191
+> **Depends on:** BG0533
 > **Points:** 3
 > **Persona:** Maya Okafor
 

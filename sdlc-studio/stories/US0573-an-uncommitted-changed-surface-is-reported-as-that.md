@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
 > **Epic:** EP0193
+> **Depends on:** BG0533
 > **Points:** 3
 > **Persona:** Maya Okafor
 
