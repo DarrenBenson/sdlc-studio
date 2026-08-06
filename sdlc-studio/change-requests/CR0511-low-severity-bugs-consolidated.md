@@ -53,6 +53,7 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
   What enabling the branch would actually do is refuse reuse of a selected-earned green on ORDINARY commits as well - which would make every commit run the full suites and would remove most of the value of selection. That is almost certainly why it was disabled, and the disabling looks deliberate.
 
   The defect is therefore not coverage loss. It is that a reader cannot tell any of this from the code: the `False` records no reason, the comment describes a rule as though this branch carried it, and nothing says whether the disabling was a decision or an accident left behind. `git log -S 'elif False and recorded_mode'` is the only way to find out, which is the state AGENTS.md's own doctrine says a guard should never be in.
+- **the brief-provenance matcher defaults the tier, so a verdict honestly taken at --tier light is reported as matching no brief**: `_seats_whose_brief_matches` now takes the phase it is checking, but still calls `brief()` with `tier` at its default `full`. A brief legitimately taken at `--tier light` - which is what a low-band unit gets, by design - fingerprints differently, so recording that verdict prints `matches no brief this repo can currently produce`. The note is meant to distinguish a fabricated fingerprint from a real one; applied to every honest light-tier verdict, it becomes noise, and a note that is always present is a note nobody reads.
 
 ## Revision History
 
