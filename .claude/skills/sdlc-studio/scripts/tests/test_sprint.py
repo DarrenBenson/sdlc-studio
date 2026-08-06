@@ -626,6 +626,89 @@ class AuthoringPlanTests(unittest.TestCase):
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
 
+class SlotGateLaneTests(unittest.TestCase):
+    """BG0527, the LANE half: the refusal must reach through the command an operator runs.
+
+    The predicate is `run_state.disjoint_refusal` and its own tests live beside it. This asserts
+    the wiring - that `sprint plan --write` consults it, honours the answer, and leaves the
+    refused plan with NO trace. A library test cannot see a caller that asks the right question
+    and ignores the reply, and this repo has shipped exactly that (LL0040).
+    """
+
+    def _plan(self, root: Path, worklist: Path, write: bool):
+        argv = ["plan", "--worklist", str(worklist), "--no-fetch", "--root", str(root)]
+        if write:
+            argv.append("--write")
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_the_slot_gate_refuses_through_plan_write_and_writes_nothing(self) -> None:
+        """Mutant: consult the predicate and ignore its answer, or consult it AFTER the sibling
+        artefacts are written - the library criteria stay green while the run is orphaned anyway,
+        or while a refused plan leaves a forecast and a sprint-plan behind it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, status="Open")
+            _bug(root, 2, status="Open")
+            first = root / "one.txt"
+            first.write_text("BG0001\n", encoding="utf-8")
+            second = root / "two.txt"
+            second.write_text("BG0002\n", encoding="utf-8")
+
+            rc, _, err = self._plan(root, first, write=True)
+            self.assertEqual(rc, 0, err)
+            opened = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text())["run_id"]
+
+            # JUDGED, not closed - the state every run passes through on its way to a close.
+            _load().run_state.update(str(root),
+                                     sprint_goal_verdict={"verdict": "achieved"})
+            state_path = root / "sdlc-studio" / ".local" / "run-state.json"
+            plan_path = root / "sdlc-studio" / ".local" / "sprint-plan.json"
+            before = state_path.read_bytes()
+            plan_before = plan_path.read_bytes() if plan_path.exists() else None
+
+            rc, out, err = self._plan(root, second, write=True)
+            self.assertNotEqual(rc, 0, "a disjoint batch was accepted against a judged run")
+            self.assertIn(opened.replace("RUN-", ""), err + out,
+                          "the refusal does not name the run it is protecting, so the operator "
+                          "cannot tell which run to close")
+            self.assertEqual(state_path.read_bytes(), before,
+                             "the refused plan mutated the run state it refused to replace")
+            self.assertEqual(plan_path.read_bytes() if plan_path.exists() else None, plan_before,
+                             "a refused plan left a sprint-plan.json behind it")
+
+    def test_an_overlapping_replan_still_reaches_exit_zero_through_the_verb(self) -> None:
+        """The lane's positive control. Mutant: refuse any open run through the verb - this
+        reddens, and without it the refusal above is satisfied by a plan that never works.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, status="Open")
+            _bug(root, 2, status="Open")
+            first = root / "one.txt"
+            first.write_text("BG0001\n", encoding="utf-8")
+            both = root / "both.txt"
+            both.write_text("BG0001\nBG0002\n", encoding="utf-8")
+
+            rc, _, err = self._plan(root, first, write=True)
+            self.assertEqual(rc, 0, err)
+            opened = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text())["run_id"]
+            _load().run_state.update(str(root),
+                                     sprint_goal_verdict={"verdict": "achieved"})
+
+            rc, _, err = self._plan(root, both, write=True)
+            self.assertEqual(rc, 0, err)
+            after = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(after["run_id"], opened,
+                             "an overlapping re-plan minted a new run instead of re-planning")
+
+
 class SignoffPanelAssignmentTests(unittest.TestCase):
     """US0643: panel sign-off ships fully built and is unreachable in practice.
 

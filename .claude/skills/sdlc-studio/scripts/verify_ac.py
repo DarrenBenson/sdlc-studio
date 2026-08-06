@@ -2095,6 +2095,248 @@ def scaffold_ac_matrix(repo_root: Path | str, epic_id: str) -> str:
 _LANE_YIELD_REL = "sdlc-studio/.local/lane-check-yield.json"
 
 
+# ---------------------------------------------------------------------------
+# TEST PLAN DERIVATION (US0629). The plan names, per criterion, the production change the
+# test must fail on - and it is DERIVED rather than hand-assembled, because a hand-assembled
+# plan is exactly where a criterion goes missing.
+# ---------------------------------------------------------------------------
+
+#: Overlap above which a mutant field is judged a restatement of its own criterion rather than a
+#: change to production code. A STATED number with a stated basis: the discriminating pair on
+#: US0629 AC2 measures 71% for a restatement and 24% for a legitimate mutant naming the same file
+#: and the same verb, so the two differ in this property alone and the threshold is what is under
+#: test rather than the examples. Measured on SUBSTANCE, after filler and punctuation come off,
+#: following `_reason_substance` and its scar - a one-character `-` once passed a non-blank check.
+TESTPLAN_OVERLAP_CEILING = 0.60
+
+#: Verbs that denote a change to code. A mutant must carry one: "the feature does not work" is a
+#: prediction about behaviour, not an edit somebody can make.
+_EDIT_VERBS = ("delete", "remove", "drop", "return", "replace", "swap", "invert", "negate",
+               "hard-code", "hardcode", "stub", "skip", "comment out", "reorder", "rename",
+               "widen", "narrow", "loosen", "weaken", "disable", "bypass", "short-circuit",
+               "change", "set", "make it", "flip", "revert", "omit", "truncate", "collapse")
+
+_TESTPLAN_HEADING = "## Test Plan"
+_TESTPLAN_PLACEHOLDER = "{{name the production change this test must fail on}}"
+
+
+def _substance_tokens(text: str) -> set:
+    """The meaning-bearing tokens of a phrase, lowercased, filler and punctuation removed."""
+    words = re.findall(r"[0-9a-z_]+", (text or "").lower())
+    return {w for w in words if len(w) > 2 and w not in _TESTPLAN_STOPWORDS}
+
+
+_TESTPLAN_STOPWORDS = {
+    "the", "and", "that", "this", "with", "for", "from", "its", "it", "is", "are", "was", "were",
+    "not", "but", "than", "then", "when", "given", "which", "who", "whom", "what", "into", "onto",
+    "have", "has", "had", "will", "would", "can", "could", "should", "must", "may", "one", "all",
+    "any", "each", "every", "because", "rather", "there", "their", "they", "them", "does", "did",
+}
+
+
+def _then_clause(lines: list, start: int, end: int) -> str:
+    """The criterion's own `Then` clause - what it asserts, as opposed to how it is set up.
+
+    Read from the source LINES between this criterion's heading and the next, because `ACBlock`
+    carries no body: it holds the heading, the verifier and the stamp, and nothing of the prose.
+    The first version of this helper read `block.body`, which does not exist, so it returned an
+    empty string, every overlap measured 0% and the restatement limb accepted everything. The
+    library test could not see it - it passes the `Then` clause in directly - and only the test
+    that drives `verify_ac.py testplan derive` caught it. LL0040, in the guard written to enforce
+    a criterion about guards that do not guard.
+    """
+    for line in lines[start:end]:
+        stripped = line.strip().lstrip("-*").strip()
+        if stripped.lower().startswith("**then**"):
+            return stripped[len("**then**"):].strip()
+    return " ".join(lines[start:end])
+
+
+def _overlap_ratio(mutant: str, then_clause: str, affects: list | None = None) -> float:
+    """Fraction of the mutant's substance tokens that its criterion's `Then` clause already
+    carries. 1.0 is a verbatim restatement; a legitimate mutant names an edit the criterion does
+    not.
+
+    THE PATH IS EXCLUDED from the measurement, and that is not a detail. Naming a file drawn from
+    the unit's `Affects` is separately REQUIRED by another limb, so counting those tokens as novel
+    substance lets a restatement buy headroom under the ceiling with the very words it was already
+    obliged to write. Measured with the path included, US0629 AC2's discriminating pair reads 57%
+    and 33% - the restatement passes - and the threshold stops being the thing under test, which
+    is exactly what the criterion says it must remain. Excluded, the same pair reads 67% and 40%
+    about the stated 60% ceiling.
+    """
+    m = _substance_tokens(mutant) - _path_tokens(affects or [])
+    if not m:
+        return 1.0
+    return len(m & _substance_tokens(then_clause)) / len(m)
+
+
+def _path_tokens(affects: list) -> set:
+    """Substance tokens contributed by the unit's declared paths, which carry no argument."""
+    out = set()
+    for a in affects or []:
+        # `/` and `.` split; `_` does NOT - `_substance_tokens` keeps `verify_ac` whole, so
+        # splitting it here would produce `verify` and `ac` and match nothing the mutant wrote.
+        out |= _substance_tokens(str(a).replace("/", " ").replace(".", " "))
+    return out
+
+
+def testplan_row_faults(mutant: str, then_clause: str, affects: list) -> list:
+    """Which of the four properties this mutant field fails, named. Empty means it is a mutant.
+
+    Named rather than counted: a guard that refuses for the wrong reason passes a bare-refusal
+    assertion, so each limb has to be distinguishable in the message it produces.
+    """
+    faults = []
+    text = (mutant or "").strip()
+    if not text or text == _TESTPLAN_PLACEHOLDER or not _substance_tokens(text):
+        return ["blank - a mutant is a change to production code, and no change is named"]
+    lowered = text.lower()
+    # MEMBERSHIP of the unit's own Affects, never path SHAPE: the mutant that defeated the
+    # original wording named a real file, so a rule checking shape still accepts it.
+    names = {Path(a).name.lower() for a in affects if a} | {str(a).strip().lower() for a in affects if a}
+    if not any(n and n in lowered for n in names):
+        faults.append(f"names no path from this unit's Affects ({', '.join(sorted(Path(a).name for a in affects)) or 'none declared'})")
+    if not any(v in lowered for v in _EDIT_VERBS):
+        faults.append("carries no edit verb - name what is changed, not what stops working")
+    ratio = _overlap_ratio(text, then_clause, affects)
+    if ratio > TESTPLAN_OVERLAP_CEILING:
+        faults.append(f"restates its own criterion - {ratio:.0%} of its substance is the `Then` "
+                      f"clause, over the {TESTPLAN_OVERLAP_CEILING:.0%} ceiling")
+    return faults
+
+
+def _testplan_rows(text: str) -> dict:
+    """Existing plan rows, keyed by criterion id, so authored mutants survive a re-derive."""
+    rows, in_plan = {}, False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_plan = line.strip() == _TESTPLAN_HEADING
+            continue
+        if not in_plan or not line.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) >= 2 and re.fullmatch(r"AC\d+", cells[0] or ""):
+            rows[cells[0]] = cells[1]
+    return rows
+
+
+def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
+    """Derive `unit`'s test plan: one row per criterion, each naming the production change its
+    test must fail on.
+
+    THE COUNT IS CHECKED BY TWO INDEPENDENT READERS, and that is part of the criterion rather
+    than a detail of the implementation. `parse_story` reads the whole file for `### ACn` and
+    `- **ACn**`, fence-aware; `sdlc_md.count_acs` reads only inside `## Acceptance Criteria`,
+    also counts bare `- [ ]` items, and is not fence-aware. They genuinely disagree on four
+    known shapes. Counting the rows from the list the rows were built from would make the
+    equality tautological and the mutant that deletes it would survive every fixture.
+    """
+    found = sdlc_md.find_by_id(Path(repo_root), unit)
+    if not found:
+        return {"ok": False, "errors": [f"{unit}: no artefact with that id"]}
+    path, _type = found
+    text = sdlc_md.read_text_safe(path)
+    blocks = parse_story(text)
+    declared = sdlc_md.count_acs(text)
+    ids = [b.ac_id for b in blocks]
+
+    # A DUPLICATE id makes "one row per criterion" unrepresentable: two criteria would key to one
+    # row and the plan would silently govern only the survivor. Refused before the count check, so
+    # the message names the real fault rather than a mismatch it happens to cause.
+    dupes = sorted({i for i in ids if ids.count(i) > 1})
+    if dupes:
+        return {"ok": False, "path": str(path), "rows": len(blocks), "criteria": declared,
+                "errors": [f"{unit}: duplicate criterion id(s) {', '.join(dupes)} - a plan keyed "
+                           f"by criterion cannot carry two rows under one id, so one criterion "
+                           f"would go unplanned. Renumber them."]}
+    if len(blocks) != declared:
+        missing = ", ".join(ids) or "none"
+        return {"ok": False, "path": str(path), "rows": len(blocks), "criteria": declared,
+                "errors": [
+                    f"{unit}: the plan would carry {len(blocks)} row(s) for {declared} "
+                    f"criterion/criteria - refusing to write a plan that does not account for "
+                    f"every one. Rows would cover: {missing}. Two independent readers disagree "
+                    f"about this file, which is a defect in the file rather than in either "
+                    f"reader: a duplicate `### ACn` id, a bare `- [ ]` item with no ACn, an "
+                    f"`### ACn` outside the Acceptance Criteria section, or one inside a fence."]}
+
+    affects = [a.strip() for a in (sdlc_md.extract_field(text, "Affects") or "").split(",")
+               if a.strip()]
+    existing = _testplan_rows(text)
+    lines = text.splitlines()
+    bounds = [b.heading_line for b in blocks] + [len(lines)]
+    faults, rows = [], []
+    for n, b in enumerate(blocks):
+        mutant = existing.get(b.ac_id) or _TESTPLAN_PLACEHOLDER
+        rows.append((b.ac_id, (b.title or "").strip(), mutant))
+        if mutant != _TESTPLAN_PLACEHOLDER:
+            then = _then_clause(lines, b.heading_line, bounds[n + 1])
+            for why in testplan_row_faults(mutant, then, affects):
+                faults.append(f"{unit} {b.ac_id}: {why}")
+    if faults:
+        return {"ok": False, "path": str(path), "rows": len(rows), "criteria": declared,
+                "errors": faults}
+
+    table = ["| Criterion | Mutant - the production change this test must fail on | Title |",
+             "| --- | --- | --- |"]
+    table += [f"| {i} | {m} | {t} |" for i, t, m in rows]
+    section = _TESTPLAN_HEADING + "\n\n" + "\n".join(table) + "\n"
+    rendered = _replace_testplan(text, section)
+    unchanged = rendered == text
+    if write and not unchanged:
+        path.write_text(rendered, encoding="utf-8")
+    return {"ok": True, "path": str(path), "rows": len(rows), "criteria": declared,
+            "unchanged": unchanged, "authored": sum(1 for _i, _t, m in rows
+                                                    if m != _TESTPLAN_PLACEHOLDER)}
+
+
+def _replace_testplan(text: str, section: str) -> str:
+    """Replace the ONE `## Test Plan` section, or insert it before Revision History.
+
+    Replaced rather than appended: a regenerate-and-append leaves the authored section in place
+    while the generated one governs, and an assertion that the authored string survives cannot
+    tell the two apart.
+    """
+    lines = text.splitlines(keepends=True)
+    out, i, replaced = [], 0, False
+    while i < len(lines):
+        if lines[i].rstrip() == _TESTPLAN_HEADING:
+            if not replaced:
+                out.append(section + "\n")
+                replaced = True
+            i += 1
+            while i < len(lines) and not lines[i].startswith("## "):
+                i += 1
+            continue
+        out.append(lines[i])
+        i += 1
+    if replaced:
+        return "".join(out)
+    body = "".join(out)
+    marker = "## Revision History"
+    if marker in body:
+        return body.replace(marker, section + "\n" + marker, 1)
+    return body.rstrip("\n") + "\n\n" + section
+
+
+def cmd_testplan(args: argparse.Namespace) -> int:
+    """`testplan derive` - write the unit's plan, or refuse and say which criterion is at fault."""
+    root = resolve_root(args)
+    res = testplan_derive(root, args.unit, write=not getattr(args, "dry_run", False))
+    if not res.get("ok"):
+        for e in res.get("errors", []):
+            print(f"testplan derive refused: {e}", file=sys.stderr)
+        return 2
+    if res.get("unchanged"):
+        print(f"testplan derive: {args.unit} unchanged - {res['rows']} row(s) already match its "
+              f"{res['criteria']} criteria, and {res['authored']} authored mutant(s) were kept")
+        return 0
+    print(f"testplan derive: {args.unit} -> {res['rows']} row(s) for {res['criteria']} "
+          f"criteria in {res['path']}")
+    return 0
+
+
 def cmd_lane_check(args: argparse.Namespace) -> int:
     """Report criteria verified only through the library. REPORTS, never fails.
 
@@ -2743,6 +2985,13 @@ def build_parser() -> argparse.ArgumentParser:
     sc.add_argument("--out", help="Write the matrix here instead of stdout")
     sc.set_defaults(func=cmd_scaffold)
 
+    tp = sub.add_parser("testplan", help="Derive a unit's test plan from its criteria")
+    tp.add_argument("action", choices=["derive"])
+    tp.add_argument("--unit", required=True)
+    tp.add_argument("--dry-run", action="store_true",
+                    help="report what would be written, and write nothing")
+    tp.add_argument("--root", default=".")
+    tp.set_defaults(func=cmd_testplan)
     lc = sub.add_parser("lane-check",
                         help="Advisory: criteria whose verifiers never enter the shipped "
                              "entry point")

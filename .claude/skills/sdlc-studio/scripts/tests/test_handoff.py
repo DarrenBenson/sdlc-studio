@@ -168,20 +168,40 @@ class RunStateTests(unittest.TestCase):
                 with self.assertRaises(run_state.RunStateError):
                     call()
 
-    def test_a_judged_run_left_running_is_treated_as_closed_not_accumulated(self) -> None:
-        """BG0188: a run whose Sprint Goal was JUDGED (verdict recorded) but whose outcome
-        was never finalised to a terminal string stays `running`. The next `open_run` must
-        NOT accumulate the new batch onto that judged run - it would reuse the old id and
-        clobber the recorded verdict. A judged run is history regardless of the outcome
-        string: `open_run` mints a fresh run."""
+    def test_a_judged_run_left_running_is_refused_not_accumulated(self) -> None:
+        """BG0188's property, under BG0527's remedy.
+
+        BG0188 established the harm: a run whose Sprint Goal was JUDGED but whose outcome was
+        never finalised stays `running`, and the next `open_run` must NOT accumulate a new batch
+        onto it - that reuses the old id and clobbers the recorded verdict. Its remedy was to
+        treat the judged run as history and mint a fresh one.
+
+        BG0527 found what that remedy costs. The goal verdict is written BEFORE the close chain,
+        not by it, so every run passes through a judged-but-unclosed window in which its units are
+        still at Review and its close is still owed. Minting a fresh run there does not clobber
+        the verdict - it strands the whole run: no close, no cascade to Done, and no record that
+        one was owed. Found live on RUN-01KZ9315, whose own pre-flight reported twenty unmet
+        prerequisites while the slot guard had already stood down.
+
+        So the remedy is now a REFUSAL naming the run to close. BG0188's property is strictly
+        better served: the batch is not accumulated, the verdict is not clobbered, AND the owed
+        close is not silently discarded. `ended_at` and `handoff` still release the slot, because
+        those are written BY the close - the test below this one pins that and must keep passing.
+        """
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
             first = run_state.open_run(root, batch=["US0001", "US0002"], goal="done")
             run_state.update(root, sprint_goal_verdict={"verdict": "achieved", "note": "ok"})
-            fresh = run_state.open_run(root, batch=["US0009"], goal="done")
-            self.assertNotEqual(fresh["run_id"], first["run_id"])
-            self.assertEqual(fresh["batch"], ["US0009"])          # not the union
-            self.assertIsNone(fresh.get("sprint_goal_verdict"))   # the judged verdict did not leak
+            with self.assertRaises(run_state.DisjointBatchError) as caught:
+                run_state.open_run(root, batch=["US0009"], goal="done")
+            self.assertEqual(caught.exception.run_id, first["run_id"],
+                             "the refusal does not name the run whose close is owed")
+            after = run_state.read(root)
+            self.assertEqual(after["run_id"], first["run_id"])
+            self.assertEqual(after["batch"], ["US0001", "US0002"],
+                             "BG0188's harm: the new batch was accumulated onto the judged run")
+            self.assertEqual(after["sprint_goal_verdict"]["verdict"], "achieved",
+                             "BG0188's harm: the recorded verdict was clobbered")
 
     def test_a_run_carrying_a_close_artefact_but_running_is_treated_as_closed(self) -> None:
         """BG0188, the wider guard: `ended_at` or a `handoff` recorded while outcome is still

@@ -3627,6 +3627,200 @@ class BaselineSchemaTests(unittest.TestCase):
                              "the stamp invented a reason no human wrote")
 
 
+class TestPlanDeriveTests(unittest.TestCase):
+    """US0629: the test plan is DERIVED from the unit's criteria, never assembled by hand.
+
+    The plan for this unit was itself authored by hand and reviewed by an independent seat before
+    any code existed - the unit that automates the mechanism cannot yet derive its own plan. Every
+    fixture below is one the seat measured against the real parsers rather than hypothesised.
+    """
+
+    THEN = ("it emits exactly N rows keyed by criterion id, and refuses to write a plan whose "
+            "row count differs from the criteria it read, because a plan assembled by hand is "
+            "exactly where a criterion goes missing")
+
+    def _unit(self, root: Path, body: str, affects="scripts/verify_ac.py") -> Path:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "US0001-x.md"
+        f.write_text(f"# US0001: a unit\n\n> **Status:** Ready\n> **Points:** 3\n"
+                     f"> **Affects:** {affects}\n\n{body}\n\n## Revision History\n",
+                     encoding="utf-8")
+        return f
+
+    def _derive(self, root: Path, **kw):
+        return verify_ac.testplan_derive(root, "US0001", **kw)
+
+    # --- AC1 -------------------------------------------------------------------------------
+
+    def test_every_criterion_gets_exactly_one_row(self) -> None:
+        """The count is ENFORCED, and by two independent readers - `parse_story` reads the whole
+        file for `### ACn`, `sdlc_md.count_acs` reads only the AC section and also counts bare
+        `- [ ]` items. Counting criteria from the row list would make the equality tautological
+        and the mutant that deletes it would survive every fixture, which is why the design
+        constraint sits on the criterion rather than in the implementation.
+
+        Mutants: (a) delete the equality; (b) count criteria from the rows themselves; (c) key
+        rows into a dict by ac_id, collapsing a duplicate id to one row.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "## Acceptance Criteria\n\n"
+                             "### AC1: one\n\n- **Then** a\n\n### AC2: two\n\n- **Then** b\n")
+            res = self._derive(root)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((res["rows"], res["criteria"]), (2, 2))
+
+        # BOTH directions - "differs" is symmetric, and each fixture is one the two readers
+        # genuinely disagree about.
+        cases = {
+            "a bare checkbox beside two headings": (
+                "## Acceptance Criteria\n\n### AC1: one\n\n- **Then** a\n\n"
+                "### AC2: two\n\n- **Then** b\n\n- [ ] a third, unnumbered\n"),
+            # The counts AGREE here (2 blocks, 2 counted), so the row-count equality cannot
+            # refuse it: only the duplicate-id check can. Without that, keying rows into a dict
+            # by ac_id collapses two criteria into one row and the plan governs the survivor
+            # alone - a mutant this unit's own plan predicted.
+            "a duplicate heading id, with the counts agreeing": (
+                "## Acceptance Criteria\n\n### AC1: one\n\n- **Then** a\n\n"
+                "### AC1: also one\n\n- **Then** b\n"),
+            "a criterion outside the AC section": (
+                "## Acceptance Criteria\n\n### AC1: one\n\n- **Then** a\n\n"
+                "## Notes\n\n### AC7: stray\n\n- **Then** c\n"),
+        }
+        for why, body in cases.items():
+            with self.subTest(why=why), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                f = self._unit(root, body)
+                before = f.read_bytes()
+                res = self._derive(root)
+                self.assertFalse(res["ok"], f"{why}: a mismatched plan was written")
+                joined = " ".join(res["errors"])
+                self.assertIn("AC1", joined, "the refusal does not name what it covered")
+                self.assertEqual(f.read_bytes(), before,
+                                 "a refused derive wrote to the unit anyway")
+
+    # --- AC2 -------------------------------------------------------------------------------
+
+    def test_a_restated_criterion_is_not_a_mutant(self) -> None:
+        """THE DISCRIMINATING PAIR, taken from the criterion rather than invented here. Both name
+        `verify_ac.py` and both carry an edit verb, so they differ in ONE property and the
+        THRESHOLD is what is under test rather than the examples.
+
+        The near-miss ACCEPT is required, not optional: without it a threshold tuned to refuse
+        everything passes every refusal row for exactly the wrong reason.
+
+        Mutants: (a) accept a blank field; (b) accept the 67% restatement; (c) drop the `Affects`
+        constraint so any path-shaped token passes - the defeating mutant named a REAL file, so a
+        rule checking path SHAPE rather than membership still accepts it.
+        """
+        affects = ["scripts/verify_ac.py"]
+        refuse = "in verify_ac.py, make it so the plan does not have exactly one row per criterion"
+        accept = "in verify_ac.py, delete the len(rows) == len(criteria) equality"
+
+        faults = verify_ac.testplan_row_faults(refuse, self.THEN, affects)
+        self.assertTrue(faults, "a verbatim restatement was accepted as a mutant")
+        self.assertTrue(any("restates" in f for f in faults),
+                        f"refused for the wrong reason: {faults}")
+        self.assertEqual(verify_ac.testplan_row_faults(accept, self.THEN, affects), [],
+                         "a legitimate mutant sharing its criterion's vocabulary was refused")
+
+        # Each limb refuses for ITS OWN reason - a guard that refuses for the wrong one passes a
+        # bare-refusal assertion.
+        for field, marker in (("", "blank"),
+                              ("delete the equality check", "Affects"),
+                              # PATH-SHAPED but not a member: the defeating mutant named a REAL
+                              # file, so a rule checking shape rather than membership accepts it.
+                              ("in other_module.py, delete the equality", "Affects"),
+                              ("in scripts/elsewhere.py, delete the equality", "Affects"),
+                              ("verify_ac.py is broken somehow", "edit verb")):
+            with self.subTest(field=field or "<blank>"):
+                got = verify_ac.testplan_row_faults(field, self.THEN, affects)
+                self.assertTrue(got, f"{field!r} was accepted")
+                self.assertTrue(any(marker in f for f in got), f"{field!r} -> {got}")
+
+        # The path is EXCLUDED from the overlap: naming a file is separately required, so
+        # counting it as novel substance lets a restatement buy headroom with obliged words.
+        self.assertGreater(verify_ac._overlap_ratio(refuse, self.THEN, affects),
+                           verify_ac._overlap_ratio(refuse, self.THEN, []),
+                           "the path is not being excluded, so a restatement is diluted by it")
+
+    def test_a_refused_row_names_its_criterion_through_the_shipped_verb(self) -> None:
+        """The LANE half: the refusal must reach an operator through `verify_ac.py testplan
+        derive`, not only through the predicate. Mutant: return the faults and exit 0."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "## Acceptance Criteria\n\n### AC1: one\n\n"
+                             f"- **Then** {self.THEN}\n\n"
+                             "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                             "| AC1 | in verify_ac.py, make it so the plan does not have exactly "
+                             "one row per criterion | one |\n")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                rc = verify_ac.main(["testplan", "derive", "--unit", "US0001", "--root", str(root)])
+            self.assertEqual(rc, 2, "the shipped verb accepted a restatement")
+            self.assertIn("AC1", err.getvalue())
+            self.assertIn("restates", err.getvalue())
+
+    # --- AC3 -------------------------------------------------------------------------------
+
+    def test_derive_is_idempotent_and_preserves_authored_mutants(self) -> None:
+        """Three overwrite mutants all preserve a distinctive string, so "the authored text
+        survives" is necessary and NOT sufficient: regenerate-and-append leaves the old section
+        in place while the generated one governs; reassign attaches it to another criterion's
+        row; append-within-the-cell makes it `<authored>; regenerated: <derived>`.
+
+        So: exactly ONE `## Test Plan`, the assertion is KEYED to the criterion, and it is cell
+        EQUALITY rather than containment. Idempotency carries a negative control - run 1 must NOT
+        report a no-op, run 2 must, and run 2's bytes must equal run 1's.
+        """
+        authored = "in verify_ac.py, delete the len(rows) == len(criteria) equality"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            f = self._unit(root, "## Acceptance Criteria\n\n### AC1: one\n\n"
+                                 f"- **Then** {self.THEN}\n\n### AC2: two\n\n- **Then** b\n")
+            first = self._derive(root)
+            self.assertTrue(first["ok"], first)
+            self.assertFalse(first["unchanged"], "run 1 reported a no-op before writing anything")
+
+            # Author a mutant into AC2's row, as a human would.
+            text = f.read_text(encoding="utf-8")
+            f.write_text(text.replace(
+                f"| AC2 | {verify_ac._TESTPLAN_PLACEHOLDER} |", f"| AC2 | {authored} |"),
+                encoding="utf-8")
+            authored_bytes = f.read_bytes()
+
+            second = self._derive(root)
+            self.assertTrue(second["ok"], second)
+            self.assertTrue(second["unchanged"], "a re-derive rewrote a plan that already matched")
+            self.assertEqual(f.read_bytes(), authored_bytes,
+                             "the re-derive changed the file it called unchanged")
+
+            body = f.read_text(encoding="utf-8")
+            self.assertEqual(body.count(verify_ac._TESTPLAN_HEADING), 1,
+                             "a second Test Plan section was appended beside the first")
+            rows = verify_ac._testplan_rows(body)
+            self.assertEqual(rows["AC2"], authored,
+                             "the authored mutant was reassigned, appended to, or regenerated")
+            self.assertEqual(rows["AC1"], verify_ac._TESTPLAN_PLACEHOLDER)
+
+    def test_a_derived_plan_does_not_stale_a_green_verify_entry(self) -> None:
+        """`ac_fingerprint` covers ac_id, title and verifier. Writing a Test Plan section must not
+        move it, or every unit's verified stamp goes stale the moment it gains a plan.
+
+        Mutant: fold the plan's rows into the fingerprint - this reddens.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            f = self._unit(root, "## Acceptance Criteria\n\n### AC1: one\n\n"
+                                 "- **Then** a\n- **Verify:** pytest x\n")
+            before = verify_ac.ac_fingerprint(f.read_text(encoding="utf-8"))
+            self.assertTrue(self._derive(root)["ok"])
+            after = verify_ac.ac_fingerprint(f.read_text(encoding="utf-8"))
+            self.assertEqual(before, after,
+                             "writing a test plan staled the unit's verification fingerprint")
+
+
 class LaneCheckTests(unittest.TestCase):
     """A criterion verified only through the library is not evidence the feature ships.
 

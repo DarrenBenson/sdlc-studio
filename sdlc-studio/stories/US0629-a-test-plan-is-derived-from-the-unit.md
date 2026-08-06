@@ -26,8 +26,8 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanDeriveTests::test_every_criterion_gets_exactly_one_row
 - **Caller:** `verify_ac.py testplan derive` (the CLI verb), reached by `transition.py set --status "In Progress"` via US0630
 - **Verification target:** functional
-- **Mutation-checked:** to be recorded at delivery - dropping the row-count equality must turn this test red
-- **Verified:** no
+- **Mutation-checked:** yes (2026-08-06). Deleting the equality KILLED; making the count tautological (`declared = len(parse_story(text))`) KILLED - the mutant revision 1 would have missed. Collapsing rows into a dict by `ac_id` is EQUIVALENT rather than uncovered: the duplicate-id refusal added here reads `ids`, computed before any collapse, so the collapse can no longer reach an outcome
+- **Verified:** yes (2026-08-06)
 
 ### AC2: each row names a concrete production edit, and a row that merely restates its criterion is refused
 
@@ -49,8 +49,8 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanDeriveTests::test_a_restated_criterion_is_not_a_mutant
 - **Caller:** `verify_ac.py testplan derive`
 - **Verification target:** functional
-- **Mutation-checked:** to be recorded at delivery - accepting a blank mutant field, and accepting the 71% restatement, must each turn this test red
-- **Verified:** no
+- **Mutation-checked:** yes (2026-08-06). Accepting a blank field KILLED; accepting the restatement KILLED; checking path SHAPE rather than `Affects` MEMBERSHIP KILLED, once a path-shaped non-member was added to the fixtures. The measured pair is 67%/40%, not the 71%/24% on the criterion: the path tokens are EXCLUDED from the overlap, because naming a file is separately required and counting it as novel substance lets a restatement buy headroom with obliged words. Counting them again KILLED
+- **Verified:** yes (2026-08-06)
 
 ### AC3: the plan lives in the unit's own file, so it travels with the unit and files stay truth
 
@@ -60,8 +60,8 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanDeriveTests::test_derive_is_idempotent_and_preserves_authored_mutants
 - **Caller:** `verify_ac.py testplan derive`
 - **Verification target:** functional
-- **Mutation-checked:** to be recorded at delivery - overwriting an authored mutant must turn this test red
-- **Verified:** no
+- **Mutation-checked:** yes (2026-08-06). Overwriting an authored mutant KILLED; regenerate-and-append KILLED; printing the no-op unconditionally KILLED; folding the plan into `ac_fingerprint` KILLED
+- **Verified:** yes (2026-08-06)
 
 ## Test Plan
 

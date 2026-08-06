@@ -421,12 +421,24 @@ def _union(existing, incoming) -> list[str]:
     return out
 
 
-# The close artefacts a finalised run carries. A run holding ANY of them has been judged or
-# closed - it is history - even if its `outcome` string was never moved off `running`: a close
-# chain that records the goal-verdict but stops before the handoff leaves exactly that
-# inconsistent state. `open_run` treats such a run as CLOSED so the next plan mints a fresh run
-# rather than accumulating the new batch onto - and clobbering the verdict of - the judged one.
-_CLOSE_ARTEFACTS = ("sprint_goal_verdict", "ended_at", "handoff")
+# The artefacts a run carries only once its CLOSE has run. A run holding any of them is history
+# even if its `outcome` string was never moved off `running`, so the next plan mints a fresh run
+# rather than accumulating a new batch onto the finished one.
+#
+# BOTH entries are written BY the close chain. `sprint_goal_verdict` used to be here and is not,
+# because it is written BEFORE the close by `sprint goal-verdict`: a run that has been judged has
+# not thereby been closed, and treating the two as one fact left every run with a window - between
+# its verdict and its close - in which its units were still at Review and the slot guard had
+# already stood down. BG0527 caught it live, on a run whose own pre-flight reported twenty unmet
+# prerequisites while `disjoint_refusal` returned None for a disjoint batch. Opening the next
+# sprint there would have replaced the state and stranded twelve units with no close, no cascade
+# and no record that one was owed.
+#
+# `close_attempts` is excluded for the same reason and was already reasoned about that way: a run
+# whose only close artefact is a FAILED close attempt is still `running`, so it stays open and
+# protected - "the run most likely to be worked around". A recorded goal verdict with no close is
+# that same run one step earlier, and the list simply stopped one item short.
+_CLOSE_ARTEFACTS = ("ended_at", "handoff")
 
 
 def _mint_run_id(repo_root: Path | str, outgoing: dict | None = None) -> str:

@@ -618,6 +618,101 @@ class FailedCloseAttemptIsProtectedTests(unittest.TestCase):
         self.assertIn("outstanding", text.lower())
 
 
+class SlotReleaseTests(unittest.TestCase):
+    """BG0527: a recorded goal verdict does not release the run slot.
+
+    `sprint goal-verdict` runs BEFORE the close chain, not as part of it, so a run carrying a
+    verdict and nothing else has been JUDGED and not CLOSED. Treating those as one fact opened a
+    window - every run passes through it - in which the outcome still said `running`, the units
+    were still at Review, and the guard protecting the close had already stood down.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = str(Path(self.tmp.name))
+        (Path(self.root) / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _judged_not_closed(self) -> dict:
+        """A run in the exact live state BG0527 was found in."""
+        opened = run_state.open_run(self.root, batch=["US0001", "US0002"], goal="done")
+        run_state.update(self.root, sprint_goal_verdict={"verdict": "achieved", "note": "n"})
+        state = run_state.read(self.root)
+        self.assertEqual(state["outcome"], run_state.RUNNING)
+        self.assertIsNone(state.get("ended_at"))
+        self.assertIsNone(state.get("handoff"))
+        self.assertTrue(state.get("sprint_goal_verdict"))
+        return opened
+
+    def test_a_goal_verdict_alone_does_not_release_the_slot(self) -> None:
+        """Mutant: put `sprint_goal_verdict` back in `_CLOSE_ARTEFACTS` - this reddens and
+        nothing else in the tree does, which was the state of the repository when it was found.
+        """
+        opened = self._judged_not_closed()
+        refusal = run_state.disjoint_refusal(self.root, ["US0100", "US0101"])
+        self.assertIsNotNone(refusal, "a judged-but-unclosed run released its slot")
+        self.assertEqual(refusal.run_id, opened["run_id"])
+        with self.assertRaises(run_state.DisjointBatchError):
+            run_state.open_run(self.root, batch=["US0100", "US0101"])
+        after = run_state.read(self.root)
+        self.assertEqual(after["run_id"], opened["run_id"])
+        self.assertEqual(after["batch"], ["US0001", "US0002"],
+                         "the judged run's batch is exactly what it held before")
+
+    def test_a_closed_run_still_releases_the_slot(self) -> None:
+        """THE POSITIVE CONTROL, and without it the fix is indistinguishable from refusing every
+        open run forever. Mutant: refuse whenever the outcome string reads `running` - the
+        criterion above still passes while every legitimate next sprint is refused.
+        """
+        for artefact in ("ended_at", "handoff"):
+            with self.subTest(artefact=artefact):
+                tmp = tempfile.TemporaryDirectory()
+                self.addCleanup(tmp.cleanup)
+                root = str(Path(tmp.name))
+                (Path(root) / "sdlc-studio" / ".local").mkdir(parents=True)
+                first = run_state.open_run(root, batch=["US0001"], goal="done")
+                run_state.update(root, sprint_goal_verdict={"verdict": "achieved"},
+                                 **{artefact: "2026-08-06T10:00:00Z" if artefact == "ended_at"
+                                    else {"id": "HO0001"}})
+                self.assertIsNone(run_state.disjoint_refusal(root, ["US0100"]),
+                                  f"a run carrying {artefact} is finished and must not block "
+                                  f"the run that follows it")
+                nxt = run_state.open_run(root, batch=["US0100"], goal="done")
+                self.assertNotEqual(nxt["run_id"], first["run_id"])
+                self.assertTrue(run_state.read_archived(root, first["run_id"]),
+                                "the finished run is archived, never silently discarded")
+
+    def test_an_overlapping_replan_is_still_accepted(self) -> None:
+        """Re-planning the open run against its own batch is the documented path and must not be
+        caught by the repair. Mutant: refuse on any open run regardless of overlap - re-planning
+        an in-flight run becomes impossible and the fix trades one stranding for another.
+        """
+        opened = self._judged_not_closed()
+        self.assertIsNone(run_state.disjoint_refusal(self.root, ["US0001", "US0500"]),
+                          "a batch sharing a unit with the open run is a re-plan, not a rival")
+        same = run_state.open_run(self.root, batch=["US0001", "US0500"], goal="done")
+        self.assertEqual(same["run_id"], opened["run_id"],
+                         "an overlapping re-plan stays on the same run")
+
+    def test_the_close_artefacts_are_all_written_by_the_close(self) -> None:
+        """The rule behind the list, asserted rather than left to the comment. Every member must
+        be an artefact the CLOSE writes; a field written earlier in the run belongs outside it.
+
+        Mutant: add any pre-close field - `sprint_goal_verdict`, `goal_content_review`,
+        `token_forecast`, `appetite` - and this reddens naming it. That is the check the original
+        list lacked, so nothing objected when a pre-close field was put in it.
+        """
+        written_before_the_close = {"sprint_goal_verdict", "goal_content_review", "appetite",
+                                    "token_forecast", "close_attempts", "review_rounds",
+                                    "base_ref", "batch", "sprint_goal", "signoff_panel"}
+        offenders = sorted(set(run_state._CLOSE_ARTEFACTS) & written_before_the_close)
+        self.assertEqual(offenders, [],
+                         f"{offenders} are written before the close, so treating them as proof "
+                         f"of one releases the run slot while the close is still owed")
+        self.assertTrue(run_state._CLOSE_ARTEFACTS,
+                        "an empty list would make every run releasable and pass the check above")
+
+
 class OverAppetiteTests(unittest.TestCase):
     """US0359 / CR0349: an over-appetite batch is recorded with BOTH the standing appetite and
     the accepted one, so raising the ceiling to make a batch fit does not erase the overage."""

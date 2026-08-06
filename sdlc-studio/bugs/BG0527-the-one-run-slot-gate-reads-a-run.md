@@ -4,7 +4,7 @@
 > **Severity:** High
 > **Verification depth:** functional
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py,.claude/skills/sdlc-studio/scripts/tests/test_run_state.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint.py,.claude/skills/sdlc-studio/scripts/tests/test_handoff.py
 > **Evidence:** Found while planning the EP0207 sprint on 2026-08-06 at 9dc330f5, by testing the premise 'the previous run must close before the next can open' rather than assuming it. The premise is false today. `run_state.py:476-498` (`_is_spent`, `_disjoint`), `sprint.py:8296-8305` (the one-run-slot gate that calls it).
 > **Created:** 2026-08-06
 > **Created-by:** sdlc-studio file
@@ -36,13 +36,63 @@ Drop `sprint_goal_verdict` from `_CLOSE_ARTEFACTS` and let the close's own artef
 
 ## Acceptance Criteria
 
-- [ ] **A recorded goal verdict alone does not release the run slot.** Given a run whose `outcome` is `running`, carrying a `sprint_goal_verdict` and neither `ended_at` nor `handoff`, `disjoint_refusal` returns a refusal naming that run for a batch sharing none of its units. *Mutant:* keep `sprint_goal_verdict` in `_CLOSE_ARTEFACTS` - this criterion reddens and nothing else in the tree does, which is the state of the repository on the day this was filed. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::SlotReleaseTests::test_a_goal_verdict_alone_does_not_release_the_slot
+> Authored as `### ACn` headings with a bold `**Verify:**`, which is the only shape
+> `verify_ac` parses. The house bug template's prose-title form is invisible to it and
+> reports `ac=0` as a clean pass - BG0530, found while delivering this bug.
 
-- [ ] **The positive control - a run the close finished does release it.** The same run with `ended_at` set draws no refusal, and neither does one with `handoff` set, because a closed run must not block the run that follows it. *Mutant:* refuse whenever the outcome string reads `running` - the first criterion still passes while every legitimate next sprint is refused, so only this one can tell the repair from an over-correction. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::SlotReleaseTests::test_a_closed_run_still_releases_the_slot
+### AC1: a recorded goal verdict alone does not release the run slot
 
-- [ ] **The refusal reaches through the shipped command, not only the predicate.** Driving `sprint.py plan --write` over a disjoint batch against such a run exits non-zero, names the open run, and leaves `run-state.json` byte-identical with no `sprint-plan.json` written - the guarantee the one-run-slot gate already claims for a refused plan. *Mutant:* consult the predicate and ignore its answer - the two library criteria above stay green while the run is orphaned anyway, which is LL0040. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SlotGateLaneTests::test_the_slot_gate_refuses_through_plan_write_and_writes_nothing
+- **Given** a run whose `outcome` is `running`, carrying a `sprint_goal_verdict` and neither `ended_at` nor `handoff`
+- **When** `disjoint_refusal` is asked about a batch sharing none of its units
+- **Then** it returns a refusal naming that run, and `open_run` raises rather than replacing the state
+- **Mutant:** put `sprint_goal_verdict` back in `_CLOSE_ARTEFACTS` - this reddens and nothing else in the tree does, which was the state of the repository when it was found
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::SlotReleaseTests::test_a_goal_verdict_alone_does_not_release_the_slot
+- **Verified:** yes (2026-08-06)
 
-- [ ] **An overlapping re-plan is still accepted**, since re-planning the open run against its own batch is the documented path and must not be caught by the repair. *Mutant:* refuse on any open run regardless of overlap - re-planning an in-flight run becomes impossible and the fix trades one stranding for another. *Verify:* pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::SlotReleaseTests::test_an_overlapping_replan_is_still_accepted
+### AC2: the positive control - a run the close finished does release it
+
+- **Given** the same run with `ended_at` set, and separately with `handoff` set
+- **When** the next batch is planned
+- **Then** no refusal is raised, a fresh run is minted and the finished one is archived
+- **Mutant:** refuse whenever the outcome string reads `running` - AC1 still passes while every legitimate next sprint is refused, so only this criterion tells the repair from an over-correction
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::SlotReleaseTests::test_a_closed_run_still_releases_the_slot
+- **Verified:** yes (2026-08-06)
+
+### AC3: the refusal reaches through the shipped command, and writes nothing
+
+- **Given** a judged-but-unclosed run
+- **When** `sprint.py plan --write` is driven over a disjoint worklist
+- **Then** it exits non-zero, names the open run so the operator knows which to close, and leaves `run-state.json` and `sprint-plan.json` byte-identical
+- **Mutant:** consult the predicate and ignore its answer, or consult it after the sibling artefacts are written - the library criteria stay green while the run is orphaned anyway, which is LL0040
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SlotGateLaneTests::test_the_slot_gate_refuses_through_plan_write_and_writes_nothing
+- **Verified:** yes (2026-08-06)
+
+### AC4: an overlapping re-plan is still accepted, through the verb
+
+- **Given** the same run and a worklist naming one of its own units
+- **When** the same command runs
+- **Then** it exits zero and stays on the same run id, because re-planning an open run is the documented path
+- **Mutant:** refuse on any open run regardless of overlap - re-planning an in-flight run becomes impossible and the fix trades one stranding for another
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SlotGateLaneTests::test_an_overlapping_replan_still_reaches_exit_zero_through_the_verb
+- **Verified:** yes (2026-08-06)
+
+### AC6: BG0188's property survives the change of remedy
+
+- **Given** BG0188, which established that a judged-but-unclosed run must not have a new batch accumulated onto it, and whose remedy was to mint a fresh run
+- **When** the same scenario runs under this fix
+- **Then** the batch is still not accumulated and the verdict is still not clobbered - but the run is REFUSED rather than replaced, so the owed close is not silently discarded either
+- **Mutant:** restore BG0188's remedy (mint a fresh run) - the units of the judged run are stranded, which is the defect this bug was filed for, and the refusal assertion reddens
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::RunStateTests::test_a_judged_run_left_running_is_refused_not_accumulated
+- **Verified:** yes (2026-08-06)
+
+### AC5: the rule behind the list is asserted, not left to the comment
+
+- **Given** the membership of `_CLOSE_ARTEFACTS`
+- **When** it is checked against the fields written before the close
+- **Then** no member is one of them, and the list is non-empty
+- **Mutant:** add any pre-close field - `sprint_goal_verdict`, `goal_content_review`, `appetite`, `token_forecast` - and this reddens naming it. This is the check the original list lacked, so nothing objected when a pre-close field was put into it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::SlotReleaseTests::test_the_close_artefacts_are_all_written_by_the_close
+- **Verified:** yes (2026-08-06)
 
 ## Impact
 
@@ -54,3 +104,4 @@ Every run in this repository passes through the affected window, because recordi
 | --- | --- | --- |
 | 2026-08-06 | sdlc-studio | Filed |
 | 2026-08-06 | sdlc-studio | Groomed at plan time: the tool-derived criteria replaced with four decidable ones naming their mutants, plus the lane test and the over-correction control |
+| 2026-08-06 | sdlc-studio | Affects corrected to name test_sprint.py (the lane test) and test_handoff.py (BG0188 supersession) - the ratchet caught the understated footprint the seats caught by hand last run |
