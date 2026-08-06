@@ -98,8 +98,8 @@ A gate that refuses without saying what refused you is worse than the flake it i
 | AC1 | in sprint.py, remove review-current from the recognised lane set | a stamped gate failure is parsed, and the parser is fed the renderer's own output |
 | AC2 | in sprint.py, drop the gate's raw failing text from the unattributable message | the test ROUND-TRIPS gate.py's own renderer, never a hand-made string |
 | AC3 | in sprint.py, remove the attribution result from the retry decision | the over-correction is refused - an advisory line is not a failure |
-| AC4 | {{name the production change this test must fail on}} | an unattributable blocker QUOTES the gate rather than claiming nothing was found |
-| AC5 | {{name the production change this test must fail on}} | the positive control - a passing gate still closes |
+| AC4 | in sprint.py, drop the gate's raw failing text from the unattributable message | an unattributable blocker QUOTES the gate rather than claiming nothing was found |
+| AC5 | in sprint.py, return every parsed line as a failing lane | the positive control - a passing gate still closes |
 
 ## Revision History
 

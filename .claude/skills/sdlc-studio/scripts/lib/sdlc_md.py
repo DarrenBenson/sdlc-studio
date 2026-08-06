@@ -2833,6 +2833,13 @@ DOR_DOD_CHECK_IDS = {
     "story.verify-ac": "the story's executable ACs pass (verify_ac; the transition -> Done gate)",
     "review.critic-approve": "an independent critic APPROVE is recorded (conformance critiqued)",
     "review.two-role": "adversarial evidence + reviewer-of-record sign-off (review.two_role_after)",
+    # US0567: the doctrine's repair-evidence rule (reference-doctrine.md#repair-evidence). A
+    # fix's author is not sufficient evidence for that fix, so the repair carries a mutant its
+    # own test was seen to fail on. Registered here because a `[check:]` tag that resolves to
+    # nothing is human intent wearing a machine tag - which is the state this tag was in for
+    # one full suite run, and the registry test caught it.
+    "repair.mutation-evidence": "a repair carries a mutant over its own changed lines whose "
+                                "death was observed (transition -> terminal, review.test_plan_after)",
     "close.review-coverage": "every unit in the batch is covered by an independent review "
                              "(sprint close's first chain step - asserted, never performed there)",
     "close.retro": "the batch retro exists and validates (gate --require-retro)",

@@ -11,6 +11,7 @@ import io
 import shutil
 import tempfile
 import unittest
+import re
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1] / "check_spec_claims.py"
@@ -598,3 +599,137 @@ class ClaimTickTests(unittest.TestCase):
             ("tools/other.py", ["    return 1"]),
         )
         self.assertEqual([], check_spec_claims.ticked_over_untouched(diff))
+
+
+# --- US0567: the doctrine's repair-evidence rule -------------------------------------------
+# Lifted here rather than shipped as its own file: `tools/tests/test_doctrine_repair_evidence.py`
+# could never be attributed by the test census, whose sibling-module rule only sees `tools/*.py`,
+# and the census baseline is explicit that it is lowered when a file gains a home and NEVER
+# raised to accommodate a new one. A guard that a shipped document's claim is true is a
+# spec-claim check, so this is where it belongs.
+
+ROOT = Path(__file__).resolve().parents[2]
+DOCTRINE = ROOT / ".claude/skills/sdlc-studio/reference-doctrine.md"
+DOD = ROOT / ".claude/skills/sdlc-studio/templates/core/definition-of-done.md"
+LESSONS = ROOT / ".claude/skills/sdlc-studio/reference-agentic-lessons.md"
+
+
+def _states_the_rule(text: str) -> bool:
+    """Does THIS text state rule 21 and name its enforcing mechanism?
+
+    Takes the text rather than reading the file, so the discrimination below can put a
+    doctored corpus through the identical predicate. Asserting a length comparison instead
+    proved too weak: a mutant that pointed the rule test at the whole file survived it,
+    because the length check computed its own slice and never saw the sibling stop
+    discriminating. The property has to be exercised, not inferred.
+    """
+    passage = _slice_rule(text)
+    if not passage:
+        return False
+    low = passage.lower()
+    return "author" in low and "mutant" in low and "transition.py" in passage
+
+
+def _slice_rule(text: str) -> str:
+    """Rule 21's own text, from its numbered heading to the next top-level heading or rule.
+
+    Sliced rather than searched, so the assertions below cannot be satisfied by any other
+    part of the file - a Revision History row included.
+    """
+    m = re.search(r"^21\. \*\*(.+?)\*\*.*?$", text, re.M)
+    if not m:
+        return ""
+    rest = text[m.start():]
+    end = re.search(r"^(?:## |\d+\. \*\*)", rest[len(m.group(0)):], re.M)
+    return rest[: len(m.group(0)) + end.start()] if end else rest
+
+
+class DoctrineTests(unittest.TestCase):
+    def test_doctrine_states_the_rule_and_names_the_enforcing_gate(self) -> None:
+        """A reader must arrive at a MECHANISM, not at advice.
+
+        Mutant: delete the passage and leave every other line intact, Revision History
+        included - this reddens. Mutant: state the rule and drop the sentence naming
+        `transition.py` - a rule with no mechanism behind it is one this doctrine is
+        explicit about distrusting, and the enforcement assertion catches it alone.
+        """
+        text = DOCTRINE.read_text(encoding="utf-8")
+        self.assertTrue(_states_the_rule(text), "rule 21 is absent, or states no mechanism")
+        passage = _slice_rule(text)
+        low = passage.lower()
+        self.assertIn("author", low, "the rule does not name whose evidence is insufficient")
+        self.assertIn("mutant", low, "the rule does not name the evidence it demands")
+        self.assertIn("transition.py", passage,
+                      "the rule states no enforcing mechanism, so it is advice")
+
+    def test_deleting_the_stating_passage_reddens_the_guard(self) -> None:
+        """THE DISCRIMINATION, exercised rather than inferred.
+
+        The predicate is run over a doctored corpus: rule 21 removed, and a Revision History
+        row describing the change that added it left in place. That row contains every word
+        the assertions look for. A guard anchored on the whole file passes it; one anchored on
+        the rule's own passage does not. BG0457 records exactly this defect - four guards
+        comparing a document against a projection of itself - and a guard shipped in the same
+        change as the prose it checks is the easiest place to repeat it.
+
+        Mutant: point `_states_the_rule` at the whole text instead of the slice - this reddens,
+        and the earlier length-comparison version did not.
+        """
+        real = DOCTRINE.read_text(encoding="utf-8")
+        self.assertTrue(_states_the_rule(real), "the positive control does not hold")
+        doctored = real.replace(_slice_rule(real), "") + (
+            "\n| 2026-08-06 | sdlc | Added the repair-evidence rule: a fix's author is not "
+            "sufficient evidence, held by a mutant and enforced by transition.py |\n")
+        self.assertFalse(_states_the_rule(doctored),
+                         "the guard is satisfied by a Revision History row describing the "
+                         "rule rather than by the rule itself")
+
+    def test_the_definition_of_done_carries_a_consistent_clause(self) -> None:
+        """A consuming project copies this file as its own Done contract.
+
+        Mutant: drop the clause from the template - the doctrine states a rule the shipped
+        contract does not carry, and a consuming project inherits the prose without the bar.
+        """
+        dod = DOD.read_text(encoding="utf-8")
+        story = dod[dod.index("## Story"): dod.index("## Delivery batch")]
+        self.assertIn("repair", story.lower(), "the Story contract carries no repair clause")
+        self.assertIn("mutant", story.lower(),
+                      "the clause does not name the evidence the gate demands")
+
+
+    def test_the_named_gate_actually_exists(self) -> None:
+        """The doctrine names `transition.py` as what enforces this rule. If that file does not
+        carry a repair-evidence gate, the doctrine names a mechanism that is not there - which
+        is the failure this repo files as INERT, and the one thing worse than advice is advice
+        wearing a mechanism's name.
+
+        This also gives the guard a HOME in the test census: it now references the module it
+        checks rather than only markdown, so the attribution convention can place it. Raising
+        the unattributed baseline to accommodate a new file is explicitly forbidden, and the
+        first remedy the ratchet offers is the right one - give the new file a home.
+
+        Mutant: point the doctrine at a verb that carries no such gate - this reddens.
+        """
+        transition = (ROOT / ".claude/skills/sdlc-studio/scripts/transition.py").read_text(
+            encoding="utf-8")
+        self.assertIn("_plan_gate_active", transition,
+                      "transition.py carries no repair/test-plan gate, so the doctrine names a "
+                      "mechanism that does not exist")
+        self.assertIn("review.test_plan_after", transition,
+                      "the gate the doctrine names is not the one transition.py reads")
+
+    def test_the_carried_lesson_cites_the_gate(self) -> None:
+        """The lesson must POINT at the doctrine and the enforcing verb, not restate their terms.
+
+        Two documents stating the same rule in their own words drift, and the second is edited
+        by whoever did not know the first existed. Citing is what makes them one rule.
+
+        Mutant: restate the rule in the lesson without the `reference-doctrine.md#repair-evidence`
+        anchor or the `transition.py` reference - this reddens, and a reader is left with advice
+        that has no destination.
+        """
+        lessons = LESSONS.read_text(encoding="utf-8")
+        self.assertIn("repair-evidence", lessons,
+                      "the lesson does not cite the doctrine passage")
+        self.assertIn("transition.py", lessons,
+                      "the lesson does not name the verb that enforces it")

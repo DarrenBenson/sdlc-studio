@@ -1919,7 +1919,76 @@ def cmd_run(args: argparse.Namespace) -> int:
     append_history(repo_root / "sdlc-studio" / ".local" / "verify-history.jsonl", reports, args.dry_run)
     print(f"wrote {report_path}")
 
+    # A UNIT THIS COMMAND COULD NOT READ IS NOT A UNIT THAT PASSED. Three states are refused,
+    # and they are refused separately because they have different fixes:
+    #   * a criteria section that parses to NOTHING - the writer and this parser disagree about
+    #     a claim somebody did make. 75 bug files are in this state today.
+    #   * criteria that parse but carry NO verifier at all - `ac=N pass=0 unspecified=N`, which
+    #     is 36 files today and is where widening the parser MOVES the unreadable ones. Without
+    #     this arm the fix converts a would-be refusal into a silent exit 0 while the count
+    #     improves: the defect reproduced in a different costume. Named by a seat at plan review.
+    #   * no criteria section at all - REPORTED, not refused. 232 files, most of them filed
+    #     findings that never claimed a verifier, and nothing else in the tree refuses them.
+    # Before this, every one of them printed a line byte-comparable to a clean pass and exited 0.
+    # Which units carried a SECTION is read from the files, because the report does not carry
+    # it - and the distinction is the whole of AC2. A unit with no section never claimed a
+    # verifier; one whose section parses to nothing made a claim this parser cannot read.
+    had_section = {str(q) for q in paths
+                   if "## Acceptance Criteria" in sdlc_md.read_text_safe(q)}
+    unreadable = [r for r in reports if r.ac_count == 0 and str(r.path) in had_section]
+    vacuous = [r for r in reports
+               if r.ac_count and not (r.verified or r.failed or r.manual)]
+    for r in unreadable:
+        print(f"REFUSED {Path(r.path).name}: it carries a `## Acceptance Criteria` section and this command "
+              f"parsed NO criteria from it, so it executed nothing. Accepted shapes are a "
+              f"`### ACn: title` heading or a `- [ ] **ACn** ...` bullet, each with a "
+              f"`- **Verify:** <command>` line in bold.", file=sys.stderr)
+    for r in vacuous:
+        print(f"REFUSED {Path(r.path).name}: {r.ac_count} criterion/criteria parsed and NONE carries a "
+              f"`Verify:` line, so nothing was executed. An omitted verifier is not a passed "
+              f"one - declare `- **Verify:** manual <what a human checks>` if that is the "
+              f"truth.", file=sys.stderr)
+    if unreadable or vacuous:
+        return 2
+
     return 1 if overall_fail > 0 else 0
+
+
+def corpus_scan(repo_root, kind: str = "bugs") -> dict:
+    """The three blind states across a whole artefact class, counted by SHIPPED code.
+
+    Ships rather than living in a throwaway script, so the before and after figures of any fix
+    are produced by the same routine. Kept as three counts rather than one total: they are
+    different defects with different fixes, and a single number hides the vacuous state inside
+    an improving trend.
+    """
+    root = Path(repo_root) / "sdlc-studio" / kind
+    out = {"files": 0, "no_section": 0, "unreadable": 0, "no_verifier": 0, "ok": 0}
+    for f in sorted(root.glob("*.md")):
+        if f.name.startswith("_"):
+            continue
+        out["files"] += 1
+        text = sdlc_md.read_text_safe(f)
+        if "## Acceptance Criteria" not in text:
+            out["no_section"] += 1
+            continue
+        blocks = parse_story(text)
+        if not blocks:
+            out["unreadable"] += 1
+        elif not any(b.verifier for b in blocks):
+            out["no_verifier"] += 1
+        else:
+            out["ok"] += 1
+    return out
+
+
+def cmd_corpus_scan(args: argparse.Namespace) -> int:
+    res = corpus_scan(resolve_root(args), args.kind)
+    print(f"corpus scan ({args.kind}): {res['files']} file(s) - {res['ok']} readable and "
+          f"verifier-bearing, {res['unreadable']} with a section this parser cannot read, "
+          f"{res['no_verifier']} parsed but carrying no verifier, {res['no_section']} with no "
+          f"criteria section at all")
+    return 0
 
 
 _PASS_TOKENS = {"pass", "passing", "passed", "done", "verified", "covered", "green"}
@@ -3043,6 +3112,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="report what would be written, and write nothing")
     tp.add_argument("--root", default=".")
     tp.set_defaults(func=cmd_testplan)
+    cs = sub.add_parser("corpus-scan",
+                        help="Count the three blind states across an artefact class")
+    cs.add_argument("--kind", default="bugs", choices=("bugs", "stories", "change-requests"))
+    cs.add_argument("--root", default=".")
+    cs.set_defaults(func=cmd_corpus_scan)
     lc = sub.add_parser("lane-check",
                         help="Advisory: criteria whose verifiers never enter the shipped "
                              "entry point")

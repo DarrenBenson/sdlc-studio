@@ -220,6 +220,12 @@ Two habits go with it, both cheap and both learned the expensive way:
   sprint would otherwise have landed 17 and 27 failures.
 - **A test that has not been seen red is not evidence.** See
   `best-practices/testing.md#name-the-mutant-first`.
+- **On a REPAIR this is enforced, not advised.** A fix's author is not sufficient evidence for
+  that fix: the test is written after the answer is known, so it must be shown capable of
+  failing on the repair's own changed lines. The doctrine states the rule at
+  `reference-doctrine.md#repair-evidence` and `transition.py` refuses the terminal status
+  without that evidence. This lesson cites the gate rather than repeating its terms, so the two
+  cannot drift into disagreeing about what is required.
 
 ### Don't skip the post-epic commit
 

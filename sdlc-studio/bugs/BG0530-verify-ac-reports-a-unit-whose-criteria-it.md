@@ -110,13 +110,13 @@ The four bugs already Fixed should be re-verified once the parser sees them, not
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | {{name the production change this test must fail on}} | a unit whose criteria could not be PARSED is refused, not reported clean |
-| AC2 | {{name the production change this test must fail on}} | "no criteria at all" is reported distinctly from "criteria I could not read" |
-| AC3 | {{name the production change this test must fail on}} | the writer emits the shape the parser reads, pinned by the template itself |
-| AC4 | {{name the production change this test must fail on}} | the corpus effect is MEASURED by production code, against a reproducible figure |
-| AC5 | {{name the production change this test must fail on}} | the release lane states its scope |
-| AC6 | {{name the production change this test must fail on}} | the vacuous shape that would SURVIVE this fix is refused too |
-| AC7 | {{name the production change this test must fail on}} | the positive control - a well-formed unit still passes at the shipped entry point |
+| AC1 | in verify_ac.py, delete the non-zero exit taken on a zero criterion count | a unit whose criteria could not be PARSED is refused, not reported clean |
+| AC2 | in verify_ac.py, return one identical message for an absent section and an unreadable one | "no criteria at all" is reported distinctly from "criteria I could not read" |
+| AC3 | in file_finding.py, drop the ACn marker from the criteria renderer | the writer emits the shape the parser reads, pinned by the template itself |
+| AC4 | in verify_ac.py, collapse the three corpus counts into one total | the corpus effect is MEASURED by production code, against a reproducible figure |
+| AC5 | in gate.py, drop the scope statement the release verify lane prints | the release lane states its scope |
+| AC6 | in verify_ac.py, return 0 when every parsed criterion is unspecified | the vacuous shape that would SURVIVE this fix is refused too |
+| AC7 | in verify_ac.py, replace the pass path with the refusal for every unit | the positive control - a well-formed unit still passes at the shipped entry point |
 
 ## Revision History
 
