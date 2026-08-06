@@ -1,7 +1,7 @@
 # RETRO-0096: test-plan-before-code: the mechanism ships, the measurement lands next run
 
 > **Date:** 2026-08-06
-> **Batch:** {{batch}}
+> **Batch:** BG0527, US0629, US0630, US0631, US0632, US0633, US0634
 > **Goal:** {{goal}}
 > **Delivered:** {{n_done}} / {{n_total}}   **Blocked:** {{n_blocked}}
 
@@ -120,18 +120,30 @@ sprints fits noise.
 
 | Unit | Points | Estimate (plan-time) | Actual | Ratio (est/actual) | Tokens/pt | Size | Wall | Model |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BG0527 | 3 | 130,812 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| US0629 | 5 | 218,020 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| US0630 | 5 | 218,020 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| US0631 | 5 | 218,020 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| US0632 | 5 | 218,020 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| US0633 | 3 | 130,812 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| US0634 | 3 | 130,812 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
 | **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
-**0 of 0 unit(s) measured; 0 of 0 forecast at plan time.**
+**0 of 7 unit(s) measured; 7 of 7 forecast at plan time.**
+
+**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
 Review passes, by phase - read from the two verdict ledgers:
 
   test-plan review: NOT IN FORCE for this run - no verdict of that phase covers any of its units, which is not the same as a run that held them and spent nothing
 
-  code review: NOT IN FORCE for this run - no verdict of that phase covers any of its units, which is not the same as a run that held them and spent nothing
+  code review: 17 pass(es) over 7 unit(s), 7 rejected
+Unmeasured: BG0527, US0629, US0630, US0631, US0632, US0633, US0634. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
-Forecast by `-`, recorded at plan time. UNFORECAST: no plan-time forecast was recorded, so there is no prediction to judge. Nothing is re-derived to fill the gap.
+Forecast by `TOKENS_PER_POINT=25000`, recorded at plan time. OUT-OF-SAMPLE: forecast by the constants in force, on a sprint they were not fitted to. This is the only kind of row that tells you anything.
 
 Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-forecast. Nothing is re-fitted here - see VELOCITY.md for the trend across sprints, and change the constants only on evidence a human has looked at.
 <!-- accuracy:end -->
