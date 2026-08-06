@@ -4584,7 +4584,28 @@ ANCHOR_REL = "sdlc-studio/reviews/LATEST.md"
 #: self-inflicted is a refusal that gets walked past.
 _CLOSE_SELF_LANES = ("review-current",)
 
-_GATE_FAIL_RE = re.compile(r"^\s*\[FAIL\]\s+([A-Za-z0-9_.-]+):\s*(.*)$")
+#: A failing gate lane, as `gate.py` ACTUALLY prints it: `[FAIL] {check}{lane_stamp}: {detail}`,
+#: where `lane_stamp` inserts ` [0.4s]` BEFORE the colon when the lane was timed. The pattern
+#: used to require the colon immediately after the lane name, so it matched an untimed lane and
+#: dropped EVERY timed one - which is all of them in a real run. The close then reported "the
+#: refusal could not be attributed" one line after the gate had named the failing lane plainly,
+#: and burned its rounds retrying (BG0516).
+#:
+#: `\[FAIL\]` stays anchored rather than widening to any bracketed word: a pattern loosened
+#: until it matches anything reports an advisory `[warn]` lane as a failure and refuses a close
+#: that should pass.
+_GATE_FAIL_RE = re.compile(r"^\s*\[FAIL\]\s+([A-Za-z0-9_.-]+)(?:\s+\[[^\]]*\])?:\s*(.*)$")
+
+
+def unparsed_fail_lines(out: str) -> list:
+    """`[FAIL]`-shaped lines the lane parser could NOT place, quoted for the reader.
+
+    A function rather than a comprehension inside the close, so a test can reach it. The first
+    version of this lived inline and its test recomputed the same expression - which passes
+    whatever production does, and the mutant that emptied it survived.
+    """
+    return [ln.strip() for ln in (out or "").splitlines()
+            if "[FAIL]" in ln and not gate_failed_lanes(ln)]
 
 
 def _repo_rel(root, path) -> str:
@@ -4864,9 +4885,18 @@ def _close_gate(root, retro_id, state):
         return True, f"gate --require-retro {retro_id} --require-review: PASS", ""
     split = close_blocker_split(root, state, out)
     if not split["attributed"]:
-        return False, (f"{out}\nclose gate: the refusal could not be attributed - its verdict "
-                       f"named no failing lane this close can read, so it is treated as a "
-                       f"blocker in the WORK"), \
+        # NAME what was seen. "I could not attribute this" and "nothing was found" are different
+        # facts, and reporting the second when the first is true sends the reader to the wrong
+        # place - which is what happened while the gate had printed `[FAIL] review-current` one
+        # line above (BG0516). Any `[FAIL]`-shaped line the parser could not place is quoted, so
+        # a lane whose format changed is visible rather than silently unattributable.
+        unread = unparsed_fail_lines(out)
+        saw = ("" if not unread else
+               "\n  failing line(s) this close could not parse - the lane format may have moved:"
+               + "".join(f"\n    {ln}" for ln in unread[:5]))
+        return False, (f"{out}\nclose gate: the refusal could not be attributed to a lane this "
+                       f"close recognises, so it is treated as a blocker in the WORK. That is "
+                       f"not the same as nothing having been found.{saw}"), \
                "read the gate output above and clear what it names, then re-run sprint close"
     if split["self"] and not split["work"]:
         names = ", ".join(n for n, _ in split["self"])

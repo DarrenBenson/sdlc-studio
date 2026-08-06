@@ -626,6 +626,90 @@ class AuthoringPlanTests(unittest.TestCase):
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
 
+class CloseBlockerAttributionTests(unittest.TestCase):
+    """BG0516: the close said it could not attribute a refusal the gate had just named.
+
+    The first plan for this blamed the lane SET. `_CLOSE_SELF_LANES` already contained
+    `review-current`; a seat executed `gate_failed_lanes` and found the real cause -
+    `_GATE_FAIL_RE` required the colon immediately after the lane name, while `gate.py` prints
+    `[FAIL] {check}{lane_stamp}: {detail}` with ` [0.4s]` inserted before it. EVERY timed lane
+    was dropped, which is all of them in a real run. The original plan was satisfiable by tests
+    written against hand-made unstamped strings while the bug remained entirely present.
+    """
+
+    def test_a_stamped_gate_failure_is_parsed(self) -> None:
+        """Mutant: restore the pattern requiring the colon immediately after the lane - this
+        reddens, and no unstamped fixture can tell the difference."""
+        s = _load()
+        got = s.gate_failed_lanes("  [FAIL] review-current [0.4s]: reviews/LATEST.md is stale")
+        self.assertEqual(got, [("review-current", "reviews/LATEST.md is stale")])
+
+    def test_the_parser_round_trips_the_renderer(self) -> None:
+        """The two are pinned to EACH OTHER, so the next change to the lane format cannot break
+        the close silently. The line is built by `gate.lane_stamp`, not typed here - a hand-made
+        `[FAIL] lane: detail` literal passes today with the bug fully present, which is exactly
+        how this survived.
+
+        Mutant: assert against a typed literal instead of the rendered line - it goes green
+        against the unfixed parser.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "gate_mod_bg0516", Path(__file__).resolve().parents[1] / "gate.py")
+        gate = importlib.util.module_from_spec(spec)
+        sys.modules["gate_mod_bg0516"] = gate
+        spec.loader.exec_module(gate)
+        stamp = gate.lane_stamp({"seconds": 0.4})
+        self.assertTrue(stamp, "the renderer produced no stamp, so this pins nothing")
+        rendered = f"  [FAIL] review-current{stamp}: reviews/LATEST.md is stale"
+        self.assertEqual(_load().gate_failed_lanes(rendered),
+                         [("review-current", "reviews/LATEST.md is stale")],
+                         "the parser cannot read what the renderer prints")
+
+    def test_an_advisory_line_is_not_a_failure(self) -> None:
+        """The over-correction. Mutant: widen to any bracketed word - the criteria above stay
+        green while every passing gate reports failures and no close can proceed."""
+        s = _load()
+        for line in ("  [warn] review-current [0.4s]: advisory only",
+                     "  [ ok ] review-current [0.4s]: fine",
+                     "  [PASS] review-current [0.4s]: fine"):
+            with self.subTest(line=line):
+                self.assertEqual(s.gate_failed_lanes(line), [],
+                                 "a non-failing lane parsed as a failure")
+
+    def test_an_unattributable_blocker_quotes_the_gate(self) -> None:
+        """"I could not attribute this" and "nothing was found" are different facts, and the
+        second sends the reader to the wrong place. Any `[FAIL]`-shaped line the parser cannot
+        place is quoted, so a lane whose format moved is visible rather than silent.
+
+        Mutant: drop the quoted lines and keep the bare message - a lane added or reformatted
+        later is invisible to the close by default, which is how this defect survived.
+        """
+        s = _load()
+        weird = "  [FAIL] some.new.lane <0.4s> :: reformatted output"
+        self.assertEqual(s.gate_failed_lanes(weird), [],
+                         "the fixture parses, so it cannot exercise the unattributable path")
+        # Calls PRODUCTION, never a copy of it. The first version recomputed the comprehension
+        # here and passed whatever the close actually did - the mutant that emptied the
+        # collection survived it, which is the shape this whole unit is about.
+        unread = s.unparsed_fail_lines(weird + "\n  [FAIL] review-current [0.1s]: parses fine")
+        self.assertEqual(unread, [weird.strip()],
+                         "the parseable line was quoted, or the unparseable one was not")
+
+    def test_a_passing_gate_still_closes(self) -> None:
+        """THE POSITIVE CONTROL: a parser that finds failures everywhere satisfies the criteria
+        above and stops every close in every consuming project.
+
+        Mutant: return every parsed line as a failing lane - this reddens alone.
+        """
+        s = _load()
+        clean = "\n".join(["  [ ok ] conformance [1.2s]: fine",
+                            "  [ ok ] reconcile [0.3s]: no drift",
+                            "gate green."])
+        self.assertEqual(s.gate_failed_lanes(clean), [],
+                         "a passing gate reported blockers")
+
+
 class AffectsCheckModesTests(unittest.TestCase):
     """BG0521: a config key that decided nothing on one path and decided it too late on another.
 

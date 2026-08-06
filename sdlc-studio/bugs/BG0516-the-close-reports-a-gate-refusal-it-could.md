@@ -49,7 +49,7 @@ Make `close_blocker_split` recognise the `review-current` lane, and - more impor
 - **Then** it returns that lane and its detail - today it returns `[]`, because the timing stamp sits between the lane and the colon
 - **Mutant:** restore `_GATE_FAIL_RE` to require the colon immediately after the lane - this reddens, and no unstamped fixture can tell the difference
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_a_stamped_gate_failure_is_parsed
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC2: the test ROUND-TRIPS gate.py's own renderer, never a hand-made string
 
@@ -58,7 +58,7 @@ Make `close_blocker_split` recognise the `review-current` lane, and - more impor
 - **Then** the lane is recovered - the two are pinned to each other, so the next change to the lane format cannot break the close silently
 - **Mutant:** assert against a hand-written `[FAIL] lane: detail` literal - it passes today, with the bug fully present, which is exactly how this defect survived
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_the_parser_round_trips_the_renderer
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC3: the over-correction is refused - an advisory line is not a failure
 
@@ -67,7 +67,7 @@ Make `close_blocker_split` recognise the `review-current` lane, and - more impor
 - **Then** neither parses as a failure, because a regex loosened until it matches anything refuses a close on an advisory lane
 - **Mutant:** widen to `\[[A-Za-z]+\]` - AC1 and AC2 stay green while every passing gate reports failures
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_an_advisory_line_is_not_a_failure
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC4: an unattributable blocker QUOTES the gate rather than claiming nothing was found
 
@@ -76,7 +76,7 @@ Make `close_blocker_split` recognise the `review-current` lane, and - more impor
 - **Then** it prints the gate's own failing text verbatim - "I could not attribute this" and "nothing was found" are different facts, and the second sends the reader to the wrong place
 - **Mutant:** in sprint.py, drop the gate's raw failing text from the unattributable message - a lane added later is invisible to the close by default
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_an_unattributable_blocker_quotes_the_gate
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC5: the positive control - a passing gate still closes
 
@@ -85,7 +85,7 @@ Make `close_blocker_split` recognise the `review-current` lane, and - more impor
 - **Then** no blocker is reported and the close proceeds - a parser that finds failures everywhere passes AC1 through AC4 and stops every close in every consuming project
 - **Mutant:** in sprint.py, return every parsed line as a failing lane - this reddens alone
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_a_passing_gate_still_closes
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ## Impact
 
