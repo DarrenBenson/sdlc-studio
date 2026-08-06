@@ -5,7 +5,7 @@
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/plan_review.py,.claude/skills/sdlc-studio/scripts/tests/test_plan_review.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/plan_review.py,.claude/skills/sdlc-studio/scripts/config.py,.claude/skills/sdlc-studio/scripts/triage_noise.py,.claude/skills/sdlc-studio/scripts/tests/test_plan_review.py,.claude/skills/sdlc-studio/scripts/tests/test_config.py
 > **Epic:** EP0208
 > **Points:** 2
 > **Persona:** Maya Okafor
@@ -59,3 +59,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-06 | sdlc-studio | Second review round: US0640 Affects corrected to name config.py and triage_noise.py, where AC4 actually landed; US0643 AC4 restatement narrowed - the distinction is impossible for every state the tooling produces, not by design |

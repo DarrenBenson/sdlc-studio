@@ -58,12 +58,20 @@
 
 > **RESTATED after an independent seat rejected the original.** It demanded that three
 > refusals (the author signing, an adversarial seat signing, and a signer the run did not
-> assign) each be reachable through the verb with its own message. Two cannot be told apart, and
-> that is correct layering rather than a defect: `signoff_panel` assigns the signer DISJOINTLY
-> from the adversarial seats, so an adversarial principal always trips the assigned-signer check
-> first and returns its message. The criterion asked for a distinction the design makes
-> impossible, and the test written to it asserted only a non-zero exit - which is why deleting
-> the disjointness guard entirely passed 1,114 tests.
+> assign) each be reachable through the verb with its own message. Two cannot be told apart for
+> any state the tooling produces: `signoff_panel(record=True)` always records a signer and
+> always holds it DISJOINT from the adversarial seats, so an adversarial principal invariably
+> trips the assigned-signer check first and returns its message. The test written to the
+> original criterion asserted only a non-zero exit, which is why deleting the disjointness
+> guard entirely passed 1,114 tests.
+>
+> **Narrowed after a second seat rejected the reason rather than the conclusion.** The first
+> wording said the distinction was one "the design makes impossible". It is not: the
+> assigned-signer check is guarded by `if signer and ...`, so a panel recorded with no signer
+> would reach the disjointness refusal with its own message. No path in the shipped tooling
+> records such a panel, so the conclusion stands and AC7 pins the guard where it IS reachable -
+> but "impossible" claimed an invariant where there is a conditional, and a criterion restated
+> in terms stronger than its evidence is the failure mode a restatement is most prone to.
 
 - **Given** a unit with a recorded adversarial verdict and an assigned panel
 - **When** `critic.py signoff --panel` is driven for the author signing, and for a signer the run did not assign
@@ -104,3 +112,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-06 | sdlc-studio | Second review round: US0640 Affects corrected to name config.py and triage_noise.py, where AC4 actually landed; US0643 AC4 restatement narrowed - the distinction is impossible for every state the tooling produces, not by design |

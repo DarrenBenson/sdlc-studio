@@ -409,6 +409,12 @@ def _mutation_lines(m: dict | None) -> list[str]:
 #: saving as a cost, and it is still counted separately so a reader can see a decision was taken.
 _REUSE_MODE = "reuse"
 
+#: The ONE spelling of "this was not measured". Declared rather than repeated at each site: an
+#: independent seat mutated one of four open-coded copies to `0` and the whole module stayed
+#: green, and a zero in a cost column reads as a sprint that cost nothing rather than as one
+#: nobody metered. A component added later cannot invent a second spelling by accident.
+UNMEASURED = "UNMEASURED"
+
 
 def _execution_actuals(root: Path, unit_ids: list[str]) -> dict:
     """What test execution actually cost this sprint, beside what the policy declared.
@@ -450,12 +456,27 @@ def _execution_actuals(root: Path, unit_ids: list[str]) -> dict:
     counted = [r for r in mine if str(r.get("mode")) != _REUSE_MODE]
     seconds = [float(r["seconds"]) for r in counted
                if isinstance(r.get("seconds"), (int, float))]
+    # DERIVED from the ledger, not enumerated over the modes this file happens to know. The
+    # first repair inverted the `seconds` rule to an exclusion and left the three counts beside
+    # it as an allow-list, so a preflight-only ledger rendered `0 full run(s), 0 selected - 623s
+    # of test time` - a sentence contradicting itself, with the LL0043 note three lines above.
+    # An independent seat found that: the lesson had been written down and then not applied to
+    # the code beside the one it was written about. `by_mode` names whatever ran, so a mode
+    # added later appears in the sentence without anyone remembering to add it.
+    by_mode: dict[str, int] = {}
+    for r in mine:
+        key = str(r.get("mode") or "unrecorded")
+        by_mode[key] = by_mode.get(key, 0) + 1
     return {
         "measured": bool(seconds),
         "runs": len(mine),
-        "full_runs": sum(1 for r in mine if r.get("mode") == "full"),
-        "selected_runs": sum(1 for r in mine if r.get("mode") == "selected"),
-        "reused_runs": sum(1 for r in mine if r.get("mode") == "reuse"),
+        "by_mode": by_mode,
+        # Kept as derived VIEWS of `by_mode` for the readers that ask for them by name. They are
+        # no longer the source of the rendered sentence, so one going stale can no longer make
+        # the counts disagree with the seconds beside them.
+        "full_runs": by_mode.get("full", 0),
+        "selected_runs": by_mode.get("selected", 0),
+        "reused_runs": by_mode.get(_REUSE_MODE, 0),
         "seconds": round(sum(seconds), 1) if seconds else None,
         "declared": _declared_policy(root),
         "why": ("" if seconds else
@@ -495,9 +516,14 @@ def _execution_lines(rep: dict) -> list[str]:
                "against.")
     if not act.get("measured"):
         return [f"Test execution: NOT CAPTURED - {act.get('why')}.{against}"]
-    reused = f", {act['reused_runs']} reused (ran nothing)" if act.get("reused_runs") else ""
-    return [f"Test execution: {act['full_runs']} full run(s), {act['selected_runs']} "
-            f"selected{reused} - {act['seconds']:,.0f}s of test time.{against}"]
+    # Every row on the ledger is named, so the counts in this sentence sum to `runs` and cannot
+    # sit beside a duration they do not account for. `reuse` is annotated rather than dropped:
+    # it ran nothing, and a reader has to be able to see that a decision was taken.
+    by_mode = act.get("by_mode") or {}
+    parts = [f"{n} {mode}" + (" (ran nothing)" if mode == _REUSE_MODE else "")
+             for mode, n in sorted(by_mode.items(), key=lambda kv: (-kv[1], kv[0]))]
+    ran = ", ".join(parts) if parts else f"{act.get('runs', 0)} run(s)"
+    return [f"Test execution: {ran} - {act['seconds']:,.0f}s of test time.{against}"]
 
 
 # ---------------------------------------------------------------------------
@@ -1752,15 +1778,28 @@ def operator_summary(root: Path, retro_id: str, rep: dict | None = None) -> dict
 
 
 def _sprint_cost_line(rep: dict) -> dict:
-    """What the sprint cost, or a STATED absence for each component that was not measured."""
-    tokens = rep.get("sprint_actual_tokens")
+    """What the sprint cost, or a STATED absence for each component that was not measured.
+
+    EVERY component states its absence, and the test asserts that over `.keys()` rather than
+    over a list of field names. An independent seat found this criterion met for two of its four
+    components: `tokens` fell back to zero under mutation and `delivered_points` had no absent
+    branch at all, so the shipped page rendered `over None points`. The negative test named two
+    fields and the positive control only exercises values that are present, so neither could see
+    it - LL0013, in a test written to catch this very class one round earlier.
+
+    Nought delivered points is an ANSWER, not an absence: a run whose units all sat at Review
+    accepted nothing, and saying UNMEASURED there would hide a real and unwelcome number behind
+    a word that means nobody looked. Nought tokens or nought hours cannot be true of a sprint
+    that ran, so for those the two collapse.
+    """
     vel = rep.get("velocity") or {}
     ov = rep.get("overhead") or {}
+    points = rep.get("delivered_points")
     return {
-        "tokens": tokens if tokens else "UNMEASURED",
-        "delivered_points": rep.get("delivered_points"),
-        "elapsed_hours": vel.get("elapsed_hours") or "UNMEASURED",
-        "overhead_ratio": ov.get("ratio") if ov.get("measured") else "UNMEASURED",
+        "tokens": rep.get("sprint_actual_tokens") or UNMEASURED,
+        "delivered_points": points if isinstance(points, (int, float)) else UNMEASURED,
+        "elapsed_hours": vel.get("elapsed_hours") or UNMEASURED,
+        "overhead_ratio": ov.get("ratio") if ov.get("measured") else UNMEASURED,
     }
 
 
@@ -1776,6 +1815,12 @@ def render_operator_summary(s: dict) -> str:
     lines.append(f"Rejected ({len(s['rejected'])}): " + (", ".join(
         f"{r['unit']} [{r['state']}]" for r in s["rejected"]) or "none"))
     lines.append(f"Carried, still open: " + (", ".join(s["carried"]) or "none"))
+    # FILED was computed, returned and never printed, while the verb's own --help and the
+    # changelog both promised "what is carried and where it is filed". A finding raised and
+    # closed inside the run reached the dict and never the page - the derivation was right and
+    # the operator could not see it, which is the state `critic brief --tier` was in for a whole
+    # sprint. Found by an independent seat reading the renderer against the help text.
+    lines.append(f"Filed this run: " + (", ".join(s.get("filed") or []) or "none"))
     c = s["cost"]
     lines.append(f"Cost: {c['tokens']} tokens over {c['delivered_points']} points, "
                  f"{c['elapsed_hours']} elapsed hours, overhead {c['overhead_ratio']}")

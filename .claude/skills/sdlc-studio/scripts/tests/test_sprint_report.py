@@ -2005,6 +2005,41 @@ class ExecutionModeAgreementTests(ReportBase):
                                 "measured gate time went missing from overhead, which means it "
                                 "was credited to delivery by subtraction")
 
+    def test_the_rendered_sentence_accounts_for_every_row_on_the_ledger(self) -> None:
+        """The half the first repair missed, and an independent seat found.
+
+        Inverting the `seconds` rule to an exclusion left the three counts beside it as an
+        allow-list, so a preflight-only ledger rendered `0 full run(s), 0 selected - 623s of
+        test time` - a sentence contradicting itself, printed three lines below a comment
+        citing LL0043 against exactly that shape. Every earlier test asserted `act["seconds"]`
+        and none asserted the rendered sentence, so nothing could see it.
+
+        The invariant is derivable rather than enumerable: the counts named in the sentence sum
+        to the number of rows attributed to the run. Mutant: render from `full_runs` and
+        `selected_runs` again - a ledger whose modes this file has not been taught reports zero
+        runs beside a non-zero duration, and this reddens while `seconds` stays right.
+        """
+        self._run()
+        self._ledger([
+            {"at": "2026-07-28T10:00:00Z", "mode": "preflight", "seconds": 300.0,
+             "verdict": "fail", "moment": "close"},
+            {"at": "2026-07-28T10:30:00Z", "mode": "preflight", "seconds": 323.2,
+             "verdict": "pass", "moment": "close"},
+            {"at": "2026-07-28T11:00:00Z", "mode": "full", "seconds": 400.0,
+             "verdict": "pass", "moment": "commit"},
+            # A mode nobody has taught this file about. It must still be accounted for.
+            {"at": "2026-07-28T12:00:00Z", "mode": "smoke", "seconds": 12.0,
+             "verdict": "pass", "moment": "commit"},
+        ])
+        with contextlib.redirect_stderr(io.StringIO()):
+            act = sr._execution_actuals(self.root, ["US0001", "US0002"])
+        line = sr._execution_lines({"execution": act})[0]
+        self.assertEqual(sum((act.get("by_mode") or {}).values()), act["runs"],
+                         "the ledger's rows are not all accounted for by mode")
+        for mode in ("preflight", "full", "smoke"):
+            self.assertIn(mode, line, f"{mode} ran and the sentence does not say so")
+        self.assertNotIn("0 full", line)
+
 
 class OperatorSummaryTests(ReportBase):
     """US0645: human in the LEAD, not human in the loop.
@@ -2021,13 +2056,67 @@ class OperatorSummaryTests(ReportBase):
         critic.record_verdict(self.root, uid, verdict, reviewer="qa", author="dev", **kw)
 
     def test_an_unrecorded_component_reads_unmeasured(self) -> None:
-        """Mutant: substitute zero for an unrecorded component - the cheapest close on file is
-        one that measured nothing, which is the direction a cost report must never fail in."""
+        """EVERY component, asserted over `.keys()` rather than over a list of field names.
+
+        The earlier version named two of the four, and an independent seat killed it: mutating
+        `tokens` to fall back on `0` survived all 131 tests in this module and all 8 in this
+        class, because the negative test never looked at that field and the positive control
+        only exercises values that are PRESENT. `delivered_points` had no absent branch at all
+        and the shipped page rendered `over None points`. That is LL0013 - an assertion that
+        enumerates its cases exempts the case it forgot - in a test written to catch exactly
+        this class of defect one round earlier.
+
+        Mutant: give any component a zero or a passthrough fallback - this reddens naming the
+        field, and a component added later is covered without anyone remembering to add it.
+        """
+        # A report carrying NOTHING, so every component is genuinely absent and the assertion
+        # can range over the keys rather than over a list somebody has to remember to extend.
+        cost = sr._sprint_cost_line({"ok": True})
+        self.assertTrue(cost, "the cost line is empty, so asserting over its keys proves nothing")
+        for field, value in cost.items():
+            self.assertEqual(value, sr.UNMEASURED,
+                             f"{field} did not state its absence - a run that measured nothing "
+                             f"must not read as a run that cost nothing")
+        # ...and through the shipped derivation on a real run, for the components that fixture
+        # genuinely lacks. A library assertion cannot see a component the summary drops.
         with contextlib.redirect_stderr(io.StringIO()):
             s = sr.operator_summary(self.root, "RETRO9100")
         self.assertTrue(s["ok"], s)
-        self.assertEqual(s["cost"]["overhead_ratio"], "UNMEASURED")
-        self.assertEqual(s["cost"]["elapsed_hours"], "UNMEASURED")
+        for field in ("tokens", "elapsed_hours", "overhead_ratio"):
+            self.assertEqual(s["cost"][field], sr.UNMEASURED, field)
+
+    def test_nought_delivered_points_is_an_answer_not_an_absence(self) -> None:
+        """The distinction the blanket rule would destroy, and the reason `delivered_points`
+        cannot simply be truth-tested like the rest. A run whose units all sat at Review
+        accepted nothing: nought is a real and unwelcome measurement, and reporting UNMEASURED
+        there hides it behind a word that means nobody looked.
+
+        Mutant: fold `delivered_points` into the same `or UNMEASURED` test as tokens - a sprint
+        that accepted nothing becomes indistinguishable from one that was never metered, which
+        is the flattering direction.
+        """
+        cost = sr._sprint_cost_line({"ok": True, "delivered_points": 0,
+                                     "velocity": {}, "overhead": {}})
+        self.assertEqual(cost["delivered_points"], 0)
+        absent = sr._sprint_cost_line({"ok": True, "velocity": {}, "overhead": {}})
+        self.assertEqual(absent["delivered_points"], sr.UNMEASURED)
+
+    def test_a_filed_finding_reaches_the_page(self) -> None:
+        """`filed` was computed, returned in the dict and never rendered, while the verb's own
+        --help and the changelog fragment both promised "what is carried and where it is filed".
+        A derivation that is right and never printed is the state `critic brief --tier` was in
+        for a whole sprint.
+
+        Mutant: drop the filed line from the renderer - the id is derived correctly and the
+        operator never sees it.
+        """
+        page = sr.render_operator_summary({
+            "ok": True, "id": "RETRO9100", "run_id": "RUN-X", "sprint_goal": "g",
+            "goal_verdict": "achieved", "shipped": [], "rejected": [], "carried": [],
+            "filed": ["BG0777"], "reversal_candidates": [],
+            "cost": {"tokens": 1, "delivered_points": 1,
+                     "elapsed_hours": 1.0, "overhead_ratio": 1.0}})
+        self.assertIn("BG0777", page)
 
     def test_a_measured_component_reports_its_value_not_the_word(self) -> None:
         """THE POSITIVE CONTROL, and its absence was a blocking review finding: reducing the
