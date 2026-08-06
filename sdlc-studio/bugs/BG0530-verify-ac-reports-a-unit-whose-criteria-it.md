@@ -36,11 +36,57 @@ The four bugs already Fixed should be re-verified once the parser sees them, not
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `verify_ac.py run --id <id>` prints `ac=0 pass=0 fail=0 manual=0 unspecified=0` and exits 0 when it parses NO acceptance criteria at all.
-- [ ] The proposed fix lands, pinned by a test: Two changes, and the first is the one that matters.
+> Authored as `### ACn` headings with a bold `**Verify:**` - the only shape `verify_ac` parses.
+> Writing this bug's own criteria in the shape the bug is about is the first test of the fix.
+
+### AC1: a unit whose criteria could not be PARSED is refused, not reported clean
+
+- **Given** a unit carrying a `## Acceptance Criteria` section from which the parser reads no criteria at all
+- **When** `verify_ac.py run --id <id>` runs
+- **Then** it exits NON-ZERO, says plainly that it executed nothing, and names the shapes it accepts
+- **Mutant:** return 0 on a zero count - which is today's behaviour for 311 of 533 bug files, a line byte-comparable to a clean pass
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_a_section_that_parses_to_nothing_is_refused
+- **Verified:** no
+
+### AC2: "no criteria at all" is distinguished from "criteria I could not read"
+
+- **Given** one unit with no `## Acceptance Criteria` section, and one whose section parses to nothing
+- **When** each is run
+- **Then** they produce DIFFERENT messages, and only the second is refused - nothing was claimed in the first case, and the grooming gate already refuses it at plan time, whereas the second is the writer and the parser disagreeing about a claim somebody did make
+- **Mutant:** refuse both identically - 232 filed findings that never claimed a verifier start failing, the refusal becomes noise, and the signal it exists to carry is switched off wholesale
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_absent_and_unparseable_are_different_events
+- **Verified:** no
+
+### AC3: the writer and the parser agree, pinned by the template itself
+
+- **Given** the acceptance criteria `file_finding.py` writes for a new bug
+- **When** they are parsed by `verify_ac.parse_story`
+- **Then** the count is non-zero, asserted from a fixture that carries the house template VERBATIM rather than a hand-written example that happens to match
+- **Mutant:** revert the writer to its prose-title, italic-`*Verify:*` form - this reddens. `file_finding.py:127` claims the runner and the validator "cannot drift into contradicting each other again"; they had, and the comment asserting they could not sits in the file that produced the drift
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::WriterMatchesParserTests::test_the_house_bug_template_parses
+- **Verified:** no
+
+### AC4: the corpus effect is MEASURED, against a stated before figure
+
+- **Given** the 533 bug files as they stand, of which 311 return `ac=0` today (79 with a criteria section the parser cannot read, 232 with no section)
+- **When** the fix has landed and the parser is widened
+- **Then** the count of bugs whose section parses to nothing is reported and is materially lower, measured over the real corpus rather than a fixture
+- **Mutant:** widen the parser and measure only the fixture - the fix passes while the corpus is untouched, which is exactly how this drifted for 400 bugs
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_the_corpus_shape_is_readable
+- **Verified:** no
+
+### AC5: a bug's criteria can reach the release gate at all
+
+- **Given** `gate.py`'s release lane, which walks `sdlc-studio/stories` only
+- **When** the release verify lane runs
+- **Then** bugs are either included, or their exclusion is REPORTED as a stated scope rather than left silent - no bug's acceptance criteria has entered the release gate in any version, and nothing says so
+- **Mutant:** leave the walk story-only and silent - the release gate keeps reporting a verification pass over 55% of the delivery corpus it never looked at
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReleaseVerifyScopeTests::test_the_release_lane_states_its_scope
+- **Verified:** no
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-06 | sdlc-studio | Filed |
+| 2026-08-06 | sdlc-studio | Groomed for the v5 release sprint: tool-derived criteria replaced with decidable ones naming their mutants, authored in the shape verify_ac actually parses |

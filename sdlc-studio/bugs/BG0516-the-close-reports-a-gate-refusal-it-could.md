@@ -33,8 +33,32 @@ Make `close_blocker_split` recognise the `review-current` lane, and - more impor
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `sprint close` runs `gate --require-retro <id> --require-review` and passes its output to `close_blocker_split`.
-- [ ] The proposed fix lands, pinned by a test: Make `close_blocker_split` recognise the `review-current` lane, and - more importantly - make the unattributed branch print what the gate actually said rather...
+### AC1: a refusal the gate NAMED is attributed, not reported unattributable
+
+- **Given** a close whose gate printed `[FAIL] review-current ... reviews/LATEST.md is stale`
+- **When** `close_blocker_split` reads that output
+- **Then** the close names that lane as the blocker - today it says "the refusal could not be attributed - its verdict named no failing lane this close can read", one line after the gate printed exactly such a lane
+- **Mutant:** leave `review-current` out of the recognised set - the close reports it cannot read output it just printed, and the reader is sent to `gate --require-retro` by hand, which exits 0
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_a_named_lane_is_attributed
+- **Verified:** no
+
+### AC2: an unattributable blocker QUOTES the gate rather than claiming nothing was found
+
+- **Given** a gate failure whose lane the splitter genuinely does not recognise
+- **When** the close reports it
+- **Then** it prints the gate's own failing text verbatim, because "I could not attribute this" and "nothing was found" are different facts and the second is what sends a reader to the wrong place
+- **Mutant:** keep the bare unattributable message - a lane added later is invisible to the close by default, which is how this one became invisible
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_an_unattributable_blocker_quotes_the_gate
+- **Verified:** no
+
+### AC3: an attributable failure does not burn a review round
+
+- **Given** the same stale-anchor failure
+- **When** the close retries
+- **Then** it does not consume four identical rounds and quarantine the run at the cap - the loop guard exists to catch non-convergence, not to re-run a blocker whose fix is named
+- **Mutant:** retry without acting on the attribution - four rounds, `LOOP STOPPED`, and a run quarantined by a lane whose remedy was printed each time
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_an_attributable_failure_does_not_burn_a_round
+- **Verified:** no
 
 ## Impact
 
@@ -45,3 +69,4 @@ A gate that refuses without saying what refused you is worse than the flake it i
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-04 | sdlc-studio | Filed |
+| 2026-08-06 | sdlc-studio | Groomed for the v5 release sprint: tool-derived criteria replaced with decidable ones naming their mutants, authored in the shape verify_ac actually parses |

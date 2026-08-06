@@ -35,8 +35,32 @@ Call the shared resolver from `cmd_plan` and honour the mode there, which is wha
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: Three defects, found by both adversarial seats independently at the RUN-01KZ79C1 boundary.
-- [ ] The proposed fix lands, pinned by a test: Call the shared resolver from `cmd_plan` and honour the mode there, which is what AC4 describes.
+### AC1: `affects_check: block` REFUSES at plan time, and differs from `warn`
+
+- **Given** a project setting `affects_check: block` and a batch with an undeclared-file finding
+- **When** `sprint.py plan` runs
+- **Then** it refuses, and its output DIFFERS from the same run under `warn` - today the two are byte-identical and both print `advisory - nothing is refused`, while `help/sprint.md:305` says the setting "decides what a finding does"
+- **Mutant:** leave `cmd_plan` without the shared resolver - the config key decides nothing and the help page is false
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AffectsCheckModesTests::test_block_and_warn_differ_at_plan
+- **Verified:** no
+
+### AC2: `batch add` refuses BEFORE it writes, not after
+
+- **Given** the same finding under `block`
+- **When** `sprint.py batch add` runs
+- **Then** the unit is NOT in the batch afterwards - today it is written and then refused, so the operator is told "refused" about a unit the done-gate can now see
+- **Mutant:** keep the write ahead of the check - the refusal is a message rather than a refusal, which is the shape of every gate that reports what it did not do
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AffectsCheckModesTests::test_batch_add_refuses_before_writing
+- **Verified:** no
+
+### AC3: `--format json` applies the same check as the text path
+
+- **Given** the identical batch and mode
+- **When** the command is run with `--format json`
+- **Then** the same refusal happens - today the json path skips the check entirely, so a machine caller is held to a weaker rule than a human one
+- **Mutant:** gate the check on the text renderer - the two output formats enforce different rules and only one of them is tested
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AffectsCheckModesTests::test_json_and_text_enforce_the_same_rule
+- **Verified:** no
 
 ## Impact
 
@@ -47,3 +71,4 @@ An operator who sets `block` believes ungroomed `Affects` declarations are being
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Filed |
+| 2026-08-06 | sdlc-studio | Groomed for the v5 release sprint: tool-derived criteria replaced with decidable ones naming their mutants, authored in the shape verify_ac actually parses |

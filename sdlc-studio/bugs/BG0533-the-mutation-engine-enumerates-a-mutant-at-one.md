@@ -30,12 +30,45 @@ Then assert the invariant rather than trusting the shared helper: after applying
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `enumerate_mutations` identifies a mutant by (file, class, occurrence ordinal) over a per-line regex scan, and skips occurrences inside multiline-string spans...
-- [ ] Following the recorded steps no longer reproduces the defect: Demonstrated by an independent seat, 2026-08-06, RUN-01KZBBZ0.
-- [ ] The proposed fix lands, pinned by a test: Share ONE occurrence-counting routine between `enumerate_mutations` and `mutated_text`, so the exclusion cannot apply on one side only - two readers of one...
+### AC1: the line CHANGED is the line the mutation was enumerated at
+
+- **Given** a target whose pattern occurs inside a multiline string above the real occurrence - `if a == b:` in a docstring above a body `if 1 == 1:`
+- **When** `mutation.py run` applies the enumerated mutant
+- **Then** the index of the changed line equals the mutation's recorded `line`, asserted after the write rather than trusted from the anchor computation
+- **Mutant:** drop the equality - the mutant is reported at line 12 and applied at line 5, which is today's behaviour and was reproduced by two independent seats
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_the_changed_line_is_the_enumerated_line
+- **Verified:** no
+
+### AC2: a disagreement ABORTS the run rather than recording a verdict
+
+- **Given** an enumerated line and an applied line that differ
+- **When** the run notices
+- **Then** it aborts loudly naming both, because a verdict attributed to a line the tool did not edit is worse than no verdict - a false KILL is a green mutation score for code that was never mutated
+- **Mutant:** warn and continue - the run completes and publishes a score, and the instrument the whole evidence story leans on reports success it did not achieve
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_a_line_disagreement_aborts_loudly
+- **Verified:** no
+
+### AC3: one routine counts occurrences for both readers
+
+- **Given** `enumerate_mutations`, which skips multiline-string spans when counting, and `mutated_text`, which re-counts without that exclusion
+- **When** the source is searched for the ordinal
+- **Then** exactly ONE routine does the counting and both call it - two readers of one file disagree eventually, and the second is written by whoever did not know the first existed
+- **Mutant:** keep two counting sites and fix only the exclusion - they agree today and drift again at the next edit, which is how this survived since c40e9c2c
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_one_routine_counts_for_both_readers
+- **Verified:** no
+
+### AC4: the positive control - an ordinary mutant still applies and still kills
+
+- **Given** a target with no multiline-string decoy
+- **When** a mutant is applied
+- **Then** it lands, its test fails, and the verdict is KILLED - a guard that refuses every application passes AC1 and AC2 for exactly the wrong reason
+- **Mutant:** abort on every application - the criteria above stay green while mutation testing stops working entirely
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_an_ordinary_mutant_still_applies_and_kills
+- **Verified:** no
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-06 | sdlc-studio | Filed |
+| 2026-08-06 | sdlc-studio | Groomed for the v5 release sprint: tool-derived criteria replaced with decidable ones naming their mutants, authored in the shape verify_ac actually parses |

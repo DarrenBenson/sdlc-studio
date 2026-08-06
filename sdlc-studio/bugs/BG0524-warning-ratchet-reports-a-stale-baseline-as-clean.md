@@ -30,8 +30,32 @@ Decide which criterion is right and make the other follow. The AC2 behaviour is 
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: US0480 AC4 requires four untrustworthy-baseline states, each non-zero, and forbids reporting clean on a reference the ratchet could not establish.
-- [ ] The proposed fix lands, pinned by a test: Decide which criterion is right and make the other follow.
+### AC1: a stale baseline exits NON-ZERO and says which state it is in
+
+- **Given** a warning baseline the ratchet cannot establish against the current tree
+- **When** `validate.py warning-ratchet` runs
+- **Then** it exits non-zero and names the state, rather than printing `clean` and exiting 0
+- **Mutant:** report `clean` on a state the ratchet could not establish - today's behaviour, contradicting both US0480 AC4 and this function's own docstring at `validate.py:876`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RatchetStatesTests::test_a_stale_baseline_is_not_clean
+- **Verified:** no
+
+### AC2: the four untrustworthy states are DISTINCT and each non-zero
+
+- **Given** the four states the docstring already declares - stale, missing, corrupt, unreadable
+- **When** each is produced
+- **Then** each exits non-zero with its own message, because they have different fixes and one message for four sends the reader to the wrong one
+- **Mutant:** collapse them to one message - the assertion that they are distinct is what makes the docstring's claim true rather than decorative
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RatchetStatesTests::test_each_untrustworthy_state_is_distinct
+- **Verified:** no
+
+### AC3: the positive control - a genuinely clean ratchet still exits 0
+
+- **Given** a baseline that IS established and holds
+- **When** the lane runs
+- **Then** it reports clean and exits 0, because this lane is in the per-commit `npm run lint` chain and a guard that refuses everything gets switched off within a day
+- **Mutant:** exit non-zero unconditionally - AC1 and AC2 pass while every commit in every consuming project is blocked
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RatchetStatesTests::test_a_clean_ratchet_still_passes
+- **Verified:** no
 
 ## Impact
 
@@ -42,3 +66,4 @@ A criterion is marked Verified against behaviour the code does not have, and the
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Filed |
+| 2026-08-06 | sdlc-studio | Groomed for the v5 release sprint: tool-derived criteria replaced with decidable ones naming their mutants, authored in the shape verify_ac actually parses |

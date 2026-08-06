@@ -92,6 +92,21 @@ review:
   # person's signature, and `sprint_report.py operator-summary` derives the page the operator
   # leads from. Adopted on RUN-01KZ9315, the sprint that made the path reachable (US0643).
   signoff: panel
+  # D0131: the test-plan gate goes live, dated so it captures the bug lane and exempts the
+  # story lane. That is chosen, not arbitrary. EP0207 shipped the mechanism on RUN-01KZBBZ0 and
+  # its own units could not measure it - the cutoff that protects an existing backlog necessarily
+  # exempts the batch that builds the gate, so the claim "reviewing the test costs a fraction of
+  # reviewing the code" stayed an assertion. This date makes the NEXT sprint an A/B in one batch:
+  # units created from 2026-08-01 (the recent bugs) derive and independently review a test plan
+  # before any code; older units (the stories) do not. `retro.py accuracy` reports both arms, and
+  # that number decides whether this process is pointed at the remaining unplanned backlog.
+  test_plan_after: "2026-08-01"
+  # D0132: the review-repair round cap is raised from its default of 4 to 6, deliberately and on
+  # the record. The default STOPPED the RUN-01KZBBZ0 close, correctly - a cap nobody enforces is
+  # a comment. It is raised because the next batch is roughly twice the units, not because 4 was
+  # wrong: the cap exists to catch a loop that is not converging, and a bigger batch takes more
+  # rounds to converge without that meaning it never will. Revisit if a run reaches 6.
+  max_rounds: 6
 
 engagement_floor:
   # The mechanical engagement floor is grandfathered forward-only, like conformance/provenance.
