@@ -1475,9 +1475,12 @@ def _planned_mutant_gate(root, unit: str) -> str | None:
     try:
         import mutation  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
         res = mutation.plan_execution(root, unit)
-    except Exception as exc:  # noqa: BLE001 - a gate must not crash the verb it guards
-        sdlc_md.debug("transition._planned_mutant_gate", exc)
-        return None
+    except Exception as exc:  # noqa: BLE001 - report it, never swallow it
+        # Same rule as `_test_plan_gate` above. Latent here only because `_load_ledger` happens
+        # to catch OSError one layer down - a defence that depends on somebody else's accident
+        # is not a defence.
+        return (f"the planned-mutant gate could not be established ({type(exc).__name__}: "
+                f"{exc}) - an unreadable bar is not a passed one")
     if res.get("errors"):
         return (f"{unit} has no `## Test Plan`, and `review.test_plan_after` puts it in scope - "
                 f"derive one with `verify_ac.py testplan derive --unit {unit}`")
@@ -1514,9 +1517,14 @@ def _test_plan_gate(root, unit: str, text: str) -> str | None:
     try:
         import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
         v = critic.verdict_for(root, unit, phase="plan-review", kind="test-plan")
-    except Exception as exc:  # noqa: BLE001 - a gate must not crash the verb it guards
-        sdlc_md.debug("transition._test_plan_gate", exc)
-        return None
+    except Exception as exc:  # noqa: BLE001 - report it, never swallow it
+        # Fail LOUD, on the same terms as the two sibling gates in this file. `return None` is
+        # PASS, so the one condition under which this gate was least able to judge - an
+        # unreadable ledger, broken tooling - was the one under which it approved everything.
+        # An independent seat chmod-ed the verdict ledger and watched a refusal become exit 0
+        # with nothing on either stream. An unreadable bar is not a passed one.
+        return (f"the test-plan gate could not be established ({type(exc).__name__}: {exc}) - "
+                f"an unreadable bar is not a passed one")
     if v and v.get("verdict") == critic.APPROVE and critic.is_independent(v):
         return None
     why = ("no plan-review verdict of kind `test-plan` is on record"

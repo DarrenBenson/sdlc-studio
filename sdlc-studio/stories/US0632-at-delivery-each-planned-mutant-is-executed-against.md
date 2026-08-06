@@ -43,6 +43,27 @@
 
 ### AC3: execution is sound against the two ways a mutation run lies
 
+> **RETRACTED AND RESTATED at review.** The delivered version narrowed away the
+> anchor-uniqueness limb on the stated ground that "this engine selects mutants by AST node
+> rather than by string anchor". **That is false on the code**, and an independent seat proved
+> it by execution: `enumerate_mutations` anchors by (file, class, occurrence ordinal) over
+> per-line regex, and `mutated_text` re-counts that ordinal WITHOUT the multiline-string
+> exclusion `enumerate_mutations` applies - so a `if a == b:` inside a docstring above a real
+> `if 1 == 1:` is enumerated at one line and PATCHED at another. The wrong location is editable
+> in the automated engine today. The property AC3 asks for is therefore deliverable here, and
+> the narrowing hid a live desync rather than describing a limitation.
+>
+> The desync itself is pre-existing (c40e9c2c, CR0146) and does not block this unit. What was
+> mine is the false rationale, and BG0531's scoping of the hazard to the `register` path alone.
+> Both are corrected: the criterion is NOT met, this unit does not claim it, and it is carried
+> rather than quietly redefined.
+>
+> **Also retracted: this criterion's Verify line was vacuous.** The named test asserts nothing
+> about an anchor - it checks `_suite_env` and `_purge_bytecode`, both of which predate this
+> diff, and renaming `plan_execution` leaves it green. A test whose NAME claims a property it
+> does not test is the defect class BG0523 exists for, and it appeared here in the unit that
+> ships mutant execution.
+
 - **Given** a mutant whose replacement is the same length as the original, and an anchor string occurring more than once in the target file
 - **When** the run applies it
 - **Then** bytecode is purged and the child runs with bytecode writing disabled so a cached module cannot report a false survival, the anchor is asserted unique before patching so the wrong function cannot be edited, and the source is restored byte-identical afterwards with that restoration asserted

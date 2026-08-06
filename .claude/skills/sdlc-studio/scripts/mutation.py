@@ -2241,7 +2241,11 @@ def plan_execution(root: Path | str, unit: str) -> dict:
                 "errors": [f"{unit}: no artefact with that id"]}
     text = sdlc_md.read_text_safe(found[0])
     planned = _va._testplan_rows(text)
-    unnameable = {r["ac"] for r in _va.testplan_unnameable(text)}
+    # Only a WELL-FORMED `unnameable` - one carrying its reason - exempts a row. A bare one is
+    # malformed, and US0633 refuses it at grooming precisely so it costs something; exempting it
+    # here too would refund that cost one lane later and make the marker a free pass at the gate
+    # it matters most at. Found by an independent seat.
+    unnameable = {r["ac"] for r in _va.testplan_unnameable(text) if not r["malformed"]}
     uid = sdlc_md.norm_id(unit)
 
     executed: dict = {}

@@ -3250,6 +3250,29 @@ class FromPlanTests(unittest.TestCase):
             self.assertTrue(any("AC1" in u and "SURVIVED" in u for u in unmet),
                             f"the transition does not name the criterion: {unmet}")
 
+    def test_a_malformed_unnameable_does_not_exempt_a_row(self) -> None:
+        """US0633 makes `unnameable` cost something at grooming, and exempting a bare one HERE
+        refunds that cost one lane later - the marker becomes a free pass at the gate it matters
+        most at. A seat drove a plan whose only row read `| AC1 | unnameable |` straight through
+        the terminal transition.
+
+        Mutant: exempt every unnameable row - a reason-less marker clears the delivery gate, and
+        nothing in the tree objects.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            m = self._unit(root, [("AC1", "unnameable")])
+            res = m.plan_execution(root, "BG0001")
+            self.assertFalse(res["ok"], "a bare `unnameable` cleared the delivery gate")
+            self.assertEqual([r["ac"] for r in res["outstanding"]], ["AC1"])
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            reason = ("unnameable: the criterion is about operator judgement and no code edit "
+                      "can falsify it")
+            m = self._unit(root, [("AC1", reason)])
+            self.assertTrue(m.plan_execution(root, "BG0001")["ok"],
+                            "a REASONED unnameable was refused - the exemption must still exist")
+
     def test_the_gate_stands_down_without_a_cutoff(self) -> None:
         """An existing backlog carrying no plans must not be retro-refused: a gate that refuses
         every unit is one that gets switched off wholesale rather than satisfied.

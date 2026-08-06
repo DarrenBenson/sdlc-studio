@@ -109,7 +109,8 @@ _FINGERPRINT_LEN = 12
 _FINGERPRINT_RE = re.compile(r"[0-9a-f]{%d}" % _FINGERPRINT_LEN)
 
 
-def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str):
+def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str,
+                               phase: str = "delivery"):
     """Seats whose CURRENT brief for `unit` fingerprints to `fingerprint`.
 
     Returns None when the question cannot be asked at all - no unit, no seat cards, an
@@ -126,7 +127,11 @@ def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str):
     matched, asked = [], False
     for seat in seats:
         try:
-            text = brief(repo_root, unit, seat)
+            # THE PHASE THE VERDICT IS BEING RECORDED FOR. Asking for a delivery brief
+            # while checking a plan-review fingerprint can never match, so every honest plan
+            # verdict carried the same suspicion note as a fabricated one - which is how the
+            # note stops being read at all.
+            text = brief(repo_root, unit, seat, phase=phase)
         except (OSError, ValueError):
             continue
         asked = True
@@ -3284,7 +3289,19 @@ def cmd_brief(args: argparse.Namespace) -> int:
                           "meaning on a plan review, which judges an artefact rather than a "
                           "diff.", file=sys.stderr)
                     return 2
-                print(brief(args.root, args.unit, args.seat, phase=phase))
+                text = brief(args.root, args.unit, args.seat, phase=phase)
+                print(text)
+                # The fingerprint, on the SAME terms as the delivery path. Returning before
+                # this block meant `record --phase plan-review` demanded a fingerprint the
+                # shipped command had never printed - verbatim the scar AGENTS.md cites, in
+                # the phase added to prevent it.
+                print(f"\nreview phase: plan-review (no tier - a plan review judges an "
+                      f"artefact, not a diff)\n"
+                      f"brief fingerprint: {brief_fingerprint(text)}\n"
+                      f"  record the verdict with:  critic.py record --unit "
+                      f"{sdlc_md.norm_id(args.unit)} --phase plan-review --kind test-plan "
+                      f"--verdict <APPROVE|REJECT> --brief {brief_fingerprint(text)}",
+                      file=sys.stderr)
                 return 0
             tier = args.tier or tier_for(args.root, args.unit)
             text = brief(args.root, args.unit, args.seat, tier)
@@ -3498,7 +3515,7 @@ def cmd_record(args: argparse.Namespace) -> int:
         # ordinary case, and silence would let an invented value pass unremarked. Per unit,
         # because `--unit` is repeatable and a batch can span several.
         if brief:
-            seats = _seats_whose_brief_matches(args.root, unit, brief)
+            seats = _seats_whose_brief_matches(args.root, unit, brief, args.phase)
             if seats is not None and not seats:
                 print(f"NOTE: {brief} matches no brief this repo can currently produce for "
                       f"{sdlc_md.norm_id(unit)}. Either the unit changed after the seat was "

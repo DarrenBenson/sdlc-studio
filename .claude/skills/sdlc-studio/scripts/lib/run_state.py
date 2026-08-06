@@ -158,7 +158,7 @@ class DisjointBatchError(RuntimeError):
     to be worked around."""
 
     def __init__(self, run_id, outcome, batch_size, close_attempts=None,
-                 repo_root: Path | str = "."):
+                 repo_root: Path | str = ".", detail: str | None = None):
         self.run_id = run_id
         self.outcome = outcome
         self.batch_size = batch_size
@@ -168,11 +168,15 @@ class DisjointBatchError(RuntimeError):
         self.outstanding = attempts[-1].get("outstanding") if attempts else None
         root = str(repo_root)
         lines = [
-            f"plan refused: run {run_id} is already open (outcome={outcome}, batch of "
-            f"{batch_size} unit(s)), and the batch just planned shares no unit with it. A "
+            # A more specific reason than "disjoint" when the caller has one - a frozen
+            # judged batch, say. The run id and both ways forward still print either way.
+            (f"plan refused: run {run_id} is already open (outcome={outcome}) and {detail}"
+             if detail else
+             f"plan refused: run {run_id} is already open (outcome={outcome}, batch of "
+             f"{batch_size} unit(s)), and the batch just planned shares no unit with it. A "
             f"project holds one run slot: a batch disjoint from the open run is NOT folded in, "
             f"because the run carries one Sprint Goal and one closing verdict and a fused run "
-            f"can be judged against neither.",
+            f"can be judged against neither."),
         ]
         if self.outstanding is not None:
             lines.append(
@@ -713,7 +717,24 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
                 len({sdlc_md.norm_id(b) for b in (state.get("batch") or [])}),
                 close_attempts=state.get("close_attempts"), repo_root=repo_root)
         if batch is not None:
-            state["batch"] = _union(state.get("batch"), batch)
+            merged = _union(state.get("batch"), batch)
+            # A JUDGED batch is FROZEN. The goal verdict was recorded against a specific set of
+            # units, so growing that set afterwards makes the verdict describe work it never
+            # saw - which is the harm BG0188 named, arriving by the overlapping door instead of
+            # the disjoint one. An identical re-plan is still a no-op and still allowed; only a
+            # batch that would CHANGE is refused. Found by an independent seat, which showed the
+            # earlier `_CLOSE_ARTEFACTS` membership had been masking this path rather than
+            # covering it: before, an overlapping re-plan minted a fresh run instead.
+            if state.get("sprint_goal_verdict") and merged != (state.get("batch") or []):
+                added = [b for b in merged if b not in (state.get("batch") or [])]
+                raise DisjointBatchError(
+                    state.get("run_id"), state.get("outcome"),
+                    len({sdlc_md.norm_id(b) for b in (state.get("batch") or [])}),
+                    close_attempts=state.get("close_attempts"), repo_root=repo_root,
+                    detail=(f"this run's Sprint Goal has already been JUDGED, so its batch is "
+                            f"frozen: adding {', '.join(added)} would make that verdict describe "
+                            f"work it never saw. Close the run, then plan these as their own."))
+            state["batch"] = merged
         if goal is not None:
             state["goal"] = goal
         if plan is not None:

@@ -2200,7 +2200,10 @@ def testplan_row_faults(mutant: str, then_clause: str, affects: list) -> list:
     if not any(v in lowered for v in _EDIT_VERBS):
         faults.append("carries no edit verb - name what is changed, not what stops working")
     ratio = _overlap_ratio(text, then_clause, affects)
-    if ratio > TESTPLAN_OVERLAP_CEILING:
+    # `>=`, not `>`: the ceiling is the first REFUSED value, so a mutant sitting exactly on it
+    # is a restatement. A seat showed 0.60 is reachable (5 substance tokens, 3 shared) and that
+    # `>` accepted it - an off-by-one on the one criterion whose whole point is the threshold.
+    if ratio >= TESTPLAN_OVERLAP_CEILING:
         faults.append(f"restates its own criterion - {ratio:.0%} of its substance is the `Then` "
                       f"clause, over the {TESTPLAN_OVERLAP_CEILING:.0%} ceiling")
     return faults
@@ -2254,14 +2257,6 @@ def testplan_unnameable(text: str) -> list:
     return out
 
 
-def unit_unnameable_rows(repo_root, unit: str) -> list:
-    """`testplan_unnameable` for a unit id, or [] when the unit or its plan is absent."""
-    found = sdlc_md.find_by_id(Path(repo_root), unit)
-    if not found:
-        return []
-    return testplan_unnameable(sdlc_md.read_text_safe(found[0]))
-
-
 def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
     """Derive `unit`'s test plan: one row per criterion, each naming the production change its
     test must fail on.
@@ -2305,6 +2300,21 @@ def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
     affects = [a.strip() for a in (sdlc_md.extract_field(text, "Affects") or "").split(",")
                if a.strip()]
     existing = _testplan_rows(text)
+    # A `## Test Plan` THIS PARSER CANNOT READ is never overwritten. `_testplan_rows` harvests
+    # `| ACn | mutant |` table rows only, so a plan authored as prose - which is how the first
+    # ones were written, US0629's own among them - yields no rows, and replacing the section
+    # would silently destroy an independently-reviewed artefact and report exit 0. A seat ran
+    # this against US0629's own file and watched 178 lines become 79. Refuse instead: naming the
+    # mutant is the judgement, and judgement the tool cannot parse is still judgement.
+    if _TESTPLAN_HEADING in text and not existing:
+        body = re.search(r"^## Test Plan\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+        if body and len(_reason_substance(body.group(1))) > 40:
+            return {"ok": False, "path": str(path), "rows": 0, "criteria": declared,
+                    "errors": [f"{unit} already has a `## Test Plan` this command cannot read - "
+                               f"it carries no `| ACn | mutant |` rows, so deriving would replace "
+                               f"an authored plan with placeholders. Convert it to the table "
+                               f"shape by hand, or delete the section deliberately if it is "
+                               f"stale. A plan the tool cannot parse is still a plan."]}
     lines = text.splitlines()
     bounds = [b.heading_line for b in blocks] + [len(lines)]
     faults, rows = [], []

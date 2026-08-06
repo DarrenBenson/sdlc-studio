@@ -5,7 +5,7 @@
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py,.claude/skills/sdlc-studio/scripts/tests/test_retro.py
 > **Epic:** EP0207
 > **Depends on:** US0631
 > **Points:** 3

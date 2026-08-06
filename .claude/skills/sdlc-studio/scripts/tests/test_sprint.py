@@ -779,8 +779,14 @@ class SlotGateLaneTests(unittest.TestCase):
                              "a refused plan left a sprint-plan.json behind it")
 
     def test_an_overlapping_replan_still_reaches_exit_zero_through_the_verb(self) -> None:
-        """The lane's positive control. Mutant: refuse any open run through the verb - this
-        reddens, and without it the refusal above is satisfied by a plan that never works.
+        """The lane's positive control, on an UNJUDGED run.
+
+        Mutant: refuse any open run through the verb - this reddens, and without it the refusal
+        above is satisfied by a plan that never works.
+
+        The goal verdict is deliberately NOT recorded here. A judged batch is frozen (BG0527
+        AC4, restated at review), so re-planning one that GROWS is refused - which is a separate
+        criterion with its own test, and folding the two together would leave neither pinned.
         """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -795,8 +801,6 @@ class SlotGateLaneTests(unittest.TestCase):
             self.assertEqual(rc, 0, err)
             opened = json.loads(
                 (root / "sdlc-studio" / ".local" / "run-state.json").read_text())["run_id"]
-            _load().run_state.update(str(root),
-                                     sprint_goal_verdict={"verdict": "achieved"})
 
             rc, _, err = self._plan(root, both, write=True)
             self.assertEqual(rc, 0, err)

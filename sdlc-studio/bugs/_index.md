@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 28 |
+| Open | 29 |
 | In Progress | 0 |
 | Fixed | 417 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **532** |
+| **Total** | **533** |
 
 ## All Bugs
 
@@ -72,6 +72,7 @@
 | [BG0530](BG0530-verify-ac-reports-a-unit-whose-criteria-it.md) | verify_ac reports a unit whose criteria it could not parse as a clean pass: ac=0 pass=0 fail=0, exit 0 - and every bug delivered in the last two sprints is in that state | Open | High | 2026-08-06 | 2026-08-06 |
 | [BG0531](BG0531-a-hand-applied-mutant-is-registered-with-no.md) | a hand-applied mutant is registered with no assertion that its anchor was unique, so a mutation run can report a false SURVIVED for a function it never edited | Open | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0532](BG0532-alias-map-decodes-every-artefact-in-the-project.md) | alias_map decodes every artefact in the project with a bare read_text, so one unreadable file takes down any command that resolves an id | Open | Medium | 2026-08-06 | 2026-08-06 |
+| [BG0533](BG0533-the-mutation-engine-enumerates-a-mutant-at-one.md) | the mutation engine enumerates a mutant at one line and applies it at another, because only the enumerator excludes multiline-string spans when counting occurrences | Open | High | 2026-08-06 | 2026-08-06 |
 
 ## Archived Releases
 

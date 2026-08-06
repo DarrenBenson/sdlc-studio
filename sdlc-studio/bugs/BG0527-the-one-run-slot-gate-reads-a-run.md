@@ -67,7 +67,14 @@ Drop `sprint_goal_verdict` from `_CLOSE_ARTEFACTS` and let the close's own artef
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SlotGateLaneTests::test_the_slot_gate_refuses_through_plan_write_and_writes_nothing
 - **Verified:** yes (2026-08-06)
 
-### AC4: an overlapping re-plan is still accepted, through the verb
+### AC4: an overlapping re-plan is accepted while the run is UNJUDGED, and refused once it is not
+
+> **RESTATED at review.** The delivered version said an overlapping re-plan is always accepted.
+> An independent seat showed what that costs: removing `sprint_goal_verdict` from
+> `_CLOSE_ARTEFACTS` shut the disjoint door and opened the overlapping one, so a re-plan sharing
+> a unit ACCUMULATED onto the batch the goal verdict had already judged - BG0188's own harm
+> arriving by the other door, and previously masked because that path minted a fresh run. A
+> judged batch is now frozen; an identical re-plan is still a no-op.
 
 - **Given** the same run and a worklist naming one of its own units
 - **When** the same command runs

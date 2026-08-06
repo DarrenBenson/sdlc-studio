@@ -240,6 +240,36 @@ class TestPlanGateTests(unittest.TestCase):
             self.assertTrue(any("Test Plan" in u for u in unmet),
                             f"the demand is not stated before the work: {unmet}")
 
+    def test_an_unreadable_ledger_refuses_rather_than_passes(self) -> None:
+        """`return None` is PASS, so swallowing every exception made the one condition under
+        which the gate was least able to judge the one under which it approved everything. A seat
+        chmod-ed the verdict ledger and watched a refusal become exit 0 with nothing on either
+        stream. Two sibling gates in this same file already fail loud; this one was written past
+        both.
+
+        Mutant: swallow and return None - an unreadable bar reads as a passed one.
+        """
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, plan=True)
+            led = root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md"
+            led.parent.mkdir(parents=True, exist_ok=True)
+            led.write_text("# Plan review verdicts\n\n| Unit | Verdict |\n| --- | --- |\n",
+                           encoding="utf-8")
+            os.chmod(led, 0o000)
+            try:
+                if os.access(led, os.R_OK):      # running as root - the probe cannot be made
+                    self.skipTest("cannot make a file unreadable in this environment")
+                code, text = self._start(root)
+            finally:
+                # Restored HERE, not via addCleanup: the temp directory is gone by then, so the
+                # cleanup would raise FileNotFoundError and mask the result it is protecting.
+                os.chmod(led, 0o644)
+            self.assertNotEqual(code, 0, "an unreadable ledger was treated as a passed gate")
+            self.assertIn("could not be established", text)
+            self.assertIn("not a passed one", text)
+
     def test_a_unit_before_the_cutoff_is_not_held(self) -> None:
         """A gate that refuses every unit in an existing backlog is one that gets switched off
         wholesale rather than satisfied.

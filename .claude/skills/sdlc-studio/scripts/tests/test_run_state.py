@@ -683,16 +683,40 @@ class SlotReleaseTests(unittest.TestCase):
                                 "the finished run is archived, never silently discarded")
 
     def test_an_overlapping_replan_is_still_accepted(self) -> None:
-        """Re-planning the open run against its own batch is the documented path and must not be
-        caught by the repair. Mutant: refuse on any open run regardless of overlap - re-planning
-        an in-flight run becomes impossible and the fix trades one stranding for another.
+        """Re-planning an open, UNJUDGED run against an overlapping batch is the documented path
+        and must not be caught by the repair.
+
+        Mutant: refuse on any open run regardless of overlap - re-planning an in-flight run
+        becomes impossible and the fix trades one stranding for another.
         """
-        opened = self._judged_not_closed()
+        opened = run_state.open_run(self.root, batch=["US0001", "US0002"], goal="done")
         self.assertIsNone(run_state.disjoint_refusal(self.root, ["US0001", "US0500"]),
                           "a batch sharing a unit with the open run is a re-plan, not a rival")
         same = run_state.open_run(self.root, batch=["US0001", "US0500"], goal="done")
         self.assertEqual(same["run_id"], opened["run_id"],
                          "an overlapping re-plan stays on the same run")
+        self.assertIn("US0500", same["batch"])
+
+    def test_a_judged_batch_is_frozen_even_to_an_overlapping_replan(self) -> None:
+        """Found by an independent seat, and it is the half the first fix missed. Removing
+        `sprint_goal_verdict` from `_CLOSE_ARTEFACTS` closed the DISJOINT door and opened the
+        OVERLAPPING one: a re-plan sharing a unit accumulated onto the batch the goal verdict had
+        already judged, so the verdict came to describe work it never saw - BG0188's own harm,
+        arriving by the other door. Before the fix that path minted a fresh run instead.
+
+        Mutant: drop the frozen-batch guard - the judged batch grows silently. An IDENTICAL
+        re-plan must still be a no-op, or the guard blocks the ordinary idempotent case.
+        """
+        opened = self._judged_not_closed()
+        same = run_state.open_run(self.root, batch=["US0001", "US0002"], goal="done")
+        self.assertEqual(same["run_id"], opened["run_id"],
+                         "an identical re-plan of a judged run is a no-op and must be allowed")
+        with self.assertRaises(run_state.DisjointBatchError) as caught:
+            run_state.open_run(self.root, batch=["US0001", "US0009"], goal="done")
+        self.assertIn("JUDGED", str(caught.exception))
+        after = run_state.read(self.root)
+        self.assertEqual(after["batch"], ["US0001", "US0002"],
+                         "the judged batch grew, so its verdict now describes unjudged work")
 
     def test_the_close_artefacts_are_all_written_by_the_close(self) -> None:
         """The rule behind the list, asserted rather than left to the comment. Every member must
@@ -702,10 +726,24 @@ class SlotReleaseTests(unittest.TestCase):
         `token_forecast`, `appetite` - and this reddens naming it. That is the check the original
         list lacked, so nothing objected when a pre-close field was put in it.
         """
-        written_before_the_close = {"sprint_goal_verdict", "goal_content_review", "appetite",
-                                    "token_forecast", "close_attempts", "review_rounds",
-                                    "base_ref", "batch", "sprint_goal", "signoff_panel"}
-        offenders = sorted(set(run_state._CLOSE_ARTEFACTS) & written_before_the_close)
+        # DERIVED, not enumerated. The first version listed ten field names, and an independent
+        # seat showed the criterion's own stated mutant was false for any name the list forgot -
+        # `started_at` is written at plan time and slipped straight through. That is the
+        # enumeration-exempts-what-it-forgot shape this very criterion exists to prevent,
+        # one level up, in the test written to prevent it.
+        #
+        # So the set is OBSERVED: open a run, do everything a run does before its close, and
+        # whatever keys carry a value by then are written before the close by definition.
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        obs = str(Path(tmp.name))
+        (Path(obs) / "sdlc-studio" / ".local").mkdir(parents=True)
+        run_state.open_run(obs, batch=["US0001"], goal="done")
+        run_state.update(obs, sprint_goal_verdict={"verdict": "achieved"},
+                         close_attempts=[{"at": "2026-08-06T00:00:00Z", "outstanding": 1}])
+        pre_close = {k for k, v in run_state.read(obs).items() if v not in (None, [], {}, "")}
+        self.assertIn("started_at", pre_close, "the observation captured nothing")
+        offenders = sorted(set(run_state._CLOSE_ARTEFACTS) & pre_close)
         self.assertEqual(offenders, [],
                          f"{offenders} are written before the close, so treating them as proof "
                          f"of one releases the run slot while the close is still owed")

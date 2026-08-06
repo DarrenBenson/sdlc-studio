@@ -3745,6 +3745,61 @@ class TestPlanDeriveTests(unittest.TestCase):
                            verify_ac._overlap_ratio(refuse, self.THEN, []),
                            "the path is not being excluded, so a restatement is diluted by it")
 
+    def test_an_unparseable_plan_is_never_overwritten(self) -> None:
+        """A seat ran the shipped verb against US0629's OWN artefact and watched 178 lines
+        become 79: a prose plan yields no table rows, so `existing` is empty and the section is
+        replaced with placeholders at exit 0. An independently-reviewed artefact destroyed by the
+        command that exists to protect it.
+
+        Mutant: replace a section that parsed to no rows - this reddens, and the file it would
+        have destroyed is asserted byte-identical.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            f = self._unit(root, "## Acceptance Criteria\n\n### AC1: one\n\n- **Then** a\n\n"
+                                 "## Test Plan\n\n> Authored by hand before any code.\n\n"
+                                 "AC1 is falsified by deleting the guard in verify_ac.py, and "
+                                 "the assertion that catches it is the count equality.\n")
+            before = f.read_bytes()
+            res = self._derive(root)
+            self.assertFalse(res["ok"], "an unreadable plan was overwritten")
+            self.assertIn("cannot read", " ".join(res["errors"]))
+            self.assertEqual(f.read_bytes(), before, "the authored plan was destroyed")
+
+    def test_the_ceiling_is_the_first_refused_value(self) -> None:
+        """A mutant sitting EXACTLY on the ceiling is a restatement. `>` accepted it, and a seat
+        showed 0.60 is reachable - an off-by-one on the one criterion whose whole point is that
+        the threshold is the thing under test.
+
+        Mutant: `>=` back to `>` - the exact-ceiling case flips to accepted and this reddens.
+        """
+        then = "alpha bravo charlie"
+        mutant = "in verify_ac.py, delete alpha bravo charlie delta"
+        affects = ["scripts/verify_ac.py"]
+        self.assertAlmostEqual(
+            verify_ac._overlap_ratio(mutant, then, affects), 0.60, places=2,
+            msg="the fixture no longer sits on the ceiling, so it pins nothing")
+        self.assertTrue(verify_ac.testplan_row_faults(mutant, then, affects),
+                        "a mutant exactly on the ceiling was accepted")
+
+    def test_a_criterion_with_no_then_bullet_still_measures_its_overlap(self) -> None:
+        """The fallback branch, which nothing covered. Reachable on every unit authored to the
+        house bug template - which is most bugs, per BG0530 - and the test-plan gate applies to
+        every type.
+
+        Mutant: return "" from the fallback - overlap measures 0% for those units and the
+        restatement limb accepts everything they write.
+        """
+        body = "- it refuses the row and names the criterion"
+        lines = ["### AC1: it refuses", "", body]
+        self.assertIn("refuses", verify_ac._then_clause(lines, 0, len(lines)),
+                      "a criterion with no **Then** bullet contributes no text at all")
+        faults = verify_ac.testplan_row_faults(
+            "in verify_ac.py, make it so it refuses the row and names the criterion",
+            verify_ac._then_clause(lines, 0, len(lines)), ["scripts/verify_ac.py"])
+        self.assertTrue(any("restates" in f for f in faults),
+                        "a restatement of a Then-less criterion was accepted")
+
     def test_a_refused_row_names_its_criterion_through_the_shipped_verb(self) -> None:
         """The LANE half: the refusal must reach an operator through `verify_ac.py testplan
         derive`, not only through the predicate. Mutant: return the faults and exit 0."""

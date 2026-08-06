@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import re
 import json
 import sys
 import tempfile
@@ -192,6 +193,63 @@ class PlanReviewBriefTests(unittest.TestCase):
             self.assertIn("brief provenance", err.getvalue())
             self.assertFalse(mod.verdicts_path(root, "plan-review").exists(),
                              "the refused verdict was written anyway")
+
+    def test_the_plan_brief_prints_a_fingerprint_that_records(self) -> None:
+        """THE LOOP, end to end through the shipped verbs. The plan path returned before the
+        fingerprint block, so `record --phase plan-review` demanded a fingerprint the command
+        had never printed - verbatim the scar AGENTS.md cites, appearing in the phase added to
+        prevent it. Both seats found it independently.
+
+        Mutants: return before printing the fingerprint (the CLI prints none and recording is
+        impossible); or match the fingerprint against a DELIVERY brief (an honest plan verdict
+        is flagged as unrecognised while a delivery fingerprint is accepted as provenance for a
+        plan review - the mechanism certifies the wrong artefact).
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["brief", "--unit", "US0001", "--seat", "qa",
+                               "--phase", "plan-review", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            m = re.search(r"brief fingerprint: ([0-9a-f]+)", err.getvalue())
+            self.assertIsNotNone(m, "the plan-review brief printed no fingerprint")
+            fp = m.group(1)
+            self.assertIn("--phase plan-review", err.getvalue(),
+                          "the record command it prints omits the phase")
+
+            out2, err2 = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out2), contextlib.redirect_stderr(err2):
+                rc = mod.main(["record", "--unit", "US0001", "--phase", "plan-review",
+                               "--kind", "test-plan", "--verdict", "APPROVE",
+                               "--reviewer", "qa", "--author", "dev", "--brief", fp,
+                               "--root", str(root)])
+            self.assertEqual(rc, 0, err2.getvalue())
+            self.assertNotIn("matches no brief", err2.getvalue(),
+                             "the tool's own fingerprint was reported as unrecognised, so every "
+                             "honest plan verdict carries a fabricated one's suspicion marker")
+
+    def test_a_delivery_fingerprint_is_not_provenance_for_a_plan_review(self) -> None:
+        """The other half, and the more dangerous one: the matcher asked for a DELIVERY brief
+        whatever phase was being recorded, so a delivery fingerprint was accepted as provenance
+        for a plan review while the correct one was not.
+
+        Mutant: drop the phase from `_seats_whose_brief_matches` - the two swap places.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root)
+            plan_fp = mod.brief_fingerprint(mod.brief(root, "US0001", "qa",
+                                                      phase="plan-review"))
+            deliv_fp = mod.brief_fingerprint(mod.brief(root, "US0001", "qa", tier="full"))
+            self.assertNotEqual(plan_fp, deliv_fp)
+            self.assertEqual(
+                mod._seats_whose_brief_matches(root, "US0001", plan_fp, "plan-review"), ["qa"],
+                "the plan brief's own fingerprint is not recognised on its own phase")
+            self.assertEqual(
+                mod._seats_whose_brief_matches(root, "US0001", deliv_fp, "plan-review"), [],
+                "a delivery fingerprint was accepted as provenance for a plan review")
 
     def test_the_plan_brief_refuses_a_tier(self) -> None:
         """`record_verdict` refuses a tier on this phase, so a brief that accepted one would
