@@ -954,6 +954,16 @@ def render_ratchet(report: dict) -> str:
         lines.append(f"warning-ratchet: {len(report['new'])} instance(s) the baseline does not "
                      f"record - the tolerated set may only shrink:")
         lines += [f"    {i} {r} {tgt}" for i, r, tgt in report["new"]]
+    elif report["stale"]:
+        # NOT `clean`. Nothing is new, which is why this does not hold the gate - a repaired
+        # instance is good news and refusing the commit that repaired it would teach an author
+        # to stop repairing. But a baseline recording what the tree no longer carries is not a
+        # clean one, and saying `clean` here contradicted the very next line this function
+        # prints. BG0524: the defect was the WORD, not the exit code.
+        lines.append(f"warning-ratchet: NO NEW instance(s), and the baseline is STALE - "
+                     f"{report['live']} recorded, {len(report['stale'])} of them repaired and "
+                     f"removable. Not `clean` while the baseline records what the tree no "
+                     f"longer carries.")
     else:
         lines.append(f"warning-ratchet: clean. {report['live']} recorded instance(s), none new.")
     if report["stale"]:

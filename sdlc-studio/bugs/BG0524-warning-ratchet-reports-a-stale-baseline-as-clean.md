@@ -50,7 +50,7 @@ Decide which criterion is right and make the other follow. The AC2 behaviour is 
 - **Then** it exits non-zero and names the state, rather than printing `clean` and exiting 0
 - **Mutant:** restore `ok = not new`, so a stale baseline leaves the verdict untouched. A seat showed the not-baselined and corrupt states ALREADY exit non-zero, so a mutant worded around them is survived - only this edit reddens this criterion
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RatchetStatesTests::test_a_stale_baseline_is_not_clean
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC2: the four untrustworthy states are DISTINCT and each non-zero
 
@@ -59,7 +59,7 @@ Decide which criterion is right and make the other follow. The AC2 behaviour is 
 - **Then** each exits non-zero with its own message, because they have different fixes and one message for four sends the reader to the wrong one
 - **Mutant:** collapse them to one message - the assertion that they are distinct is what makes the docstring's claim true rather than decorative
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RatchetStatesTests::test_each_untrustworthy_state_is_distinct
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC3: the positive control - a genuinely clean ratchet still exits 0
 
@@ -68,7 +68,7 @@ Decide which criterion is right and make the other follow. The AC2 behaviour is 
 - **Then** it reports clean and exits 0, because this lane is in the per-commit `npm run lint` chain and a guard that refuses everything gets switched off within a day
 - **Mutant:** exit non-zero unconditionally - AC1 and AC2 pass while every commit is blocked. The control must include the FRESH workspace (not-baselined with zero live instances), which is where AC1's edit bites and which every consuming project hits on its first commit of the per-commit lint chain
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RatchetStatesTests::test_a_clean_ratchet_still_passes
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ## Impact
 

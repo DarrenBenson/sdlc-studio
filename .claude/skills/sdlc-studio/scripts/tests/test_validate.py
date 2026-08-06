@@ -2861,5 +2861,66 @@ class WarningRatchetTests(unittest.TestCase):
 
 
 
+
+class RatchetStatesTests(unittest.TestCase):
+    """BG0524: a stale baseline printed `clean` and then contradicted itself on the next line.
+
+    The premise was corrected before any code. `validate.py` deliberately does NOT hold the gate
+    on stale - "a repaired instance is good news, and refusing the commit that repaired it would
+    teach an author to stop repairing" - and that reasoning is better than US0480 AC4's, which
+    lumped stale in with the untrustworthy states. The defect was the WORD, not the exit code.
+    """
+
+    def test_a_stale_baseline_is_not_clean(self) -> None:
+        """Mutant: restore the shared `clean` line for the no-new case - the render says `clean`
+        and the very next line it prints says two recorded instances no artefact still carries."""
+        v = validate
+        out = v.render_ratchet({"state": "ok", "live": 5, "new": [],
+                                "stale": [("US0001", "r", "t"), ("US0002", "r", "t")]})
+        first = out.splitlines()[0]
+        self.assertNotIn("clean.", first,
+                         "a baseline recording what the tree no longer carries reported clean")
+        self.assertIn("STALE", first)
+        self.assertIn("removable", out)
+
+    def test_each_untrustworthy_state_is_distinct(self) -> None:
+        """The four states have different fixes, so one message for four sends the reader to the
+        wrong one. Mutant: collapse them to a shared string - this reddens on the pairwise
+        comparison rather than on any single message."""
+        v = validate
+        # IDENTICAL payloads, so only the MESSAGE can differ. The first version varied `live`
+        # per fixture and the strings then differed on interpolated data rather than on message
+        # identity - a mutant making `corrupt` return the not-baselined text verbatim survived
+        # it. The test was discriminating by accident.
+        payload = {"live": 3, "new": [], "stale": [], "reasonless": [("US0001", "r", "t")],
+                   "error": "bad json"}
+        msgs = {
+            "not-baselined": validate.render_ratchet({**payload, "state": "not-baselined"}),
+            "corrupt": validate.render_ratchet({**payload, "state": "corrupt"}),
+            "reasonless": validate.render_ratchet({**payload, "state": "reasonless"}),
+            "stale": validate.render_ratchet({**payload, "state": "ok",
+                                              "stale": [("US0001", "r", "t")]}),
+        }
+        firsts = [m.splitlines()[0] for m in msgs.values()]
+        self.assertEqual(len(set(firsts)), 4,
+                         f"two states share a message, so they cannot be told apart: {firsts}")
+
+    def test_a_clean_ratchet_still_passes(self) -> None:
+        """THE POSITIVE CONTROL, and it covers the FRESH workspace too - not-baselined with zero
+        live instances, which every consuming project hits on its first commit of the per-commit
+        lint chain. A guard that refuses there is switched off within a day.
+
+        Mutant: report stale-style prose whenever anything is recorded - a genuinely clean
+        baseline stops reading clean and the lane becomes noise.
+        """
+        v = validate
+        out = v.render_ratchet({"state": "ok", "live": 5, "new": [], "stale": []})
+        self.assertIn("clean.", out.splitlines()[0])
+        # The FRESH workspace: no baseline and nothing live is `ok`, not a refusal. Every
+        # consuming project hits this on its first commit of the per-commit lint chain, and a
+        # guard that refuses there is switched off within a day.
+        self.assertIn("clean.", validate.render_ratchet(
+            {"state": "ok", "live": 0, "new": [], "stale": []}).splitlines()[0])
+
 if __name__ == "__main__":
     unittest.main()
