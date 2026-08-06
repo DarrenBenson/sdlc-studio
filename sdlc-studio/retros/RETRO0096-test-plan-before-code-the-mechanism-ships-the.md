@@ -53,6 +53,12 @@ ruling HOLDS the close, which is the point of being able to make one.
 
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
+| BG0529 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0509 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0528 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0529 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0530 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0531 | deferred | Claude Opus 5 (author) | 2026-08-06 |
 | BG0457 | deferred | Claude Opus 5 (author) | 2026-08-06 |
 | BG0463 | deferred | Claude Opus 5 (author) | 2026-08-06 |
 | BG0469 | deferred | Claude Opus 5 (author) | 2026-08-06 |
