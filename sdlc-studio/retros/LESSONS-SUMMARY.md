@@ -2,9 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
-- **L-0313: **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the...**
-- **L-0312: **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the...**
-- **L-0311: **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment...**
+- **L-0313: **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the**
+- **L-0312: **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the**
+- **L-0311: **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment**
 - **L-0310: **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the**
 - **L-0309: **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the**
 - **L-0308: **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment**
