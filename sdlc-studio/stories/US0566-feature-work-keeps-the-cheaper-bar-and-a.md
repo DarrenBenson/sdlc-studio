@@ -1,6 +1,6 @@
 # US0566: Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0501
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
