@@ -66,6 +66,14 @@ Call the shared resolver from `cmd_plan` and honour the mode there, which is wha
 
 An operator who sets `block` believes ungroomed `Affects` declarations are being refused at plan time. Nothing is. Worse, the one place the setting is honoured leaves the unit in the batch after saying it refused it, so the done-gate reads a unit the operator believes was rejected.
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in sprint.py, skip the shared affects resolver inside cmd_plan | `affects_check: block` REFUSES at plan time, and differs from `warn` |
+| AC2 | in sprint.py, reorder the affects check below the batch write | `batch add` refuses BEFORE it writes, not after |
+| AC3 | in sprint.py, gate that check on the text renderer so json skips it | `--format json` applies the same check as the text path |
+
 ## Revision History
 
 | Date | Author | Change |

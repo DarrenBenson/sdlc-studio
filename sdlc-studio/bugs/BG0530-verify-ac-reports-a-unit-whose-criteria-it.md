@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
 > **Evidence:** Found while delivering BG0527 on RUN-01KZBBZ0, 2026-08-06, at commit 367459cd, by running the tool on my own unit and getting ac=0 for criteria I had just written. Confirmed across BG0495, BG0510, BG0520 and BG0525 - every bug of the previous run, all Fixed, all panel-signed.
 > **Created:** 2026-08-06
 > **Created-by:** sdlc-studio file
@@ -83,6 +83,16 @@ The four bugs already Fixed should be re-verified once the parser sees them, not
 - **Mutant:** leave the walk story-only and silent - the release gate keeps reporting a verification pass over 55% of the delivery corpus it never looked at
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReleaseVerifyScopeTests::test_the_release_lane_states_its_scope
 - **Verified:** no
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in verify_ac.py, delete the non-zero exit taken on a zero criterion count | a unit whose criteria could not be PARSED is refused, not reported clean |
+| AC2 | in verify_ac.py, return one identical message for an absent section and an unreadable one | "no criteria at all" is distinguished from "criteria I could not read" |
+| AC3 | in file_finding.py, revert the writer to its prose-title, italic Verify form | the writer and the parser agree, pinned by the template itself |
+| AC4 | in tests/test_verify_ac.py, replace the corpus walk with a single hand-written fixture | the corpus effect is MEASURED, against a stated before figure |
+| AC5 | in gate.py, drop the scope statement the release verify lane prints | a bug's criteria can reach the release gate at all |
 
 ## Revision History
 

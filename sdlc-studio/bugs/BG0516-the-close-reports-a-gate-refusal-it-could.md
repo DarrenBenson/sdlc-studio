@@ -64,6 +64,14 @@ Make `close_blocker_split` recognise the `review-current` lane, and - more impor
 
 A gate that refuses without saying what refused you is worse than the flake it is reporting - it is the same shape as BG0513, one layer up. Here it also burns the loop guard: the close quarantines itself after four rounds that were never real attempts, and the run cannot be closed by the command built to close it.
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in sprint.py, remove review-current from the recognised lane set | a refusal the gate NAMED is attributed, not reported unattributable |
+| AC2 | in sprint.py, drop the gate's raw failing text from the unattributable message | an unattributable blocker QUOTES the gate rather than claiming nothing was found |
+| AC3 | in sprint.py, remove the attribution result from the retry decision | an attributable failure does not burn a review round |
+
 ## Revision History
 
 | Date | Author | Change |

@@ -61,6 +61,14 @@ Decide which criterion is right and make the other follow. The AC2 behaviour is 
 
 A criterion is marked Verified against behaviour the code does not have, and the module docstring states a rule the module does not follow - so the next reader trusts a four-state guarantee that is three.
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in validate.py, return 0 when the baseline could not be established | a stale baseline exits NON-ZERO and says which state it is in |
+| AC2 | in validate.py, collapse the four untrustworthy states into one shared message | the four untrustworthy states are DISTINCT and each non-zero |
+| AC3 | in validate.py, replace the clean-path return with a non-zero exit | the positive control - a genuinely clean ratchet still exits 0 |
+
 ## Revision History
 
 | Date | Author | Change |

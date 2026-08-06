@@ -66,6 +66,15 @@ Then assert the invariant rather than trusting the shared helper: after applying
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_an_ordinary_mutant_still_applies_and_kills
 - **Verified:** no
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in mutation.py, delete the check comparing the changed index against the recorded line | the line CHANGED is the line the mutation was enumerated at |
+| AC2 | in mutation.py, replace the refusal on a line disagreement with a printed warning | a disagreement ABORTS the run rather than recording a verdict |
+| AC3 | in mutation.py, revert the shared counting routine so each reader has its own loop again | one routine counts occurrences for both readers |
+| AC4 | in mutation.py, replace the index comparison with an unconditional refusal | the positive control - an ordinary mutant still applies and still kills |
+
 ## Revision History
 
 | Date | Author | Change |
