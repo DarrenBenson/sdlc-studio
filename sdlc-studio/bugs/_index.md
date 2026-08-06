@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-06
+**Last Updated:** 2026-08-07
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 29 |
+| Open | 25 |
 | In Progress | 0 |
-| Fixed | 418 |
+| Fixed | 423 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **534** |
+| **Total** | **535** |
 
 ## All Bugs
 
@@ -55,25 +55,26 @@
 | [BG0513](BG0513-run-suite-sh-all-is-intermittently-red-the.md) | run-suite.sh all is intermittently red: the tools suite takes 4.5x longer inside the full runner than alone, and one test fails when it does | Fixed | High | 2026-08-04 | 2026-08-04 |
 | [BG0514](BG0514-queue-show-is-blind-exactly-when-an-operator.md) | queue show is blind exactly when an operator uses it - it reuses the materialiser's open-run refusal | Fixed | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0515](BG0515-the-charter-queue-has-no-exit-nothing-sets.md) | the charter queue has no exit - nothing sets Spent, and next never opens a run | Fixed | Medium | 2026-08-04 | 2026-08-04 |
-| [BG0516](BG0516-the-close-reports-a-gate-refusal-it-could.md) | the close reports a gate refusal it could not attribute, where the gate named its failing lane plainly | Open | High | 2026-08-04 | 2026-08-04 |
+| [BG0516](BG0516-the-close-reports-a-gate-refusal-it-could.md) | the close reports a gate refusal it could not attribute, where the gate named its failing lane plainly | Fixed | High | 2026-08-04 | 2026-08-04 |
 | [BG0517](BG0517-the-close-loop-cap-stops-a-loop-that.md) | the close-loop cap stops a loop that has already converged - it counts attempts before it looks at the outstanding set | Fixed | High | 2026-08-04 | 2026-08-04 |
 | [BG0518](BG0518-close-owed-detect-prints-a-sprint-close-is.md) | close_owed detect prints "a sprint close is owed" on the run where it exits 0, so its headline contradicts its own verdict | Fixed | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0519](BG0519-the-tools-leg-s-remaining-slowdown-inside-the.md) | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed | Open | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0520](BG0520-the-triage-session-cap-is-a-lifetime-cap.md) | the triage session cap is a LIFETIME cap: the session key defaults to a constant, so the counter never resets and filing eventually refuses for good | Fixed | Medium | 2026-08-04 | 2026-08-04 |
-| [BG0521](BG0521-us0481-ships-a-config-key-that-does-nothing.md) | US0481 ships a config key that does nothing at plan time, and batch add writes the unit before it refuses it | Open | High | 2026-08-05 | 2026-08-05 |
+| [BG0521](BG0521-us0481-ships-a-config-key-that-does-nothing.md) | US0481 ships a config key that does nothing at plan time, and batch add writes the unit before it refuses it | Fixed | High | 2026-08-05 | 2026-08-05 |
 | [BG0522](BG0522-bg0515-s-fix-reproduces-bg0515-a-charter-with.md) | BG0515's fix reproduces BG0515: a charter with an unresolved Open Question leaves the run open and the charter Queued | Open | High | 2026-08-05 | 2026-08-05 |
 | [BG0523](BG0523-five-acceptance-criteria-are-pinned-by-verifiers-that.md) | Five acceptance criteria are pinned by verifiers that cannot fail on what they claim | Open | High | 2026-08-05 | 2026-08-05 |
-| [BG0524](BG0524-warning-ratchet-reports-a-stale-baseline-as-clean.md) | warning-ratchet reports a stale baseline as clean and exits 0, contradicting US0480 AC4 and its own docstring | Open | Medium | 2026-08-05 | 2026-08-05 |
+| [BG0524](BG0524-warning-ratchet-reports-a-stale-baseline-as-clean.md) | warning-ratchet reports a stale baseline as clean and exits 0, contradicting US0480 AC4 and its own docstring | Fixed | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0525](BG0525-us0629-ac2-asks-derive-to-detect-a-polarity.md) | US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written | Fixed | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0526](BG0526-loop-guard-budget-has-no-programmatic-caller-the.md) | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers | Open | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0527](BG0527-the-one-run-slot-gate-reads-a-run.md) | the one-run-slot gate reads a run as history the moment its goal verdict is recorded, so the next plan can open over a run whose close has 20 unmet prerequisites | Fixed | High | 2026-08-06 | 2026-08-06 |
 | [BG0528](BG0528-a-delivered-unit-left-at-ready-is-invisible.md) | a delivered unit left at Ready is invisible to every close gate: twenty blockers were reported and not one of them said the units had never been transitioned | Open | High | 2026-08-06 | 2026-08-06 |
 | [BG0529](BG0529-four-run-01kz9315-units-carry-no-verifier-that.md) | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing | Open | Medium | 2026-08-06 | 2026-08-06 |
-| [BG0530](BG0530-verify-ac-reports-a-unit-whose-criteria-it.md) | verify_ac reports a unit whose criteria it could not parse as a clean pass: ac=0 pass=0 fail=0, exit 0 - and every bug delivered in the last two sprints is in that state | Open | High | 2026-08-06 | 2026-08-06 |
+| [BG0530](BG0530-verify-ac-reports-a-unit-whose-criteria-it.md) | verify_ac reports a unit whose criteria it could not parse as a clean pass: ac=0 pass=0 fail=0, exit 0 - and every bug delivered in the last two sprints is in that state | Fixed | High | 2026-08-06 | 2026-08-06 |
 | [BG0531](BG0531-a-hand-applied-mutant-is-registered-with-no.md) | a hand-applied mutant is registered with no assertion that its anchor was unique, so a mutation run can report a false SURVIVED for a function it never edited | Open | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0532](BG0532-alias-map-decodes-every-artefact-in-the-project.md) | alias_map decodes every artefact in the project with a bare read_text, so one unreadable file takes down any command that resolves an id | Open | Medium | 2026-08-06 | 2026-08-06 |
-| [BG0533](BG0533-the-mutation-engine-enumerates-a-mutant-at-one.md) | the mutation engine enumerates a mutant at one line and applies it at another, because only the enumerator excludes multiline-string spans when counting occurrences | Open | High | 2026-08-06 | 2026-08-06 |
+| [BG0533](BG0533-the-mutation-engine-enumerates-a-mutant-at-one.md) | the mutation engine enumerates a mutant at one line and applies it at another, because only the enumerator excludes multiline-string spans when counting occurrences | Fixed | High | 2026-08-06 | 2026-08-06 |
 | [BG0534](BG0534-testplan-derive-s-edit-verb-check-is-an.md) | testplan derive's edit-verb check is an enumeration, so it refuses honest mutants written with a verb nobody listed | Open | Medium | 2026-08-06 | 2026-08-06 |
+| [BG0535](BG0535-106-of-1824-executable-acceptance-criteria-are-red.md) | 106 of 1824 executable acceptance criteria are RED across stories already marked Done, and the lane that would have said so has never run to completion | Open | High | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

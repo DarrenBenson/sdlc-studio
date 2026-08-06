@@ -1,7 +1,8 @@
 # BG0521: US0481 ships a config key that does nothing at plan time, and batch add writes the unit before it refuses it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/help/sprint.md
 > **Evidence:** Independently established by the QA and engineering review seats at the RUN-01KZ79C1 batch boundary, each by execution against isolated fixtures, and each reporting `affects_check_mode`'s single call site at sprint.py:7179 inside cmd_batch.

@@ -1,7 +1,8 @@
 # BG0533: the mutation engine enumerates a mutant at one line and applies it at another, because only the enumerator excludes multiline-string spans when counting occurrences
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
 > **Evidence:** Found by the engineering and QA seats at the RUN-01KZBBZ0 batch boundary. The desync is pre-existing: `git log -S` puts the divergence at c40e9c2c (CR0146), well before 367459cd. What was new was US0632's claim that the engine is AST-based, which is retracted on the artefact.

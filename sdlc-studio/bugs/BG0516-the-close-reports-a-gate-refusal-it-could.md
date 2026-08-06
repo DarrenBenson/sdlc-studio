@@ -1,7 +1,8 @@
 # BG0516: the close reports a gate refusal it could not attribute, where the gate named its failing lane plainly
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Observed on RUN-01KZ5YXM's close on 2026-08-04 across four consecutive attempts, each recorded in run-state `close_attempts` with `outstanding: 1, stages: [gate]`. The gate's own output at the same moment: `[FAIL] review-current [124.9s]: reviews/LATEST.md is stale - 15 artefact(s) changed since the last review (BG0513, BG0514, BG0515, CR0528, CR0529, CR0530, CR0531, SC0001, US0487, US0488 (+5 more))`.

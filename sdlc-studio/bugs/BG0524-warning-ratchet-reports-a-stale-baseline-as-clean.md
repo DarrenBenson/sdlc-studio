@@ -1,7 +1,8 @@
 # BG0524: warning-ratchet reports a stale baseline as clean and exits 0, contradicting US0480 AC4 and its own docstring
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
+> **Verification depth:** functional
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
 > **Evidence:** Engineering review seat, RUN-01KZ79C1 boundary, through the shipped CLI on an isolated fixture.

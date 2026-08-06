@@ -1,7 +1,8 @@
 # BG0530: verify_ac reports a unit whose criteria it could not parse as a clean pass: ac=0 pass=0 fail=0, exit 0 - and every bug delivered in the last two sprints is in that state
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
 > **Evidence:** Found while delivering BG0527 on RUN-01KZBBZ0, 2026-08-06, at commit 367459cd, by running the tool on my own unit and getting ac=0 for criteria I had just written. Confirmed across BG0495, BG0510, BG0520 and BG0525 - every bug of the previous run, all Fixed, all panel-signed.
