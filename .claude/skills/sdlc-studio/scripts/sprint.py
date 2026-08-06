@@ -2080,9 +2080,31 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             "derived-only": "Acceptance Criteria (every one tool-derived from the finding's own "
                             "prose - restates the summary, so nothing states what passing is)",
         }
+        # UNNAMEABLE MUTANTS (US0633). A criterion whose falsifying change nobody can name is a
+        # legitimate state, and it must cost something to enter or every awkward criterion will
+        # choose it. So a batch holding one is not plannable until somebody decides, and a bare
+        # `unnameable` with no reason is MALFORMED rather than a declared exemption. Read from
+        # `verify_ac`, where the plan lives - a second reader here would disagree with it.
+        unnameable = []
+        if _enforced("grooming.acs"):
+            import verify_ac as _va  # noqa: PLC0415 - deferred; one definition of the plan format
+            # Read from the path the census ALREADY resolved, with the crash-safe reader it
+            # already uses. Re-resolving the id through `find_by_id` pulled in `alias_map`,
+            # which decodes every artefact in the project with a bare `read_text` - so one
+            # unreadable sibling anywhere took down `file_finding`, which is not even asking
+            # about test plans. Caught by the full suite; the selected lanes never reach it.
+            for row in _va.testplan_unnameable(sdlc_md.read_text_safe(it["path"])):
+                unnameable.append(
+                    f"Test Plan ({row['ac']}: `unnameable` with no reason recorded - a state "
+                    f"that costs nothing to enter is the state every awkward criterion ends "
+                    f"up in; write `unnameable: <why nobody can name one>`)"
+                    if row["malformed"] else
+                    f"Test Plan ({row['ac']}: mutant declared `unnameable` - {row['reason']}. "
+                    f"Decide it before planning: name a mutant, or drop the criterion)")
         missing = (([] if declared or not _enforced("grooming.affects") else ["Affects"])
                    + ([] if sized or not _enforced("grooming.points") else [size_field])
-                   + ([_AC_MISS[ac_why]] if ungroomed_ac else []))
+                   + ([_AC_MISS[ac_why]] if ungroomed_ac else [])
+                   + unnameable)
         # All declared paths unresolvable = a fictional Affects. Named so the author can
         # fix the typo. Not applied when Affects is absent (that is the plainer "Affects" miss).
         if declared and len(unresolvable) == len(declared) and _enforced("grooming.affects"):

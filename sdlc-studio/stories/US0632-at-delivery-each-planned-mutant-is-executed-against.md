@@ -27,8 +27,8 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::FromPlanTests::test_an_unexecuted_planned_mutant_is_not_a_pass
 - **Caller:** `mutation.py run --from-plan`, reached by `transition.py set --status Done|Fixed` via US0564's gate
 - **Verification target:** functional
-- **Mutation-checked:** to be recorded at delivery - treating `not-run` as killed must turn this test red
-- **Verified:** no
+- **Mutation-checked:** yes (2026-08-06). Treating `not-run` as killed KILLED; letting a later kill cancel an earlier survivor KILLED. The criterion-guard mutant (join on unit alone) is EQUIVALENT, not uncovered: an unkeyed registration then keys on `None` and no lookup ever asks for `None`
+- **Verified:** yes (2026-08-06)
 
 ### AC2: a surviving planned mutant refuses the terminal transition, naming the mutant and its line
 
@@ -38,8 +38,8 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::FromPlanTests::test_a_survivor_refuses_the_transition_and_names_the_criterion
 - **Caller:** `transition.py set`
 - **Verification target:** functional
-- **Mutation-checked:** to be recorded at delivery - downgrading a survivor to a warning must turn this test red
-- **Verified:** no
+- **Mutation-checked:** yes (2026-08-06). Downgrading the gate's block to a warning KILLED; swallowing the gate's own errors KILLED; reporting `not-run` but not survivors KILLED; gating unconditionally (no `review.test_plan_after`) KILLED, which is the over-correction that would retro-refuse every existing backlog
+- **Verified:** yes (2026-08-06)
 
 ### AC3: execution is sound against the two ways a mutation run lies
 
@@ -49,8 +49,8 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::FromPlanTests::test_a_cached_module_and_an_ambiguous_anchor_are_both_refused
 - **Caller:** `mutation.py run --from-plan`
 - **Verification target:** functional
-- **Mutation-checked:** to be recorded at delivery - dropping either the cache purge or the uniqueness assertion must turn this test red
-- **Verified:** no
+- **Mutation-checked:** yes (2026-08-06). Dropping `PYTHONDONTWRITEBYTECODE` from the suite env KILLED; not purging the stale `.pyc` KILLED; a non-idempotent restore KILLED. NARROWED and stated: the anchor-uniqueness limb is not delivered. This engine selects mutants by AST node rather than by string anchor, so it has no anchor to assert unique - the hazard is real for hand-applied mutants (it bit twice this session) and belongs to the `register` path, filed rather than claimed here
+- **Verified:** yes (2026-08-06)
 
 ## Revision History
 

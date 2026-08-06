@@ -1661,7 +1661,8 @@ def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> 
 
 
 def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: str,
-                    reason: str | None = None, run: str | None = None) -> dict:
+                    reason: str | None = None, run: str | None = None,
+                    unit: str | None = None, criterion: str | None = None) -> dict:
     """Record a mutant that was ALREADY applied by hand, against the target's content NOW.
 
     The practice this exists for: a builder writes a test, applies a mutant to the code it
@@ -1731,6 +1732,12 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     entries = [e for e in state["entries"] if isinstance(e, dict)]
     record = {"mutant": mutant, "test": test or None, "verdict": verdict,
               "reason": reason or None, "run": run,
+              # THE JOIN KEY for `run --from-plan` (US0632). Recorded explicitly rather than
+              # matched out of the mutant's prose: a matching rule that is convenient is a gate
+              # that is optional, and a substring join would silently credit one criterion's
+              # execution to another's row.
+              "unit": sdlc_md.norm_id(unit) if unit else None,
+              "criterion": (criterion or "").strip().upper() or None,
               "at": sdlc_md.now_iso8601()}
     entry = next((e for e in entries if e.get("target") == rel
                   and entry_provenance(e) == PROVENANCE_REGISTERED
@@ -2069,6 +2076,11 @@ def _pct(part: int, whole: int) -> str:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    if getattr(args, "from_plan", False):
+        if not getattr(args, "story", None):
+            print("run --from-plan needs --story: the plan belongs to a unit", file=sys.stderr)
+            return 2
+        return cmd_from_plan(args)
     root = Path(args.root)
     try:
         files = select_files(root, files=args.files, since=args.since, story=args.story)
@@ -2206,11 +2218,101 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 1 if s["survived"] or s["errors"] else 0
 
 
+NOT_RUN = "not-run"
+
+
+def plan_execution(root: Path | str, unit: str) -> dict:
+    """Join a unit's test-plan rows to the mutation ledger: what was executed, and what was not.
+
+    A plan is paperwork until its rows are EXECUTED. The join is on an explicit `criterion` field
+    recorded at registration, never on the mutant's prose: a substring match would credit one
+    criterion's execution to another's row, and a matching rule that is convenient is a gate that
+    is optional.
+
+    A row with no execution is `not-run` - reported as its own state, never folded into "killed"
+    and never silently omitted. An unexecuted plan and a passed one must not read alike, because
+    the whole point of the plan is that somebody checks.
+    """
+    root = Path(root)
+    import verify_ac as _va  # noqa: PLC0415 - deferred; the module that owns the plan format
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        return {"ok": False, "unit": unit, "rows": [],
+                "errors": [f"{unit}: no artefact with that id"]}
+    text = sdlc_md.read_text_safe(found[0])
+    planned = _va._testplan_rows(text)
+    unnameable = {r["ac"] for r in _va.testplan_unnameable(text)}
+    uid = sdlc_md.norm_id(unit)
+
+    executed: dict = {}
+    state, _reset = _load_ledger(ledger_path(root))
+    for entry in state.get("entries", []):
+        if not isinstance(entry, dict):
+            continue
+        for m in entry.get("mutants", []) or []:
+            if not isinstance(m, dict) or m.get("unit") != uid or not m.get("criterion"):
+                continue
+            # The WORST verdict wins per criterion: a survivor is not cancelled by a later kill
+            # of some other mutant on the same row. Silence about a survivor is the failure this
+            # gate exists to catch.
+            prev = executed.get(m["criterion"])
+            if prev is None or prev["verdict"] != "survived":
+                executed[m["criterion"]] = {"verdict": m.get("verdict"),
+                                            "target": entry.get("target"),
+                                            "mutant": m.get("mutant"), "test": m.get("test")}
+    rows = []
+    for ac, mutant in sorted(planned.items()):
+        if ac in unnameable:
+            rows.append({"ac": ac, "verdict": "unnameable", "mutant": mutant})
+            continue
+        hit = executed.get(ac.upper())
+        rows.append({"ac": ac, "mutant": mutant,
+                     "verdict": (hit or {}).get("verdict") or NOT_RUN,
+                     "target": (hit or {}).get("target"),
+                     "test": (hit or {}).get("test")})
+    outstanding = [r for r in rows
+                   if r["verdict"] in (NOT_RUN, "survived")]
+    return {"ok": not outstanding and bool(rows), "unit": uid, "rows": rows,
+            "outstanding": outstanding, "planned": len(rows),
+            "errors": ([] if rows else
+                       [f"{uid}: no `## Test Plan` rows - derive one first: "
+                        f"`verify_ac.py testplan derive --unit {uid}`"])}
+
+
+def cmd_from_plan(args: argparse.Namespace) -> int:
+    """`mutation.py run --story <id> --from-plan` - was every planned mutant executed?"""
+    res = plan_execution(args.root, args.story)
+    for e in res.get("errors", []):
+        print(f"from-plan refused: {e}", file=sys.stderr)
+    if res.get("errors"):
+        return 2
+    for r in res["rows"]:
+        print(f"  {r['ac']}: {r['verdict']}"
+              + (f" [{r.get('target')}]" if r.get("target") else "")
+              + f" - {r['mutant'][:90]}")
+    if res["ok"]:
+        print(f"from-plan: {res['planned']} planned mutant(s), every one executed and killed")
+        return 0
+    for r in res["outstanding"]:
+        if r["verdict"] == NOT_RUN:
+            print(f"from-plan: {res['unit']} {r['ac']} was PLANNED and never executed - a plan "
+                  f"whose rows are optional measures nothing. Apply it, then record it with "
+                  f"`mutation.py register --unit {res['unit']} --criterion {r['ac']} ...`",
+                  file=sys.stderr)
+        else:
+            print(f"from-plan: {res['unit']} {r['ac']} mutant SURVIVED on {r.get('target')} - "
+                  f"the test named by that criterion did not notice `{r['mutant'][:80]}`. The "
+                  f"finding is about the TEST, not the mutant.", file=sys.stderr)
+    return 2
+
+
 def cmd_register(args: argparse.Namespace) -> int:
     try:
         res = register_mutant(args.root, args.target, args.mutant, args.test, args.verdict,
                               reason=getattr(args, "reason", None),
-                              run=getattr(args, "run", None))
+                              run=getattr(args, "run", None),
+                              unit=getattr(args, "unit", None),
+                              criterion=getattr(args, "criterion", None))
     except (ValueError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -2353,9 +2455,17 @@ def build_parser() -> argparse.ArgumentParser:
                    help="run the mutants and print the verdicts, but write no report, no "
                         "ledger entry and no series row - a rehearsal leaves no evidence")
     r.add_argument("--format", choices=("text", "json"), default="text")
+    r.add_argument("--from-plan", action="store_true", dest="from_plan",
+                   help="do not mutate: join --story's TEST PLAN rows to the ledger and report "
+                        "which planned mutants were executed. A row never applied is `not-run`, "
+                        "which is not a pass")
     r.set_defaults(func=cmd_run)
     g = sub.add_parser("register",
                        help="Record a mutant applied BY HAND - self-reported, never measured.")
+    g.add_argument("--unit", help="the unit whose test plan this mutant belongs to")
+    g.add_argument("--criterion", metavar="ACn",
+                   help="the criterion whose planned mutant this is - the JOIN KEY "
+                        "`run --from-plan` reads, recorded rather than matched out of prose")
     g.add_argument("--target", required=True, help="the file the mutant was applied to")
     g.add_argument("--mutant", required=True,
                    help="what was mutated, in words a reviewer can check against the diff")

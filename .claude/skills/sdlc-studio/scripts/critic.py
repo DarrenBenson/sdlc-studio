@@ -2648,7 +2648,61 @@ def tier_for(repo_root: Path | str, unit: str) -> str:
     return BAND_TIER.get(band or "", UNKNOWN_BAND_TIER)
 
 
-def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> str:
+def _plan_review_brief(root, card, seat, unit_id, title, path, text, acs) -> str:
+    """The PRE-CODE brief: the criteria as law and the test plan as the object of review.
+
+    It carries NO diff scope, and that absence is the point rather than an omission. There is no
+    diff yet - that is the whole premise of reviewing the plan first - and a brief that asks for
+    one teaches the reviewer to wait for code, which is the habit this gate exists to break. The
+    claim-inventory pass is likewise absent: it rules on prose in a diff, and there is none.
+    """
+    m = re.search(r"^## Test Plan\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+    plan = (m.group(1).strip() if m else
+            "(NO `## Test Plan` section - derive one first: "
+            "`verify_ac.py testplan derive --unit " + unit_id + "`)")
+    return f"""You are the {seat} review seat, reviewing a TEST PLAN before any code exists.
+Read and adopt the charter at
+{card} (the review render). You did NOT author this plan; your job is independent
+judgement of it against the criteria below - they are law, your stance never overrides them.
+
+Repo root: {root.resolve()}
+
+Unit under review: {unit_id} - {title}
+Artefact: {path}
+
+There is NO diff scope and no code to read. That is the premise: reviewing the test is
+cheaper than reviewing the code, and a plan judged against an implementation is judged
+against the thing it was supposed to constrain.
+
+Acceptance criteria (canonical - the plan is judged against THESE, not a paraphrase):
+{acs}
+
+The test plan under review - one row per criterion, each naming the production change
+that criterion's test must FAIL on:
+{plan}
+
+Ask of each row, in this order:
+
+1. **Is the mutant a change to production code?** "The feature does not work" is a
+   prediction about behaviour, not an edit anybody can make. Name the file and the edit.
+2. **Would the named test actually die on it?** A mutant nothing asserts against is a
+   plan that measures nothing. Say which assertion catches it.
+3. **Is it the mutant a careless implementer would produce**, or one written backwards
+   from an implementation that does not exist yet? The second is the failure mode here:
+   a mutant derived from the code is the mutant the test was built to catch.
+4. **What is MISSING?** A criterion whose row is present and weak is more dangerous than
+   one absent, because the absent one is visible. Name the case no row covers.
+5. **Is a positive control named** beside each refusal? A guard tested only by what it
+   refuses passes for the wrong reason when it refuses everything.
+
+Return EXACTLY:
+VERDICT: APPROVE or REJECT
+ISSUES: <semicolon-separated, each naming the criterion it is about, or 'none'>
+BLOCKING: <the subset that must change before code is written, or 'none'>"""
+
+
+def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full",
+          phase: str = "delivery") -> str:
     """The seat-review prompt, assembled deterministically.
 
     The judgement stays with the seat; this is only the scaffolding every review
@@ -2688,6 +2742,8 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
     inventory = f"{_CLAIM_INVENTORY_BLOCK}\n\n" if full_tier else ""
     unit_id = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
     title = sdlc_md.extract_h1_title(text) or unit_id
+    if phase == "plan-review":
+        return _plan_review_brief(root, card, seat, unit_id, title, path, text, acs)
     return f"""You are the {seat} review seat. Read and adopt the charter at
 {card} (the review render). You did NOT author this diff; your job is
 independent judgement of it against the ACs below - they are law, your stance never
@@ -3218,6 +3274,18 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # in the parser: a default there is indistinguishable from a choice, and the
             # record has to be able to tell them apart to judge whether the derivation works.
             explicit = args.tier is not None
+            phase = getattr(args, "phase", "delivery")
+            if phase == "plan-review":
+                # A plan review judges an artefact, not a diff, so it has no depth to derive
+                # and `record_verdict` refuses a tier on this phase. Naming one here would
+                # promise a depth the ledger cannot record.
+                if explicit:
+                    print("brief refused: --tier is the DELIVERY review's depth and has no "
+                          "meaning on a plan review, which judges an artefact rather than a "
+                          "diff.", file=sys.stderr)
+                    return 2
+                print(brief(args.root, args.unit, args.seat, phase=phase))
+                return 0
             tier = args.tier or tier_for(args.root, args.unit)
             text = brief(args.root, args.unit, args.seat, tier)
             print(text)
@@ -3802,6 +3870,11 @@ def build_parser() -> argparse.ArgumentParser:
                         "band decides: a low-band unit gets a bounded brief, a medium-or-worse "
                         "one gets the full adversarial pass. An explicit choice is recorded as "
                         "one, so the derivation can be judged against the reviews it produced")
+    b.add_argument("--phase", choices=PHASES, default="delivery",
+                   help="`plan-review` briefs the PRE-CODE pass: the criteria as law and the "
+                        "unit's test plan as the object of review, with NO diff scope, because "
+                        "there is no diff yet and a brief that asks for one teaches the reviewer "
+                        "to wait for code")
     b.add_argument("--rejoinder", metavar="FILE|-", default=None,
                    help="emit the RE-REVIEW brief from the prior verdict file (or stdin "
                         "with -): prior verdict quoted verbatim, re-execute-your-probes "

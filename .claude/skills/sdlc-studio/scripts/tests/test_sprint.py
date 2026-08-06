@@ -626,6 +626,103 @@ class AuthoringPlanTests(unittest.TestCase):
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
 
+class UnnameableMutantTests(unittest.TestCase):
+    """US0633: a criterion whose falsifying change nobody can name is refused at grooming.
+
+    It is a legitimate state - some criteria really are not mechanically falsifiable - but it
+    must COST something to enter. A state that costs nothing is the state every awkward criterion
+    ends up in, and the plan then measures nothing while looking complete.
+    """
+
+    def _bug(self, root: Path, num: int, mutant: str) -> None:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
+        (d / f"BG{num:04d}-x.md").write_text(
+            f"# BG{num:04d}: a bug\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Affects:** src/thing.py\n> **Points:** 3\n\n"
+            f"## Acceptance Criteria\n\n### AC1: it refuses\n\n"
+            f"- **Then** it refuses an empty batch\n- **Verify:** pytest x\n\n"
+            f"## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+            f"| AC1 | {mutant} | it refuses |\n", encoding="utf-8")
+
+    REASONED = ("unnameable: the criterion is about operator judgement and no code edit "
+                "can falsify it")
+    REAL = "in thing.py, delete the emptiness guard"
+
+    def _cli(self, argv):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(argv)
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_an_unnameable_mutant_refuses_the_plan(self) -> None:
+        """`breakdown` reports read-only; `plan --write` REFUSES, on the same terms it already
+        refuses a unit lacking Affects or Points.
+
+        Mutant: report it and plan anyway - the batch is built on a plan that measures nothing
+        for that criterion, and the fact is visible only to somebody who read the breakdown.
+        THE POSITIVE CONTROL sits in the same batch: a unit with a real mutant must still plan,
+        or a guard that refuses everything passes this test for the wrong reason.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, 1, self.REASONED)
+            self._bug(root, 3, self.REAL)
+
+            rc, text = self._cli(["breakdown", "--bugs", "Open", "--root", str(root)])
+            self.assertEqual(rc, 0, "breakdown must REPORT, never refuse")
+            self.assertIn("BG0001", text)
+            self.assertIn("unnameable", text)
+
+            rc, text = self._cli(["plan", "--bugs", "Open", "--write", "--no-fetch",
+                                  "--root", str(root)])
+            self.assertEqual(rc, 2, "a batch carrying an unnameable mutant was planned")
+            self.assertIn("BG0001", text)
+            self.assertIn("AC1", text, "the refusal does not name the criterion")
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists(),
+                             "a refused plan opened a run anyway")
+
+        # THE POSITIVE CONTROL, alone: the same command plans a unit whose mutant is real.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, 3, self.REAL)
+            rc, text = self._cli(["plan", "--bugs", "Open", "--write", "--no-fetch",
+                                  "--root", str(root)])
+            self.assertEqual(rc, 0, f"a nameable mutant was refused: {text}")
+
+    def test_unnameable_without_a_reason_is_malformed(self) -> None:
+        """A bare `unnameable` is MALFORMED, not a declared exemption, and the two refusals must
+        be distinguishable - they have different fixes.
+
+        Mutant: accept a bare `unnameable` as a declared exemption - the state becomes free, and
+        free is what every criterion with an awkward mutant will choose. A one-character reason
+        must not buy it either: substance is measured after filler comes off, following
+        `_reason_substance` and its scar.
+        """
+        cases = {"unnameable": True, "unnameable: -": True, "unnameable: n/a": True,
+                 self.REASONED: False}
+        for cell, malformed in cases.items():
+            with self.subTest(cell=cell):
+                _load()          # puts the scripts dir on sys.path
+                import verify_ac  # noqa: PLC0415 - the module that owns the plan format
+                rows = verify_ac.testplan_unnameable(
+                    "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                    f"| AC1 | {cell} | t |\n")
+                self.assertEqual(len(rows), 1, cell)
+                self.assertEqual(rows[0]["malformed"], malformed, f"{cell} -> {rows[0]}")
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, 1, "unnameable")
+            rc, text = self._cli(["plan", "--bugs", "Open", "--write", "--no-fetch",
+                                  "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("no reason recorded", text,
+                          "a bare `unnameable` was reported as a declared exemption")
+
+
 class SlotGateLaneTests(unittest.TestCase):
     """BG0527, the LANE half: the refusal must reach through the command an operator runs.
 

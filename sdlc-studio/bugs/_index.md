@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 26 |
+| Open | 28 |
 | In Progress | 0 |
 | Fixed | 417 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **530** |
+| **Total** | **532** |
 
 ## All Bugs
 
@@ -70,6 +70,8 @@
 | [BG0528](BG0528-a-delivered-unit-left-at-ready-is-invisible.md) | a delivered unit left at Ready is invisible to every close gate: twenty blockers were reported and not one of them said the units had never been transitioned | Open | High | 2026-08-06 | 2026-08-06 |
 | [BG0529](BG0529-four-run-01kz9315-units-carry-no-verifier-that.md) | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing | Open | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0530](BG0530-verify-ac-reports-a-unit-whose-criteria-it.md) | verify_ac reports a unit whose criteria it could not parse as a clean pass: ac=0 pass=0 fail=0, exit 0 - and every bug delivered in the last two sprints is in that state | Open | High | 2026-08-06 | 2026-08-06 |
+| [BG0531](BG0531-a-hand-applied-mutant-is-registered-with-no.md) | a hand-applied mutant is registered with no assertion that its anchor was unique, so a mutation run can report a false SURVIVED for a function it never edited | Open | Medium | 2026-08-06 | 2026-08-06 |
+| [BG0532](BG0532-alias-map-decodes-every-artefact-in-the-project.md) | alias_map decodes every artefact in the project with a bare read_text, so one unreadable file takes down any command that resolves an id | Open | Medium | 2026-08-06 | 2026-08-06 |
 
 ## Archived Releases
 

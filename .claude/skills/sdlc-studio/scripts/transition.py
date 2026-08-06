@@ -937,6 +937,15 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         block = _bug_depth_gate(text, target_canon)
         if block:
             blocks.append(f"{block}. Override with --force")
+    # US0632: a PLANNED mutant that was never executed, or that SURVIVED, refuses the terminal
+    # transition. Every type, not stories: a bug's test plan is a test plan. Opt-in behind a
+    # dated cutoff on the same terms as the two-role gate, so an existing backlog carrying no
+    # plans is not retro-refused - a gate that refuses everything is a gate that gets switched
+    # off wholesale.
+    if not force and target_canon in _TERMINAL_FOR_PLAN and _plan_gate_active(root, text):
+        block = _planned_mutant_gate(root, sdlc_md.norm_id(artifact_id))
+        if block:
+            blocks.append(f"{block}. Override with --force")
     if type_ == "story" and target_canon == "Done":
         parity = _story_target_parity(text)
         if parity:
@@ -1424,6 +1433,56 @@ def cmd_annotate(args: argparse.Namespace) -> int:
 #: machine saying so. Requiring both would refuse the ordinary judgement call a bug fix is.
 _TICKED_RE = re.compile(r"^\s*[-*]\s*\[[xX]\]", re.M)
 _VERIFY_RE = re.compile(r"^\s*[-*]\s*\*\*Verify:\*\*", re.M)
+
+
+#: Terminal statuses a test plan has to have been executed for.
+_TERMINAL_FOR_PLAN = ("Done", "Fixed")
+
+
+def _plan_gate_active(root, text: str) -> bool:
+    """Is the planned-mutant gate in force for this unit?
+
+    Dated cutoff, exactly like the two-role rule: `review.test_plan_after` names the creation
+    date on or after which units are held. Absent, the gate stands down entirely - an existing
+    backlog carrying no plans must not be retro-refused, because a gate that refuses every unit
+    in a backlog is one that gets switched off wholesale rather than satisfied.
+    """
+    after = sdlc_md.project_override(root, "review.test_plan_after", None)
+    if not after:
+        return False
+    created = (sdlc_md.extract_field(text, "Created") or "").strip()
+    return bool(created) and created >= str(after).strip()
+
+
+def _planned_mutant_gate(root, unit: str) -> str | None:
+    """Refuse a terminal transition while a planned mutant is unexecuted or alive.
+
+    The finding is about the TEST, so the message points at the criterion rather than at the
+    mutant: a survivor means the test that criterion names did not notice a change to the code
+    it claims to pin. `not-run` is refused on the same terms - a plan whose rows are optional
+    measures nothing, and an unexecuted plan must not read like a passed one.
+    """
+    try:
+        import mutation  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        res = mutation.plan_execution(root, unit)
+    except Exception as exc:  # noqa: BLE001 - a gate must not crash the verb it guards
+        sdlc_md.debug("transition._planned_mutant_gate", exc)
+        return None
+    if res.get("errors"):
+        return (f"{unit} has no `## Test Plan`, and `review.test_plan_after` puts it in scope - "
+                f"derive one with `verify_ac.py testplan derive --unit {unit}`")
+    outstanding = res.get("outstanding") or []
+    if not outstanding:
+        return None
+    parts = []
+    for r in outstanding:
+        if r["verdict"] == mutation.NOT_RUN:
+            parts.append(f"{r['ac']} was planned and never executed")
+        else:
+            parts.append(f"{r['ac']}'s mutant SURVIVED on {r.get('target')} - the test that "
+                         f"criterion names did not notice `{r['mutant'][:60]}`")
+    return (f"{unit}: {len(outstanding)} planned mutant(s) unaccounted for - " + "; ".join(parts)
+            + f". Check them with `mutation.py run --story {unit} --from-plan`")
 
 
 def requirements(root, artifact_id: str, target: str) -> list[str]:

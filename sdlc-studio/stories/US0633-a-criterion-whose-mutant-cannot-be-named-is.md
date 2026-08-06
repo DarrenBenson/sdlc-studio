@@ -28,7 +28,7 @@
 - **Caller:** `sprint.py plan --write` (the command that opens a run)
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - reducing the refusal to a warning must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC2: `unnameable` must carry its reason, so the state cannot be used as a silent exit
 
@@ -39,7 +39,7 @@
 - **Caller:** `sprint.py breakdown` and `sprint.py plan --write`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - accepting a reasonless `unnameable` must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ## Revision History
 

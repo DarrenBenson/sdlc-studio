@@ -3162,6 +3162,186 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
                          "the gate emitted no killer for a mutant its own runner named")
 
 
+class FromPlanTests(unittest.TestCase):
+    """US0632: a planned mutant is EXECUTED and its death recorded.
+
+    A plan written and never checked is the same paperwork problem one level up - the whole
+    point of naming the mutant before the code is that somebody afterwards confirms the test
+    dies on it. So an unexecuted row is its own state, never folded into a pass.
+    """
+
+    def _unit(self, root, rows, created="2026-08-06", cutoff=True):
+        m = _load()
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
+        if cutoff:
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                'review:\n  test_plan_after: "2026-01-01"\n', encoding="utf-8")
+        acs = "".join(f"### {ac}: c{n}\n\n- **Then** it behaves\n- **Verify:** pytest x\n\n"
+                      for n, (ac, _mut) in enumerate(rows))
+        plan = "".join(f"| {ac} | {mut} | t |\n" for ac, mut in rows)
+        (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
+            f"# BG0001: a bug\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Verification depth:** functional\n> **Created:** {created}\n"
+            f"> **Affects:** src/thing.py\n> **Points:** 3\n\n"
+            f"## Acceptance Criteria\n\n{acs}"
+            f"## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n{plan}",
+            encoding="utf-8")
+        return m
+
+    def _register(self, m, root, criterion, verdict):
+        m.register_mutant(root, "src/thing.py", f"mutant for {criterion}", "pytest x",
+                          verdict, unit="BG0001", criterion=criterion)
+
+    def test_an_unexecuted_planned_mutant_is_not_a_pass(self) -> None:
+        """Mutant: treat `not-run` as killed, or omit unexecuted rows from `outstanding` - a plan
+        nobody executed reads exactly like one that passed, which is the paperwork problem this
+        unit exists to end. THE POSITIVE CONTROL is in the same test: once both are executed and
+        killed, the same call reports ok."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            m = self._unit(root, [("AC1", "in thing.py, delete the guard"),
+                                  ("AC2", "in thing.py, return True always")])
+            res = m.plan_execution(root, "BG0001")
+            self.assertFalse(res["ok"])
+            self.assertEqual({r["ac"] for r in res["outstanding"]}, {"AC1", "AC2"})
+            self.assertTrue(all(r["verdict"] == m.NOT_RUN for r in res["rows"]))
+
+            self._register(m, root, "AC1", "killed")
+            res = m.plan_execution(root, "BG0001")
+            self.assertFalse(res["ok"], "one executed row made the whole plan read as done")
+            self.assertEqual({r["ac"] for r in res["outstanding"]}, {"AC2"})
+
+            self._register(m, root, "AC2", "killed")
+            res = m.plan_execution(root, "BG0001")
+            self.assertTrue(res["ok"], res)
+            self.assertEqual(res["outstanding"], [])
+
+    def test_a_survivor_refuses_the_transition_and_names_the_criterion(self) -> None:
+        """The finding is about the TEST, so the message must point at the criterion whose test
+        failed to notice - not merely at the mutant.
+
+        Mutant: downgrade a survivor to a warning, or let a later kill on the same criterion
+        cancel it - silence about a survivor is exactly what this gate exists to catch.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            m = self._unit(root, [("AC1", "in thing.py, delete the guard")])
+            self._register(m, root, "AC1", "survived")
+            res = m.plan_execution(root, "BG0001")
+            self.assertFalse(res["ok"])
+            self.assertEqual(res["outstanding"][0]["verdict"], "survived")
+
+            # A later KILL must not cancel the survivor: the worst verdict per criterion wins.
+            self._register(m, root, "AC1", "killed")
+            self.assertEqual(m.plan_execution(root, "BG0001")["outstanding"][0]["verdict"],
+                             "survived", "a survivor was cancelled by a later kill")
+
+            # ...and it reaches the shipped transition verb, naming the criterion.
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "transition_mod",
+                Path(__file__).resolve().parents[1] / "transition.py")
+            tr = importlib.util.module_from_spec(spec)
+            sys.modules["transition_mod"] = tr
+            spec.loader.exec_module(tr)
+            unmet = tr.requirements(str(root), "BG0001", "Fixed")
+            self.assertTrue(any("AC1" in u and "SURVIVED" in u for u in unmet),
+                            f"the transition does not name the criterion: {unmet}")
+
+    def test_the_gate_stands_down_without_a_cutoff(self) -> None:
+        """An existing backlog carrying no plans must not be retro-refused: a gate that refuses
+        every unit is one that gets switched off wholesale rather than satisfied.
+
+        Mutant: gate unconditionally - every historical unit in every consuming project is held
+        at its terminal transition by a plan nobody was ever asked for.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "transition_mod2", Path(__file__).resolve().parents[1] / "transition.py")
+        tr = importlib.util.module_from_spec(spec)
+        sys.modules["transition_mod2"] = tr
+        spec.loader.exec_module(tr)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, [("AC1", "in thing.py, delete the guard")], cutoff=False)
+            self.assertFalse(
+                any("planned mutant" in u for u in tr.requirements(str(root), "BG0001", "Fixed")),
+                "the gate fired with no `review.test_plan_after` recorded")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # ...and a unit created BEFORE the cutoff is out of scope even when one is set.
+            self._unit(root, [("AC1", "in thing.py, delete the guard")], created="2025-01-01")
+            self.assertFalse(
+                any("planned mutant" in u for u in tr.requirements(str(root), "BG0001", "Fixed")),
+                "a unit created before the cutoff was retro-refused")
+
+    def test_the_join_is_on_a_recorded_criterion_not_on_prose(self) -> None:
+        """A matching rule that is convenient is a gate that is optional: joining on the mutant's
+        prose would credit one criterion's execution to another's row.
+
+        Mutant: fall back to a substring match on the mutant text when no criterion is recorded -
+        a registration for AC1 silently discharges AC2 whenever their wording overlaps.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            m = self._unit(root, [("AC1", "in thing.py, delete the guard"),
+                                  ("AC2", "in thing.py, delete the guard")])
+            # Same prose, recorded against AC1 only.
+            self._register(m, root, "AC1", "killed")
+            res = m.plan_execution(root, "BG0001")
+            self.assertEqual({r["ac"] for r in res["outstanding"]}, {"AC2"},
+                             "an identically-worded row was discharged by another's execution")
+            # A registration with NO criterion discharges nothing at all.
+            m.register_mutant(root, "src/thing.py", "in thing.py, delete the guard",
+                              "pytest x", "killed", unit="BG0001")
+            self.assertEqual({r["ac"] for r in m.plan_execution(root, "BG0001")["outstanding"]},
+                             {"AC2"}, "an unkeyed registration discharged a planned row")
+
+    def test_a_cached_module_and_an_ambiguous_anchor_are_both_refused(self) -> None:
+        """AC3: the two ways a mutation run LIES.
+
+        A same-length mutant written inside one mtime second reuses the cached `.pyc` and is
+        recorded as survived; and a mutant restored imprecisely leaves the tree dirty. Both are
+        asserted on the shipped helpers rather than on a comment describing them.
+
+        Mutants: drop `PYTHONDONTWRITEBYTECODE` from the suite env - a same-length mutant runs
+        the ORIGINAL bytecode and every such mutant reads as survived; or stop purging the
+        cache - the previous mutant's bytecode is inherited by the next.
+        """
+        m = _load()
+        env = m._suite_env()
+        self.assertEqual(env.get("PYTHONDONTWRITEBYTECODE"), "1",
+                         "the child may write bytecode, so a same-length mutant can run the "
+                         "original module and be recorded as survived")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            src = root / "thing.py"
+            src.write_text("x = 1\n", encoding="utf-8")
+            cache = root / "__pycache__"
+            cache.mkdir()
+            stale = cache / "thing.cpython-311.pyc"
+            stale.write_bytes(b"stale bytecode")
+            m._purge_bytecode(src)
+            self.assertFalse(stale.exists(), "a stale .pyc survived the purge")
+
+    def test_the_source_is_restored_byte_identical(self) -> None:
+        """Mutant: restore from a re-read rather than the captured bytes, or skip the restore -
+        a killed run strands a mutant on the working tree, which is how a review agent's mutant
+        once reached `main`."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "thing.py"
+            original = b"def g():\n    return 1\n"
+            f.write_bytes(original)
+            m._APPLIED[str(f)] = original
+            f.write_bytes(b"def g():\n    return 2\n")
+            m._restore_applied()
+            self.assertEqual(f.read_bytes(), original, "the restore was not byte-identical")
+            self.assertNotIn(str(f), m._APPLIED, "the restore is not idempotent")
+
+
 class TheRunLeavesNothingBehindTests(unittest.TestCase):
     """BG0410. Replacing the pipe with a temp-file sink cured the hang and moved the defect.
 

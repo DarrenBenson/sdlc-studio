@@ -2221,6 +2221,47 @@ def _testplan_rows(text: str) -> dict:
     return rows
 
 
+#: A criterion whose falsifying change nobody can name. A legitimate state - some criteria really
+#: are not mechanically falsifiable - but it must COST something to enter, or it becomes the state
+#: every awkward criterion ends up in. So it carries its reason, and a batch holding one is not
+#: plannable until somebody decides.
+UNNAMEABLE = "unnameable"
+
+
+def testplan_unnameable(text: str) -> list:
+    """Rows marked `unnameable`, each with its reason and whether it is malformed.
+
+    A bare `unnameable` is MALFORMED rather than a declared exemption. The distinction is the
+    whole control: a state that costs nothing to enter is free, and free is what every criterion
+    with an awkward mutant will choose. Written as `unnameable: <why nobody can name one>`.
+    """
+    out, in_plan = [], False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_plan = line.strip() == _TESTPLAN_HEADING
+            continue
+        if not in_plan or not line.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 2 or not re.fullmatch(r"AC\d+", cells[0] or ""):
+            continue
+        cell = cells[1]
+        if not cell.lower().startswith(UNNAMEABLE):
+            continue
+        reason = cell[len(UNNAMEABLE):].lstrip(" :-").strip()
+        out.append({"ac": cells[0], "reason": reason,
+                    "malformed": len(_reason_substance(reason)) < 12})
+    return out
+
+
+def unit_unnameable_rows(repo_root, unit: str) -> list:
+    """`testplan_unnameable` for a unit id, or [] when the unit or its plan is absent."""
+    found = sdlc_md.find_by_id(Path(repo_root), unit)
+    if not found:
+        return []
+    return testplan_unnameable(sdlc_md.read_text_safe(found[0]))
+
+
 def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
     """Derive `unit`'s test plan: one row per criterion, each naming the production change its
     test must fail on.

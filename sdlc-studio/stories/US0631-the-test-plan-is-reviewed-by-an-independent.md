@@ -28,7 +28,7 @@
 - **Caller:** `critic.py brief --phase plan-review` (the CLI verb a review subagent is spawned with)
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - restoring the diff-scope block must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC2: the verdict records through the existing plan-review phase, and a self-review is refused
 
@@ -39,7 +39,7 @@
 - **Caller:** `critic.py record --phase plan-review`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - routing a plan-review row into the delivery log must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC3: a plan verdict carries brief provenance on the same terms as a delivery verdict
 
@@ -50,7 +50,7 @@
 - **Caller:** `critic.py record --phase plan-review`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - exempting the plan-review phase from the provenance demand must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ## Revision History
 

@@ -83,6 +83,131 @@ class RecordTests(unittest.TestCase):
             self.assertIn("US0003", units)
 
 
+class PlanReviewBriefTests(unittest.TestCase):
+    """US0631: the test plan is reviewed by an independent seat BEFORE the code.
+
+    The pass is the point: reviewing the test costs a fraction of reviewing the code, and this
+    repo has an accidental measurement of that (L-0301). What makes it a review rather than a
+    formality is that the brief is produced by the shipped tool, carries the criteria as law,
+    and carries NO diff scope - because there is no diff, and asking for one teaches the
+    reviewer to wait for code.
+    """
+
+    def _unit(self, root: Path, plan: bool = True) -> Path:
+        for sub in ("stories", "personas/seats", "reviews"):
+            (root / "sdlc-studio" / sub).mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "personas" / "seats" / "qa.md").write_text(
+            "# Sam - QA amigo\n\nthe charter text\n", encoding="utf-8")
+        body = ("# US0001: a unit\n\n> **Status:** Ready\n> **Points:** 3\n"
+                "> **Affects:** scripts/thing.py\n\n"
+                "## Acceptance Criteria\n\n### AC1: it refuses an empty batch\n\n"
+                "- **Then** it refuses\n")
+        if plan:
+            body += ("\n## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                     "| AC1 | in thing.py, delete the emptiness guard | it refuses |\n")
+        f = root / "sdlc-studio" / "stories" / "US0001-x.md"
+        f.write_text(body + "\n## Revision History\n", encoding="utf-8")
+        return f
+
+    def test_the_plan_brief_scopes_to_the_plan_not_a_diff(self) -> None:
+        """Mutant: fall through to the delivery brief - the reviewer is handed a diff scope and
+        a claim-inventory pass over code that does not exist, and is taught to wait for it."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root)
+            text = mod.brief(root, "US0001", "qa", phase="plan-review")
+            # The charter is REFERENCED by path, exactly as the delivery brief references it -
+            # asserted the same way here so the two cannot drift into different contracts.
+            self.assertIn("personas/seats/qa.md", text, "the seat charter is not pointed at")
+            self.assertIn("adopt the charter", text)
+            self.assertIn("AC1: it refuses an empty batch", text, "the criteria are missing")
+            self.assertIn("delete the emptiness guard", text, "the plan rows are missing")
+            self.assertNotIn("Diff scope", text, "a plan review was handed a diff scope")
+            self.assertNotIn("scripts/thing.py", text,
+                             "the unit's Affects reached a brief that has no diff to bound")
+            # ...and the DELIVERY brief for the same unit still carries both, or the assertions
+            # above pass for a brief that simply lost its scope.
+            delivery = mod.brief(root, "US0001", "qa", tier="full")
+            self.assertIn("Diff scope", delivery)
+            self.assertIn("scripts/thing.py", delivery)
+
+    def test_the_plan_brief_says_so_when_no_plan_exists(self) -> None:
+        """An absence is not an answer. Mutant: render an empty plan section - the reviewer
+        approves a plan that was never derived, and cannot tell that from an empty one."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root, plan=False)
+            text = mod.brief(root, "US0001", "qa", phase="plan-review")
+            self.assertIn("NO `## Test Plan`", text)
+            self.assertIn("testplan derive", text, "the brief does not say how to produce one")
+
+    def test_a_self_plan_review_is_refused_and_phases_stay_separate(self) -> None:
+        """The independence rule the delivery phase already enforces: a self-review is recorded
+        with a warning and NEVER clears the gate. Asserted at the gate rather than at the write,
+        because that is where the delivery phase enforces it and two phases with two different
+        rules is the drift this criterion exists to prevent.
+
+        Mutant: drop `is_independent` from the plan-review gate - a plan an author approved for
+        themselves clears it; or write the row into the delivery log - a plan review then
+        satisfies the conformance `critiqued` gate, which judges a diff nobody read.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            f = self._unit(root)
+            mod.record_verdict(root, "US0001", "approve", reviewer="dev", author="dev",
+                               phase="plan-review", kind="spec", brief="a" * 12)
+            self.assertFalse(mod.is_independent(
+                mod.verdict_for(root, "US0001", phase="plan-review", kind="spec")),
+                "a self plan-review read as independent")
+            # It lands in the PLAN ledger and nowhere near the delivery one.
+            self.assertTrue(mod.verdicts_path(root, "plan-review").exists())
+            self.assertFalse(mod.verdicts_path(root, "delivery").exists(),
+                             "a plan review wrote into the delivery log, where it would satisfy "
+                             "the conformance `critiqued` gate for a diff nobody read")
+            self.assertIsNone(mod.verdict_for(root, "US0001", phase="delivery"))
+            # THE POSITIVE CONTROL: an independent one does read as independent.
+            mod.record_verdict(root, "US0001", "approve", reviewer="qa", author="dev",
+                               phase="plan-review", kind="spec", brief="b" * 12)
+            self.assertTrue(mod.is_independent(
+                mod.verdict_for(root, "US0001", phase="plan-review", kind="spec")))
+            self.assertTrue(f.exists())
+
+    def test_a_plan_verdict_without_brief_provenance_is_refused(self) -> None:
+        """The same terms as a delivery verdict: a hand-written plan-review prompt substitutes an
+        unbounded surface exactly as a hand-written code-review prompt does.
+
+        Mutant: exempt the plan-review phase from the provenance gate - a plan verdict with no
+        evidence of the prompt that produced it is accepted, and the cheaper review becomes the
+        one with weaker provenance.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                rc = mod.main(["record", "--unit", "US0001", "--verdict", "APPROVE",
+                               "--phase", "plan-review", "--reviewer", "qa", "--author", "dev",
+                               "--root", str(root)])
+            self.assertEqual(rc, 2, "a plan verdict with no brief provenance was accepted")
+            self.assertIn("brief provenance", err.getvalue())
+            self.assertFalse(mod.verdicts_path(root, "plan-review").exists(),
+                             "the refused verdict was written anyway")
+
+    def test_the_plan_brief_refuses_a_tier(self) -> None:
+        """`record_verdict` refuses a tier on this phase, so a brief that accepted one would
+        promise a depth the ledger cannot record. Mutant: accept and ignore it - the two halves
+        disagree and the operator is told a light plan review happened."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                rc = mod.main(["brief", "--unit", "US0001", "--seat", "qa",
+                               "--phase", "plan-review", "--tier", "light", "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("no meaning on a plan review", err.getvalue())
+
+
 class PlanReviewKindTests(unittest.TestCase):
     """BG0510: a plan-review verdict was keyed by unit and phase only.
 
