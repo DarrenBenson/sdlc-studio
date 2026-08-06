@@ -3627,6 +3627,121 @@ class BaselineSchemaTests(unittest.TestCase):
                              "the stamp invented a reason no human wrote")
 
 
+class EmptyParseIsRefusedTests(unittest.TestCase):
+    """BG0530: `verify_ac run` reported a clean pass over criteria it never read.
+
+    311 of 534 bug files printed `ac=0 pass=0 fail=0`, exit 0 - a line byte-comparable to a
+    clean pass - and 74% of everything filed since BG0500. Nothing detected the drift between
+    the writer and the parser because the failure mode WAS exit 0.
+    """
+
+    def _unit(self, root: Path, body: str, name: str = "BG9001-x.md") -> Path:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / name
+        f.write_text(body, encoding="utf-8")
+        return f
+
+    HEAD = "# BG9001: a bug\n\n> **Status:** Open\n> **Severity:** Medium\n\n"
+
+    def _run(self, root: Path, unit: str = "BG9001"):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = verify_ac.main(["run", "--id", unit, "--root", str(root), "--dry-run"])
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_a_section_that_parses_to_nothing_is_refused_through_the_cli(self) -> None:
+        """Driven as a COMMAND, not a library call - the exit code is the whole finding.
+
+        Mutant: delete the non-zero exit on a zero criterion count, which is the state 75 bug
+        files are in today and which printed a line indistinguishable from a pass.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, self.HEAD + "## Acceptance Criteria\n\n"
+                             "- [ ] it behaves, written in a shape this parser cannot read\n")
+            rc, text = self._run(root)
+            self.assertNotEqual(rc, 0, "an unreadable criteria section reported a clean pass")
+            self.assertIn("REFUSED", text)
+            self.assertIn("executed nothing", text)
+
+    def test_absent_and_unparseable_are_different_events(self) -> None:
+        """They have different fixes, so one message for both sends the reader to the wrong one.
+        232 filed findings never claimed a verifier and nothing else in the tree refuses them.
+
+        Mutant: return one identical message for both - this reddens on the distinction.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, self.HEAD + "## Summary\n\nno criteria section at all\n")
+            rc_absent, absent = self._run(root)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, self.HEAD + "## Acceptance Criteria\n\n- [ ] unreadable shape\n")
+            rc_unread, unread = self._run(root)
+        self.assertNotEqual(rc_unread, 0, "an unreadable section was not refused")
+        self.assertEqual(rc_absent, 0,
+                         "a unit that never claimed a verifier was refused - 232 filed findings "
+                         "would start failing and the refusal becomes noise")
+        self.assertIn("REFUSED", unread)
+        self.assertNotIn("REFUSED", absent)
+
+    def test_criteria_with_no_verifiers_are_not_a_pass(self) -> None:
+        """THE CASE THAT WOULD SURVIVE THIS FIX, named by a seat at plan review. 36 bug files
+        parse to criteria carrying no `Verify:` line at all - `ac=N pass=0 unspecified=N`, exit
+        0 - and widening the parser MOVES the unreadable ones into that same bucket, converting
+        a would-be refusal into a silent pass while the headline count improves.
+
+        Mutant: return 0 when every parsed criterion is unspecified - the fix reproduces the
+        defect it repairs, in a different costume.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, self.HEAD + "## Acceptance Criteria\n\n"
+                             "### AC1: it behaves\n\n- **Then** it behaves\n")
+            rc, text = self._run(root)
+            self.assertNotEqual(rc, 0, "criteria carrying no verifier reported a pass")
+            self.assertIn("NONE carries", text)
+
+    def test_a_well_formed_unit_still_passes(self) -> None:
+        """THE POSITIVE CONTROL. `verify_ac` sits in the per-commit lane, so a refusal wired
+        unconditionally satisfies every criterion above and stops every commit in every
+        consuming project.
+
+        Mutant: return the refusal for every unit regardless of what parsed - this reddens alone.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, self.HEAD + "## Acceptance Criteria\n\n"
+                             "### AC1: it behaves\n\n- **Then** it behaves\n"
+                             "- **Verify:** shell true\n")
+            rc, text = self._run(root)
+            self.assertEqual(rc, 0, f"a well-formed unit was refused: {text}")
+            self.assertNotIn("REFUSED", text)
+
+    def test_the_corpus_scan_reports_three_distinct_states(self) -> None:
+        """The counting routine SHIPS, so the before and after figures of any fix come from the
+        same code rather than a script somebody wrote once and threw away.
+
+        Mutant: collapse the three counts into one total - the three states become
+        indistinguishable and the vacuous one hides inside an improving number.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, self.HEAD + "## Summary\n\nnothing\n", "BG9001-a.md")
+            self._unit(root, self.HEAD + "## Acceptance Criteria\n\n- [ ] unreadable\n",
+                       "BG9002-b.md")
+            self._unit(root, self.HEAD + "## Acceptance Criteria\n\n### AC1: x\n\n"
+                             "- **Then** x\n", "BG9003-c.md")
+            self._unit(root, self.HEAD + "## Acceptance Criteria\n\n### AC1: x\n\n"
+                             "- **Then** x\n- **Verify:** shell true\n", "BG9004-d.md")
+            res = verify_ac.corpus_scan(root, "bugs")
+            self.assertEqual(
+                (res["no_section"], res["unreadable"], res["no_verifier"], res["ok"]),
+                (1, 1, 1, 1),
+                f"the three blind states are not counted apart: {res}")
+
+
 class TestPlanDeriveTests(unittest.TestCase):
     """US0629: the test plan is DERIVED from the unit's criteria, never assembled by hand.
 

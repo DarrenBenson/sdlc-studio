@@ -1587,6 +1587,19 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
         return {"count": 1, "blocking": True,
                 "detail": "no stories under sdlc-studio/stories - the verify lane proved "
                           "nothing about the AC layer (wrong --root?)"}
+    # THE SCOPE, STATED. This lane walks `sdlc-studio/stories` and nothing else, so no bug's
+    # acceptance criteria has entered the release gate in any version - 534 bug files, 55% of
+    # the delivery corpus, silently outside a pass this lane reports. Naming it is the whole of
+    # BG0530 AC5: a verification pass taken over a fraction of the corpus while reporting on
+    # "the AC layer" is the same false green one level up. Counted rather than asserted, so the
+    # number moves when the scope does.
+    try:
+        skipped = len(list((rr / "sdlc-studio" / "bugs").glob("BG*.md")))
+    except OSError:
+        skipped = 0
+    scope_note = (f" SCOPE: stories only - {skipped} bug file(s) carry acceptance criteria this "
+                  f"lane does not walk, so this pass says nothing about them."
+                  if skipped else "")
     started = time.time()
     jest_cache = verify_ac.jest_batch_cache(rr, timeout) if batch else None
     # Without batching this lane pays a cold pytest start PER CRITERION. 694 of this
@@ -1645,7 +1658,8 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
                           f"verify lane proved nothing about the AC layer (wrong --root?)"}
     return {"count": 0, "blocking": True,
             "detail": f"{executable}/{acs} executable AC(s) green across "
-                      f"{len(stories)} story/stories ({manual} manual) [{cost}]"}
+                      f"{len(stories)} story/stories ({manual} manual) [{cost}]"
+                      + scope_note}
 
 
 def _review_legs(root: str) -> dict:

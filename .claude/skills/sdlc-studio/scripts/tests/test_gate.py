@@ -5638,5 +5638,48 @@ class LoaderRouteTests(unittest.TestCase):
             f"loader route is not wired into the selection: {selected.get('selectors')}")
 
 
+
+class ReleaseVerifyScopeTests(unittest.TestCase):
+    """BG0530 AC5: the release verify lane walks stories only, and never said so.
+
+    No bug's acceptance criteria has entered the release gate in ANY version - 534 files, 55%
+    of the delivery corpus, silently outside a pass the lane reports on "the AC layer". A
+    verification pass taken over a fraction of the corpus while reporting on the whole is the
+    same false green one level up.
+    """
+
+    def test_the_release_lane_states_its_scope(self) -> None:
+        """Mutant: drop the scope statement - the lane keeps reporting a pass over 55% of the
+        delivery corpus it never looked at, and no reader can tell.
+
+        The count is DERIVED from the tree, not typed, so it moves when the scope does.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "gate_scope_bg0530", Path(__file__).resolve().parents[1] / "gate.py")
+        g = importlib.util.module_from_spec(spec)
+        sys.modules["gate_scope_bg0530"] = g
+        spec.loader.exec_module(g)
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+                "# US0001: s\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: it behaves\n\n- **Then** it behaves\n- **Verify:** shell true\n",
+                encoding="utf-8")
+            for n in (1, 2, 3):
+                (root / "sdlc-studio" / "bugs" / f"BG{n:04d}-x.md").write_text(
+                    f"# BG{n:04d}: b\n\n> **Status:** Open\n\n## Acceptance Criteria\n\n"
+                    f"### AC1: it behaves\n\n- **Then** it behaves\n", encoding="utf-8")
+            res = g._verify_acs(str(root), batch=False)
+            detail = res.get("detail", "")
+            self.assertIn("SCOPE", detail,
+                          "the release verify lane reports a pass without naming what it "
+                          f"did not walk: {detail}")
+            self.assertIn("3 bug file(s)", detail,
+                          f"the skipped count is not derived from the tree: {detail}")
+
 if __name__ == "__main__":
     unittest.main()

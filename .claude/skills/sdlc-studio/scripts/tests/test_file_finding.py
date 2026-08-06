@@ -1768,9 +1768,13 @@ class AuthoredCriteriaSurviveTests(unittest.TestCase):
         self.assertIn(ff.THIN_EVIDENCE_MARK, thin)
 
     def test_an_authored_criterion_already_carrying_a_checkbox_is_not_doubled(self) -> None:
+        # The PROPERTY is that a supplied checkbox is not doubled - asserted on the shape rather
+        # than on a literal, because BG0530 added the `ACn` marker the parser requires and a
+        # string match would have read that as a regression when the property was untouched.
         block = ff.criteria_block("bug", self._fields(acs=["- [ ] ALREADY BOXED"]))
-        self.assertIn("- [ ] ALREADY BOXED", block)
+        self.assertIn("ALREADY BOXED", block)
         self.assertNotIn("- [ ] - [ ]", block)
+        self.assertEqual(block.count("- [ ]"), 1, f"the checkbox was doubled: {block!r}")
 
 
 class NoSuppliedFieldIsDiscardedTests(unittest.TestCase):
@@ -2562,6 +2566,63 @@ class AuditRunRegisterTests(unittest.TestCase):
                              ac.registered_run_ids(root))
             self.assertNotEqual(ac.PROVENANCE_RECORDED, ac.PROVENANCE_BACKFILLED)
 
+
+
+class WriterMatchesParserTests(unittest.TestCase):
+    """BG0530: the module that WRITES a bug's criteria and the module that EXECUTES them
+    disagreed about their shape, for 400 bugs, undetected.
+
+    `file_finding.py:127` claims of a neighbouring mechanism that the runner and the validator
+    "cannot drift into contradicting each other again". They had - by a different route, in the
+    same file - and nothing noticed because `verify_ac run` exited 0 when it parsed nothing.
+    """
+
+    def test_a_freshly_filed_bug_parses(self) -> None:
+        """The fixture is built by CALLING the filer, never by hand - a hand-written example
+        that happens to match is exactly how the two drifted while looking fine.
+
+        Mutant: drop the `ACn` marker from the criteria renderer, returning it to the bare
+        `- [ ] <prose>` bullet it emitted for 400 bugs - this reddens.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "verify_ac_bg0530", Path(__file__).resolve().parents[1] / "verify_ac.py")
+        va = importlib.util.module_from_spec(spec)
+        sys.modules["verify_ac_bg0530"] = va
+        spec.loader.exec_module(va)
+
+        block = ff.criteria_block("bug", {"acs": ["it refuses an empty batch",
+                                                        "it accepts a full one"]})
+        text = ("# BG9999: x\n\n> **Status:** Open\n\n## Acceptance Criteria\n\n"
+                + block + "\n")
+        parsed = va.parse_story(text)
+        self.assertEqual(len(parsed), 2,
+                         f"the filer writes a shape verify_ac cannot read:\n{block}")
+        self.assertEqual([b.ac_id for b in parsed], ["AC1", "AC2"])
+
+    def test_the_derived_shape_parses_too(self) -> None:
+        """The tool-derived path is the one 19 open bugs are in, and it is the path a filer
+        takes when nobody supplies criteria.
+
+        Mutant: mark only the authored branch - a filed finding is still invisible to the runner.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "verify_ac_bg0530b", Path(__file__).resolve().parents[1] / "verify_ac.py")
+        va = importlib.util.module_from_spec(spec)
+        sys.modules["verify_ac_bg0530b"] = va
+        spec.loader.exec_module(va)
+        # Fields with real substance: the derivation refuses to invent a criterion from fewer
+        # than five words, and a thin fixture would exercise the stated-absence note instead of
+        # the derived block this criterion is about.
+        block = ff.criteria_block("bug", {
+            "summary": "the close reports a refusal it could not attribute to any lane",
+            "steps": "run sprint close over a run whose gate failed on a timed lane",
+            "fix": "widen the lane pattern so a timing stamp does not defeat attribution"})
+        text = ("# BG9999: x\n\n> **Status:** Open\n\n## Acceptance Criteria\n\n"
+                + block + "\n")
+        self.assertTrue(va.parse_story(text),
+                        f"the DERIVED criteria block is unreadable:\n{block}")
 
 if __name__ == "__main__":
     unittest.main()
