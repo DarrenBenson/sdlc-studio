@@ -1,6 +1,6 @@
 # US0631: the test plan is reviewed by an independent seat before the code, and that review is recorded like a code review
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0525
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

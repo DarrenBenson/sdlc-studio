@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 9 |
+| Draft | 8 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 200 |
+| Done | 201 |
 | **Total** | **209** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -52,7 +52,7 @@
 | [EP0204](EP0204-the-close-converges-nothing-is-fixed-inside-it.md) | The close converges: nothing is fixed inside it, and the ledger can tell a close-time repair from an unaccounted unit | Done | 4 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0205](EP0205-a-reject-whose-findings-were-repaired-has-a.md) | A REJECT whose findings were repaired has a route back to covered, so a repaired batch stops reading like an unreviewed one | Done | 5 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0206](EP0206-a-sprint-ends-with-nothing-open-a-non.md) | A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it | Draft | 4 | -- | 2026-08-02 | 2026-08-02 |
-| [EP0207](EP0207-a-unit-s-test-plan-is-written-and.md) | A unit's test plan is written and reviewed before its code, because reviewing the test is cheaper than reviewing the code | Draft | 6 | -- | 2026-08-02 | 2026-08-02 |
+| [EP0207](EP0207-a-unit-s-test-plan-is-written-and.md) | A unit's test plan is written and reviewed before its code, because reviewing the test is cheaper than reviewing the code | Done | 6 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0208](EP0208-ceremony-proportional-to-blast-radius-the-close-converges.md) | Ceremony proportional to blast radius: the close converges and the risk band drives the review | Done | 5 | -- | 2026-08-05 | 2026-08-05 |
 | [EP0209](EP0209-the-reviewer-of-record-can-be-a-named.md) | The reviewer of record can be a named seat, and the operator leads from a derived summary | Done | 3 | -- | 2026-08-05 | 2026-08-05 |
 

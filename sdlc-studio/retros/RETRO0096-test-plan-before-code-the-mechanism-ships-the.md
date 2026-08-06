@@ -137,7 +137,7 @@ sprints fits noise.
 
 **0 of 7 unit(s) measured; 7 of 7 forecast at plan time.**
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Velocity: 5.46 points/elapsed-hour** (29 points ACCEPTED over 5.312h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
@@ -205,3 +205,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: {{tokens}} · Duration: {{duration}} · Critic rejects: {{rejects}}
+
+## Handoff
+
+- [HO-0051](../handoffs/HO0051-a-unit-s-test-plan-is-derived-reviewed.md) - 6 remaining item(s): 0 copilot-tail, 6 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

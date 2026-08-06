@@ -11,8 +11,8 @@
 | Ready | 10 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 6 |
-| Done | 609 |
+| Review | 0 |
+| Done | 615 |
 | Won't Implement | 2 |
 | Deferred | 0 |
 | Superseded | 2 |
@@ -68,12 +68,12 @@
 | [US0626](US0626-sprint-close-and-sprint-stop-refuse-while-any.md) | sprint close and sprint stop refuse while any batch unit is non-terminal, naming each and where its findings went | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0627](US0627-closing-a-story-over-a-recorded-reject-requires.md) | closing a story over a recorded REJECT requires a filed artefact id or an explicit stop-ship ruling | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0628](US0628-a-story-closed-this-way-names-the-bug.md) | a story closed this way names the bug in its own record | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
-| [US0629](US0629-a-test-plan-is-derived-from-the-unit.md) | a test plan is DERIVED from the unit's criteria by the tooling, naming per criterion the production change the test must fail on | Review | EP0207 | 2026-08-02 | 2026-08-02 |
-| [US0630](US0630-a-unit-reaching-delivery-without-a-reviewed-test.md) | a unit reaching delivery without a reviewed test plan is REFUSED by the command that starts the work | Review | EP0207 | 2026-08-02 | 2026-08-02 |
-| [US0631](US0631-the-test-plan-is-reviewed-by-an-independent.md) | the test plan is reviewed by an independent seat before the code, and that review is recorded like a code review | Review | EP0207 | 2026-08-02 | 2026-08-02 |
-| [US0632](US0632-at-delivery-each-planned-mutant-is-executed-against.md) | at delivery each planned mutant is EXECUTED against the shipped test and its death recorded | Review | EP0207 | 2026-08-02 | 2026-08-02 |
-| [US0633](US0633-a-criterion-whose-mutant-cannot-be-named-is.md) | a criterion whose mutant cannot be named is refused at grooming | Review | EP0207 | 2026-08-02 | 2026-08-02 |
-| [US0634](US0634-the-cost-is-measured-over-one-run-and.md) | the cost is measured over one run and reported: passes spent on test-plan review versus on code review | Review | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0629](US0629-a-test-plan-is-derived-from-the-unit.md) | a test plan is DERIVED from the unit's criteria by the tooling, naming per criterion the production change the test must fail on | Done | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0630](US0630-a-unit-reaching-delivery-without-a-reviewed-test.md) | a unit reaching delivery without a reviewed test plan is REFUSED by the command that starts the work | Done | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0631](US0631-the-test-plan-is-reviewed-by-an-independent.md) | the test plan is reviewed by an independent seat before the code, and that review is recorded like a code review | Done | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0632](US0632-at-delivery-each-planned-mutant-is-executed-against.md) | at delivery each planned mutant is EXECUTED against the shipped test and its death recorded | Done | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0633](US0633-a-criterion-whose-mutant-cannot-be-named-is.md) | a criterion whose mutant cannot be named is refused at grooming | Done | EP0207 | 2026-08-02 | 2026-08-02 |
+| [US0634](US0634-the-cost-is-measured-over-one-run-and.md) | the cost is measured over one run and reported: passes spent on test-plan review versus on code review | Done | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0635](US0635-the-thirteen-story-side-duplicate-verify-groups-are.md) | The thirteen story-side duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
 | [US0636](US0636-the-seven-bug-side-duplicate-verify-groups-are.md) | The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
 | [US0637](US0637-the-duplicate-groups-no-collection-can-answer-are.md) | The duplicate groups no collection can answer are derived from the resolver and named one by one | Done | EP0174 | 2026-08-03 | 2026-08-03 |

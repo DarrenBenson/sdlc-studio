@@ -1,6 +1,6 @@
 # US0630: a unit reaching delivery without a reviewed test plan is REFUSED by the command that starts the work
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0525
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # CR-0525: a unit's test plan is written and reviewed BEFORE its code, because reviewing the test is cheaper than reviewing the code
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0207
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

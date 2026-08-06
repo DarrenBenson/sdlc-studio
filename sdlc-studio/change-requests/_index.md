@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 17 |
 | Approved | 0 |
-| In Progress | 10 |
-| Complete | 484 |
+| In Progress | 9 |
+| Complete | 485 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
@@ -75,7 +75,7 @@
 | [CR-0522](CR0522-the-repo-wide-periodic-review-must-not-block.md) | the repo-wide periodic review must not block a sprint close whose own work is fully reviewed | Complete | High | Improvement | 2026-08-01 | EP0200 |
 | [CR-0523](CR0523-the-unreviewed-span-is-reported-during-the-run.md) | the unreviewed span is reported DURING the run, not discovered at the close | Proposed | High | Improvement | 2026-08-02 | -- |
 | [CR-0524](CR0524-a-review-verdict-separates-a-broken-feature-from.md) | a review verdict separates a broken feature from evidence that cannot fail | Proposed | High | Improvement | 2026-08-02 | -- |
-| [CR-0525](CR0525-a-unit-s-test-plan-is-written-and.md) | a unit's test plan is written and reviewed BEFORE its code, because reviewing the test is cheaper than reviewing the code | In Progress | Critical | Improvement | 2026-08-02 | EP0207 |
+| [CR-0525](CR0525-a-unit-s-test-plan-is-written-and.md) | a unit's test plan is written and reviewed BEFORE its code, because reviewing the test is cheaper than reviewing the code | Complete | Critical | Improvement | 2026-08-02 | EP0207 |
 | [CR-0526](CR0526-a-sprint-ends-with-nothing-open-a-non.md) | a sprint ends with nothing open - a non-stop-ship finding becomes a bug and its story closes | In Progress | Critical | Improvement | 2026-08-02 | EP0206 |
 | [CR-0527](CR0527-the-close-has-no-fixed-point-so-a.md) | the close has no fixed point, so a repair made during it re-opens the ledger it just satisfied | Complete | Critical | Improvement | 2026-08-02 | EP0204 |
 | [CR-0528](CR0528-the-installed-copy-is-only-reconciled-at-a.md) | the installed copy is only reconciled at a close, so a fix believed shipped is in force nowhere for the length of a run | Proposed | Medium | Improvement | 2026-08-04 | -- |
