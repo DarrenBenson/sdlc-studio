@@ -1,2 +1,0 @@
-<!-- section: Fixed -->
-- **A skipped test no longer stamps an acceptance criterion green (BG0317).** An all-skipped `pytest` run exits 0 without printing "no tests ran", so the default verify path recorded a pass from a test that never executed - while the batch path, reading the same run, correctly refused it. The default path now treats a run whose counts are entirely skipped as vacuous and not a pass, with its own remedy line. The equivalent hole in the unittest, jest, vitest and go runners is filed as BG0348.

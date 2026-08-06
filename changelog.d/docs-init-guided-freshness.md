@@ -1,2 +1,0 @@
-<!-- section: Changed -->
-- **In-repo docs point at guided onboarding.** `help/hint.md` now records that a guided onboarding walk pre-empts the next-step ladder (matching what `status`/`hint` implement); the greenfield and brownfield runbooks open with `init guided` as the one-command path, keeping their manual step lists as under-the-hood detail; and the README documentation index points at the new sdlc-studio.com pages (the specification layer including the PVD, personas and the Three Amigos, and the greenfield/brownfield walkthroughs).

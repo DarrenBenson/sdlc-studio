@@ -1,2 +1,0 @@
-<!-- section: Fixed -->
-- **Gate-hardening sprint - repairs from the closing review (EP0164).** The manual-AC Done gate now accepts only a passing `**Verified:** yes` marker as evidence: a `no` or `stale` marker blocks like a red verifier, closing a re-opened bypass where any marker satisfied the gate. The close tail's parent-request derivation is scoped to this run's units and the epics it just derived (matching the epic derivation), so a close never sweeps and names unrelated derivable requests.
