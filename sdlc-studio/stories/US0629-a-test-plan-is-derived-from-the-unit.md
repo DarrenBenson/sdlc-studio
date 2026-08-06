@@ -1,6 +1,6 @@
 # US0629: a test plan is DERIVED from the unit's criteria by the tooling, naming per criterion the production change the test must fail on
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0525
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

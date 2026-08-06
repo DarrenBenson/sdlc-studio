@@ -1,6 +1,6 @@
 # BG0527: the one-run-slot gate reads a run as history the moment its goal verdict is recorded, so the next plan can open over a run whose close has 20 unmet prerequisites
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Verification depth:** functional
 > **Points:** 3

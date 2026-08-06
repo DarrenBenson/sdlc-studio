@@ -1,6 +1,6 @@
 # US0633: a criterion whose mutant cannot be named is refused at grooming
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0525
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

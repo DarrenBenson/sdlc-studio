@@ -1,6 +1,6 @@
 # US0634: the cost is measured over one run and reported: passes spent on test-plan review versus on code review
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0525
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

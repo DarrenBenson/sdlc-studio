@@ -270,6 +270,61 @@ class TestPlanGateTests(unittest.TestCase):
             self.assertIn("could not be established", text)
             self.assertIn("not a passed one", text)
 
+    def test_an_unreadable_config_does_not_switch_the_gate_off(self) -> None:
+        """An unreadable `.config.yaml` is not an ABSENT cutoff. `project_override` swallows every
+        config fault and returns the default, so `not after` read a malformed, non-UTF-8,
+        unreadable or directory-shaped config as "this project set no cutoff" and stood BOTH new
+        gates down entirely. A seat reproduced it four ways.
+
+        The sibling `_two_role_gate` already solved this with `_config_unparseable`, and its
+        comment enumerates the same four shapes: "silence read as a pass, reproduced one layer up
+        in the gate written to close it". This repair reached parity with that gate's LEDGER half
+        and skipped its CONFIG half.
+
+        Mutant: read an unparseable config as no cutoff - a project that DECLARES the rule and
+        then cannot be read has silently waived it.
+        """
+        import os
+        shapes = {
+            "malformed yaml": lambda c: c.write_text("review:\n\ttest_plan_after: x\n",
+                                                     encoding="utf-8"),
+            "non-utf8": lambda c: c.write_bytes(b"review:\n  test_plan_after: \xff\xfe\n"),
+            "a directory": lambda c: c.mkdir(),
+        }
+        for why, make in shapes.items():
+            with self.subTest(why=why), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._repo(root, plan=False, cutoff=False)
+                make(root / "sdlc-studio" / ".config.yaml")
+                code, text = self._start(root)
+                self.assertNotEqual(code, 0,
+                                    f"an unreadable config ({why}) switched the gate off")
+
+    def test_the_planned_mutant_gate_also_fails_loud(self) -> None:
+        """The sibling half of the fail-loud repair, which a seat found pinned by NOTHING: the
+        `return None` mutant survived 2,137 tests across eight suite files, and this unit's own
+        Mutation-checked field claimed it had been killed. Both are corrected.
+
+        Mutant: swallow and return None - a corrupt mutation ledger grants the terminal
+        transition at exit 0.
+        """
+        import unittest.mock
+        import mutation
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, plan=True)
+            # The FIRST version of this test wrote a corrupt ledger and passed for the wrong
+            # reason: `_load_ledger` catches that one layer down, so the except branch never ran
+            # and the swallow mutant survived it. The failure has to be forced at the boundary
+            # the gate actually guards.
+            with unittest.mock.patch.object(
+                    mutation, "plan_execution",
+                    side_effect=RuntimeError("ledger unreadable")):
+                unmet = tr.requirements(str(root), "BG0001", "Fixed")
+            self.assertTrue(any("could not be established" in u for u in unmet),
+                            f"a failing planned-mutant gate granted the transition: {unmet}")
+            self.assertTrue(any("not a passed one" in u for u in unmet), unmet)
+
     def test_a_unit_before_the_cutoff_is_not_held(self) -> None:
         """A gate that refuses every unit in an existing backlog is one that gets switched off
         wholesale rather than satisfied.

@@ -1457,6 +1457,15 @@ def _plan_gate_active(root, text: str) -> bool:
     backlog carrying no plans must not be retro-refused, because a gate that refuses every unit
     in a backlog is one that gets switched off wholesale rather than satisfied.
     """
+    # AN UNREADABLE CONFIG IS NOT AN ABSENT CUTOFF. `project_override` swallows every config
+    # fault and returns the default, so `not after` read a malformed, non-UTF-8, unreadable or
+    # directory-shaped `.config.yaml` as "this project set no cutoff" and switched BOTH new gates
+    # off entirely. A seat reproduced it four ways. The sibling `_two_role_gate` already solved
+    # this exact case with the helper below, and its comment enumerates the same four shapes -
+    # the repair reached parity with that gate's LEDGER half and skipped its CONFIG half.
+    cfg = Path(root) / "sdlc-studio" / ".config.yaml"
+    if cfg.exists() and _config_unparseable(cfg):
+        return True          # in scope, and `_test_plan_gate` will report why it cannot judge
     after = sdlc_md.project_override(root, "review.test_plan_after", None)
     if not after:
         return False

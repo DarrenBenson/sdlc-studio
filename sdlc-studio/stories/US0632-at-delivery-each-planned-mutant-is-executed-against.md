@@ -1,6 +1,6 @@
 # US0632: at delivery each planned mutant is EXECUTED against the shipped test and its death recorded
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0525
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -38,7 +38,7 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::FromPlanTests::test_a_survivor_refuses_the_transition_and_names_the_criterion
 - **Caller:** `transition.py set`
 - **Verification target:** functional
-- **Mutation-checked:** yes (2026-08-06). Downgrading the gate's block to a warning KILLED; swallowing the gate's own errors KILLED; reporting `not-run` but not survivors KILLED; gating unconditionally (no `review.test_plan_after`) KILLED, which is the over-correction that would retro-refuse every existing backlog
+- **Mutation-checked:** yes (2026-08-06). Downgrading the gate's block to a warning KILLED; reporting `not-run` but not survivors KILLED. CORRECTED at review: the earlier entry also claimed "swallowing the gate's own errors KILLED", which a seat showed false - that mutant survived 2,137 tests, and the gate's fail-loud behaviour was pinned by nothing; gating unconditionally (no `review.test_plan_after`) KILLED, which is the over-correction that would retro-refuse every existing backlog
 - **Verified:** yes (2026-08-06)
 
 ### AC3: execution is sound against the two ways a mutation run lies
@@ -66,12 +66,27 @@
 
 - **Given** a mutant whose replacement is the same length as the original, and an anchor string occurring more than once in the target file
 - **When** the run applies it
-- **Then** bytecode is purged and the child runs with bytecode writing disabled so a cached module cannot report a false survival, the anchor is asserted unique before patching so the wrong function cannot be edited, and the source is restored byte-identical afterwards with that restoration asserted
+- **Then** bytecode is purged and the child runs with bytecode writing disabled so a cached module cannot report a false survival, and the source is restored byte-identical afterwards with that restoration asserted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::FromPlanTests::test_a_cached_module_and_an_ambiguous_anchor_are_both_refused
 - **Caller:** `mutation.py run --from-plan`
 - **Verification target:** functional
-- **Mutation-checked:** yes (2026-08-06). Dropping `PYTHONDONTWRITEBYTECODE` from the suite env KILLED; not purging the stale `.pyc` KILLED; a non-idempotent restore KILLED. NARROWED and stated: the anchor-uniqueness limb is not delivered. This engine selects mutants by AST node rather than by string anchor, so it has no anchor to assert unique - the hazard is real for hand-applied mutants (it bit twice this session) and belongs to the `register` path, filed rather than claimed here
+- **Mutation-checked:** partial (2026-08-06). Dropping `PYTHONDONTWRITEBYTECODE` from the suite env KILLED; not purging the stale `.pyc` KILLED; a non-idempotent restore KILLED. The anchor limb is NOT delivered and NOT verified - see the retraction above. The earlier claim that "this engine selects mutants by AST node rather than by string anchor" was FALSE and is withdrawn in full.
 - **Verified:** yes (2026-08-06)
+
+### AC4: the mutant is applied where it was enumerated - CARRIED UNMET
+
+> **SPLIT OUT of AC3 at review, because a retraction written only in prose is not a retraction.**
+> AC3 originally carried this limb, and marking it undelivered in a comment left `**Verified:**
+> yes` on the line the tooling reads - `verify_ac` re-stamped it green from a test that does not
+> exercise the property, so every mechanical reader still saw the criterion met. A seat caught
+> that. The limb now stands alone, with NO verifier, so the tooling reports it unverified because
+> it IS unverified.
+
+- **Given** a target whose pattern occurs inside a multiline string above the real occurrence
+- **When** the mutant is applied
+- **Then** the line changed on disk is the line the mutation was enumerated at, and the run aborts loudly when it is not
+- **Mutant:** none applicable - the property is not implemented. `enumerate_mutations` skips multiline-string spans when counting occurrences and `mutated_text` does not, so a mutant enumerated at line 12 is applied at line 5 inside a docstring. Two seats reproduced it
+- **Verified:** no - CARRIED. Filed as BG0533. The earlier claim that this engine "selects mutants by AST node rather than by string anchor", and BG0531's scoping of the hazard to the hand-`register` path, are both withdrawn as false
 
 ## Revision History
 
