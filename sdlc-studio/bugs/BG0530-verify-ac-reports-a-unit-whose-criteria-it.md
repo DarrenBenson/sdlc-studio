@@ -36,63 +36,87 @@ The four bugs already Fixed should be re-verified once the parser sees them, not
 
 ## Acceptance Criteria
 
-> Authored as `### ACn` headings with a bold `**Verify:**` - the only shape `verify_ac` parses.
-> Writing this bug's own criteria in the shape the bug is about is the first test of the fix.
+> **REVISED at plan review, before any code.** A seat executed against the tree and refuted three
+> things: AC2's carve-out rested on a claim that the grooming gate refuses criteria-less bugs at
+> plan time (`engagement_floor check` reports 0 violations over 1601 units, so nothing does);
+> AC3's mutant was fictional (`file_finding.py` emits `- [ ] <text>`, and there is no italic
+> `*Verify:*` form to revert to); and AC4's mutant edited a test, which cannot die on a mutation
+> of itself. It also named the case that would have SURVIVED the whole fix, now AC6.
 
 ### AC1: a unit whose criteria could not be PARSED is refused, not reported clean
 
-- **Given** a unit carrying a `## Acceptance Criteria` section from which the parser reads no criteria at all
-- **When** `verify_ac.py run --id <id>` runs
-- **Then** it exits NON-ZERO, says plainly that it executed nothing, and names the shapes it accepts
-- **Mutant:** return 0 on a zero count - which is today's behaviour for 311 of 533 bug files, a line byte-comparable to a clean pass
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_a_section_that_parses_to_nothing_is_refused
+- **Given** a unit whose `## Acceptance Criteria` section yields no criteria to the parser
+- **When** `verify_ac.py run --id <id>` is driven as a COMMAND, not as a library call
+- **Then** it exits non-zero, says it executed nothing, and names the shapes it accepts
+- **Mutant:** in verify_ac.py, delete the non-zero exit taken on a zero criterion count
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_a_section_that_parses_to_nothing_is_refused_through_the_cli
 - **Verified:** no
 
-### AC2: "no criteria at all" is distinguished from "criteria I could not read"
+### AC2: "no criteria at all" is reported distinctly from "criteria I could not read"
 
-- **Given** one unit with no `## Acceptance Criteria` section, and one whose section parses to nothing
+- **Given** one unit with no criteria section and one whose section parses to nothing
 - **When** each is run
-- **Then** they produce DIFFERENT messages, and only the second is refused - nothing was claimed in the first case, and the grooming gate already refuses it at plan time, whereas the second is the writer and the parser disagreeing about a claim somebody did make
-- **Mutant:** refuse both identically - 232 filed findings that never claimed a verifier start failing, the refusal becomes noise, and the signal it exists to carry is switched off wholesale
+- **Then** the messages DIFFER and name their own cause. Whether the first also exits non-zero is a stated decision recorded on this criterion, not an accident: it is 232 of 534 bug files, most of them filed findings that never claimed a verifier, and nothing else in the tree refuses them today
+- **Mutant:** in verify_ac.py, return one identical message for both - a reader is sent to write criteria when the criteria exist and cannot be read, or the reverse
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_absent_and_unparseable_are_different_events
 - **Verified:** no
 
-### AC3: the writer and the parser agree, pinned by the template itself
+### AC3: the writer emits the shape the parser reads, pinned by the template itself
 
-- **Given** the acceptance criteria `file_finding.py` writes for a new bug
-- **When** they are parsed by `verify_ac.parse_story`
-- **Then** the count is non-zero, asserted from a fixture that carries the house template VERBATIM rather than a hand-written example that happens to match
-- **Mutant:** revert the writer to its prose-title, italic-`*Verify:*` form - this reddens. `file_finding.py:127` claims the runner and the validator "cannot drift into contradicting each other again"; they had, and the comment asserting they could not sits in the file that produced the drift
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::WriterMatchesParserTests::test_the_house_bug_template_parses
+- **Given** the criteria `file_finding.py` writes today - `- [ ] <prose>` bullets carrying no `ACn` marker, which `AC_BULLET_RE` cannot match
+- **When** a freshly filed bug is parsed by `verify_ac.parse_story`
+- **Then** the count is non-zero, asserted from a fixture built by CALLING the filer rather than from a hand-written example that happens to match
+- **Mutant:** in file_finding.py, drop the `ACn` marker from the criteria renderer, returning it to the bare `- [ ] <prose>` bullet it emits today
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::WriterMatchesParserTests::test_a_freshly_filed_bug_parses
 - **Verified:** no
 
-### AC4: the corpus effect is MEASURED, against a stated before figure
+### AC4: the corpus effect is MEASURED by production code, against a reproducible figure
 
-- **Given** the 533 bug files as they stand, of which 311 return `ac=0` today (79 with a criteria section the parser cannot read, 232 with no section)
-- **When** the fix has landed and the parser is widened
-- **Then** the count of bugs whose section parses to nothing is reported and is materially lower, measured over the real corpus rather than a fixture
-- **Mutant:** widen the parser and measure only the fixture - the fix passes while the corpus is untouched, which is exactly how this drifted for 400 bugs
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_the_corpus_shape_is_readable
+- **Given** the 534 bug files as they stand: 232 with no criteria section, 75 whose section parses to nothing, 36 that parse but carry no verifier at all
+- **When** `verify_ac.py corpus-scan` reports those three counts
+- **Then** the counting routine SHIPS, so the before and after figures are produced by the same code rather than by a script somebody wrote once and threw away
+- **Mutant:** in verify_ac.py, collapse the three counts into one total - the three states become indistinguishable and AC6's case hides inside the number
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_the_corpus_scan_reports_three_distinct_states
 - **Verified:** no
 
-### AC5: a bug's criteria can reach the release gate at all
+### AC5: the release lane states its scope
 
-- **Given** `gate.py`'s release lane, which walks `sdlc-studio/stories` only
-- **When** the release verify lane runs
-- **Then** bugs are either included, or their exclusion is REPORTED as a stated scope rather than left silent - no bug's acceptance criteria has entered the release gate in any version, and nothing says so
-- **Mutant:** leave the walk story-only and silent - the release gate keeps reporting a verification pass over 55% of the delivery corpus it never looked at
+- **Given** `gate.py`'s release verify lane, which walks `sdlc-studio/stories` only
+- **When** it runs
+- **Then** it names the artefact classes it did NOT walk and how many units that is, because a verification pass silently taken over 55% of the delivery corpus is the same false green one level up
+- **Mutant:** in gate.py, drop the scope statement the release verify lane prints
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReleaseVerifyScopeTests::test_the_release_lane_states_its_scope
+- **Verified:** no
+
+### AC6: the vacuous shape that would SURVIVE this fix is refused too
+
+- **Given** a unit whose criteria parse but carry no `Verify:` line at all - `ac=N pass=0 fail=0 unspecified=N` - which is 36 bug files today and is where widening the parser MOVES the 75 unreadable ones
+- **When** it is run
+- **Then** it is refused, or reported in a form no reader can mistake for a pass. Without this, the fix converts a would-be refusal into a silent exit 0 while AC4's count improves - the criterion reproducing the defect it repairs, in a different costume. Found by a seat at plan review
+- **Mutant:** in verify_ac.py, return 0 when every parsed criterion is unspecified
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_criteria_with_no_verifiers_are_not_a_pass
+- **Verified:** no
+
+### AC7: the positive control - a well-formed unit still passes at the shipped entry point
+
+- **Given** a bug whose criteria parse and whose verifiers pass
+- **When** `verify_ac.py run --id` is driven as a command
+- **Then** it exits 0. `verify_ac` sits in the per-commit lane, so a refusal wired unconditionally satisfies AC1, AC2 and AC6 and stops every commit in every consuming project
+- **Mutant:** in verify_ac.py, return the refusal for every unit regardless of what parsed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EmptyParseIsRefusedTests::test_a_well_formed_unit_still_passes
 - **Verified:** no
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in verify_ac.py, delete the non-zero exit taken on a zero criterion count | a unit whose criteria could not be PARSED is refused, not reported clean |
-| AC2 | in verify_ac.py, return one identical message for an absent section and an unreadable one | "no criteria at all" is distinguished from "criteria I could not read" |
-| AC3 | in file_finding.py, revert the writer to its prose-title, italic Verify form | the writer and the parser agree, pinned by the template itself |
-| AC4 | in tests/test_verify_ac.py, replace the corpus walk with a single hand-written fixture | the corpus effect is MEASURED, against a stated before figure |
-| AC5 | in gate.py, drop the scope statement the release verify lane prints | a bug's criteria can reach the release gate at all |
+| AC1 | {{name the production change this test must fail on}} | a unit whose criteria could not be PARSED is refused, not reported clean |
+| AC2 | {{name the production change this test must fail on}} | "no criteria at all" is reported distinctly from "criteria I could not read" |
+| AC3 | {{name the production change this test must fail on}} | the writer emits the shape the parser reads, pinned by the template itself |
+| AC4 | {{name the production change this test must fail on}} | the corpus effect is MEASURED by production code, against a reproducible figure |
+| AC5 | {{name the production change this test must fail on}} | the release lane states its scope |
+| AC6 | {{name the production change this test must fail on}} | the vacuous shape that would SURVIVE this fix is refused too |
+| AC7 | {{name the production change this test must fail on}} | the positive control - a well-formed unit still passes at the shipped entry point |
 
 ## Revision History
 

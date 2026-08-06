@@ -33,31 +33,58 @@ Make `close_blocker_split` recognise the `review-current` lane, and - more impor
 
 ## Acceptance Criteria
 
-### AC1: a refusal the gate NAMED is attributed, not reported unattributable
+> **REWRITTEN at plan review, before any code.** The first version named the wrong mechanism.
+> It claimed the close fails to recognise `review-current`; `_CLOSE_SELF_LANES` already contains
+> it. A seat executed `sprint.gate_failed_lanes` and found the real defect: `_GATE_FAIL_RE`
+> matches `[FAIL] <lane>:` while `gate.py` prints `[FAIL] {check}{lane_stamp(c)}: {detail}`, and
+> `lane_stamp` inserts `[0.4s]` before the colon. **Every TIMED lane is dropped, not just this
+> one.** The original plan was satisfiable by tests written against hand-made unstamped strings
+> while the bug remained - the mutant-from-the-criterion, assertion-from-the-code failure this
+> gate exists to catch, caught for the price of a plan review.
 
-- **Given** a close whose gate printed `[FAIL] review-current ... reviews/LATEST.md is stale`
-- **When** `close_blocker_split` reads that output
-- **Then** the close names that lane as the blocker - today it says "the refusal could not be attributed - its verdict named no failing lane this close can read", one line after the gate printed exactly such a lane
-- **Mutant:** leave `review-current` out of the recognised set - the close reports it cannot read output it just printed, and the reader is sent to `gate --require-retro` by hand, which exits 0
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_a_named_lane_is_attributed
+### AC1: a stamped gate failure is parsed, and the parser is fed the renderer's own output
+
+- **Given** the exact line `gate.py` prints for a failing timed lane, `[FAIL] review-current [0.4s]: reviews/LATEST.md is stale`
+- **When** `sprint.gate_failed_lanes` reads it
+- **Then** it returns that lane and its detail - today it returns `[]`, because the timing stamp sits between the lane and the colon
+- **Mutant:** restore `_GATE_FAIL_RE` to require the colon immediately after the lane - this reddens, and no unstamped fixture can tell the difference
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_a_stamped_gate_failure_is_parsed
 - **Verified:** no
 
-### AC2: an unattributable blocker QUOTES the gate rather than claiming nothing was found
+### AC2: the test ROUND-TRIPS gate.py's own renderer, never a hand-made string
 
-- **Given** a gate failure whose lane the splitter genuinely does not recognise
+- **Given** a failing lane rendered by `gate.py`'s own formatting path rather than typed into the test
+- **When** that output is fed to `gate_failed_lanes`
+- **Then** the lane is recovered - the two are pinned to each other, so the next change to the lane format cannot break the close silently
+- **Mutant:** assert against a hand-written `[FAIL] lane: detail` literal - it passes today, with the bug fully present, which is exactly how this defect survived
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_the_parser_round_trips_the_renderer
+- **Verified:** no
+
+### AC3: the over-correction is refused - an advisory line is not a failure
+
+- **Given** `[warn]` and `[PASS]` lines carrying the same timing stamp
+- **When** the widened pattern reads them
+- **Then** neither parses as a failure, because a regex loosened until it matches anything refuses a close on an advisory lane
+- **Mutant:** widen to `\[[A-Za-z]+\]` - AC1 and AC2 stay green while every passing gate reports failures
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_an_advisory_line_is_not_a_failure
+- **Verified:** no
+
+### AC4: an unattributable blocker QUOTES the gate rather than claiming nothing was found
+
+- **Given** a gate failure whose lane the splitter genuinely cannot recognise
 - **When** the close reports it
-- **Then** it prints the gate's own failing text verbatim, because "I could not attribute this" and "nothing was found" are different facts and the second is what sends a reader to the wrong place
-- **Mutant:** keep the bare unattributable message - a lane added later is invisible to the close by default, which is how this one became invisible
+- **Then** it prints the gate's own failing text verbatim - "I could not attribute this" and "nothing was found" are different facts, and the second sends the reader to the wrong place
+- **Mutant:** in sprint.py, drop the gate's raw failing text from the unattributable message - a lane added later is invisible to the close by default
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_an_unattributable_blocker_quotes_the_gate
 - **Verified:** no
 
-### AC3: an attributable failure does not burn a review round
+### AC5: the positive control - a passing gate still closes
 
-- **Given** the same stale-anchor failure
-- **When** the close retries
-- **Then** it does not consume four identical rounds and quarantine the run at the cap - the loop guard exists to catch non-convergence, not to re-run a blocker whose fix is named
-- **Mutant:** retry without acting on the attribution - four rounds, `LOOP STOPPED`, and a run quarantined by a lane whose remedy was printed each time
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_an_attributable_failure_does_not_burn_a_round
+- **Given** a gate whose lanes all pass
+- **When** the close reads its output
+- **Then** no blocker is reported and the close proceeds - a parser that finds failures everywhere passes AC1 through AC4 and stops every close in every consuming project
+- **Mutant:** in sprint.py, return every parsed line as a failing lane - this reddens alone
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseBlockerAttributionTests::test_a_passing_gate_still_closes
 - **Verified:** no
 
 ## Impact
@@ -68,9 +95,11 @@ A gate that refuses without saying what refused you is worse than the flake it i
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in sprint.py, remove review-current from the recognised lane set | a refusal the gate NAMED is attributed, not reported unattributable |
-| AC2 | in sprint.py, drop the gate's raw failing text from the unattributable message | an unattributable blocker QUOTES the gate rather than claiming nothing was found |
-| AC3 | in sprint.py, remove the attribution result from the retry decision | an attributable failure does not burn a review round |
+| AC1 | in sprint.py, remove review-current from the recognised lane set | a stamped gate failure is parsed, and the parser is fed the renderer's own output |
+| AC2 | in sprint.py, drop the gate's raw failing text from the unattributable message | the test ROUND-TRIPS gate.py's own renderer, never a hand-made string |
+| AC3 | in sprint.py, remove the attribution result from the retry decision | the over-correction is refused - an advisory line is not a failure |
+| AC4 | {{name the production change this test must fail on}} | an unattributable blocker QUOTES the gate rather than claiming nothing was found |
+| AC5 | {{name the production change this test must fail on}} | the positive control - a passing gate still closes |
 
 ## Revision History
 

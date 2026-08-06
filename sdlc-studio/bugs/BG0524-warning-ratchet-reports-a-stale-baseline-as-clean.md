@@ -35,7 +35,7 @@ Decide which criterion is right and make the other follow. The AC2 behaviour is 
 - **Given** a warning baseline the ratchet cannot establish against the current tree
 - **When** `validate.py warning-ratchet` runs
 - **Then** it exits non-zero and names the state, rather than printing `clean` and exiting 0
-- **Mutant:** report `clean` on a state the ratchet could not establish - today's behaviour, contradicting both US0480 AC4 and this function's own docstring at `validate.py:876`
+- **Mutant:** restore `ok = not new`, so a stale baseline leaves the verdict untouched. A seat showed the not-baselined and corrupt states ALREADY exit non-zero, so a mutant worded around them is survived - only this edit reddens this criterion
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RatchetStatesTests::test_a_stale_baseline_is_not_clean
 - **Verified:** no
 
@@ -53,7 +53,7 @@ Decide which criterion is right and make the other follow. The AC2 behaviour is 
 - **Given** a baseline that IS established and holds
 - **When** the lane runs
 - **Then** it reports clean and exits 0, because this lane is in the per-commit `npm run lint` chain and a guard that refuses everything gets switched off within a day
-- **Mutant:** exit non-zero unconditionally - AC1 and AC2 pass while every commit in every consuming project is blocked
+- **Mutant:** exit non-zero unconditionally - AC1 and AC2 pass while every commit is blocked. The control must include the FRESH workspace (not-baselined with zero live instances), which is where AC1's edit bites and which every consuming project hits on its first commit of the per-commit lint chain
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RatchetStatesTests::test_a_clean_ratchet_still_passes
 - **Verified:** no
 

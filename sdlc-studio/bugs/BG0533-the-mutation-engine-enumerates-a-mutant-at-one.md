@@ -35,7 +35,7 @@ Then assert the invariant rather than trusting the shared helper: after applying
 - **Given** a target whose pattern occurs inside a multiline string above the real occurrence - `if a == b:` in a docstring above a body `if 1 == 1:`
 - **When** `mutation.py run` applies the enumerated mutant
 - **Then** the index of the changed line equals the mutation's recorded `line`, asserted after the write rather than trusted from the anchor computation
-- **Mutant:** drop the equality - the mutant is reported at line 12 and applied at line 5, which is today's behaviour and was reproduced by two independent seats
+- **Mutant:** revert `mutated_text` to counting occurrences WITHOUT the exclusion `enumerate_mutations` applies. A seat showed the post-write equality check alone is survived once AC3 unifies the counters, so this is the edit that reddens this criterion rather than AC2's
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_the_changed_line_is_the_enumerated_line
 - **Verified:** no
 
@@ -59,7 +59,7 @@ Then assert the invariant rather than trusting the shared helper: after applying
 
 ### AC4: the positive control - an ordinary mutant still applies and still kills
 
-- **Given** a target with no multiline-string decoy
+- **Given** an ordinary target that DOES carry docstrings, as every file in this repo does - a docstring-free fixture is satisfied by an over-correction refusing whenever any multiline span exists at all
 - **When** a mutant is applied
 - **Then** it lands, its test fails, and the verdict is KILLED - a guard that refuses every application passes AC1 and AC2 for exactly the wrong reason
 - **Mutant:** abort on every application - the criteria above stay green while mutation testing stops working entirely

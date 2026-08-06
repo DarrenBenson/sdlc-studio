@@ -53,6 +53,15 @@ Call the shared resolver from `cmd_plan` and honour the mode there, which is wha
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AffectsCheckModesTests::test_batch_add_refuses_before_writing
 - **Verified:** no
 
+### AC4: the positive control - `warn` still warns, and a clean batch still passes
+
+- **Given** the shipped default `affects_check: warn`, and separately a finding-free batch under `block`
+- **When** `sprint.py plan` and `sprint.py batch add` run
+- **Then** both proceed and `batch add` still WRITES the unit. A seat found no positive control anywhere in this plan: a refusal wired unconditionally satisfies all three refusal rows above and blocks `sprint plan` in every consuming project
+- **Mutant:** in sprint.py, replace the mode lookup with an unconditional refusal - the rows above stay green while the shipped default stops working
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AffectsCheckModesTests::test_warn_still_warns_and_a_clean_batch_passes
+- **Verified:** no
+
 ### AC3: `--format json` applies the same check as the text path
 
 - **Given** the identical batch and mode
@@ -72,6 +81,7 @@ An operator who sets `block` believes ungroomed `Affects` declarations are being
 | --- | --- | --- |
 | AC1 | in sprint.py, skip the shared affects resolver inside cmd_plan | `affects_check: block` REFUSES at plan time, and differs from `warn` |
 | AC2 | in sprint.py, reorder the affects check below the batch write | `batch add` refuses BEFORE it writes, not after |
+| AC4 | in sprint.py, replace the mode lookup with an unconditional refusal | the positive control - `warn` still warns, and a clean batch still passes |
 | AC3 | in sprint.py, gate that check on the text renderer so json skips it | `--format json` applies the same check as the text path |
 
 ## Revision History

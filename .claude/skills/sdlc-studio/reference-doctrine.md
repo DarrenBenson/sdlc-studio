@@ -223,6 +223,25 @@ rules, the agents/services) live in that project's agent-instructions file
     still had to happen as a close-time repair rather than as work nobody accounted for -
     visible and countable, without holding the gate.
 
+21. **A fix's author is not sufficient evidence for that fix.** {#repair-evidence}
+    Every other kind of change is held by a test written before anyone knew which way the
+    implementation would go. A repair is not: the defect is already understood, the fix is
+    written fast under the belief that understanding is complete, and the test is written
+    afterwards by the person who just decided what the answer is. It is the most
+    defect-dense work in a sprint and the only work whose evidence is authored with the
+    answer already in hand.
+
+    So a repair carries evidence its author could not have manufactured: a mutant applied to
+    the repair's own changed lines, and the repair's test observed to fail on it. A test that
+    cannot fail on the change it guards is not evidence about that change - it is evidence
+    that somebody wrote a test. The distinction is invisible in a green suite and it is
+    exactly the distinction that matters here.
+
+    This is enforced, not advised. `transition.py` refuses the terminal status of a
+    repair-typed unit whose changed surface carries no surviving-mutant evidence, on the same
+    terms it already refuses a bug with no verification depth. A rule stated here with no
+    mechanism behind it is a rule this doctrine is explicit about distrusting.
+
 ## Project constitution {#constitution}
 
 A project may declare its inviolable principles in an optional
