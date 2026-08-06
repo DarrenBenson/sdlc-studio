@@ -151,6 +151,14 @@ PROFILES: dict[str, dict] = {
 }
 
 
+class MutationAnchorError(RuntimeError):
+    """The line a mutation would edit is not the line it was enumerated at.
+
+    Raised rather than warned: the run must abort, because a score published over a mutant
+    applied somewhere else is evidence about nothing and reads exactly like evidence.
+    """
+
+
 def _multiline_string_spans(text: str) -> tuple[set, bool]:
     """(line numbers inside multi-line string literals, tokenise_ok). Docstring
     interiors are code-shaped but mutate nothing - enumerating them yields false
@@ -200,30 +208,59 @@ def enumerate_mutations(paths, classes: tuple = FAULT_CLASSES) -> tuple[list[dic
                                   "reason": f"no {path.suffix} pattern for {cls}"})
                 continue
             pattern, _ = profile[cls]
-            occ = 0
-            for ln, line in enumerate(lines, 1):
-                if ln in excluded:
-                    continue
-                if pattern.match(line):
-                    mutations.append({"file": str(path), "class": cls,
-                                      "occurrence": occ, "line": ln})
-                    occ += 1
+            # THE SAME routine `mutated_text` resolves with, so the two cannot drift.
+            for occ, ln in enumerate(_occurrences(path, pattern, lines)):
+                mutations.append({"file": str(path), "class": cls,
+                                  "occurrence": occ, "line": ln})
     return mutations, unchecked
 
 
+def _occurrences(path: Path, pattern, lines: list) -> list:
+    """The 1-based line numbers this pattern matches, in occurrence order, with multiline-string
+    interiors excluded for Python.
+
+    THE ONE routine both readers use. `enumerate_mutations` used to apply the exclusion while
+    `mutated_text` re-counted without it, so a pattern occurring inside a docstring above the
+    real occurrence shifted the ordinal between them: the mutant was REPORTED at one line and
+    APPLIED at another. A verdict attributed to a line the tool did not edit is worse than no
+    verdict - a false KILL is a green mutation score for code that was never mutated, and this
+    is the instrument the whole evidence story leans on. Two readers of one file disagree
+    eventually, and the second is written by whoever did not know the first existed (BG0533).
+    """
+    excluded: set = set()
+    if path.suffix == ".py":
+        excluded, _tok_ok = _multiline_string_spans("\n".join(lines) + "\n")
+    return [ln for ln, line in enumerate(lines, 1)
+            if ln not in excluded and pattern.match(line)]
+
+
 def mutated_text(mutation: dict) -> str:
-    """The full mutated file content for one anchored mutation."""
+    """The full mutated file content for one anchored mutation.
+
+    REFUSES when the line it would edit is not the line the mutation was enumerated at. The
+    check is cheap, independent of how the anchor is computed, and it is what makes the shared
+    routine above a guarantee rather than a convention the next edit can break.
+    """
     path = Path(mutation["file"])
     pattern, repl = PROFILES[path.suffix][mutation["class"]]
     lines = path.read_text(encoding="utf-8").splitlines()
-    occ = 0
-    for i, line in enumerate(lines):
-        m = pattern.match(line)
-        if m:
-            if occ == mutation["occurrence"]:
-                lines[i] = repl(m)
-                break
-            occ += 1
+    hits = _occurrences(path, pattern, lines)
+    occ = mutation["occurrence"]
+    if occ >= len(hits):
+        # UNCHANGED text, deliberately - an existing contract this bug does not touch. The
+        # caller refuses on "the patch changed nothing", which is the same refusal by a
+        # different route; raising here would break `test_applied_refuses_a_mutant_identical
+        # _to_the_source`. BG0533 is about applying at the WRONG line, not about an ordinal
+        # that no longer resolves.
+        return "\n".join(lines) + "\n"
+    target = hits[occ]
+    if target != mutation["line"]:
+        raise MutationAnchorError(
+            f"{path}: {mutation['class']} occurrence {occ} was ENUMERATED at line "
+            f"{mutation['line']} and resolves to line {target}. Refusing to apply it: a verdict "
+            f"attributed to a line the tool did not edit is not evidence about anything.")
+    m = pattern.match(lines[target - 1])
+    lines[target - 1] = repl(m)
     return "\n".join(lines) + "\n"
 
 

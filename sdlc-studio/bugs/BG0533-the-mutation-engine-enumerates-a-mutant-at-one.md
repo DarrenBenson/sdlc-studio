@@ -37,7 +37,7 @@ Then assert the invariant rather than trusting the shared helper: after applying
 - **Then** the index of the changed line equals the mutation's recorded `line`, asserted after the write rather than trusted from the anchor computation
 - **Mutant:** revert `mutated_text` to counting occurrences WITHOUT the exclusion `enumerate_mutations` applies. A seat showed the post-write equality check alone is survived once AC3 unifies the counters, so this is the edit that reddens this criterion rather than AC2's
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_the_changed_line_is_the_enumerated_line
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC2: a disagreement ABORTS the run rather than recording a verdict
 
@@ -46,7 +46,7 @@ Then assert the invariant rather than trusting the shared helper: after applying
 - **Then** it aborts loudly naming both, because a verdict attributed to a line the tool did not edit is worse than no verdict - a false KILL is a green mutation score for code that was never mutated
 - **Mutant:** warn and continue - the run completes and publishes a score, and the instrument the whole evidence story leans on reports success it did not achieve
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_a_line_disagreement_aborts_loudly
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC3: one routine counts occurrences for both readers
 
@@ -55,7 +55,7 @@ Then assert the invariant rather than trusting the shared helper: after applying
 - **Then** exactly ONE routine does the counting and both call it - two readers of one file disagree eventually, and the second is written by whoever did not know the first existed
 - **Mutant:** keep two counting sites and fix only the exclusion - they agree today and drift again at the next edit, which is how this survived since c40e9c2c
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_one_routine_counts_for_both_readers
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC4: the positive control - an ordinary mutant still applies and still kills
 
@@ -64,7 +64,7 @@ Then assert the invariant rather than trusting the shared helper: after applying
 - **Then** it lands, its test fails, and the verdict is KILLED - a guard that refuses every application passes AC1 and AC2 for exactly the wrong reason
 - **Mutant:** abort on every application - the criteria above stay green while mutation testing stops working entirely
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AppliedWhereEnumeratedTests::test_an_ordinary_mutant_still_applies_and_kills
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ## Test Plan
 

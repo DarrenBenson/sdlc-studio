@@ -3162,6 +3162,94 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
                          "the gate emitted no killer for a mutant its own runner named")
 
 
+class AppliedWhereEnumeratedTests(unittest.TestCase):
+    """BG0533: the engine reported a mutant at one line and applied it at another.
+
+    `enumerate_mutations` skipped multiline-string interiors when counting occurrences and
+    `mutated_text` re-counted without that exclusion, so a pattern inside a docstring above the
+    real occurrence shifted the ordinal between them. A verdict attributed to a line the tool
+    did not edit reads exactly like evidence and is evidence about nothing - and a false KILL is
+    a green mutation score for code that was never mutated.
+    """
+
+    DECOY = ('def g(a, b):\n'
+             '    """doc\n'
+             '    if a == b:\n'
+             '        pass\n'
+             '    """\n'
+             '    if 1 == 1:\n'
+             '        return 2\n'
+             '    return 3\n')
+
+    def _file(self, d, body):
+        f = Path(d) / "m.py"
+        f.write_text(body, encoding="utf-8")
+        return f
+
+    def _guard(self, muts):
+        return next(m for m in muts if m["class"] == "invert-guard")
+
+    def test_the_changed_line_is_the_enumerated_line(self) -> None:
+        """The decoy that produced the bug: `if a == b:` inside a docstring above the real
+        guard. Mutant: revert `mutated_text` to counting occurrences WITHOUT the exclusion
+        `enumerate_mutations` applies - the ordinal shifts and the edit lands in the string."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            f = self._file(d, self.DECOY)
+            before = f.read_text(encoding="utf-8")
+            mu = self._guard(m.enumerate_mutations([f])[0])
+            out = m.mutated_text(mu)
+            changed = [i + 1 for i, (x, y) in
+                       enumerate(zip(before.splitlines(), out.splitlines())) if x != y]
+            self.assertEqual(changed, [mu["line"]],
+                             "the mutant was applied at a line it was not enumerated at")
+            self.assertNotIn(3, changed, "the edit landed inside the docstring")
+
+    def test_a_line_disagreement_aborts_loudly(self) -> None:
+        """A disagreement must ABORT. Mutant: replace the refusal with a printed warning - the
+        run completes and publishes a score over a mutant applied somewhere else."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            f = self._file(d, self.DECOY)
+            mu = dict(self._guard(m.enumerate_mutations([f])[0]))
+            mu["line"] = mu["line"] + 1          # claim a line the ordinal does not resolve to
+            with self.assertRaises(m.MutationAnchorError) as caught:
+                m.mutated_text(mu)
+            self.assertIn("ENUMERATED", str(caught.exception))
+
+    def test_one_routine_counts_for_both_readers(self) -> None:
+        """Mutant: revert the shared routine so each reader has its own loop again - they agree
+        today and drift at the next edit, which is how this survived since c40e9c2c."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            f = self._file(d, self.DECOY)
+            pattern, _ = m.PROFILES[".py"]["invert-guard"]
+            lines = f.read_text(encoding="utf-8").splitlines()
+            shared = m._occurrences(f, pattern, lines)
+            enumerated = [x["line"] for x in m.enumerate_mutations([f])[0]
+                          if x["class"] == "invert-guard"]
+            self.assertEqual(shared, enumerated,
+                             "the enumerator does not resolve through the shared routine")
+            self.assertNotIn(3, shared, "the docstring interior was counted")
+
+    def test_an_ordinary_mutant_still_applies_and_kills(self) -> None:
+        """THE POSITIVE CONTROL, on a file that DOES carry docstrings - as every file in this
+        repo does. A seat rejected the first version of this criterion for using a
+        docstring-free fixture, which an over-correction refusing whenever any multiline span
+        exists would have passed while refusing every real file.
+
+        Mutant: refuse whenever `_multiline_string_spans` returns any span - this reddens alone.
+        """
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            f = self._file(d, 'def g(a):\n    """a docstring, no decoy"""\n'
+                              '    if 1 == 1:\n        return 2\n    return 3\n')
+            before = f.read_text(encoding="utf-8")
+            mu = self._guard(m.enumerate_mutations([f])[0])
+            out = m.mutated_text(mu)
+            self.assertNotEqual(out, before, "an ordinary mutant on a docstringed file was refused")
+
+
 class FromPlanTests(unittest.TestCase):
     """US0632: a planned mutant is EXECUTED and its death recorded.
 

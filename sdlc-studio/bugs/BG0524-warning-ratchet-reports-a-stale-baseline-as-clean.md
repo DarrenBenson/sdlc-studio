@@ -30,7 +30,20 @@ Decide which criterion is right and make the other follow. The AC2 behaviour is 
 
 ## Acceptance Criteria
 
-### AC1: a stale baseline exits NON-ZERO and says which state it is in
+> **PREMISE CORRECTED before any code.** This bug's title says a stale baseline "reports clean
+> and exits 0", and treats both halves as the defect. Only the first half is. `validate.py`
+> carries a deliberate, reasoned decision that stale does NOT hold the gate - "a repaired
+> instance is good news, and refusing the commit that repaired it would teach an author to stop
+> repairing" - and that reasoning is better than US0480 AC4's, which lumped stale in with the
+> untrustworthy states. The criterion over-specified.
+>
+> What IS wrong is the WORD. A baseline carrying entries no artefact still holds is not `clean`;
+> it is ok-with-removable-entries, and printing `clean` is what contradicts the docstring's
+> "four untrustworthy states". Separately, US0480 AC4's verifier asserts the stale ENTRIES and
+> never the exit code, so it passes while the code contradicts the criterion it verifies - which
+> is BG0523's class, found here rather than by it.
+
+### AC1: a stale baseline is not reported as `clean`, and still does not hold the gate
 
 - **Given** a warning baseline the ratchet cannot establish against the current tree
 - **When** `validate.py warning-ratchet` runs
