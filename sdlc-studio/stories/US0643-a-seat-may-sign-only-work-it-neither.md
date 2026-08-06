@@ -1,6 +1,6 @@
 # US0643: A seat may sign only work it neither authored nor adversarially reviewed - three distinct contexts, enforced
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0532
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new

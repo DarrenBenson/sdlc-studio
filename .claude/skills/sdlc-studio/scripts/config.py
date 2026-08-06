@@ -116,7 +116,10 @@ def feature_enabled(repo_root: Path | str, feature: str) -> bool:
     except Exception:  # noqa: BLE001 - config must never break a feature check
         stated = None
     if stated is None:
-        from lib import sdlc_md  # noqa: PLC0415 - deferred; avoids a config->sdlc_md import cycle
+        # `sdlc_md` is already bound at module level (line 21) and imports nothing from this
+        # module, so there is no cycle to avoid. The deferred import that used to sit here said
+        # there was: a claim in a comment, unexamined because comments are not executed. An
+        # independent seat ruled it FALSE in the claim-inventory pass.
         return sdlc_md.is_schema_v3(repo_root)
     return bool(stated)
 

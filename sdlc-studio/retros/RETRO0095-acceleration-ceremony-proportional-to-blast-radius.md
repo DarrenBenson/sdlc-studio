@@ -64,6 +64,10 @@ store. A ranking is a fact about the past; this is a decision, re-made every ret
 
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
+| BG0528 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| BG0527 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0533 | deferred | Claude Opus 5 (author) | 2026-08-06 |
+| CR0534 | deferred | Claude Opus 5 (author) | 2026-08-06 |
 | BG0526 | deferred | Claude Opus 5 (author) | 2026-08-05 |
 | CR0511 | not-stop-ship | Claude Opus 5 (author) | 2026-08-05 |
 | BG0521 | deferred | Claude Opus 5 (author) | 2026-08-05 |

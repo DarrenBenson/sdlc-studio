@@ -1,11 +1,11 @@
 # US0639: Every gate execution the close runs is recorded, so the close cost report is not a fraction of the truth
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0510
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/scripts/sprint_report.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0208
 > **Points:** 2
 > **Persona:** Maya Okafor

@@ -1,6 +1,6 @@
 # US0641: The critic brief tier is derived from the risk band, recorded on the verdict, and read by the coverage predicate
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0510
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new

@@ -11,9 +11,9 @@
 
 ## RUN-01KZ9315 - ceremony is proportional to blast radius, and the fixes were already built
 
-**12 of 12 units, 41 of 41 points, all committed with a green full suite at each commit.** The
-sprint's thesis was CR0510's second finding rather than its first: the accelerators were built,
-tested, and switched off. Three of the twelve units are wiring, not building.
+**12 of 12 units, 41 of 41 points, delivered with a green full suite at each commit and reviewed
+by two independent seats over two rounds.** The sprint's thesis was CR0510's second finding
+rather than its first: the accelerators were already built, tested, and switched off.
 
 | Unit | Pts | |
 | --- | --- | --- |
@@ -32,43 +32,70 @@ tested, and switched off. Three of the twelve units are wiring, not building.
 
 **`route.py`'s own header said "Advisory only - no gate reads a tier". That is now false.**
 Measured through the shipped CLI: a low-band unit's brief is 6,146 characters and omits the
-claim-inventory pass; a high-band unit's is 8,415 and carries it. Over this run's own batch the
-tiering splits 3 light to 9 full; over the whole corpus of 1,171 units it bands medium 821, low
-177, high 167, trivial 6.
+claim-inventory pass; a high-band unit's is 8,415 and carries it. Over the whole corpus of 1,171
+units the bands split medium 821, low 177, high 167, trivial 6 - so the tiering buys a bounded
+brief on about 16% of units, and every unit of the NEXT sprint's own batch bands medium. That
+number is the case for CR0510's next slice, and it is stated here rather than discovered later.
 
-**CR0532 turned out to be mostly built.** Panel sign-off ships today with three distinct contexts
-enforced, the signer read from the run rather than named at signing time, and a
-brief-provenance interlock. What was missing was reachability: nothing but a hand-run command
-recorded the assignment, so a run that forgot it could not be signed off at all.
+**Panel sign-off is in force.** Adversarial seats qa and engineering, signing seat product, under
+D0130. The panel was assigned by `persona_resolve.py panel`, read from the run rather than named
+at signing time, and the product seat signed work it neither authored nor adversarially reviewed.
 
-### What the discipline bought, and what it cost
+### What the two review rounds actually found
 
-**45 named mutants applied, 45 killed** - against five that survived on the previous run. The
-difference is that every mutant here was written from the criterion before the code existed.
-Four needed a second attempt and each found something real: a dead guard clause in
-`conformance.tier_covers` (the same defect this sprint filed against `gate.py:3170` while
-planning it), an explicit `--tier light` that would have silently cleared the gate its derived
-twin does not, a reader that would have un-signed every historical sign-off when the table
-widened, and the panel's brief-provenance interlock, which no fixture reached.
+Round 1 (both seats, pre-repair): 71 mutants, 12 survivors, 6 blocking findings. Round 2 (both
+seats, over the repaired tree): 103 further mutants, and **the sharpest finding of the sprint was
+a regression created BY a repair.**
 
-The gates caught four author defects before any reviewer: two units whose verifiers never
-entered the shipped entry point, a `close --dry-run` contract broken by the cost recording, a
-test that passed in isolation and failed under the suite, and two test classes appended below a
-`__main__` guard.
+That repair replaced four open-coded `"UNMEASURED"` literals with one constant and rewrote the
+assertions to compare against it. Both sides of every assertion then moved together: mutating the
+constant to `"0"` survived all 134 tests while the shipped CLI printed `Cost: 0 tokens over 8
+points` - verbatim the mutant the criterion names. The literal assertions the repair deleted were
+the only thing pinning the word. A self-referential assertion cannot fail, however many there are.
 
-**The cost, stated plainly.** Six full suites at seven minutes each. The gate's own budget lane
-reported OVER on every commit - 383s, 445s, 392s against a 380s ceiling already raised once from
-120s. That is CR0510's headline evidence worsening while CR0510's first slice was being built.
+The same round found the first repair of BG0495 had moved its defect rather than removed it: the
+`seconds` rule was inverted from an allow-list to an exclusion, with a comment citing LL0043
+written directly above three surviving enumerations of the same rule. A preflight-only ledger
+rendered `0 full run(s), 0 selected - 623s of test time`. The counts now derive from the ledger.
 
-### What is owed
+Twice, a repair relocated its own defect one clause over. That is the transferable finding, and
+it is why `critic.py brief --rejoinder` exists.
 
-Nothing in this sprint was live during this sprint. The measurable claim is the NEXT run's
-tokens per point against **RETRO0094's 353,810**, recorded in RETRO0095 as the before figure so
-the comparison is against a stated baseline rather than a remembered one.
+Also found and fixed: a completeness claim true of the dict and false of the page (the renderer
+hand-enumerated four field names, so a fifth component was derived correctly and never printed);
+a deferred import justified by an import cycle that does not exist; and two units whose declared
+`Affects` omitted the files their own repairs landed in, so a seat honouring the bounded scope
+could not see the work it was reviewing.
 
-**No independent review covers any unit, and no reviewer-of-record sign-off exists.** Both are
-structurally unavailable to the authoring session - the gate working, not failing. US0643 is
-what makes the next run able to answer this without waiting.
+Reported and NOT fixed, each proven pre-existing at the base ref by execution: the reuse
+annotation in the execution sentence is unpinned in both directions, the sum-to-runs invariant is
+reuse-blind on its fixture, the overhead `exact` bound has no positive control, `critic.py:1236`'s
+role normalisation is unpinned since 307ce91d, and `retro.py:2255`'s "absent rather than a repeat"
+rule for the Written cell can be deleted with the suite green.
+
+**The panel split on BG0495** - engineering rejected, qa approved - and the tooling escalated it
+to the operator rather than resolving it by majority. The disagreement is the finding.
+
+### Filed this run
+
+BG0526, BG0527, CR0533, CR0534. **BG0527** is the one to read: the premise "the previous run must
+close before the next can open" was tested rather than assumed and is false - `_is_spent` reads a
+recorded goal verdict as proof a run is history, though the verdict is written before the close
+chain rather than by it, so every run passes through a window in which the slot guard is off.
+**CR0534** is the operator's: 64 documented config keys, no command that shows what is in force,
+and nothing that revisits a setting against the evidence the run itself produced.
+
+### What this cost, stated plainly
+
+Six full suites at roughly seven minutes each, and the gate's own budget lane reported OVER on
+most commits - 383s, 392s, 405s, 406s, 445s against a 380s ceiling already raised once from 120s.
+That is CR0510's headline evidence worsening while CR0510's first slice was being built.
+
+The run stayed open for over 24 hours, and the cause is worth recording because no gate reported
+it: **eight of the twelve units never left `Ready`.** Delivery committed their code and green
+suites and never transitioned them. Every downstream gate then reported a symptom - no review
+coverage, no sign-off, a blocked Done gate - and none of the twenty pre-flight blockers said the
+units had not been moved. `sprint close` also does not name it. Filed as **BG0528**.
 
 ## CLOSED: RUN-01KZ79C1 - the instruments are honest; the review found what the gates could not
 
