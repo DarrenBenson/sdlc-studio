@@ -73,20 +73,25 @@
 - **Mutation-checked:** partial (2026-08-06). Dropping `PYTHONDONTWRITEBYTECODE` from the suite env KILLED; not purging the stale `.pyc` KILLED; a non-idempotent restore KILLED. The anchor limb is NOT delivered and NOT verified - see the retraction above. The earlier claim that "this engine selects mutants by AST node rather than by string anchor" was FALSE and is withdrawn in full.
 - **Verified:** yes (2026-08-06)
 
-### AC4: the mutant is applied where it was enumerated - CARRIED UNMET
-
-> **SPLIT OUT of AC3 at review, because a retraction written only in prose is not a retraction.**
-> AC3 originally carried this limb, and marking it undelivered in a comment left `**Verified:**
-> yes` on the line the tooling reads - `verify_ac` re-stamped it green from a test that does not
-> exercise the property, so every mechanical reader still saw the criterion met. A seat caught
-> that. The limb now stands alone, with NO verifier, so the tooling reports it unverified because
-> it IS unverified.
-
-- **Given** a target whose pattern occurs inside a multiline string above the real occurrence
-- **When** the mutant is applied
-- **Then** the line changed on disk is the line the mutation was enumerated at, and the run aborts loudly when it is not
-- **Mutant:** none applicable - the property is not implemented. `enumerate_mutations` skips multiline-string spans when counting occurrences and `mutated_text` does not, so a mutant enumerated at line 12 is applied at line 5 inside a docstring. Two seats reproduced it
-- **Verified:** no - CARRIED. Filed as BG0533. The earlier claim that this engine "selects mutants by AST node rather than by string anchor", and BG0531's scoping of the hazard to the hand-`register` path, are both withdrawn as false
+> **DELIVERED NARROWED.** AC4 - "the mutant is applied where it was enumerated" - was DESCOPED
+> from this story at the close, on a recorded operator decision (`sprint decision list`, choice
+> `split`). It is carried wholly by **BG0533**.
+>
+> This story therefore delivers THREE criteria, not four, and says so rather than counting the
+> fourth as passed. The descoped property is a pre-existing defect in the mutation engine that
+> this unit SURFACED rather than caused: `enumerate_mutations` skips multiline-string spans when
+> counting occurrences and `mutated_text` does not, so a mutant enumerated at one line is applied
+> at another. Two independent seats reproduced it by execution.
+>
+> The history matters more than the outcome. The limb was first narrowed away on my claim that
+> "this engine selects mutants by AST node rather than by string anchor" - which is false, and
+> the seats disproved it. Correcting that in prose was not enough either: `**Verified:** yes`
+> stayed on the line the tooling reads and `verify_ac` re-stamped it green from a test that does
+> not exercise the property. A criterion is descoped when the record says so in the fields a
+> machine reads, and not before.
+>
+> Reversible: the operator summary names this as a reversal candidate, and the decision is on
+> the run.
 
 ## Revision History
 
@@ -95,3 +100,4 @@
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | sdlc-studio | Groomed: criteria authored against the `mutation.py --from-plan` slice; AC3 pins the two recorded false-survival scars |
 | 2026-08-06 | sdlc-studio | Declared `Depends on:` at plan time - the planner reported all six units parallel because no dependency was stated, which is false: the plan is derived (US0629) before it can be reviewed, gated, executed or measured |
+| 2026-08-06 | sdlc-studio | DELIVERED NARROWED at the close: AC4 descoped on a recorded decision and carried by BG0533; three criteria delivered, not four |
