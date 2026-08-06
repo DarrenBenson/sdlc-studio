@@ -3618,7 +3618,19 @@ def affects_findings(repo_root: Path | str, unit_ids) -> list[dict]:
     return out
 
 
-def _render_affects_advisories(data: dict) -> None:
+def _affects_blocking(repo_root) -> bool:
+    """Is an Affects finding a refusal for this project? ONE reader, asked by every path.
+
+    `plan` announced "nothing is refused" whatever the mode while `batch add` consulted the mode
+    itself, so the same setting meant two things depending on which verb you ran (BG0521)."""
+    try:
+        return affects_check_mode(repo_root) == "block"
+    except Exception as exc:  # noqa: BLE001 - a mode read must not crash the verb it advises
+        sdlc_md.debug("sprint._affects_blocking", exc)
+        return False
+
+
+def _render_affects_advisories(data: dict, repo_root=None) -> None:
     """A declaration the unit's own content contradicts. ADVISORY - it names what looks wrong
     and refuses nothing, because a path to a file the unit will create is legitimate.
 
@@ -3628,7 +3640,13 @@ def _render_affects_advisories(data: dict) -> None:
     items = (data.get("breakdown") or {}).get("affects_advisories") or []
     if not items:
         return
-    print("  Affects contradicted by the unit's own content (advisory - nothing is refused):")
+    # THE MODE DECIDES, and it is read here rather than announced. `block` and `warn` printed a
+    # byte-identical "nothing is refused" line, so the config key decided nothing on this path
+    # while `help/sprint.md` said it "decides what a finding does" (BG0521).
+    blocking = _affects_blocking(repo_root or data.get("root") or ".")
+    print("  Affects contradicted by the unit's own content"
+          + (" - REFUSED under sprint.affects_check: block:" if blocking
+             else " (advisory - nothing is refused):"))
     for it in items:
         if it.get("unresolvable"):
             print(f"    {it['id']}: declared but not on disk - "
@@ -4233,7 +4251,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_delivery_mode(data)
     _render_lane_partition(data)
     _render_clusters(data)
-    _render_affects_advisories(data)
+    _render_affects_advisories(data, args.root)
     _render_triage(data)
     _render_decompose(data)
     _render_downgrades(data)
@@ -4352,7 +4370,7 @@ def cmd_breakdown(args: argparse.Namespace) -> int:
         print("\n".join(_oversized_detail(bd)))
         print(SPLIT_FIX.format(ceiling=bd["ceiling"]))
     _render_clusters({"breakdown": bd})
-    _render_affects_advisories({"breakdown": bd})
+    _render_affects_advisories({"breakdown": bd}, args.root)
     _render_decompose({"breakdown": bd})
     _render_downgrades({"breakdown": bd})
     return 0
@@ -7265,6 +7283,24 @@ def cmd_batch(args: argparse.Namespace) -> int:
         print("sprint batch drop: --reason is required - a drop is recorded, not silent",
               file=sys.stderr)
         return 2
+    # REFUSED BEFORE THE WRITE. The check used to run after `add_to_batch`, so the operator was
+    # told "refused" about a unit the done-gate could already see - a refusal that is a message
+    # rather than a refusal. Applied on every output format: the json path skipped the check
+    # entirely, holding a machine caller to a weaker rule than a human one (BG0521).
+    if action == "add" and affects_check_mode(root) == "block":
+        offenders = list(affects_findings(root, [sdlc_md.norm_id(args.id)]))
+        if offenders:
+            for it in offenders:
+                if it.get("unresolvable"):
+                    print(f"  {it['id']}: Affects declares path(s) not on disk - "
+                          f"{', '.join(it['unresolvable'])}", file=sys.stderr)
+                if it.get("undeclared"):
+                    print(f"  {it['id']}: targeted by its own Verify lines but undeclared - "
+                          f"{', '.join(it['undeclared'])}", file=sys.stderr)
+            print(f"sprint batch add REFUSED {sdlc_md.norm_id(args.id)}: "
+                  f"sprint.affects_check is `block`. The unit was NOT added - declare the path "
+                  f"or correct the Verify line.", file=sys.stderr)
+            return 2
     try:
         if action == "drop":
             state = run_state.drop_from_batch(root, args.id, reason=args.reason)
@@ -7293,10 +7329,8 @@ def cmd_batch(args: argparse.Namespace) -> int:
             if it.get("undeclared"):
                 print(f"  {it['id']}: targeted by its own Verify lines but undeclared - "
                       f"{', '.join(it['undeclared'])}")
-            if affects_check_mode(root) == "block":
-                print("  sprint.affects_check is `block`, so this unit is refused - declare the "
-                      "path or correct the Verify line.", file=sys.stderr)
-                return 2
+            # The `block` refusal now happens BEFORE the write, above - reaching here means
+            # the mode is `warn`, so these are reported and nothing is refused.
     return 0
 
 

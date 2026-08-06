@@ -42,7 +42,7 @@ Call the shared resolver from `cmd_plan` and honour the mode there, which is wha
 - **Then** it refuses, and its output DIFFERS from the same run under `warn` - today the two are byte-identical and both print `advisory - nothing is refused`, while `help/sprint.md:305` says the setting "decides what a finding does"
 - **Mutant:** leave `cmd_plan` without the shared resolver - the config key decides nothing and the help page is false
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AffectsCheckModesTests::test_block_and_warn_differ_at_plan
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC2: `batch add` refuses BEFORE it writes, not after
 
@@ -51,7 +51,7 @@ Call the shared resolver from `cmd_plan` and honour the mode there, which is wha
 - **Then** the unit is NOT in the batch afterwards - today it is written and then refused, so the operator is told "refused" about a unit the done-gate can now see
 - **Mutant:** keep the write ahead of the check - the refusal is a message rather than a refusal, which is the shape of every gate that reports what it did not do
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AffectsCheckModesTests::test_batch_add_refuses_before_writing
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC4: the positive control - `warn` still warns, and a clean batch still passes
 
@@ -60,7 +60,7 @@ Call the shared resolver from `cmd_plan` and honour the mode there, which is wha
 - **Then** both proceed and `batch add` still WRITES the unit. A seat found no positive control anywhere in this plan: a refusal wired unconditionally satisfies all three refusal rows above and blocks `sprint plan` in every consuming project
 - **Mutant:** in sprint.py, replace the mode lookup with an unconditional refusal - the rows above stay green while the shipped default stops working
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AffectsCheckModesTests::test_warn_still_warns_and_a_clean_batch_passes
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC3: `--format json` applies the same check as the text path
 
@@ -69,7 +69,7 @@ Call the shared resolver from `cmd_plan` and honour the mode there, which is wha
 - **Then** the same refusal happens - today the json path skips the check entirely, so a machine caller is held to a weaker rule than a human one
 - **Mutant:** gate the check on the text renderer - the two output formats enforce different rules and only one of them is tested
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AffectsCheckModesTests::test_json_and_text_enforce_the_same_rule
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ## Impact
 

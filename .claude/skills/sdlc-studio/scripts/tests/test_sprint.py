@@ -626,6 +626,104 @@ class AuthoringPlanTests(unittest.TestCase):
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
 
+class AffectsCheckModesTests(unittest.TestCase):
+    """BG0521: a config key that decided nothing on one path and decided it too late on another.
+
+    `plan` printed "advisory - nothing is refused" whatever the mode, so `block` and `warn` were
+    byte-identical while `help/sprint.md` said the setting "decides what a finding does".
+    `batch add` consulted the mode AFTER writing, so the operator was told "refused" about a unit
+    the done-gate could already see. And `--format json` skipped the check entirely, holding a
+    machine caller to a weaker rule than a human one.
+    """
+
+    def _repo(self, root: Path, mode: str) -> None:
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            f"sprint:\n  affects_check: {mode}\n", encoding="utf-8")
+        for n in (1, 2):
+            (root / "sdlc-studio" / "bugs" / f"BG{n:04d}-x.md").write_text(
+                f"# BG{n:04d}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                f"> **Affects:** src/thing.py, src/GHOST.py\n> **Points:** 3\n\n"
+                f"## Acceptance Criteria\n\n### AC1: it works\n\n- **Then** it works\n"
+                f"- **Verify:** pytest x\n", encoding="utf-8")
+
+    def _cli(self, argv):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(argv)
+        return rc, out.getvalue() + err.getvalue()
+
+    def _batch(self, root: Path) -> list:
+        return json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text())["batch"]
+
+    def test_block_and_warn_differ_at_plan(self) -> None:
+        """Mutant: announce "nothing is refused" whatever the mode - the two outputs become
+        byte-identical and the config key decides nothing on this path."""
+        outs = {}
+        for mode in ("block", "warn"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._repo(root, mode)
+                _rc, text = self._cli(["plan", "--bugs", "Open", "--no-fetch", "--root", str(root)])
+                outs[mode] = [l for l in text.splitlines() if "Affects contradicted" in l]
+        self.assertTrue(outs["block"] and outs["warn"], outs)
+        self.assertNotEqual(outs["block"], outs["warn"],
+                            "`block` and `warn` produce identical plan output")
+        self.assertIn("REFUSED", outs["block"][0])
+
+    def test_batch_add_refuses_before_writing(self) -> None:
+        """Mutant: reorder the affects check below the batch write - the unit is in the batch
+        when the refusal prints, so the done-gate can see a unit the operator was told was
+        refused. The assertion is on the BATCH, not on the exit code."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, "block")
+            (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+            rc, _ = self._cli(["plan", "--worklist", str(root / "w.txt"), "--write",
+                               "--no-fetch", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            rc, text = self._cli(["batch", "add", "BG0002", "--reason", "t", "--root", str(root)])
+            self.assertEqual(rc, 2, "a blocked unit was accepted")
+            self.assertEqual(self._batch(root), ["BG0001"],
+                             "the unit was written into the batch before being refused")
+            self.assertIn("NOT added", text)
+
+    def test_json_and_text_enforce_the_same_rule(self) -> None:
+        """Mutant: gate the check on the text renderer - a machine caller is held to a weaker
+        rule than a human one, which is the path nobody demonstrates."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, "block")
+            (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+            self._cli(["plan", "--worklist", str(root / "w.txt"), "--write", "--no-fetch",
+                       "--root", str(root)])
+            rc, _ = self._cli(["batch", "add", "BG0002", "--reason", "t", "--format", "json",
+                               "--root", str(root)])
+            self.assertEqual(rc, 2, "the json path skipped the check")
+            self.assertEqual(self._batch(root), ["BG0001"])
+
+    def test_warn_still_warns_and_a_clean_batch_passes(self) -> None:
+        """THE POSITIVE CONTROL, which a seat found missing from the whole plan: a refusal wired
+        unconditionally satisfies all three criteria above and blocks `sprint plan` in every
+        consuming project.
+
+        Mutant: refuse whenever a finding exists regardless of mode - this reddens alone.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, "warn")
+            (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+            self._cli(["plan", "--worklist", str(root / "w.txt"), "--write", "--no-fetch",
+                       "--root", str(root)])
+            rc, _ = self._cli(["batch", "add", "BG0002", "--reason", "t", "--root", str(root)])
+            self.assertEqual(rc, 0, "`warn` refused, so the shipped default stops working")
+            self.assertIn("BG0002", self._batch(root),
+                          "`warn` did not write the unit it only warns about")
+
+
 class UnnameableMutantTests(unittest.TestCase):
     """US0633: a criterion whose falsifying change nobody can name is refused at grooming.
 
