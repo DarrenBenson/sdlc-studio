@@ -943,9 +943,25 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     # plans is not retro-refused - a gate that refuses everything is a gate that gets switched
     # off wholesale.
     if not force and target_canon in _TERMINAL_FOR_PLAN and _plan_gate_active(root, text):
-        block = _planned_mutant_gate(root, sdlc_md.norm_id(artifact_id))
-        if block:
-            blocks.append(f"{block}. Override with --force")
+        # SCOPED TO REPAIRS (US0566). Feature work is already held by a test written before
+        # anyone knew which way the implementation would go; only a repair's test is authored
+        # with the answer in hand. A blanket demand on all work is the one that gets switched
+        # off wholesale, and then it holds nothing.
+        repair, why = is_repair_unit(type_, text)
+        uid = sdlc_md.norm_id(artifact_id)
+        if repair:
+            record = no_surface_record(root, uid)
+            if record:
+                # The exemption is RE-DERIVED, never granted on the author's word. An exemption
+                # nobody checks is a box, and this one exempts a unit from the only evidence its
+                # author could not have manufactured.
+                refusal = verify_no_surface_claim(root, uid, record)
+                if refusal:
+                    blocks.append(f"{refusal}. Override with --force")
+            else:
+                block = _planned_mutant_gate(root, uid)
+                if block:
+                    blocks.append(f"{block} ({why}). Override with --force")
     if type_ == "story" and target_canon == "Done":
         parity = _story_target_parity(text)
         if parity:
@@ -1505,6 +1521,74 @@ def _planned_mutant_gate(root, unit: str) -> str | None:
                          f"criterion names did not notice `{r['mutant'][:60]}`")
     return (f"{unit}: {len(outstanding)} planned mutant(s) unaccounted for - " + "; ".join(parts)
             + f". Check them with `mutation.py run --story {unit} --from-plan`")
+
+
+#: The provenance fields that mark a unit as REPAIR work. Read from the artefact's own metadata,
+#: never inferred from prose: "fix", "repair" and "regression" appear in the titles of plenty of
+#: feature stories, and a classifier reading words would type them wrongly in the direction that
+#: costs most - holding new capability to a bar the evidence indicts only repairs for.
+_REPAIR_PARENT_PREFIXES = ("BG", "RV")
+
+
+def is_repair_unit(type_: str, text: str) -> tuple[bool, str]:
+    """Is this unit REPAIR work, and which field says so?
+
+    `(bool, why)` - the reason is returned so a refusal can name the field it read rather than
+    asserting a classification the reader cannot check.
+
+    The scope matters as much as the rule. A blanket mutation demand on ALL work is the one that
+    gets switched off wholesale: feature work is already held by a test written before anyone
+    knew which way the implementation would go, and only a repair's test is authored with the
+    answer already in hand. Widening the demand past that dilutes it to nothing.
+    """
+    if type_ == "bug":
+        return True, "its type is `bug`"
+    parent = (sdlc_md.extract_field(text, "Parent") or "").strip()
+    delivers = (sdlc_md.extract_field(text, "Delivers") or "").strip()
+    for field, value in (("Parent", parent), ("Delivers", delivers)):
+        ident = sdlc_md.norm_id(value.split(",")[0].strip()) if value else ""
+        if ident[:2] in _REPAIR_PARENT_PREFIXES:
+            return True, f"its `{field}` names {ident}, a finding rather than a request"
+    return False, "no type or provenance field marks it as repair work"
+
+
+def no_surface_record(root, unit: str) -> dict | None:
+    """The recorded no-mutatable-surface exemption for `unit`, or None."""
+    import json  # noqa: PLC0415
+    path = Path(root) / "sdlc-studio" / ".local" / "no-mutatable-surface.json"
+    try:
+        return (json.loads(path.read_text(encoding="utf-8")) or {}).get(sdlc_md.norm_id(unit))
+    except (OSError, ValueError):
+        return None
+
+
+def verify_no_surface_claim(root, unit: str, record: dict) -> str | None:
+    """Re-derive the claim rather than trusting it. Returns a refusal, or None when it holds.
+
+    An exemption nobody checks is a box, and this one exempts a unit from the only evidence its
+    author could not have manufactured. So the paths it names are put through the mutation
+    generator: if a mutant CAN be produced there, the claim is false and the transition is
+    refused naming the file that refutes it.
+    """
+    paths = [p for p in (record or {}).get("paths", []) if p]
+    if not paths:
+        return (f"{unit}: the no-mutatable-surface record names no changed path, so there is "
+                f"nothing to re-derive the claim from - an exemption that states no scope "
+                f"cannot be checked and is not an exemption")
+    try:
+        import mutation  # noqa: PLC0415
+        targets = [Path(root) / p for p in paths]
+        muts, _unchecked = mutation.enumerate_mutations([t for t in targets if t.is_file()])
+    except Exception as exc:  # noqa: BLE001 - report it, never swallow it
+        return (f"{unit}: the no-mutatable-surface claim could not be re-derived "
+                f"({type(exc).__name__}: {exc}) - an unverifiable exemption is not a granted one")
+    if muts:
+        first = muts[0]
+        return (f"{unit}: the no-mutatable-surface record claims nothing could be mutated, and "
+                f"the generator produces {len(muts)} mutant(s) over the paths it names - "
+                f"starting at {first['file']}:{first['line']} ({first['class']}). An exemption "
+                f"is re-derived, never taken on the author's word")
+    return None
 
 
 def _test_plan_gate(root, unit: str, text: str) -> str | None:

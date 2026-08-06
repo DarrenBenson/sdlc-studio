@@ -25,6 +25,7 @@
 - **When** `transition.py set --id <story> --status Done` runs and every other Done gate is satisfied
 - **Then** it proceeds, because the scope of the demand is the repair class the evidence indicts and a blanket requirement on all work is the one that gets switched off for cost
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RepairScopeTests::test_a_feature_story_is_not_held_to_the_repair_bar
+- **Verified:** yes (2026-08-06)
 
 ### AC2: the repair class is read from the artefact, not inferred from prose
 
@@ -32,6 +33,7 @@
 - **When** each is classified
 - **Then** the first three are typed as repairs from their recorded type and provenance fields and the fourth is not, with the classification derived from the artefact's own metadata rather than keyword-matched against its title or summary
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RepairScopeTests::test_the_repair_class_is_derived_from_metadata_not_prose
+- **Verified:** yes (2026-08-06)
 
 ### AC3: a repair with no mutatable surface records the exemption with its reason
 
@@ -39,6 +41,7 @@
 - **When** the transition runs
 - **Then** it proceeds only after writing a durable no-mutatable-surface record naming the unit, the changed paths and why no mutant could be generated, so the artefact says an absence was established rather than leaving the reader unable to tell it from a skipped run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::NoSurfaceExemptionTests::test_a_no_surface_repair_records_the_exemption_and_its_reason
+- **Verified:** yes (2026-08-06)
 
 ### AC4: the exemption is verified, never taken on the author's word
 
@@ -46,6 +49,7 @@
 - **When** the transition runs
 - **Then** it refuses, because the exemption is re-derived from the unit's changed lines and the claim contradicts a surface the generator can demonstrably mutate. An exemption an author can assert is the gate's own fail-open
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::NoSurfaceExemptionTests::test_a_claimed_exemption_over_a_mutatable_surface_is_refused
+- **Verified:** yes (2026-08-06)
 
 ## Revision History
 

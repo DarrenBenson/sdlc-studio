@@ -142,6 +142,88 @@ class TransitionTests(unittest.TestCase):
             self.assertIn("**Points:** 3", line)
 
 
+class RepairScopeTests(unittest.TestCase):
+    """US0566: the mutation demand is scoped to REPAIRS, and the class is read from metadata.
+
+    Feature work is already held by a test written before anyone knew which way the
+    implementation would go. Only a repair's test is authored with the answer in hand, which is
+    what the evidence indicts. A blanket demand on all work is the one that gets switched off
+    wholesale, and then it holds nothing.
+    """
+
+    def test_a_feature_story_is_not_held_to_the_repair_bar(self) -> None:
+        """Mutant: drop the scope so every unit is classed a repair - new capability is held to
+        a bar its evidence does not indict, and the demand is switched off wholesale."""
+        repair, why = tr.is_repair_unit(
+            "story", "# US3: fix the regression in the parser\n\n"
+                     "> **Status:** Ready\n> **Delivers:** CR0500\n")
+        self.assertFalse(repair, why)
+
+    def test_the_repair_class_is_derived_from_metadata_not_prose(self) -> None:
+        """The fourth case is the one that matters: its TITLE says "fix the regression" and its
+        provenance says feature work. A classifier reading words types it wrongly in the
+        direction that costs most.
+
+        Mutant: classify on the title text - the feature story becomes a repair and this reddens
+        on it alone.
+        """
+        cases = [
+            ("bug", "# BG1: x\n\n> **Status:** Open\n", True),
+            ("story", "# US1: x\n\n> **Status:** Ready\n> **Parent:** BG0123\n", True),
+            ("story", "# US2: x\n\n> **Status:** Ready\n> **Delivers:** RV0007\n", True),
+            ("story", "# US3: fix the regression in the parser\n\n"
+                      "> **Status:** Ready\n> **Delivers:** CR0500\n", False),
+        ]
+        for type_, text, expected in cases:
+            with self.subTest(text=text.splitlines()[0]):
+                got, why = tr.is_repair_unit(type_, text)
+                self.assertEqual(got, expected, why)
+                self.assertTrue(why, "the classification states no field it read")
+
+
+class NoSurfaceExemptionTests(unittest.TestCase):
+    """US0566 AC3/AC4: a repair with nothing to mutate records WHY, and the record is checked.
+
+    An exemption nobody verifies is a box, and this one exempts a unit from the only evidence
+    its author could not have manufactured.
+    """
+
+    def test_a_no_surface_repair_records_the_exemption_and_its_reason(self) -> None:
+        """Mutant: accept an exemption naming no paths - a record that states no scope cannot be
+        re-derived, so it is a claim wearing an exemption's name."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            refusal = tr.verify_no_surface_claim(str(root), "BG0001", {"paths": []})
+            self.assertIsNotNone(refusal, "an exemption naming no path was granted")
+            self.assertIn("nothing to re-derive", refusal)
+
+            # A genuine no-surface repair: the changed path is markdown, so the generator
+            # produces nothing and the exemption holds.
+            (root / "doc.md").write_text("# just prose\n", encoding="utf-8")
+            self.assertIsNone(
+                tr.verify_no_surface_claim(str(root), "BG0001", {"paths": ["doc.md"]}),
+                "a genuine markdown-only repair was refused its exemption")
+
+    def test_a_claimed_exemption_over_a_mutatable_surface_is_refused(self) -> None:
+        """THE POINT of the criterion: the claim is re-derived, never taken on the author's word.
+
+        Mutant: return None without running the generator - a hand-written record claiming
+        nothing could be mutated exempts a repair whose Python function the generator can
+        demonstrably mutate, and the gate becomes a box somebody ticks.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "m.py").write_text(
+                "def g(a, b):\n    if a == b:\n        return 1\n    return 2\n",
+                encoding="utf-8")
+            refusal = tr.verify_no_surface_claim(str(root), "BG0001", {"paths": ["m.py"]})
+            self.assertIsNotNone(refusal, "a false exemption over a mutatable surface was granted")
+            self.assertIn("m.py", refusal, "the refusal does not name the file that refutes it")
+            self.assertIn("re-derived", refusal)
+
+
 class TestPlanGateTests(unittest.TestCase):
     """US0630: a unit reaching delivery without a REVIEWED test plan is refused by the command
     that starts the work, not reported at the close.
