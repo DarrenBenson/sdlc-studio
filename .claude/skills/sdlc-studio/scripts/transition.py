@@ -1022,6 +1022,16 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         pr_res = plan_review.gate(root, artifact_id, path)
         if not pr_res["ok"]:
             blocks.append(pr_res["reason"])
+    # TEST-PLAN gate (US0630). A SECOND pre-code gate, beside the spec one above and keyed to a
+    # different `Kind`, so neither discharges the other - that separation is BG0510's whole
+    # point, and without it one approval clears both while neither reviewer read the other's
+    # artefact. Fires on the same entry so a direct Ready->Done cannot smuggle an unreviewed
+    # plan into the terminal state, and on EVERY type: a bug's test plan is a test plan.
+    if (target_canon in _IMPL_TARGETS and from_canon not in _IMPL_TARGETS
+            and _plan_gate_active(root, text)):
+        block = _test_plan_gate(root, sdlc_md.norm_id(artifact_id), text)
+        if block:
+            blocks.append(block)
     if blocks:
         joined = "; AND ".join(blocks)
         raise GateRefusal(f"{artifact_id} -> {new_status} blocked ({len(blocks)} requirement(s), "
@@ -1483,6 +1493,42 @@ def _planned_mutant_gate(root, unit: str) -> str | None:
                          f"criterion names did not notice `{r['mutant'][:60]}`")
     return (f"{unit}: {len(outstanding)} planned mutant(s) unaccounted for - " + "; ".join(parts)
             + f". Check them with `mutation.py run --story {unit} --from-plan`")
+
+
+def _test_plan_gate(root, unit: str, text: str) -> str | None:
+    """Refuse entry to implementation while the unit's test plan is missing or unreviewed.
+
+    The two refusals are DISTINCT, and that is the criterion rather than a nicety: "no plan" and
+    "plan not reviewed" have different fixes, and one message for both sends the reader to the
+    wrong command. Reviewing the test costs a fraction of reviewing the code, so being sent to
+    the wrong one of those two is not a small error.
+
+    The review is looked up under the `test-plan` KIND. A spec-review approval must not discharge
+    this gate: its reviewer never saw a test plan, and BG0510 exists because the ledger's shape
+    made exactly that substitution the default.
+    """
+    if "## Test Plan" not in text:
+        return (f"{unit} has no `## Test Plan`, and `review.test_plan_after` puts it in scope - "
+                f"name, per criterion, the production change its test must fail on. Derive it: "
+                f"`verify_ac.py testplan derive --unit {unit}`")
+    try:
+        import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        v = critic.verdict_for(root, unit, phase="plan-review", kind="test-plan")
+    except Exception as exc:  # noqa: BLE001 - a gate must not crash the verb it guards
+        sdlc_md.debug("transition._test_plan_gate", exc)
+        return None
+    if v and v.get("verdict") == critic.APPROVE and critic.is_independent(v):
+        return None
+    why = ("no plan-review verdict of kind `test-plan` is on record"
+           if not v else
+           f"the plan-review verdict on record is {v.get('verdict')} by "
+           f"{v.get('reviewer') or '-'} against author {v.get('author') or '-'}"
+           + (" - a self-review never clears the gate" if not critic.is_independent(v) else ""))
+    return (f"{unit} has a test plan that no independent seat has approved - {why}. Reviewing "
+            f"the test costs a fraction of reviewing the code, which is the whole reason this "
+            f"gate is here. Brief one: `critic.py brief --unit {unit} --seat qa "
+            f"--phase plan-review`, then record it with `critic.py record --unit {unit} "
+            f"--phase plan-review --kind test-plan --verdict APPROVE --brief <fingerprint>`")
 
 
 def requirements(root, artifact_id: str, target: str) -> list[str]:

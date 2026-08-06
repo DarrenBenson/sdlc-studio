@@ -2209,6 +2209,110 @@ class PartialMeasurementIsExcludedFromTheRate(AccuracyBase):
         self.assertEqual(rate["by_model"], {})
 
 
+class PlanVersusCodeReviewCostTests(unittest.TestCase):
+    """US0634: the cost is MEASURED over one run and reported.
+
+    EP0207's whole claim is that reviewing the test costs a fraction of reviewing the code. A
+    figure anybody could type in would be that claim wearing a measurement's clothes, so the
+    split is read from the two ledgers and from nowhere else.
+    """
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "reviews").mkdir(parents=True, exist_ok=True)
+        return root
+
+    def _rec(self, root, unit, verdict, phase, kind=None, reviewer="qa", author="dev"):
+        import critic
+        critic.record_verdict(root, unit, verdict, reviewer=reviewer, author=author,
+                              phase=phase, kind=kind, brief="a" * 12)
+
+    def test_the_split_is_read_from_both_ledgers(self) -> None:
+        """Mutant: count rows from one ledger for both phases, or count every plan-review kind
+        rather than `test-plan` - a spec review is then billed as a test-plan review and the
+        ratio the epic is judged on is measured against work nobody did."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._rec(root, "US0001", "approve", "plan-review", kind="test-plan")
+            self._rec(root, "US0002", "reject", "plan-review", kind="test-plan")
+            self._rec(root, "US0003", "approve", "plan-review", kind="spec")   # NOT counted
+            for u in ("US0001", "US0002", "US0003", "US0004"):
+                self._rec(root, u, "approve", "delivery")
+            self._rec(root, "US0001", "reject", "delivery")
+
+            split = retro.review_cost_split(root, ["US0001", "US0002", "US0003", "US0004"])
+            self.assertEqual(split["plan-review"]["passes"], 2,
+                             "a spec review was billed as a test-plan review")
+            self.assertEqual(split["plan-review"]["rejected"], 1)
+            self.assertEqual(split["delivery"]["passes"], 5)
+            self.assertEqual(split["delivery"]["rejected"], 1)
+            # ...and it MOVES with the ledgers, so neither figure is a constant.
+            self._rec(root, "US0004", "approve", "plan-review", kind="test-plan")
+            self.assertEqual(
+                retro.review_cost_split(root, ["US0001", "US0002", "US0003", "US0004"])
+                ["plan-review"]["passes"], 3, "the figure did not track the ledger")
+
+            text = "\n".join(retro.render_review_cost(split))
+            self.assertIn("2 pass(es)", text)
+            self.assertIn("ratio", text, "the claim the epic is judged on is not reported")
+
+    def test_a_run_without_the_phase_is_not_reported_as_zero(self) -> None:
+        """A bare 0 in a cost column reads as evidence the ceremony is free. A run predating the
+        cutoff spent nothing because the ceremony did not exist; a run that held plan reviews and
+        spent nothing on them would be extraordinary. One number says the second while meaning
+        the first.
+
+        Mutant: report 0 for an absent phase - this reddens, and the epic's headline claim
+        becomes unfalsifiable in the flattering direction.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._rec(root, "US0001", "approve", "delivery")
+            split = retro.review_cost_split(root, ["US0001"])
+            self.assertEqual(split["plan-review"]["state"], retro.NOT_IN_FORCE)
+            self.assertIsNone(split["plan-review"]["passes"],
+                              "an absent phase reported a number")
+            text = "\n".join(retro.render_review_cost(split))
+            self.assertIn("NOT IN FORCE", text)
+            self.assertNotIn("0 pass(es)", text)
+            # and no ratio is invented from an absent denominator
+            self.assertNotIn("ratio", text)
+
+    def test_the_split_reaches_the_rendered_accuracy_output(self) -> None:
+        """THE LANE HALF, and its absence was found by mutation: dropping the block from the
+        renderer left all three library criteria green while the operator saw nothing. A
+        derivation that is correct and never printed is the state `critic brief --tier` was in
+        for a whole sprint - the third time that shape has appeared in this repository.
+
+        Mutant: drop the block from `_summary_lines` - the split is computed, returned in the
+        dict, and never rendered.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._rec(root, "US0001", "approve", "plan-review", kind="test-plan")
+            self._rec(root, "US0001", "approve", "delivery")
+            block = {"review_cost": retro.review_cost_split(root, ["US0001"]),
+                     "points": 0, "tokens_per_point": None,
+                     "points_per_elapsed_hour": None, "points_per_worker_hour": None,
+                     "sprint_elapsed_hours": None}
+            lines = "\n".join(retro._points_lines({"batch": block, "n_measured": 1}))
+            self.assertIn("Review passes, by phase", lines,
+                          "the split is computed and never printed - the operator sees nothing")
+            self.assertIn("test-plan review", lines)
+
+    def test_the_split_only_counts_this_run_s_units(self) -> None:
+        """Mutant: read every row in the ledger - a project's whole history is billed to one
+        sprint, and the more sprints there have been the cheaper the newest one looks."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._rec(root, "US0001", "approve", "plan-review", kind="test-plan")
+            self._rec(root, "US0099", "approve", "plan-review", kind="test-plan")
+            self._rec(root, "US0001", "approve", "delivery")
+            split = retro.review_cost_split(root, ["US0001"])
+            self.assertEqual(split["plan-review"]["passes"], 1,
+                             "a unit outside this run was billed to it")
+
+
 class VelocityRowTests(unittest.TestCase):
     """BG0495: the velocity row understated twice, and in the same direction both times.
 

@@ -964,6 +964,60 @@ def _run_rung(root, unit_ids) -> str:
     return "done"
 
 
+#: Reported when a phase was not in force for a run, so a bare 0 cannot be read as evidence the
+#: ceremony is free. An absence and a measured nought are different facts and want different words.
+NOT_IN_FORCE = "not-in-force"
+
+
+def review_cost_split(root, unit_ids: list) -> dict:
+    """Passes spent on TEST-PLAN review versus passes spent on CODE review, for one run's units.
+
+    Read from the two verdict ledgers, never from prose: this figure is the whole claim EP0207
+    makes - that reviewing the test costs a fraction of reviewing the code - so a number anybody
+    could type in would be an assertion wearing a measurement's clothes.
+
+    A phase with no rows at all reports `not-in-force` rather than 0. The distinction is the
+    criterion: a run that predates the cutoff spent nothing because the ceremony did not exist,
+    and a run that held plan reviews and spent nothing on them would be extraordinary evidence.
+    A bare 0 says the second while meaning the first.
+    """
+    import critic  # noqa: PLC0415 - deferred; the module that owns the ledgers
+    wanted = {sdlc_md.norm_id(u) for u in unit_ids}
+    out = {}
+    for phase, kind in (("plan-review", "test-plan"), ("delivery", None)):
+        rows = [r for r in critic.read_verdicts(root, phase)
+                if sdlc_md.norm_id(r.get("unit", "")) in wanted
+                and (kind is None or (r.get("kind") or "").strip() == kind)]
+        if not rows:
+            out[phase] = {"state": NOT_IN_FORCE, "passes": None, "rejected": None,
+                          "units": None}
+            continue
+        rejected = sum(1 for r in rows if (r.get("verdict") or "").upper() == "REJECT")
+        out[phase] = {"state": "measured", "passes": len(rows), "rejected": rejected,
+                      "units": len({sdlc_md.norm_id(r["unit"]) for r in rows})}
+    return out
+
+
+def render_review_cost(split: dict) -> list:
+    """The split as prose, with each absence stated rather than printed as a nought."""
+    label = {"plan-review": "test-plan review", "delivery": "code review"}
+    lines = []
+    for phase in ("plan-review", "delivery"):
+        s = split.get(phase) or {}
+        if s.get("state") != "measured":
+            lines.append(f"  {label[phase]}: NOT IN FORCE for this run - no verdict of that "
+                         f"phase covers any of its units, which is not the same as a run that "
+                         f"held them and spent nothing")
+            continue
+        lines.append(f"  {label[phase]}: {s['passes']} pass(es) over {s['units']} unit(s), "
+                     f"{s['rejected']} rejected")
+    a, b = split.get("plan-review") or {}, split.get("delivery") or {}
+    if a.get("state") == "measured" and b.get("state") == "measured" and a["passes"]:
+        lines.append(f"  ratio: {b['passes'] / a['passes']:.2f} code-review pass(es) per "
+                     f"test-plan pass - the claim EP0207 is judged on, as a number")
+    return lines
+
+
 def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
              elapsed_hours: float | None = None, sprint_model: str | None = None) -> dict:
     """Estimate vs actual for every unit in the retro's batch - IN POINTS, and in tokens.
@@ -1229,6 +1283,7 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             "unaccepted_points": split["unaccepted"],
             "unaccepted_ids": split["unaccepted_ids"],
             "delivered_points": delivered_points,
+            "review_cost": review_cost_split(root, [u["id"] for u in units]),
             "sprint_elapsed_idle_gaps": elapsed_gaps,
             # US0401 / CR0407: a run driven to a rung OTHER than `done` (a design/plan run)
             # records its token actual but leaves the tokens-per-point BLANK - a non-build rung
@@ -1402,6 +1457,12 @@ def _points_lines(res: dict) -> list[str]:
         else:
             out.append("  secondary (points/worker-hour): UNMEASURED - no runner worker-time "
                        "records (an interactive sprint has none).")
+    # THE CLAIM EP0207 IS JUDGED ON, printed beside the cost it is about rather than left in the
+    # dict. A derivation that is correct and never rendered is the state `critic brief --tier`
+    # was in for a whole sprint.
+    if b.get("review_cost"):
+        out.append("Review passes, by phase - read from the two verdict ledgers:")
+        out.extend(render_review_cost(b["review_cost"]))
     if not b["points"]:
         if res["n_measured"]:
             out.append(

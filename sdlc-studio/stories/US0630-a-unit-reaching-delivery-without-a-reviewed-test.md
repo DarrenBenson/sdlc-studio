@@ -28,7 +28,7 @@
 - **Caller:** `transition.py set` (the CLI verb the sprint loop and the operator both use to start a unit)
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - removing the gate call must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC2: an unreviewed plan is refused on the same terms as a missing one
 
@@ -39,7 +39,7 @@
 - **Caller:** `transition.py set`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - collapsing the two refusal messages into one must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC3: the demand is stated before the work, not discovered by hitting it
 
@@ -50,7 +50,7 @@
 - **Caller:** `transition.py requirements`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - dropping the requirement from the derived list must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC4: the gate is opt-in per project and dated, so an existing backlog is not retro-refused
 
@@ -61,7 +61,7 @@
 - **Caller:** `transition.py set`, reading `review.test_plan_after` from project config
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - ignoring the cutoff must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ## Revision History
 

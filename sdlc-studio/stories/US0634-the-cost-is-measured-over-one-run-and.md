@@ -28,7 +28,7 @@
 - **Caller:** `retro.py accuracy --write`, whose output the close report renders
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - reading the count from the retro's prose must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ### AC2: a run with no plan reviews reports that state rather than a zero that reads as free
 
@@ -39,7 +39,7 @@
 - **Caller:** `retro.py accuracy --write`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - emitting 0 for an absent phase must turn this test red
-- **Verified:** no
+- **Verified:** yes (2026-08-06)
 
 ## Revision History
 

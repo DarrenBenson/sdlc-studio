@@ -142,6 +142,123 @@ class TransitionTests(unittest.TestCase):
             self.assertIn("**Points:** 3", line)
 
 
+class TestPlanGateTests(unittest.TestCase):
+    """US0630: a unit reaching delivery without a REVIEWED test plan is refused by the command
+    that starts the work, not reported at the close.
+
+    The demand has to arrive before any code is written, or it is a tax on finished work rather
+    than a gate on starting it - which is how a gate stops being satisfied and starts being
+    forced.
+    """
+
+    PLAN = ("\n## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+            "| AC1 | in thing.py, delete the guard | it refuses |\n")
+
+    def _repo(self, root: Path, *, plan: bool, created="2026-08-06", cutoff=True) -> None:
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
+        if cutoff:
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                'review:\n  test_plan_after: "2026-01-01"\n', encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
+            f"# BG0001: a bug\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Verification depth:** functional\n> **Created:** {created}\n"
+            f"> **Affects:** src/thing.py\n> **Points:** 3\n\n"
+            f"## Acceptance Criteria\n\n### AC1: it refuses\n\n- **Then** it refuses\n"
+            f"- **Verify:** pytest x\n" + (self.PLAN if plan else ""), encoding="utf-8")
+
+    def _start(self, root: Path):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = tr.main(["set", "--id", "BG0001", "--status", "In Progress",
+                            "--root", str(root)])
+        return code, out.getvalue() + err.getvalue()
+
+    def test_starting_work_without_a_plan_is_refused(self) -> None:
+        """Mutant: gate only at Done - the plan is demanded of finished work, which is a tax
+        rather than a gate and is exactly what gets forced. THE POSITIVE CONTROL is below: with
+        a reviewed plan the same transition succeeds."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, plan=False)
+            code, text = self._start(root)
+            self.assertNotEqual(code, 0, "work started with no test plan")
+            self.assertIn("no `## Test Plan`", text)
+            self.assertIn("testplan derive", text,
+                          "the refusal does not print the command that produces one")
+
+    def test_an_unreviewed_plan_is_refused_distinctly(self) -> None:
+        """The two refusals have DIFFERENT fixes, so one message for both sends the reader to
+        the wrong command - and being sent to the wrong one of "write a plan" and "get it
+        reviewed" is not a small error when the whole claim is that reviewing the test is cheap.
+
+        Mutant: return the missing-plan message for both - this reddens on the distinction.
+        A spec-kind approval must not discharge it either: that reviewer never saw a test plan.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, plan=True)
+            code, text = self._start(root)
+            self.assertNotEqual(code, 0, "work started on an unreviewed plan")
+            self.assertIn("no independent seat has approved", text)
+            self.assertNotIn("no `## Test Plan`", text,
+                             "an unreviewed plan was reported as a missing one")
+
+            # A SPEC approval does not clear the TEST-PLAN gate - BG0510's whole point.
+            import critic
+            critic.record_verdict(root, "BG0001", "approve", reviewer="qa", author="dev",
+                                  phase="plan-review", kind="spec", brief="a" * 12)
+            code, text = self._start(root)
+            self.assertNotEqual(code, 0,
+                                "a spec-review approval discharged the test-plan gate")
+
+            # A SELF test-plan review does not clear it either.
+            critic.record_verdict(root, "BG0001", "approve", reviewer="dev", author="dev",
+                                  phase="plan-review", kind="test-plan", brief="b" * 12)
+            code, text = self._start(root)
+            self.assertNotEqual(code, 0, "a self-review cleared the test-plan gate")
+            self.assertIn("self-review", text)
+
+            # THE POSITIVE CONTROL: an independent test-plan APPROVE opens it.
+            critic.record_verdict(root, "BG0001", "approve", reviewer="qa", author="dev",
+                                  phase="plan-review", kind="test-plan", brief="c" * 12)
+            code, text = self._start(root)
+            self.assertEqual(code, 0, f"a reviewed plan was still refused: {text}")
+
+    def test_requirements_states_the_test_plan_demand(self) -> None:
+        """Asked BEFORE the work. Derived by running the real gate rather than restating it, so
+        there is no second copy to go stale.
+
+        Mutant: hand-maintain the requirement list - it drifts from the gate silently, which is
+        the failure `requirements` exists to remove, reintroduced one layer up.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, plan=False)
+            unmet = tr.requirements(str(root), "BG0001", "In Progress")
+            self.assertTrue(any("Test Plan" in u for u in unmet),
+                            f"the demand is not stated before the work: {unmet}")
+
+    def test_a_unit_before_the_cutoff_is_not_held(self) -> None:
+        """A gate that refuses every unit in an existing backlog is one that gets switched off
+        wholesale rather than satisfied.
+
+        Mutant: gate unconditionally, or ignore the unit's Created date - every historical unit
+        in every consuming project is held by a plan nobody was ever asked for.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, plan=False, created="2025-01-01")
+            code, text = self._start(root)
+            self.assertEqual(code, 0, f"a pre-cutoff unit was retro-refused: {text}")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, plan=False, cutoff=False)
+            code, text = self._start(root)
+            self.assertEqual(code, 0, f"the gate fired with no cutoff recorded: {text}")
+
+
 class DoneGateTests(unittest.TestCase):
     """CR0084: a story may not reach Done with red / never-run executable ACs."""
 
