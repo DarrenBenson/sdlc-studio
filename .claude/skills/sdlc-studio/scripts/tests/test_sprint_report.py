@@ -2084,6 +2084,16 @@ class OperatorSummaryTests(ReportBase):
         self.assertTrue(s["ok"], s)
         for field in ("tokens", "elapsed_hours", "overhead_ratio"):
             self.assertEqual(s["cost"][field], sr.UNMEASURED, field)
+        # ...and the WORD itself, as a literal, exactly once. Every assertion above compares
+        # against `sr.UNMEASURED`, so mutating the constant moves both sides together and the
+        # whole class passes while the shipped page prints `Cost: 0 tokens over 8 points` -
+        # verbatim the mutant AC1 names. An independent seat found that, and it was introduced
+        # BY the repair that replaced four open-coded literals with one constant: the literal
+        # assertions it removed were the only thing pinning the word. A self-referential
+        # assertion cannot fail, however many of them there are.
+        self.assertEqual(sr.UNMEASURED, "UNMEASURED",
+                         "the absent-word is only ever compared against itself - a constant "
+                         "meaning zero would read as a sprint that cost nothing")
 
     def test_nought_delivered_points_is_an_answer_not_an_absence(self) -> None:
         """The distinction the blanket rule would destroy, and the reason `delivered_points`
@@ -2100,6 +2110,29 @@ class OperatorSummaryTests(ReportBase):
         self.assertEqual(cost["delivered_points"], 0)
         absent = sr._sprint_cost_line({"ok": True, "velocity": {}, "overhead": {}})
         self.assertEqual(absent["delivered_points"], sr.UNMEASURED)
+
+    def test_a_cost_component_the_renderer_has_never_heard_of_still_reaches_the_page(self) -> None:
+        """The completeness claim was true of the dict and false of the PAGE.
+
+        `_sprint_cost_line` asserts over its `.keys()`, so a component added later is pinned -
+        but `render_operator_summary` hand-enumerated four field names, so a fifth would be
+        derived correctly, returned correctly and silently never printed. An independent seat
+        proved it: adding a key survived all 134 tests. A figure that is right and unseen is the
+        state `critic brief --tier` was in for a whole sprint.
+
+        Mutant: hand-enumerate the four names again, or drop keys with no phrase entry - the
+        unknown component vanishes from the page and this reddens naming it.
+        """
+        page = sr.render_operator_summary({
+            "ok": True, "id": "R", "run_id": "RUN-X", "sprint_goal": "g",
+            "goal_verdict": "achieved", "shipped": [], "rejected": [], "carried": [],
+            "filed": [], "reversal_candidates": [],
+            "cost": {"tokens": 1, "delivered_points": 2, "elapsed_hours": 3.0,
+                     "overhead_ratio": 4.0, "wall_clock_hours": 99.5}})
+        self.assertIn("99.5", page,
+                      "a cost component the renderer has no phrase for went missing from the "
+                      "page - the derivation is complete and the reader is not")
+        self.assertIn("wall_clock_hours", page)
 
     def test_a_filed_finding_reaches_the_page(self) -> None:
         """`filed` was computed, returned in the dict and never rendered, while the verb's own

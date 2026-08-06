@@ -415,6 +415,15 @@ _REUSE_MODE = "reuse"
 #: nobody metered. A component added later cannot invent a second spelling by accident.
 UNMEASURED = "UNMEASURED"
 
+#: How each cost component reads on the operator's page. A component with no entry still prints,
+#: as `<key> <value>` - the renderer must never be the reason a measured figure goes unseen.
+_COST_PHRASE = {
+    "tokens": lambda v: f"{v} tokens",
+    "delivered_points": lambda v: f"over {v} points",
+    "elapsed_hours": lambda v: f"{v} elapsed hours",
+    "overhead_ratio": lambda v: f"overhead {v}",
+}
+
 
 def _execution_actuals(root: Path, unit_ids: list[str]) -> dict:
     """What test execution actually cost this sprint, beside what the policy declared.
@@ -471,9 +480,10 @@ def _execution_actuals(root: Path, unit_ids: list[str]) -> dict:
         "measured": bool(seconds),
         "runs": len(mine),
         "by_mode": by_mode,
-        # Kept as derived VIEWS of `by_mode` for the readers that ask for them by name. They are
-        # no longer the source of the rendered sentence, so one going stale can no longer make
-        # the counts disagree with the seconds beside them.
+        # Derived views of `by_mode`, kept for compatibility with any consuming project reading
+        # this dict by field name. A seat checked and there is no non-test reader in this repo,
+        # so do not read these as evidence of demand - they are no longer the source of the
+        # rendered sentence, which is the property that matters.
         "full_runs": by_mode.get("full", 0),
         "selected_runs": by_mode.get("selected", 0),
         "reused_runs": by_mode.get(_REUSE_MODE, 0),
@@ -1821,9 +1831,14 @@ def render_operator_summary(s: dict) -> str:
     # the operator could not see it, which is the state `critic brief --tier` was in for a whole
     # sprint. Found by an independent seat reading the renderer against the help text.
     lines.append(f"Filed this run: " + (", ".join(s.get("filed") or []) or "none"))
+    # DERIVED from the cost line's own keys, so a component added to `_sprint_cost_line`
+    # reaches the page. A seat proved the completeness claim true of the dict and false of the
+    # page: the derivation asserted over `.keys()` while the renderer hand-enumerated four field
+    # names, so a fifth component was computed correctly and silently never printed. An unknown
+    # key renders as `<key> <value>` rather than vanishing.
     c = s["cost"]
-    lines.append(f"Cost: {c['tokens']} tokens over {c['delivered_points']} points, "
-                 f"{c['elapsed_hours']} elapsed hours, overhead {c['overhead_ratio']}")
+    lines.append("Cost: " + ", ".join(_COST_PHRASE.get(k, lambda v, k=k: f"{k} {v}")(v)
+                                      for k, v in c.items()))
     lines += ["", "What to overturn if you disagree:"]
     lines += [f"  - {r['unit']}: {r['why']}" for r in s["reversal_candidates"]] or ["  - nothing"]
     return "\n".join(lines)
