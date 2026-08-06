@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
 > **Epic:** EP0207
+> **Depends on:** US0631
 > **Points:** 3
 > **Persona:** Maya Okafor
 
@@ -46,3 +47,4 @@
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | sdlc-studio | Groomed: criteria authored against the `retro.py accuracy` slice |
+| 2026-08-06 | sdlc-studio | Declared `Depends on:` at plan time - the planner reported all six units parallel because no dependency was stated, which is false: the plan is derived (US0629) before it can be reviewed, gated, executed or measured |

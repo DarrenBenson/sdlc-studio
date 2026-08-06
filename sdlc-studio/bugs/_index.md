@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-05
+**Last Updated:** 2026-08-06
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
+| Open | 23 |
 | In Progress | 0 |
 | Fixed | 417 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **526** |
+| **Total** | **527** |
 
 ## All Bugs
 
@@ -66,6 +66,7 @@
 | [BG0524](BG0524-warning-ratchet-reports-a-stale-baseline-as-clean.md) | warning-ratchet reports a stale baseline as clean and exits 0, contradicting US0480 AC4 and its own docstring | Open | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0525](BG0525-us0629-ac2-asks-derive-to-detect-a-polarity.md) | US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written | Fixed | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0526](BG0526-loop-guard-budget-has-no-programmatic-caller-the.md) | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers | Open | Medium | 2026-08-05 | 2026-08-05 |
+| [BG0527](BG0527-the-one-run-slot-gate-reads-a-run.md) | the one-run-slot gate reads a run as history the moment its goal verdict is recorded, so the next plan can open over a run whose close has 20 unmet prerequisites | Open | High | 2026-08-06 | 2026-08-06 |
 
 ## Archived Releases
 

@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Epic:** EP0207
+> **Depends on:** US0629
 > **Points:** 5
 > **Persona:** Maya Okafor
 
@@ -57,3 +58,4 @@
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | sdlc-studio | Groomed: criteria authored against the existing `--phase plan-review` route |
+| 2026-08-06 | sdlc-studio | Declared `Depends on:` at plan time - the planner reported all six units parallel because no dependency was stated, which is false: the plan is derived (US0629) before it can be reviewed, gated, executed or measured |
