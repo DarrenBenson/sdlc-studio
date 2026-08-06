@@ -1,6 +1,6 @@
 # US0644: The sign-off record states that a seat signed and names it, so no reader mistakes it for a human
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0532
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new

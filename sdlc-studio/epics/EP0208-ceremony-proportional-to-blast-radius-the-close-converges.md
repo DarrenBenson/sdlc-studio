@@ -1,6 +1,6 @@
 # EP0208: Ceremony proportional to blast radius: the close converges and the risk band drives the review
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 20
 > **Parent:** CR0510
 > **Created:** 2026-08-05
@@ -14,11 +14,11 @@ Decomposed from CR0510. Delivers the work CR0510 requested.
 
 ## Story Breakdown
 
-- [ ] [US0638: The close pre-flight runs the retro checklist it is about to be judged on](../stories/US0638-the-close-pre-flight-runs-the-retro-checklist.md)
-- [ ] [US0639: Every gate execution the close runs is recorded, so the close cost report is not a fraction of the truth](../stories/US0639-every-gate-execution-the-close-runs-is-recorded.md)
-- [ ] [US0640: plan_review honours its own enabled key rather than the schema-version gate](../stories/US0640-plan-review-honours-its-own-enabled-key-rather.md)
-- [ ] [US0641: The critic brief tier is derived from the risk band, recorded on the verdict, and read by the coverage predicate](../stories/US0641-the-critic-brief-tier-is-derived-from-the.md)
-- [ ] [US0642: A low-band unit gets a bounded brief and the claim-inventory pass runs only at high band](../stories/US0642-a-low-band-unit-gets-a-bounded-brief.md)
+- [x] [US0638: The close pre-flight runs the retro checklist it is about to be judged on](../stories/US0638-the-close-pre-flight-runs-the-retro-checklist.md)
+- [x] [US0639: Every gate execution the close runs is recorded, so the close cost report is not a fraction of the truth](../stories/US0639-every-gate-execution-the-close-runs-is-recorded.md)
+- [x] [US0640: plan_review honours its own enabled key rather than the schema-version gate](../stories/US0640-plan-review-honours-its-own-enabled-key-rather.md)
+- [x] [US0641: The critic brief tier is derived from the risk band, recorded on the verdict, and read by the coverage predicate](../stories/US0641-the-critic-brief-tier-is-derived-from-the.md)
+- [x] [US0642: A low-band unit gets a bounded brief and the claim-inventory pass runs only at high band](../stories/US0642-a-low-band-unit-gets-a-bounded-brief.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -1,5 +1,5 @@
 {
-  "stamped": "2026-08-05",
+  "stamped": "2026-08-06",
   "entries": [
     {
       "id": "BG0138",
@@ -744,6 +744,18 @@
       "rule": "affects-unresolvable",
       "target": "tools/tests/test_run_suite.sh",
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0532",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/help/critic.md",
+      "reason": "BG0529: four RUN-01KZ9315 units carry no verifier entering the shipped entry point. The wiring itself IS verified - both adversarial seats drove every mechanism through the CLI and reported the results, and US0640's entry appeared only because this close widened its Affects to name the two files its criterion actually landed in, so the lane is reporting a surface that was always there rather than a new gap. What is missing is an AUTOMATED lane test, which is debt rather than a defect. Surfaced during a close, so filed and deferred per the repo's own rule; CR0520 is the standing fix."
+    },
+    {
+      "id": "CR0532",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/personas/seats/",
+      "reason": "BG0529: four RUN-01KZ9315 units carry no verifier entering the shipped entry point. The wiring itself IS verified - both adversarial seats drove every mechanism through the CLI and reported the results, and US0640's entry appeared only because this close widened its Affects to name the two files its criterion actually landed in, so the lane is reporting a surface that was always there rather than a new gap. What is missing is an AUTOMATED lane test, which is debt rather than a defect. Surfaced during a close, so filed and deferred per the repo's own rule; CR0520 is the standing fix."
     },
     {
       "id": "US0001",

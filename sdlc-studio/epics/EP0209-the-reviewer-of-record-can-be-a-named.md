@@ -1,6 +1,6 @@
 # EP0209: The reviewer of record can be a named seat, and the operator leads from a derived summary
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 9
 > **Parent:** CR0532
 > **Created:** 2026-08-05
@@ -14,9 +14,9 @@ Decomposed from CR0532. Delivers the work CR0532 requested.
 
 ## Story Breakdown
 
-- [ ] [US0643: A seat may sign only work it neither authored nor adversarially reviewed - three distinct contexts, enforced](../stories/US0643-a-seat-may-sign-only-work-it-neither.md)
-- [ ] [US0644: The sign-off record states that a seat signed and names it, so no reader mistakes it for a human](../stories/US0644-the-sign-off-record-states-that-a-seat.md)
-- [ ] [US0645: The operator summary is derived from the record, never composed by the signing seat](../stories/US0645-the-operator-summary-is-derived-from-the-record.md)
+- [x] [US0643: A seat may sign only work it neither authored nor adversarially reviewed - three distinct contexts, enforced](../stories/US0643-a-seat-may-sign-only-work-it-neither.md)
+- [x] [US0644: The sign-off record states that a seat signed and names it, so no reader mistakes it for a human](../stories/US0644-the-sign-off-record-states-that-a-seat.md)
+- [x] [US0645: The operator summary is derived from the record, never composed by the signing seat](../stories/US0645-the-operator-summary-is-derived-from-the-record.md)
 
 ## Acceptance Criteria (Epic Level)
 

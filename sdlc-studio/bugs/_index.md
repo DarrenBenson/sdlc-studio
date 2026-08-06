@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 24 |
+| Open | 25 |
 | In Progress | 0 |
 | Fixed | 417 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **528** |
+| **Total** | **529** |
 
 ## All Bugs
 
@@ -68,6 +68,7 @@
 | [BG0526](BG0526-loop-guard-budget-has-no-programmatic-caller-the.md) | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers | Open | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0527](BG0527-the-one-run-slot-gate-reads-a-run.md) | the one-run-slot gate reads a run as history the moment its goal verdict is recorded, so the next plan can open over a run whose close has 20 unmet prerequisites | Open | High | 2026-08-06 | 2026-08-06 |
 | [BG0528](BG0528-a-delivered-unit-left-at-ready-is-invisible.md) | a delivered unit left at Ready is invisible to every close gate: twenty blockers were reported and not one of them said the units had never been transitioned | Open | High | 2026-08-06 | 2026-08-06 |
+| [BG0529](BG0529-four-run-01kz9315-units-carry-no-verifier-that.md) | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing | Open | Medium | 2026-08-06 | 2026-08-06 |
 
 ## Archived Releases
 

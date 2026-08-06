@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 17 |
 | Approved | 0 |
-| In Progress | 12 |
-| Complete | 482 |
+| In Progress | 10 |
+| Complete | 484 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
@@ -62,7 +62,7 @@
 | [CR-0507](CR0507-closing-a-sprint-asks-twenty-questions-when-it.md) | closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0508](CR0508-a-verify-selector-naming-a-test-that-does.md) | a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0509](CR0509-a-review-worktree-opens-at-a-stale-base.md) | A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet | Proposed | High | Improvement | 2026-07-31 | -- |
-| [CR-0510](CR0510-ceremony-proportional-to-blast-radius-the-process-spends.md) | Ceremony proportional to blast radius: the process spends gate-grade rigour on prose-grade changes, and the machinery that would stop it is built and switched off | In Progress | High | Improvement | 2026-07-31 | EP0208 |
+| [CR-0510](CR0510-ceremony-proportional-to-blast-radius-the-process-spends.md) | Ceremony proportional to blast radius: the process spends gate-grade rigour on prose-grade changes, and the machinery that would stop it is built and switched off | Complete | High | Improvement | 2026-07-31 | EP0208 |
 | [CR-0511](CR0511-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-07-31 | -- |
 | [CR-0512](CR0512-a-unit-review-is-scoped-to-that-unit.md) | A unit review is scoped to that unit's own diff and blocks only on a NEW defect; an already-logged finding is reported, never blocking | In Progress | High | Improvement | 2026-08-01 | EP0194 |
 | [CR-0513](CR0513-the-close-checklist-enforces-items-where-they-can.md) | The close checklist enforces items where they can still be satisfied, reads verdicts rather than counts, and checks how a review was briefed | In Progress | High | Improvement | 2026-08-01 | EP0197 |
@@ -82,7 +82,7 @@
 | [CR-0529](CR0529-the-prior-art-check-is-scoped-to-the.md) | the prior-art check is scoped to the reviewer, so an author rediscovers by being rejected what one command would have told them | Proposed | Medium | Improvement | 2026-08-04 | -- |
 | [CR-0530](CR0530-the-planner-reports-shared-file-clusters-not-the.md) | the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all | Proposed | Medium | Improvement | 2026-08-04 | -- |
 | [CR-0531](CR0531-a-charter-s-scope-query-cannot-express-a.md) | a charter's scope query cannot express a decomposition, so the only queued charter's two scope fields disagree | Proposed | Medium | Improvement | 2026-08-04 | -- |
-| [CR-0532](CR0532-the-reviewer-of-record-is-an-ai-seat.md) | The reviewer of record is an AI seat, and the human gets a summary to lead from - human in the LEAD, not human in the loop | In Progress | High | Improvement | 2026-08-05 | EP0209 |
+| [CR-0532](CR0532-the-reviewer-of-record-is-an-ai-seat.md) | The reviewer of record is an AI seat, and the human gets a summary to lead from - human in the LEAD, not human in the loop | Complete | High | Improvement | 2026-08-05 | EP0209 |
 | [CR-0533](CR0533-a-production-hunk-whose-reversion-leaves-the-suite.md) | A production hunk whose reversion leaves the suite green is uncovered: make the gate prove coverage rather than assume it | Proposed | High | Improvement | 2026-08-05 | -- |
 | [CR-0534](CR0534-a-project-s-configuration-is-a-surface-nobody.md) | a project's configuration is a surface nobody is introduced to and nobody revisits: the operator cannot see what is in force, what the default would have been, or which setting their own history says is wrong | Proposed | High | Improvement | 2026-08-06 | -- |
 

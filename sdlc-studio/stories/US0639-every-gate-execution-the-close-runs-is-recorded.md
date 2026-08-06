@@ -1,6 +1,6 @@
 # US0639: Every gate execution the close runs is recorded, so the close cost report is not a fraction of the truth
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0510
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new

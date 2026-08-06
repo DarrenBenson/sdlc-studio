@@ -11,8 +11,8 @@
 | Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 8 |
-| Done | 601 |
+| Review | 0 |
+| Done | 609 |
 | Won't Implement | 2 |
 | Deferred | 0 |
 | Superseded | 2 |
@@ -77,14 +77,14 @@
 | [US0635](US0635-the-thirteen-story-side-duplicate-verify-groups-are.md) | The thirteen story-side duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
 | [US0636](US0636-the-seven-bug-side-duplicate-verify-groups-are.md) | The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
 | [US0637](US0637-the-duplicate-groups-no-collection-can-answer-are.md) | The duplicate groups no collection can answer are derived from the resolver and named one by one | Done | EP0174 | 2026-08-03 | 2026-08-03 |
-| [US0638](US0638-the-close-pre-flight-runs-the-retro-checklist.md) | The close pre-flight runs the retro checklist it is about to be judged on | Review | EP0208 | 2026-08-05 | 2026-08-05 |
-| [US0639](US0639-every-gate-execution-the-close-runs-is-recorded.md) | Every gate execution the close runs is recorded, so the close cost report is not a fraction of the truth | Review | EP0208 | 2026-08-05 | 2026-08-05 |
-| [US0640](US0640-plan-review-honours-its-own-enabled-key-rather.md) | plan_review honours its own enabled key rather than the schema-version gate | Review | EP0208 | 2026-08-05 | 2026-08-05 |
-| [US0641](US0641-the-critic-brief-tier-is-derived-from-the.md) | The critic brief tier is derived from the risk band, recorded on the verdict, and read by the coverage predicate | Review | EP0208 | 2026-08-05 | 2026-08-05 |
-| [US0642](US0642-a-low-band-unit-gets-a-bounded-brief.md) | A low-band unit gets a bounded brief and the claim-inventory pass runs only at high band | Review | EP0208 | 2026-08-05 | 2026-08-05 |
-| [US0643](US0643-a-seat-may-sign-only-work-it-neither.md) | A seat may sign only work it neither authored nor adversarially reviewed - three distinct contexts, enforced | Review | EP0209 | 2026-08-05 | 2026-08-05 |
-| [US0644](US0644-the-sign-off-record-states-that-a-seat.md) | The sign-off record states that a seat signed and names it, so no reader mistakes it for a human | Review | EP0209 | 2026-08-05 | 2026-08-05 |
-| [US0645](US0645-the-operator-summary-is-derived-from-the-record.md) | The operator summary is derived from the record, never composed by the signing seat | Review | EP0209 | 2026-08-05 | 2026-08-05 |
+| [US0638](US0638-the-close-pre-flight-runs-the-retro-checklist.md) | The close pre-flight runs the retro checklist it is about to be judged on | Done | EP0208 | 2026-08-05 | 2026-08-05 |
+| [US0639](US0639-every-gate-execution-the-close-runs-is-recorded.md) | Every gate execution the close runs is recorded, so the close cost report is not a fraction of the truth | Done | EP0208 | 2026-08-05 | 2026-08-05 |
+| [US0640](US0640-plan-review-honours-its-own-enabled-key-rather.md) | plan_review honours its own enabled key rather than the schema-version gate | Done | EP0208 | 2026-08-05 | 2026-08-05 |
+| [US0641](US0641-the-critic-brief-tier-is-derived-from-the.md) | The critic brief tier is derived from the risk band, recorded on the verdict, and read by the coverage predicate | Done | EP0208 | 2026-08-05 | 2026-08-05 |
+| [US0642](US0642-a-low-band-unit-gets-a-bounded-brief.md) | A low-band unit gets a bounded brief and the claim-inventory pass runs only at high band | Done | EP0208 | 2026-08-05 | 2026-08-05 |
+| [US0643](US0643-a-seat-may-sign-only-work-it-neither.md) | A seat may sign only work it neither authored nor adversarially reviewed - three distinct contexts, enforced | Done | EP0209 | 2026-08-05 | 2026-08-05 |
+| [US0644](US0644-the-sign-off-record-states-that-a-seat.md) | The sign-off record states that a seat signed and names it, so no reader mistakes it for a human | Done | EP0209 | 2026-08-05 | 2026-08-05 |
+| [US0645](US0645-the-operator-summary-is-derived-from-the-record.md) | The operator summary is derived from the record, never composed by the signing seat | Done | EP0209 | 2026-08-05 | 2026-08-05 |
 
 ## Archived Releases
 

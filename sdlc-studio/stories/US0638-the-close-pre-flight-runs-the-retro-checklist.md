@@ -1,6 +1,6 @@
 # US0638: The close pre-flight runs the retro checklist it is about to be judged on
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0510
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new

@@ -143,6 +143,10 @@ should be, and that comparison needs a baseline written down before the next run
 | **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
 **0 of 12 unit(s) measured; 12 of 12 forecast at plan time.**
+
+**Velocity: 2.01 points/elapsed-hour** (41 points ACCEPTED over 20.373h, run-state - a CALENDAR SPAN with no idle deducted, since the run recorded no gap; it is not working time, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: US0638, US0639, BG0495, BG0520, BG0510, BG0525, US0640, US0641, US0642, US0643, US0644, US0645. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
@@ -178,3 +182,7 @@ Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-for
 ## Metrics
 
 - Tokens: captured at close from the harness meter · Duration: see the run state · Critic rejects: 0 recorded (the adversarial pass is owed)
+
+## Handoff
+
+- [HO-0050](../handoffs/HO0050-the-close-converges-in-two-rounds-the-review.md) - 8 remaining item(s): 0 copilot-tail, 8 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

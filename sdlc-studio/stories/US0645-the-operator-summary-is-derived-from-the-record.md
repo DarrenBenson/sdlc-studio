@@ -1,6 +1,6 @@
 # US0645: The operator summary is derived from the record, never composed by the signing seat
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0532
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new

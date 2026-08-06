@@ -1,6 +1,6 @@
 # US0640: plan_review honours its own enabled key rather than the schema-version gate
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0510
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new
