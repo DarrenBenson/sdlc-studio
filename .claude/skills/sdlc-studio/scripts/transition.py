@@ -1638,6 +1638,33 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
         now = hashlib.sha256(target.read_bytes()).hexdigest()
         if e.get("hash") and e["hash"] != now:
             stale.append(str(e.get("target")))
+    # SURVIVORS, and the vacuous zero. `survivors == 0` over an EMPTY mutant set is not a pass -
+    # it is the same shape as `ac=0 pass=0` reading as a clean pass (BG0530), one instrument
+    # over. A run is judged on what it applied, never on its own exit status: a run that
+    # completes is evidence a run happened and says nothing about what it found.
+    applied = survivors = 0
+    living: list = []
+    for e in mine:
+        for mu in (e.get("mutants") or []):
+            if not isinstance(mu, dict) or mu.get("unit") != uid:
+                continue
+            if mu.get("verdict") == mutation.EQUIVALENT_VERDICT:
+                continue          # excluded by design, and visibly so
+            applied += 1
+            if mu.get("verdict") == "survived":
+                survivors += 1
+                living.append(f"{e.get('target')}:{mu.get('line') or '?'} "
+                              f"({mu.get('mutant') or 'unnamed mutant'})")
+    if applied == 0:
+        return (f"{uid}: the recorded mutation run applied NO mutant, so a survivor count of "
+                f"zero says nothing. `survivors == 0` over an empty set is vacuous - the same "
+                f"shape as a clean pass over criteria nobody read")
+    if survivors:
+        listed = "; ".join(living[:5])
+        return (f"{uid}: {survivors} of {applied} mutant(s) SURVIVED - {listed}. The finding is "
+                f"about the TEST: an assertion is missing for the behaviour each names. This "
+                f"refuses on the survivor count, not on the run's exit status")
+
     if stale and len(stale) == len(mine):
         return (f"{uid}'s mutation evidence is STALE, not absent: every recorded run covers "
                 f"bytes {', '.join(sorted(stale))} no longer has. A run banked against an "

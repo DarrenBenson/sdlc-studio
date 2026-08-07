@@ -142,6 +142,103 @@ class TransitionTests(unittest.TestCase):
             self.assertIn("**Points:** 3", line)
 
 
+class SurvivorGateTests(unittest.TestCase):
+    """US0565: the gate is the SURVIVOR count over the changed lines, not the run's exit status.
+
+    A mutation run that completes is evidence a run happened and says nothing about what it
+    found. And `survivors == 0` over an EMPTY mutant set is vacuous - the same shape as a clean
+    pass over criteria nobody read, one instrument over.
+    """
+
+    def _repo(self, d, mutants):
+        import json, hashlib
+        root = Path(d)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        src = root / "src" / "thing.py"
+        src.write_text("def g(a, b):\n    if a == b:\n        return 1\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
+            "# BG0001: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Affects:** src/thing.py\n> **Points:** 3\n", encoding="utf-8")
+        (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(json.dumps(
+            {"entries": [{"target": "src/thing.py",
+                          "hash": hashlib.sha256(src.read_bytes()).hexdigest(),
+                          "mutants": mutants}]}), encoding="utf-8")
+        return str(root), (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(
+            encoding="utf-8")
+
+    def test_a_completed_run_with_one_survivor_refuses(self) -> None:
+        """Mutant: judge on the run's exit status instead of the survivor count - a run that
+        completed cleanly while a mutant lived reads as evidence."""
+        root, text = self._repo(".", [])  # placeholder, replaced below
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d, [
+                {"unit": "BG0001", "criterion": "AC1", "verdict": "killed"},
+                {"unit": "BG0001", "criterion": "AC2", "verdict": "survived",
+                 "line": 2, "mutant": "invert the guard"}])
+            r = tr.repair_mutation_gate(root, "BG0001", text)
+            self.assertIsNotNone(r, "a run carrying a survivor was accepted")
+            self.assertIn("SURVIVED", r)
+
+    def test_the_refusal_names_each_survivor_with_its_file_line_and_mutation(self) -> None:
+        """The finding is about the TEST, so the message must point at what is missing rather
+        than at the mutant alone. Mutant: report only a count - the author is told a number and
+        has to go looking for which assertion is absent."""
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d, [
+                {"unit": "BG0001", "criterion": "AC1", "verdict": "survived",
+                 "line": 2, "mutant": "invert the guard"}])
+            r = tr.repair_mutation_gate(root, "BG0001", text)
+            self.assertIn("src/thing.py", r, "the refusal names no file")
+            self.assertIn(":2", r, "the refusal names no line")
+            self.assertIn("invert the guard", r, "the refusal names no applied mutation")
+            self.assertIn("about the TEST", r)
+
+    def test_an_empty_mutant_set_is_refused_not_passed(self) -> None:
+        """THE VACUOUS ZERO. Mutant: pass when survivors == 0 without checking that anything was
+        applied - a record with no mutants at all opens the gate, which is `ac=0 pass=0` reading
+        as a clean pass, one instrument over."""
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d, [])
+            empty = tr.repair_mutation_gate(root, "BG0001", text)
+            self.assertIsNotNone(empty, "an empty mutant set passed on a zero survivor count")
+            # AC4 asks for the DISTINCTION, so assert it: "nothing to mutate" and "nothing
+            # survived" have different fixes, and a record whose mutants are all equivalent is
+            # a third state again - a run that applied things and judged none of them.
+            root2, text2 = self._repo(d + "/b", [
+                {"unit": "BG0001", "criterion": "AC1", "verdict": "equivalent",
+                 "reason": "unreachable"}])
+            vacuous = tr.repair_mutation_gate(root2, "BG0001", text2)
+            self.assertIsNotNone(vacuous)
+            self.assertNotEqual(empty, vacuous,
+                                "an absent record and a record that judged nothing read alike")
+            self.assertIn("NO mutation evidence", empty)
+            self.assertIn("vacuous", vacuous)
+
+    def test_zero_survivors_over_a_non_empty_set_passes(self) -> None:
+        """THE POSITIVE CONTROL: a gate refusing every repair satisfies all three criteria above
+        while stopping repair work entirely. Mutant: refuse whatever the record says."""
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d, [
+                {"unit": "BG0001", "criterion": "AC1", "verdict": "killed"},
+                {"unit": "BG0001", "criterion": "AC2", "verdict": "killed"}])
+            self.assertIsNone(tr.repair_mutation_gate(root, "BG0001", text),
+                              "two killed mutants over the current bytes were refused")
+
+    def test_an_equivalent_mutant_is_excluded_not_counted_as_a_kill(self) -> None:
+        """An equivalent mutant cannot be killed by any test, so counting it as one inflates the
+        evidence. Mutant: count it toward `applied` - a record of nothing but equivalents opens
+        the gate on a set where nothing was ever judged."""
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d, [
+                {"unit": "BG0001", "criterion": "AC1", "verdict": "equivalent",
+                 "reason": "unreachable branch"}])
+            r = tr.repair_mutation_gate(root, "BG0001", text)
+            self.assertIsNotNone(r, "a record of only equivalent mutants opened the gate")
+            self.assertIn("vacuous", r)
+
+
 class RepairMutationGateTests(unittest.TestCase):
     """US0564: a repair carries mutation evidence over its OWN changed lines, re-read from the
     record, and a record about bytes the file no longer has is STALE rather than green."""

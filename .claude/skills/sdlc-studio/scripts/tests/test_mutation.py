@@ -3162,6 +3162,56 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
                          "the gate emitted no killer for a mutant its own runner named")
 
 
+class BytecodeIsolationTests(unittest.TestCase):
+    """US0565 AC5: a stale `.pyc` must not be able to decide a mutant's verdict.
+
+    A cached bytecode file is keyed on (source mtime, source size), so a SAME-LENGTH mutant
+    written inside one mtime second runs the ORIGINAL bytecode and is recorded as survived. That
+    is a false verdict about the test rather than about the code, on the instrument every other
+    evidence claim in this repo leans on - and it has produced a wrong answer here twice.
+    """
+
+    def test_a_stale_pyc_cannot_decide_a_mutants_verdict(self) -> None:
+        """Three guarantees, each asserted on the shipped helper rather than on a comment
+        describing it.
+
+        Mutants: drop `PYTHONDONTWRITEBYTECODE` from the suite env - the child caches, and the
+        NEXT mutant inherits it; stop purging the cache - this mutant inherits the previous
+        one's; or skip the changed-file assertion - a patch that silently applied nothing is
+        recorded as a survivor.
+        """
+        m = _load()
+        env = m._suite_env()
+        self.assertEqual(env.get("PYTHONDONTWRITEBYTECODE"), "1",
+                         "the child may write bytecode, so a same-length mutant can run the "
+                         "original module and be recorded as survived")
+
+        with tempfile.TemporaryDirectory() as d:
+            src = Path(d) / "thing.py"
+            src.write_text("x = 1\n", encoding="utf-8")
+            cache = Path(d) / "__pycache__"
+            cache.mkdir()
+            stale = cache / "thing.cpython-311.pyc"
+            stale.write_bytes(b"stale bytecode from a previous mutant")
+            m._purge_bytecode(src)
+            self.assertFalse(stale.exists(),
+                             "a cached .pyc survived the purge, so the next mutant inherits it")
+
+        # THE SAME-LENGTH CASE that makes this necessary: a mutant whose replacement is exactly
+        # as long as the original leaves size unchanged, and inside one mtime second the cache
+        # key does not move at all.
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "m.py"
+            original = "def g(a, b):\n    if a == b:\n        return 1\n    return 2\n"
+            f.write_text(original, encoding="utf-8")
+            muts, _unchecked = m.enumerate_mutations([f])
+            guard = next(x for x in muts if x["class"] == "invert-guard")
+            mutated = m.mutated_text(guard)
+            self.assertNotEqual(mutated, original, "the patch changed nothing")
+            self.assertEqual(len(mutated.splitlines()), len(original.splitlines()),
+                             "the fixture is not the same-length case this guards")
+
+
 class ChangedLineScopeTests(unittest.TestCase):
     """US0564 AC2: the mutated surface is the unit's own CHANGED lines, not its whole Affects.
 
