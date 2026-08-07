@@ -14,6 +14,541 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > its body is folded back into Unreleased here and one dated 5.0.0 is cut from the whole.
 > Nothing is discarded - the earlier body follows the newer one, in its original order.
 
+### Added
+
+- **`sprint_report.py operator-summary` - the decision-grade page an operator leads from (US0645).** What shipped and who signed it, what was rejected and in what repair state, what is carried and under which filed id, what it cost, and the one or two judgements most worth overturning. Human in the LEAD rather than in the loop: the seats judge at their speed, the operator reads and reverses at theirs.
+- **Every field is a READ of the ledgers, and no channel carries anybody's prose into it (US0645).** A seat writing its own summary is a seat marking its own homework, and the operator would be leading from an account with a stake in the answer. The test varies a verdict's free text and asserts the summary does not move.
+- **A component with no record reads UNMEASURED, never zero (US0645)** - omitting it would let a run that measured nothing read as a run that cost nothing. The summary is generated identically for a human sign-off and states the capacity, because a second code path for the human case is a path that drifts.
+- **A sign-off records the CAPACITY it was given in: `human` or `seat` (US0644).** A panel sign-off was distinguishable only by string-matching the `panel(...)` marker inside the free-text chain - a fact a reader can find and a filter cannot rely on. The point of recording a seat's signature is transparency about who judged, and transparency a machine cannot read is transparency in name only.
+- **An absent capacity never reads as `seat` (US0644).** The direction this must not fail in is a machine's signature being taken for a person's, and every row without the column predates seat sign-off entirely.
+- **A row short by the new trailing column is still read (US0644).** Widening the table with an exact-width reader would have silently un-signed every unit signed before it, and the two-role gate would have started refusing them - a quiet loss found by mutation rather than by review.
+- **`sprint plan --write` assigns the sign-off panel when the project has adopted one (US0643).** Panel sign-off ships fully built - the two roles held disjoint, the signer read from the run rather than named at signing time, the brief-provenance interlock, three distinct contexts enforced - and was reachable only if somebody remembered to run `persona_resolve.py panel --ceremony signoff` by hand first. A run that forgot it reached its close and could not be signed off at all, so the whole path stayed theoretical. LL0027: a gate belongs in the command people actually run.
+- **An unassignable panel refuses at PLAN time and leaves no run behind (US0643).** Discovering it at the close strands a delivered run behind a sign-off nobody can give, and a half-opened run is worse than none - the next plan of any other batch is refused as disjoint against it.
+- **A project on the shipped `operator` policy is untouched (US0643)** - no assignment, no change to the plan's output. An upgrade never moves the bar under anybody.
+- **The refusals are pinned through the shipped verb (US0643)**, including the assigned-signer check that lives in the CLI path and is invisible to any test calling `record_signoff` directly - with the positive control beside them, because a path that refuses every panel sign-off passes every refusal test for the wrong reason.
+- **The review tier is derived from the unit's risk band, recorded on the verdict, and READ by the coverage predicate (US0641).** `route.py` said it in its own header - "Advisory only - no gate reads a tier" - and that had been true since the score was built: a deterministic 0-100 difficulty with bands and a confidence, stamped on every unit at plan time and consumed by nothing but `plan_review`. `critic brief --tier` existed and was cosmetic, substituting one sentence into a prompt that was never recorded, never read and never checked. All three steps now land, and the third is what makes the other two worth anything.
+- **A light verdict does not cover a unit the band tiers full (US0641)**, and the gate names the tier shortfall rather than reporting a missing approval that is sitting in the log. An explicitly chosen light tier does not stand the gate down either - a gate an operator can disarm with an undeclared flag is not a gate.
+- **Nothing is applied backwards (US0641).** A verdict carrying no tier covers, in both spellings of absent: the `-` marker the current writer uses and the missing cell on a row that predates the column. The rule would otherwise re-open every closed unit in the corpus for a fact nobody could have recorded.
+- **The band distribution is asserted against the real corpus, not a fixture (US0641).** A band that always resolves the same way is a config key wearing the appearance of a gate, and every other test would pass. The sample is strided across stories and bugs because the first N bugs by id are the oldest ones and banded uniformly - a sample that would have reported this gate degenerate when it is not.
+- **`plan_review.enabled` decouples the plan-review gate from the schema version (US0640).** The gate hard-returned `dormant (schema v2)` with no config key at all, so the one hard, deterministic, risk-proportional gate in the codebase - the model the rest of the ceremony work copies, and the one `--force` cannot bypass - was reachable only by adopting the v3 id format, the inbox status and spec-guard across every artefact a project holds. It is a review policy and has nothing to do with the shape of artefacts.
+- **One shared enablement predicate, not a second copy (US0640).** `config.feature_enabled` now holds the knob-then-schema resolution that `triage_noise.active` had spelled out, and both adopters call it. Two copies are two answers to the question "is this on", and they drift the moment either is touched. The test proves the sharing by replacing the shared predicate and asserting BOTH adopters follow.
+- **An unset knob changes nothing for any existing project (US0640), and the dormant reason names whichever thing actually decided** - the knob when a project stated one, the schema version otherwise. Reporting "schema v2" to a project that deliberately set `enabled: false` would send a reader to a migration they do not need.
+- **The duplicate groups no collection can answer are derived and named one by one (US0637).** A group whose selector `selector_resolves` answers `None` for cannot be split into discriminating halves, because nothing can say what either half selects. Those groups are now derived AT LINT TIME by asking the resolver, never read from a list in a document - so a group that becomes answerable, or stops being, moves in and out of the set without anybody editing prose. Each member is printed on its own line with the verb that makes it unanswerable and every AC claiming it: a reader told "6 groups are exempt" cannot tell an exemption that still holds from one that quietly stopped being true, and a count cannot be taken apart. An unanswerable group is no longer also told to split into discriminating halves, which was advice its author could not take.
+- **`retro.py accuracy` reports passes spent on test-plan review beside passes spent on code review (US0634).** Read from the two verdict ledgers and from nowhere else: this is the claim EP0207 makes, so a figure anybody could type in would be an assertion wearing a measurement's clothes. Only the run's own units count, and only the `test-plan` kind - a spec review billed as a test-plan review would measure work nobody did.
+- **A phase that was not in force reports that, never 0 (US0634).** A run predating the cutoff spent nothing because the ceremony did not exist; a run that held plan reviews and spent nothing on them would be extraordinary evidence. A bare 0 says the second while meaning the first, and no ratio is invented from an absent denominator.
+- **A criterion whose mutant cannot be named is refused at grooming (US0633).** `sprint breakdown` reports it read-only and `sprint plan --write` refuses, on the same terms it already refuses a unit lacking `Affects` or `Points`. A bare `unnameable` is MALFORMED rather than a declared exemption, and the reason is measured for substance so `-` and `n/a` do not buy one: a state that costs nothing to enter is the state every awkward criterion ends up in.
+- **`mutation.py run --story <id> --from-plan` (US0632).** Each planned mutant is joined to the mutation ledger and reported killed, survived or `not-run`. A row never executed is its own state and never folds into a pass: a plan written and never checked is the same paperwork problem one level up. The join is on a `criterion` recorded at registration, never on the mutant's prose - a substring match would credit one criterion's execution to another's row, and a matching rule that is convenient is a gate that is optional. The WORST verdict per criterion wins, so a later kill cannot cancel an earlier survivor.
+- **A planned mutant that is unexecuted or alive refuses the terminal transition (US0632).** Reported by `transition.py requirements` before the work rather than discovered as a refusal after it, and the message names the CRITERION whose test failed to notice, because the finding is about the test. Behind the dated `review.test_plan_after` cutoff on the same terms as the two-role gate: a gate that refuses an existing backlog wholesale is one that gets switched off wholesale.
+- **A reason-less `unnameable` no longer clears the delivery gate (US0632).** US0633 makes the marker cost something at grooming; exempting a malformed one here refunded that cost one lane later and made it a free pass at the gate it matters most at.
+- **US0632 AC3 is CARRIED UNMET, and its narrowing retracted (US0632).** The delivered version claimed the anchor-uniqueness limb was undeliverable because the engine selects by AST node. That is false: it counts regex occurrences, and only the enumerator excludes multiline-string spans, so a mutant reported at one line is applied at another. Two seats proved it by execution. The property is deliverable, this unit does not claim it, and the real desync is filed as BG0533.
+- **The AC3 retraction is now real in the fields the tooling reads (US0632).** Marking a criterion undelivered in prose while leaving `**Verified:** yes` on the line `verify_ac` reads is not a retraction - the tool re-stamped it green from a test that does not exercise the property, so every mechanical reader still saw it met. The undelivered limb is split into its own criterion carrying NO verifier, so the tooling reports it unverified because it is. A seat caught this; it is the same class as BG0530, committed in prose about my own work hours after filing it.
+- **`critic.py brief --phase plan-review` (US0631).** The pre-code brief: the seat charter, the unit's criteria as law, and the test-plan rows as the object of review. It carries NO diff scope, and the absence is the point rather than an omission - there is no diff yet, that being the premise, and a brief that asks for one teaches the reviewer to wait for code. The claim-inventory pass is absent for the same reason: it rules on prose in a diff. A `--tier` is refused, because `record_verdict` already refuses one on this phase and a brief that accepted it would promise a depth the ledger cannot record. Where no plan exists the brief says so and names the command that derives one, rather than presenting an empty section a reviewer could approve.
+- **The plan-review provenance loop closes through the shipped verbs (US0631).** `brief --phase plan-review` returned before printing its fingerprint, while `record` refused without one and told the reader to use "the fingerprint it printed"; and the matcher asked for a DELIVERY brief whatever phase was being recorded, so a correct plan fingerprint was flagged as unrecognised while a delivery one was accepted as provenance for a plan review. Both seats found it independently. It is verbatim the scar AGENTS.md cites, in the phase added to prevent it.
+- **A unit reaching implementation without a REVIEWED test plan is refused by the command that starts the work (US0630).** `transition.py set --status "In Progress"` holds it, and `transition.py requirements` states the demand before any code is written rather than after it - a gate discovered by finished work is a tax, and a tax is what gets forced. "No plan" and "plan not reviewed" are DISTINCT refusals: the two have different fixes, and being sent to the wrong one of "write a plan" and "get it reviewed" is not a small error when the claim is that reviewing the test is cheap.
+- **The test-plan gate is keyed to its own review kind (US0630).** It sits beside the spec plan-review gate and neither discharges the other, which is exactly what BG0510's `Kind` column shipped for. A spec approval does not clear it - that reviewer never saw a test plan - and neither does a self-review. Behind the dated `review.test_plan_after` cutoff, so an existing backlog is not retro-refused.
+- **The test-plan and planned-mutant gates fail LOUD (US0630, US0632).** Both swallowed every exception and returned None, which is PASS - so the one condition under which either was least able to judge was the one under which it approved everything. A seat made the verdict ledger unreadable and watched a refusal become exit 0 with nothing on either stream. Two sibling gates in the same file already fail loud for this exact reason.
+- **An unreadable `.config.yaml` no longer switches both new gates off (US0630).** `project_override` swallows every config fault and returns the default, so a malformed, non-UTF-8, unreadable or directory-shaped config read as "this project set no cutoff". The sibling `_two_role_gate` already solved this with `_config_unparseable`, and its comment names the same four shapes - the repair reached parity with that gate's ledger half and skipped its config half. A project that DECLARES the rule and then cannot be read has not waived it.
+- **`verify_ac.py testplan derive` (US0629).** A unit's test plan is derived from its acceptance criteria rather than assembled by hand, naming per criterion the production change its test must fail on. The row count is checked by TWO INDEPENDENT READERS - `parse_story` reads the whole file for `### ACn`, `sdlc_md.count_acs` reads only the Acceptance Criteria section and also counts bare checkbox items - because counting criteria from the list the rows were built from makes the equality tautological and the mutant that deletes it survives every fixture. A duplicate criterion id is refused outright: a plan keyed by criterion cannot carry two rows under one id without one criterion going unplanned.
+- **A mutant field must name a production edit, on four checkable properties (US0629).** Blank, no path drawn from the unit's own `Affects`, no edit verb, or more than 60% meaningful-token overlap with the criterion's own `Then` clause. The path is EXCLUDED from that overlap: naming a file is separately required, so counting those tokens as novel substance lets a restatement buy headroom under the ceiling with the very words it was obliged to write. With them counted, US0629's own discriminating pair reads 57%/33% and the restatement passes; excluded, it reads 67%/40% about the stated ceiling and the threshold is the thing under test rather than the examples.
+- **`testplan derive` never overwrites a plan it cannot read (US0629).** It harvests `| ACn | mutant |` rows only, so a plan authored as prose yielded none and the section was replaced with placeholders at exit 0. A seat ran it against US0629's own artefact and watched 178 lines become 79 - an independently-reviewed plan destroyed by the command meant to protect it. It now refuses and says why. The overlap ceiling is also the first REFUSED value rather than the last accepted one, and a criterion with no `**Then**` bullet - the house bug template's shape - measures its overlap instead of silently scoring zero.
+- **Re-running a finished close over an unchanged tree is now a no-op that says so (US0619).** The close was run three times on one run and repeatedly on the next, and from outside that read as a sprint that was never being closed. It was: each close was undone by the next repair, and each re-run re-derived an account that could differ from the one before it. The close now stamps a digest of the tree its account describes, and a later close over that same tree reports the run already accounted for, writes nothing, and exits zero - so re-running is free and an operator who is unsure whether the ceremony finished can CHECK rather than guess, which is exactly the behaviour a close-time gate makes people want. "Unchanged" means the TREE, not `HEAD`: a close is followed by commits - its own paperwork - so a check keyed on the commit id would report "changed" after every close and never short-circuit, and would report "unchanged" while an uncommitted repair sat in the tree. The digest is a real git tree object built in a throwaway index, so it is a function of content alone and staging cannot move it. A run still open is never short-circuited, because its first close has not happened; a genuinely changed tree re-runs normally, since this is an idempotence guarantee and not a lock; and a digest that cannot be computed declines to short-circuit, which errs towards doing the work.
+- **An unavoidable close-time repair can be recorded as a reasoned, per-unit override (US0618).** US0616 refuses the inline repair and US0617 makes the residue readable; this is the deliberate way through for the case where deferring genuinely is not an option - a defect that makes the close itself wrong, for instance. It is written in the retro as `> **Close-repair-override:** <UNIT> - <why>`, travelling with the record rather than in a command flag, on the same reasoning as the velocity override beside it: an escape nobody can read afterwards is a silent pass. A BARE marker is not an override, by that same existing rule - an exception has to cost a sentence, or it becomes the routine the rule was written against. It is per unit, so one exception cannot license the next, and an override naming no unit forgives nothing rather than forgiving everything, which is the blanket exemption this is specifically not. Recorded overrides are counted and printed with their reasons on every run: an override nobody sees is indistinguishable from the inline repair the rule forbids.
+- **`sprint close` and `sprint stop` now refuse while the tree carries a repair to one of their own batch units (US0616).** The close writes an account of the batch and then stamps the ledger that says the batch is accounted for, so anything reaching terminal after that stamp is unaccounted by construction - and a repair made *inside* the ceremony invalidates the account written moments earlier. RUN-01KYZKY5 hit it twice in one close, and from outside it read as a sprint that was never being closed. It was, repeatedly, and each close was undone by the next repair. The refusal names the unit, the offending path, and both ways out: commit it as batch work before the ceremony starts, or file it and let the next run carry it - a refusal that leaves the operator to work out the remedy is the shape that gets bypassed. `stop` is gated on the same terms because a stop writes the same account, and the last run was stopped rather than closed, so a gate covering only `close` would have left the route actually taken ungated. Scoped to the batch's own declared `Affects`, never to any dirty file: a guard that stopped every close over an unrelated edit would be switched off within a sprint, and then it would guard nothing. `--dry-run` reports the condition instead of refusing it. The rule now sits in `reference-doctrine.md` and `reference-sprint.md` as well, each naming the command that enforces it - a rule stated with no gate behind it is a known-weak rule, which is why the statement and the gate ship as one unit.
+- **`sprint review-batch --fields-file` reads the findings from a JSON document**, so prose
+  carrying backticks or `$(` is stored verbatim rather than executed by the shell. A review's
+  findings are exactly the text most likely to contain both - this project mangled its own
+  twice in one run, and once quoted the mangled output back into an artefact.
+- It uses `resolve_prose_fields`, the loader every other writer already shares, so the
+  fields-file spelling cannot drift from theirs. The flag path is unchanged: this is an
+  addition, not a migration.
+- **`status.py points` answers how much delivery work is left, in POINTS, by type and by
+  status.** The routine question had no home: `status` reported counts, `sprint breakdown`
+  reported grooming state with no points anywhere, and only `sprint plan` summed them - a batch
+  planner, not a backlog query. So it kept being answered by a script written on the spot, and
+  the first hand-written one silently counted a `Won't Implement` story.
+- **Terminal units are excluded from the ONE shared authority** (`sdlc_md.is_terminal_status`),
+  so the census cannot disagree with what the rest of the tooling calls finished. The buckets
+  are the answer rather than the total: a single number cannot say whether the points are Ready
+  to plan or sitting at Review awaiting a sign-off.
+- **`sprint plan` prints the toolchain**, beside the carried lessons and for the same reason:
+  both are things an agent is meant to have read, and both get skipped unless the command that
+  runs anyway prints them. An absent runbook is REPORTED, not omitted - a plan that drops it
+  silently reads exactly like one that never had it.
+- **`tools/runbook.py` fails when the runbook names a command that no longer exists**, or
+  drops a step of the cycle. A runbook that has rotted is worse than none: it sends an agent to
+  a renamed tool, which is the moment they stop trusting it and go back to hand-rolling.
+  Commands are resolved against the shipped surface rather than listed a second time.
+- **`reference-sprint-toolchain.md` - the toolchain ordered by STEP, not by script.**
+  `reference-scripts.md` is the catalogue and answers "what does X do"; nobody planning a
+  sprint has that question. The one they have is "what is next, and which command performs
+  it", and answering it from memory is where hand-rolling comes from.
+- **Every entry names the hand-rolled shape it replaces**, so it is findable from the WRONG
+  instinct as well as the right one - `npm test | tail` beside `run-suite.sh`, a hand-written
+  review prompt beside `critic.py brief`, a census script beside `status.py points`. An entry
+  useful only to somebody who already knows the tool exists is useless to whoever needs it.
+- A closing rule: a step with no command is a FINDING to file, never an invitation to
+  hand-roll it.
+- **`run-suite.sh --check` refuses a greenness claim the record does not support** - an absent
+  verdict (never read as pass), one recorded at an earlier commit than HEAD, or one recording
+  a non-zero exit. Each refusal says which of the three it is.
+- **The commit-msg hook checks a message that CLAIMS the suites are green against that
+  verdict.** Scoped to messages making the claim rather than to every commit: a gate demanding
+  a six-minute suite before every commit is one people bypass, and a bypassed gate protects
+  nothing. The lane REFUSES where it stands rather than setting a flag, because the section
+  below it initialises `fail=0` and would wipe it - and with no pre-commit handover the hook
+  exits before that section is reached at all.
+- **`tools/run-suite.sh scripts|tools|all` runs a suite and writes its verdict to
+  `sdlc-studio/.local/suite-verdict.json`** - suite, exit code, counts, duration and the HEAD
+  it was taken at - while printing a single line. `npm test 2>&1 | tail -15` reports TAIL's
+  exit status, not the suite's, and that cost two false claims in one session: a commit
+  reported as landed when the hook had refused it, and a suite reported green with a real
+  failure in it. The pipe exists because six minutes of output does not fit in one read, so
+  the fix removes the incentive rather than asking anyone to resist it.
+- The verdict is written on a RED run too, and overwrites: skipping the write on failure
+  would leave the previous GREEN verdict in place, which is worse than none because it is
+  stale and looks current. An unknown suite name is refused rather than defaulted, and writes
+  nothing - an absent verdict is honest, a wrong one is not.
+- **`best-practices/testing.md` states the entry-point rule beside name-the-mutant-first:**
+  name the door the test goes in through, before the first assertion. If the criterion
+  describes a command, the test must enter that command - a library import standing in for one
+  is not evidence for a claim about it, however green.
+- **`tools/best_practice_rules.py` makes it a runnable check**, exiting non-zero when the
+  practice does not state the rule, so it is enforceable by a gate rather than only where
+  a test runner happens to look.
+- **The guard's own paperwork cannot satisfy it.** The check is scoped to
+  the passage's own section, because a whole-file search goes green on a Revision History row
+  describing the change being made (BG0457).
+- **The lane-check runs in the pre-commit gate, ADVISORY**, scoped to the unit ids the commit
+  touches so it costs nothing on a commit that touches none. It ships reporting-only on the
+  same terms as claim-drift: a new blocking check on a gate already over its ceiling earns its
+  place on a measured number rather than on assertion.
+- **Its yield accumulates under `sdlc-studio/.local/`**, following the precedent that fixed
+  BG0481 - a hook-written record on a tracked path dirties the working tree on every commit
+  with a file the author never touched and the hook never stages.
+- **`verify_ac.py lane-check` reports a unit that changes a command where NONE of its
+  verifiers enters the shipped entry point.** US0577 shipped `brief_fingerprint` with a
+  passing acceptance test and a feature that did not work: the test computed it in-process
+  while the command that issues a brief never called it. A library test cannot see a missing
+  lane, because the wiring is exactly the part it does not exercise.
+- **Detection is by execution over the verifier's own source** - does it call the entry point
+  or run the script - never by naming convention, which a rename satisfies. Where the selector
+  names a node, that node's source is read rather than the whole file.
+
+#### Measured, not asserted
+
+Two earlier scopings were rejected on their numbers before this one shipped. Whole-file
+matching reported **0 findings over 615 units** - a detector that never fires, because one
+`main()` call anywhere in a several-thousand-line module marked every criterion in it clean.
+Per-criterion scoping reported **563 of 615**, because most individual tests legitimately
+exercise a library function. Scoped per UNIT it reports **167 of 615**, and a sampled finding
+was confirmed genuine: US0131's verifier calls `refine.refine(...)` directly, so the criterion
+would pass even if the command never called it.
+
+That figure was **186** as first shipped; `BG0487` removed 19 false positives where the test
+entered the CLI through a shared helper. The number is restated rather than left standing,
+because it is the number the decision to let this lane BLOCK will rest on.
+
+- **The close REPORTS to the operator** - shipped, carried, cost and what the reviews found -
+  rather than leaving a file to be discovered. Being informed is the operator's half of
+  human-in-the-lead: if they are not a step in the machine, the machine has to reach them.
+- **An absent figure is named absent, never dropped.** A missing line reads as nothing to
+  report, and "not attributable" and "nothing happened" are different facts - only one of them
+  means somebody should go and look. A close with no captured cost still prints a COST section
+  saying so.
+
+### Changed
+
+- **In-repo docs point at guided onboarding.** `help/hint.md` now records that a guided onboarding walk pre-empts the next-step ladder (matching what `status`/`hint` implement); the greenfield and brownfield runbooks open with `init guided` as the one-command path, keeping their manual step lists as under-the-hood detail; and the README documentation index points at the new sdlc-studio.com pages (the specification layer including the PVD, personas and the Three Amigos, and the greenfield/brownfield walkthroughs).
+- **A low-band unit gets a bounded brief: the claim-inventory pass runs at full tier only (US0642).** It reads every Resolution, docstring, comment and CHANGELOG line in scope and rules on each - a finding generator by construction, and the largest block in the prompt. On a low-band unit it costs more than the unit does.
+- **The depth line and the omitted sections come from one decision (US0642)**, so a brief cannot announce a lighter pass while carrying the full inventory. What a light brief KEEPS is stated rather than left to whatever survived: the seat charter, the bounded diff scope, the canonical acceptance criteria and the return contract - the four things that make it a briefed review rather than a hand-written prompt.
+- **Bounding the light tier does not weaken the full one (US0642).** The refusal that a full brief must enumerate all four prose surfaces still fires, pinned with a positive control so the four refusals cannot pass because the guard refuses everything.
+- **The close-owed ledger now tells a close-time repair from an unaccounted unit (US0617).** A close writes a retro accounting for its batch and then stamps the baseline, so anything reaching terminal after that stamp is uncovered - and a repair made *during* the close is exactly such a unit. The ledger therefore re-opened the moment a careful close did its job, twice in one close of RUN-01KYZKY5, and the operator's reading was that the sprint was never being closed. It was, repeatedly, and each close was undone by the next repair. The two states are now named apart, because "fixed after the account was written" and "nobody accounted for this" are different facts. The classification is DERIVED from what is already on disk - the most recent retro's `Date` and the unit's terminal date, which `transition.py` records in a telemetry file named for the day it happened - so nobody has to declare which kind a unit is; a flag somebody must remember to pass records the honest case and misses the careless one, which is the whole population this ledger exists for. Both conditions are load-bearing: without the date test every uncovered unit would be excused, and without the run-finished test the *next* sprint's ordinary delivery would be excused too, since it also postdates the last retro. Nothing is forgiven - both states stay in the owed set - but only an unaccounted unit holds the exit code, because gating on a close-time repair would refuse the ceremony precisely when the close had been careful, which is the unconvergeable close from the other side.
+- **A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are
+  all independently covered.** It is reported as CADENCE DEBT instead, naming the artefacts and
+  saying the repo-wide review is still owed. The periodic ceremony runs on its own schedule
+  over the whole tree; a sprint that reviewed every one of its units is not made less correct
+  by that ceremony being overdue, and it did nothing to cause the staleness.
+- **The coverage question fails CLOSED.** No open run, an unreadable state, or a single
+  uncovered unit all keep the lane blocking - so this can only ever go advisory when the
+  evidence positively says the batch was reviewed, and the exemption is not reachable by
+  deleting a file.
+
+Measured on a real close: nine units, each with independent adversarial evidence, an APPROVE
+verdict after repair, a confirmation pass and a sign-off - and the close still stopped, on 59
+artefacts of staleness that entirely predated the run.
+
+- **The review-repair loop STOPS when it stops converging.** The growing-set detector already
+  existed and only reported: a loop that announces it is diverging and then runs another round
+  has reported nothing, and unattended it burns a night going backwards. `loop_termination`
+  turns the same signal into a decision, and `_record_close_attempt` acts on it.
+- **Two rules, both at their boundary.** A declared round cap (`review.max_rounds`, default 4)
+  ends the loop; so does an outstanding set that grew two rounds running. One growing round
+  alone does not - a repair exposing its neighbour is ordinary (`lessons/LL0052`), and stopping
+  on it would end loops that were about to converge.
+- **Only a regression or a newly introduced defect holds a unit's gate.** A review whose
+  findings are all `[pre-existing]` now COVERS the unit: the findings are reported with their
+  origin, and the repository's existing debt does not block this increment. A `[regression]`
+  or `[new]` finding still blocks, unchanged.
+- **The blocking and non-blocking sets are rendered apart,** with the non-blocking set stating
+  why those findings do not block, so a reader can tell what held the gate from what was
+  merely noticed. One undifferentiated list is how a pre-existing observation gets repaired at
+  close time as though it were this batch's debt.
+
+An UNTAGGED finding is not treated as harmless: it counts as neither blocking nor
+pre-existing, and `record` refuses it upstream. A REJECT carrying no itemised findings at all
+still does not cover, because the safe reading is that the reviewer rejected for a reason they
+did not write down.
+
+- The `origin` axis is deliberately SEPARATE from the existing `class` axis
+  (`fresh` / `repair-regression`). They answer different questions - `repair-regression` means
+  the repair broke it, `origin: regression` means this unit's diff broke it - and the word
+  appearing on both is why they are not merged. An independent engineering seat found the
+  collision at goal review; without the separate name a second classifier would have been
+  built on top of one CR0510 reports as effectively dead.
+- **`critic.py record` refuses a verdict carrying no brief provenance.** The refusal names
+  `critic.py brief --unit <id> --seat engineering|product|qa` as the way to obtain one, and
+  shows both `--brief <fingerprint>` and `--brief-file <saved brief text>`. Briefing a
+  reviewer with the shipped tool was doctrine, and doctrine is what got skipped: a review
+  round was run from four hand-written prompts while the seat brief existed, carrying neither
+  the charter, nor the bounded diff scope, nor the acceptance criteria as law. A rule that
+  matters belongs in the command people actually run (`lessons/LL0027`).
+- **Standing the rule down is a recorded decision, never an omission.** Setting
+  `review.require_brief_provenance: false` accepts an unbriefed verdict AND states on the
+  output that the requirement was switched off rather than met, so the two are different
+  events in the record.
+- A recorded review verdict now carries a fingerprint of the brief the seat was given.
+  `critic.py brief` emits a fingerprint alongside the brief text, and `record_verdict`
+  stores it in a new `Brief` column, so a verdict can be traced to the prompt that produced
+  it. Two seats briefed on the same unit fingerprint differently, so the field identifies
+  which brief was used rather than merely asserting one existed.
+
+- The verdict table gains a `Brief` column. Rows written before it exist are read unchanged
+  and report an absent fingerprint - the same value a hand-written prompt records, which is
+  correct, because that is exactly what those rows cannot distinguish about themselves.
+  A verdict recorded without going through `brief` is therefore visibly unbriefed.
+- **Doctrine rule 21: a fix's author is not sufficient evidence for that fix (US0567).** Every other change is held by a test written before anyone knew which way the implementation would go; a repair's test is written afterwards, by the person who just decided what the answer is. So a repair carries a mutant applied to its own changed lines whose death was observed. The rule names `transition.py` as what enforces it rather than leaving it as advice, the Definition of Done template carries the clause under a registered `[check: repair.mutation-evidence]`, and the carried lesson cites the gate instead of restating its terms so the two cannot drift.
+- **The close reports what it itself cost (US0559).** `close_cost` reads the execution ledger and the close prints its gate seconds, the runs behind them, the verdicts reused and the seconds those saved, and the wall-clock elapsed across the ceremony - on both the sign-off brief and the `--apply-signoff` path, so the next reduction is judged against a number rather than a recollection. Every figure is a measurement or it is absent: a run whose seconds were never recorded is counted as UNMEASURED and contributes nothing to the total, a reuse whose source run is not on the ledger is named rather than credited with zero saving, and a close with a single event reports no span rather than `0m00s`. Reading any of those as zero would let the close that measured least report the cheapest.
+- **`sprint close --dry-run` reports every refusal all seven steps would raise, in one pass, writing nothing (US0555).** The close stops at its first unmet prerequisite, so a close took as many attempts as it had gaps and each restart re-ran the steps before it. `close_preflight` answers the prerequisites read-only and always did - but three of the chain's steps exist to DO something, and one of those, the retro's CONTENT, is the class that actually refused. The dry run performs the action steps against a scratch copy of the workspace: it scaffolds the retro there and judges what `close` would mint, so a content gap is reported before a retro exists. The real tree is never opened for writing and the copy is removed. A step whose probe cannot be evaluated is reported as UNEVALUATED, never as passing, and a pass carrying one is not called clean - a preview that reported an unanswered step as green would be the one way this could actively mislead.
+- **A census attributes suite cost per module, and nominates tests no mutation can kill (US0506, US0507).** `tools/test_census.py` reports test count and time against the module each test covers, so the expensive areas are visible rather than guessed, and names any test it cannot attribute instead of dropping it. The removal-candidate half is consumer-only until the mutation runner records which test killed each mutant (BG0357), and refuses loudly rather than guessing when that attribution is absent.
+- **The plan-time test strategy now states the EXECUTION policy, and the close reports what it actually cost (US0497-US0499).** The strategy answered "what proof does each unit owe" and said nothing about what runs, how often, or at what price - so the largest single cost in a sprint was set by a habit living in a commit hook that nobody proposed and nobody signed off. `sprint plan` now states the per-commit mode, the close and release runs and an estimated cost for each (priced from the declared `gate_budget` baseline, and named NOT MEASURED rather than printed as zero when no baseline exists), and reports a declared `test_execution.*` policy that the commit hooks do not implement - the hook's behaviour is read from the hook, never restated beside it, and an unreadable hook is reported as UNRECONCILED rather than as agreement. The strategy is persisted into `sprint-plan.json` and read back at the close, so what is judged is what was agreed; a run planned before this exists still gets an answer, named as a re-derivation. The sprint report carries a `Test execution:` line counting full, selected and reused runs against the declared policy, attributed to the run's own window, and says NOT CAPTURED - never a total of zero - when nothing was recorded.
+
+<!-- section: Fixed -->
+- **The sprint close no longer invalidates itself, and a retry over an unchanged surface reuses its verdict (US0500, US0501).** The close writes the review anchor and the handoff, which made them newer than the anchor's last review, which failed the review-currency lane on the next attempt - so one close took four attempts and about sixteen minutes of test execution to record a decision already made, and filing an honest finding during a close cost another full gate. Artefacts the close itself wrote are now recorded as its own output and attributed as such: a review-currency refusal naming only those is reported as the close's own paperwork and the ceremony continues, while a stale artefact the close did not write, any other failing lane, and a refusal this cannot parse all still refuse - and the message names which blockers are in the WORK. A finding filed during a close is recorded as carried into the next run. The close's gate verdict is recorded against a content hash of the test-relevant surface with the close's own output subtracted, so a retry over an unchanged surface reuses it and says so; a changed surface, a red verdict and an unhashable surface each pay in full.
+- **The gate reports its own cost against a budget, every run (US0496).** Each lane is timed, and the run prints its elapsed cost, the declared budget (`GATE_BUDGET_S`, 45s, overridable with `gate.budget_seconds`), the lane that dominated the total and the direction of travel against the previous run. An over-budget run states the overage plainly with the dominant lane named, because a total with no lane named sends a reader to bisect the gate by hand. The first measured run says what it was for: 33.6s over this workspace, 26.5s of it in the `constitution` lane.
+- **A full-suite run is confined to a boundary - push, release and sprint close (US0495).** Everywhere else the gate runs the selection. Declare the moment with `gate.py --suite-decision --boundary push` or the `SDLC_GATE_BOUNDARY` environment variable, for a step that runs the gate through a wrapper it cannot pass flags to; an unrecognised boundary is refused rather than downgraded to the cheap path, because a caller who asked for everything and silently got a selection would be wrong about their coverage. A boundary also declines a green verdict earned by a partial run, so selection trades when the coverage is paid and never whether. The policy is stated in `help/gate.md`, and `tools/tests/test_help_coverage.py` pins the page against `gate.BOUNDARIES` so a boundary cannot be added without documenting it.
+- **The gate selects the tests a change can reach, instead of running all of them (US0494).** `gate.select_tests` follows the repo map's import graph transitively from the changed files, and attributes a changed non-source file (a reference doc, a hook, a shipped artefact) to the suite modules whose source is measured to read it. `repo_map.py` gained `basename_index`, `import_candidates` and `dependents_index`, so the reverse graph and the in-degree hub score resolve an import through one rule rather than two. A selected run reports how many test modules it excluded and why. Anything neither route resolves widens the run: an unanswerable changed-file probe, a file in the surface no module claims, and a change that reaches no test at all all run everything, because a selection of zero tests reported as a pass is a vacuous green.
+- **The unit suites are skipped when the test-relevant surface is unchanged since the last green verdict (US0493).** `gate.py --suite-decision` hashes the measured test-relevant surface by content and compares it with a recorded verdict (`--record-suite-verdict RUN-xxxx`, `.local/gate-suite-verdict.json`), so consecutive paperwork commits and a retried close cost nothing instead of paying the full price for a tree the tests already passed on. Measured over one working day on this repository: the suites ran about 52 times for about 218 minutes against about 35 minutes of delivery, a large share of them over a byte-identical source tree. Every unknown runs the suites - an absent, unreadable or malformed record, a red one, a record carrying no hash, or a surface that cannot be hashed - so a broken cache degrades to the slow answer and never to a false green. The pre-commit hook reads the `suite-decision: run|skip` sentinel and names the reuse rather than skipping in silence.
+- The charter queue lifecycle is documented beside the run lifecycle in `help/sprint.md`, with
+  every queue verb shown as a runnable invocation rather than named in prose, and the reasoning
+  for materialising late recorded where a reader expecting frozen queued plans will look for it.
+  The coverage check derives the verbs it expects from the parser's own help table, so a verb
+  added later is covered without editing the check.
+- `sprint call` finishes a run at a point rather than abandoning it: the unstarted remainder is
+  descoped and the close chain then runs against the Sprint Goal, so a called sprint is closed
+  rather than left open. The remainder returns to the **backlog**, never forward to the next
+  charter, so no two sprints are coupled and the next run never inherits a batch it did not
+  approve. It forwards the close's own flags - `--retro`, `--goal-verdict`, `--note`,
+  `--apply-signoff`, `--principal` - so the close's messages never name a flag this verb
+  rejects. Each descoped unit keeps its own status, because the drop judges the batch and not
+  the work. A descope needs a reason, matching what `batch drop` already requires.
+- A sprint charter carries its own goal review, under `## Seat review` on the charter itself
+  rather than in `.local/`. Local state does not travel: a charter pulled into another working
+  copy now arrives carrying the review that justified it. `sprint next --runner` records who ran
+  it beside who reviewed it, and states plainly when they are the same identity. Separation is
+  recorded, never enforced. A charter whose goal was never reviewed is reported before it runs,
+  in wording that distinguishes an unexamined plan from a review that found nothing.
+- The sprint charter queue is inspectable and editable: `sprint queue show` lists it head first
+  and reports what the head resolves to against the backlog right now, and `queue reorder`,
+  `queue cancel` and `queue clear` correct a plan without hand-editing state. Cancelling
+  withdraws rather than deletes and keeps its reason, so the queue's shape stays explicable. A
+  charter with no rank sits in authoring order and sorts after every ranked one - absence is not
+  rank zero, so ranking one charter does not reshuffle the rest. Only the head is resolved,
+  because resolving the tail would be arithmetic over a backlog the earlier runs will change.
+- `sprint next` materialises the head sprint charter against the backlog **as it stands at that
+  moment**, so a queue holds intent rather than a frozen batch: units created since the charter
+  was written are included, and units delivered since are not. It refuses, leaving the queue
+  untouched, when a run is already open, when the head charter carries no resolvable scope
+  query, or when the scope selects nothing. A charter's `Scope query` speaks `sprint plan`'s own
+  selector vocabulary rather than a second grammar.
+- A sprint charter is a first-class artefact (`SC` prefix, `sdlc-studio/charters/`): it carries
+  the goal a run drives to, the rule that selects its batch, and an optional appetite, so a run
+  can be opened from it without asking again. Its prefix, create status and terminal set derive
+  from the shared registry rather than being restated beside the charter code, and the versioned
+  schema contract documents all three. A charter missing its goal or its scope rule is refused
+  before an id is allocated, because one that cannot answer those stops the queue at the moment
+  it reaches the head.
+- **A gate lane for a flag whose parsed destination no line acts on (US0485).** `command_audit.py --dead-flags` follows the parsed value rather than counting the sites that mention a destination, which is the distinction the earlier specification for this could not make: `verify_batch` was mentioned three times in `gate.py` - defined, read through a defaulted lookup, and forwarded as a keyword argument into a `run_gate` parameter no line of the body read - so every mention-counting rule called it live. Validated against that module as it stood before the flag was deleted (reported dead, nothing unjudged), and pinned as a fixture of the three lines verbatim so the defence holds after the deletion. Positionals are not judged: argparse enforces their presence whether or not a line reads the value, and reporting one also printed a switch that does not exist. Three shapes are reported NOT JUDGED with the reason rather than dead - a namespace handed to a callee the analysis cannot resolve, a `getattr` whose attribute name is computed, and a module that declares flags on a parser it never parses - because a fabricated verdict is worse than an absent one, and each of the three named live flags as dead while it was being built.
+- **`reconcile` reports a supersession recorded on one side of the pair only (US0484).** A superseded design that never records it keeps reading as live from the direction a reader arrives from, so the pair is now checked from both ends as `supersession-asymmetry`. The declaration is matched on its **verb**, not against a list of field names: the corpus carries eleven distinct spellings (measured - the specification said six), and five of the missing ones carry the verb in free prose inside the bold run, which a field-name allowlist reads as an absence and reports as drift that does not exist. The template's combined `Supersedes / Superseded by:` field takes its direction from its value, since recording both directions manufactured a reversed phantom pair for every one of the fifteen it ships in. Detect-only, like `link-asymmetry`: which side is authoritative is a judgement about which design won. Legitimate asymmetry - a partial supersession replacing named decisions of an artefact that stays live in the rest - is recorded in `sdlc-studio/.supersession-waivers.json`, a ratchet whose entries need a stated reason and whose set may only shrink; a corrupt or `pairs`-less file reads as corrupt rather than as "nothing waived", so a malformed waiver cannot bury a real finding under every tolerated one.
+- **`sprint plan` validates the units in its batch, not only their index rows (US0481).** A unit whose own `Verify:` lines target a file its `Affects` omits carries that wrong declaration into the collision analysis and the engagement floor, both of which read `Affects`. The plan now names the unit and the missing path, from one shared resolver that `batch add` calls too.
+- **Joining a batch late is not a way past the check (US0481).** `sprint batch add` runs the same resolver over the unit it adds, so a unit that arrives after the plan was printed is held to what every other unit in that batch passed. Pinned by driving the shipped `batch add` verb rather than the helper, because the wiring is the part a library test does not exercise.
+- **Scoped to the batch, never the corpus (US0481).** A defect in work nobody is planning cannot block a plan, and a check that refused on the standing tail would be switched off within a day - the tail is held by `validate.py warning-ratchet` instead. The test puts an offending unit on disk and outside the batch, and asserts it is not judged.
+- **`sprint.affects_check` decides what a finding does, defaulting to `warn` (US0481).** Reporting rather than refusing is the shipped default because a declaration naming a file the unit will CREATE is legitimate; `block` is for a project that has paid its tail down and wants it kept at zero. An unknown value falls back to `warn` rather than to the stricter mode. The default is stated in `help/sprint.md`, and the test asserts the help page and the code agree rather than checking each against the author's memory of the other.
+- **The Affects/Verify warning family is ratcheted by INSTANCE, and the tolerated set may only shrink (US0480).** It stood at 371 instances and was purely advisory, so a new one was indistinguishable from the standing tail and nothing stopped the tail growing. `validate.py warning-ratchet` compares the live set of instance identities - `(artefact, rule, the specific path or command the warning names)` - against `sdlc-studio/.validate-warning-baseline.json`, and refuses naming the instance rather than reporting that a number moved.
+- **A count could not have done this, and the tests say why (US0480).** A swap that repairs one instance and introduces another leaves the total flat and is still refused, because the comparison is over identities and consults no recomputed total anywhere. Two `pseudo-verify` instances paid down elsewhere cannot mask one new `affects-undeclared`, because the rule is part of each entry's identity rather than a per-kind tally a surplus could offset. A repaired entry is reported STALE and removable - it can never be spent again to admit a different instance.
+- **A baseline the ratchet cannot trust never reports clean (US0480).** Four distinct non-zero states: `not-baselined` (an absent reference is not an empty one), `corrupt` (loud, never a silent pass), `stale`, and `reasonless` - a tolerated instance nobody justified is exactly the silent tolerance this replaces. Identity is read from the finding's own `targets`, which the checker now attaches structurally, rather than parsed back out of its message, so the prose a human reads cannot drift from what the gate compares.
+- **The verdict reaches a lane that refuses a real commit (US0480).** A `warning-ratchet` lane runs in `.githooks/pre-commit` and in the `npm run lint` chain, invoking the checker directly - not through `gate.py._validate`, whose `severity == "error"` filter would swallow a warning-severity refusal. Pinned by executing `git commit` against a fixture repo with the shipped hooks enabled: the commit does not land, HEAD does not move, and the lane and the offending instance are both named. The control commits the same tree once the instance is recorded, so the refusal is attributable to the instance rather than to the fixture.
+- **The epic index's derived cells have one importable definition, and a census behind them (US0477, foundation).** `sdlc_md.EPIC_INDEX_COLUMNS` is the single answer to what an epic row is, because two parties consulted their own: the shipped `templates/indexes/epic.md` declared `Owner`/`Target` while all 191 live rows carry `Deps`/`Created`/`Updated`. The live set wins on 191 rows of evidence.
+
+  `epic_story_count` censuses the story files naming an epic, so `0` is a derived fact rather than a placeholder. `epic_declared_deps` has **three** states and the third is the point: named dependencies, a declared-but-empty section (the epic says it has none), and **no section at all** (nobody has said). It returns `None` for the third and `derive_epic_row_cells` then omits the cell entirely, so a caller writes nothing rather than turning an absence into a declaration - which matters because **181 of this repository's 191 epics** state no Dependencies section.
+
+  **Now wired as the `epic-index-derivable` drift kind, and the nine-row question is settled by a rule rather than by a decision.** The measured dry run said the derivation would fill 182 rows from `--` (pure gain) and overwrite nine, eight of them downward - EP0001-EP0009 dropping to `0` or `1`, because those old epics' stories are no longer on disk and their hand-typed counts cannot be substantiated. What `apply` writes is now decided by the DIRECTION of the disagreement, not by whether the cell looks empty: a placeholder is filled, a count the census **exceeds** is filled (the row was merely stale, and the tree holds every story it claims and more - that is EP0008, 6 to 7), and a count the census **falls short of** is reported as `advisory (epic-index-uncorroborated)` and left alone. So the eight downward rewrites never happen, no operator decision is needed to introduce the kind, and no blocking lane goes red on a repository nobody had broken.
+
+  The direction test is also what keeps the rule usable rather than merely safe. A newly minted epic's row carries a censused `0`, which is a real value - so a placeholder-only rule would have locked the derivation out of its own cell, and the first story wired to that epic could never move it. The story census is memoised on a `stat` signature, taking 3.3s off a lane that runs on every commit.
+- **Every sprint verb is documented as a runnable INVOCATION**, not as a word that happens to
+  appear in a sentence. The in-flight controls - `goal-review record`, `batch swap|drop|add`,
+  `stop`, `reopen` - now have a section of their own in both `help/sprint.md` and
+  `reference-sprint.md`, so a reader working through the reference does not have to leave it to
+  learn how to change a run that is already open. The read-only verbs (`breakdown`,
+  `preflight`, `goal-verdict`, `lane`) are shown too.
+- **The verifier is derived from the PARSER**, so a verb added tomorrow is covered without
+  editing the test, and it extracts only from FENCED blocks - a verb named in prose is not an
+  invocation, and scraping prose would assert that the English around a command parses.
+
+- **The 108 findings that hid their audit run inside `Raised-by` prose now carry it as a field: `backfill_audit_runs.py` (US0568).** Counting a class across runs meant a regex over free text where a field read will do. The pass relocates a datum somebody already wrote and invents nothing else - `plan` reports, `apply` stamps and seeds, and `check` is the standing sweep a guard runs.
+
+  **Two rules the prose already settles, so neither was a judgement call.** Twelve findings name TWO ids, in the shape `adversarial audit <A> carry-over, run <B>`: `B` filed it and `A` is the earlier run it carried over from, which the sentence says outright. All twelve match, so none needed a choice made for it - and the carry-over id comes FIRST, so taking the first id would have attributed twelve findings to the wrong run and made one run look like two. A line the prose does not disambiguate is refused rather than resolved by order.
+
+  **The lens is NOT derived.** `detector-owed` groups by lens, the prose carries none, and guessing 108 lenses from sentences written for another purpose would be inventing evidence at scale. Each backfilled finding records its lens as explicitly unknown, and that placeholder counts as UNATTRIBUTABLE rather than as a lens of that name - otherwise 108 findings sharing one placeholder across five runs would read as a detector owed on every one, a verdict manufactured out of nothing. The sentinel has one definition in the shared library, because the writer that stamps it and the reader that decides attribution by it must agree.
+
+  **Seeded rows are stamped `backfilled`, never `recorded`.** These are harness workflow ids lifted from prose, minted by nothing this project runs.
+
+  Five run ids, not the three the request named: the two it missed were the two with the fewest findings, which a spot check would have missed the same way, and the request's own closing sweep would then have failed on the real corpus. The per-run counts are pinned against the live tree so a sixth id reddens a test rather than being skipped.
+
+  `detector-owed` now scans RFCs as well as bugs and CRs, because the RFC template renders the same attribution fields and a reader scanning fewer directories than the writer stamps would make an attributed RFC invisible to every verdict.
+
+  The new script was held to the house conventions its own guards enforce, which it initially failed three of: it anchors `--root` through the shared resolver before dispatch, carries a row and a count in the root census, and has a real write-confinement case rather than an allowlist entry - its fixture finding is a CR rather than a bug, since two sibling cases mint `BG0001` and seeding the bugs directory would have shifted their ids.
+- **The retro scaffold passes its own validator (US0558).** The shipped template omitted `## Carried lessons` entirely and left every other checked section as a `{{placeholder}}`, so a freshly scaffolded retro failed `retro validate` three ways and the carried-set shape and the `fixed-in:` / `declined:` vocabulary were each learned from a separate rejection - every one of them after a full gate run. The template now DEMONSTRATES each shape: a carried set of exactly the limit as bullets, and all three accepted dispositions filled in rather than described. That trades one failure for another, since a retro nobody filled in would now pass, so every worked example carries a marker and `retro validate` reports any left in place - on both the pass and the fail path, because a structurally valid retro whose content is still the template's is a different failure from a malformed one and blocking on it would refuse a legitimate close.
+- **A missing required argument is refused once, before anything is written (US0557).** `critic signoff` needs `--author`; it was learned from a refusal, one unit at a time, at a cost of nineteen wasted spawns. The requirement now lives beside each verb rather than on argparse alone, so one refusal names EVERY argument the verb needs and arrives before the first write. A guard holds each refusal message against the parser itself, so a message can never send a caller to a flag the command does not accept.
+- **`critic record`, `evidence` and `signoff` each take a whole batch in one invocation (US0556).** Recording three facts about nineteen units cost fifty-seven process spawns, each paying interpreter start, imports and a read-modify-write to record one line. `--units` names a batch, `--from-run` takes the open run's approved batch - refusing when no run is open rather than degrading to acting on nothing and reporting success - and a repeated `--unit` accumulates instead of keeping only its last value, which is BG0386's defect stated as a contract. The single-unit form is unchanged. Exit codes distinguish the two outcomes a caller acts on differently: nothing written is a refusal (2, as the single-unit form has always returned), a partly written batch is 1 and names both the units that landed and those that did not.
+- **A listing-only declaration can name the ids its structural read depends on (US0554).** `GATE_LISTING_ONLY` was a directory, so a module whose census asks about a handful of named artefacts made EVERY new file under that tree structural - and filing an artefact is most of what a sprint close does. A declaration may now be `{"path": ..., "ids": (...)}`; a structural change is then relevant only for the ids it names. The fail-safe direction is preserved four ways: a bare-string declaration, an unreadable `ids` value, an empty id set and a file whose name carries no id all keep the old whole-directory meaning, so the narrowing is opt-in and getting it wrong is slower rather than blind. Two modules reading one tree take the union of their ids, and a bare declaration beside a scoped one wins outright - one module's narrowing never speaks for another's read. `test_root_census.py` declares the single id it reads, and a guard holds that list against the census record in both directions, so an id added to one and not the other fails instead of going quietly unprotected.
+- **The gate prints each lane's own seconds, not only its total and dominant lane (US0533).** The per-lane figure had been recorded since the cost report was added and no reader ever saw it: the text report named the lane that dominated, which says where the worst of the cost went but not what the second and third cost - and that is what a decision about where to spend effort needs. CR0465's own 25 seconds were invisible for exactly this reason. A lane that was not timed prints nothing rather than `0.0s`, because untimed is not instant and a zero would send a reader looking anywhere but the lane that has the cost.
+- **`reconcile detect` reads the artefact corpus once per run instead of once per lookup: 22.3s to 1.3s (US0531, US0532).** Every sweep detector walks the artefact tree, and `find_by_id` and `children_of` were asked per unit - 650 and 72 times over this workspace, each one a fresh walk that opened and read every file. One `reconcile detect` opened 777,732 files, and reconcile is a gate lane, so that was paid on every commit. `sdlc_md.corpus_cache()` memoises the walk, a by-id index and a parent-to-children index for the duration of one read-only sweep. It is OPT-IN and scoped to a `with` block, never a module-level memo: the cache cannot see a write and `reconcile apply` sits beside the sweep it exists for. Nesting is a no-op so an inner block cannot hand the outer one a second, emptier cache, the block closes on an exception, and a `trust_names` walk bypasses it in both directions because its results differ from an ordinary walk's by construction. The by-id index keeps the FIRST match in `ARTIFACT_TYPES` order - the answer the linear walk gave - so a duplicate id cannot resolve to a different file just because the lookup got faster.
+- **RETRO0083's delivered figure is corrected a third and final time, and computed rather than restated.** The run delivered **133 of 148 planned points across 44 of 48 units**, plus 9 points of repair discovered and delivered in-run (BG0400, BG0408, BG0409, BG0410), giving a 52-unit accounted batch. The figure was written as 143/47, then 138/45, and each correction was drafted from memory of the previous one rather than derived from the artefacts, so each carried the next error forward: the first counted BG0372 and BG0359 (both later reopened for delivering nothing), the second still counted US0553 (reverted, standing Blocked). The current figure is computed from the Status field of all 52 files. The retro's estimate-versus-actual block is now populated and a VELOCITY.md row written, clearing the two close obligations the last run left open; the row records 107 points rather than 133, because velocity counts only terminal units and ten stories stand at Review awaiting sign-off.
+- **AGENTS.md states the front-door rule:** exercise every claim through the shipped entry
+  point before asking for review. A review should confirm the work, not discover that it does
+  not run. A library test cannot see a missing lane, because the wiring is the part it does
+  not exercise - `brief_fingerprint(brief(...))` passed in-process for a whole sprint while
+  `critic.py brief` printed nothing and the paperwork said otherwise. The rule is recorded as
+  known-weak until CR0520 ships `verify_ac lane-check` to gate it, because a rule with no gate
+  behind it is one that gets skipped (LL0027).
+- **The triage noise controls have their own switch, and this project has finally turned them on (CR0510).** A session cap and low-severity consolidation have shipped for some time and were reachable only through a `schema_version: 3` bump - which also switches on plan-review, spec-guard and the inbox status, so adopting a cap on filings meant adopting four unrelated things. The result was that the project which built them had never once run them: 801 findings filed in a month, roughly 26 a day, against a cap of 20 sitting unused; 27 of 29 open bugs were skeletons; and the low-severity fold was being hand-rolled, one artefact in this tree being twenty findings bundled together by hand. `triage.enabled` now decides it, falling back to the schema version when unstated - so every consuming project behaves exactly as before, and a project that wants the controls can have them without an unrelated migration. The cap remains a loud REFUSAL rather than a silent drop, naming how to proceed.
+- **US0629 AC2 is restated in mechanically decidable terms, before anything was built against it (BG0525).** It asked `derive` to refuse a mutant that is "that criterion's own text with the polarity flipped", and an independent seat reviewing the TEST PLAN produced the mutant that defeats every proxy: a field naming a real file, naming a real edit, and being the criterion with its polarity flipped. The replacement asks four checkable things - a non-blank field, a path drawn from the unit's own `Affects`, an edit verb, and no more than 60% meaningful-token overlap with the criterion's `Then` clause - and carries its own discriminating pair (71% refused, 24% accepted, differing in one property) plus a near-miss ACCEPT, without which a guard that refuses everything passes every refusal row.
+- **The threshold is a stated number with a stated basis (BG0525).** It follows `_reason_substance`, which measures substance after filler comes off and carries the scar of a one-character `-` passing a non-blank check. Implementing the old wording would have produced BG0523's class exactly: a criterion marked Verified against a verifier pinning a proxy rather than the property.
+- **The test-census attribution guard is a visible ratchet rather than a cliff (BG0469).** It asserted that more than 80% of test files attribute to a sibling module, and was sitting at 0.8045 - 179 files, 144 placed - so a single new cross-cutting test tipped it. The guard gave no warning it was one file from firing, which is how a threshold fails as a surprise rather than as a signal. It now carries a declared `UNATTRIBUTED_BASELINE` alongside a looser collapse floor: the floor still catches attribution breaking down, and the baseline makes the remaining gap countable and shrinkable. 29 of the 36 unattributed guard a hook, a document or a contract, which the name-or-reference convention cannot place by construction. Lowered when a file gains a home, never raised to accommodate a new one.
+- **Six guards now state what they check, and what they do not.** Independent review established that a number of guards assert something weaker than the criteria verifying them claim, and the repairs are carried. What is not carried is the over-claim itself: a guard that says more than it checks is the defect it was built to prevent, wearing its own name. The TRD surface guard now records that its set comparison has ONE direction and is structurally unable to catch a document naming a lane the code lacks - measured, with three surviving mutants named. The token-premise guard records that its whole-file substring is satisfied by the Revision History row describing the change being asserted. The ADR-011 guard records that its word-presence check is already satisfied by an unrelated sentence, and that its wiring check reads source text, so a comment naming the call satisfies it. On the sprint checklist: the not-delivered row says it reads the retro's Batch rather than the run's planned set; the known-issues row says an empty result and a scan that could not run are indistinguishable to it; the review row says it counts distinct reviewer NAMES, not seats; the impediments row says it does not read the blocker; and `cycle_drift` records that it walks the `sprint` verbs only and that its unverifiable bucket is non-empty today. The shipped sprint doctrine no longer says the checklist and the cycle "cannot part" - it says the guard narrows that drift rather than closing it.
+- **The evidence lessons from five consecutive REJECTs are shipped, not just observed (BG0422).** A sprint returned five REJECTs across five reviews with the production code right in most of them - an evidence problem rather than a code-quality one, and the two need different remedies. `best-practices/testing.md` now carries the rule that closes the dominant class: name the mutant in the test's docstring BEFORE writing the test, and if it cannot be named there is nothing to test yet. All eight mechanisms that produce a test which passes whether the feature is present or absent are named individually, because each needs a different habit to catch, along with the two rules that follow (test the surface the user invokes; for every reader you add, name its writer) and the honest limit of a pre-implementation design review - it catches the two structural classes and cannot see a test that does not exist yet, so it is not a general cure. `reference-agentic-lessons.md` states the review-before-commit sequencing the same sprint built a mechanism for and then ignored five times. Recorded cross-project as LL0050.
+- **The RFC index column is named `Decomposed into`, for what its cells actually hold.** It
+  read `Spawned CRs` while most cells held EPIC ids - a column whose name contradicts its
+  contents, which a reader has to know the history of to interpret. Renamed in the shipped
+  TEMPLATE as well as this repo's index, because the header is fixed by the template and a
+  rename here alone would drift back on the next project that generates one.
+- The rename is only safe because the drift check reads a SET of header aliases: keyed to one
+  spelling it would have silently exempted the column it exists to check. Both spellings stay
+  in the set, so a project that has not renamed is still checked.
+
+The drift half of this bug was already delivered and wired into `reconcile`; it reports zero
+on this corpus today. What remained was the header.
+
+- **The pre-commit gate budget is re-declared against the measured cost (US0432, CR0420).** The
+  120s ceiling was set when the suites were half their current size, so every commit reported OVER
+  and the signal became noise. It is re-declared to 380s against a 317s measured baseline (skill +
+  tool suites + cheap lanes), with ~20% headroom - so a normal commit reads under budget while a
+  genuine regression still flags, with the drift measured from the new baseline.
+- **The delivery-mode disjointness check treats build tooling and shared config as coupling
+  (US0416).** A unit touching the commit hooks, the `tools/` guards, the gate, `package.json`,
+  `install.sh`, the CI workflow or the shared project config is never offered as parallel-safe -
+  two worktrees editing different tooling files still share the one gate that runs across both, so
+  a merge-clean split is not a safe one. The build-tooling set is declared explicitly, never
+  inferred from a filename shape, and the contract is documented where the delivery mode is.
+- **`reference-cr.md` and `reference-rfc.md` state what `refine` actually produces (US0412, EP0155, CR0412).** Both now describe the plannable-but-ungroomed contract: refine mints a unit that is plannable now (an `Affects` is present - the story's own, inherited, or seeded from the request) whose acceptance criteria still need grooming, and both name the `sprint.breakdown: judgement` opt-out. The two-backlog promise - a refined request is delivery work - is stated as it is rather than as an aspiration.
+- **A refined story's acceptance criteria are labelled an ungroomed grooming placeholder, and the ungroomed count is machine-visible (US0411, EP0155, CR0412).** A story `refine` mints without seeded criteria used to carry a bare `### AC1: {{define}}` scaffold that read as thin authored content. It now carries an explicit marker stating the ACs are a grooming stub, so a reader tells a groomed story from an ungroomed one at a glance. `conformance` counts the stories carrying the marker (`summary.ungroomed`, a per-unit `ungroomed` flag, and a CLI line), so an operator sees how much grooming a refined backlog still owes rather than meeting a full-batch refusal at plan time. The marker never reads as a specified AC, so an ungroomed story stays honestly unspecified.
+- **`refine` requires or inherits an `Affects` per story, so a minted story is plannable the moment it exists (US0410, EP0155, CR0412).** A bulk refine over dozens of requests supplied only title and points, so `refine apply` minted stories with no `Affects` that `sprint plan` then refused as ungroomed - a backlog that read as sized delivery work could not be planned at all. A story now takes its `Affects` one of three ways, all resolved before anything is minted: its own path list; the `inherit` keyword (`title|points|inherit`, or `inherit:paths` to narrow the request's footprint); or, given none of its own, SEEDED from the request's `Affects` (marked for confirmation) when the request declares one. A story with nothing to inherit and none supplied is refused, naming the story and how to supply it - refine never mints a unit nobody can plan, and never half-decomposes. A recorded grooming opt-out (`sprint.breakdown: judgement`) downgrades the refusal to a warning. The requirement applies to newly-refined stories at mint time only; the existing backlog is untouched.
+- **The sprint guidance states the batch-size trade-off from the measured rows and prescribes no
+  number (US0397).** `reference-sprint.md` and `help/sprint.md` now name the trade-off - fixed cost
+  falls per point as the batch grows, review convergence cost rises with it - grounded in this
+  project's own measured velocity rows and naming how many sprints it rests on. It prescribes NO
+  batch-size number: with this few measured sprints there is no defensible optimum, and inventing
+  one would repeat a mistake this project has twice had to undo.
+- **The review guidance requires a round of at least two reviewers on distinct lenses, one of
+  them the claims lens (US0396).** `reference-review.md` and `reference-sprint.md` now state that a
+  round is at least two reviewers with distinct lenses whatever the diff size - a small diff is not
+  a licence to drop to a single pass - and that one lens is always the claims lens. Where a round
+  runs with one reviewer anyway, the review record says so, so an under-covered round never reads
+  as a full one.
+- **Three plan-surface messages read straight (US0386, US0387, US0390).** A zero-remaining handoff
+  now states nothing carried over and offers no `--worklist`, so a clean close reads as good news
+  rather than a false action item above the warnings that need reading. The run-opened line names
+  the Sprint Goal and the `--goal` ladder rung with distinct labels (`rung=...`, `sprint-goal=...`),
+  so `rung=done` is never misread as the Sprint Goal failing to take. The no-batch-selected error
+  shows a usable example status per selector (`--bugs Open`, `--crs Proposed`, `--stories Ready`),
+  so the first retry is a working invocation.
+- **The mutation documents describe the ledger the gate actually reads, not the whole-blob
+  report rule it superseded (US0384, US0385).** `help/mutation.md` and
+  `reference-scripts-verify.md` said the lane reports STALE on a rev change or any edited
+  target, which has not been the rule since coverage moved to `mutation-runs.json`. Both now
+  name the ledger beside the report, state that an entry is keyed on that file's content hash
+  at run time so evidence survives commits to other files, state the 200-entry bound and its
+  cumulative dropped total, distinguish a `measured` run from a `registered` self-report, and
+  give the per-file verdict - a matching hash is covered, a hash that no longer matches is
+  stale, no entry is uncovered - with the degraded whole-report fallback and the lane's
+  advisory status stated on both pages. `trd.md` gains the ledger's state-file row and
+  `tsd.md`'s mutation and gate-lane tables carry the per-file verdict; the reconcile pass
+  checked 19 mutation claims across the two specs and records a verdict for each, including
+  the 11 it verified and left alone, in US0385.
+- **The harness token capture records which model spent the tokens, and the interactive close
+  writes it to the velocity row (US0376).** `harness_tokens` reads the transcript model alongside
+  the total - a single id, or `mixed` when the session spanned two - and the interactive close
+  writes it to the Model cell, so `measured_rate` books each interactive sprint in the correct
+  (project, model) cell instead of the unrecorded-model bucket. A runner sprint's per-unit models
+  still win; the harness model fills only the interactive gap.
+- **A superseded verdict row is retired for every gate that reads it, and still visible to every reader (US0375).** `verdict_for` skips it and falls back to the latest live row, so a unit whose only row is superseded has no verdict rather than an approval; the sign-off gate no longer counts its reviewer among the authoring session's own, so a principal wrongly recorded as a reviewer can sign off instead of being stranded at Review for ever. `read_verdicts`, `critic show` (text and json) and the sign-off brief still return and print the row, flagged with its reason and authoriser, so the audit trail keeps both facts: that it was recorded, and that it was retired.
+- **The commit-message rules are checked ahead of the expensive test lanes (US0372).** The gate costs about 205s when scripts are staged, and a one-line commit-message defect was refused only after all of it had run, then paid for again on the retry. Git invokes `pre-commit` before the commit message exists - at that point `COMMIT_EDITMSG` is absent or still holds the previous commit's message - so no ordering of lanes inside that hook could ever put the message rules first. The two unit suites, with the timing, scope and budget recording that wraps them, therefore moved into `commit-msg`, behind the message check. `pre-commit` still owns the selection rule and hands its verdict over in a one-shot record inside the git directory, so the docs-only skip, the cheaper-lane short circuit and the per-commit budget total (now the sum across both hooks) all behave as before. Measured on this repo: a message refusal fell from 212s to 33s, and no lane is lost or duplicated.
+- **The pre-commit unit-suite selector measures the test-relevant set instead of naming three
+  directories by hand (US0368).** `gate.py --test-relevant` derives the set from what the shipped
+  suites actually read - the hooks, the workflow file, `install.sh`, `package.json`, reference
+  docs, help pages and shipped artefacts, none of which the old `scripts/`, `templates/`, `tools/`
+  regex covered - so a commit touching a doc a test asserts over no longer takes the docs-only fast
+  path and skips that test. A hand list is a lower bound; the measurement is over-inclusive on
+  files and precise on directories, so it never skips a suite that was needed.
+- **The LATEST.md over-ceiling refusal states the overage and names the longest sections (US0365).**
+  `doc_freshness` now reports how many lines the anchor is OVER its ceiling (for example, 2 over
+  the 80-line ceiling) rather than leaving the reader to subtract, and names the longest sections
+  by line count so the trim can be aimed rather than guessed.
+- **The safe form for prose is documented family-wide, and a consuming project now inherits it (US0363).** The script contract in `reference-scripts.md` gains the rule as its own numbered clause: `file_finding.resolve_prose_fields` is the one loader, all nine prose-taking writers take `--fields-file FIELDS.json`, and `--fields-file -` reads the document from stdin. The flag path still works and still reports a field that arrives already mangled, stated as defence in depth rather than the fix - measured against the recorded corruptions it catches three of the four with no false positive over the project's own artefact prose, and the fourth is undetectable in principle. `templates/agent-instructions.md` carried no line at all, so a consuming project inherited none of this; it now carries one.
+- **The test suites and the scripts catalogue follow the `audit`-stem rename (US0346, RFC0033 D1).** `test_audit.py` -> `test_readiness.py` and `test_audit_check.py` -> `test_schema_check.py`, with two new classes (`RenameTests`, `RenameDocsTests`) pinning that no shipped file reaches for the retired module names, the renamed modules resolve and change no verdict, and the public `audit` command is untouched. `reference-scripts.md` and `reference-scripts-review.md` now catalogue `readiness.py` and `schema_check.py`, and the `scripts/audit.py`/`scripts/audit_check.py` references in `reference-sprint.md`, `reference-audit.md`, `reference-schema.md`, `help/sprint.md` and `help/audit.md` point at the new names, so no doc sends an agent to a script that no longer exists.
+- **The two deterministic `audit`-stem scripts are renamed, freeing the verb for the user-facing weakness-hunt (US0345, RFC0033 D1).** `audit.py` (sprint tranche pre-flight readiness) is now `readiness.py` and `audit_check.py` (the schema-v3 CI linter) is now `schema_check.py`. The move is internal only - the user-facing `audit --profile repo` command is unchanged, its profile-resolution engine simply lives under the new module name. Every Python importer moved with the files (`handoff.py` and `artifact.py`, the real in-repo callers; the story's `gate.py`/`sprint.py` framing describes the documented pre-flight and CI steps, which are not code imports), and byte-identical output for the same input was verified command-by-command against the pre-rename baseline: only the two `--help` usage lines change, naming the new scripts.
+- **The shipped seed basis names the condition its "no base term" finding was measured under (US0339, EP0114, CR0391).** The seed no longer asserts flatly that a fitted base term does worse; it states the result was measured on per-unit actuals with no sprint ceremony, review rounds or close - a finding about the build, not a whole sprint. The condition travels with every forecast basis, seed or local, and `reference-sprint.md`'s estimator account carries the same qualification, so the doc cannot be cited against the fixed per-sprint term the same release ships.
+- **A fitted fixed term is never applied automatically (US0338, EP0114, CR0391).** The plan states how many sprints the fit rests on and keeps a fit below `FIXED_MIN_SPRINTS` (3) out of the total, reporting it as NOT APPLIED with the minimum required and the count the project has - a line through two points is not spent as calibration. Every quoted fixed term, applied or not, states its sprint count. At or above the minimum the term enters the total and the plan says so.
+- **The token forecast carries an explicit fixed per-sprint term beside the per-point term (US0336, EP0114, CR0391).** The total is `fixed + sum(Points) x marginal rate`, and the plan shows both terms on their own lines rather than a single product. Halving the batch no longer halves the forecast: the fixed term is amortised over fewer points, so a small batch is not priced as though the ceremony, review rounds and close were free.
+- **help/sprint.md documents the single run slot (US0329, EP0111).** A new "One run slot" section states that a project holds one run, that a disjoint batch is refused rather than merged, and that an overlapping re-plan accumulates - naming the same two routes (close, or a `--write` re-plan) the refusal prints.
+- **A run whose only close artefact is a FAILED close attempt is open-and-protected, not absorbable (US0328, EP0111).** `close_attempts` is deliberately not a close artefact, so a mid-close run stays `running` and is covered by the disjoint guard - the run most likely to be worked around no longer silently absorbs the next batch. A truly closed run (carrying `ended_at`) is still archived and replaced. The refusal states that a close attempt already ran and how many items it left outstanding.
+- **The disjoint-batch refusal names the open run and both ways forward (US0327, EP0111).** The message carries the open run's id, its `running` outcome and its batch size, and states two routes as runnable commands - close the open run, or re-plan it deliberately - so the operator acts without opening the run state.
+- **`sprint plan --write` refuses a disjoint batch against an open run instead of fusing it (US0326, EP0111, CR0401).** A project holds one run slot. A batch sharing no unit with the open run is refused - the command exits non-zero and `run-state.json` is byte-identical afterwards, so no partial write survives. An overlapping re-plan still accumulates into the same run with no new flag. This holds one run to one Sprint Goal and one closing verdict, rather than producing a fused run whose goal describes a fraction of it.
+- **Forecast in days and sprint-sessions, not ISO weeks (CR0314, EP0063).** `flow forecast`
+  defaults to day-bucket sampling (zero days included, dates at day precision); a new
+  `--bucket sprint` samples measured per-sprint throughput from the velocity history and
+  reports sprints-to-complete plus hours at the measured elapsed-hours-per-sprint median,
+  refusing under three sprints of history and naming unmeasured hours. The ISO-week bucket
+  stays available via `--bucket week` or `flow.forecast_bucket`. Every refusal guard
+  (seeded, min-history, all-zero, non-positive, horizon) holds in every bucket.
+- **Spec-truth refresh: PRD/TRD/TSD/RFC reconciled with shipped `main` (EP0071, RUN-01KXR6XS).**
+  A batch of documentation-alignment stories corrected specs that had drifted from shipped
+  behaviour:
+  - **US0201/US0203 (PRD + TRD).** PRD §3/§10/§11 and TRD §10/§12/§13 now describe the shipped
+    cost model - modified Fibonacci Points on story/bug, T-shirt Size on CR/RFC/epic, forecast =
+    sum(Points) x the measured tokens-per-point rate (r = +0.68, RFC0038), recorded at plan time
+    to `telemetry.forecasts` - instead of the falsified file-complexity predictor and the two
+    loop defects (BG0133/BG0136), now fixed. The version check and `git fetch origin` are
+    enumerated in the PRD Security NFR / §8, the feature inventory, and TRD rule 6 / §9 as the
+    second and third outbound network paths beside `gh`.
+  - **US0206 (TSD).** Corrected two false claims: the blocking 80% CI coverage gate (reconciled
+    with the ~90% aspiration) and the blocking bandit security scan are now recorded, where the
+    TSD had asserted neither was wired.
+  - **US0207 (RFC0034).** Marked D1/D5 superseded by RFC0038 with cross-links in both RFCs and
+    the rfcs index; D2-D4 remain live and underpin the shipped model.
+  - **US0202 (PRD §3).** Populated every `[Unreleased]` row's Epic column and added rows for the
+    EP0033-EP0047 features; where a feature had no owning epic (delivered by a CR/RFC sprint) the
+    governing id is cited, with a preamble note for the exception.
+  - **US0204 (PRD §9 + config).** Corrected `require_ac_verification` (shipped default `false`, the
+    table said `on`); added `quality.done_requires_verified` (the true hard-by-default Done gate)
+    and `two_backlog.enforce` (deliberate default-off) to the PRD table, `config-defaults.yaml` and
+    `reference-config.md`; retired `SDLC_ENGAGEMENT_STRICT`; added `SDLC_AUTHOR`,
+    `SDLC_VERIFY_HTTP_HOSTS`, `SDLC_TRIAGE_SESSION`, `SDLC_DEBUG` to the env-var table.
+  - **US0205 (TRD ADR-008).** States the real ULID guarantee (6+2 chars, ~1-in-1024 per ~17-minute
+    bucket, glob-retry backstop) with a cross-machine residual-risk paragraph naming `next_id.py`'s
+    collision detector; "collision-free" softened to "collision-resistant".
+  - **US0208 (TRD §3/§5 + critic.py).** `critic record` moved to the writer list with the
+    append-only-ledger exception documented; `read_verdicts` now warns on a torn row instead of
+    silently dropping it (red-first test).
+  - **US0209 (TRD §6).** Adds the `issue` type, the `Blocked` story status, the inbox triage lane
+    and a two-backlog subsection to the type registry.
+  - **US0210 (TRD §5).** Rule 5's writer list gains `retro.py`/`handoff.py`/`archive.py`/
+    `persona_gen.py`/`decisions.py`, declared non-exhaustive with a pointer to the script catalogue;
+    ADR-009 no longer contradicts it.
+  - **US0211 (TRD counts).** Drifted exact counts converted to growth-tolerant bands and the 4.0.0
+    changelog line restated to what the freshness guard actually checks.
+  - **US0212 (TRD §6).** Names the shipped migration surface (`migrate.py`, `project_upgrade.py`
+    `--apply`, `migrate_v3.py`) and reconciles the `upgrade`-type-vs-`migrate`-command naming.
+
+- **Story workflows resolve personas registry-first (CR0283, EP0049).** `reference-story.md`'s
+  create and generate prerequisites now read the `sdlc-studio/personas/` registry (index.md +
+  per-persona cards) as the primary source, with the flat `personas.md` as a documented legacy
+  fallback - a registry-only project is no longer STOPped on a file it never created. Step 3's
+  persona selection defaults to the declared **Primary** from `personas/index.md`, and a
+  **Negative** persona is never a story target. `help/story.md` prerequisites and validation
+  tables updated to match.
+- **validate covers the legacy personas.md layout (CR0297, EP0051).** `check_personas` no longer
+  gives a vacuous clean pass to a personas.md-only project: the legacy flat file (the one the
+  story pipeline falls back to) now gets a `persona-layout` advisory plus a light structural
+  check (`persona-legacy`: unfilled `{{...}}` boilerplate, no persona sections) - including when
+  `personas/` holds only seats/stakeholders and story generation would fall back to it. Advisory
+  severity only; a registry with design cards behaves exactly as before.
+- **The per-unit token forecast is DROPPED. No plan-time predictor cleared the bar (CR0262).** The seed
+  the forecast was built on - `max_cognitive`, the cognitive complexity of the files a unit touches -
+  carries no signal: r = +0.03 against measured cost across 18 units. Both past recalibrations (5,000,
+  then 600) were fitting a slope through noise, which is why the model over-forecast by 3.3x and then
+  under-forecast by 0.55x and 0.39x on consecutive sprints. You cannot scale zero.
+
+  A bar was set BEFORE measuring (leave-one-out r >= 0.50, beating `files_affected` alone, LOO ratio
+  within 0.5x-2.0x for most units). **Nothing cleared it.** The best composite reached LOO r = 0.415 -
+  and that number is generous, because its coefficients were refitted inside every fold and its feature
+  set chosen with hindsight. Rather than ship a mediocre predictor, the per-unit estimate is gone.
+
+  Two contaminants were found in the candidates that looked promising, and both matter. **`files_affected`
+  flips sign within sprints** (+0.72, -0.34, +0.87; the pooled +0.44 is a between-sprint artefact) - a
+  signal that reverses direction is not a predictor. And **the `Effort` field's apparent strength was
+  partly a calendar**: scoring an undeclared Effort as zero inflates it, because the field only exists on
+  later, larger units - the mere PRESENCE of the field scores r = +0.43. Treated honestly as missing, the
+  human Effort value scores r = +0.35: still far better than the metric the code computes about itself,
+  but not what a naive pooled correlation claimed.
+
+  **Change-complexity is not derivable at plan time, and is not faked.** Before a change exists, every
+  available complexity number is a property of the CONTAINER (file, coupling, churn), and none correlate.
+  Substituting one is the bug being removed.
+
+  The plan now leads with **batch history - what sprints ACTUALLY cost** - and quotes a flat measured rate
+  (120,000 tokens per unit) with a wide band, saying plainly: read the history, not this number.
+
+- **The router no longer reads an inapplicable signal as a zero (CR0262, absorbing BG0139).** A markdown
+  file RESOLVES the code-complexity signal and yields no scored function - and that 0 is an absence, not a
+  measurement. `complexity.assess()` now reports whether it was applicable at all; when nothing touched can
+  carry a score, `code` and `risk` go MISSING, confidence drops, and the tier is bumped UP (the doctrine the
+  module always documented and never reached). **CR0252 - a docs unit that cost 205,534 tokens - went from
+  `14 / trivial / HIGH confidence` to `34 / low / LOW`.** Under routing it would have been sent to the
+  smallest model, confidently. Code units are unchanged.
+
+- **`appetite.minutes` / `appetite.units` of `0` now mean "inherit the capacity", not "unbounded"
+  (CR0259).** A consuming project that left them at the default previously ran with no ceiling; it now
+  inherits `capacity.minutes` (240) and `capacity.units` (8). This is a default-behaviour change, and
+  it is the point of the CR - plan capacity and run appetite are one source with two consumers, and a
+  run that silently had no breaker was the thing worth removing. The stop is clean, with a handoff, and
+  the plan prints the ceiling and where it came from. Set the keys explicitly to choose your own.
+
+- **The token forecast is calibrated against measured actuals for the first time (CR0257).**
+  `TOKENS_PER_COGNITIVE` drops 5,000 -> 600; the 50,000 base stays (validated - the one
+  complexity-0 unit measured 46,359). Six units delivered by instrumented subagents were measured
+  end-to-end: the batch forecast was **1,285,000 against 384,278 actually spent - 3.3x over**. At 600
+  it lands at 1.09x. The inflation was not harmless: a 10-unit batch was cut to 5 on the belief it
+  was too big, when it was not. Two limits are pinned in tests so they cannot be quietly forgotten:
+  this is a **hypothesis** fitted to six units (the next sprint is its falsification test - the value
+  it replaces was never validated at all), and **complexity is a weak per-unit predictor**, so the
+  forecast is a **batch** tool - two units of identical complexity cost 2.1x apart, because the
+  complexity of the FILE is a poor proxy for the WORK done in it.
+
+- **One archive writer, one layout (CR0248).** `reconcile.py` carried a second, CLI-reachable
+  `archive` path that wrote a flat `<type>/archive/_index.md` with no live-index pointer, while
+  `archive.py` wrote the per-release layout with one. Archiving via both split a type's terminal rows
+  across two incompatible schemes, and the census survived either way, so nothing flagged the
+  incoherence (LL0016). Reconcile's duplicate is removed - it now only READS the archive into the
+  census; `archive.py` is the single writer. A guard test asserts the duplicate cannot silently
+  return.
+
+- **Per-type status vocabulary derives from one source (CR0249).** `artifact.SPEC` and
+  `file_finding.TYPES` each re-hardcoded the statuses that `lib/sdlc_md.py` already declares, so a
+  vocab change had to be made in three places or they drifted. Both now derive from `sdlc_md`, and a
+  guard test fails if either creator re-hardcodes a divergent value. A pure refactor - no status
+  added, removed or renamed.
+
 ### Removed
 
 - **`gate --verify-batch`, a flag that was parsed and read by nothing (US0479).** It was accepted, passed to `run_gate` as `verify_batch`, and consulted nowhere: `--release` implies batching and assigns the verify lane itself, so the option promised a behaviour no invocation of the gate has ever produced. An option that is accepted and ignored is worse than an absent one, because it is chosen. The flag, its dead parameter and every line of documentation naming it are gone, and a repo-only guard asserts no tracked skill file mentions it - alongside a control string that IS present, so a scan that silently matched nothing cannot read as a pass.
@@ -485,7 +1020,7 @@ ratchet, and doing both at once would leave neither measurable.
   broader - `test_two_backlogs.py` loads `refine.py`. The index is derived from the loader
   calls the modules actually make, never from a hand-kept table that would drift.
 
-### Measured, and smaller than it looks
+#### Measured, and smaller than it looks
 
 `test_two_backlogs.py` was already selected for a change to `refine.py` before this fix - but
 only because it measures empty and is swept in as unattributable, not because any route reached
@@ -553,7 +1088,7 @@ and would be silently dropped for changes to the very script it tests.
   accepted, which is exactly what the surviving call-site mutant produced - an answer with no
   question, which cannot be scored at the close and reads exactly like one about the sprint.
 
-### Re-measured rather than assumed
+#### Re-measured rather than assumed
 
 All five surviving mutants in the filing were re-run before any work. Two were already fixed
 (the inert index guard, and `close_goal_judgement` unwired) and are recorded as such rather
@@ -746,7 +1281,7 @@ than re-fixed. Two survived and are fixed here.
   against the clock - a clock-stamped header would re-drift every index in every project at
   midnight; a header level with or ahead of its rows, or an index carrying no stamp, is not flagged.
 
-### Breaking (opt-in; the next release is semver-major 5.0.0)
+#### Breaking (opt-in; the next release is semver-major 5.0.0)
 
 - **The two-backlog workflow and the Fibonacci sizing model are a breaking change - but opt-in
   (EP0037, RFC0040).** The hard gates (plan refuses a request, terminal status derived from
@@ -757,150 +1292,6 @@ than re-fixed. Two survived and are fixed here.
   requests that need refining), `refine` the accepted requests, then turn `enforce` on - documented
   in `reference-upgrade.md#two-backlog-migration`. The sizing migration only ADDS a `Size:` line and
   the workflow is one config line, so the upgrade is reversible.
-
-### Added
-
-- **`sprint_report.py operator-summary` - the decision-grade page an operator leads from (US0645).** What shipped and who signed it, what was rejected and in what repair state, what is carried and under which filed id, what it cost, and the one or two judgements most worth overturning. Human in the LEAD rather than in the loop: the seats judge at their speed, the operator reads and reverses at theirs.
-- **Every field is a READ of the ledgers, and no channel carries anybody's prose into it (US0645).** A seat writing its own summary is a seat marking its own homework, and the operator would be leading from an account with a stake in the answer. The test varies a verdict's free text and asserts the summary does not move.
-- **A component with no record reads UNMEASURED, never zero (US0645)** - omitting it would let a run that measured nothing read as a run that cost nothing. The summary is generated identically for a human sign-off and states the capacity, because a second code path for the human case is a path that drifts.
-- **A sign-off records the CAPACITY it was given in: `human` or `seat` (US0644).** A panel sign-off was distinguishable only by string-matching the `panel(...)` marker inside the free-text chain - a fact a reader can find and a filter cannot rely on. The point of recording a seat's signature is transparency about who judged, and transparency a machine cannot read is transparency in name only.
-- **An absent capacity never reads as `seat` (US0644).** The direction this must not fail in is a machine's signature being taken for a person's, and every row without the column predates seat sign-off entirely.
-- **A row short by the new trailing column is still read (US0644).** Widening the table with an exact-width reader would have silently un-signed every unit signed before it, and the two-role gate would have started refusing them - a quiet loss found by mutation rather than by review.
-- **`sprint plan --write` assigns the sign-off panel when the project has adopted one (US0643).** Panel sign-off ships fully built - the two roles held disjoint, the signer read from the run rather than named at signing time, the brief-provenance interlock, three distinct contexts enforced - and was reachable only if somebody remembered to run `persona_resolve.py panel --ceremony signoff` by hand first. A run that forgot it reached its close and could not be signed off at all, so the whole path stayed theoretical. LL0027: a gate belongs in the command people actually run.
-- **An unassignable panel refuses at PLAN time and leaves no run behind (US0643).** Discovering it at the close strands a delivered run behind a sign-off nobody can give, and a half-opened run is worse than none - the next plan of any other batch is refused as disjoint against it.
-- **A project on the shipped `operator` policy is untouched (US0643)** - no assignment, no change to the plan's output. An upgrade never moves the bar under anybody.
-- **The refusals are pinned through the shipped verb (US0643)**, including the assigned-signer check that lives in the CLI path and is invisible to any test calling `record_signoff` directly - with the positive control beside them, because a path that refuses every panel sign-off passes every refusal test for the wrong reason.
-- **The review tier is derived from the unit's risk band, recorded on the verdict, and READ by the coverage predicate (US0641).** `route.py` said it in its own header - "Advisory only - no gate reads a tier" - and that had been true since the score was built: a deterministic 0-100 difficulty with bands and a confidence, stamped on every unit at plan time and consumed by nothing but `plan_review`. `critic brief --tier` existed and was cosmetic, substituting one sentence into a prompt that was never recorded, never read and never checked. All three steps now land, and the third is what makes the other two worth anything.
-- **A light verdict does not cover a unit the band tiers full (US0641)**, and the gate names the tier shortfall rather than reporting a missing approval that is sitting in the log. An explicitly chosen light tier does not stand the gate down either - a gate an operator can disarm with an undeclared flag is not a gate.
-- **Nothing is applied backwards (US0641).** A verdict carrying no tier covers, in both spellings of absent: the `-` marker the current writer uses and the missing cell on a row that predates the column. The rule would otherwise re-open every closed unit in the corpus for a fact nobody could have recorded.
-- **The band distribution is asserted against the real corpus, not a fixture (US0641).** A band that always resolves the same way is a config key wearing the appearance of a gate, and every other test would pass. The sample is strided across stories and bugs because the first N bugs by id are the oldest ones and banded uniformly - a sample that would have reported this gate degenerate when it is not.
-- **`plan_review.enabled` decouples the plan-review gate from the schema version (US0640).** The gate hard-returned `dormant (schema v2)` with no config key at all, so the one hard, deterministic, risk-proportional gate in the codebase - the model the rest of the ceremony work copies, and the one `--force` cannot bypass - was reachable only by adopting the v3 id format, the inbox status and spec-guard across every artefact a project holds. It is a review policy and has nothing to do with the shape of artefacts.
-- **One shared enablement predicate, not a second copy (US0640).** `config.feature_enabled` now holds the knob-then-schema resolution that `triage_noise.active` had spelled out, and both adopters call it. Two copies are two answers to the question "is this on", and they drift the moment either is touched. The test proves the sharing by replacing the shared predicate and asserting BOTH adopters follow.
-- **An unset knob changes nothing for any existing project (US0640), and the dormant reason names whichever thing actually decided** - the knob when a project stated one, the schema version otherwise. Reporting "schema v2" to a project that deliberately set `enabled: false` would send a reader to a migration they do not need.
-- **The duplicate groups no collection can answer are derived and named one by one (US0637).** A group whose selector `selector_resolves` answers `None` for cannot be split into discriminating halves, because nothing can say what either half selects. Those groups are now derived AT LINT TIME by asking the resolver, never read from a list in a document - so a group that becomes answerable, or stops being, moves in and out of the set without anybody editing prose. Each member is printed on its own line with the verb that makes it unanswerable and every AC claiming it: a reader told "6 groups are exempt" cannot tell an exemption that still holds from one that quietly stopped being true, and a count cannot be taken apart. An unanswerable group is no longer also told to split into discriminating halves, which was advice its author could not take.
-- **`retro.py accuracy` reports passes spent on test-plan review beside passes spent on code review (US0634).** Read from the two verdict ledgers and from nowhere else: this is the claim EP0207 makes, so a figure anybody could type in would be an assertion wearing a measurement's clothes. Only the run's own units count, and only the `test-plan` kind - a spec review billed as a test-plan review would measure work nobody did.
-- **A phase that was not in force reports that, never 0 (US0634).** A run predating the cutoff spent nothing because the ceremony did not exist; a run that held plan reviews and spent nothing on them would be extraordinary evidence. A bare 0 says the second while meaning the first, and no ratio is invented from an absent denominator.
-- **A criterion whose mutant cannot be named is refused at grooming (US0633).** `sprint breakdown` reports it read-only and `sprint plan --write` refuses, on the same terms it already refuses a unit lacking `Affects` or `Points`. A bare `unnameable` is MALFORMED rather than a declared exemption, and the reason is measured for substance so `-` and `n/a` do not buy one: a state that costs nothing to enter is the state every awkward criterion ends up in.
-- **`mutation.py run --story <id> --from-plan` (US0632).** Each planned mutant is joined to the mutation ledger and reported killed, survived or `not-run`. A row never executed is its own state and never folds into a pass: a plan written and never checked is the same paperwork problem one level up. The join is on a `criterion` recorded at registration, never on the mutant's prose - a substring match would credit one criterion's execution to another's row, and a matching rule that is convenient is a gate that is optional. The WORST verdict per criterion wins, so a later kill cannot cancel an earlier survivor.
-- **A planned mutant that is unexecuted or alive refuses the terminal transition (US0632).** Reported by `transition.py requirements` before the work rather than discovered as a refusal after it, and the message names the CRITERION whose test failed to notice, because the finding is about the test. Behind the dated `review.test_plan_after` cutoff on the same terms as the two-role gate: a gate that refuses an existing backlog wholesale is one that gets switched off wholesale.
-- **A reason-less `unnameable` no longer clears the delivery gate (US0632).** US0633 makes the marker cost something at grooming; exempting a malformed one here refunded that cost one lane later and made it a free pass at the gate it matters most at.
-- **US0632 AC3 is CARRIED UNMET, and its narrowing retracted (US0632).** The delivered version claimed the anchor-uniqueness limb was undeliverable because the engine selects by AST node. That is false: it counts regex occurrences, and only the enumerator excludes multiline-string spans, so a mutant reported at one line is applied at another. Two seats proved it by execution. The property is deliverable, this unit does not claim it, and the real desync is filed as BG0533.
-- **The AC3 retraction is now real in the fields the tooling reads (US0632).** Marking a criterion undelivered in prose while leaving `**Verified:** yes` on the line `verify_ac` reads is not a retraction - the tool re-stamped it green from a test that does not exercise the property, so every mechanical reader still saw it met. The undelivered limb is split into its own criterion carrying NO verifier, so the tooling reports it unverified because it is. A seat caught this; it is the same class as BG0530, committed in prose about my own work hours after filing it.
-- **`critic.py brief --phase plan-review` (US0631).** The pre-code brief: the seat charter, the unit's criteria as law, and the test-plan rows as the object of review. It carries NO diff scope, and the absence is the point rather than an omission - there is no diff yet, that being the premise, and a brief that asks for one teaches the reviewer to wait for code. The claim-inventory pass is absent for the same reason: it rules on prose in a diff. A `--tier` is refused, because `record_verdict` already refuses one on this phase and a brief that accepted it would promise a depth the ledger cannot record. Where no plan exists the brief says so and names the command that derives one, rather than presenting an empty section a reviewer could approve.
-- **The plan-review provenance loop closes through the shipped verbs (US0631).** `brief --phase plan-review` returned before printing its fingerprint, while `record` refused without one and told the reader to use "the fingerprint it printed"; and the matcher asked for a DELIVERY brief whatever phase was being recorded, so a correct plan fingerprint was flagged as unrecognised while a delivery one was accepted as provenance for a plan review. Both seats found it independently. It is verbatim the scar AGENTS.md cites, in the phase added to prevent it.
-- **A unit reaching implementation without a REVIEWED test plan is refused by the command that starts the work (US0630).** `transition.py set --status "In Progress"` holds it, and `transition.py requirements` states the demand before any code is written rather than after it - a gate discovered by finished work is a tax, and a tax is what gets forced. "No plan" and "plan not reviewed" are DISTINCT refusals: the two have different fixes, and being sent to the wrong one of "write a plan" and "get it reviewed" is not a small error when the claim is that reviewing the test is cheap.
-- **The test-plan gate is keyed to its own review kind (US0630).** It sits beside the spec plan-review gate and neither discharges the other, which is exactly what BG0510's `Kind` column shipped for. A spec approval does not clear it - that reviewer never saw a test plan - and neither does a self-review. Behind the dated `review.test_plan_after` cutoff, so an existing backlog is not retro-refused.
-- **The test-plan and planned-mutant gates fail LOUD (US0630, US0632).** Both swallowed every exception and returned None, which is PASS - so the one condition under which either was least able to judge was the one under which it approved everything. A seat made the verdict ledger unreadable and watched a refusal become exit 0 with nothing on either stream. Two sibling gates in the same file already fail loud for this exact reason.
-- **An unreadable `.config.yaml` no longer switches both new gates off (US0630).** `project_override` swallows every config fault and returns the default, so a malformed, non-UTF-8, unreadable or directory-shaped config read as "this project set no cutoff". The sibling `_two_role_gate` already solved this with `_config_unparseable`, and its comment names the same four shapes - the repair reached parity with that gate's ledger half and skipped its config half. A project that DECLARES the rule and then cannot be read has not waived it.
-- **`verify_ac.py testplan derive` (US0629).** A unit's test plan is derived from its acceptance criteria rather than assembled by hand, naming per criterion the production change its test must fail on. The row count is checked by TWO INDEPENDENT READERS - `parse_story` reads the whole file for `### ACn`, `sdlc_md.count_acs` reads only the Acceptance Criteria section and also counts bare checkbox items - because counting criteria from the list the rows were built from makes the equality tautological and the mutant that deletes it survives every fixture. A duplicate criterion id is refused outright: a plan keyed by criterion cannot carry two rows under one id without one criterion going unplanned.
-- **A mutant field must name a production edit, on four checkable properties (US0629).** Blank, no path drawn from the unit's own `Affects`, no edit verb, or more than 60% meaningful-token overlap with the criterion's own `Then` clause. The path is EXCLUDED from that overlap: naming a file is separately required, so counting those tokens as novel substance lets a restatement buy headroom under the ceiling with the very words it was obliged to write. With them counted, US0629's own discriminating pair reads 57%/33% and the restatement passes; excluded, it reads 67%/40% about the stated ceiling and the threshold is the thing under test rather than the examples.
-- **`testplan derive` never overwrites a plan it cannot read (US0629).** It harvests `| ACn | mutant |` rows only, so a plan authored as prose yielded none and the section was replaced with placeholders at exit 0. A seat ran it against US0629's own artefact and watched 178 lines become 79 - an independently-reviewed plan destroyed by the command meant to protect it. It now refuses and says why. The overlap ceiling is also the first REFUSED value rather than the last accepted one, and a criterion with no `**Then**` bullet - the house bug template's shape - measures its overlap instead of silently scoring zero.
-- **Re-running a finished close over an unchanged tree is now a no-op that says so (US0619).** The close was run three times on one run and repeatedly on the next, and from outside that read as a sprint that was never being closed. It was: each close was undone by the next repair, and each re-run re-derived an account that could differ from the one before it. The close now stamps a digest of the tree its account describes, and a later close over that same tree reports the run already accounted for, writes nothing, and exits zero - so re-running is free and an operator who is unsure whether the ceremony finished can CHECK rather than guess, which is exactly the behaviour a close-time gate makes people want. "Unchanged" means the TREE, not `HEAD`: a close is followed by commits - its own paperwork - so a check keyed on the commit id would report "changed" after every close and never short-circuit, and would report "unchanged" while an uncommitted repair sat in the tree. The digest is a real git tree object built in a throwaway index, so it is a function of content alone and staging cannot move it. A run still open is never short-circuited, because its first close has not happened; a genuinely changed tree re-runs normally, since this is an idempotence guarantee and not a lock; and a digest that cannot be computed declines to short-circuit, which errs towards doing the work.
-- **An unavoidable close-time repair can be recorded as a reasoned, per-unit override (US0618).** US0616 refuses the inline repair and US0617 makes the residue readable; this is the deliberate way through for the case where deferring genuinely is not an option - a defect that makes the close itself wrong, for instance. It is written in the retro as `> **Close-repair-override:** <UNIT> - <why>`, travelling with the record rather than in a command flag, on the same reasoning as the velocity override beside it: an escape nobody can read afterwards is a silent pass. A BARE marker is not an override, by that same existing rule - an exception has to cost a sentence, or it becomes the routine the rule was written against. It is per unit, so one exception cannot license the next, and an override naming no unit forgives nothing rather than forgiving everything, which is the blanket exemption this is specifically not. Recorded overrides are counted and printed with their reasons on every run: an override nobody sees is indistinguishable from the inline repair the rule forbids.
-- **`sprint close` and `sprint stop` now refuse while the tree carries a repair to one of their own batch units (US0616).** The close writes an account of the batch and then stamps the ledger that says the batch is accounted for, so anything reaching terminal after that stamp is unaccounted by construction - and a repair made *inside* the ceremony invalidates the account written moments earlier. RUN-01KYZKY5 hit it twice in one close, and from outside it read as a sprint that was never being closed. It was, repeatedly, and each close was undone by the next repair. The refusal names the unit, the offending path, and both ways out: commit it as batch work before the ceremony starts, or file it and let the next run carry it - a refusal that leaves the operator to work out the remedy is the shape that gets bypassed. `stop` is gated on the same terms because a stop writes the same account, and the last run was stopped rather than closed, so a gate covering only `close` would have left the route actually taken ungated. Scoped to the batch's own declared `Affects`, never to any dirty file: a guard that stopped every close over an unrelated edit would be switched off within a sprint, and then it would guard nothing. `--dry-run` reports the condition instead of refusing it. The rule now sits in `reference-doctrine.md` and `reference-sprint.md` as well, each naming the command that enforces it - a rule stated with no gate behind it is a known-weak rule, which is why the statement and the gate ship as one unit.
-- **`sprint review-batch --fields-file` reads the findings from a JSON document**, so prose
-  carrying backticks or `$(` is stored verbatim rather than executed by the shell. A review's
-  findings are exactly the text most likely to contain both - this project mangled its own
-  twice in one run, and once quoted the mangled output back into an artefact.
-- It uses `resolve_prose_fields`, the loader every other writer already shares, so the
-  fields-file spelling cannot drift from theirs. The flag path is unchanged: this is an
-  addition, not a migration.
-- **`status.py points` answers how much delivery work is left, in POINTS, by type and by
-  status.** The routine question had no home: `status` reported counts, `sprint breakdown`
-  reported grooming state with no points anywhere, and only `sprint plan` summed them - a batch
-  planner, not a backlog query. So it kept being answered by a script written on the spot, and
-  the first hand-written one silently counted a `Won't Implement` story.
-- **Terminal units are excluded from the ONE shared authority** (`sdlc_md.is_terminal_status`),
-  so the census cannot disagree with what the rest of the tooling calls finished. The buckets
-  are the answer rather than the total: a single number cannot say whether the points are Ready
-  to plan or sitting at Review awaiting a sign-off.
-- **`sprint plan` prints the toolchain**, beside the carried lessons and for the same reason:
-  both are things an agent is meant to have read, and both get skipped unless the command that
-  runs anyway prints them. An absent runbook is REPORTED, not omitted - a plan that drops it
-  silently reads exactly like one that never had it.
-- **`tools/runbook.py` fails when the runbook names a command that no longer exists**, or
-  drops a step of the cycle. A runbook that has rotted is worse than none: it sends an agent to
-  a renamed tool, which is the moment they stop trusting it and go back to hand-rolling.
-  Commands are resolved against the shipped surface rather than listed a second time.
-- **`reference-sprint-toolchain.md` - the toolchain ordered by STEP, not by script.**
-  `reference-scripts.md` is the catalogue and answers "what does X do"; nobody planning a
-  sprint has that question. The one they have is "what is next, and which command performs
-  it", and answering it from memory is where hand-rolling comes from.
-- **Every entry names the hand-rolled shape it replaces**, so it is findable from the WRONG
-  instinct as well as the right one - `npm test | tail` beside `run-suite.sh`, a hand-written
-  review prompt beside `critic.py brief`, a census script beside `status.py points`. An entry
-  useful only to somebody who already knows the tool exists is useless to whoever needs it.
-- A closing rule: a step with no command is a FINDING to file, never an invitation to
-  hand-roll it.
-- **`run-suite.sh --check` refuses a greenness claim the record does not support** - an absent
-  verdict (never read as pass), one recorded at an earlier commit than HEAD, or one recording
-  a non-zero exit. Each refusal says which of the three it is.
-- **The commit-msg hook checks a message that CLAIMS the suites are green against that
-  verdict.** Scoped to messages making the claim rather than to every commit: a gate demanding
-  a six-minute suite before every commit is one people bypass, and a bypassed gate protects
-  nothing. The lane REFUSES where it stands rather than setting a flag, because the section
-  below it initialises `fail=0` and would wipe it - and with no pre-commit handover the hook
-  exits before that section is reached at all.
-- **`tools/run-suite.sh scripts|tools|all` runs a suite and writes its verdict to
-  `sdlc-studio/.local/suite-verdict.json`** - suite, exit code, counts, duration and the HEAD
-  it was taken at - while printing a single line. `npm test 2>&1 | tail -15` reports TAIL's
-  exit status, not the suite's, and that cost two false claims in one session: a commit
-  reported as landed when the hook had refused it, and a suite reported green with a real
-  failure in it. The pipe exists because six minutes of output does not fit in one read, so
-  the fix removes the incentive rather than asking anyone to resist it.
-- The verdict is written on a RED run too, and overwrites: skipping the write on failure
-  would leave the previous GREEN verdict in place, which is worse than none because it is
-  stale and looks current. An unknown suite name is refused rather than defaulted, and writes
-  nothing - an absent verdict is honest, a wrong one is not.
-- **`best-practices/testing.md` states the entry-point rule beside name-the-mutant-first:**
-  name the door the test goes in through, before the first assertion. If the criterion
-  describes a command, the test must enter that command - a library import standing in for one
-  is not evidence for a claim about it, however green.
-- **`tools/best_practice_rules.py` makes it a runnable check**, exiting non-zero when the
-  practice does not state the rule, so it is enforceable by a gate rather than only where
-  a test runner happens to look.
-- **The guard's own paperwork cannot satisfy it.** The check is scoped to
-  the passage's own section, because a whole-file search goes green on a Revision History row
-  describing the change being made (BG0457).
-- **The lane-check runs in the pre-commit gate, ADVISORY**, scoped to the unit ids the commit
-  touches so it costs nothing on a commit that touches none. It ships reporting-only on the
-  same terms as claim-drift: a new blocking check on a gate already over its ceiling earns its
-  place on a measured number rather than on assertion.
-- **Its yield accumulates under `sdlc-studio/.local/`**, following the precedent that fixed
-  BG0481 - a hook-written record on a tracked path dirties the working tree on every commit
-  with a file the author never touched and the hook never stages.
-- **`verify_ac.py lane-check` reports a unit that changes a command where NONE of its
-  verifiers enters the shipped entry point.** US0577 shipped `brief_fingerprint` with a
-  passing acceptance test and a feature that did not work: the test computed it in-process
-  while the command that issues a brief never called it. A library test cannot see a missing
-  lane, because the wiring is exactly the part it does not exercise.
-- **Detection is by execution over the verifier's own source** - does it call the entry point
-  or run the script - never by naming convention, which a rename satisfies. Where the selector
-  names a node, that node's source is read rather than the whole file.
-
-### Measured, not asserted
-
-Two earlier scopings were rejected on their numbers before this one shipped. Whole-file
-matching reported **0 findings over 615 units** - a detector that never fires, because one
-`main()` call anywhere in a several-thousand-line module marked every criterion in it clean.
-Per-criterion scoping reported **563 of 615**, because most individual tests legitimately
-exercise a library function. Scoped per UNIT it reports **167 of 615**, and a sampled finding
-was confirmed genuine: US0131's verifier calls `refine.refine(...)` directly, so the criterion
-would pass even if the command never called it.
-
-That figure was **186** as first shipped; `BG0487` removed 19 false positives where the test
-entered the CLI through a shared helper. The number is restated rather than left standing,
-because it is the number the decision to let this lane BLOCK will rest on.
-
-- **The close REPORTS to the operator** - shipped, carried, cost and what the reviews found -
-  rather than leaving a file to be discovered. Being informed is the operator's half of
-  human-in-the-lead: if they are not a step in the machine, the machine has to reach them.
-- **An absent figure is named absent, never dropped.** A missing line reads as nothing to
-  report, and "not attributable" and "nothing happened" are different facts - only one of them
-  means somebody should go and look. A close with no captured cost still prints a COST section
-  saying so.
-
-### Fixed
 
 - **The close report now actually reaches the operator.** Its emitter read the review rounds
   through `critic` without importing it - every use elsewhere in that module is a deferred
@@ -990,158 +1381,6 @@ because it is the number the decision to let this lane BLOCK will rest on.
   the rule cannot be satisfied by a gate that refuses every clean review.
 - **The seat brief's return contract asks for the tags,** with the three origins spelled out
   and the instruction to decide by `git log -S` or a re-probe at the base ref.
-
-### Changed
-
-- **In-repo docs point at guided onboarding.** `help/hint.md` now records that a guided onboarding walk pre-empts the next-step ladder (matching what `status`/`hint` implement); the greenfield and brownfield runbooks open with `init guided` as the one-command path, keeping their manual step lists as under-the-hood detail; and the README documentation index points at the new sdlc-studio.com pages (the specification layer including the PVD, personas and the Three Amigos, and the greenfield/brownfield walkthroughs).
-- **A low-band unit gets a bounded brief: the claim-inventory pass runs at full tier only (US0642).** It reads every Resolution, docstring, comment and CHANGELOG line in scope and rules on each - a finding generator by construction, and the largest block in the prompt. On a low-band unit it costs more than the unit does.
-- **The depth line and the omitted sections come from one decision (US0642)**, so a brief cannot announce a lighter pass while carrying the full inventory. What a light brief KEEPS is stated rather than left to whatever survived: the seat charter, the bounded diff scope, the canonical acceptance criteria and the return contract - the four things that make it a briefed review rather than a hand-written prompt.
-- **Bounding the light tier does not weaken the full one (US0642).** The refusal that a full brief must enumerate all four prose surfaces still fires, pinned with a positive control so the four refusals cannot pass because the guard refuses everything.
-- **The close-owed ledger now tells a close-time repair from an unaccounted unit (US0617).** A close writes a retro accounting for its batch and then stamps the baseline, so anything reaching terminal after that stamp is uncovered - and a repair made *during* the close is exactly such a unit. The ledger therefore re-opened the moment a careful close did its job, twice in one close of RUN-01KYZKY5, and the operator's reading was that the sprint was never being closed. It was, repeatedly, and each close was undone by the next repair. The two states are now named apart, because "fixed after the account was written" and "nobody accounted for this" are different facts. The classification is DERIVED from what is already on disk - the most recent retro's `Date` and the unit's terminal date, which `transition.py` records in a telemetry file named for the day it happened - so nobody has to declare which kind a unit is; a flag somebody must remember to pass records the honest case and misses the careless one, which is the whole population this ledger exists for. Both conditions are load-bearing: without the date test every uncovered unit would be excused, and without the run-finished test the *next* sprint's ordinary delivery would be excused too, since it also postdates the last retro. Nothing is forgiven - both states stay in the owed set - but only an unaccounted unit holds the exit code, because gating on a close-time repair would refuse the ceremony precisely when the close had been careful, which is the unconvergeable close from the other side.
-- **A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are
-  all independently covered.** It is reported as CADENCE DEBT instead, naming the artefacts and
-  saying the repo-wide review is still owed. The periodic ceremony runs on its own schedule
-  over the whole tree; a sprint that reviewed every one of its units is not made less correct
-  by that ceremony being overdue, and it did nothing to cause the staleness.
-- **The coverage question fails CLOSED.** No open run, an unreadable state, or a single
-  uncovered unit all keep the lane blocking - so this can only ever go advisory when the
-  evidence positively says the batch was reviewed, and the exemption is not reachable by
-  deleting a file.
-
-Measured on a real close: nine units, each with independent adversarial evidence, an APPROVE
-verdict after repair, a confirmation pass and a sign-off - and the close still stopped, on 59
-artefacts of staleness that entirely predated the run.
-
-- **The review-repair loop STOPS when it stops converging.** The growing-set detector already
-  existed and only reported: a loop that announces it is diverging and then runs another round
-  has reported nothing, and unattended it burns a night going backwards. `loop_termination`
-  turns the same signal into a decision, and `_record_close_attempt` acts on it.
-- **Two rules, both at their boundary.** A declared round cap (`review.max_rounds`, default 4)
-  ends the loop; so does an outstanding set that grew two rounds running. One growing round
-  alone does not - a repair exposing its neighbour is ordinary (`lessons/LL0052`), and stopping
-  on it would end loops that were about to converge.
-- **Only a regression or a newly introduced defect holds a unit's gate.** A review whose
-  findings are all `[pre-existing]` now COVERS the unit: the findings are reported with their
-  origin, and the repository's existing debt does not block this increment. A `[regression]`
-  or `[new]` finding still blocks, unchanged.
-- **The blocking and non-blocking sets are rendered apart,** with the non-blocking set stating
-  why those findings do not block, so a reader can tell what held the gate from what was
-  merely noticed. One undifferentiated list is how a pre-existing observation gets repaired at
-  close time as though it were this batch's debt.
-
-An UNTAGGED finding is not treated as harmless: it counts as neither blocking nor
-pre-existing, and `record` refuses it upstream. A REJECT carrying no itemised findings at all
-still does not cover, because the safe reading is that the reviewer rejected for a reason they
-did not write down.
-
-- The `origin` axis is deliberately SEPARATE from the existing `class` axis
-  (`fresh` / `repair-regression`). They answer different questions - `repair-regression` means
-  the repair broke it, `origin: regression` means this unit's diff broke it - and the word
-  appearing on both is why they are not merged. An independent engineering seat found the
-  collision at goal review; without the separate name a second classifier would have been
-  built on top of one CR0510 reports as effectively dead.
-- **`critic.py record` refuses a verdict carrying no brief provenance.** The refusal names
-  `critic.py brief --unit <id> --seat engineering|product|qa` as the way to obtain one, and
-  shows both `--brief <fingerprint>` and `--brief-file <saved brief text>`. Briefing a
-  reviewer with the shipped tool was doctrine, and doctrine is what got skipped: a review
-  round was run from four hand-written prompts while the seat brief existed, carrying neither
-  the charter, nor the bounded diff scope, nor the acceptance criteria as law. A rule that
-  matters belongs in the command people actually run (`lessons/LL0027`).
-- **Standing the rule down is a recorded decision, never an omission.** Setting
-  `review.require_brief_provenance: false` accepts an unbriefed verdict AND states on the
-  output that the requirement was switched off rather than met, so the two are different
-  events in the record.
-- A recorded review verdict now carries a fingerprint of the brief the seat was given.
-  `critic.py brief` emits a fingerprint alongside the brief text, and `record_verdict`
-  stores it in a new `Brief` column, so a verdict can be traced to the prompt that produced
-  it. Two seats briefed on the same unit fingerprint differently, so the field identifies
-  which brief was used rather than merely asserting one existed.
-
-### Changed
-
-- The verdict table gains a `Brief` column. Rows written before it exist are read unchanged
-  and report an absent fingerprint - the same value a hand-written prompt records, which is
-  correct, because that is exactly what those rows cannot distinguish about themselves.
-  A verdict recorded without going through `brief` is therefore visibly unbriefed.
-- **Doctrine rule 21: a fix's author is not sufficient evidence for that fix (US0567).** Every other change is held by a test written before anyone knew which way the implementation would go; a repair's test is written afterwards, by the person who just decided what the answer is. So a repair carries a mutant applied to its own changed lines whose death was observed. The rule names `transition.py` as what enforces it rather than leaving it as advice, the Definition of Done template carries the clause under a registered `[check: repair.mutation-evidence]`, and the carried lesson cites the gate instead of restating its terms so the two cannot drift.
-- **The close reports what it itself cost (US0559).** `close_cost` reads the execution ledger and the close prints its gate seconds, the runs behind them, the verdicts reused and the seconds those saved, and the wall-clock elapsed across the ceremony - on both the sign-off brief and the `--apply-signoff` path, so the next reduction is judged against a number rather than a recollection. Every figure is a measurement or it is absent: a run whose seconds were never recorded is counted as UNMEASURED and contributes nothing to the total, a reuse whose source run is not on the ledger is named rather than credited with zero saving, and a close with a single event reports no span rather than `0m00s`. Reading any of those as zero would let the close that measured least report the cheapest.
-- **`sprint close --dry-run` reports every refusal all seven steps would raise, in one pass, writing nothing (US0555).** The close stops at its first unmet prerequisite, so a close took as many attempts as it had gaps and each restart re-ran the steps before it. `close_preflight` answers the prerequisites read-only and always did - but three of the chain's steps exist to DO something, and one of those, the retro's CONTENT, is the class that actually refused. The dry run performs the action steps against a scratch copy of the workspace: it scaffolds the retro there and judges what `close` would mint, so a content gap is reported before a retro exists. The real tree is never opened for writing and the copy is removed. A step whose probe cannot be evaluated is reported as UNEVALUATED, never as passing, and a pass carrying one is not called clean - a preview that reported an unanswered step as green would be the one way this could actively mislead.
-- **A census attributes suite cost per module, and nominates tests no mutation can kill (US0506, US0507).** `tools/test_census.py` reports test count and time against the module each test covers, so the expensive areas are visible rather than guessed, and names any test it cannot attribute instead of dropping it. The removal-candidate half is consumer-only until the mutation runner records which test killed each mutant (BG0357), and refuses loudly rather than guessing when that attribution is absent.
-- **The plan-time test strategy now states the EXECUTION policy, and the close reports what it actually cost (US0497-US0499).** The strategy answered "what proof does each unit owe" and said nothing about what runs, how often, or at what price - so the largest single cost in a sprint was set by a habit living in a commit hook that nobody proposed and nobody signed off. `sprint plan` now states the per-commit mode, the close and release runs and an estimated cost for each (priced from the declared `gate_budget` baseline, and named NOT MEASURED rather than printed as zero when no baseline exists), and reports a declared `test_execution.*` policy that the commit hooks do not implement - the hook's behaviour is read from the hook, never restated beside it, and an unreadable hook is reported as UNRECONCILED rather than as agreement. The strategy is persisted into `sprint-plan.json` and read back at the close, so what is judged is what was agreed; a run planned before this exists still gets an answer, named as a re-derivation. The sprint report carries a `Test execution:` line counting full, selected and reused runs against the declared policy, attributed to the run's own window, and says NOT CAPTURED - never a total of zero - when nothing was recorded.
-
-<!-- section: Fixed -->
-- **The sprint close no longer invalidates itself, and a retry over an unchanged surface reuses its verdict (US0500, US0501).** The close writes the review anchor and the handoff, which made them newer than the anchor's last review, which failed the review-currency lane on the next attempt - so one close took four attempts and about sixteen minutes of test execution to record a decision already made, and filing an honest finding during a close cost another full gate. Artefacts the close itself wrote are now recorded as its own output and attributed as such: a review-currency refusal naming only those is reported as the close's own paperwork and the ceremony continues, while a stale artefact the close did not write, any other failing lane, and a refusal this cannot parse all still refuse - and the message names which blockers are in the WORK. A finding filed during a close is recorded as carried into the next run. The close's gate verdict is recorded against a content hash of the test-relevant surface with the close's own output subtracted, so a retry over an unchanged surface reuses it and says so; a changed surface, a red verdict and an unhashable surface each pay in full.
-- **The gate reports its own cost against a budget, every run (US0496).** Each lane is timed, and the run prints its elapsed cost, the declared budget (`GATE_BUDGET_S`, 45s, overridable with `gate.budget_seconds`), the lane that dominated the total and the direction of travel against the previous run. An over-budget run states the overage plainly with the dominant lane named, because a total with no lane named sends a reader to bisect the gate by hand. The first measured run says what it was for: 33.6s over this workspace, 26.5s of it in the `constitution` lane.
-- **A full-suite run is confined to a boundary - push, release and sprint close (US0495).** Everywhere else the gate runs the selection. Declare the moment with `gate.py --suite-decision --boundary push` or the `SDLC_GATE_BOUNDARY` environment variable, for a step that runs the gate through a wrapper it cannot pass flags to; an unrecognised boundary is refused rather than downgraded to the cheap path, because a caller who asked for everything and silently got a selection would be wrong about their coverage. A boundary also declines a green verdict earned by a partial run, so selection trades when the coverage is paid and never whether. The policy is stated in `help/gate.md`, and `tools/tests/test_help_coverage.py` pins the page against `gate.BOUNDARIES` so a boundary cannot be added without documenting it.
-- **The gate selects the tests a change can reach, instead of running all of them (US0494).** `gate.select_tests` follows the repo map's import graph transitively from the changed files, and attributes a changed non-source file (a reference doc, a hook, a shipped artefact) to the suite modules whose source is measured to read it. `repo_map.py` gained `basename_index`, `import_candidates` and `dependents_index`, so the reverse graph and the in-degree hub score resolve an import through one rule rather than two. A selected run reports how many test modules it excluded and why. Anything neither route resolves widens the run: an unanswerable changed-file probe, a file in the surface no module claims, and a change that reaches no test at all all run everything, because a selection of zero tests reported as a pass is a vacuous green.
-- **The unit suites are skipped when the test-relevant surface is unchanged since the last green verdict (US0493).** `gate.py --suite-decision` hashes the measured test-relevant surface by content and compares it with a recorded verdict (`--record-suite-verdict RUN-xxxx`, `.local/gate-suite-verdict.json`), so consecutive paperwork commits and a retried close cost nothing instead of paying the full price for a tree the tests already passed on. Measured over one working day on this repository: the suites ran about 52 times for about 218 minutes against about 35 minutes of delivery, a large share of them over a byte-identical source tree. Every unknown runs the suites - an absent, unreadable or malformed record, a red one, a record carrying no hash, or a surface that cannot be hashed - so a broken cache degrades to the slow answer and never to a false green. The pre-commit hook reads the `suite-decision: run|skip` sentinel and names the reuse rather than skipping in silence.
-- The charter queue lifecycle is documented beside the run lifecycle in `help/sprint.md`, with
-  every queue verb shown as a runnable invocation rather than named in prose, and the reasoning
-  for materialising late recorded where a reader expecting frozen queued plans will look for it.
-  The coverage check derives the verbs it expects from the parser's own help table, so a verb
-  added later is covered without editing the check.
-- `sprint call` finishes a run at a point rather than abandoning it: the unstarted remainder is
-  descoped and the close chain then runs against the Sprint Goal, so a called sprint is closed
-  rather than left open. The remainder returns to the **backlog**, never forward to the next
-  charter, so no two sprints are coupled and the next run never inherits a batch it did not
-  approve. It forwards the close's own flags - `--retro`, `--goal-verdict`, `--note`,
-  `--apply-signoff`, `--principal` - so the close's messages never name a flag this verb
-  rejects. Each descoped unit keeps its own status, because the drop judges the batch and not
-  the work. A descope needs a reason, matching what `batch drop` already requires.
-- A sprint charter carries its own goal review, under `## Seat review` on the charter itself
-  rather than in `.local/`. Local state does not travel: a charter pulled into another working
-  copy now arrives carrying the review that justified it. `sprint next --runner` records who ran
-  it beside who reviewed it, and states plainly when they are the same identity. Separation is
-  recorded, never enforced. A charter whose goal was never reviewed is reported before it runs,
-  in wording that distinguishes an unexamined plan from a review that found nothing.
-- The sprint charter queue is inspectable and editable: `sprint queue show` lists it head first
-  and reports what the head resolves to against the backlog right now, and `queue reorder`,
-  `queue cancel` and `queue clear` correct a plan without hand-editing state. Cancelling
-  withdraws rather than deletes and keeps its reason, so the queue's shape stays explicable. A
-  charter with no rank sits in authoring order and sorts after every ranked one - absence is not
-  rank zero, so ranking one charter does not reshuffle the rest. Only the head is resolved,
-  because resolving the tail would be arithmetic over a backlog the earlier runs will change.
-- `sprint next` materialises the head sprint charter against the backlog **as it stands at that
-  moment**, so a queue holds intent rather than a frozen batch: units created since the charter
-  was written are included, and units delivered since are not. It refuses, leaving the queue
-  untouched, when a run is already open, when the head charter carries no resolvable scope
-  query, or when the scope selects nothing. A charter's `Scope query` speaks `sprint plan`'s own
-  selector vocabulary rather than a second grammar.
-- A sprint charter is a first-class artefact (`SC` prefix, `sdlc-studio/charters/`): it carries
-  the goal a run drives to, the rule that selects its batch, and an optional appetite, so a run
-  can be opened from it without asking again. Its prefix, create status and terminal set derive
-  from the shared registry rather than being restated beside the charter code, and the versioned
-  schema contract documents all three. A charter missing its goal or its scope rule is refused
-  before an id is allocated, because one that cannot answer those stops the queue at the moment
-  it reaches the head.
-- **A gate lane for a flag whose parsed destination no line acts on (US0485).** `command_audit.py --dead-flags` follows the parsed value rather than counting the sites that mention a destination, which is the distinction the earlier specification for this could not make: `verify_batch` was mentioned three times in `gate.py` - defined, read through a defaulted lookup, and forwarded as a keyword argument into a `run_gate` parameter no line of the body read - so every mention-counting rule called it live. Validated against that module as it stood before the flag was deleted (reported dead, nothing unjudged), and pinned as a fixture of the three lines verbatim so the defence holds after the deletion. Positionals are not judged: argparse enforces their presence whether or not a line reads the value, and reporting one also printed a switch that does not exist. Three shapes are reported NOT JUDGED with the reason rather than dead - a namespace handed to a callee the analysis cannot resolve, a `getattr` whose attribute name is computed, and a module that declares flags on a parser it never parses - because a fabricated verdict is worse than an absent one, and each of the three named live flags as dead while it was being built.
-- **`reconcile` reports a supersession recorded on one side of the pair only (US0484).** A superseded design that never records it keeps reading as live from the direction a reader arrives from, so the pair is now checked from both ends as `supersession-asymmetry`. The declaration is matched on its **verb**, not against a list of field names: the corpus carries eleven distinct spellings (measured - the specification said six), and five of the missing ones carry the verb in free prose inside the bold run, which a field-name allowlist reads as an absence and reports as drift that does not exist. The template's combined `Supersedes / Superseded by:` field takes its direction from its value, since recording both directions manufactured a reversed phantom pair for every one of the fifteen it ships in. Detect-only, like `link-asymmetry`: which side is authoritative is a judgement about which design won. Legitimate asymmetry - a partial supersession replacing named decisions of an artefact that stays live in the rest - is recorded in `sdlc-studio/.supersession-waivers.json`, a ratchet whose entries need a stated reason and whose set may only shrink; a corrupt or `pairs`-less file reads as corrupt rather than as "nothing waived", so a malformed waiver cannot bury a real finding under every tolerated one.
-- **`sprint plan` validates the units in its batch, not only their index rows (US0481).** A unit whose own `Verify:` lines target a file its `Affects` omits carries that wrong declaration into the collision analysis and the engagement floor, both of which read `Affects`. The plan now names the unit and the missing path, from one shared resolver that `batch add` calls too.
-- **Joining a batch late is not a way past the check (US0481).** `sprint batch add` runs the same resolver over the unit it adds, so a unit that arrives after the plan was printed is held to what every other unit in that batch passed. Pinned by driving the shipped `batch add` verb rather than the helper, because the wiring is the part a library test does not exercise.
-- **Scoped to the batch, never the corpus (US0481).** A defect in work nobody is planning cannot block a plan, and a check that refused on the standing tail would be switched off within a day - the tail is held by `validate.py warning-ratchet` instead. The test puts an offending unit on disk and outside the batch, and asserts it is not judged.
-- **`sprint.affects_check` decides what a finding does, defaulting to `warn` (US0481).** Reporting rather than refusing is the shipped default because a declaration naming a file the unit will CREATE is legitimate; `block` is for a project that has paid its tail down and wants it kept at zero. An unknown value falls back to `warn` rather than to the stricter mode. The default is stated in `help/sprint.md`, and the test asserts the help page and the code agree rather than checking each against the author's memory of the other.
-- **The Affects/Verify warning family is ratcheted by INSTANCE, and the tolerated set may only shrink (US0480).** It stood at 371 instances and was purely advisory, so a new one was indistinguishable from the standing tail and nothing stopped the tail growing. `validate.py warning-ratchet` compares the live set of instance identities - `(artefact, rule, the specific path or command the warning names)` - against `sdlc-studio/.validate-warning-baseline.json`, and refuses naming the instance rather than reporting that a number moved.
-- **A count could not have done this, and the tests say why (US0480).** A swap that repairs one instance and introduces another leaves the total flat and is still refused, because the comparison is over identities and consults no recomputed total anywhere. Two `pseudo-verify` instances paid down elsewhere cannot mask one new `affects-undeclared`, because the rule is part of each entry's identity rather than a per-kind tally a surplus could offset. A repaired entry is reported STALE and removable - it can never be spent again to admit a different instance.
-- **A baseline the ratchet cannot trust never reports clean (US0480).** Four distinct non-zero states: `not-baselined` (an absent reference is not an empty one), `corrupt` (loud, never a silent pass), `stale`, and `reasonless` - a tolerated instance nobody justified is exactly the silent tolerance this replaces. Identity is read from the finding's own `targets`, which the checker now attaches structurally, rather than parsed back out of its message, so the prose a human reads cannot drift from what the gate compares.
-- **The verdict reaches a lane that refuses a real commit (US0480).** A `warning-ratchet` lane runs in `.githooks/pre-commit` and in the `npm run lint` chain, invoking the checker directly - not through `gate.py._validate`, whose `severity == "error"` filter would swallow a warning-severity refusal. Pinned by executing `git commit` against a fixture repo with the shipped hooks enabled: the commit does not land, HEAD does not move, and the lane and the offending instance are both named. The control commits the same tree once the instance is recorded, so the refusal is attributable to the instance rather than to the fixture.
-- **The epic index's derived cells have one importable definition, and a census behind them (US0477, foundation).** `sdlc_md.EPIC_INDEX_COLUMNS` is the single answer to what an epic row is, because two parties consulted their own: the shipped `templates/indexes/epic.md` declared `Owner`/`Target` while all 191 live rows carry `Deps`/`Created`/`Updated`. The live set wins on 191 rows of evidence.
-
-  `epic_story_count` censuses the story files naming an epic, so `0` is a derived fact rather than a placeholder. `epic_declared_deps` has **three** states and the third is the point: named dependencies, a declared-but-empty section (the epic says it has none), and **no section at all** (nobody has said). It returns `None` for the third and `derive_epic_row_cells` then omits the cell entirely, so a caller writes nothing rather than turning an absence into a declaration - which matters because **181 of this repository's 191 epics** state no Dependencies section.
-
-  **Now wired as the `epic-index-derivable` drift kind, and the nine-row question is settled by a rule rather than by a decision.** The measured dry run said the derivation would fill 182 rows from `--` (pure gain) and overwrite nine, eight of them downward - EP0001-EP0009 dropping to `0` or `1`, because those old epics' stories are no longer on disk and their hand-typed counts cannot be substantiated. What `apply` writes is now decided by the DIRECTION of the disagreement, not by whether the cell looks empty: a placeholder is filled, a count the census **exceeds** is filled (the row was merely stale, and the tree holds every story it claims and more - that is EP0008, 6 to 7), and a count the census **falls short of** is reported as `advisory (epic-index-uncorroborated)` and left alone. So the eight downward rewrites never happen, no operator decision is needed to introduce the kind, and no blocking lane goes red on a repository nobody had broken.
-
-  The direction test is also what keeps the rule usable rather than merely safe. A newly minted epic's row carries a censused `0`, which is a real value - so a placeholder-only rule would have locked the derivation out of its own cell, and the first story wired to that epic could never move it. The story census is memoised on a `stat` signature, taking 3.3s off a lane that runs on every commit.
-- **Every sprint verb is documented as a runnable INVOCATION**, not as a word that happens to
-  appear in a sentence. The in-flight controls - `goal-review record`, `batch swap|drop|add`,
-  `stop`, `reopen` - now have a section of their own in both `help/sprint.md` and
-  `reference-sprint.md`, so a reader working through the reference does not have to leave it to
-  learn how to change a run that is already open. The read-only verbs (`breakdown`,
-  `preflight`, `goal-verdict`, `lane`) are shown too.
-- **The verifier is derived from the PARSER**, so a verb added tomorrow is covered without
-  editing the test, and it extracts only from FENCED blocks - a verb named in prose is not an
-  invocation, and scraping prose would assert that the English around a command parses.
-
-### Fixed
 
 - **Two documented invocations the shipped parser does not accept**, found by this unit's own
   verifier: `/sdlc-studio sprint prd.md --goal design` (the PRD is a `--prd` argument to
@@ -1352,8 +1591,6 @@ did not write down.
   artefact's own body contradicts. EITHER oracle satisfies the gate - a tick is a human saying
   they checked it, a `Verify:` line is the machine saying so - because demanding both would
   refuse the ordinary judgement call a bug fix often is.
-
-### Fixed
 
 - **BG0402 no longer stands at `Fixed` while declaring itself unfinished.** Two of its four
   criteria were labelled NOT YET FIXED; they are carved out to BG0485, where their status is
@@ -2678,255 +2915,6 @@ Measured, the hole is 8 destinations across 3 modules.
   is nothing to game. What does not pass is silence. The evidence that this works: 8 of 9 retros in
   a consuming project carry a `## Lessons` section *because the template prompts for one* - and
   those same 9 retros reference exactly 1 artefact id between them, because nothing ever asked.
-
-### Changed
-
-- **The 108 findings that hid their audit run inside `Raised-by` prose now carry it as a field: `backfill_audit_runs.py` (US0568).** Counting a class across runs meant a regex over free text where a field read will do. The pass relocates a datum somebody already wrote and invents nothing else - `plan` reports, `apply` stamps and seeds, and `check` is the standing sweep a guard runs.
-
-  **Two rules the prose already settles, so neither was a judgement call.** Twelve findings name TWO ids, in the shape `adversarial audit <A> carry-over, run <B>`: `B` filed it and `A` is the earlier run it carried over from, which the sentence says outright. All twelve match, so none needed a choice made for it - and the carry-over id comes FIRST, so taking the first id would have attributed twelve findings to the wrong run and made one run look like two. A line the prose does not disambiguate is refused rather than resolved by order.
-
-  **The lens is NOT derived.** `detector-owed` groups by lens, the prose carries none, and guessing 108 lenses from sentences written for another purpose would be inventing evidence at scale. Each backfilled finding records its lens as explicitly unknown, and that placeholder counts as UNATTRIBUTABLE rather than as a lens of that name - otherwise 108 findings sharing one placeholder across five runs would read as a detector owed on every one, a verdict manufactured out of nothing. The sentinel has one definition in the shared library, because the writer that stamps it and the reader that decides attribution by it must agree.
-
-  **Seeded rows are stamped `backfilled`, never `recorded`.** These are harness workflow ids lifted from prose, minted by nothing this project runs.
-
-  Five run ids, not the three the request named: the two it missed were the two with the fewest findings, which a spot check would have missed the same way, and the request's own closing sweep would then have failed on the real corpus. The per-run counts are pinned against the live tree so a sixth id reddens a test rather than being skipped.
-
-  `detector-owed` now scans RFCs as well as bugs and CRs, because the RFC template renders the same attribution fields and a reader scanning fewer directories than the writer stamps would make an attributed RFC invisible to every verdict.
-
-  The new script was held to the house conventions its own guards enforce, which it initially failed three of: it anchors `--root` through the shared resolver before dispatch, carries a row and a count in the root census, and has a real write-confinement case rather than an allowlist entry - its fixture finding is a CR rather than a bug, since two sibling cases mint `BG0001` and seeding the bugs directory would have shifted their ids.
-- **The retro scaffold passes its own validator (US0558).** The shipped template omitted `## Carried lessons` entirely and left every other checked section as a `{{placeholder}}`, so a freshly scaffolded retro failed `retro validate` three ways and the carried-set shape and the `fixed-in:` / `declined:` vocabulary were each learned from a separate rejection - every one of them after a full gate run. The template now DEMONSTRATES each shape: a carried set of exactly the limit as bullets, and all three accepted dispositions filled in rather than described. That trades one failure for another, since a retro nobody filled in would now pass, so every worked example carries a marker and `retro validate` reports any left in place - on both the pass and the fail path, because a structurally valid retro whose content is still the template's is a different failure from a malformed one and blocking on it would refuse a legitimate close.
-- **A missing required argument is refused once, before anything is written (US0557).** `critic signoff` needs `--author`; it was learned from a refusal, one unit at a time, at a cost of nineteen wasted spawns. The requirement now lives beside each verb rather than on argparse alone, so one refusal names EVERY argument the verb needs and arrives before the first write. A guard holds each refusal message against the parser itself, so a message can never send a caller to a flag the command does not accept.
-- **`critic record`, `evidence` and `signoff` each take a whole batch in one invocation (US0556).** Recording three facts about nineteen units cost fifty-seven process spawns, each paying interpreter start, imports and a read-modify-write to record one line. `--units` names a batch, `--from-run` takes the open run's approved batch - refusing when no run is open rather than degrading to acting on nothing and reporting success - and a repeated `--unit` accumulates instead of keeping only its last value, which is BG0386's defect stated as a contract. The single-unit form is unchanged. Exit codes distinguish the two outcomes a caller acts on differently: nothing written is a refusal (2, as the single-unit form has always returned), a partly written batch is 1 and names both the units that landed and those that did not.
-- **A listing-only declaration can name the ids its structural read depends on (US0554).** `GATE_LISTING_ONLY` was a directory, so a module whose census asks about a handful of named artefacts made EVERY new file under that tree structural - and filing an artefact is most of what a sprint close does. A declaration may now be `{"path": ..., "ids": (...)}`; a structural change is then relevant only for the ids it names. The fail-safe direction is preserved four ways: a bare-string declaration, an unreadable `ids` value, an empty id set and a file whose name carries no id all keep the old whole-directory meaning, so the narrowing is opt-in and getting it wrong is slower rather than blind. Two modules reading one tree take the union of their ids, and a bare declaration beside a scoped one wins outright - one module's narrowing never speaks for another's read. `test_root_census.py` declares the single id it reads, and a guard holds that list against the census record in both directions, so an id added to one and not the other fails instead of going quietly unprotected.
-- **The gate prints each lane's own seconds, not only its total and dominant lane (US0533).** The per-lane figure had been recorded since the cost report was added and no reader ever saw it: the text report named the lane that dominated, which says where the worst of the cost went but not what the second and third cost - and that is what a decision about where to spend effort needs. CR0465's own 25 seconds were invisible for exactly this reason. A lane that was not timed prints nothing rather than `0.0s`, because untimed is not instant and a zero would send a reader looking anywhere but the lane that has the cost.
-- **`reconcile detect` reads the artefact corpus once per run instead of once per lookup: 22.3s to 1.3s (US0531, US0532).** Every sweep detector walks the artefact tree, and `find_by_id` and `children_of` were asked per unit - 650 and 72 times over this workspace, each one a fresh walk that opened and read every file. One `reconcile detect` opened 777,732 files, and reconcile is a gate lane, so that was paid on every commit. `sdlc_md.corpus_cache()` memoises the walk, a by-id index and a parent-to-children index for the duration of one read-only sweep. It is OPT-IN and scoped to a `with` block, never a module-level memo: the cache cannot see a write and `reconcile apply` sits beside the sweep it exists for. Nesting is a no-op so an inner block cannot hand the outer one a second, emptier cache, the block closes on an exception, and a `trust_names` walk bypasses it in both directions because its results differ from an ordinary walk's by construction. The by-id index keeps the FIRST match in `ARTIFACT_TYPES` order - the answer the linear walk gave - so a duplicate id cannot resolve to a different file just because the lookup got faster.
-- **RETRO0083's delivered figure is corrected a third and final time, and computed rather than restated.** The run delivered **133 of 148 planned points across 44 of 48 units**, plus 9 points of repair discovered and delivered in-run (BG0400, BG0408, BG0409, BG0410), giving a 52-unit accounted batch. The figure was written as 143/47, then 138/45, and each correction was drafted from memory of the previous one rather than derived from the artefacts, so each carried the next error forward: the first counted BG0372 and BG0359 (both later reopened for delivering nothing), the second still counted US0553 (reverted, standing Blocked). The current figure is computed from the Status field of all 52 files. The retro's estimate-versus-actual block is now populated and a VELOCITY.md row written, clearing the two close obligations the last run left open; the row records 107 points rather than 133, because velocity counts only terminal units and ten stories stand at Review awaiting sign-off.
-- **AGENTS.md states the front-door rule:** exercise every claim through the shipped entry
-  point before asking for review. A review should confirm the work, not discover that it does
-  not run. A library test cannot see a missing lane, because the wiring is the part it does
-  not exercise - `brief_fingerprint(brief(...))` passed in-process for a whole sprint while
-  `critic.py brief` printed nothing and the paperwork said otherwise. The rule is recorded as
-  known-weak until CR0520 ships `verify_ac lane-check` to gate it, because a rule with no gate
-  behind it is one that gets skipped (LL0027).
-- **The triage noise controls have their own switch, and this project has finally turned them on (CR0510).** A session cap and low-severity consolidation have shipped for some time and were reachable only through a `schema_version: 3` bump - which also switches on plan-review, spec-guard and the inbox status, so adopting a cap on filings meant adopting four unrelated things. The result was that the project which built them had never once run them: 801 findings filed in a month, roughly 26 a day, against a cap of 20 sitting unused; 27 of 29 open bugs were skeletons; and the low-severity fold was being hand-rolled, one artefact in this tree being twenty findings bundled together by hand. `triage.enabled` now decides it, falling back to the schema version when unstated - so every consuming project behaves exactly as before, and a project that wants the controls can have them without an unrelated migration. The cap remains a loud REFUSAL rather than a silent drop, naming how to proceed.
-- **US0629 AC2 is restated in mechanically decidable terms, before anything was built against it (BG0525).** It asked `derive` to refuse a mutant that is "that criterion's own text with the polarity flipped", and an independent seat reviewing the TEST PLAN produced the mutant that defeats every proxy: a field naming a real file, naming a real edit, and being the criterion with its polarity flipped. The replacement asks four checkable things - a non-blank field, a path drawn from the unit's own `Affects`, an edit verb, and no more than 60% meaningful-token overlap with the criterion's `Then` clause - and carries its own discriminating pair (71% refused, 24% accepted, differing in one property) plus a near-miss ACCEPT, without which a guard that refuses everything passes every refusal row.
-- **The threshold is a stated number with a stated basis (BG0525).** It follows `_reason_substance`, which measures substance after filler comes off and carries the scar of a one-character `-` passing a non-blank check. Implementing the old wording would have produced BG0523's class exactly: a criterion marked Verified against a verifier pinning a proxy rather than the property.
-- **The test-census attribution guard is a visible ratchet rather than a cliff (BG0469).** It asserted that more than 80% of test files attribute to a sibling module, and was sitting at 0.8045 - 179 files, 144 placed - so a single new cross-cutting test tipped it. The guard gave no warning it was one file from firing, which is how a threshold fails as a surprise rather than as a signal. It now carries a declared `UNATTRIBUTED_BASELINE` alongside a looser collapse floor: the floor still catches attribution breaking down, and the baseline makes the remaining gap countable and shrinkable. 29 of the 36 unattributed guard a hook, a document or a contract, which the name-or-reference convention cannot place by construction. Lowered when a file gains a home, never raised to accommodate a new one.
-- **Six guards now state what they check, and what they do not.** Independent review established that a number of guards assert something weaker than the criteria verifying them claim, and the repairs are carried. What is not carried is the over-claim itself: a guard that says more than it checks is the defect it was built to prevent, wearing its own name. The TRD surface guard now records that its set comparison has ONE direction and is structurally unable to catch a document naming a lane the code lacks - measured, with three surviving mutants named. The token-premise guard records that its whole-file substring is satisfied by the Revision History row describing the change being asserted. The ADR-011 guard records that its word-presence check is already satisfied by an unrelated sentence, and that its wiring check reads source text, so a comment naming the call satisfies it. On the sprint checklist: the not-delivered row says it reads the retro's Batch rather than the run's planned set; the known-issues row says an empty result and a scan that could not run are indistinguishable to it; the review row says it counts distinct reviewer NAMES, not seats; the impediments row says it does not read the blocker; and `cycle_drift` records that it walks the `sprint` verbs only and that its unverifiable bucket is non-empty today. The shipped sprint doctrine no longer says the checklist and the cycle "cannot part" - it says the guard narrows that drift rather than closing it.
-- **The evidence lessons from five consecutive REJECTs are shipped, not just observed (BG0422).** A sprint returned five REJECTs across five reviews with the production code right in most of them - an evidence problem rather than a code-quality one, and the two need different remedies. `best-practices/testing.md` now carries the rule that closes the dominant class: name the mutant in the test's docstring BEFORE writing the test, and if it cannot be named there is nothing to test yet. All eight mechanisms that produce a test which passes whether the feature is present or absent are named individually, because each needs a different habit to catch, along with the two rules that follow (test the surface the user invokes; for every reader you add, name its writer) and the honest limit of a pre-implementation design review - it catches the two structural classes and cannot see a test that does not exist yet, so it is not a general cure. `reference-agentic-lessons.md` states the review-before-commit sequencing the same sprint built a mechanism for and then ignored five times. Recorded cross-project as LL0050.
-- **The RFC index column is named `Decomposed into`, for what its cells actually hold.** It
-  read `Spawned CRs` while most cells held EPIC ids - a column whose name contradicts its
-  contents, which a reader has to know the history of to interpret. Renamed in the shipped
-  TEMPLATE as well as this repo's index, because the header is fixed by the template and a
-  rename here alone would drift back on the next project that generates one.
-- The rename is only safe because the drift check reads a SET of header aliases: keyed to one
-  spelling it would have silently exempted the column it exists to check. Both spellings stay
-  in the set, so a project that has not renamed is still checked.
-
-The drift half of this bug was already delivered and wired into `reconcile`; it reports zero
-on this corpus today. What remained was the header.
-
-- **The pre-commit gate budget is re-declared against the measured cost (US0432, CR0420).** The
-  120s ceiling was set when the suites were half their current size, so every commit reported OVER
-  and the signal became noise. It is re-declared to 380s against a 317s measured baseline (skill +
-  tool suites + cheap lanes), with ~20% headroom - so a normal commit reads under budget while a
-  genuine regression still flags, with the drift measured from the new baseline.
-- **The delivery-mode disjointness check treats build tooling and shared config as coupling
-  (US0416).** A unit touching the commit hooks, the `tools/` guards, the gate, `package.json`,
-  `install.sh`, the CI workflow or the shared project config is never offered as parallel-safe -
-  two worktrees editing different tooling files still share the one gate that runs across both, so
-  a merge-clean split is not a safe one. The build-tooling set is declared explicitly, never
-  inferred from a filename shape, and the contract is documented where the delivery mode is.
-- **`reference-cr.md` and `reference-rfc.md` state what `refine` actually produces (US0412, EP0155, CR0412).** Both now describe the plannable-but-ungroomed contract: refine mints a unit that is plannable now (an `Affects` is present - the story's own, inherited, or seeded from the request) whose acceptance criteria still need grooming, and both name the `sprint.breakdown: judgement` opt-out. The two-backlog promise - a refined request is delivery work - is stated as it is rather than as an aspiration.
-- **A refined story's acceptance criteria are labelled an ungroomed grooming placeholder, and the ungroomed count is machine-visible (US0411, EP0155, CR0412).** A story `refine` mints without seeded criteria used to carry a bare `### AC1: {{define}}` scaffold that read as thin authored content. It now carries an explicit marker stating the ACs are a grooming stub, so a reader tells a groomed story from an ungroomed one at a glance. `conformance` counts the stories carrying the marker (`summary.ungroomed`, a per-unit `ungroomed` flag, and a CLI line), so an operator sees how much grooming a refined backlog still owes rather than meeting a full-batch refusal at plan time. The marker never reads as a specified AC, so an ungroomed story stays honestly unspecified.
-- **`refine` requires or inherits an `Affects` per story, so a minted story is plannable the moment it exists (US0410, EP0155, CR0412).** A bulk refine over dozens of requests supplied only title and points, so `refine apply` minted stories with no `Affects` that `sprint plan` then refused as ungroomed - a backlog that read as sized delivery work could not be planned at all. A story now takes its `Affects` one of three ways, all resolved before anything is minted: its own path list; the `inherit` keyword (`title|points|inherit`, or `inherit:paths` to narrow the request's footprint); or, given none of its own, SEEDED from the request's `Affects` (marked for confirmation) when the request declares one. A story with nothing to inherit and none supplied is refused, naming the story and how to supply it - refine never mints a unit nobody can plan, and never half-decomposes. A recorded grooming opt-out (`sprint.breakdown: judgement`) downgrades the refusal to a warning. The requirement applies to newly-refined stories at mint time only; the existing backlog is untouched.
-- **The sprint guidance states the batch-size trade-off from the measured rows and prescribes no
-  number (US0397).** `reference-sprint.md` and `help/sprint.md` now name the trade-off - fixed cost
-  falls per point as the batch grows, review convergence cost rises with it - grounded in this
-  project's own measured velocity rows and naming how many sprints it rests on. It prescribes NO
-  batch-size number: with this few measured sprints there is no defensible optimum, and inventing
-  one would repeat a mistake this project has twice had to undo.
-- **The review guidance requires a round of at least two reviewers on distinct lenses, one of
-  them the claims lens (US0396).** `reference-review.md` and `reference-sprint.md` now state that a
-  round is at least two reviewers with distinct lenses whatever the diff size - a small diff is not
-  a licence to drop to a single pass - and that one lens is always the claims lens. Where a round
-  runs with one reviewer anyway, the review record says so, so an under-covered round never reads
-  as a full one.
-- **Three plan-surface messages read straight (US0386, US0387, US0390).** A zero-remaining handoff
-  now states nothing carried over and offers no `--worklist`, so a clean close reads as good news
-  rather than a false action item above the warnings that need reading. The run-opened line names
-  the Sprint Goal and the `--goal` ladder rung with distinct labels (`rung=...`, `sprint-goal=...`),
-  so `rung=done` is never misread as the Sprint Goal failing to take. The no-batch-selected error
-  shows a usable example status per selector (`--bugs Open`, `--crs Proposed`, `--stories Ready`),
-  so the first retry is a working invocation.
-- **The mutation documents describe the ledger the gate actually reads, not the whole-blob
-  report rule it superseded (US0384, US0385).** `help/mutation.md` and
-  `reference-scripts-verify.md` said the lane reports STALE on a rev change or any edited
-  target, which has not been the rule since coverage moved to `mutation-runs.json`. Both now
-  name the ledger beside the report, state that an entry is keyed on that file's content hash
-  at run time so evidence survives commits to other files, state the 200-entry bound and its
-  cumulative dropped total, distinguish a `measured` run from a `registered` self-report, and
-  give the per-file verdict - a matching hash is covered, a hash that no longer matches is
-  stale, no entry is uncovered - with the degraded whole-report fallback and the lane's
-  advisory status stated on both pages. `trd.md` gains the ledger's state-file row and
-  `tsd.md`'s mutation and gate-lane tables carry the per-file verdict; the reconcile pass
-  checked 19 mutation claims across the two specs and records a verdict for each, including
-  the 11 it verified and left alone, in US0385.
-- **The harness token capture records which model spent the tokens, and the interactive close
-  writes it to the velocity row (US0376).** `harness_tokens` reads the transcript model alongside
-  the total - a single id, or `mixed` when the session spanned two - and the interactive close
-  writes it to the Model cell, so `measured_rate` books each interactive sprint in the correct
-  (project, model) cell instead of the unrecorded-model bucket. A runner sprint's per-unit models
-  still win; the harness model fills only the interactive gap.
-- **A superseded verdict row is retired for every gate that reads it, and still visible to every reader (US0375).** `verdict_for` skips it and falls back to the latest live row, so a unit whose only row is superseded has no verdict rather than an approval; the sign-off gate no longer counts its reviewer among the authoring session's own, so a principal wrongly recorded as a reviewer can sign off instead of being stranded at Review for ever. `read_verdicts`, `critic show` (text and json) and the sign-off brief still return and print the row, flagged with its reason and authoriser, so the audit trail keeps both facts: that it was recorded, and that it was retired.
-- **The commit-message rules are checked ahead of the expensive test lanes (US0372).** The gate costs about 205s when scripts are staged, and a one-line commit-message defect was refused only after all of it had run, then paid for again on the retry. Git invokes `pre-commit` before the commit message exists - at that point `COMMIT_EDITMSG` is absent or still holds the previous commit's message - so no ordering of lanes inside that hook could ever put the message rules first. The two unit suites, with the timing, scope and budget recording that wraps them, therefore moved into `commit-msg`, behind the message check. `pre-commit` still owns the selection rule and hands its verdict over in a one-shot record inside the git directory, so the docs-only skip, the cheaper-lane short circuit and the per-commit budget total (now the sum across both hooks) all behave as before. Measured on this repo: a message refusal fell from 212s to 33s, and no lane is lost or duplicated.
-- **The pre-commit unit-suite selector measures the test-relevant set instead of naming three
-  directories by hand (US0368).** `gate.py --test-relevant` derives the set from what the shipped
-  suites actually read - the hooks, the workflow file, `install.sh`, `package.json`, reference
-  docs, help pages and shipped artefacts, none of which the old `scripts/`, `templates/`, `tools/`
-  regex covered - so a commit touching a doc a test asserts over no longer takes the docs-only fast
-  path and skips that test. A hand list is a lower bound; the measurement is over-inclusive on
-  files and precise on directories, so it never skips a suite that was needed.
-- **The LATEST.md over-ceiling refusal states the overage and names the longest sections (US0365).**
-  `doc_freshness` now reports how many lines the anchor is OVER its ceiling (for example, 2 over
-  the 80-line ceiling) rather than leaving the reader to subtract, and names the longest sections
-  by line count so the trim can be aimed rather than guessed.
-- **The safe form for prose is documented family-wide, and a consuming project now inherits it (US0363).** The script contract in `reference-scripts.md` gains the rule as its own numbered clause: `file_finding.resolve_prose_fields` is the one loader, all nine prose-taking writers take `--fields-file FIELDS.json`, and `--fields-file -` reads the document from stdin. The flag path still works and still reports a field that arrives already mangled, stated as defence in depth rather than the fix - measured against the recorded corruptions it catches three of the four with no false positive over the project's own artefact prose, and the fourth is undetectable in principle. `templates/agent-instructions.md` carried no line at all, so a consuming project inherited none of this; it now carries one.
-- **The test suites and the scripts catalogue follow the `audit`-stem rename (US0346, RFC0033 D1).** `test_audit.py` -> `test_readiness.py` and `test_audit_check.py` -> `test_schema_check.py`, with two new classes (`RenameTests`, `RenameDocsTests`) pinning that no shipped file reaches for the retired module names, the renamed modules resolve and change no verdict, and the public `audit` command is untouched. `reference-scripts.md` and `reference-scripts-review.md` now catalogue `readiness.py` and `schema_check.py`, and the `scripts/audit.py`/`scripts/audit_check.py` references in `reference-sprint.md`, `reference-audit.md`, `reference-schema.md`, `help/sprint.md` and `help/audit.md` point at the new names, so no doc sends an agent to a script that no longer exists.
-- **The two deterministic `audit`-stem scripts are renamed, freeing the verb for the user-facing weakness-hunt (US0345, RFC0033 D1).** `audit.py` (sprint tranche pre-flight readiness) is now `readiness.py` and `audit_check.py` (the schema-v3 CI linter) is now `schema_check.py`. The move is internal only - the user-facing `audit --profile repo` command is unchanged, its profile-resolution engine simply lives under the new module name. Every Python importer moved with the files (`handoff.py` and `artifact.py`, the real in-repo callers; the story's `gate.py`/`sprint.py` framing describes the documented pre-flight and CI steps, which are not code imports), and byte-identical output for the same input was verified command-by-command against the pre-rename baseline: only the two `--help` usage lines change, naming the new scripts.
-- **The shipped seed basis names the condition its "no base term" finding was measured under (US0339, EP0114, CR0391).** The seed no longer asserts flatly that a fitted base term does worse; it states the result was measured on per-unit actuals with no sprint ceremony, review rounds or close - a finding about the build, not a whole sprint. The condition travels with every forecast basis, seed or local, and `reference-sprint.md`'s estimator account carries the same qualification, so the doc cannot be cited against the fixed per-sprint term the same release ships.
-- **A fitted fixed term is never applied automatically (US0338, EP0114, CR0391).** The plan states how many sprints the fit rests on and keeps a fit below `FIXED_MIN_SPRINTS` (3) out of the total, reporting it as NOT APPLIED with the minimum required and the count the project has - a line through two points is not spent as calibration. Every quoted fixed term, applied or not, states its sprint count. At or above the minimum the term enters the total and the plan says so.
-- **The token forecast carries an explicit fixed per-sprint term beside the per-point term (US0336, EP0114, CR0391).** The total is `fixed + sum(Points) x marginal rate`, and the plan shows both terms on their own lines rather than a single product. Halving the batch no longer halves the forecast: the fixed term is amortised over fewer points, so a small batch is not priced as though the ceremony, review rounds and close were free.
-- **help/sprint.md documents the single run slot (US0329, EP0111).** A new "One run slot" section states that a project holds one run, that a disjoint batch is refused rather than merged, and that an overlapping re-plan accumulates - naming the same two routes (close, or a `--write` re-plan) the refusal prints.
-- **A run whose only close artefact is a FAILED close attempt is open-and-protected, not absorbable (US0328, EP0111).** `close_attempts` is deliberately not a close artefact, so a mid-close run stays `running` and is covered by the disjoint guard - the run most likely to be worked around no longer silently absorbs the next batch. A truly closed run (carrying `ended_at`) is still archived and replaced. The refusal states that a close attempt already ran and how many items it left outstanding.
-- **The disjoint-batch refusal names the open run and both ways forward (US0327, EP0111).** The message carries the open run's id, its `running` outcome and its batch size, and states two routes as runnable commands - close the open run, or re-plan it deliberately - so the operator acts without opening the run state.
-- **`sprint plan --write` refuses a disjoint batch against an open run instead of fusing it (US0326, EP0111, CR0401).** A project holds one run slot. A batch sharing no unit with the open run is refused - the command exits non-zero and `run-state.json` is byte-identical afterwards, so no partial write survives. An overlapping re-plan still accumulates into the same run with no new flag. This holds one run to one Sprint Goal and one closing verdict, rather than producing a fused run whose goal describes a fraction of it.
-- **Forecast in days and sprint-sessions, not ISO weeks (CR0314, EP0063).** `flow forecast`
-  defaults to day-bucket sampling (zero days included, dates at day precision); a new
-  `--bucket sprint` samples measured per-sprint throughput from the velocity history and
-  reports sprints-to-complete plus hours at the measured elapsed-hours-per-sprint median,
-  refusing under three sprints of history and naming unmeasured hours. The ISO-week bucket
-  stays available via `--bucket week` or `flow.forecast_bucket`. Every refusal guard
-  (seeded, min-history, all-zero, non-positive, horizon) holds in every bucket.
-- **Spec-truth refresh: PRD/TRD/TSD/RFC reconciled with shipped `main` (EP0071, RUN-01KXR6XS).**
-  A batch of documentation-alignment stories corrected specs that had drifted from shipped
-  behaviour:
-  - **US0201/US0203 (PRD + TRD).** PRD §3/§10/§11 and TRD §10/§12/§13 now describe the shipped
-    cost model - modified Fibonacci Points on story/bug, T-shirt Size on CR/RFC/epic, forecast =
-    sum(Points) x the measured tokens-per-point rate (r = +0.68, RFC0038), recorded at plan time
-    to `telemetry.forecasts` - instead of the falsified file-complexity predictor and the two
-    loop defects (BG0133/BG0136), now fixed. The version check and `git fetch origin` are
-    enumerated in the PRD Security NFR / §8, the feature inventory, and TRD rule 6 / §9 as the
-    second and third outbound network paths beside `gh`.
-  - **US0206 (TSD).** Corrected two false claims: the blocking 80% CI coverage gate (reconciled
-    with the ~90% aspiration) and the blocking bandit security scan are now recorded, where the
-    TSD had asserted neither was wired.
-  - **US0207 (RFC0034).** Marked D1/D5 superseded by RFC0038 with cross-links in both RFCs and
-    the rfcs index; D2-D4 remain live and underpin the shipped model.
-  - **US0202 (PRD §3).** Populated every `[Unreleased]` row's Epic column and added rows for the
-    EP0033-EP0047 features; where a feature had no owning epic (delivered by a CR/RFC sprint) the
-    governing id is cited, with a preamble note for the exception.
-  - **US0204 (PRD §9 + config).** Corrected `require_ac_verification` (shipped default `false`, the
-    table said `on`); added `quality.done_requires_verified` (the true hard-by-default Done gate)
-    and `two_backlog.enforce` (deliberate default-off) to the PRD table, `config-defaults.yaml` and
-    `reference-config.md`; retired `SDLC_ENGAGEMENT_STRICT`; added `SDLC_AUTHOR`,
-    `SDLC_VERIFY_HTTP_HOSTS`, `SDLC_TRIAGE_SESSION`, `SDLC_DEBUG` to the env-var table.
-  - **US0205 (TRD ADR-008).** States the real ULID guarantee (6+2 chars, ~1-in-1024 per ~17-minute
-    bucket, glob-retry backstop) with a cross-machine residual-risk paragraph naming `next_id.py`'s
-    collision detector; "collision-free" softened to "collision-resistant".
-  - **US0208 (TRD §3/§5 + critic.py).** `critic record` moved to the writer list with the
-    append-only-ledger exception documented; `read_verdicts` now warns on a torn row instead of
-    silently dropping it (red-first test).
-  - **US0209 (TRD §6).** Adds the `issue` type, the `Blocked` story status, the inbox triage lane
-    and a two-backlog subsection to the type registry.
-  - **US0210 (TRD §5).** Rule 5's writer list gains `retro.py`/`handoff.py`/`archive.py`/
-    `persona_gen.py`/`decisions.py`, declared non-exhaustive with a pointer to the script catalogue;
-    ADR-009 no longer contradicts it.
-  - **US0211 (TRD counts).** Drifted exact counts converted to growth-tolerant bands and the 4.0.0
-    changelog line restated to what the freshness guard actually checks.
-  - **US0212 (TRD §6).** Names the shipped migration surface (`migrate.py`, `project_upgrade.py`
-    `--apply`, `migrate_v3.py`) and reconciles the `upgrade`-type-vs-`migrate`-command naming.
-
-- **Story workflows resolve personas registry-first (CR0283, EP0049).** `reference-story.md`'s
-  create and generate prerequisites now read the `sdlc-studio/personas/` registry (index.md +
-  per-persona cards) as the primary source, with the flat `personas.md` as a documented legacy
-  fallback - a registry-only project is no longer STOPped on a file it never created. Step 3's
-  persona selection defaults to the declared **Primary** from `personas/index.md`, and a
-  **Negative** persona is never a story target. `help/story.md` prerequisites and validation
-  tables updated to match.
-- **validate covers the legacy personas.md layout (CR0297, EP0051).** `check_personas` no longer
-  gives a vacuous clean pass to a personas.md-only project: the legacy flat file (the one the
-  story pipeline falls back to) now gets a `persona-layout` advisory plus a light structural
-  check (`persona-legacy`: unfilled `{{...}}` boilerplate, no persona sections) - including when
-  `personas/` holds only seats/stakeholders and story generation would fall back to it. Advisory
-  severity only; a registry with design cards behaves exactly as before.
-- **The per-unit token forecast is DROPPED. No plan-time predictor cleared the bar (CR0262).** The seed
-  the forecast was built on - `max_cognitive`, the cognitive complexity of the files a unit touches -
-  carries no signal: r = +0.03 against measured cost across 18 units. Both past recalibrations (5,000,
-  then 600) were fitting a slope through noise, which is why the model over-forecast by 3.3x and then
-  under-forecast by 0.55x and 0.39x on consecutive sprints. You cannot scale zero.
-
-  A bar was set BEFORE measuring (leave-one-out r >= 0.50, beating `files_affected` alone, LOO ratio
-  within 0.5x-2.0x for most units). **Nothing cleared it.** The best composite reached LOO r = 0.415 -
-  and that number is generous, because its coefficients were refitted inside every fold and its feature
-  set chosen with hindsight. Rather than ship a mediocre predictor, the per-unit estimate is gone.
-
-  Two contaminants were found in the candidates that looked promising, and both matter. **`files_affected`
-  flips sign within sprints** (+0.72, -0.34, +0.87; the pooled +0.44 is a between-sprint artefact) - a
-  signal that reverses direction is not a predictor. And **the `Effort` field's apparent strength was
-  partly a calendar**: scoring an undeclared Effort as zero inflates it, because the field only exists on
-  later, larger units - the mere PRESENCE of the field scores r = +0.43. Treated honestly as missing, the
-  human Effort value scores r = +0.35: still far better than the metric the code computes about itself,
-  but not what a naive pooled correlation claimed.
-
-  **Change-complexity is not derivable at plan time, and is not faked.** Before a change exists, every
-  available complexity number is a property of the CONTAINER (file, coupling, churn), and none correlate.
-  Substituting one is the bug being removed.
-
-  The plan now leads with **batch history - what sprints ACTUALLY cost** - and quotes a flat measured rate
-  (120,000 tokens per unit) with a wide band, saying plainly: read the history, not this number.
-
-- **The router no longer reads an inapplicable signal as a zero (CR0262, absorbing BG0139).** A markdown
-  file RESOLVES the code-complexity signal and yields no scored function - and that 0 is an absence, not a
-  measurement. `complexity.assess()` now reports whether it was applicable at all; when nothing touched can
-  carry a score, `code` and `risk` go MISSING, confidence drops, and the tier is bumped UP (the doctrine the
-  module always documented and never reached). **CR0252 - a docs unit that cost 205,534 tokens - went from
-  `14 / trivial / HIGH confidence` to `34 / low / LOW`.** Under routing it would have been sent to the
-  smallest model, confidently. Code units are unchanged.
-
-- **`appetite.minutes` / `appetite.units` of `0` now mean "inherit the capacity", not "unbounded"
-  (CR0259).** A consuming project that left them at the default previously ran with no ceiling; it now
-  inherits `capacity.minutes` (240) and `capacity.units` (8). This is a default-behaviour change, and
-  it is the point of the CR - plan capacity and run appetite are one source with two consumers, and a
-  run that silently had no breaker was the thing worth removing. The stop is clean, with a handoff, and
-  the plan prints the ceiling and where it came from. Set the keys explicitly to choose your own.
-
-- **The token forecast is calibrated against measured actuals for the first time (CR0257).**
-  `TOKENS_PER_COGNITIVE` drops 5,000 -> 600; the 50,000 base stays (validated - the one
-  complexity-0 unit measured 46,359). Six units delivered by instrumented subagents were measured
-  end-to-end: the batch forecast was **1,285,000 against 384,278 actually spent - 3.3x over**. At 600
-  it lands at 1.09x. The inflation was not harmless: a 10-unit batch was cut to 5 on the belief it
-  was too big, when it was not. Two limits are pinned in tests so they cannot be quietly forgotten:
-  this is a **hypothesis** fitted to six units (the next sprint is its falsification test - the value
-  it replaces was never validated at all), and **complexity is a weak per-unit predictor**, so the
-  forecast is a **batch** tool - two units of identical complexity cost 2.1x apart, because the
-  complexity of the FILE is a poor proxy for the WORK done in it.
-
-- **One archive writer, one layout (CR0248).** `reconcile.py` carried a second, CLI-reachable
-  `archive` path that wrote a flat `<type>/archive/_index.md` with no live-index pointer, while
-  `archive.py` wrote the per-release layout with one. Archiving via both split a type's terminal rows
-  across two incompatible schemes, and the census survived either way, so nothing flagged the
-  incoherence (LL0016). Reconcile's duplicate is removed - it now only READS the archive into the
-  census; `archive.py` is the single writer. A guard test asserts the duplicate cannot silently
-  return.
-
-- **Per-type status vocabulary derives from one source (CR0249).** `artifact.SPEC` and
-  `file_finding.TYPES` each re-hardcoded the statuses that `lib/sdlc_md.py` already declares, so a
-  vocab change had to be made in three places or they drifted. Both now derive from `sdlc_md`, and a
-  guard test fails if either creator re-hardcodes a divergent value. A pure refactor - no status
-  added, removed or renamed.
-
-### Fixed
 
 - **`refine`'s SEEDED-Affects note no longer prints from the library (US0410 repair).** The note confirming a story's Affects was seeded from its parent was printed inside the `refine()` library call, so it leaked to the console under every passing test that refined a no-Affects story - 69 lines, which broke the green-suite noise ratchet. The note is now RETURNED (`result["seeded_notes"]`) and printed only by the CLI layer (`refine apply` / `refine add`), so the operator still sees it while the library stays silent.
 - **A criterion that swallowed its own verifier is named at mint (US0381, EP0139, CR0381).** `--ac` pairs with `--verify` positionally, so writing the verifier inside the criterion as `criterion|pytest path::Node` used to be swallowed whole as prose - the command was rewritten into a code span and the artefact shipped with no `Verify:` line the runner could ever see. `artifact.py new` now warns by position, names where the verifier goes, and leaves an escaped `\|` alone. Advisory and positional: a correctly-paired `--ac`/`--verify` is untouched.

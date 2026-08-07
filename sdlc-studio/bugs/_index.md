@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 26 |
+| Open | 28 |
 | In Progress | 0 |
 | Fixed | 423 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **536** |
+| **Total** | **538** |
 
 ## All Bugs
 
@@ -76,6 +76,8 @@
 | [BG0534](BG0534-testplan-derive-s-edit-verb-check-is-an.md) | testplan derive's edit-verb check is an enumeration, so it refuses honest mutants written with a verb nobody listed | Open | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0535](BG0535-106-of-1824-executable-acceptance-criteria-are-red.md) | 106 of 1824 executable acceptance criteria are RED across stories already marked Done, and the lane that would have said so has never run to completion | Open | High | 2026-08-07 | 2026-08-07 |
 | [BG0536](BG0536-a-test-fixture-that-accepts-a-caller-supplied.md) | a test fixture that accepts a caller-supplied root can write into the working tree, and one did - destroying 23 recorded mutation registrations | Open | High | 2026-08-07 | 2026-08-07 |
+| [BG0537](BG0537-check-root-docs-reads-raw-lines-while-check.md) | check_root_docs reads raw lines while check_body_links blanks code spans, so a link inside backticks is an example in one directory and a broken reference in another | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0538](BG0538-a-release-cut-mints-an-affects-unresolvable-warning.md) | a release cut mints an affects-unresolvable warning for every unit that declared its own changelog fragment, because compose deletes the file the unit named | Open | Medium | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

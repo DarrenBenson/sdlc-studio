@@ -368,6 +368,40 @@ class ContradictedAffectsTests(unittest.TestCase):
             self.assertIn("affects-unresolvable", rules)
             self.assertIn("affects-undeclared", rules)
 
+    def test_a_consumed_changelog_fragment_is_not_an_unresolvable_affects(self) -> None:
+        """BG0538. `compose --apply` folds a fragment into CHANGELOG.md and DELETES it, so a
+        delivered unit that declared its own fragment names a path guaranteed to vanish at the
+        next release cut. Warning about it says "this file should exist by now" about a file
+        the toolchain removed on purpose, and the v5 cut minted nine such warnings at once -
+        one for every unit that had done the right thing.
+
+        Mutant: drop the `_is_consumed_fragment` filter - the warning returns.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "src/real.py", "x = 1\n")
+            _write(root, "tests/test_p.py", "def test_x(): pass\n")
+            p = self._story(root, "src/real.py,changelog.d/US0001.md",
+                            "pytest tests/test_p.py -k test_x")
+            rules = {v["rule"] for v in validate.validate_file(p, "story", repo_root=root)}
+            self.assertNotIn("affects-unresolvable", rules,
+                             "a consumed changelog fragment was reported as a broken reference")
+
+    def test_a_real_missing_path_beside_a_fragment_is_still_reported(self) -> None:
+        """The control. Exempting the fragment must not exempt the typo sitting next to it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "src/real.py", "x = 1\n")
+            _write(root, "tests/test_p.py", "def test_x(): pass\n")
+            p = self._story(root, "src/real.py,changelog.d/US0001.md,src/typo.py",
+                            "pytest tests/test_p.py -k test_x")
+            found = [v for v in validate.validate_file(p, "story", repo_root=root)
+                     if v["rule"] == "affects-unresolvable"]
+            self.assertEqual(1, len(found), "the real missing path was lost with the fragment")
+            self.assertIn("src/typo.py", found[0]["message"])
+            self.assertNotIn("changelog.d", found[0]["message"],
+                             "the exempt fragment was still named in the warning")
+
     def test_a_clean_affects_is_reported_by_neither_rule(self) -> None:
         """The negative control: without it, a function reporting every story unconditionally
         would satisfy the test above."""

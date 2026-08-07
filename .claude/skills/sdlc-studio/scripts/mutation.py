@@ -231,7 +231,7 @@ def _occurrences(path: Path, pattern, lines: list) -> list:
     APPLIED at another. A verdict attributed to a line the tool did not edit is worse than no
     verdict - a false KILL is a green mutation score for code that was never mutated, and this
     is the instrument the whole evidence story leans on. Two readers of one file disagree
-    eventually, and the second is written by whoever did not know the first existed (BG0533).
+    eventually, and the second is written by whoever did not know the first existed.
     """
     excluded: set = set()
     if path.suffix == ".py":
@@ -1468,7 +1468,7 @@ def mutants_over_changed_lines(repo_root, files, since: str) -> tuple[list, dict
     two-thousand-line module should be held to those nine: generating over the whole `Affects`
     makes the gate cost scale with the file rather than the change, and a gate nobody can afford
     to run is one that gets switched off - which is how the release verify lane reached 106 red
-    criteria unobserved (BG0535).
+    criteria unobserved.
     """
     changed = changed_lines(repo_root, since)
     if not changed:

@@ -337,13 +337,20 @@ def check_root_docs(repo_root: Path) -> list[str]:
     """File-existence for the repo-root docs' markdown links (README, AGENTS, CLAUDE, ...).
     These sit outside the skill tree, so the skill scan never saw them; a link is checked
     against the linking file's own directory (root-relative), anchors ignored (root docs
-    rarely target a cross-file anchor)."""
+    rarely target a cross-file anchor).
+
+    Code spans and fences are blanked first, exactly as `check_body_links` does and for
+    exactly the reason its docstring gives: a link inside backticks is an EXAMPLE, not a
+    reference. This pass read raw lines while its sibling stripped them, so the same text
+    meant two different things depending on which directory it sat in - and a CHANGELOG
+    entry could not describe the link form a guard had learned to accept without failing
+    that guard on its own example."""
     broken: list[str] = []
     for name in ROOT_DOCS:
         path = repo_root / name
         if not path.exists():
             continue
-        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        for i, line in enumerate(_without_code(path.read_text(encoding="utf-8")), 1):
             for tgt in _LINK_RE.findall(line):
                 if not (path.parent / tgt).exists():
                     broken.append(f"{name}:{i} -> {tgt} [file missing]")

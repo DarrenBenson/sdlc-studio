@@ -738,7 +738,7 @@ def criteria_block(type_: str, fields: dict) -> str:
     # THE `ACn` MARKER, because `sdlc_md.AC_BULLET_RE` requires it and a bare `- [ ] <prose>`
     # bullet is invisible to `verify_ac`. The writer and the parser disagreed for 400 bugs and
     # nothing detected it, because the failure mode was exit 0 - 311 of 534 bug files printed a
-    # line byte-comparable to a clean pass (BG0530). A criteria block this module writes must be
+    # line byte-comparable to a clean pass. A criteria block this module writes must be
     # readable by the module that executes it.
     if authored:
         return "\n".join(f"- [ ] **AC{n}** {a}" for n, a in enumerate(authored, 1))

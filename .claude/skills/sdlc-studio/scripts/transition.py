@@ -1639,7 +1639,7 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
         if e.get("hash") and e["hash"] != now:
             stale.append(str(e.get("target")))
     # SURVIVORS, and the vacuous zero. `survivors == 0` over an EMPTY mutant set is not a pass -
-    # it is the same shape as `ac=0 pass=0` reading as a clean pass (BG0530), one instrument
+    # it is the same shape as `ac=0 pass=0` reading as a clean pass, one instrument
     # over. A run is judged on what it applied, never on its own exit status: a run that
     # completes is evidence a run happened and says nothing about what it found.
     applied = survivors = 0

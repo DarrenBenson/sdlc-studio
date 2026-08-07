@@ -689,12 +689,24 @@ class DoctrineTests(unittest.TestCase):
 
         Mutant: drop the clause from the template - the doctrine states a rule the shipped
         contract does not carry, and a consuming project inherits the prose without the bar.
+
+        Second mutant: write the clause with an internal provenance tag (`(US0567)`) or an
+        em dash. The style guard would catch either, but only while somebody runs it over
+        this file; asserting it HERE is what makes the criterion's own selector answer for
+        the whole criterion rather than for half of it. This criterion previously pointed at
+        `bash tools/lint-style.sh`, a whole-repo selector it shared with US0111 AC3 - two
+        criteria that a regression in either would fail together, neither saying which.
         """
         dod = DOD.read_text(encoding="utf-8")
         story = dod[dod.index("## Story"): dod.index("## Delivery batch")]
         self.assertIn("repair", story.lower(), "the Story contract carries no repair clause")
         self.assertIn("mutant", story.lower(),
                       "the clause does not name the evidence the gate demands")
+        # Tool-neutral and untagged: a consuming project copies this file, so an id that means
+        # something only in THIS repo is noise there, and the house style refuses it.
+        tags = re.findall(r"\((?:US|CR|BG|RFC|EP|RV)\d{3,4}[^)]*\)", story)
+        self.assertEqual([], tags, f"the clause carries an internal provenance tag: {tags}")
+        self.assertNotIn("—", story, "the clause carries an em dash")
 
 
     def test_the_named_gate_actually_exists(self) -> None:

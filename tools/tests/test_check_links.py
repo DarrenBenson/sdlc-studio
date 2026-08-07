@@ -644,5 +644,44 @@ class LoadingGuideColumnTests(unittest.TestCase):
                          "a task label was read as a path cell")
 
 
+class RootDocCodeSpanTests(unittest.TestCase):
+    """A link inside backticks is an example in a root doc too.
+
+    `check_root_docs` read raw lines while `check_body_links` blanked code spans and fences,
+    so the identical text was a reference in one directory and an example in another - and a
+    CHANGELOG entry could not quote the link form it was describing. The mutant these hold:
+    revert the loop to `path.read_text().splitlines()`.
+    """
+
+    def _root(self, body: str) -> Path:
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        (d / "README.md").write_text(body, encoding="utf-8")
+        return d
+
+    def test_a_link_inside_a_code_span_is_an_example_not_a_reference(self) -> None:
+        root = self._root("The passes match `[text](file.md#anchor)`, so a bare cell was missed.\n")
+        self.assertEqual([], check_links.check_root_docs(root),
+                         "an example inside backticks was reported as a broken link")
+
+    def test_a_link_inside_a_fence_is_an_example_too(self) -> None:
+        root = self._root("Example:\n\n```markdown\n[Epic](../epics/EP0001-x.md)\n```\n")
+        self.assertEqual([], check_links.check_root_docs(root),
+                         "an example inside a fenced block was reported as a broken link")
+
+    def test_a_live_broken_link_is_still_reported(self) -> None:
+        """The control. Blanking code spans must not blank the links the pass exists to find."""
+        root = self._root("See [the guide](docs/missing-guide.md) for more.\n")
+        broken = check_links.check_root_docs(root)
+        self.assertEqual(1, len(broken), f"the live broken link was lost: {broken}")
+        self.assertIn("docs/missing-guide.md", broken[0])
+
+    def test_the_reported_line_number_still_points_at_the_line(self) -> None:
+        """`_without_code` preserves line COUNT; a pass that collapsed them would misreport."""
+        root = self._root("one\ntwo `[x](a.md)`\nthree\n[real](b.md)\n")
+        broken = check_links.check_root_docs(root)
+        self.assertEqual(["README.md:4 -> b.md [file missing]"], broken)
+
+
 if __name__ == "__main__":
     unittest.main()

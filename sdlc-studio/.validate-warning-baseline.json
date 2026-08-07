@@ -1,5 +1,5 @@
 {
-  "stamped": "2026-08-06",
+  "stamped": "2026-08-07",
   "entries": [
     {
       "id": "BG0138",
@@ -2225,12 +2225,6 @@
       "id": "US0590",
       "rule": "affects-undeclared",
       "target": "tools/tests/test_doctrine_tooling.py",
-      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
-    },
-    {
-      "id": "US0595",
-      "rule": "affects-undeclared",
-      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
     },
     {

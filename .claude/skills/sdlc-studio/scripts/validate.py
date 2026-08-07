@@ -225,6 +225,23 @@ def infer_type(path: Path) -> str | None:
     return None
 
 
+#: A path whose absence is the SYSTEM WORKING, not a broken reference. `changelog.py compose
+#: --apply` folds each fragment into CHANGELOG.md and removes it, so a unit that declared its
+#: own fragment under `Affects` names a file that is guaranteed to be gone after the next cut.
+_CONSUMED_DIRS = ("changelog.d/",)
+
+
+def _is_consumed_fragment(path: str) -> bool:
+    """Is this declared path one the toolchain deletes on purpose?
+
+    Matched on the DIRECTORY the fragment lives in rather than on a name shape: a check keyed
+    to `<ID>.md` would quietly stop covering a fragment named any other way, and the thing that
+    makes it transient is where it sits, not what it is called.
+    """
+    norm = str(path or "").strip().lstrip("./")
+    return any(norm.startswith(d) for d in _CONSUMED_DIRS)
+
+
 def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list[dict]:
     """Return a list of violation dicts for one artifact file. Pass repo_root so a
     project's `.config.yaml` status_vocab extensions count as valid."""
@@ -407,12 +424,18 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
         except Exception as exc:  # noqa: BLE001 - a validate run must never break on this
             sdlc_md.debug("validate.affects_mismatch", exc)
             mism = {"unresolvable": [], "undeclared": []}
-        if mism["unresolvable"] and _terminal:
+        # A changelog fragment is CONSUMED by design: `changelog.py compose --apply` folds it
+        # into CHANGELOG.md and deletes it, so a delivered unit that declared its own fragment
+        # names a path guaranteed to vanish at the next release cut. The warning's own reasoning
+        # - "should exist by now" - is false for exactly this family, and a release cut was
+        # otherwise minting a permanent warning for every unit that had done the right thing.
+        unresolvable = [p for p in mism["unresolvable"] if not _is_consumed_fragment(p)]
+        if unresolvable and _terminal:
             add(SEVERITY_WARNING, "affects-unresolvable",
                 "`Affects` names path(s) not on disk: "
-                f"{', '.join(mism['unresolvable'])} - the unit is {_canon}, so the file it "
+                f"{', '.join(unresolvable)} - the unit is {_canon}, so the file it "
                 "declared should exist by now (a typo, or a claim about code that never landed)",
-                targets=sorted(mism["unresolvable"]))
+                targets=sorted(unresolvable))
         if mism["undeclared"]:
             add(SEVERITY_WARNING, "affects-undeclared",
                 "the artefact's own `Verify:` lines target file(s) its `Affects` omits: "

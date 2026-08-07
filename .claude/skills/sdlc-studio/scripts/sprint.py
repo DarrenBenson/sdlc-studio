@@ -3622,7 +3622,7 @@ def _affects_blocking(repo_root) -> bool:
     """Is an Affects finding a refusal for this project? ONE reader, asked by every path.
 
     `plan` announced "nothing is refused" whatever the mode while `batch add` consulted the mode
-    itself, so the same setting meant two things depending on which verb you ran (BG0521)."""
+    itself, so the same setting meant two things depending on which verb you ran."""
     try:
         return affects_check_mode(repo_root) == "block"
     except Exception as exc:  # noqa: BLE001 - a mode read must not crash the verb it advises
@@ -3642,7 +3642,7 @@ def _render_affects_advisories(data: dict, repo_root=None) -> None:
         return
     # THE MODE DECIDES, and it is read here rather than announced. `block` and `warn` printed a
     # byte-identical "nothing is refused" line, so the config key decided nothing on this path
-    # while `help/sprint.md` said it "decides what a finding does" (BG0521).
+    # while `help/sprint.md` said it "decides what a finding does".
     blocking = _affects_blocking(repo_root or data.get("root") or ".")
     print("  Affects contradicted by the unit's own content"
           + (" - REFUSED under sprint.affects_check: block:" if blocking
@@ -4589,7 +4589,7 @@ _CLOSE_SELF_LANES = ("review-current",)
 #: used to require the colon immediately after the lane name, so it matched an untimed lane and
 #: dropped EVERY timed one - which is all of them in a real run. The close then reported "the
 #: refusal could not be attributed" one line after the gate had named the failing lane plainly,
-#: and burned its rounds retrying (BG0516).
+#: and burned its rounds retrying.
 #:
 #: `\[FAIL\]` stays anchored rather than widening to any bracketed word: a pattern loosened
 #: until it matches anything reports an advisory `[warn]` lane as a failure and refuses a close
@@ -4888,7 +4888,7 @@ def _close_gate(root, retro_id, state):
         # NAME what was seen. "I could not attribute this" and "nothing was found" are different
         # facts, and reporting the second when the first is true sends the reader to the wrong
         # place - which is what happened while the gate had printed `[FAIL] review-current` one
-        # line above (BG0516). Any `[FAIL]`-shaped line the parser could not place is quoted, so
+        # line above. Any `[FAIL]`-shaped line the parser could not place is quoted, so
         # a lane whose format changed is visible rather than silently unattributable.
         unread = unparsed_fail_lines(out)
         saw = ("" if not unread else
@@ -7316,7 +7316,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
     # REFUSED BEFORE THE WRITE. The check used to run after `add_to_batch`, so the operator was
     # told "refused" about a unit the done-gate could already see - a refusal that is a message
     # rather than a refusal. Applied on every output format: the json path skipped the check
-    # entirely, holding a machine caller to a weaker rule than a human one (BG0521).
+    # entirely, holding a machine caller to a weaker rule than a human one.
     if action == "add" and affects_check_mode(root) == "block":
         offenders = list(affects_findings(root, [sdlc_md.norm_id(args.id)]))
         if offenders:

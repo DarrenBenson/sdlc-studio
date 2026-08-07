@@ -8,7 +8,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** sdlc-studio/bugs, sdlc-studio/.verify-lint-baseline.json, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Epic:** EP0174
-> **Depends on:** BG0530
+> **Depends on:** BG0530, US0635
 > **Points:** 3
 > **Persona:** Maya Okafor
 
@@ -45,7 +45,8 @@ claim waits.
 - **When** `verify_ac.py lint --ratchet --bugs` runs over the workspace, deriving the set from
   the resolver at lint time rather than from any count recorded in prose
 - **Then** it reports no intra-record duplicate group in that directory, each having been
-  split into a per-criterion selector on the same terms a story's is
+  split into a per-criterion selector that RESOLVES, on the same terms a story's is - because
+  uniqueness alone is met by a cosmetic split that collects nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_no_intra_record_group_remains_in_bugs
 
 ### AC2: emptying the bug side did not disarm the guard
@@ -63,6 +64,39 @@ claim waits.
 - **Then** it lists no intra-record group in either directory - the burn-down is complete
   rather than half-done, and what remains in the file is cross-record only
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_the_baseline_holds_no_intra_record_group_in_either_directory
+
+## Test-plan notes
+
+Written after a plan review rejected the first draft. The story-side notes in US0635 apply here
+in full; four things are specific to the bug side:
+
+1. **All seven bug-side groups use the `shell` verb**, so `selector_resolves` answers None for
+   every one and `cmd_lint` omits them from its duplicate-report lines entirely. A test that
+   scrapes those lines is green before any work is done. The assertion is over the resolver's
+   intra-record subset for `sdlc-studio/bugs`, and each split selector must resolve - which
+   forces all seven onto a collectable verb rather than a narrower `discover -p`.
+2. **Prove the bug scan is live.** `walk_stories(bugs)` without `prefixes=("BG",)` yields
+   nothing, and this repo has already shipped that exact vacuity. The test asserts a non-zero
+   bug record count and that a known cross-record group - `BG0378 AC3` with `BG0382 AC1` - is
+   still seen.
+3. **Two escapes cost the implementer nothing and must be closed.** `dup_group_key` folds only
+   whitespace and the leading verb, so quoting a pattern or adding `-v` makes two groups of one
+   and reports no duplicate at all; and `_is_manual` drops a group entirely if a criterion is
+   downgraded to `Verify: manual`. Both empty the set without splitting anything.
+4. **AC3's premise is now mechanised**: `Depends on` names US0635. It was carried in prose only,
+   while this unit's `Affects` excludes `sdlc-studio/stories` - so if the sibling had not landed,
+   AC3 would fail on thirteen entries this unit is not permitted to touch.
+
+Nothing here asserts the baseline only shrank; that is `tools/tests/test_baselines_only_shrink.py`,
+which compares against HEAD. The reliance is deliberate rather than an omission.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | change one split criterion under sdlc-studio/bugs to a node id that collects nothing, so the group is unique and vacuous | no intra-record duplicate group remains in a bug |
+| AC2 | widen sdlc-studio/.verify-lint-baseline.json with the fixture's shared selector, so the bug-side ratchet forgives a fresh group | emptying the bug side did not disarm the guard |
+| AC3 | return one intra-record entry to sdlc-studio/.verify-lint-baseline.json after both halves have landed | with both halves landed, the baseline carries no intra-record group at all |
 
 ## Revision History
 

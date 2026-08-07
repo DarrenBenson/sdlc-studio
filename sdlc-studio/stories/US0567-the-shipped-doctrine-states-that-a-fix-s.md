@@ -31,7 +31,7 @@
 - **Given** `templates/core/definition-of-done.md`, which a consuming project copies as its own Done contract
 - **When** it is read
 - **Then** it carries a repair-evidence clause consistent with the shipped gate, phrased tool-neutrally and without an internal provenance tag, so `tools/lint-style.sh` stays green on a consuming-facing file
-- **Verify:** shell bash tools/lint-style.sh
+- **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_the_definition_of_done_carries_a_consistent_clause
 - **Verified:** yes (2026-08-06)
 
 ### AC3: the guard discriminates, and its own Revision History cannot satisfy it
