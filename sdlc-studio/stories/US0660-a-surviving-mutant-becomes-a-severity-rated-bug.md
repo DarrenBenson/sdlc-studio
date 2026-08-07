@@ -5,7 +5,7 @@
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0212
 > **Points:** 5
 > **Persona:** Maya Okafor
@@ -52,6 +52,17 @@
   defaulted - a typo must not silently switch a project's hard bar off
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::MutationEvidenceModeTests::test_the_close_names_the_resolved_mode
 
+### AC5: the close counts the survivors this run let through, by severity
+
+- **Given** a run that filed three survivor bugs at High, Medium and Low
+- **When** the close report is composed
+- **Then** it states the count by severity, derived from the filed artefacts rather than from a
+  tally kept alongside them, because reporting rather than blocking is a trade the operator only
+  gets to make if the thing traded away is visible: a survivor filed and never counted is a
+  survivor silently dropped, which is the outcome blocking was rejected in favour of avoiding,
+  not the outcome that was chosen
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::MutationSurvivorCountTests::test_the_close_counts_survivors_by_severity
+
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
@@ -60,9 +71,11 @@
 | AC2 | collapse the derived severity in mutation.py to a uniform Medium | severity is derived, and says what it read |
 | AC3 | change transition.py to key idempotence on a .local cache rather than the artefact field | re-filing is idempotent |
 | AC4 | change sprint.py to default an unrecognised evidence mode instead of refusing it by name | the run names the mode that held it |
+| AC5 | change sprint_report.py to state a survivor total with no severity split | the close counts the survivors this run let through, by severity |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-07 | sdlc-studio | AC5 added from the plan-time seat review: product found that CR0537's count of survivors by severity was in no unit, so the visibility that bought the reporting trade did not ship with it |

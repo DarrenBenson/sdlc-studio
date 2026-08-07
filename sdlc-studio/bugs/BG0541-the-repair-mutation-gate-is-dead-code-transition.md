@@ -45,10 +45,21 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       naming both the claimed path and the derived one. An empty base ref refuses rather than
       granting the exemption - the fallback fails the worse way here.
       **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::NoSurfaceExemptionCLITests::test_a_claim_over_another_file_is_refused_through_the_command
-- [ ] **AC4:** The guard can fail. Run over `transition.py`'s source with the single line calling
-      `mutation_evidence_lane` removed, the reachability predicate answers False, while answering
-      True over the real source - so a definition nobody calls no longer satisfies it.
-      **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_removing_the_call_reddens_the_guard
+- [ ] **AC4:** The guard can fail, over every lane the doctrine names. The reachability predicate
+      takes its lane set from the code rather than a list typed into the test, and answers False
+      when ANY one of them is unreached - demonstrated by removing each call in turn from a copy
+      of `transition.py`'s source, while answering True over the real source. A predicate pinned
+      to one call site is the enumerated-list defect the registry already records, and would let
+      this same gap reopen one lane along.
+      **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_removing_any_lane_call_reddens_the_guard
+
+- [ ] **AC5:** The lane does not inherit an unrelated cutoff. With `review.test_plan_after` absent
+      - so `_plan_gate_active` is False - a STALE repair under `review.mutation_evidence: block`
+      is still REFUSED by the shipped verb. Today's repair branch sits inside that condition, so
+      a lane hung there would be inert in every project that has not set a test-plan cutoff,
+      while a fixture setting both went green: the dead-lane defect this bug exists to close,
+      recreated one level in.
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceLaneCLITests::test_the_lane_runs_with_no_test_plan_cutoff_set
 
 ## Test Plan
 
@@ -57,10 +68,12 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
 | AC1 | delete the `mutation_evidence_lane` call from `_pre_write_gates` in transition.py - the state of the tree today | The shipped verb reaches the gate. A bug whose mutation record is STALE against the |
 | AC2 | change transition.py to map the report mode onto the blocking arm | The default mode reports and proceeds. With no `review.mutation_evidence` set, the |
 | AC3 | revert transition.py to re-deriving the exemption from the record's own declared paths | The exemption is re-derived from the diff, not from its own paths. A repair whose |
-| AC4 | widen the wiring test in tools/tests/test_check_spec_claims.py so an unreached function still counts as wired | The guard can fail. Run over `transition.py`'s source with the single line calling |
+| AC4 | narrow the predicate in tools/tests/test_check_spec_claims.py to one hard-coded lane name, so an unreached sibling still counts as wired | The guard can fail, over every lane the doctrine names |
+| AC5 | nest the `mutation_evidence_lane` call inside the existing `_plan_gate_active` condition in transition.py | The lane does not inherit an unrelated cutoff |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Filed |
+| 2026-08-07 | sdlc-studio | AC5 added and AC4 widened, both from the plan-time seat review: engineering found the repair branch sits inside `_plan_gate_active`, so a lane hung there is inert wherever `review.test_plan_after` is unset; qa found the reachability predicate covered one call site, so the same gap could reopen one lane along |
