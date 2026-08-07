@@ -385,6 +385,26 @@ class AdoptCutoffTests(unittest.TestCase):
             self.assertEqual(summ["exempt"], 1)
             self.assertEqual(summ["nonconformant"], 1)
 
+    def test_post_cutoff_story_is_still_judged(self) -> None:
+        """The other half of the cutoff, asserted on its own selector (US0635).
+
+        AC1's test carried both claims, so the exemption and the judgement shared one verifier
+        and a regression in either failed both without saying which. This one asserts only that
+        a story AT OR AFTER the cutoff is still judged, still non-conformant, and still counted
+        as such - the direction that matters, because a cutoff that exempts everything is the
+        failure a pre-cutoff assertion alone cannot see.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 10, epic=False, ac=False)
+            self._config(root, "conformance:\n  adopt_after: US0005\n")
+            units = _units(root)
+            self.assertFalse(units["US0010"]["exempt"])
+            self.assertFalse(units["US0010"]["conformant"])
+            self.assertTrue(units["US0010"]["missing"],
+                            "a judged non-conformant story named nothing missing")
+            self.assertEqual(_load().detect_conformance(root)["summary"]["nonconformant"], 1)
+
     def test_no_cutoff_judges_all(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

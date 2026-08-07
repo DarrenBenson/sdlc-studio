@@ -27,7 +27,7 @@ layouts were never normalised - and this sprint had to layout-check every append
 - **Given** the test suite under `.claude/skills/sdlc-studio/scripts/tests/`
 - **When** any test file contains `if __name__`
 - **Then** nothing but the guard body follows it (no classes or functions after)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py -k guard
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::GuardAtEofTests::test_every_main_guard_is_the_last_statement
 - **Verified:** yes (2026-07-10)
 
 ### AC2: direct-run counts equal discover counts
@@ -43,7 +43,7 @@ layouts were never normalised - and this sprint had to layout-check every append
 - **Given** a future test file with a class after its guard
 - **When** the suite runs
 - **Then** a hygiene test fails naming the file
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py -k guard
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::GuardAtEofTests::test_a_class_after_the_guard_is_reported_by_filename
 - **Verified:** yes (2026-07-10)
 
 ## Revision History

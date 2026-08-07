@@ -1,6 +1,6 @@
 # US0635: The thirteen story-side duplicate Verify groups are split into discriminating selectors
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0445
 > **Supersedes:** US0482
 > **Created:** 2026-08-03
@@ -49,6 +49,7 @@ criteria - a selector that discriminates by accident is the debt this pays down.
   split into a per-criterion selector that RESOLVES - `selector_resolves` answers True, not
   None and not False - because uniqueness alone is met by appending junk that collects nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_no_intra_record_group_remains_in_stories
+- **Verified:** yes (2026-08-07)
 
 ### AC2: the baseline no longer carries the story-side entries, and only shrank
 
@@ -59,6 +60,7 @@ criteria - a selector that discriminates by accident is the debt this pays down.
   compared against the file at this story's base ref, so the direction is proven rather than
   asserted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_the_story_side_baseline_entries_are_gone_and_none_were_added
+- **Verified:** yes (2026-08-07)
 
 ### AC3: emptying the story side did not disarm the guard
 
@@ -67,6 +69,7 @@ criteria - a selector that discriminates by accident is the debt this pays down.
 - **Then** it refuses, proving the entries were removed by splitting the selectors rather than
   by weakening the check that protects them
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_a_fresh_duplicate_in_a_story_is_still_refused
+- **Verified:** yes (2026-08-07)
 
 ## Test-plan notes
 

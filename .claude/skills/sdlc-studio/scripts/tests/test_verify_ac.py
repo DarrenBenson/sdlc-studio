@@ -10,8 +10,10 @@ import contextlib
 import importlib.util
 import io
 import json
+import re
 import shutil
 import sys
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -3409,6 +3411,201 @@ class RatchetTests(unittest.TestCase):
         v = verify_ac.dup_ratchet(stale, self._paths(stale))
         self.assertFalse(v["ok"], "a stale entry reported clean")
         self.assertTrue(v["stale"])
+
+
+#: The records whose intra-record groups this pair split. Named, so the resolvability sweep
+#: answers for the selectors that were WRITTEN rather than auditing the whole corpus.
+SPLIT_STORIES = ("US0025", "US0111", "US0113", "US0114", "US0123", "US0124", "US0166",
+                 "US0167", "US0170", "US0247", "US0266", "US0268", "US0392")
+SPLIT_BUGS = ("BG0239", "BG0240", "BG0241", "BG0242", "BG0245", "BG0251")
+
+
+#: The twenty intra-record baseline entries US0635 and US0636 removed. A literal, so the
+#: direction is proven against something committed rather than against a run-local file.
+BURNED_DOWN_KEYS = (
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::ProseWriterSweepTests::test_the_four_cr0392_writers_are_now_safe",
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::AdoptCutoffTests::test_pre_cutoff_story_is_exempt",
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k HookEnabled",
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py -k guard",
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_briefing_is_generated_from_definitions",
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::TwoBacklogStatusTests",
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::UndecomposedDriftTests",
+    "pytest tools/tests/test_lint_style.py::ProvenanceGuardTests",
+    "pytest tools/tests/test_precommit_lane_order.py",
+    "shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_conformance.SprintReviewCritiquedTests",
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_backlog_triage.py -k Duplicate",
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_close_guard.py",
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_engagement_floor.py",
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_loop_guard.py",
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_mutation.py",
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py -k TriageInPlan",
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_verify_ac.py",
+    "shell python3 -m unittest discover -s tools/tests -p test_precommit_budget_recording.py",
+    "shell python3 -m unittest discover -s tools/tests -p test_skill_tests_env.py",
+    "shell python3 -m unittest tools.tests.test_precommit_floor_pending",
+)
+
+
+class DuplicateBurndownTests(unittest.TestCase):
+    """US0635/US0636. Two ACs sharing a selector cannot both discriminate: a regression in
+    either fails both, and neither says which.
+
+    The assertions are over the RESOLVER's intra-record subset, never over `lint --ratchet`'s
+    exit code - that verdict answers for the whole corpus including cross-record debt this pair
+    does not touch, so a test pinned to it is green or red for reasons outside these units.
+
+    Every emptiness assertion is preceded by a liveness one. `walk_stories` yields nothing when
+    it is pointed at the wrong prefix, and `selector_resolves` answers None when the runner is
+    absent from PATH - either way "no group remains" goes green over a scan that saw nothing,
+    which is the failure this whole file exists to refuse.
+    """
+
+    #: The repo root. Five levels up from `.../.claude/skills/sdlc-studio/scripts/tests/`, and
+    #: asserted rather than counted: an off-by-one here would point the whole class at a
+    #: directory holding no workspace, and every emptiness assertion would pass over nothing.
+    ROOT = Path(__file__).resolve().parents[5]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if not (cls.ROOT / "sdlc-studio" / "stories").is_dir():
+            raise unittest.SkipTest(
+                f"no workspace under {cls.ROOT} - this class reads the LIVE corpus and would "
+                f"otherwise report a burn-down complete over a directory that is not there")
+
+    def _groups(self, kind: str):
+        paths = sorted((self.ROOT / "sdlc-studio" / kind).glob("*.md"))
+        self.assertGreater(len(paths), 100, f"the {kind} scan collected almost nothing")
+        groups = verify_ac.duplicate_verifiers(paths)
+        intra = [g for g in groups if len({a.split()[0] for a in g["acs"]}) == 1]
+        return groups, intra
+
+    def _selectors(self, kind: str, ids: tuple) -> list[str]:
+        """The Verify lines of the records this burn-down SPLIT, not of the whole corpus.
+
+        Scoped deliberately. The criterion is that the selectors written here resolve; sweeping
+        every record in the tree measures 1,400 lines this pair never touched and turns a
+        specific claim into an unrelated corpus audit.
+        """
+        out = []
+        for uid in ids:
+            for p in (self.ROOT / "sdlc-studio" / kind).glob(f"{uid}-*.md"):
+                for line in verify_ac.sdlc_md.criteria_section(
+                        p.read_text(encoding="utf-8")).splitlines():
+                    m = re.search(r"\*\*Verify:\*\*\s*(.+?)\s*$", line)
+                    if m:
+                        out.append(m.group(1))
+        return out
+
+    def test_no_intra_record_group_remains_in_stories(self) -> None:
+        """Mutant: point one split criterion at a node id that collects nothing.
+
+        Uniqueness alone is met by appending junk - the groups empty, the baseline entries go
+        stale and get removed, and nothing was split. So every story-side selector must RESOLVE.
+        """
+        groups, intra = self._groups("stories")
+        self.assertTrue(groups, "the resolver found no groups at all - the scan is not live")
+        self.assertEqual([], [g["acs"] for g in intra])
+        unresolvable = [s for s in self._selectors("stories", SPLIT_STORIES)
+                        if s.startswith("pytest ")
+                        and verify_ac.selector_resolves(s, cwd=str(self.ROOT)) is False]
+        self.assertEqual([], unresolvable,
+                         f"story selectors that resolve to nothing: {unresolvable[:5]}")
+
+    def test_the_story_side_baseline_entries_are_gone_and_none_were_added(self) -> None:
+        """Mutant: return a story-side entry to the baseline, so the set grew rather than shrank.
+
+        Pinned to COMMITTED state, not to `run_state.base_ref` - that reads an untracked
+        run-local file and answers empty once the run closes, so a permanent suite test would
+        lose its oracle.
+        """
+        cur = json.loads((self.ROOT / "sdlc-studio" / ".verify-lint-baseline.json")
+                         .read_text(encoding="utf-8"))["groups"]
+        self.assertTrue(cur, "the baseline parsed empty - the comparison would be vacuous")
+        intra = [k for k, v in cur.items() if len({a.split()[0] for a in v["acs"]}) == 1]
+        self.assertEqual([], intra, f"intra-record entries still baselined: {intra[:5]}")
+        # The twenty keys this burn-down removed, as LITERALS. Pinned to committed state rather
+        # than to `run_state.base_ref`, which reads an untracked run-local file and answers
+        # empty the moment the run closes - a permanent suite test cannot keep that oracle.
+        back = sorted(set(BURNED_DOWN_KEYS) & set(cur))
+        self.assertEqual([], back, f"a burned-down entry returned to the baseline: {back[:3]}")
+        self.assertEqual(20, len(BURNED_DOWN_KEYS),
+                         "the pinned burn-down set changed size; it is a record of what landed")
+
+    def test_a_fresh_duplicate_in_a_story_is_still_refused(self) -> None:
+        """Mutant: widen the shipped baseline with the fixture's selector.
+
+        Run over the LIVE story paths plus one planted record, so the SHIPPED baseline is the
+        surface. Every sibling ratchet test builds its own tmp baseline, against which editing
+        the shipped file changes nothing at all.
+        """
+        shared = "pytest tests/test_planted.py::PlantedTests::test_planted_and_shared"
+        with tempfile.TemporaryDirectory() as d:
+            plant = Path(d) / "US9999-planted.md"
+            plant.write_text(
+                "# US9999: planted\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+                f"### AC1: a\n\n- **Verify:** {shared}\n\n### AC2: b\n\n"
+                f"- **Verify:** {shared}\n", encoding="utf-8")
+            live = sorted((self.ROOT / "sdlc-studio" / "stories").glob("*.md"))
+            verdict = verify_ac.dup_ratchet(self.ROOT, live + [plant])
+            control = verify_ac.dup_ratchet(self.ROOT, live)
+        # `dup_ratchet` answers not-ok for at least five reasons, and a non-ok BASELINE returns
+        # every live group as `new` - so a bare assertFalse(ok) passes for the wrong one.
+        self.assertEqual("ok", control.get("state"),
+                         f"the control run is already not-ok: {control.get('state')}")
+        self.assertEqual("ok", verdict.get("state"))
+        self.assertFalse(verdict["ok"], "the planted duplicate was not refused")
+        self.assertIn(shared, verdict["new"], "the refusal did not name the planted selector")
+
+    def test_no_intra_record_group_remains_in_bugs(self) -> None:
+        """Mutant: point one split criterion under sdlc-studio/bugs at a node id collecting
+        nothing. All seven bug-side groups were `shell ... discover`, which `selector_resolves`
+        answers None for - so a cosmetic split leaves them unanswerable and invisible."""
+        groups, intra = self._groups("bugs")
+        self.assertTrue(groups, "the bug scan found no groups at all - it is not live")
+        self.assertTrue(any(len({a.split()[0] for a in g["acs"]}) > 1 for g in groups),
+                        "no cross-record group was seen, so the scan is not reaching the corpus")
+        self.assertEqual([], [g["acs"] for g in intra])
+        unresolvable = [s for s in self._selectors("bugs", SPLIT_BUGS)
+                        if s.startswith("pytest ")
+                        and verify_ac.selector_resolves(s, cwd=str(self.ROOT)) is False]
+        self.assertEqual([], unresolvable,
+                         f"bug selectors that resolve to nothing: {unresolvable[:5]}")
+
+    def test_a_fresh_duplicate_in_a_bug_is_still_refused(self) -> None:
+        """The bug-side half, on the same terms - live paths, shipped baseline, state asserted
+        alongside the named selector, and a control run without the plant."""
+        shared = "pytest tests/test_planted.py::PlantedTests::test_planted_bug_side"
+        with tempfile.TemporaryDirectory() as d:
+            plant = Path(d) / "BG9999-planted.md"
+            plant.write_text(
+                "# BG9999: planted\n\n> **Status:** Open\n\n## Acceptance Criteria\n\n"
+                f"- [ ] **AC1** a\n  **Verify:** {shared}\n"
+                f"- [ ] **AC2** b\n  **Verify:** {shared}\n", encoding="utf-8")
+            live = sorted((self.ROOT / "sdlc-studio" / "bugs").glob("*.md"))
+            verdict = verify_ac.dup_ratchet(self.ROOT, live + [plant])
+            control = verify_ac.dup_ratchet(self.ROOT, live)
+        self.assertEqual("ok", control.get("state"))
+        self.assertEqual("ok", verdict.get("state"))
+        self.assertFalse(verdict["ok"], "the planted bug-side duplicate was not refused")
+        self.assertIn(shared, verdict["new"])
+
+    def test_the_baseline_holds_no_intra_record_group_in_either_directory(self) -> None:
+        """Mutant: return one intra-record entry to the baseline after both halves have landed.
+
+        The closing claim: what remains is cross-record ONLY. Asserted with the surviving
+        cross-record entries required present, so it cannot pass over a baseline never read.
+        """
+        cur = json.loads((self.ROOT / "sdlc-studio" / ".verify-lint-baseline.json")
+                         .read_text(encoding="utf-8"))["groups"]
+        self.assertTrue(cur, "the baseline parsed empty, so this assertion would be vacuous")
+        by_kind = {"intra": [], "cross": []}
+        for k, v in cur.items():
+            by_kind["intra" if len({a.split()[0] for a in v["acs"]}) == 1 else "cross"].append(k)
+        self.assertEqual([], by_kind["intra"],
+                         f"intra-record debt still baselined: {by_kind['intra'][:5]}")
+        self.assertTrue(by_kind["cross"],
+                        "no cross-record entry survives, so the baseline was emptied rather "
+                        "than burned down - the guard would have nothing left to enforce from")
 
 
 class BaselineSchemaTests(unittest.TestCase):

@@ -1,6 +1,6 @@
 # US0636: The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0445
 > **Supersedes:** US0482
 > **Created:** 2026-08-03
@@ -48,6 +48,7 @@ had not landed AC3 would fail on thirteen entries this unit is not permitted to 
   split into a per-criterion selector that RESOLVES, on the same terms a story's is - because
   uniqueness alone is met by a cosmetic split that collects nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_no_intra_record_group_remains_in_bugs
+- **Verified:** yes (2026-08-07)
 
 ### AC2: emptying the bug side did not disarm the guard
 
@@ -57,6 +58,7 @@ had not landed AC3 would fail on thirteen entries this unit is not permitted to 
   and the same live paths WITHOUT the fixture answer ok, the control - proving the entries were
   removed by splitting the selectors rather than by weakening the check that protects them
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_a_fresh_duplicate_in_a_bug_is_still_refused
+- **Verified:** yes (2026-08-07)
 
 ### AC3: with both halves landed, the baseline carries no intra-record group at all
 
@@ -65,6 +67,7 @@ had not landed AC3 would fail on thirteen entries this unit is not permitted to 
 - **Then** it lists no intra-record group in either directory - the burn-down is complete
   rather than half-done, and what remains in the file is cross-record only
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_the_baseline_holds_no_intra_record_group_in_either_directory
+- **Verified:** yes (2026-08-07)
 
 ## Test-plan notes
 

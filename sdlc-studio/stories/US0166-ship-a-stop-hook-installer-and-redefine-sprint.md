@@ -4,7 +4,7 @@
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/hooks/close_guard.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/hooks/close_guard.py, .claude/skills/sdlc-studio/scripts/tests/test_close_guard.py
 > **Epic:** EP0046
 > **Points:** 5
 
@@ -22,7 +22,7 @@
 - **When** the `close_guard.py` Stop hook evaluates the turn-end event
 - **Then** it returns a `block` decision naming the owed units; a covered, unbaselined, or
   already-blocked (`stop_hook_active`) turn is allowed
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_close_guard.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_guard.py::CloseGuardTests::test_blocks_when_a_close_is_owed
 - **Verified:** yes (2026-07-16)
 
 ### AC2: default-allow on the hook's own bug - a parse error never blocks a turn
@@ -31,7 +31,7 @@
 - **When** the hook reads the event
 - **Then** it parses to an empty event and never blocks on that error (it falls back to the process
   cwd; if that tree genuinely owes a close it may block - that is the feature, not a bug)
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_close_guard.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_guard.py::CloseGuardTests::test_empty_event_falls_back_to_cwd_and_does_not_block_on_its_own
 - **Verified:** yes (2026-07-16)
 
 ### AC3: the doctrine records that a sprint is done only when the close gate is green, never at "deployed"

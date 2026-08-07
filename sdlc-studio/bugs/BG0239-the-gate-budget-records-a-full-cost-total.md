@@ -17,11 +17,11 @@ The pre-commit hook sets `suites_ran`=1 once the suite lane has been invoked, no
 
 - [x] **AC1:** A commit whose test module failed to import does not enter the budget series, and
       the skip is announced rather than silent. Driven through the REAL hook in a throwaway repo.
-      **Verify:** shell python3 -m unittest discover -s tools/tests -p test_precommit_budget_recording.py
+      **Verify:** pytest tools/tests/test_precommit_budget_recording.py::BudgetRecordingTests::test_a_suite_that_failed_to_import_is_not_recorded_as_this_commit_s_cost
 - [x] **AC2:** A suite that ran its whole scope and FAILED is still recorded, because the cost was
       paid whatever the verdict. This is the positive control that stops AC1 being satisfied by a
       hook that simply records nothing.
-      **Verify:** shell python3 -m unittest discover -s tools/tests -p test_precommit_budget_recording.py
+      **Verify:** pytest tools/tests/test_precommit_budget_recording.py::BudgetRecordingTests::test_a_suite_that_ran_its_scope_and_FAILED_is_still_recorded
 - [x] **AC3:** The scope decision is taken on a loader-error fact and a test-count floor, never on
       the run's duration, so a genuine speed-up is never discarded as implausible. The floor is
       pinned two-sided so moving it fails rather than silently widening what counts as a full run.

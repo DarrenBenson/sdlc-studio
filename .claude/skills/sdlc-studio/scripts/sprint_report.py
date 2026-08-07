@@ -989,6 +989,9 @@ CHECKLIST = (
     {"id": "scope-creep", "kind": FIGURE, "authority": DERIVED,
      "title": "Scope creep, as a count and a ratio", "command": "sprint report",
      "resolver": "_ck_scope_creep"},
+    {"id": "coverage-consistency", "kind": FIGURE, "authority": DERIVED,
+     "title": "Coverage computed once, and the two readings agree",
+     "command": "sprint report", "resolver": "_ck_coverage_consistency"},
     {"id": "review-attribution", "kind": FIGURE, "authority": DERIVED,
      "title": "Who reviewed what, under which seat, over how many lenses",
      "command": "critic record", "resolver": "_ck_review_attribution"},
@@ -1167,6 +1170,67 @@ def _verdict_entries(ctx: dict) -> list[tuple]:
     return entries
 
 
+def _coverage(ctx: dict) -> dict | None:
+    """THE coverage reading, computed once and cached on the context.
+
+    One question - is this unit covered by an independent pass? - was being answered by three
+    computations that could disagree, and did: one close reported `9/9 covered`, `0 covered, 37
+    uncovered` and `71 recorded passes` about the same batch. A report that contradicts itself
+    is a fact about the report, and the reader has no way to tell which number to believe.
+
+    `sprint.review_coverage` is the canonical one: it is the richest (per-unit verdict,
+    adversarial evidence, batch review, each proving independence the same way) and it is
+    already what the close chain refuses on. Making the checklist rows read it means the close
+    and the page it prints cannot diverge.
+
+    None is not an empty reading. An unresolvable answer must not read as "nothing is covered",
+    which would refuse every close for a reason that is really "we could not look".
+    """
+    if "_coverage" in ctx:
+        return ctx["_coverage"]
+    try:
+        import sprint  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        out = sprint.review_coverage(ctx["root"], list(ctx.get("units") or []))
+    except Exception as exc:  # noqa: BLE001 - a report must not die on a ledger read
+        sdlc_md.debug("sprint_report._coverage", exc)
+        out = None
+    ctx["_coverage"] = out
+    return out
+
+
+def _ck_coverage_consistency(ctx: dict) -> tuple:
+    """Do the two readings of coverage agree?
+
+    The shared reading is the authority; `critic.coverage_counts` is the independent one the
+    attribution row's breakdown rests on. If they disagree, the report is contradicting itself
+    and NOTHING previously noticed - so the disagreement is the finding, named with both
+    figures, rather than a silently-picked winner.
+    """
+    units = list(ctx.get("units") or [])
+    if not units:
+        return (ANSWERED, "no units", "")
+    cov = _coverage(ctx)
+    if cov is None:
+        return (UNANSWERED, "unreadable",
+                "the coverage reading could not be taken, so the two cannot be compared - "
+                "which is not the same as their agreeing")
+    shared = sum(1 for u in units if (cov.get(u) or {}).get("covered"))
+    try:
+        import critic  # noqa: PLC0415
+        states = critic.coverage_counts(ctx["root"], units)
+        other = len(states[critic.COVERAGE_APPROVED]) + len(states[critic.COVERAGE_REPAIRED])
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint_report._ck_coverage_consistency", exc)
+        return (UNANSWERED, "unreadable", f"the verdict ledger could not be read ({exc})")
+    if shared != other:
+        return (UNANSWERED, f"{shared} vs {other} of {len(units)}",
+                f"two readings of one question disagree: the shared reading says {shared} "
+                f"unit(s) covered, the verdict ledger says {other}. A report contradicting "
+                f"itself is a fact about the report - decide which lane is wrong before "
+                f"believing either figure")
+    return (ANSWERED, f"{shared}/{len(units)} covered, both readings agree", "")
+
+
 def _ck_closing_review(ctx: dict) -> tuple:
     """Does an APPROVE cover EVERY unit in the batch?
 
@@ -1186,8 +1250,17 @@ def _ck_closing_review(ctx: dict) -> tuple:
         for unit in units:
             latest[unit] = verdict
     units = [sdlc_md.norm_id(u) for u in (ctx.get("units") or [])]
-    rejected = [u for u in units if latest.get(u) and latest[u] != _APPROVE]
-    unreviewed = [u for u in units if not latest.get(u)]
+    # WHETHER a unit is covered comes from the shared reading; the verdict fold only says WHY,
+    # because `review_coverage` reports a rejection and an absence identically and the operator
+    # needs those apart. One computation decides, the other explains - never two deciding.
+    cov = _coverage(ctx)
+    if cov is None:
+        return (NOT_RUN, "coverage unreadable",
+                "the coverage reading could not be taken, so this row cannot say whether the "
+                "batch was reviewed - which is not the same as its not having been")
+    open_units = [u for u in units if not (cov.get(u) or {}).get("covered")]
+    rejected = [u for u in open_units if latest.get(u) and latest[u] != _APPROVE]
+    unreviewed = [u for u in open_units if not latest.get(u)]
     rounds = len(ctx.get("review_rounds") or [])
     if rejected or unreviewed:
         # The VALUE has to say which of the two outstanding states this is. Outstanding because
@@ -1550,10 +1623,19 @@ def _ck_review_attribution(ctx: dict) -> tuple:
     # that hides the one real gap inside a crowd of false ones.
     states = critic.coverage_counts(ctx["root"], units)
     covered, rejected, uncovered, reviewers = [], [], [], set()
+    # UNCOVERED comes from the shared reading, not from a second walk of the verdict ledger.
+    # This row and the closing-review row above were each deciding the same question their own
+    # way, which is how one close reported three different answers to it.
+    shared = _coverage(ctx) or {}
     for uid in units:
         v = critic.verdict_for(ctx["root"], uid)
-        if not v:
+        if not (shared.get(uid) or {}).get("covered") and not v:
             uncovered.append(uid)
+            continue
+        if not v:
+            # Covered by a lane that carries no per-unit verdict (adversarial evidence, or a
+            # batch review naming it). Real coverage, and it must not be reported as a gap.
+            covered.append(f"{uid} by {(shared.get(uid) or {}).get('by') or 'an independent pass'}")
             continue
         who = (v.get("reviewer") or "").strip()
         reviewers.add(who)

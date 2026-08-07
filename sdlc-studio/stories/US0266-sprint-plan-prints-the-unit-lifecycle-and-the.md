@@ -46,7 +46,7 @@ drifts, which is what CR0361's third acceptance criterion forbids.
 - **When** a check is added to or removed from that set
 - **Then** the briefing changes with it, because it is composed from the definitions - a test
   fails if the briefing carries a hand-maintained list of check names
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_briefing_is_generated_from_definitions
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GateBriefingTests::test_briefing_is_generated_from_definitions
 - **Verified:** yes (2026-07-19)
 
 ### AC3: the briefing covers every refusal the SKILL's own gates can raise for the batch
@@ -55,7 +55,7 @@ drifts, which is what CR0361's third acceptance criterion forbids.
 - **When** the briefing is produced
 - **Then** every such requirement is named per unit, and the commit-path checks the skill
   defines are carried on the briefing in full
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_briefing_is_generated_from_definitions
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GateBriefingTests::test_the_briefing_carries_every_commit_check_in_full
 - **Verified:** yes (2026-07-19)
 
 > **Amended at build time, and why.** This AC first named the five refusal classes recorded

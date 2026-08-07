@@ -4,7 +4,7 @@
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/backlog_triage.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py
 > **Epic:** EP0047
 > **Points:** 5
 
@@ -21,7 +21,7 @@
 - **Given** a backlog with a duplicate pair (shared Affects + similar title/summary) and a subsumed pair (one Affects a proper subset of the other)
 - **When** `backlog_triage.triage` runs
 - **Then** the first is reported `duplicate`, the second `subsumed`, and unrelated items are not flagged
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_backlog_triage.py -k Duplicate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::DuplicateLensTests::test_same_file_and_similar_wording_flags_duplicate
 - **Verified:** yes (2026-07-16)
 
 ### AC2: no shared file or dissimilar wording is not a duplicate
@@ -29,7 +29,7 @@
 - **Given** two items on different files, or on one file but unrelated wording
 - **When** triage runs
 - **Then** neither is flagged - the lens does not cry wolf on a clean backlog
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_backlog_triage.py -k Duplicate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::DuplicateLensTests::test_different_files_no_duplicate
 - **Verified:** yes (2026-07-16)
 
 ## Revision History

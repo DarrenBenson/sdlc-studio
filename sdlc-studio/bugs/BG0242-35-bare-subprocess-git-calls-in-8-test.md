@@ -9,7 +9,7 @@
 > re-run rather than asserted.
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint.py,.claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py,.claude/skills/sdlc-studio/scripts/tests/test_mutation.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint.py,.claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py,.claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -55,9 +55,9 @@ while a third of the hole remains.
 ## Acceptance Criteria
 
 - [x] **AC1:** Every git call site in the eight named test modules routes through the confined helper: the census run with a pattern that catches the `subprocess as _sp` alias reports zero unconfined sites.
-      **Verify:** shell python3 -m unittest discover -s tools/tests -p test_skill_tests_env.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_no_module_calls_git_without_a_confined_environment
 - [x] **AC2:** The sweep still FAILS on a newly planted unconfined call, including one written through an import alias, so the guard cannot pass by being blind.
-      **Verify:** shell python3 -m unittest discover -s tools/tests -p test_skill_tests_env.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_sweep_names_the_module_holding_a_planted_call
 - [x] **AC3:** Where a module already had a confined helper, the bare calls route through THAT helper rather than a second one being added alongside it.
       **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py
 

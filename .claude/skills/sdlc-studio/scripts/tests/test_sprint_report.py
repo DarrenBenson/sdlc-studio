@@ -1031,6 +1031,92 @@ class ChecklistBase(unittest.TestCase):
         return next(r for r in ck["items"] if r["id"] == item_id)
 
 
+class CoverageConsistencyTests(ChecklistBase):
+    """US0596. One question - is this unit covered? - was answered by three computations that
+    could disagree, and did: one close reported `9/9 covered`, `0 covered, 37 uncovered` and
+    `71 recorded passes` about the same batch.
+
+    The fixture makes the readings DIVERGE. On two units with one clean APPROVE each every
+    recompute agrees, "recompute its own figure" changes no output, and the test measures
+    nothing - so the batch here is a strict subset of the report's units, which is one of the
+    three lane differences that produced the original contradiction.
+    """
+
+    def _reviews(self, rows: list[tuple]) -> None:
+        path = self.root / "sdlc-studio" / "reviews"
+        path.mkdir(parents=True, exist_ok=True)
+        body = ["| Base | Reviewer | Author | Verdict | Date | Units | Findings |",
+                "| --- | --- | --- | --- | --- | --- | --- |"]
+        for verdict, units, date in rows:
+            body.append(f"| abc123 | qa; seat; r | agent | {verdict} | {date} | {units} | none |")
+        (path / "sprint-review-record.md").write_text(
+            "# Sprint reviews\n\n" + "\n".join(body) + "\n", encoding="utf-8")
+
+    def test_coverage_has_one_source(self) -> None:
+        """Mutant: revert `_ck_closing_review` to counting `ctx['sprint_reviews']` itself.
+
+        The number is asserted, not merely the equality of two calls - two calls agreeing is
+        satisfied by both being wrong in the same way.
+        """
+        self._reviews([("APPROVE", "US0001", "2026-01-02")])
+        ck = self._ck()
+        row = self._row(ck, "closing-review")
+        self.assertEqual(sr.NOT_RUN, row["state"], row["detail"])
+        self.assertIn("US0002", row["detail"], "the uncovered unit was not named")
+        self.assertIn("1", self._row(ck, "coverage-consistency")["value"])
+
+    def test_a_disagreement_is_outstanding(self) -> None:
+        """Mutant: drop one of the two readings from the row's value.
+
+        Both figures must appear: a row saying the readings disagree without saying WHAT they
+        each said leaves the reader unable to decide which lane is wrong. And `_resolve_item`
+        turns any resolver exception into the same UNANSWERED, so a state-only assertion is
+        satisfied by a resolver that crashes.
+        """
+        with mock.patch.object(sr, "_coverage", return_value={"US0001": {"covered": True},
+                                                              "US0002": {"covered": True}}):
+            self._run()
+            ck = sr.checklist(self.root, "RETRO9100")
+        row = self._row(ck, "coverage-consistency")
+        self.assertEqual(sr.UNANSWERED, row["state"])
+        self.assertIn("2", row["value"])
+        self.assertIn("0", row["value"])
+        self.assertIn("coverage-consistency", ck["outstanding"])
+
+    def test_the_shipped_checklist_command_carries_the_coverage_row(self) -> None:
+        """The SHIPPED entry point. `checklist()` could compute the row perfectly while the
+        command never printed it, and the command is what the close and a reader both act on."""
+        self._reviews([("APPROVE", "US0001", "2026-01-02")])
+        self._run()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = sr.main(["--root", str(self.root), "checklist", "--id", "RETRO9100"])
+        out = buf.getvalue()
+        self.assertIn("Coverage computed once", out)
+        # The DISCRIMINATING fact, not merely that the row printed. Only US0001 is approved, so
+        # the shared reading must leave US0002 uncovered and the command must say so - an
+        # implementation that clears the row whenever any review row exists prints the heading
+        # just as happily.
+        # Assert what ONLY the closing-review row says. `US0002` alone does not discriminate:
+        # the attribution row names it too, so an implementation that clears the closing review
+        # whenever any review row exists still prints the id and still prints the heading.
+        line = next(ln for ln in out.splitlines() if "Closing full-diff review" in ln)
+        self.assertTrue(line.startswith("[NOT RUN]"),
+                        f"the closing review cleared on a batch one unit of which was "
+                        f"reviewed: {line}")
+        self.assertIn("unreviewed", line)
+        self.assertEqual(1, rc, "the uncovered unit did not hold the close")
+
+    def test_two_agreeing_readings_are_answered(self) -> None:
+        """The positive control. Without it a resolver hard-coded to the disagreement state
+        kills neither mutant - the always-refuses guard."""
+        ck = self._ck()
+        row = self._row(ck, "coverage-consistency")
+        self.assertEqual(sr.ANSWERED, row["state"], row["detail"])
+        self.assertIn("agree", row["value"])
+        self.assertNotIn("coverage-consistency", ck["outstanding"])
+
+
 class ChecklistWindowTests(ChecklistBase):
     """US0591. An item whose window shut before the close was being raised where a waiver was
     its only exit, and a gate whose only exit at firing time is a waiver is a receipt."""

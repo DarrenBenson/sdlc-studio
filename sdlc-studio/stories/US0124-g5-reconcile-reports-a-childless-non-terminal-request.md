@@ -21,7 +21,7 @@
 - **Given** a CR or RFC accepted into the workflow (an Approved/In-Progress CR, an In-Review RFC), non-terminal, that nothing names as its Parent
 - **When** `reconcile detect` runs
 - **Then** it reports an `undecomposed` drift item for that request
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::UndecomposedDriftTests
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::UndecomposedDriftTests::test_accepted_childless_request_is_flagged
 - **Verified:** yes (2026-07-15)
 
 ### AC2: intake, parked, decomposed and terminal requests are not flagged
@@ -29,7 +29,7 @@
 - **Given** a still-`Proposed`/`Draft` request (pre-triage intake), a `Deferred`/`Blocked` request (parked), a request with at least one child, and a terminal (Complete/Rejected) request with none
 - **When** `reconcile detect` runs
 - **Then** none is reported UNDECOMPOSED - the check is specific to a live, accepted, childless request, so a healthy backlog leaves `reconcile detect` clean
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::UndecomposedDriftTests
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::UndecomposedDriftTests::test_a_healthy_backlog_is_clean
 - **Verified:** yes (2026-07-15)
 
 ### AC3: undecomposed is a registered, hinted drift kind

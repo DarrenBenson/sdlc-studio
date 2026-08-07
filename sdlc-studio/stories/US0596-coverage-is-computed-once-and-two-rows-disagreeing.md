@@ -1,6 +1,6 @@
 # US0596: Coverage is computed once, and two rows disagreeing about it is itself an outstanding item
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -22,7 +22,8 @@
 - **Given** the close chain, the checklist coverage row and the review row
 - **When** a close composes its report
 - **Then** all three read one computed value, so a run cannot report `9/9 covered`, `0 covered, 37 uncovered` and `71 recorded passes` about the same question
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CoverageConsistencyTests::test_coverage_has_one_source
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CoverageConsistencyTests::test_the_shipped_checklist_command_carries_the_coverage_row
+- **Verified:** yes (2026-08-07)
 
 ### AC2: a disagreement is itself outstanding
 
@@ -30,6 +31,7 @@
 - **When** the checklist resolves
 - **Then** the disagreement is an OUTSTANDING item naming both readings, because a report contradicting itself is a fact about the report that nothing currently notices
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CoverageConsistencyTests::test_a_disagreement_is_outstanding
+- **Verified:** yes (2026-08-07)
 
 ### AC3: two agreeing readings resolve answered
 
@@ -39,6 +41,7 @@
   exception into the same UNANSWERED that holds the close, so a row that crashes on every
   input satisfies AC2 without computing anything
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CoverageConsistencyTests::test_two_agreeing_readings_are_answered
+- **Verified:** yes (2026-08-07)
 
 ## Test-plan notes
 

@@ -45,7 +45,7 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 - **When** the hook runs
 - **Then** it fails on the markdown lane and the unit suites never execute, so the failure
   reports in seconds rather than after ~132s
-- **Verify:** pytest tools/tests/test_precommit_lane_order.py
+- **Verify:** pytest tools/tests/test_precommit_lane_order.py::ShortCircuitTests::test_the_unit_suites_are_guarded_by_the_accumulated_failure
 - **Verified:** yes (2026-07-19)
 
 ### AC3: the skip path still announces what did not run
@@ -62,7 +62,7 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 - **Given** the hook before and after the change
 - **When** the set of lane names is compared
 - **Then** it is identical - this story changes ORDER only, never coverage
-- **Verify:** pytest tools/tests/test_precommit_lane_order.py
+- **Verify:** pytest tools/tests/test_precommit_lane_order.py::LaneOrderTests::test_no_lane_is_lost_in_the_reorder
 - **Verified:** yes (2026-07-19)
 
 ## Revision History

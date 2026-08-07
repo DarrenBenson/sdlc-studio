@@ -29,7 +29,7 @@ discipline applies forward, not retroactively (consuming repo A: ~414 permanent 
 - **Given** the same cutoff and a non-conformant US0010
 - **When** the check runs
 - **Then** US0010 is not exempt and is reported non-conformant (the cutoff is exclusive)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::AdoptCutoffTests::test_pre_cutoff_story_is_exempt
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::AdoptCutoffTests::test_post_cutoff_story_is_still_judged
 - **Verified:** yes (2026-06-20)
 
 ### AC3: cmd exits 0 when all failing units are exempt

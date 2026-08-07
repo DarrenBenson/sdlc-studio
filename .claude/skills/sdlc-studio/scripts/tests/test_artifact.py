@@ -1731,6 +1731,31 @@ class ProseWriterSweepTests(unittest.TestCase):
             f"and no recorded reason: {unaccounted}. Give them `--fields-file` (see "
             "file_finding.load_fields_file), or record why not in KNOWN_PROSE_WRITER_GAPS")
 
+    def test_telemetry_takes_no_free_prose_at_all(self) -> None:
+        """US0392 AC1, on a selector of its own (US0635).
+
+        AC1's claim is that telemetry is safe BY NATURE - it has no narrative flag - which is a
+        different claim from AC3's, that the four deferred writers are no longer deferred. They
+        shared one selector, so a regression in either failed both and neither said which.
+
+        Asserted against the source rather than the reason string: a recorded reason is prose,
+        and prose cannot notice telemetry growing a real prose flag tomorrow. If it ever does,
+        this reddens and the safe-by-nature classification has to be re-earned.
+        """
+        import re as _re
+        src = self._prose_writers().get("telemetry.py")
+        self.assertIsNotNone(src, "telemetry.py no longer matches the prose-flag sweep at all")
+        matched = [flag for flag in _PROSE_FLAGS
+                   if _re.search(rf'add_argument\(\s*"{_re.escape(flag)}"', src)]
+        self.assertEqual(["--summary"], matched,
+                         f"telemetry matches prose flags beyond --summary: {matched}")
+        # ... and that one is a BOOLEAN. A store_true stores no prose, which is the whole
+        # ground for the classification.
+        self.assertRegex(src, r'add_argument\(\s*"--summary"[^)]*store_true',
+                         "--summary is no longer a store_true, so it may now carry prose")
+        self.assertIn("safe-by-nature", KNOWN_PROSE_WRITER_GAPS["telemetry.py"],
+                      "telemetry's recorded reason no longer states the classification")
+
     def test_the_four_cr0392_writers_are_now_safe(self) -> None:
         """US0392 AC3: none of the four deferred writers remains a DEFERRED gap. Three genuinely
         took prose and gained `--fields-file` (now SAFE_INPUT_WRITERS); telemetry took no prose

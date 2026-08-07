@@ -22,7 +22,7 @@ Delivers CR0201.
 - **Given** a fixture shipped file containing `(US0101/CR0186)` (the form the old pattern missed) and `(CR0186)`
 - **When** `lint-style.sh` runs over it
 - **Then** it fails, naming the offending line
-- **Verify:** pytest tools/tests/test_lint_style.py::ProvenanceGuardTests
+- **Verify:** pytest tools/tests/test_lint_style.py::ProvenanceGuardTests::test_flags_us_led_provenance_pair
 - **Verified:** yes (2026-07-09)
 
 ### AC2: legitimate example ids still pass (no false positive)
@@ -30,7 +30,7 @@ Delivers CR0201.
 - **Given** a fixture file with example ids - a comma list `(US0045, US0046)`, a range `(US0023-US0064)`, a lone `(US0001)`, and an id trailing narrative text `(e.g. CR0003)` - which are indistinguishable from a citation and legitimate in tree diagrams / sample output
 - **When** the guard runs
 - **Then** it does not flag them
-- **Verify:** pytest tools/tests/test_lint_style.py::ProvenanceGuardTests
+- **Verify:** pytest tools/tests/test_lint_style.py::ProvenanceGuardTests::test_does_not_flag_example_ids
 - **Verified:** yes (2026-07-09)
 
 ### AC3: existing shipped files are audited and leaked US-pair tags removed

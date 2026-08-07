@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 11 |
-| Ready | 5 |
+| Draft | 10 |
+| Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 10 |
+| Review | 13 |
 | Done | 615 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -54,7 +54,7 @@
 | [US0593](US0593-a-run-whose-only-review-verdicts-are-reject.md) | A run whose only review verdicts are REJECT reports the closing-review item outstanding, never ran | Review | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0594](US0594-a-unit-whose-ticked-criteria-the-tree-contradicts.md) | A unit whose ticked criteria the tree contradicts is reported outstanding at the close | Review | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0595](US0595-a-waiver-records-whether-it-was-deliberate-or.md) | A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart | Review | EP0197 | 2026-08-01 | 2026-08-01 |
-| [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
+| [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Review | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0616](US0616-sprint-close-and-sprint-stop-refuse-while-the.md) | sprint close and sprint stop refuse while the tree carries a repair to a batch unit | Done | EP0204 | 2026-08-02 | 2026-08-02 |
 | [US0617](US0617-the-close-owed-ledger-distinguishes-a-close-time.md) | the close-owed ledger distinguishes a close-time repair from an unaccounted unit | Done | EP0204 | 2026-08-02 | 2026-08-02 |
 | [US0618](US0618-an-unavoidable-close-time-repair-is-recorded-as.md) | an unavoidable close-time repair is recorded as an explicit override with its reason | Done | EP0204 | 2026-08-02 | 2026-08-02 |
@@ -74,8 +74,8 @@
 | [US0632](US0632-at-delivery-each-planned-mutant-is-executed-against.md) | at delivery each planned mutant is EXECUTED against the shipped test and its death recorded | Done | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0633](US0633-a-criterion-whose-mutant-cannot-be-named-is.md) | a criterion whose mutant cannot be named is refused at grooming | Done | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0634](US0634-the-cost-is-measured-over-one-run-and.md) | the cost is measured over one run and reported: passes spent on test-plan review versus on code review | Done | EP0207 | 2026-08-02 | 2026-08-02 |
-| [US0635](US0635-the-thirteen-story-side-duplicate-verify-groups-are.md) | The thirteen story-side duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
-| [US0636](US0636-the-seven-bug-side-duplicate-verify-groups-are.md) | The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt | Ready | EP0174 | 2026-08-03 | 2026-08-03 |
+| [US0635](US0635-the-thirteen-story-side-duplicate-verify-groups-are.md) | The thirteen story-side duplicate Verify groups are split into discriminating selectors | Review | EP0174 | 2026-08-03 | 2026-08-03 |
+| [US0636](US0636-the-seven-bug-side-duplicate-verify-groups-are.md) | The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt | Review | EP0174 | 2026-08-03 | 2026-08-03 |
 | [US0637](US0637-the-duplicate-groups-no-collection-can-answer-are.md) | The duplicate groups no collection can answer are derived from the resolver and named one by one | Done | EP0174 | 2026-08-03 | 2026-08-03 |
 | [US0638](US0638-the-close-pre-flight-runs-the-retro-checklist.md) | The close pre-flight runs the retro checklist it is about to be judged on | Done | EP0208 | 2026-08-05 | 2026-08-05 |
 | [US0639](US0639-every-gate-execution-the-close-runs-is-recorded.md) | Every gate execution the close runs is recorded, so the close cost report is not a fraction of the truth | Done | EP0208 | 2026-08-05 | 2026-08-05 |

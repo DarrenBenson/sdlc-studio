@@ -4,7 +4,7 @@
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/conformance.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py
 > **Epic:** EP0080
 > **Points:** 5
 
@@ -21,7 +21,7 @@
 - **Given** a Done story with no individual critic verdict, covered by a recorded independent sprint-level APPROVE
 - **When** conformance is checked
 - **Then** the unit's `critiqued` stage passes (verdict + evidence halves satisfied by the sprint review)
-- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_conformance.SprintReviewCritiquedTests
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::SprintReviewCritiquedTests::test_sprint_review_clears_critiqued_for_covered_unit
 - **Verified:** yes (2026-07-18)
 
 ### AC2: a per-unit REJECT is never overridden by sprint coverage
@@ -29,7 +29,7 @@
 - **Given** a unit whose latest per-unit verdict is REJECT, also inside a sprint-level APPROVE's range
 - **When** conformance is checked
 - **Then** `critiqued` stays failed - the REJECT must be repaired per unit
-- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_conformance.SprintReviewCritiquedTests
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::SprintReviewCritiquedTests::test_SprintReview_does_not_override_a_per_unit_reject
 - **Verified:** yes (2026-07-18)
 
 ### AC3: a sprint-level review proves independence and refuses a self-review
@@ -37,7 +37,7 @@
 - **Given** `critic sprint-review` recording a batch verdict
 - **When** reviewer == author, or findings/units are empty
 - **Then** it is refused loudly (independence is proven, not assumed)
-- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_conformance.SprintReviewCritiquedTests
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::SprintReviewCritiquedTests::test_SprintReview_refuses_self_review_and_empty
 - **Verified:** yes (2026-07-18)
 
 ## Revision History

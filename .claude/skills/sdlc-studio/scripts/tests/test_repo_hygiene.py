@@ -9,6 +9,7 @@ from __future__ import annotations
 import ast
 import re
 import shutil
+import tempfile
 import subprocess
 import sys
 import unittest
@@ -26,19 +27,55 @@ def _guard_index(tree: ast.Module) -> int | None:
     return None
 
 
+def _guard_offenders(directory) -> list[str]:
+    """Files under `directory` whose `__main__` guard is not the last statement.
+
+    Taken as a PARAMETER rather than reading TESTS_DIR directly, so the detector can be shown
+    to fire. A sweep that only ever runs over a clean tree proves nothing: green is what it
+    prints when it works and equally what it prints when it looks at nothing.
+    """
+    offenders = []
+    for p in sorted(Path(directory).glob("test_*.py")):
+        tree = ast.parse(p.read_text(encoding="utf-8"))
+        gi = _guard_index(tree)
+        if gi is not None and gi != len(tree.body) - 1:
+            after = [type(n).__name__ for n in tree.body[gi + 1:]]
+            offenders.append(f"{p.name}: guard at statement {gi}, followed by {after}")
+    return offenders
+
+
 class GuardAtEofTests(unittest.TestCase):
     def test_every_main_guard_is_the_last_statement(self) -> None:
-        offenders = []
-        for p in sorted(TESTS_DIR.glob("test_*.py")):
-            tree = ast.parse(p.read_text(encoding="utf-8"))
-            gi = _guard_index(tree)
-            if gi is not None and gi != len(tree.body) - 1:
-                after = [type(n).__name__ for n in tree.body[gi + 1:]]
-                offenders.append(f"{p.name}: guard at statement {gi}, followed by {after}")
+        offenders = _guard_offenders(TESTS_DIR)
         self.assertEqual(offenders, [],
                          "mid-file __main__ guards silently drop the classes below them "
                          "on direct runs - move the guard to true end-of-file:\n"
                          + "\n".join(offenders))
+
+
+    def test_a_class_after_the_guard_is_reported_by_filename(self) -> None:
+        """US0114 AC3, on a selector of its own (US0635).
+
+        The regression claim - that the detector still fires - had no verifier: the class held
+        one test, which passes over a clean tree whether the sweep works or is inert. This
+        plants an offender in a temp directory and requires it back BY NAME, so the sweep is
+        shown to discriminate rather than assumed to.
+        """
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        (d / "test_offender.py").write_text(
+            "import unittest\n\n\nif __name__ == '__main__':\n    unittest.main()\n\n\n"
+            "class LostBelowTheGuard(unittest.TestCase):\n    def test_x(self):\n        pass\n",
+            encoding="utf-8")
+        (d / "test_clean.py").write_text(
+            "import unittest\n\n\nclass Fine(unittest.TestCase):\n    def test_x(self):\n"
+            "        pass\n\n\nif __name__ == '__main__':\n    unittest.main()\n",
+            encoding="utf-8")
+        offenders = _guard_offenders(d)
+        self.assertEqual(1, len(offenders), f"expected exactly the planted offender: {offenders}")
+        self.assertIn("test_offender.py", offenders[0])
+        self.assertNotIn("test_clean.py", " ".join(offenders),
+                         "a well-formed file was reported as an offender")
 
 
 class DirectRunParityTests(unittest.TestCase):

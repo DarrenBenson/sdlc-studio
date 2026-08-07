@@ -21,7 +21,7 @@
 - **Given** a mix of non-terminal requests and product units
 - **When** `status backlog` runs
 - **Then** it reports a DISCOVERY backlog (rfc, cr - the options funnel) and a DELIVERY backlog (epic, story, bug - sized work) as distinct groups, each counted on its own (dual-track agile / upstream Kanban)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::TwoBacklogStatusTests
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::TwoBacklogStatusTests::test_text_output_labels_both_backlogs
 - **Verified:** yes (2026-07-15)
 
 ### AC2: the split uses the shared taxonomy, not a local list
@@ -29,7 +29,7 @@
 - **Given** the `is_request` predicate from `sdlc_md`
 - **When** status assigns each type to a backlog
 - **Then** the assignment is driven by `is_request`, so status and the planner agree on what a request is
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::TwoBacklogStatusTests
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::TwoBacklogStatusTests::test_summary_partitions_by_is_request
 - **Verified:** yes (2026-07-15)
 
 ## Revision History

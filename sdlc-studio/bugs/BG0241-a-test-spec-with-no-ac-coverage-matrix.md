@@ -4,7 +4,7 @@
 > **Verification depth:** functional - reproduced first, the two states printing byte-identical output (`ts-check: 0 finding(s) in <name>`, exit 0) before any edit; the migration cost was counted across every sdlc-studio workspace on this machine BEFORE the default changed (0 of 2 specs here, 30 of 178 across 11 repos); 8 of 12 new tests RED first; 9 hand-mutants, one SURVIVED and drove a stronger test
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -16,11 +16,11 @@ Found and deliberately left in scope-declined state during BG0229, which fixed t
 ## Acceptance Criteria
 
 - [x] **AC1:** A spec that is present and readable but carries no AC Coverage Matrix reports a finding and exits 1, distinct from a complete matrix at 0 and an absent file at 2 (BG0229), so the three states are told apart by exit code alone.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_verify_ac.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckAbsentMatrixTests::test_a_spec_with_no_matrix_section_exits_non_zero
 - [x] **AC2:** A matrix heading with no rows is also a finding, so the check cannot be silenced by pasting two lines that assert nothing.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_verify_ac.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckAbsentMatrixTests::test_a_matrix_with_a_header_and_no_rows_is_a_finding
 - [x] **AC3:** Prose merely naming the section is not accepted as a heading, so the classification cannot be satisfied by mentioning the matrix in a sentence.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_verify_ac.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckAbsentMatrixTests::test_prose_naming_the_section_is_not_a_heading
 
 ## Steps to Reproduce
 

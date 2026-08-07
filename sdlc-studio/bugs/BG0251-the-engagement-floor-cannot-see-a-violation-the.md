@@ -18,21 +18,21 @@ The floor only evaluates SHIPPED units, and `_git_touched_by_id` derives that fr
 - [x] **AC1:** A unit the pending commit puts below the floor is visible BEFORE the commit
       lands: `detect(root, include_staged=True)` folds the staged index in and marks the unit
       `staged_new`.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_engagement_floor.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::PendingCommitTests::test_a_unit_this_commit_puts_below_the_floor_is_seen_before_it_lands
 - [x] **AC2:** The pending verdict is the verdict the commit actually produces: the same unit,
       the same kind and the same file count as the unchanged history leg reports once the
       commit exists. Without this the lane could refuse commits for reasons the floor never held.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_engagement_floor.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::PendingCommitTests::test_the_pending_verdict_is_the_verdict_the_commit_actually_produces
 - [x] **AC3:** The pre-commit hook runs that lane and REFUSES the commit (D0053), staging an
       unplanned multi-file unit that passed the gate before this fix.
-      **Verify:** shell python3 -m unittest tools.tests.test_precommit_floor_pending
+      **Verify:** pytest tools/tests/test_precommit_floor_pending.py::FloorPendingLaneTests::test_a_commit_that_puts_a_unit_below_the_floor_is_refused
 - [x] **AC4:** The gap that remains is stated where it is read, not only in a docstring: both
       the lane's refusal and its PASS print that they judge the staged index and cannot read
       the commit message, and the gate-facing line says its evidence is committed history.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_engagement_floor.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::PendingCliTests::test_the_green_pending_lane_also_states_its_scope
 - [x] **AC5:** The message-only case is held to a test that asserts it is NOT covered, so no
       later edit can quietly claim it is.
-      **Verify:** shell python3 -m unittest tools.tests.test_precommit_floor_pending
+      **Verify:** pytest tools/tests/test_precommit_floor_pending.py::FloorPendingLaneTests::test_a_unit_named_only_in_the_message_is_still_not_seen
 
 ## Resolution
 

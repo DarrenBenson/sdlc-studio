@@ -4,7 +4,7 @@
 > **Verification depth:** functional - both were reproduced by RUNNING them from a foreign cwd before any edit, giving the filed symptoms verbatim, and re-run afterwards to see the file land under the resolved root; 13 of 18 new tests were RED first, every one run from a cwd that is not the root, with the write and the read in DIFFERENT directories; 14 hand-mutants applied, all killed
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py,.claude/skills/sdlc-studio/scripts/loop_guard.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py,.claude/skills/sdlc-studio/scripts/loop_guard.py, .claude/skills/sdlc-studio/scripts/tests/test_loop_guard.py
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -18,9 +18,9 @@ Two confirmed survivors of BG0228's exact shape, found by the sibling sweep that
 - [x] **AC1:** Run from a cwd that is NOT the project root, `lessons.py summary --root <proj> --out <rel>` writes under the resolved root and prints the RESOLVED path, leaving nothing beside the cwd.
       **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_lessons.py
 - [x] **AC2:** Run from a subdirectory with the default `--root .`, `loop_guard.py record` discovers the project root upward instead of writing a stray workspace beside the cwd, and every verdict names the state file it used.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_loop_guard.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard.py::RootAnchoringTests::test_record_without_a_root_discovers_the_project_from_a_subdirectory
 - [x] **AC3:** The read half and the write half resolve to the SAME root, so anchoring the write cannot leave the read pointing elsewhere. Pinned by tests that write from one directory and read from another.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_loop_guard.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard.py::RootAnchoringTests::test_status_reads_what_record_wrote_from_a_different_directory
 
 ## Steps to Reproduce
 

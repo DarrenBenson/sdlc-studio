@@ -27,7 +27,7 @@ tree that ships `.githooks/pre-commit` (this repo), never a consuming project (w
 - **Given** a git work tree containing `.githooks/pre-commit` with `core.hooksPath` unset or not `.githooks`
 - **When** `gate.py --root .` runs
 - **Then** an advisory `hook-enabled` lane reports the gap and names the fix command (`bash tools/enable-hooks.sh`), without failing the gate
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k HookEnabled
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::HookEnabledLaneTests::test_hook_present_but_disabled_warns_advisory
 - **Verified:** yes (2026-07-10)
 
 ### AC2: silent where it means nothing
@@ -35,7 +35,7 @@ tree that ships `.githooks/pre-commit` (this repo), never a consuming project (w
 - **Given** (a) a tree with the hook enabled, (b) a tree with no `.githooks/pre-commit`, (c) a non-git directory
 - **When** the `hook-enabled` lane runs
 - **Then** it reports clean (count 0) in all three cases - no standing advisory noise
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k HookEnabled
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::HookEnabledLaneTests::test_hook_enabled_is_clean
 - **Verified:** yes (2026-07-10)
 
 ### AC3: status surfaces the same warning

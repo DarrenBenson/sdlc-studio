@@ -4,7 +4,7 @@
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Epic:** EP0047
 > **Points:** 5
 
@@ -21,7 +21,7 @@
 - **Given** a batch of two groomed bugs that are a duplicate pair
 - **When** `sprint plan` runs
 - **Then** the plan prints and a `backlog triage` section names the duplicate; the plan is not refused
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py -k TriageInPlan
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TriageInPlanTests::test_a_duplicate_pair_is_surfaced_in_the_plan_not_refused
 - **Verified:** yes (2026-07-16)
 
 ### AC2: a coherent batch prints no triage section
@@ -29,7 +29,7 @@
 - **Given** a batch with no triage findings
 - **When** `sprint plan` runs
 - **Then** no `backlog triage` section appears
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py -k TriageInPlan
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TriageInPlanTests::test_a_coherent_batch_prints_no_triage_section
 - **Verified:** yes (2026-07-16)
 
 ## Revision History

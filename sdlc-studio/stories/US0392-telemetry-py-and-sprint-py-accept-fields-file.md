@@ -28,7 +28,7 @@ for prose that does not exist.
 - **Given** the prose-writer sweep enumerates telemetry.py
 - **When** its `KNOWN_PROSE_WRITER_GAPS` entry is read
 - **Then** telemetry is recorded as safe-by-nature (a boolean flag, no free prose), not a deferred gap
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::ProseWriterSweepTests::test_the_four_cr0392_writers_are_now_safe
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::ProseWriterSweepTests::test_telemetry_takes_no_free_prose_at_all
 - **Verified:** yes (2026-07-23)
 
 ### AC2: sprint.py consumes goal and note prose from a fields-file verbatim

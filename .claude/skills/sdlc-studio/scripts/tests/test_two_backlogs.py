@@ -921,6 +921,27 @@ class UndecomposedDriftTests(unittest.TestCase):
             ids = {(x["kind"], x["id"]) for x in reconcile.undecomposed_drift(root)}
             self.assertIn(("undecomposed", "CR0210"), ids)
 
+    def test_a_healthy_backlog_is_clean(self) -> None:
+        """AC2's whole claim, on a selector of its own (US0635).
+
+        The four exemptions each had a test, and AC2's actual claim - that a backlog holding
+        all four AT ONCE leaves `detect` clean - had none. Four passing per-category tests do
+        not add up to it: a rule that exempts each shape in isolation can still flag a tree
+        that mixes them, and this is the assertion an operator's real backlog makes.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, "CR0300", "Proposed")      # pre-triage intake
+            self._rfc(root, "RFC0300", "Draft")       # pre-triage intake
+            self._cr(root, "CR0301", "Deferred")      # parked
+            self._cr(root, "CR0302", "Rejected")      # terminal, childless by design
+            self._cr(root, "CR0303", "Approved")      # accepted - and DECOMPOSED, below
+            _write(root / "sdlc-studio" / "epics" / "EP0300-x.md",
+                   "# EP0300: X\n\n> **Status:** In Progress\n> **Parent:** CR0303\n")
+            self.assertEqual([], reconcile.undecomposed_drift(root),
+                             "a backlog whose every request is intake, parked, terminal or "
+                             "decomposed was reported as drifting")
+
     def test_intake_request_is_not_flagged(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

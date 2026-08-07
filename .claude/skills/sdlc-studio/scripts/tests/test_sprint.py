@@ -6567,6 +6567,23 @@ class GateBriefingTests(unittest.TestCase):
             brief = _quiet_brief(root, [{"id": "BG0001", "type": "bug"}])
             self.assertEqual(brief["units"], [])
 
+    def test_the_briefing_carries_every_commit_check_in_full(self) -> None:
+        """AC3's completeness claim, on a selector of its own (US0635).
+
+        The sentinel test beside this one proves the list is DERIVED from the gate, by adding
+        one check and finding it. That is a different claim from the list being carried in
+        FULL: a briefing that took the first three checks would pass the sentinel whenever the
+        sentinel happened to be among them, and truncation is the failure an operator notices
+        only when the check that was dropped is the one that would have refused them.
+        """
+        import gate as _gate
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root)
+            brief = _quiet_brief(root, [{"id": "BG0001", "type": "bug"}])
+            self.assertEqual(sorted(_gate.DEFAULT_CHECKS), sorted(brief["commit_checks"]),
+                             "the briefing's commit-check list is not the gate's, in full")
+
     def test_briefing_is_generated_from_definitions(self) -> None:
         """AC2: the commit-check list comes from the gate, so it cannot drift from it.
 

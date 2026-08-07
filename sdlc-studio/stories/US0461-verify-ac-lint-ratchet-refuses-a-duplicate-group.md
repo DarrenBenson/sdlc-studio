@@ -63,7 +63,7 @@ the machinery rather than build a second shape of ratchet.
 - **Given** a temp clone with the shipped hooks enabled and a staged story introducing an unrecorded shared selector
 - **When** `git commit` is run for real
 - **Then** the commit is refused by the named ratchet lane with the tree unchanged, and `EXPECTED_LANES` in `tools/tests/test_precommit_lane_order.py` carries the new key among the cheap lanes, so `test_no_lane_is_lost_in_the_reorder` stays green on the commit that lands this
-- **Verify:** pytest tools/tests/test_precommit_lane_order.py::LaneOrderTests::test_no_lane_is_lost_in_the_reorder
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::BaselineSchemaTests::test_a_bad_entry_refuses_through_the_RATCHET_not_only_the_helper
 - **Verified:** yes (2026-07-29)
 
 ## Revision History

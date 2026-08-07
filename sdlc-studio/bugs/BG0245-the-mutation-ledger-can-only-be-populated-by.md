@@ -4,7 +4,7 @@
 > **Verification depth:** functional - `mutation.py register` was driven end to end in a throwaway git fixture and the resulting lane line read against three states (self-report only, self-report beside a measured entry, self-report gone stale on an edit). 15 mutants hand-applied across `register_mutant`, `append_ledger` and the gate's coverage lane; 14 killed first time, 1 SURVIVED and drove a second test.
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py,.claude/skills/sdlc-studio/scripts/gate.py,.claude/skills/sdlc-studio/reference-sprint.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py,.claude/skills/sdlc-studio/scripts/gate.py,.claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -16,13 +16,13 @@ BG0238 made mutation evidence accumulate in a ledger keyed on each target's cont
 ## Acceptance Criteria
 
 - [x] **AC1:** `mutation.py register` records an already-applied mutant against the target's content hash, so the per-unit hand-mutation practice leaves a trace without changing the practice.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_mutation.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterTests::test_a_registered_mutant_becomes_a_ledger_entry_marked_self_reported
 - [x] **AC2:** Every ledger entry carries its provenance, and a registered entry is reported as SELF-REPORTED by the gate lane rather than presented as a measured run.
       **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_gate.py
 - [x] **AC3:** A registered and a measured entry for the same target are separate records, so neither erases the other, and an edit to the target starts a fresh entry.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_mutation.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterTests::test_a_registration_never_overwrites_a_measured_entry
 - [x] **AC4:** Verdicts only a runner can observe (error, unviable) are REFUSED from a self-report, so a builder cannot claim what they did not measure.
-      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_mutation.py
+      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterTests::test_a_verdict_the_runner_alone_can_observe_is_refused
 
 ## Steps to Reproduce
 
