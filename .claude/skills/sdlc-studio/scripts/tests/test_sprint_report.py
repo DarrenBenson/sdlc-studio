@@ -7,6 +7,9 @@ config switch gates RENDERING only - never recording.
 import contextlib
 import io
 import json
+import subprocess
+import shutil
+import os
 import pathlib
 import sys
 import tempfile
@@ -1149,14 +1152,15 @@ class ChecklistWindowTests(ChecklistBase):
             self.assertNotEqual(sr.CLOSE_WINDOW, sr._window(rows[rid]),
                                 f"{rid} is enforced before the close, but declares the close as "
                                 f"the last command that could satisfy it")
-        drift = sr.cycle_drift()
-        known = set(drift.get("covered") or []) | set(drift.get("verbs") or [])
         for item in sr.CHECKLIST:
-            win = sr._window(item)
-            self.assertTrue(win, f"{item['id']} declares no window")
-            if known:
-                self.assertIn(win, known | {sr.CLOSE_WINDOW},
-                              f"{item['id']} names a window no shipped verb exposes")
+            self.assertTrue(sr._window(item), f"{item['id']} declares no window")
+        # Resolvability, asserted through `cycle_drift` itself rather than against a set built
+        # here. The first version of this guarded the check behind `if known:` and `known` was
+        # PERMANENTLY EMPTY - `cycle_drift` returns {unresolved, uncovered, unverifiable} and
+        # never `covered`/`verbs` - so a window naming a verb nothing exposes passed the whole
+        # file. `cycle_drift` now walks windows on the same terms as commands.
+        self.assertEqual([], sr.cycle_drift()["unresolved"],
+                         "a checklist row names a command or window nothing exposes")
 
     def test_an_expired_item_reports_rather_than_gates(self) -> None:
         """Mutant: delete the expired bucket's line from `render_checklist`.
@@ -1309,6 +1313,57 @@ class TickVerificationTests(ChecklistBase):
         row = self._resolve({"src/touched.py"})
         self.assertEqual(sr.NOT_RUN, row["state"])
         self.assertIn("nothing was checked", row["detail"])
+
+    def test_the_diff_source_is_exercised_against_real_git(self) -> None:
+        """`_changed_paths` is MOCKED in every other test here, so nothing pinned it at all -
+        four mutants survived the whole suite, each turning "cannot judge" into "nothing
+        changed", which the row reads as every tick contradicted.
+
+        Mutants this kills: a non-zero return, an unverifiable ref, and the exception path all
+        answering `set()` instead of None; and `...` narrowed to `..`.
+        """
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
+               "GIT_COMMITTER_EMAIL": "t@x", "PATH": os.environ.get("PATH", ""),
+               "HOME": str(d), "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null"}
+        run = lambda *a: subprocess.run(["git", *a], cwd=str(d), env=env,
+                                        capture_output=True, text=True, check=True)
+        run("init", "-q", "-b", "main")
+        (d / "first.txt").write_text("1\n", encoding="utf-8")
+        run("add", "-A"); run("commit", "-qm", "one")
+        base = run("rev-parse", "HEAD").stdout.strip()
+        (d / "second.txt").write_text("2\n", encoding="utf-8")
+        run("add", "-A"); run("commit", "-qm", "two")
+
+        changed = sr._changed_paths(d, base)
+        self.assertEqual({"second.txt"}, changed,
+                         "the real diff was not read - this is the seam every other test mocks")
+        # None, never an empty set: "could not look" and "nothing changed" lead to OPPOSITE
+        # verdicts in the row above, and collapsing them certifies what it could not check.
+        self.assertIsNone(sr._changed_paths(d, ""), "an empty base ref answered a set")
+        self.assertIsNone(sr._changed_paths(d, "no-such-ref-at-all"),
+                          "an unresolvable ref answered a set")
+        self.assertIsNone(sr._changed_paths(d / "nowhere", base),
+                          "an unusable repo answered a set")
+
+    def test_a_ref_shaped_like_an_option_cannot_make_git_write_a_file(self) -> None:
+        """The ref is interpolated into one argv token. Unverified, `--output=<path>` is read by
+        git as an OPTION: it writes the file, exits 0, and returns an empty diff, which the row
+        reads as every tick contradicted. Verified first, it is refused."""
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
+               "GIT_COMMITTER_EMAIL": "t@x", "PATH": os.environ.get("PATH", ""),
+               "HOME": str(d), "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null"}
+        run = lambda *a: subprocess.run(["git", *a], cwd=str(d), env=env,
+                                        capture_output=True, text=True, check=True)
+        run("init", "-q", "-b", "main")
+        (d / "f.txt").write_text("1\n", encoding="utf-8")
+        run("add", "-A"); run("commit", "-qm", "one")
+        victim = d / "written-by-git.txt"
+        self.assertIsNone(sr._changed_paths(d, f"--output={victim}"))
+        self.assertFalse(victim.exists(), "the ref was parsed as an option and git wrote a file")
 
     def test_an_unreadable_diff_is_unjudged_not_supported(self) -> None:
         """None is not an empty set. `could not be taken` and `nothing changed` lead to opposite

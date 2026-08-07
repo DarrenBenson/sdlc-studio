@@ -1307,10 +1307,22 @@ def _changed_paths(root: Path, base_ref: str) -> set | None:
         return None
     try:
         import subprocess  # noqa: PLC0415 - deferred, like every sibling read here
-        out = subprocess.run(["git", "diff", "--name-only", f"{base_ref}...HEAD"],
-                             cwd=str(root), capture_output=True, text=True, timeout=60)
-        if out.returncode != 0:
+        # VERIFY THE REF FIRST, and pass it after `--`. `f"{base_ref}...HEAD"` builds one argv
+        # token from an unvalidated string, so a ref of `--output=<path>` is parsed by git as an
+        # OPTION: it writes that file, exits 0, and returns an empty diff - which this row would
+        # read as "nothing changed" and report every tick contradicted. A guard that can be
+        # turned into a file write by its own input is not a guard.
+        ok = subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{base_ref}^{{commit}}"],
+                            cwd=str(root), capture_output=True, text=True, timeout=30)
+        if ok.returncode != 0:
             return None
+        # `check=True`, so a failing diff raises into the handler below rather than taking a
+        # second return path of its own. One way out for every "cannot look", because the branch
+        # that had its own `return` was unreachable once the ref is verified first - and an
+        # unreachable branch that flips None to an empty set is a hazard nothing can pin.
+        out = subprocess.run(["git", "diff", "--name-only", f"{base_ref}...HEAD", "--"],
+                             cwd=str(root), capture_output=True, text=True, timeout=60,
+                             check=True)
         return {ln.strip() for ln in out.stdout.splitlines() if ln.strip()}
     except Exception as exc:  # noqa: BLE001 - an unreadable diff judges nothing
         sdlc_md.debug("sprint_report._changed_paths", exc)
@@ -2011,6 +2023,17 @@ def cycle_drift() -> dict:
         return found
 
     covered: dict[str, set] = {}
+    # WINDOWS are checked on the same terms as commands. A row's window names the last command
+    # that could still have satisfied it, and a window naming a verb nothing exposes is the same
+    # inert-mechanism defect as a command that does - but it was outside this walk entirely, so
+    # a window of `sprint totally-not-a-verb` passed every test in the file.
+    for item in CHECKLIST:
+        win_script, _, win_verb = _window(item).partition(" ")
+        if not verbs(win_script):
+            unresolved.append(f"{item['id']}: window `{_window(item)}` names no shipped script")
+        elif win_verb and win_verb not in verbs(win_script):
+            unresolved.append(f"{item['id']}: window `{_window(item)}` names no verb of "
+                              f"{win_script}.py")
     for item in CHECKLIST:
         script, _, verb = item["command"].partition(" ")
         if verb:
