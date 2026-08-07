@@ -1,6 +1,6 @@
 # US0564: A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0501
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
