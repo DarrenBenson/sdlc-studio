@@ -889,6 +889,13 @@ WAIVER_SUBJECT = "rule:sprint-checklist"
 #: and an unreadable record shows nothing. That is the conservative direction - the alternative
 #: reports a ceremony as held on the strength of a file nobody could open.
 RAN, NOT_RUN, WAIVED = "ran", "not-run", "waived"
+#: Unsatisfied, and PAST the last command that could still have satisfied it. Reported with the
+#: command that should have enforced it, and never held against the close: a gate whose only
+#: exit at firing time is a waiver is a receipt rather than a gate.
+EXPIRED = "expired"
+#: The window that is still open when the checklist runs. Every other window has shut by then,
+#: because the checklist is composed BY the close.
+CLOSE_WINDOW = "sprint close"
 #: A FIGURE row is answered when its value could be derived, unanswered when it could not.
 ANSWERED, UNANSWERED = "answered", "unanswered"
 
@@ -927,18 +934,23 @@ NON_CEREMONY_VERBS = {
 #: shipped command that HOLDS the stage, and the drift guard checks it still resolves.
 CHECKLIST = (
     {"id": "reconciled-before-plan", "kind": STAGE, "authority": DERIVED,
+     "window": "sprint plan",
      "title": "Index drift zero before the plan", "command": "sprint plan",
      "resolver": "_ck_reconciled"},
     {"id": "goal-seat-reviewed", "kind": STAGE, "authority": DERIVED,
+     "window": "sprint plan",
      "title": "Sprint Goal stated and seat-reviewed BEFORE the plan",
      "command": "sprint goal-review", "resolver": "_ck_goal_seat_review"},
     {"id": "batch-groomed", "kind": STAGE, "authority": DERIVED,
+     "window": "sprint plan",
      "title": "Batch groomed - nothing ungroomed admitted", "command": "sprint breakdown",
      "resolver": "_ck_batch_groomed"},
     {"id": "run-opened", "kind": STAGE, "authority": DERIVED,
+     "window": "sprint plan",
      "title": "Batch approved and the run opened", "command": "sprint plan",
      "resolver": "_ck_run_opened"},
     {"id": "batch-boundary-review", "kind": STAGE, "authority": DERIVED,
+     "window": "sprint review-batch",
      "title": "Review at each delivery batch boundary", "command": "sprint review-batch",
      "resolver": "_ck_batch_boundary_review"},
     {"id": "closing-review", "kind": STAGE, "authority": DERIVED,
@@ -1728,6 +1740,7 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
                      **_resolve_item(item, ctx)})
     unmet = [r for r in rows if r["state"] in _OUTSTANDING]
     return {"ok": True, "id": retro_id, "items": rows,
+            "expired": [r["id"] for r in rows if r["state"] == EXPIRED],
             "outstanding": [r["id"] for r in unmet if not r.get("discharged_by")],
             "pending_in_close": [r["id"] for r in unmet if r.get("discharged_by") == "close"],
             # A finding ruled stop-ship is ANSWERED - the answer is that it stops the ship. It
@@ -1735,6 +1748,26 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
             # ruling that matters most is the one that must be able to stop something.
             "stop_ship": [i["id"] for i in (ctx["carried_issues"] or [])
                           if i["ok"] and i["ruling"] == retro.STOP_SHIP]}
+
+
+def _window(item: dict) -> str:
+    """The last command by which this item could still have been satisfied.
+
+    Defaults to the close: a row that declares no earlier window is one the close itself owns,
+    which is the safe direction - the alternative would quietly stop gating anything nobody had
+    got round to labelling.
+    """
+    return str(item.get("window") or CLOSE_WINDOW)
+
+
+def _expired(item: dict) -> bool:
+    """Has this item's window already shut by the time the checklist runs?
+
+    The checklist is composed BY the close, so every window that is not the close's own has
+    passed. Nothing else needs to be inspected - a row whose enforcer was `sprint plan` cannot
+    be satisfied at a close where the batch has already been delivered.
+    """
+    return _window(item) != CLOSE_WINDOW
 
 
 def _resolve_item(item: dict, ctx: dict) -> dict:
@@ -1751,6 +1784,15 @@ def _resolve_item(item: dict, ctx: dict) -> dict:
         value, detail = "unresolved", f"{type(exc).__name__}: {exc}"
     if waiver and state in _OUTSTANDING:
         return {"state": WAIVED, "value": value, "detail": detail, "waiver": waiver}
+    if state in _OUTSTANDING and _expired(item):
+        # REPORTED, not held. The item cannot be satisfied here - its enforcer ran long ago -
+        # so refusing the close leaves a waiver as the only exit, and a gate whose only exit is
+        # a waiver is a receipt. The command that SHOULD have enforced it goes in the detail,
+        # because the actionable fact is where to put the gate, not that it is missing now.
+        return {"state": EXPIRED, "value": value, "waiver": None,
+                "detail": (f"{detail} - past its window: `{_window(item)}` is the last command "
+                           f"that could still have satisfied this, and it has already run"
+                           ).strip(" -")}
     return {"state": state, "value": value, "detail": detail, "waiver": None}
 
 
@@ -1882,7 +1924,7 @@ def render_checklist(ck: dict) -> str:
     column a reader scans is the one that says whether something happened."""
     lines = ["", "## Sprint checklist", ""]
     for row in ck["items"]:
-        mark = {RAN: "ran", ANSWERED: "ok", WAIVED: "WAIVED",
+        mark = {RAN: "ran", ANSWERED: "ok", WAIVED: "WAIVED", EXPIRED: "EXPIRED",
                 NOT_RUN: "NOT RUN", UNANSWERED: "UNANSWERED"}[row["state"]]
         line = f"[{mark}] {row['title']}: {row['value']}"
         if row.get("waiver"):
@@ -1895,6 +1937,12 @@ def render_checklist(ck: dict) -> str:
                       f"{', '.join(ck['outstanding'])}. The close refuses until each is "
                       f"answered or waived on the record (`decisions.py waive --subject "
                       f"{WAIVER_SUBJECT}:<item> --rationale '<why>'`)."]
+    if ck.get("expired"):
+        lines += ["", f"{len(ck['expired'])} item(s) PAST THEIR WINDOW, reported and not held: "
+                      + "; ".join(f"{r['id']} (enforce at `{_window(r)}`)"
+                                  for r in ck["items"] if r["state"] == EXPIRED)
+                      + ". Each names the command that should have enforced it - the fix is to "
+                        "gate it there, not to waive it here."]
     if ck.get("stop_ship"):
         lines += ["", f"{len(ck['stop_ship'])} carried finding(s) ruled STOP-SHIP: "
                       f"{', '.join(ck['stop_ship'])}. The close refuses: a ruling that cannot "

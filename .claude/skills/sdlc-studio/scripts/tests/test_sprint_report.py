@@ -1031,6 +1031,97 @@ class ChecklistBase(unittest.TestCase):
         return next(r for r in ck["items"] if r["id"] == item_id)
 
 
+class ChecklistWindowTests(ChecklistBase):
+    """US0591. An item whose window shut before the close was being raised where a waiver was
+    its only exit, and a gate whose only exit at firing time is a waiver is a receipt."""
+
+    def test_every_item_declares_its_enforcer(self) -> None:
+        """Mutant: stamp every row's window with the close, so none can expire.
+
+        A PRESENCE assertion is killed by deleting a key and passes on that mutant while
+        delivering nothing - so this asserts the VALUE: the rows the plan enforces must carry a
+        window that is not the close, and every window must name a verb the tooling exposes.
+        """
+        pre_close = {"reconciled-before-plan", "goal-seat-reviewed", "batch-groomed",
+                     "run-opened", "batch-boundary-review"}
+        rows = {i["id"]: i for i in sr.CHECKLIST}
+        self.assertTrue(pre_close <= set(rows), "a pre-close row was renamed or removed")
+        for rid in pre_close:
+            self.assertNotEqual(sr.CLOSE_WINDOW, sr._window(rows[rid]),
+                                f"{rid} is enforced before the close, but declares the close as "
+                                f"the last command that could satisfy it")
+        drift = sr.cycle_drift()
+        known = set(drift.get("covered") or []) | set(drift.get("verbs") or [])
+        for item in sr.CHECKLIST:
+            win = sr._window(item)
+            self.assertTrue(win, f"{item['id']} declares no window")
+            if known:
+                self.assertIn(win, known | {sr.CLOSE_WINDOW},
+                              f"{item['id']} names a window no shipped verb exposes")
+
+    def test_an_expired_item_reports_rather_than_gates(self) -> None:
+        """Mutant: delete the expired bucket's line from `render_checklist`.
+
+        Dropping the state out of `_OUTSTANDING` alone leaves both buckets empty and the close
+        printing `none outstanding` - the row VANISHES instead of being reported. So this
+        asserts it appears in the render, carrying the command that should have enforced it.
+        """
+        ck = self._ck()
+        row = self._row(ck, "goal-seat-reviewed")
+        self.assertEqual(sr.EXPIRED, row["state"], row["detail"])
+        self.assertNotIn("goal-seat-reviewed", ck["outstanding"],
+                         "an item past its window is holding the close")
+        self.assertIn("goal-seat-reviewed", ck["expired"])
+        self.assertIn("sprint plan", row["detail"])
+        rendered = sr.render_checklist(ck)
+        self.assertIn("PAST THEIR WINDOW", rendered)
+        self.assertIn("enforce at `sprint plan`", rendered)
+
+    def test_the_shipped_checklist_command_reports_the_expired_item_and_does_not_refuse_on_it(
+            self) -> None:
+        """The SHIPPED entry point, not the library behind it.
+
+        `cmd_checklist` exits non-zero while any compulsory item is outstanding, and that exit
+        code is what the close chain and a reader both act on. A library test cannot see the
+        wiring: `checklist()` could return the expired row correctly while the command still
+        counted it as outstanding and refused. Both halves are asserted here - the row is
+        printed with its enforcing command, and the exit code does not hold on it.
+        """
+        self._run()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = sr.main(["--root", str(self.root), "checklist", "--id", "RETRO9100"])
+        out = buf.getvalue()
+        self.assertIn("PAST THEIR WINDOW", out)
+        self.assertIn("enforce at `sprint plan`", out)
+        # Non-zero here, but for the CLOSING REVIEW - a close-window item - never for the
+        # expired ones. A command that refused on an expired row would be the receipt again.
+        self.assertEqual(1, rc)
+        self.assertIn("closing-review", out)
+
+    def test_a_close_window_item_still_gates(self) -> None:
+        """Mutant: `_expired` returns True unconditionally.
+
+        The control against moving windows disarming the items the close genuinely owns. The
+        criterion first named an unwritten retro; that row reports `ran` for a missing file
+        (BG0540), so the example is the closing review, which gates as the table intends.
+        """
+        ck = self._ck()
+        row = self._row(ck, "closing-review")
+        self.assertEqual(sr.NOT_RUN, row["state"], row["detail"])
+        self.assertIn("closing-review", ck["outstanding"])
+        self.assertNotIn("closing-review", ck["expired"])
+
+    def test_a_satisfied_close_item_is_in_no_bucket(self) -> None:
+        """The positive control beside AC3: without it, an implementation reporting everything
+        outstanding passes the test above."""
+        ck = self._ck()
+        row = self._row(ck, "retro")
+        self.assertEqual(sr.RAN, row["state"], row["detail"])
+        self.assertNotIn("retro", ck["outstanding"])
+        self.assertNotIn("retro", ck["expired"])
+
+
 class TickVerificationTests(ChecklistBase):
     """US0594. Two units of one run were closed on ticks the diff contradicted, and the
     checklist passed them.
@@ -1227,9 +1318,9 @@ class SprintChecklistStageTests(ChecklistBase):
         stages = [r for r in ck["items"] if r["kind"] == sr.STAGE]
         self.assertTrue(stages, "the checklist carries no stage rows at all")
         for row in stages:
-            self.assertIn(row["state"], (sr.RAN, sr.NOT_RUN, sr.WAIVED),
+            self.assertIn(row["state"], (sr.RAN, sr.NOT_RUN, sr.WAIVED, sr.EXPIRED),
                           f"{row['id']} has state {row['state']!r}, which is not one of the "
-                          f"three a stage may hold")
+                          f"four a stage may hold")
             self.assertTrue(str(row["value"]).strip(),
                             f"{row['id']} reports an empty value, which reads as 'nothing to "
                             f"say' - the one thing a stage that never ran must not read as")
@@ -1238,9 +1329,13 @@ class SprintChecklistStageTests(ChecklistBase):
         # No goal-review record and a run that stopped short with no handoff.
         ck = self._ck(outcome="blocked", handoff=None)
         text = sr.render_checklist(ck)
-        self.assertEqual(self._row(ck, "goal-seat-reviewed")["state"], sr.NOT_RUN)
+        # `goal-seat-reviewed` is enforced at `sprint plan`, so at a close it is EXPIRED
+        # rather than NOT RUN (US0591) - still NAMED, which is what this test is about, and
+        # still carrying the command that should have enforced it.
+        self.assertEqual(self._row(ck, "goal-seat-reviewed")["state"], sr.EXPIRED)
         self.assertEqual(self._row(ck, "handoff")["state"], sr.NOT_RUN)
-        self.assertIn("goal-seat-reviewed", " ".join(ck["outstanding"]) + " " + text)
+        self.assertIn("goal-seat-reviewed",
+                      " ".join(ck["outstanding"] + ck["expired"]) + " " + text)
         self.assertIn("Handoff", text)
         self.assertIn("NOT RUN", text)
 
@@ -1249,9 +1344,12 @@ class SprintChecklistStageTests(ChecklistBase):
         no `reviewed_at` is a batch nobody reviewed, however many spans were opened."""
         unreviewed = self._ck(batches=[{"units": ["US0001"], "opened_at": "2026-01-01T01:00:00Z"}])
         row = self._row(unreviewed, "batch-boundary-review")
-        self.assertEqual(row["state"], sr.NOT_RUN)
+        # EXPIRED, not NOT RUN: its enforcer is `sprint review-batch`, which cannot be run at a
+        # close where the batch has already been delivered (US0591). Still reported, and still
+        # distinguishable from a batch that WAS reviewed - which is this test's subject.
+        self.assertEqual(row["state"], sr.EXPIRED)
         self.assertIn("0/1", row["value"])
-        self.assertIn("batch-boundary-review", unreviewed["outstanding"])
+        self.assertIn("batch-boundary-review", unreviewed["expired"])
         # ... and the control, so the state depends on the review rather than being constant.
         reviewed = self._ck(batches=[{"units": ["US0001"], "opened_at": "2026-01-01T01:00:00Z",
                                       "reviewed_at": "2026-01-01T02:00:00Z"}])
