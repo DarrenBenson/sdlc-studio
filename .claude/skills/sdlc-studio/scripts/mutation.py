@@ -1833,6 +1833,15 @@ def append_ledger(root: Path | str, report: dict, records: list[dict],
     return _store_ledger(path, state, entries, reset)
 
 
+class LedgerUnreadable(RuntimeError):
+    """The mutation ledger existed and could not be parsed, so its contents are gone.
+
+    Raised rather than returned as an empty list: an unreadable bar is not a passed one, and
+    every gate here says so in its own except-arm. An empty history and a destroyed one look
+    identical to a caller, and only one of them means nothing was ever recorded.
+    """
+
+
 def ledger_entries(root: Path | str) -> list[dict]:
     """Every entry in the mutation ledger, or an empty list when it cannot be read.
 
@@ -1842,7 +1851,15 @@ def ledger_entries(root: Path | str) -> list[dict]:
     silently got nothing back. A defensive `hasattr` around a name that never existed is
     indistinguishable from the feature working.
     """
-    state, _reset = _load_ledger(ledger_path(Path(root)))
+    state, reset = _load_ledger(ledger_path(Path(root)))
+    if reset:
+        # A ledger that could not be PARSED is not an empty history, and reading it as one made
+        # the check that refuses in every mode - `off` included - silently pass exactly when the
+        # instrument was unreadable. `_load_ledger` reports the replacement; the callers just
+        # never saw it.
+        raise LedgerUnreadable(f"{ledger_path(Path(root))} was malformed and has been replaced "
+                               f"- its previous contents are gone, so nothing can be checked "
+                               f"against them")
     return [e for e in (state.get("entries") or []) if isinstance(e, dict)]
 
 

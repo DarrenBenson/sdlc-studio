@@ -549,6 +549,34 @@ class MutationEvidenceLaneCLITests(unittest.TestCase):
             self.assertNotIn("mutation-evidence advisory", out,
                              "`off` emitted an advisory, so it is `report` under another name")
 
+    def test_off_stands_the_lane_down_rather_than_running_and_discarding(self) -> None:
+        """`off` returns before the exemption re-derivation, which shells out to git and runs
+        the mutant generator. Doing that work and throwing the answer away is not what the
+        doctrine's "the lane stands down" says, and it is a real cost on a project that chose
+        `off` to avoid paying it.
+
+        Mutant: delete the early return - the lane then reaches `verify_no_surface_claim`,
+        which this fixture's false exemption would make refuse under any other mode.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _lane_repo(d, mode="off", exemption=["README.md"], record="stale")
+            calls = []
+            real = tr.verify_no_surface_claim
+
+            def _spy(*a, **kw):
+                calls.append(a)
+                return real(*a, **kw)
+
+            tr.verify_no_surface_claim = _spy
+            try:
+                code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
+            finally:
+                tr.verify_no_surface_claim = real
+            self.assertEqual(0, code, out)
+            self.assertEqual([], calls,
+                             "`off` re-derived the exemption anyway, so the lane ran and its "
+                             "answer was discarded rather than the lane standing down")
+
     def test_an_unrecognised_mode_is_refused_by_name(self) -> None:
         """A typo must not silently switch a project's hard bar off. Mutant: fall back to the
         default on an unrecognised value - `blcok` would then get `report`, which is the one
@@ -756,6 +784,21 @@ class MeasuredEvidenceCLITests(unittest.TestCase):
         spec.loader.exec_module(mod)
         mod.append_ledger(root, report, records, unit=unit)
 
+    def _contradict(self, root, *, line, mutant, verdict="survived"):
+        """Append a SECOND measured row to the same entry, for the same instrument.
+
+        Written straight into the entry rather than through a second `append_ledger` call,
+        because a second measured run for the same (target, unit) supersedes the first - which
+        is correct, and is why a self-contradiction has to be two rows of ONE run.
+        """
+        led = root / "sdlc-studio" / ".local" / "mutation-runs.json"
+        state = json.loads(led.read_text(encoding="utf-8"))
+        entry = next(e for e in state["entries"] if e.get("mutants"))
+        entry["mutants"].append({"unit": "BG0001", "criterion": "AC1", "line": line,
+                                 "mutant": mutant, "test": "pytest x", "verdict": verdict,
+                                 "provenance": "measured"})
+        led.write_text(json.dumps(state), encoding="utf-8")
+
     def test_a_measured_run_satisfies_the_gate(self) -> None:
         """AC1, A DISCRIMINATING PAIR. Asserting exit 0 alone is vacuous - the command exited 0
         for every ledger before the lane was wired, so a single-arm test is green in both
@@ -813,20 +856,22 @@ class MeasuredEvidenceCLITests(unittest.TestCase):
             # ONE mutant, two verdicts: registered killed and measured survived at the same
             # target, line and content hash, naming the SAME edit. That is the instrument lying
             # about itself, which is the only thing this check is for.
-            root = _lane_repo(d, mode="off", record="current", mutants=[
-                {"unit": "BG0001", "criterion": "AC1", "verdict": "killed", "line": 4,
-                 "mutant": "stub-return-null", "test": "pytest x"}])
-            self._measured(root, verdicts=(("survived", 4),), mutant="stub-return-null")
+            # ONE INSTRUMENT contradicting ITSELF: two measured rows for the same mutant at the
+            # same line and hash, with opposite verdicts. Same provenance, because that is what
+            # the ledger can decide - a measured row names a fault class and a registered one
+            # names the author's prose, and the two join on nothing (BG0552).
+            root = _lane_repo(d, mode="off", record="none")
+            self._measured(root, verdicts=(("killed", 4),), mutant="stub-return-null")
+            self._contradict(root, line=4, mutant="stub-return-null")
             code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertNotEqual(0, code, "a self-contradicting ledger was accepted under `off`")
             self.assertIn("CONTRADICTS", out, f"the refusal does not say what it found:\n{out}")
         with tempfile.TemporaryDirectory() as d:
             # CONTROL ONE: the same co-located pair, AGREEING. A check that refuses on any pair
             # passes the assertion above for the wrong reason.
-            root = _lane_repo(d, mode="off", record="current", mutants=[
-                {"unit": "BG0001", "criterion": "AC1", "verdict": "killed", "line": 4,
-                 "mutant": "stub-return-null", "test": "pytest x"}])
+            root = _lane_repo(d, mode="off", record="none")
             self._measured(root, verdicts=(("killed", 4),), mutant="stub-return-null")
+            self._contradict(root, line=4, mutant="stub-return-null", verdict="killed")
             self.assertEqual(0, _cli(root, "set", "--id", "BG0001", "--status", "Fixed")[0],
                              "two records AGREEING were read as a contradiction")
         with tempfile.TemporaryDirectory() as d:
@@ -835,10 +880,9 @@ class MeasuredEvidenceCLITests(unittest.TestCase):
             # line alone this refuses - and since this branch ignores the mode by design, that
             # false positive turns the DEFAULT reporting mode into a block no config can stand
             # down, only `--force`.
-            root = _lane_repo(d, mode=None, record="current", mutants=[
-                {"unit": "BG0001", "criterion": "AC1", "verdict": "killed", "line": 4,
-                 "mutant": "inverted the a == b guard", "test": "pytest x"}])
-            self._measured(root, verdicts=(("survived", 4),), mutant="stub-return-null")
+            root = _lane_repo(d, mode=None, record="none")
+            self._measured(root, verdicts=(("killed", 4),), mutant="stub-return-null")
+            self._contradict(root, line=4, mutant="invert-condition", verdict="survived")
             code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertEqual(0, code,
                              "two DIFFERENT mutants at one line were read as the instrument "
@@ -980,6 +1024,76 @@ class SurvivorFilingCLITests(unittest.TestCase):
                              "the same survivor minted a second bug once the filer's own "
                              "bookkeeping was lost, so the key is not on the artefact")
 
+    def test_the_filed_bug_carries_the_run_that_let_it_through(self) -> None:
+        """The close counts THIS RUN's survivors by this field. The stamp and the count are
+        joined only by a string literal in two files, so deleting the stamp leaves both suites
+        green while every close reports zero - the silent drop AC6 exists to prevent.
+
+        Mutant: drop the run-field upsert at filing.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._survivor_repo(d)
+            self.assertEqual(0, _cli(root, "set", "--id", "BG0001", "--status", "Fixed")[0])
+            body = (root / "sdlc-studio" / "bugs" / self._bugs(root)[0]).read_text(
+                encoding="utf-8")
+            self.assertEqual("RUN-TEST01",
+                             (sdlc_md.extract_field(body, tr.SURVIVOR_RUN_FIELD) or "").strip(),
+                             "the filed bug does not name the run that let it through, so no "
+                             "close can count it")
+            # And the close DOES count it - the two halves joined, not asserted separately.
+            import importlib.util as iu
+            spec = iu.spec_from_file_location("sprint_report", DIR / "sprint_report.py")
+            sr = iu.module_from_spec(spec)
+            sys.modules["sprint_report"] = sr
+            spec.loader.exec_module(sr)
+            state, value, _detail = sr._ck_mutation_survivors(
+                {"root": str(root), "run": {"run_id": "RUN-TEST01"}})
+            self.assertIn("1 survivor(s)", value,
+                          f"the close did not count the bug the filer just wrote: {value}")
+
+    def test_force_does_not_skip_the_filing(self) -> None:
+        """A force taken for an unrelated reason must not drop the survivor: `--force` waives a
+        BAR, not a finding.
+
+        Mutant: restore the `not force and` guard on the filing.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._survivor_repo(d)
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed", "--force")
+            self.assertEqual(0, code, out)
+            self.assertEqual(1, len(self._bugs(root)),
+                             "a forced close dropped the survivor silently")
+
+    def test_the_key_survives_a_reworded_field_and_an_archived_finding(self) -> None:
+        """Both are things a triager does to a finding they have decided about, and both
+        re-minted it.
+
+        Mutant: return the raw free-text key rather than a digest of it.
+        Mutant: use a non-recursive glob over the bug directory.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._survivor_repo(d)
+            self.assertEqual(0, _cli(root, "set", "--id", "BG0001", "--status", "Fixed")[0])
+            first = self._bugs(root)
+            self.assertEqual(1, len(first))
+            filed = root / "sdlc-studio" / "bugs" / first[0]
+            body = filed.read_text(encoding="utf-8")
+            key = (sdlc_md.extract_field(body, tr.SURVIVOR_FIELD) or "").strip()
+            self.assertNotIn(" ", key,
+                             "the key carries free text, so rewording the description in the "
+                             "filed bug re-mints the same finding")
+            # ARCHIVED, which is where a decided finding goes.
+            archive = root / "sdlc-studio" / "bugs" / "archive" / "v1"
+            archive.mkdir(parents=True)
+            filed.rename(archive / filed.name)
+            _cli(root, "set", "--id", "BG0001", "--status", "Open")
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed",
+                             "--depth", "functional (unit: the repaired branch, both ways)")
+            self.assertEqual(0, code, out)
+            self.assertEqual([], self._bugs(root),
+                             "archiving the finding re-minted it, so a decided survivor comes "
+                             "back every close")
+
     def test_a_survivor_bug_never_parents_another(self) -> None:
         """The generational hazard. A filed survivor bug is itself a repair; without this it
         files a survivor of its own, and so on for ever."""
@@ -992,9 +1106,19 @@ class SurvivorFilingCLITests(unittest.TestCase):
                           "the filed bug carries no survivor field, so nothing stops it "
                           "parenting another")
             cid = sdlc_md.extract_record_id(Path(child).stem)
-            # The child close must actually SUCCEED, or the guard is never reached and this
-            # test passes on a refusal that has nothing to do with it - which is what it did:
-            # the filed bug's criteria are unticked, so the close exited 1 before the guard.
+            # The CHILD must have a survivor of its own in the ledger, or nothing would be
+            # filed with or without the guard and this test proves nothing about it. Two
+            # earlier versions of this test were vacuous for two different reasons: the close
+            # exited before the guard, and then the child had no survivor to file.
+            led = root / "sdlc-studio" / ".local" / "mutation-runs.json"
+            state = json.loads(led.read_text(encoding="utf-8"))
+            state["entries"][0]["mutants"].append(
+                {"unit": cid, "criterion": "AC1", "verdict": "survived", "line": 3,
+                 "mutant": "a survivor of the survivor", "test": "pytest x"})
+            led.write_text(json.dumps(state), encoding="utf-8")
+            self.assertTrue(tr._survivor_records(str(root), cid),
+                            "the child has no survivor recorded, so this test cannot see the "
+                            "guard at all")
             code, out = _cli(root, "set", "--id", cid, "--status", "Fixed", "--force",
                              "--depth", "functional (unit: the survivor's own repair)")
             self.assertEqual(0, code, f"the child close did not reach the guard:\n{out}")
@@ -1014,17 +1138,30 @@ class SurvivorSeverityTests(unittest.TestCase):
         "Medium": "def decide(a, b):\n    if a == b:\n        print('x')\n    return 1\n",
         "Low": "DECIDE = 1\ndef other():\n    return 2\n",
     }
-    #: Bodies whose SIGNAL was false before the scope and terminality rules were fixed. Each is
-    #: Medium: no None path, and no raise the enclosing function performs.
+    #: Bodies whose SIGNAL was false before the scope and terminality rules were fixed, each
+    #: with the line to probe. Every one is Medium: no None path, and no raise the enclosing
+    #: function performs. The line travels WITH the body - a fixed line number across fixtures
+    #: silently probed past the end of a short one and got `module level`, which is a different
+    #: wrong answer wearing the same green tick.
     HONEST_MEDIUM = {
-        "if/else returning on both arms":
-            "def decide(a, b):\n    if a == b:\n        return 1\n    else:\n        return 2\n",
-        "a nested helper that raises":
+        "if/else returning on both arms": (
+            "def decide(a, b):\n    if a == b:\n        return 1\n    else:\n        return 2\n", 3),
+        "a nested helper that raises": (
             "def decide(a, b):\n    def _inner():\n        raise ValueError('no')\n"
-            "    print(a, b)\n    return 1\n",
-        "a try whose body and handler both return":
+            "    print(a, b)\n    return 1\n", 4),
+        "a try whose body and handler both return": (
             "def decide(a, b):\n    try:\n        return int(a)\n"
-            "    except ValueError:\n        return 0\n",
+            "    except ValueError:\n        return 0\n", 3),
+        "a for with an else, both returning": (
+            "def decide(a, b):\n    for x in a:\n        return x\n    else:\n        return b\n", 3),
+        "a while True whose only break is in an inner loop": (
+            "def decide(a, b):\n    while True:\n        for x in a:\n            break\n"
+            "        return b\n", 5),
+        "an async with returning": (
+            "async def decide(a, b):\n    async with a as c:\n        return c\n", 3),
+        "a match whose cases all return, with a catch-all": (
+            "def decide(a, b):\n    match a:\n        case 1:\n            return 1\n"
+            "        case _:\n            return b\n", 4),
     }
 
     def test_a_signal_is_never_false_of_the_body_it_read(self) -> None:
@@ -1039,11 +1176,11 @@ class SurvivorSeverityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "src").mkdir(parents=True)
-            for name, body in self.HONEST_MEDIUM.items():
+            for name, (body, line) in self.HONEST_MEDIUM.items():
                 with self.subTest(body=name):
                     (root / "src" / "thing.py").write_text(body, encoding="utf-8")
                     sev, signal = tr._survivor_severity(
-                        str(root), {"target": "src/thing.py", "line": 4})
+                        str(root), {"target": "src/thing.py", "line": line})
                     self.assertEqual("Medium", sev,
                                      f"{name} derived {sev} with the signal {signal!r}, which "
                                      f"is not true of that body")
@@ -1177,21 +1314,35 @@ class NoSurfaceExemptionCLITests(unittest.TestCase):
                           f"the refusal does not name the missing base ref:\n{out}")
 
     def test_a_no_surface_repair_records_the_exemption_and_its_reason(self) -> None:
-        """US0566 AC3. An exemption that states no scope cannot be re-derived, so it is a claim
-        wearing an exemption's name.
+        """US0566 AC3: an exemption is READ from a durable record, and what it claims is what
+        gets re-derived - so the reader can tell an established absence from a skipped run.
 
-        Mutant: accept a record naming no paths.
+        The read-back assertion this test used to carry was vacuous: it asserted the fixture's
+        own file back, and no production path writes it. What IS decidable is that the record's
+        CONTENT decides the outcome, which is the property the criterion is actually about.
+
+        Mutant: ignore the record and treat every repair as unexempted.
+        Mutant: grant the exemption without re-deriving what it claims.
         """
         with tempfile.TemporaryDirectory() as d:
-            root = _lane_repo(d, mode="block", exemption=[], affects="README.md",
-                              py_change=False)
+            # A markdown-only diff WITH the record: exempt, and it proceeds.
+            # `Affects` names a Python module deliberately: with it naming only markdown, the
+            # unexempted arm below passes for a different reason entirely - `repair_mutation_gate`
+            # derives its own surface from `Affects` and finds nothing to demand evidence over,
+            # which is BG0551 and not this criterion.
+            root = _lane_repo(d, mode="block", exemption=["README.md"], py_change=False)
             code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertEqual(0, code, f"a genuine markdown-only repair was refused:\n{out}")
-            rec = json.loads((root / "sdlc-studio" / ".local"
-                              / "no-mutatable-surface.json").read_text(encoding="utf-8"))
-            self.assertIn("BG0001", rec,
-                          "the exemption was granted without a durable record, so a reader "
-                          "cannot tell an established absence from a skipped run")
+        with tempfile.TemporaryDirectory() as d:
+            # The SAME markdown-only diff with NO record: the exemption path is not taken, so
+            # the evidence demand applies and the repair is refused. That is what makes the
+            # record load-bearing rather than decorative.
+            root = _lane_repo(d, mode="block", exemption=None, py_change=False)
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
+            self.assertNotEqual(0, code,
+                                "an unexempted repair was let through, so the record decides "
+                                "nothing and the exemption is a box")
+            self.assertIn("NO mutation evidence", out)
 
     def test_a_claimed_exemption_over_a_mutatable_surface_is_refused(self) -> None:
         """US0566 AC4. An exemption an author can assert is the gate's own fail-open.

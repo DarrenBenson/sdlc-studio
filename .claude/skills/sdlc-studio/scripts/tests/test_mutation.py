@@ -4242,6 +4242,31 @@ class ChangedLineScopeCLITests(unittest.TestCase):
                               f"changed")
 
 
+class UnreadableLedgerTests(unittest.TestCase):
+    """An unreadable ledger is not an empty one. `_load_ledger` replaces a malformed file and
+    reports it; `ledger_entries` threw that report away, so the check that refuses in every mode
+    - `off` included - silently passed exactly when the instrument could not be read."""
+
+    def test_a_malformed_ledger_raises_rather_than_reading_as_empty(self) -> None:
+        """Mutant: discard `_load_ledger`'s reset flag and return the empty entry list."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            m.ledger_path(root).write_text("{not json at all", encoding="utf-8")
+            with self.assertRaises(m.LedgerUnreadable):
+                m.ledger_entries(root)
+
+    def test_an_absent_ledger_is_an_empty_history(self) -> None:
+        """The control: a project that has never mutated anything reads as empty, not as
+        broken, or the refusal fires on every fresh checkout."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self.assertEqual([], m.ledger_entries(root))
+
+
 class RunUnitAttributionCLITests(unittest.TestCase):
     """US0661 AC2, at the SHIPPED VERB. Every other test here calls `append_ledger` directly, so
     the wiring between `run --unit` and the ledger - the part a library test does not exercise -

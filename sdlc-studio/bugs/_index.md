@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 40 |
+| Open | 41 |
 | In Progress | 1 |
 | Fixed | 423 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **551** |
+| **Total** | **552** |
 
 ## All Bugs
 
@@ -91,6 +91,7 @@
 | [BG0549](BG0549-the-non-convergence-escalation-is-sticky-a-converging.md) | the non-convergence escalation is sticky: a converging APPROVE still reports that the panel is not converging, because the notice counts historical REJECTs and never re-reads the latest verdict | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0550](BG0550-register-drops-a-file-s-earlier-registered-mutants.md) | register drops a file's earlier registered mutants without saying so, so an edit after registering silently empties a unit's evidence | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0551](BG0551-repair-mutation-gate-derives-its-surface-from-the.md) | repair_mutation_gate derives its surface from the artefact's own Affects, so a mis-declared Affects bypasses the evidence demand entirely | Open | High | 2026-08-07 | 2026-08-07 |
+| [BG0552](BG0552-a-registered-mutant-cannot-be-joined-to-a.md) | a registered mutant cannot be joined to a measured one, so a cross-provenance contradiction in the mutation ledger is undetectable | Open | Medium | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

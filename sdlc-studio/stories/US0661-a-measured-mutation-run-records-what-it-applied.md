@@ -63,18 +63,21 @@
 
 ### AC4: a ledger that contradicts itself refuses in every mode, `off` included
 
-- **Given** a mutant registered `killed` at a file and line, and a measured run recording
-  `survived` at that same file and line under the same content hash, with
-  `review.mutation_evidence: off`; and beside it the control, a mutant registered `killed` and
-  measured `killed` at the same target, line and hash
+- **Given** ONE mutant recorded twice by the same instrument at the same target, line and
+  content hash with opposite verdicts - two measured rows, or two registered ones - with
+  `review.mutation_evidence: off`; and beside it two controls: the same pair AGREEING, and two
+  DIFFERENT mutants at one line disagreeing because they are different edits
 - **When** the terminal transition runs on each
-- **Then** the first REFUSES, naming both records and the fact that they contradict, and the
-  second PROCEEDS under both `off` and `block`. This is not a quality bar being applied under
-  `off`, it is the instrument lying about itself, and every figure derived from a false verdict is
-  wrong. The control is named because a check that refuses on any co-located pair passes the
-  refusal test for the wrong reason
+- **Then** the first REFUSES, naming both records and the fact that they contradict, and both
+  controls PROCEED under `off` and under `block`. This is not a quality bar being applied under
+  `off`, it is the instrument lying about itself, and every figure derived from a false verdict
+  is wrong. The scope is ONE PROVENANCE because that is what the ledger can decide: a measured
+  row names a fault class and a registered one names the author's prose, so the two can be
+  compared on nothing but the line - and joining on the line alone reads two honest different
+  mutants as a contradiction, which, since this branch ignores the mode by design, converts the
+  default reporting mode into a block no configuration can stand down. The cross-provenance
+  case is real and is filed rather than guessed at
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MeasuredEvidenceCLITests::test_a_recorded_kill_shown_to_survive_refuses_even_when_off
-- **Verified:** yes (2026-08-07)
 
 ### AC5: a registered mutant records a line, and a missing line is refused not defaulted
 
@@ -110,7 +113,7 @@
 | AC3 | write the measured records with the file and verdict but no line | the ledger records the shape the gate selects on |
 | AC3 | write the measured records without the `unit` key, pinning the field where it is written | the ledger records the shape the gate selects on |
 | AC4 | change transition.py to gate the contradiction check behind the mode being other than `off` | a ledger that contradicts itself refuses in every mode, `off` included |
-| AC4 | change transition.py to refuse on any co-located registered and measured pair, whatever the two verdicts were | a ledger that contradicts itself refuses in every mode, `off` included |
+| AC4 | change transition.py to key the contradiction on the line alone, so two different mutants there read as one | a ledger that contradicts itself refuses in every mode, `off` included |
 | AC5 | change mutation.py to accept `--line` and drop it before writing the record | a registered mutant records a line, and a missing line is refused not defaulted |
 | AC5 | change mutation.py to leave `--line` optional for a `survived` verdict | a registered mutant records a line, and a missing line is refused not defaulted |
 | AC6 | change transition.py to compose the refusal from the target alone, dropping the line | the refusal quotes the line rather than a question mark |
@@ -125,3 +128,5 @@
 | 2026-08-07 | sdlc-studio | Plan review round 3 APPROVEd, ruling both round-2 findings CLOSED. Its minors are folded in: AC2's pair derives from one real run, AC6 names the survivor listing as the refusal under test, AC3 gains a row pinning the unit key where it is written, and the round-1 history row is marked against the renumbering |
 | 2026-08-07 | sdlc-studio | Built. `ledger_entries` did not exist: `repair_mutation_gate` called it behind a `hasattr` that was False for its whole life, so the fallback was the only branch and any new caller reaching for it inside a `try` silently got nothing. Making `--line` mandatory reddened 16 existing tests, every one of them registering a mutant the shipped verb could not have produced - which is the criterion's own point, paid at its own expense |
 | 2026-08-07 | sdlc-studio | Delivery review round 1 REJECTed on the finding that mattered most: `append_ledger` superseded every measured entry for a target, so two units declaring the same file - which is what a sprint touching one module looks like - meant the second unit's run silently erased the first unit's rows and shut its gate. Superseding is now per (target, unit), with a CLI test over two units and one file. The contradiction check keyed on the line alone, so two honest different mutants there read as the instrument lying - and because that branch ignores the mode by design, it turned the default reporting mode into a block no config could stand down. It now keys on the mutant too, with the differing-mutants control beside the agreeing one. `run --unit` had no test at all and its mutant survived; it has one now. `--line 0` is refused |
+| 2026-08-07 | sdlc-studio | Delivery review round 2 ruled AC4's repair MOVED: keying on the mutant traded a false positive for a false negative, because a registered mutant is prose and a measured one is a fault class, so the two never join and the cross-provenance check was near-dead. AC4 is narrowed to what the ledger can DECIDE - one instrument contradicting itself within its own vocabulary - with the differing-mutants control beside the agreeing one, and the cross-provenance case is filed as BG0552 rather than guessed at. A criterion whose premise is not decidable from what is stored is a criterion that gets satisfied by a fixture instead |
+| 2026-08-07 | sdlc-studio | Delivery review round 2 ruled four findings CLOSED and the contradiction repair MOVED - keying on the mutant traded a false positive for a false negative, since a registered mutant is prose and a measured one is a fault class and the two never join. The check is now scoped to ONE PROVENANCE, which is what the ledger can decide; AC4 is reworded to that rather than left asserting a premise no fixture could honestly meet, and BG0552 carries the cross-provenance case with the fix it needs - a recorded fault class. `help/mutation.md`'s one-entry-per-target claim, which the per-unit supersede had made false, is corrected |

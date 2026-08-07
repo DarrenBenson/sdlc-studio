@@ -98,8 +98,10 @@ is committed.
   no target has a verdict.
 - **Bounded at 200 entries**, oldest out first, with a cumulative `dropped` total in the file
   and a note on the run's output, so truncation is counted rather than silent. Entries are one
-  per target, so the ledger grows with the number of distinct files ever mutated, not with the
-  number of runs. An unreadable ledger is replaced and says so (`reset`).
+  per (target, unit) for a measured run and one per (target, content) for registrations, so the
+  ledger grows with the distinct surfaces ever mutated rather than with the number of runs. A
+  run supersedes its own kind AND its own unit: two units declaring the same file - which is
+  what a sprint touching one module looks like - do not erase each other's evidence. An unreadable ledger is replaced and says so (`reset`).
 - **`measured` against `registered`.** A `measured` entry is a run that applied the mutant and
   observed the suite's answer. `mutation.py register --target F --line N --mutant "..."
   --test "..." --verdict killed|survived|equivalent` records a mutant a builder applied **by

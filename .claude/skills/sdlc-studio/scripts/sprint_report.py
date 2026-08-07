@@ -1670,6 +1670,7 @@ def _ck_mutation_survivors(ctx: dict) -> tuple:
     if not run_id:
         return (NOT_RUN, "no run", "no run is recorded, so survivors cannot be scoped to one")
     counts: dict = {}
+    orphans: list = []
     for f in sorted(bugs.rglob("BG*.md")):
         try:
             body = f.read_text(encoding="utf-8")
@@ -1677,17 +1678,25 @@ def _ck_mutation_survivors(ctx: dict) -> tuple:
             continue
         if not (sdlc_md.extract_field(body, "Mutation-survivor") or "").strip():
             continue
-        if (sdlc_md.extract_field(body, "Mutation-survivor-run") or "").strip() != run_id:
-            continue
+        stamped = (sdlc_md.extract_field(body, "Mutation-survivor-run") or "").strip()
         sev = (sdlc_md.extract_field(body, "Severity") or "unstated").strip() or "unstated"
-        counts[sev] = counts.get(sev, 0) + 1
+        if stamped == run_id:
+            counts[sev] = counts.get(sev, 0) + 1
+        elif stamped in ("", "none"):
+            # Filed with no run open, so no close will ever claim it. Reported rather than
+            # dropped: a survivor nobody counts is the silent loss this row exists to prevent,
+            # and scoping to a run must not become a new way of losing one.
+            orphans.append(sev)
     total = sum(counts.values())
+    unattributed = (f"; {len(orphans)} filed with no run open, counted by no close"
+                    if orphans else "")
     if not total:
-        return (RAN, "0 survivors filed", "")
+        return (RAN, f"0 survivors filed{unattributed}",
+                "a survivor filed outside a run is counted by nobody" if orphans else "")
     order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
     split = ", ".join(f"{sev} {n}" for sev, n in
                       sorted(counts.items(), key=lambda kv: (order.get(kv[0], 9), kv[0])))
-    return (RAN, f"{total} survivor(s) filed - {split}",
+    return (RAN, f"{total} survivor(s) filed - {split}{unattributed}",
             "these are mutants a repair let through, filed rather than blocked on. Fix them "
             "or decide to live with them, but decide")
 

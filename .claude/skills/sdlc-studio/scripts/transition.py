@@ -1507,11 +1507,41 @@ def _terminates(body) -> bool:
         handled = all(_terminates(h.body) for h in tail.handlers)
         return _terminates(tail.finalbody) or (_terminates(tail.body) and handled
                                                and (not tail.orelse or _terminates(tail.orelse)))
-    if isinstance(tail, ast.With):
+    if isinstance(tail, (ast.With, ast.AsyncWith)):
         return _terminates(tail.body)
+    if isinstance(tail, (ast.For, ast.AsyncFor)):
+        # A `for` may run zero times, so only its `else` can be relied on - and the loop body
+        # can `break` past the `else`, which is why the body has to terminate too.
+        return bool(tail.orelse) and _terminates(tail.body) and _terminates(tail.orelse)
+    if getattr(ast, "Match", None) and isinstance(tail, ast.Match):
+        # Every case terminates AND one of them is a catch-all, or the match can fall through
+        # having matched nothing.
+        catch_all = any(isinstance(c.pattern, ast.MatchAs) and c.pattern.pattern is None
+                        and c.guard is None for c in tail.cases)
+        return catch_all and all(_terminates(c.body) for c in tail.cases)
     if isinstance(tail, ast.While) and isinstance(getattr(tail, "test", None), ast.Constant) \
             and tail.test.value is True:
-        return not any(isinstance(n, ast.Break) for n in ast.walk(tail))
+        return not _breaks_this_loop(tail)
+    return False
+
+
+def _breaks_this_loop(loop) -> bool:
+    """Does `loop` contain a `break` that leaves IT, rather than an inner loop?
+
+    `ast.walk` counted an inner loop's break as the outer one's, so a `while True` whose only
+    break belongs to a nested `for` was read as escapable and its enclosing function derived a
+    None path that does not exist.
+    """
+    import ast  # noqa: PLC0415
+    stack = list(loop.body) + list(getattr(loop, "orelse", []))
+    while stack:
+        node = stack.pop()
+        if isinstance(node, ast.Break):
+            return True
+        if isinstance(node, (ast.For, ast.AsyncFor, ast.While, ast.FunctionDef,
+                             ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)):
+            continue                    # a break in there belongs to that construct
+        stack.extend(ast.iter_child_nodes(node))
     return False
 
 
@@ -2007,7 +2037,7 @@ def _ledger_contradiction(root, uid: str) -> str | None:
             # default `report` mode into a block no config could stand down - this branch
             # ignores the mode by design, so a false positive here is not survivable. The
             # instrument lying about ITSELF means one mutant, two verdicts.
-            key = (*key_base, line, _mutant_identity(mu))
+            key = (*key_base, line, _mutant_identity(mu), mutation.entry_provenance(e))
             prior = seen.get(key)
             if prior and prior[0] != verdict:
                 return (f"{uid}: the mutation ledger CONTRADICTS itself at "
