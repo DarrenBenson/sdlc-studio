@@ -1064,6 +1064,19 @@ class CoverageConsistencyTests(ChecklistBase):
         self.assertEqual(sr.NOT_RUN, row["state"], row["detail"])
         self.assertIn("US0002", row["detail"], "the uncovered unit was not named")
         self.assertIn("1", self._row(ck, "coverage-consistency")["value"])
+        # STRUCTURAL, not behavioural. `open_units = list(units)` - the closing review deciding
+        # coverage for itself, which is exactly what this criterion forbids - survived the whole
+        # suite, because every assertion above is satisfied by a second computation that happens
+        # to agree. So `_coverage` is patched and the row is required to move with it: a unit the
+        # shared reading calls covered must stop holding the row, whatever any other lane thinks.
+        with mock.patch.object(sr, "_coverage",
+                               return_value={"US0001": {"covered": True, "by": "x"},
+                                             "US0002": {"covered": True, "by": "x"}}):
+            self._run()
+            moved = self._row(sr.checklist(self.root, "RETRO9100"), "closing-review")
+        self.assertEqual(sr.RAN, moved["state"],
+                         "the closing review did not read the shared coverage value - it is "
+                         "computing coverage for itself, so the readings can diverge again")
 
     def test_a_disagreement_is_outstanding(self) -> None:
         """Mutant: drop one of the two readings from the row's value.
@@ -1268,6 +1281,34 @@ class TickVerificationTests(ChecklistBase):
         row = self._row(ck, "tick-verification")
         self.assertEqual(sr.NOT_RUN, row["state"])
         self.assertIn("base ref", row["detail"])
+
+    def test_a_story_criterion_is_read_in_its_own_convention(self) -> None:
+        """A story's claim is a `- **Verified:** yes` stamp under `### ACn`, not a checkbox.
+
+        Reading only the box made this row inert for every story in the corpus - 0 of 651 - so
+        it reported `ticks supported` across a whole batch having examined nothing, including
+        the very unit whose two false ticks are the rationale this row cites.
+        """
+        (self.root / "sdlc-studio" / "stories" / "US0001-s.md").write_text(
+            "# US0001: s\n\n> **Status:** Done\n> **Affects:** src/never.py\n"
+            "> **Points:** 2\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+            "- **Given** x\n- **Verified:** yes (2026-08-07)\n", encoding="utf-8")
+        self.assertEqual(["AC1"], sr._ticked_criteria(
+            (self.root / "sdlc-studio" / "stories" / "US0001-s.md").read_text(encoding="utf-8")))
+        self._unit("US0002", "src/touched.py", ticked=True)
+        row = self._resolve({"src/touched.py"})
+        self.assertEqual(sr.NOT_RUN, row["state"], row["detail"])
+        self.assertIn("US0001", row["detail"])
+        self.assertIn("AC1", row["detail"])
+
+    def test_a_pass_over_no_ticks_at_all_is_refused(self) -> None:
+        """A pass over an empty set is not a pass - the affirmative-over-nothing shape the
+        sibling rows refuse by design. Mutant: return RAN when nothing was examined."""
+        for uid in ("US0001", "US0002"):
+            self._unit(uid, "src/touched.py", ticked=False)
+        row = self._resolve({"src/touched.py"})
+        self.assertEqual(sr.NOT_RUN, row["state"])
+        self.assertIn("nothing was checked", row["detail"])
 
     def test_an_unreadable_diff_is_unjudged_not_supported(self) -> None:
         """None is not an empty set. `could not be taken` and `nothing changed` lead to opposite

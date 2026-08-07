@@ -1258,7 +1258,16 @@ def _ck_closing_review(ctx: dict) -> tuple:
         return (NOT_RUN, "coverage unreadable",
                 "the coverage reading could not be taken, so this row cannot say whether the "
                 "batch was reviewed - which is not the same as its not having been")
-    open_units = [u for u in units if not (cov.get(u) or {}).get("covered")]
+    # BOTH, never one. The shared reading is the authority on COVERAGE - that is US0596 - but
+    # a recorded non-APPROVE verdict is terminal for the unit, which is US0593, and delegating
+    # the whole decision voided it: `review_coverage`'s negative test reads only the per-unit
+    # verdict ledger, so an adversarial-evidence row or a stale APPROVE under a later sprint
+    # REJECT cleared the row and printed "N unit(s) approved" over a batch nobody had cleared.
+    # A delivery review caught it by executing the case; two of US0593's own mutants had gone
+    # from killed to surviving in the commit that was supposed to unify the readings.
+    open_units = [u for u in units
+                  if not (cov.get(u) or {}).get("covered")
+                  or (latest.get(u) and latest[u] != _APPROVE)]
     rejected = [u for u in open_units if latest.get(u) and latest[u] != _APPROVE]
     unreviewed = [u for u in open_units if not latest.get(u)]
     rounds = len(ctx.get("review_rounds") or [])
@@ -1308,13 +1317,31 @@ def _changed_paths(root: Path, base_ref: str) -> set | None:
         return None
 
 
+#: A story's claim is not a checkbox. `### ACn` headings are stamped `- **Verified:** yes (date)`
+#: by `verify_ac.py`; the `- [x]` box is the BUG convention. Reading only the box made this row
+#: inert for every story in the corpus - 0 of 651 - including the very unit whose two false
+#: ticks are the rationale this row cites.
+_VERIFIED_RE = re.compile(r"^\s*[-*]\s+\*\*Verified:\*\*\s*(yes|true)\b", re.I)
+
+
 def _ticked_criteria(text: str) -> list[str]:
-    """The criteria this unit's own body claims are done, named."""
-    out = []
-    for i, line in enumerate(sdlc_md.criteria_section(text).splitlines(), 1):
+    """The criteria this unit's own body claims are done, named, in BOTH conventions.
+
+    Returns the criterion ids, so a caller reporting them names `AC2` rather than a line index.
+    """
+    out, heading = [], None
+    for line in sdlc_md.criteria_section(text).splitlines():
+        h = sdlc_md.AC_HEADING_RE.match(line.strip())
+        if h:
+            heading = h.group(1)
+            continue
         m = _TICKED_RE.match(line)
         if m:
-            out.append(m.group(1) or f"criterion {i}")
+            out.append(m.group(1) or heading or "an unnamed criterion")
+            continue
+        if heading and _VERIFIED_RE.match(line):
+            out.append(heading)
+            heading = None
     return out
 
 
@@ -1342,7 +1369,7 @@ def _ck_tick_verification(ctx: dict) -> tuple:
         return (NOT_RUN, "diff unreadable",
                 f"the diff against {base} could not be taken, so the ticks are unjudged - "
                 "which is not the same as supported")
-    contradicted = []
+    contradicted, examined = [], 0
     for uid in (ctx.get("units") or []):
         found = sdlc_md.find_by_id(ctx["root"], uid)
         if not found:
@@ -1355,6 +1382,7 @@ def _ck_tick_verification(ctx: dict) -> tuple:
                     str(sdlc_md.extract_field(text, "Affects") or "").split(",") if a.strip()]
         if not declared:
             continue
+        examined += len(ticked)
         if any(any(c == d or c.startswith(d.rstrip("/") + "/") for c in changed)
                for d in declared):
             continue
@@ -1363,7 +1391,16 @@ def _ck_tick_verification(ctx: dict) -> tuple:
         return (NOT_RUN, f"{len(contradicted)} ticked criterion/criteria unsupported",
                 f"ticked while the surfaces the unit declared are unchanged since {base}: "
                 f"{', '.join(contradicted[:8])}")
-    return (RAN, f"ticks supported by the diff since {base}", "")
+    if not examined:
+        # A PASS OVER NOTHING is not a pass. Reporting `ticks supported` having read zero ticks
+        # is the affirmative-over-an-empty-set shape the sibling rows refuse by design, and it
+        # is how this row read green across a whole batch while understanding one of the two
+        # conventions its corpus is written in.
+        return (NOT_RUN, "no ticked criteria found",
+                f"none of the {len(ctx.get('units') or [])} unit(s) carries a criterion this "
+                f"row can read, so nothing was checked - which is not the same as everything "
+                f"being supported")
+    return (RAN, f"{examined} ticked criterion/criteria supported by the diff since {base}", "")
 
 
 def _ck_goal_judged(ctx: dict) -> tuple:
@@ -1633,9 +1670,7 @@ def _ck_review_attribution(ctx: dict) -> tuple:
             uncovered.append(uid)
             continue
         if not v:
-            # Covered by a lane that carries no per-unit verdict (adversarial evidence, or a
-            # batch review naming it). Real coverage, and it must not be reported as a gap.
-            covered.append(f"{uid} by {(shared.get(uid) or {}).get('by') or 'an independent pass'}")
+            uncovered.append(uid)
             continue
         who = (v.get("reviewer") or "").strip()
         reviewers.add(who)

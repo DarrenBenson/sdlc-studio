@@ -5246,10 +5246,20 @@ def _close_checklist(root, retro, state):
                 + " ruled STOP-SHIP in the retro's carried-issues table",
                 "fix the finding, or have the ruler revise the ruling in the retro - a close "
                 "that proceeds over a stop-ship ruling makes every future ruling a note")
+    # EXPIRED rows are reported here too. They do not HOLD the close - their enforcer ran hours
+    # ago and a waiver would be the only exit - but the close's report is where an operator
+    # learns what went unsatisfied, and naming them only in `render_checklist` took information
+    # OUT of it: four rows named at the base ref were named nowhere afterwards. Reported and not
+    # held is the contract; dropping them from view is neither.
+    expired = [r for r in ck["items"] if r["id"] in set(ck.get("expired") or [])]
+    past = ("; " + f"{len(expired)} past their window, reported not held: "
+            + ", ".join(f"{r['id']} (enforce at `{sprint_report._window(r)}`)" for r in expired)
+            if expired else "")
     if not ck["outstanding"]:
         pending = (f"; {len(ck['pending_in_close'])} item(s) this close discharges itself"
                    if ck.get("pending_in_close") else "")
-        return (True, f"{len(ck['items'])} compulsory item(s), none outstanding{pending}", "")
+        return (True,
+                f"{len(ck['items'])} compulsory item(s), none outstanding{pending}{past}", "")
     named = [r for r in ck["items"] if r["id"] in set(ck["outstanding"])]
     detail = "\n".join(f"  {r['id']}: {r['title']} - {r['value']}"
                        + (f"\n      {r['detail']}" if r["detail"] else "") for r in named)
@@ -6415,6 +6425,16 @@ def _checklist_blockers(root: Path, retro_id: str, state: dict) -> list[dict]:
                               "retro - a close that proceeds over a stop-ship ruling makes "
                               "every future ruling a note"})
     rows = {r["id"]: r for r in (ck.get("items") or [])}
+    for item_id in ck.get("expired") or []:
+        row = rows.get(item_id, {})
+        # Reported by the pre-flight, never a blocker: `blocking` False keeps it out of the
+        # refusal while keeping it in the operator's view, which is what "reported not held"
+        # has to mean at every surface, not just the rendered page.
+        out.append({"stage": "checklist", "blocking": False,
+                    "detail": f"{item_id}: {row.get('title', '')} - past its window "
+                              f"(`{sprint_report._window(row)}`)".rstrip(" -"),
+                    "remedy": "gate it where it can still be answered; a waiver here is a "
+                              "receipt, not an answer"})
     for item_id in ck.get("outstanding") or []:
         row = rows.get(item_id, {})
         detail = f"{item_id}: {row.get('title', '')} - {row.get('value', '')}".rstrip(" -")
