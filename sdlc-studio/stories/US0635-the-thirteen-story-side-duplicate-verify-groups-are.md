@@ -97,7 +97,7 @@ stops a planned test from passing over a burn-down that burned nothing down:
    tmp root with its own baseline, and against those, editing the shipped file changes nothing.
    The assertion names the fixture's own selector in `verdict["new"]`: `dup_ratchet` answers not-
    ok for at least five distinct reasons, so a bare `assertFalse(ok)` passes for the wrong one -
-   and `read_dup_baseline` returns every live group as `new` for the `not-baselined` and
+   and `dup_ratchet` returns every live group as `new` for the `not-baselined` and
    `corrupt` states, so the test asserts `state == "ok"` alongside, with the same live paths
    minus the fixture as its control.
 

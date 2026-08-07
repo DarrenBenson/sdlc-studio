@@ -1,6 +1,6 @@
 # US0595: A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

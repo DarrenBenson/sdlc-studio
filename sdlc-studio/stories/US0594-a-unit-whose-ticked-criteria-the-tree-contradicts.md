@@ -1,6 +1,6 @@
 # US0594: A unit whose ticked criteria the tree contradicts is reported outstanding at the close
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the checklist resolves
 - **Then** the item is OUTSTANDING and names the unit and the criterion, because two units of one run were closed on exactly this and the checklist passed them
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationTests::test_a_tick_the_tree_contradicts_is_outstanding
+- **Verified:** yes (2026-08-07)
 
 ### AC2: a tick the tree supports passes
 
@@ -30,6 +31,7 @@
 - **When** the checklist resolves
 - **Then** the item passes - the control against an item that flags every ticked criterion
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationTests::test_a_supported_tick_passes
+- **Verified:** yes (2026-08-07)
 
 ### AC3: an unrecorded base ref refuses rather than passing every tick
 
@@ -39,6 +41,7 @@
   falls back to HEAD treats everything as changed, passes every tick, and reproduces the exact
   defect this story cites while staying green
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationTests::test_an_unrecorded_base_ref_refuses
+- **Verified:** yes (2026-08-07)
 
 ## Test-plan notes
 

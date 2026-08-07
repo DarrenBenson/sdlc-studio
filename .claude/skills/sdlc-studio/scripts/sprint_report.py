@@ -944,6 +944,9 @@ CHECKLIST = (
     {"id": "closing-review", "kind": STAGE, "authority": DERIVED,
      "title": "Closing full-diff review", "command": "critic sprint-review",
      "resolver": "_ck_closing_review"},
+    {"id": "tick-verification", "kind": STAGE, "authority": DERIVED,
+     "title": "Ticked criteria the tree supports", "command": "sprint report",
+     "resolver": "_ck_tick_verification"},
     {"id": "goal-judged", "kind": STAGE, "authority": DERIVED,
      "title": "Sprint Goal judged", "command": "sprint goal-verdict",
      "resolver": "_ck_goal_judged"},
@@ -1188,6 +1191,94 @@ def _ck_closing_review(ctx: dict) -> tuple:
                 f"no APPROVE covers: {named} - the row reads each unit's latest verdict, so a "
                 f"batch is reviewed only when every unit in it is")
     return (RAN, f"{len(units)} unit(s) approved over {rounds} round(s)", "")
+
+
+#: A criterion the author ticked. The `[x]` is a human saying "I checked this"; the row below
+#: asks whether the tree agrees.
+_TICKED_RE = re.compile(r"^\s*[-*]\s+\[[xX]\]\s+(?:\*\*(AC\d+)[^*]*\*\*[:\s]*)?(.*)$")
+
+
+def _changed_paths(root: Path, base_ref: str) -> set | None:
+    """The paths this run changed, or None when the diff cannot be taken.
+
+    THE SEAM. It is drawn around the SOURCE of the changed set, never around the comparison the
+    row makes with it: a fixture that patches the comparison patches away the very thing under
+    test, and both of this row's mutants with it.
+
+    None is not an empty set. "The diff could not be taken" and "nothing changed" lead to
+    opposite verdicts here - the first means the row cannot judge, the second means every tick
+    is contradicted - and collapsing them is how a row comes to certify what it could not check.
+    """
+    if not str(base_ref or "").strip():
+        return None
+    try:
+        import subprocess  # noqa: PLC0415 - deferred, like every sibling read here
+        out = subprocess.run(["git", "diff", "--name-only", f"{base_ref}...HEAD"],
+                             cwd=str(root), capture_output=True, text=True, timeout=60)
+        if out.returncode != 0:
+            return None
+        return {ln.strip() for ln in out.stdout.splitlines() if ln.strip()}
+    except Exception as exc:  # noqa: BLE001 - an unreadable diff judges nothing
+        sdlc_md.debug("sprint_report._changed_paths", exc)
+        return None
+
+
+def _ticked_criteria(text: str) -> list[str]:
+    """The criteria this unit's own body claims are done, named."""
+    out = []
+    for i, line in enumerate(sdlc_md.criteria_section(text).splitlines(), 1):
+        m = _TICKED_RE.match(line)
+        if m:
+            out.append(m.group(1) or f"criterion {i}")
+    return out
+
+
+def _ck_tick_verification(ctx: dict) -> tuple:
+    """Does the tree support what the units say they did?
+
+    A tick is the author asserting a criterion is met. Two units of one run were closed on
+    ticks the diff contradicted, and the checklist passed them - because nothing compared the
+    claim against the surfaces the unit itself declared.
+    """
+    base = ""
+    try:
+        base = run_state.base_ref(ctx["root"])
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint_report._ck_tick_verification.base", exc)
+    if not str(base).strip():
+        # REFUSE on an unrecorded base ref rather than falling back to HEAD. A fallback treats
+        # everything as changed, passes every tick, and reproduces the exact defect this row
+        # exists to catch - while reporting itself green.
+        return (NOT_RUN, "no base ref",
+                "the run recorded no base ref, so no diff can be taken and no tick can be "
+                "checked against one; this row refuses rather than assuming everything changed")
+    changed = _changed_paths(ctx["root"], base)
+    if changed is None:
+        return (NOT_RUN, "diff unreadable",
+                f"the diff against {base} could not be taken, so the ticks are unjudged - "
+                "which is not the same as supported")
+    contradicted = []
+    for uid in (ctx.get("units") or []):
+        found = sdlc_md.find_by_id(ctx["root"], uid)
+        if not found:
+            continue
+        text = sdlc_md.read_text_safe(found[0])
+        ticked = _ticked_criteria(text)
+        if not ticked:
+            continue
+        declared = [a.strip() for a in
+                    str(sdlc_md.extract_field(text, "Affects") or "").split(",") if a.strip()]
+        if not declared:
+            continue
+        if any(any(c == d or c.startswith(d.rstrip("/") + "/") for c in changed)
+               for d in declared):
+            continue
+        contradicted.extend(f"{uid} {ac}" for ac in ticked)
+    if contradicted:
+        return (NOT_RUN, f"{len(contradicted)} ticked criterion/criteria unsupported",
+                f"ticked while the surfaces the unit declared are unchanged since {base}: "
+                f"{', '.join(contradicted[:8])}")
+    return (RAN, f"ticks supported by the diff since {base}", "")
 
 
 def _ck_goal_judged(ctx: dict) -> tuple:

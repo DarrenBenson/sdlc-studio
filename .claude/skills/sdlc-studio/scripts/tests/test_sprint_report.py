@@ -11,6 +11,7 @@ import pathlib
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -1028,6 +1029,77 @@ class ChecklistBase(unittest.TestCase):
 
     def _row(self, ck: dict, item_id: str) -> dict:
         return next(r for r in ck["items"] if r["id"] == item_id)
+
+
+class TickVerificationTests(ChecklistBase):
+    """US0594. Two units of one run were closed on ticks the diff contradicted, and the
+    checklist passed them.
+
+    The seam is the changed-paths SOURCE (`_changed_paths`), never the comparison the row makes
+    with it - a fixture patching the comparison patches away the thing under test and both
+    mutants with it. Every test asserts the row's DETAIL as well as its state: `_resolve_item`
+    turns any resolver exception into NOT_RUN with the message in `detail`, so a state-only
+    assertion is satisfied by a resolver that raises on every input.
+    """
+
+    def _unit(self, uid: str, affects: str, ticked: bool) -> None:
+        mark = "x" if ticked else " "
+        # Overwrite the base fixture's own file rather than adding a second one: two files
+        # carrying one id is a duplicate-id tree, and `find_by_id` would answer with whichever
+        # it reached first - which is how this test first passed while measuring nothing.
+        (self.root / "sdlc-studio" / "stories" / f"{uid}-s.md").write_text(
+            f"# {uid}: s\n\n> **Status:** Done\n> **Affects:** {affects}\n> **Points:** 2\n\n"
+            f"## Acceptance Criteria\n\n- [{mark}] **AC1** the thing\n", encoding="utf-8")
+
+    def _resolve(self, changed, base="abc123") -> dict:
+        self._run(base_ref=base)
+        with mock.patch.object(sr, "_changed_paths", return_value=changed):
+            ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US0001", "US0002"])
+        return self._row(ck, "tick-verification")
+
+    def test_a_tick_the_tree_contradicts_is_outstanding(self) -> None:
+        """Mutant: emit a detail naming neither the unit nor the criterion.
+
+        A row that says something is wrong without saying WHAT cannot be acted on, and the
+        criterion makes naming both law.
+        """
+        self._unit("US0001", "src/touched.py", ticked=True)
+        self._unit("US0002", "src/never_touched.py", ticked=True)
+        row = self._resolve({"src/touched.py"})
+        self.assertEqual(sr.NOT_RUN, row["state"], row["detail"])
+        self.assertIn("US0002", row["detail"])
+        self.assertIn("AC1", row["detail"])
+        self.assertNotIn("US0001", row["detail"], "a supported tick was reported as contradicted")
+
+    def test_a_supported_tick_passes(self) -> None:
+        """The control. Mutant: delete the changed-surface consultation, flagging every tick."""
+        self._unit("US0001", "src/touched.py", ticked=True)
+        self._unit("US0002", "src/also.py", ticked=True)
+        row = self._resolve({"src/touched.py", "src/also.py"})
+        self.assertEqual(sr.RAN, row["state"], row["detail"])
+
+    def test_an_unrecorded_base_ref_refuses(self) -> None:
+        """Mutant: fall back to HEAD when the recorded base ref is empty.
+
+        A fallback treats everything as changed, passes every tick, and reproduces the defect
+        this row exists to catch while reporting itself green.
+        """
+        self._unit("US0001", "src/never.py", ticked=True)
+        self._unit("US0002", "src/never2.py", ticked=True)
+        self._run(base_ref="")
+        ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US0001", "US0002"])
+        row = self._row(ck, "tick-verification")
+        self.assertEqual(sr.NOT_RUN, row["state"])
+        self.assertIn("base ref", row["detail"])
+
+    def test_an_unreadable_diff_is_unjudged_not_supported(self) -> None:
+        """None is not an empty set. `could not be taken` and `nothing changed` lead to opposite
+        verdicts, and collapsing them certifies what the row could not check."""
+        self._unit("US0001", "src/a.py", ticked=True)
+        self._unit("US0002", "src/b.py", ticked=True)
+        row = self._resolve(None)
+        self.assertEqual(sr.NOT_RUN, row["state"])
+        self.assertIn("unjudged", row["detail"])
 
 
 class WaiverKindTests(ChecklistBase):

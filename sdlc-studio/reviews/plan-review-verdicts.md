@@ -30,3 +30,5 @@
 | US0594 | APPROVE | qa; plan-review subagent; round 2 | sdlc-studio; agent; v1 | 2026-08-07 | a4a7e46ca63c | test-plan | none blocking |
 | US0596 | APPROVE | qa; plan-review subagent; round 2 | sdlc-studio; agent; v1 | 2026-08-07 | 7d898bf8cc49 | test-plan | none blocking |
 | US0635 | APPROVE | qa; plan-review subagent; round 2 | sdlc-studio; agent; v1 | 2026-08-07 | 5e7cd0bc60ce | test-plan | none blocking |
+| US0595 | APPROVE | qa; plan-review subagent; round 3 | sdlc-studio; agent; v1 | 2026-08-07 | fceb9cf8b758 | test-plan | none blocking |
+| US0636 | APPROVE | qa; plan-review subagent; round 3 | sdlc-studio; agent; v1 | 2026-08-07 | 64ec677baa61 | test-plan | none blocking |

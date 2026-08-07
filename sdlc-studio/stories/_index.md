@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 15 |
+| Draft | 13 |
 | Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 6 |
+| Review | 8 |
 | Done | 615 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -52,8 +52,8 @@
 | [US0591](US0591-every-checklist-item-declares-its-enforcing-command-and.md) | Every checklist item declares its enforcing command, and the close reports rather than gates on an expired window | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0592](US0592-the-goal-seat-review-is-enforced-by-sprint.md) | The goal seat review is enforced by sprint plan --write, so skipping it is refused where it can still be run | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0593](US0593-a-run-whose-only-review-verdicts-are-reject.md) | A run whose only review verdicts are REJECT reports the closing-review item outstanding, never ran | Review | EP0197 | 2026-08-01 | 2026-08-01 |
-| [US0594](US0594-a-unit-whose-ticked-criteria-the-tree-contradicts.md) | A unit whose ticked criteria the tree contradicts is reported outstanding at the close | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
-| [US0595](US0595-a-waiver-records-whether-it-was-deliberate-or.md) | A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
+| [US0594](US0594-a-unit-whose-ticked-criteria-the-tree-contradicts.md) | A unit whose ticked criteria the tree contradicts is reported outstanding at the close | Review | EP0197 | 2026-08-01 | 2026-08-01 |
+| [US0595](US0595-a-waiver-records-whether-it-was-deliberate-or.md) | A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart | Review | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0616](US0616-sprint-close-and-sprint-stop-refuse-while-the.md) | sprint close and sprint stop refuse while the tree carries a repair to a batch unit | Done | EP0204 | 2026-08-02 | 2026-08-02 |
 | [US0617](US0617-the-close-owed-ledger-distinguishes-a-close-time.md) | the close-owed ledger distinguishes a close-time repair from an unaccounted unit | Done | EP0204 | 2026-08-02 | 2026-08-02 |

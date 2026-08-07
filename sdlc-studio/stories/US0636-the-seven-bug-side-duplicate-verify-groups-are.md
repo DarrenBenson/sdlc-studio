@@ -33,9 +33,9 @@ intra-record groups across 6 bug records** - BG0239, BG0240, BG0241, BG0242, BG0
 BG0251, which holds two. Every one is a whole-file `unittest discover -p` selector, the shape
 that reads as green evidence for criteria it never separately exercised.
 
-AC3 is the only criterion here that depends on US0635 having landed; the first two stand on
-their own, so this unit is shippable whichever order the pair runs in and only its closing
-claim waits.
+AC3 depends on US0635 having landed, and `Depends on:` now makes that hard rather than
+leaving it to prose - this unit's `Affects` excludes `sdlc-studio/stories`, so if the sibling
+had not landed AC3 would fail on thirteen entries this unit is not permitted to touch.
 
 ## Acceptance Criteria
 
@@ -88,7 +88,7 @@ in full; four things are specific to the bug side:
    while this unit's `Affects` excludes `sdlc-studio/stories` - so if the sibling had not landed,
    AC3 would fail on thirteen entries this unit is not permitted to touch.
 
-5. **A bare `assertFalse(ok)` is not a refusal assertion.** `read_dup_baseline` returns every
+5. **A bare `assertFalse(ok)` is not a refusal assertion.** `dup_ratchet` returns every
    live group as `new` for the `not-baselined` and `corrupt` states, so once the fixture runs
    against the LIVE baseline - a mis-resolved root, or a baseline broken while the seven
    entries are being removed - the planned `assertIn` passes while the ratchet is holding
