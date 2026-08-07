@@ -1,6 +1,6 @@
 # US0593: A run whose only review verdicts are REJECT reports the closing-review item outstanding, never ran
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the closing-review checklist item resolves
 - **Then** it is OUTSTANDING, because the item counted passes rather than reading verdicts and reported `ran` over four rounds of which three rejected
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ClosingReviewVerdictTests::test_reject_only_rounds_are_outstanding
+- **Verified:** yes (2026-08-07)
 
 ### AC2: an APPROVE covering every unit passes
 
@@ -30,6 +31,7 @@
 - **When** the item resolves
 - **Then** it passes - the control, so the item cannot be satisfied by one that never clears
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ClosingReviewVerdictTests::test_an_approve_covering_every_unit_passes
+- **Verified:** yes (2026-08-07)
 
 ### AC3: a REJECT followed by a later APPROVE passes
 
@@ -37,6 +39,7 @@
 - **When** the item resolves
 - **Then** it passes for that unit, because a REJECT is a verdict on a revision rather than a property of the work
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ClosingReviewVerdictTests::test_a_later_approve_clears_an_earlier_reject
+- **Verified:** yes (2026-08-07)
 
 ### AC4: a partially covered run is outstanding, and names the unit nobody reviewed
 
@@ -46,6 +49,7 @@
   unit and an item cleared by any single APPROVE is the same counted-passes defect one level
   down - it would report `ran` on a batch of twelve where one was reviewed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ClosingReviewVerdictTests::test_a_partially_covered_run_names_the_uncovered_unit
+- **Verified:** yes (2026-08-07)
 
 ## Test-plan notes
 

@@ -1030,6 +1030,82 @@ class ChecklistBase(unittest.TestCase):
         return next(r for r in ck["items"] if r["id"] == item_id)
 
 
+class ClosingReviewVerdictTests(ChecklistBase):
+    """US0593. The row counted recorded passes and reported `ran` over four rounds of which
+    three rejected. A count cannot see a verdict.
+
+    Every fixture writes into BOTH ledgers the resolver reads - the sprint-review rows and the
+    run-state rounds - because against a fixture that populates only one, the old counting
+    implementation returns `none recorded`, which is the same OUTSTANDING state a correct
+    resolver returns, and the mutant survives its own test.
+    """
+
+    def _ledgers(self, rows: list[tuple], rounds: list[tuple]) -> None:
+        """`rows` as (verdict, units, date); `rounds` as (verdict, units, recorded_at)."""
+        path = self.root / "sdlc-studio" / "reviews"
+        path.mkdir(parents=True, exist_ok=True)
+        body = ["| Base | Reviewer | Author | Verdict | Date | Units | Findings |",
+                "| --- | --- | --- | --- | --- | --- | --- |"]
+        for verdict, units, date in rows:
+            body.append(f"| abc123 | qa; seat; r | agent | {verdict} | {date} | {units} | none |")
+        (path / "sprint-review-record.md").write_text(
+            "# Sprint reviews\n\n" + "\n".join(body) + "\n", encoding="utf-8")
+        self._extra_rounds = [
+            {"round": i + 1, "verdict": v, "reviewer": "qa; seat", "units": u.split(","),
+             "recorded_at": at}
+            for i, (v, u, at) in enumerate(rounds)]
+
+    def _resolve(self) -> dict:
+        ck = self._ck(review_rounds=getattr(self, "_extra_rounds", []))
+        return self._row(ck, "closing-review")
+
+    def test_reject_only_rounds_are_outstanding(self) -> None:
+        """Mutant: revert the resolver to `len(ctx['sprint_reviews'])`, reading no verdict."""
+        self._ledgers([("REJECT", "US0001,US0002", "2026-01-02")],
+                      [("REJECT", "US0001,US0002", "2026-01-02T10:00:00Z")])
+        row = self._resolve()
+        self.assertEqual(sr.NOT_RUN, row["state"])
+        self.assertNotIn("none recorded", row["value"],
+                         "outstanding because the verdicts were read must be distinguishable "
+                         "from outstanding because nothing was found")
+        self.assertIn("unresolved", row["value"])
+        self.assertIn("US0001", row["detail"])
+
+    def test_an_approve_covering_every_unit_passes(self) -> None:
+        """The control. A row that never clears satisfies the test above for free."""
+        self._ledgers([("APPROVE", "US0001,US0002", "2026-01-02")],
+                      [("APPROVE", "US0001,US0002", "2026-01-02T10:00:00Z")])
+        row = self._resolve()
+        self.assertEqual(sr.RAN, row["state"], row["detail"])
+
+    def test_a_later_approve_clears_an_earlier_reject(self) -> None:
+        """Mutant: take `rows[0]` rather than `rows[-1]` per unit.
+
+        The two rounds carry distinct ordered stamps on purpose: `record_verdict` writes a date
+        with no time, so two verdicts in one sitting tie and a date-keyed max picks either.
+        """
+        self._ledgers([("REJECT", "US0001,US0002", "2026-01-02"),
+                       ("APPROVE", "US0001,US0002", "2026-01-03")],
+                      [("REJECT", "US0001,US0002", "2026-01-02T10:00:00Z"),
+                       ("APPROVE", "US0001,US0002", "2026-01-03T10:00:00Z")])
+        row = self._resolve()
+        self.assertEqual(sr.RAN, row["state"], row["detail"])
+
+    def test_a_partially_covered_run_names_the_uncovered_unit(self) -> None:
+        """Mutant: clear the row when ANY unit carries an approval.
+
+        That implementation kills all three mutants above and still reports `ran` on a batch of
+        twelve where one was reviewed, which is the counted-passes defect one level down.
+        """
+        self._ledgers([("APPROVE", "US0001", "2026-01-02")],
+                      [("APPROVE", "US0001", "2026-01-02T10:00:00Z")])
+        row = self._resolve()
+        self.assertEqual(sr.NOT_RUN, row["state"])
+        self.assertIn("unreviewed", row["value"])
+        self.assertIn("US0002", row["detail"])
+        self.assertNotIn("US0001", row["detail"].replace("US0002", ""))
+
+
 class SprintChecklistStageTests(ChecklistBase):
     """US0574. The compulsory set is the cycle's own stages, so a stage nobody held is visible
     on the page rather than inferred from its absence."""

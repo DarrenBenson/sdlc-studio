@@ -29,6 +29,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -1085,14 +1086,76 @@ def _ck_batch_boundary_review(ctx: dict) -> tuple:
     return (RAN, f"{len(done)}/{len(spans)} reviewed", "")
 
 
+#: The one verdict that COVERS a unit. Compared against an upper-cased cell, because the
+#: ledgers are written by two different recorders and a case-sensitive match against one
+#: spelling is how a recorded approval comes to satisfy nothing.
+_APPROVE = "APPROVE"
+
+
+def _verdict_entries(ctx: dict) -> list[tuple]:
+    """Every recorded verdict from both ledgers as `(sort_key, verdict, units)`, in order.
+
+    Two ledgers hold this, and the row counts them BOTH: `critic`'s sprint-review rows and the
+    run-state review rounds. Reading one and not the other is how a run whose REJECTs were
+    written to the ledger this row did not consult reported `none recorded` - the same state a
+    genuinely unreviewed run reports, and indistinguishable from it.
+
+    Ordered by the recorded stamp with a stable tiebreak on append order. NOT by date alone:
+    `record_verdict` writes a date with no time, so two verdicts recorded in one sitting tie,
+    and a date-keyed `max()` would pick either - which turns "the later verdict wins" into a
+    coin toss on exactly the case AC3 is about.
+    """
+    entries: list[tuple] = []
+    for i, row in enumerate(ctx.get("sprint_reviews") or []):
+        cell = str(row.get("units") or "")
+        units = [sdlc_md.norm_id(u) for u in re.split(r"[,;\s]+", cell) if u.strip()]
+        entries.append(((str(row.get("date") or ""), 0, i),
+                        str(row.get("verdict") or "").strip().upper(), units))
+    for i, rnd in enumerate(ctx.get("review_rounds") or []):
+        idx = rnd.get("round") if isinstance(rnd.get("round"), int) else i
+        entries.append(((str(rnd.get("recorded_at") or ""), 1, idx),
+                        str(rnd.get("verdict") or "").strip().upper(),
+                        [sdlc_md.norm_id(u) for u in (rnd.get("units") or [])]))
+    entries.sort(key=lambda e: e[0])
+    return entries
+
+
 def _ck_closing_review(ctx: dict) -> tuple:
-    reviews = ctx["sprint_reviews"]
-    rounds = ctx["review_rounds"]
-    if not reviews and not rounds:
+    """Does an APPROVE cover EVERY unit in the batch?
+
+    This row counted recorded passes and reported `ran` over four rounds of which three
+    rejected. A count cannot see a verdict, and a batch of twelve with one approval is not a
+    reviewed batch - so the quantifier is every unit, and the answer is the LAST verdict
+    recorded against each, because a REJECT is a verdict on a revision rather than a property
+    of the work.
+    """
+    entries = _verdict_entries(ctx)
+    if not entries:
         return (NOT_RUN, "none recorded",
                 "no full-diff pass over this batch is recorded; the close certifies that a "
                 "review happened, it does not perform one")
-    return (RAN, f"{len(reviews)} recorded pass(es), {len(rounds)} round(s)", "")
+    latest: dict[str, str] = {}
+    for _key, verdict, units in entries:
+        for unit in units:
+            latest[unit] = verdict
+    units = [sdlc_md.norm_id(u) for u in (ctx.get("units") or [])]
+    rejected = [u for u in units if latest.get(u) and latest[u] != _APPROVE]
+    unreviewed = [u for u in units if not latest.get(u)]
+    rounds = len(ctx.get("review_rounds") or [])
+    if rejected or unreviewed:
+        # The VALUE has to say which of the two outstanding states this is. Outstanding because
+        # the verdicts were read and did not clear is a different fact from outstanding because
+        # nothing was found, and only the first means somebody should go and re-review.
+        parts = []
+        if rejected:
+            parts.append(f"{len(rejected)} unresolved")
+        if unreviewed:
+            parts.append(f"{len(unreviewed)} unreviewed")
+        named = ", ".join(sorted(rejected + unreviewed)[:6])
+        return (NOT_RUN, f"{', '.join(parts)} of {len(units)} unit(s) over {rounds} round(s)",
+                f"no APPROVE covers: {named} - the row reads each unit's latest verdict, so a "
+                f"batch is reviewed only when every unit in it is")
+    return (RAN, f"{len(units)} unit(s) approved over {rounds} round(s)", "")
 
 
 def _ck_goal_judged(ctx: dict) -> tuple:
