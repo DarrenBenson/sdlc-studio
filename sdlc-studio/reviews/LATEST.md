@@ -1,6 +1,6 @@
 
 <!-- close-status:begin -->
-> **RUN-01KZCAJX closed stopped.** 12 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01KZEF9M closed goal-reached.** 8 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **Run of record:** RUN-01KZ5YXM - the charter queue. 26 of 26 points across 6 units, every
@@ -8,6 +8,77 @@
 > REJECT, and the tooling escalated the second to the operator for non-convergence. That
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
+
+## RUN-01KZEF9M - the doctrine's claim and the command's behaviour are the same claim now
+
+**8 of 8 units, 42 points, goal ACHIEVED under panel sign-off.** The doctrine told consuming
+projects that `transition.py` refuses a repair whose changed surface carries no surviving-mutant
+evidence. `repair_mutation_gate` had zero non-test callers; `mutants_over_changed_lines` had none
+anywhere. The wave that built them verified every criterion through the library function each
+one's own When named the command for, so nothing in it could see the missing lane.
+
+| Unit | Pts | |
+| --- | --- | --- |
+| BG0541 | 8 | the lane is wired, OUTSIDE the unrelated cutoff the repair branch sat in |
+| US0660 | 8 | a survivor becomes a severity-rated bug and the transition proceeds - the operator's mode |
+| US0661 | 8 | a MEASURED run is evidence the gate can read, not just a hand-typed claim |
+| US0564 | 5 | changed-line scope, re-verified through the command its criteria always named |
+| US0565 | 5 | the survivor gate, likewise, with a `line` the shipped verb can now write |
+| US0566 | 3 | repair scope and the exemption, re-derived from the diff rather than the declaration |
+| US0573 | 3 | the uncommitted-surface reason - **found FALSE at the entry point while re-verifying it** |
+| US0567 | 2 | rule 21 enumerates its mechanisms, and a guard checks each is REACHED |
+
+**`review.mutation_evidence` is the operator's decision, and `report` is the default.** A survivor
+becomes a severity-rated bug and the close proceeds; `block` restores the hard bar; `off` stands
+the lane down. Two things ignore the setting, and both are stated in the doctrine: a claimed
+exemption re-derived and found FALSE refuses under `report` too, because that is a written claim
+shown untrue rather than a bar being applied; and a ledger recording one mutant as both killed and
+survived refuses even under `off`, because `off` says evidence must not hold your transitions, not
+that the instrument may lie.
+
+### The gate could not be satisfied by measurement at all
+
+`append_ledger` reduced a measured run to a counter block and discarded its per-mutant records,
+while `register` - the hand-typed claim - wrote the list both gates select on. **The strongest
+evidence in the system read as no evidence and the weakest read as proof**, which is the exact
+inverse of what the doctrine claimed. That is now fixed, and `ledger_entries` exists at all: it
+was called behind a `hasattr` that was False for its whole life.
+
+### What the reviews cost, and what they bought
+
+Three plan-review rounds (24 findings, 21 closed before a line existed) and three delivery rounds
+plus a closing pass. Ten REJECTs in all, every blocking finding established by EXECUTION.
+
+**Twice, a repair MOVED its defect rather than closing it.** The terminality rule learned If, Try,
+With and `while True` in one round and was still wrong about `for`/`else`, `match`, `async with`,
+an inner loop's `break`, and a `break` that jumps past the `else`. Widening a rule is not the same
+as making it right, and the test for the difference is a fixture on the OTHER side.
+
+**One proposed repair was implemented and REVERTED.** Round three asked that a corrected mutation
+verdict supersede the earlier row. Building it reddened the test that pins the opposite rule
+deliberately: a genuine correction and an author registering their way out of a survivor are
+byte-identical to the tool. BG0553 carries it with an answer that does not open that door.
+
+### The sprint's own thesis caught the sprint
+
+61 mutants had been registered across the eight units for edits that were never applied - the
+ledger held claims, which is the exact state this work exists to stop counting as proof. Clearing
+all 61 and applying them for real took under ten minutes and **turned up two survivors the
+paperwork had recorded as kills**. LL0053 records it: a registered mutant is a claim; clear the
+ledger and apply them before believing the count. 65 mutants were measured in the end.
+
+### Filed and NOT fixed, each ruled
+
+BG0545 to BG0554. Two carry `accepted-risk` because they limit something this increment claims:
+**BG0551** - `repair_mutation_gate` still derives its surface from the artefact's own `Affects`,
+so a unit declaring a surface it did not change is not held to one, and rule 21 now names that gap
+rather than promising a bar it does not fully have. **BG0553** - a mistyped verdict cannot be
+corrected, and the contradiction check turns that from a wrong number into a refusal.
+
+**BG0552 is the one to read next**: a registered mutant names the author's prose and a measured one
+names the generator's fault class, so the cross-provenance contradiction - a hand-typed claim caught
+disagreeing with a measurement, the case this whole rule turns on - is undetectable. US0661 AC4 was
+narrowed to what the ledger can decide rather than left asserting a premise no fixture could meet.
 
 ## RUN-01KZ9315 - ceremony is proportional to blast radius, and the fixes were already built
 
