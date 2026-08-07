@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-08-05
+**Last Updated:** 2026-08-07
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 10 |
+| Draft | 16 |
 | Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 2 |
 | Blocked | 0 |
-| **Total** | **645** |
+| **Total** | **651** |
 
 ## All Stories
 
@@ -85,6 +85,12 @@
 | [US0643](US0643-a-seat-may-sign-only-work-it-neither.md) | A seat may sign only work it neither authored nor adversarially reviewed - three distinct contexts, enforced | Done | EP0209 | 2026-08-05 | 2026-08-05 |
 | [US0644](US0644-the-sign-off-record-states-that-a-seat.md) | The sign-off record states that a seat signed and names it, so no reader mistakes it for a human | Done | EP0209 | 2026-08-05 | 2026-08-05 |
 | [US0645](US0645-the-operator-summary-is-derived-from-the-record.md) | The operator summary is derived from the record, never composed by the signing seat | Done | EP0209 | 2026-08-05 | 2026-08-05 |
+| [US0646](US0646-a-shared-contract-reporter-derives-a-verb-s.md) | A shared contract reporter derives a verb's demands by executing its own guard, never by restating them | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0647](US0647-the-vocabularies-that-gate-a-caller-print-from.md) | The vocabularies that gate a caller print from the constant that enforces them | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0648](US0648-the-four-verbs-whose-refusals-cost-most-in.md) | The four verbs whose refusals cost most in the measured session answer the contract reporter | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0649](US0649-a-lint-lane-counts-contract-reporter-coverage-and.md) | A lint lane counts contract-reporter coverage and names every refusing verb it cannot reach | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0650](US0650-help-and-reference-scripts-point-at-the-contract.md) | help and reference-scripts point at the contract reporter instead of restating any contract | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0651](US0651-the-refusals-a-run-hits-are-counted-so.md) | The refusals a run hits are counted, so the round-trip saving is a figure in the retro | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

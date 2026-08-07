@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 19 |
+| Proposed | 18 |
 | Approved | 0 |
-| In Progress | 9 |
+| In Progress | 10 |
 | Complete | 485 |
 | Rejected | 1 |
 | Deferred | 0 |
@@ -85,7 +85,7 @@
 | [CR-0532](CR0532-the-reviewer-of-record-is-an-ai-seat.md) | The reviewer of record is an AI seat, and the human gets a summary to lead from - human in the LEAD, not human in the loop | Complete | High | Improvement | 2026-08-05 | EP0209 |
 | [CR-0533](CR0533-a-production-hunk-whose-reversion-leaves-the-suite.md) | A production hunk whose reversion leaves the suite green is uncovered: make the gate prove coverage rather than assume it | Proposed | High | Improvement | 2026-08-05 | -- |
 | [CR-0534](CR0534-a-project-s-configuration-is-a-surface-nobody.md) | a project's configuration is a surface nobody is introduced to and nobody revisits: the operator cannot see what is in force, what the default would have been, or which setting their own history says is wrong | Proposed | High | Improvement | 2026-08-06 | -- |
-| [CR-0535](CR0535-a-refusing-verb-cannot-state-its-contract-until.md) | a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand | Proposed | High | Improvement | 2026-08-06 | -- |
+| [CR-0535](CR0535-a-refusing-verb-cannot-state-its-contract-until.md) | a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand | In Progress | High | Improvement | 2026-08-06 | EP0210 |
 | [CR-0536](CR0536-the-spec-documents-do-not-learn-about-a.md) | the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail | Proposed | High | Improvement | 2026-08-06 | -- |
 
 ## Archived Releases

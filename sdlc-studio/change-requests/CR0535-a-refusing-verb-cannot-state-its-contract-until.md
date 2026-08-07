@@ -1,6 +1,7 @@
 # CR-0535: a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0210
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** L
