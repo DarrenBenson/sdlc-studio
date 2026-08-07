@@ -355,7 +355,10 @@ def migrate_sizing(repo_root: Path | str, dry_run: bool = True) -> dict:
             "terminal_sized": terminal_sized, "dry_run": dry_run}
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """The parser, as a module-level function so the surface can be enumerated without
+    running the command. `lib/surface.py` walks every one of these; a parser built inside
+    `main()` is invisible to it, which is a verb no coverage number can count."""
     p = argparse.ArgumentParser(prog="migrate_v3.py", description="Migrate a workspace v2 -> v3 (ULID ids).")
     p.add_argument("cmd", choices=["plan", "apply", "adopt", "sizing"])
     p.add_argument("--root", default=".")
@@ -363,6 +366,11 @@ def main(argv: list[str] | None = None) -> int:
                    help="required for apply/adopt: switching the numbering scheme is an "
                         "operator decision, never headless")
     p.add_argument("--format", choices=["text", "json"], default="text")
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    p = build_parser()
     args = p.parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
     # run belongs to. The family default `.` means "work it out from here", not "the cwd

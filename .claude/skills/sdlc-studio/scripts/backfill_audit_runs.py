@@ -203,7 +203,10 @@ def check(repo_root: Path | str) -> list:
     return errors
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """The parser, as a module-level function so the surface can be enumerated without
+    running the command. `lib/surface.py` walks every one of these; a parser built inside
+    `main()` is invisible to it, which is a verb no coverage number can count."""
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
     for name, helptext in (("plan", "report the mapping without writing"),
@@ -214,6 +217,11 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--format", choices=("text", "json"), default="text")
         if name == "apply":
             p.add_argument("--dry-run", action="store_true")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
     args = parser.parse_args(argv)
     # ANCHOR BEFORE DISPATCH. A bare `--root .` taken from the cwd means a run from a
     # subdirectory reads an empty tree, or writes into a stray one, and exits 0. The shared

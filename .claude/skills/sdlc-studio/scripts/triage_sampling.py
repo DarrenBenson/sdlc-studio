@@ -19,6 +19,8 @@ on a v2 project, since `Triage-severity` is a v3 field).
 """
 from __future__ import annotations
 
+import argparse
+
 import hashlib
 import json
 from pathlib import Path
@@ -170,13 +172,20 @@ def metrics(root) -> dict:
     }
 
 
-def main(argv=None) -> int:
-    """Module-only library: a --help stub so disclosure and humans learn its role."""
-    import argparse
+def build_parser() -> argparse.ArgumentParser:
+    """The parser, as a module-level function so the surface can be enumerated without
+    running the command. `lib/surface.py` walks every one of these; a parser built inside
+    `main()` is invisible to it, which is a verb no coverage number can count."""
     ap = argparse.ArgumentParser(
         prog="triage_sampling.py",
         description="Internal module (no CLI): imported by file_finding/artifact for the "
                     "v3 triage noise controls. Drive it through those tools.")
+    return ap
+
+
+def main(argv=None) -> int:
+    """Module-only library: a --help stub so disclosure and humans learn its role."""
+    ap = build_parser()
     ap.parse_args(argv)
     ap.print_help()
     return 0

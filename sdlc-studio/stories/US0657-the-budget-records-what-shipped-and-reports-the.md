@@ -35,9 +35,12 @@
 
 ### AC2: `--drift` names the files inside the tolerance, and exits 0
 
-- **Given** the files within +5% of their ceiling, `reference-outputs.md` among them at 4.87%
+- **Given** the SET of files within +5% of their ceiling - `reference-outputs.md` at 4.87%,
+  `reference-decisions.md` at 4.83% and `reference-test-best-practices.md` at 4.67% among them
 - **When** `--drift` runs
-- **Then** each is named with its percentage and the command exits 0. A file one line from
+- **Then** every member of that set is named with its percentage and the command exits 0 -
+  the SET, not one member, since a report naming only the worst offender passes a
+  single-member assertion while hiding the rest. A file one line from
   failing a hard threshold is worth seeing before it fails, and a report that fails is a report
   that gets a bigger number rather than a smaller file
 - **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_drift_names_the_files_inside_the_tolerance_and_exits_zero
@@ -53,7 +56,9 @@
 
 ### AC4: the three unbudgeted trees get a REPORTED total and NO threshold
 
-- **Given** `help/` at 9,456 lines, `best-practices/` at 4,881 and `templates/` at 5,863 - none
+- **Given** `help/` at 9,456 markdown lines, `best-practices/` at 4,881 and `templates/` at
+  5,863 - counted over `*.md` only, which is stated because `templates/` is 7,412 over all files
+  and a total whose filter is unstated is a number nobody can reproduce - none
   of them walked by `check_budgets.py` today, which reads only `SKILL.md` and `reference-*.md`
 - **When** the budgets are reported
 - **Then** each carries a total, and NO threshold exists for any of them - both directions
@@ -82,3 +87,4 @@
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-08 | sdlc-studio | AC4 moved to US0658, from the plan-time engineering seat's finding. `check_budgets.py` is a BLOCKING pre-commit lane, so a requirement that `reference-sprint.md`'s justification have a Reading Guide - landing here, one story before US0658 generates it - leaves main red between the two commits. The requirement belongs with the story that makes it true |
 | 2026-08-08 | sdlc-studio | Plan review round 1 REJECTed AC1 as a vacuous pass - with a fixture already in step, `--record` is a no-op and the file is byte-identical under both the honest implementation and the mutant, and nothing asserted that an integer moved. It does now. The reviewer also found the real tension underneath: the reason comments CONTAIN their numbers, so preserving them byte-identically while the ceiling moves leaves an argument false about its own ceiling - `--record` APPENDS a provenance line instead, so the history accumulates and nothing written is rewritten. AC4's totals were wrong (help is 9,456 and templates 5,863) and `check_budgets.py` does not walk those trees at all today |
+| 2026-08-08 | sdlc-studio | Plan review round 2 APPROVEd, ruling all three round-1 findings CLOSED. Its two minors are folded in: AC2 asserts the SET inside the tolerance rather than one member, and AC4 states that the tree totals count `*.md` only, since `templates/` is 7,412 over all files |

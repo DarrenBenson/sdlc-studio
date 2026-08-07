@@ -44,8 +44,9 @@
 
 - **Given** a reference whose sections have moved since its guide was generated
 - **When** `docgen.py reading-guides --check` runs
-- **Then** it reports the drift. A line span that is wrong is worse than none: it sends a reader
-  to the wrong place with confidence, where an anchor at least fails visibly
+- **Then** it reports the drift, AND reports none over a reference whose sections have not
+  moved - the silent case is the positive control, without which a checker that always reports
+  drift passes the first half
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReadingGuideTests::test_a_moved_section_is_reported_as_drift
 
 ### AC4: no file is split and no budget is raised to fit the guide
@@ -58,7 +59,7 @@
   pass more easily, so the mutant this criterion is about would strengthen its own test.
   Splitting a reference to fit a guide would be the tail wagging the dog, and raising a ceiling
   to accommodate a generator is the ratchet running backwards
-- **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_the_budgets_pass_with_the_guides_in_place
+- **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_the_recorded_ceilings_are_unchanged_by_the_guides
 
 ### AC5: a ceiling justification that names a Reading Guide must have one, and it does
 
@@ -94,3 +95,4 @@
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-08 | sdlc-studio | AC5 arrives from US0657, from the plan-time engineering seat's finding: `check_budgets.py` is a blocking lane, so the demand and the thing that satisfies it must land in one commit or the trunk is red between them |
 | 2026-08-08 | sdlc-studio | Plan review round 1 REJECTed on constants that were mine and wrong: 26 references exceed 400 lines and THREE carry a guide, not 27 and nine - the other six carrying the phrase sit under the threshold and are not the population. AC4's mutant made its own test pass MORE strongly, since raising a ceiling makes the budgets pass, so it asserts the recorded ceilings against a pinned set instead. AC5 gains its positive control and states that the checker and the guides land in one commit |
+| 2026-08-08 | sdlc-studio | Plan review round 2 APPROVEd, ruling all three round-1 findings CLOSED. Its minors are folded in: AC4's verifier is renamed to match the pinned-set assertion it now carries rather than the exit-0 one it replaced, and AC3 gains the silent positive control |

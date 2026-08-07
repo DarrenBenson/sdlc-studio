@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-07
+**Last Updated:** 2026-08-08
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 43 |
+| Open | 44 |
 | In Progress | 0 |
 | Fixed | 424 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **554** |
+| **Total** | **555** |
 
 ## All Bugs
 
@@ -94,6 +94,7 @@
 | [BG0552](BG0552-a-registered-mutant-cannot-be-joined-to-a.md) | a registered mutant cannot be joined to a measured one, so a cross-provenance contradiction in the mutation ledger is undetectable | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0553](BG0553-a-mistyped-mutation-verdict-cannot-be-corrected-and.md) | a mistyped mutation verdict cannot be corrected, and the contradiction check now turns that from a wrong number into a refusal in every mode | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0554](BG0554-survivor-severity-under-rates-the-explicit-return-none.md) | survivor severity under-rates the explicit return-None idiom, which is the shape that matters most in this codebase | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0555](BG0555-twelve-scripts-declare-root-only-per-subcommand-a.md) | twelve scripts declare --root only per-subcommand, a grammar defect the conformance sweep could not see because it silently skipped them | Open | Medium | 2026-08-08 | 2026-08-08 |
 
 ## Archived Releases
 

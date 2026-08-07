@@ -41,7 +41,9 @@
 
 ### AC3: SKILL.md's ceiling is unchanged at 500
 
-- **Given** SKILL.md at 271 lines against a 500-line ceiling
+- **Given** SKILL.md at 271 lines against a ceiling constant of 500 - which the checker
+  enforces as `n >= 500`, so the effective cap is 499 and the criterion says so rather than
+  restating a number that is off by one in practice
 - **When** the budget is checked after the additions
 - **Then** the CEILING is still 500, asserted as a value. Asserting that the file is inside its
   budget is vacuous - 229 lines of slack remain and the criterion's own projection is 296, so
@@ -55,7 +57,9 @@
 - **Given** `disclosure.py`, which has no depth, nesting or hop logic of any kind today, and a
   fixture whose loading path is exactly FOUR hops deep
 - **When** the depth is reported
-- **Then** it reports 4. The fixture's depth is deliberately not the 3 this story's prose states
+- **Then** it reports 4, ADVISORY - exit 0 whatever the depth. US0655 puts `disclosure.py`
+  into the blocking lint chain, so a non-zero exit here would couple the two units and make a
+  reported measurement into a gate nobody agreed to. The fixture's depth is deliberately not the 3 this story's prose states
   about the real tree, because the mutant a hurried implementer actually writes is returning
   that constant - and a test asserting "reports the measured depth" against a tree that really
   is 3 deep passes on a hardcoded 3. The 3-hop path is not fixable without a rewrite this change
@@ -78,3 +82,4 @@
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-08 | sdlc-studio | Plan review round 1 REJECTed both blocking findings. AC3's mutant was the wrong DIRECTION - raising a ceiling makes an inside-the-budget assertion pass more easily - and the assertion was vacuous anyway, with SKILL.md at 271 against 500; it pins the ceiling value now. AC4 was derived backwards from an implementation that does not exist: `disclosure.py` has no nesting logic at all, and the mutant a hurried implementer writes is returning the constant this story's prose states, so the fixture's true depth is deliberately four. AC1's assertion moves from list SHAPE to trigger phrases, which is what the checklist's bad example is actually about |
+| 2026-08-08 | sdlc-studio | Plan review round 2 APPROVEd, ruling both round-1 findings CLOSED. Its minors are folded in: the checker enforces `n >= 500` so the effective cap is 499, and the depth report is stated ADVISORY because US0655 puts `disclosure.py` into the blocking lint chain and a non-zero exit would couple the two |

@@ -20,8 +20,11 @@
 
 ### AC1: a verb documented ONLY in a generated block reads UNDOCUMENTED
 
-- **Given** a fixture corpus with two verbs: one named in hand-written prose only, and one named
-  only inside a `<!-- BEGIN GENERATED -->` block
+- **Given** a fixture corpus with two verbs: one named in hand-written prose inside a
+  `reference-scripts`-family file, and one named only inside a `<!-- BEGIN GENERATED -->` block.
+  The first lives in that family deliberately - excluding `reference-scripts*.md` wholesale is
+  the other way to make the number stop moving, and only a prose-only verb INSIDE it catches
+  that
 - **When** `command_audit.py --coverage` runs
 - **Then** the first reads DOCUMENTED and the second reads UNDOCUMENTED. That PAIR is the
   criterion, not an unchanged total: asserting only that the number does not move when the
@@ -104,3 +107,4 @@
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-08 | sdlc-studio | AC5 added from the plan-time qa seat: excluding the generated TARGETS closes the front door, and pasting the same table into a hand-written file walks in the back one - the same flattery with one extra step and no prose |
 | 2026-08-08 | sdlc-studio | Plan review round 1 REJECTed on three blocking findings, all of them the same shape: a criterion asserting a number does NOT move is satisfied by measuring nothing. AC1 is now a PAIR - a verb documented only in prose reads documented, the same verb only inside a generated block reads undocumented. AC3 requires a hand-written table of the same shape to survive the stripper, so eating every table cannot pass. AC4 pins literals on a miniature corpus, since an expectation computed by the function under test can never fail. AC2 patches the shared rule rather than comparing two lists, because a copy compares equal. `docgen.py` joins the declared Affects, which AC2 imports |
+| 2026-08-08 | sdlc-studio | Plan review round 2 APPROVEd, ruling all five round-1 findings CLOSED. Its minor is folded in: the prose-only verb lives in the `reference-scripts` family, so excluding that family wholesale - the other way to make the number stop moving - fails the pair too |

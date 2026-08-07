@@ -483,7 +483,10 @@ def _render(report: dict) -> str:
     return "\n".join(lines)
 
 
-def main(argv=None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """The parser, as a module-level function so the surface can be enumerated without
+    running the command. `lib/surface.py` walks every one of these; a parser built inside
+    `main()` is invisible to it, which is a verb no coverage number can count."""
     ap = argparse.ArgumentParser(
         prog="flow", description="Deterministic flow metrics: cycle time, throughput, "
         "work-item age - the zero-token schedule instrument. Advisory; never a gate.")
@@ -506,6 +509,11 @@ def main(argv=None) -> int:
                    help="throughput denominator (default: flow.forecast_bucket config, "
                         "else day)")
     sdlc_md.add_format_arg(f)
+    return ap
+
+
+def main(argv=None) -> int:
+    ap = build_parser()
     args = ap.parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
     # run belongs to. The family default `.` means "work it out from here", not "the cwd

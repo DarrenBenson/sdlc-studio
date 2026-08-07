@@ -257,7 +257,10 @@ def _unreleased_faults(lines: list[str], start: int, end: int) -> list[str]:
     return errs
 
 
-def main(argv=None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """The parser, as a module-level function so the surface can be enumerated without
+    running the command. `lib/surface.py` walks every one of these; a parser built inside
+    `main()` is invisible to it, which is a verb no coverage number can count."""
     ap = argparse.ArgumentParser(
         prog="changelog", description="Per-unit CHANGELOG fragments: write one per unit "
         "under changelog.d/, compose them deterministically into [Unreleased].")
@@ -274,6 +277,11 @@ def main(argv=None) -> int:
                        "unrepeated and non-empty; exit 1 on a fault")
     for p in (c, k, s):
         p.add_argument("--root", default=".", help="Repo root (default: .)")
+    return ap
+
+
+def main(argv=None) -> int:
+    ap = build_parser()
     args = ap.parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
     # run belongs to. The family default `.` means "work it out from here", not "the cwd

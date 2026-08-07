@@ -11,6 +11,8 @@ the claims it could not find as UNCHECKED rather than counting them as green.
 """
 from __future__ import annotations
 
+import argparse
+
 import json
 import re
 import sys
@@ -323,11 +325,18 @@ def _longest_sections(text: str, top: int = 3) -> list[tuple[str, int]]:
     return [sections[i] for i in ranked[:top]]
 
 
-def main(argv: list[str] | None = None) -> int:
-    import argparse
+def build_parser() -> argparse.ArgumentParser:
+    """The parser, as a module-level function so the surface can be enumerated without
+    running the command. `lib/surface.py` walks every one of these; a parser built inside
+    `main()` is invisible to it, which is a verb no coverage number can count."""
     ap = argparse.ArgumentParser(description="Flag stale facts in LATEST.md (advisory).")
     ap.add_argument("--root", default=".")
     sdlc_md.add_format_arg(ap)
+    return ap
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = build_parser()
     args = ap.parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
     # run belongs to. The family default `.` means "work it out from here", not "the cwd

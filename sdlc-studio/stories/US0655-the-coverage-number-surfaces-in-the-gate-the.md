@@ -54,7 +54,8 @@
 - **Given** the gate lane and the close row - the two readers that consume the coverage
   measurement; the lint aggregate is deliberately NOT among them, because it shells out to
   `disclosure.py`, a different checker with an unrelated count, and could never quote this one
-- **When** the measurement function is patched IN ITS DEFINING MODULE to an implausible sentinel
+- **When** the measurement function is patched in `command_audit.py`, THE MODULE THAT DEFINES
+  IT, to an implausible sentinel
   (4242, a value no real tree produces)
 - **Then** both readers quote 4242. The patch is on the defining module and each reader must
   call through it rather than binding the name at import, or the mutant that gives the gate lane
@@ -81,3 +82,4 @@
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-08 | sdlc-studio | AC4 rewritten from the plan-time qa seat's finding: as written it asserted three readers AGREE, which three correct readers do by construction, so its own mutant survived. It patches the shared routine now and requires each reader to move with it |
 | 2026-08-08 | sdlc-studio | Plan review round 1 REJECTed. AC4 named THREE readers and one of them is not executable: the lint lane shells out to `disclosure.py`, a different checker with an unrelated count, so it could never quote a patched coverage value - it is scoped to the two readers that can, with the reason stated. The patch site is named as the DEFINING module, since patching each reader's own attribute leaves the re-derivation mutant alive. AC1 gains the finding that `gate.py` ALREADY reports `N undocumented` at script granularity, so the new lane must be worded so a reader cannot conflate them. AC2 asserts the `lint` CHAIN, not the key, which exists today |
+| 2026-08-08 | sdlc-studio | Plan review round 2 APPROVEd, ruling all four round-1 findings CLOSED. Its minor is folded in: the defining module is named as `command_audit.py` rather than left determinate only by reading US0654 |
