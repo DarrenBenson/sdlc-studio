@@ -3771,6 +3771,36 @@ class GoalReviewWindowTests(unittest.TestCase):
             self.assertEqual(2, rc)
             self.assertIn("no Sprint Goal", err)
 
+    def test_a_preview_plan_cannot_bank_a_waiver(self) -> None:
+        """Mutant: drop the `--write` gate from the waiver recording.
+
+        A waiver is a PERMANENT row in the decision log, and the close reads it by subject, not
+        by run. A preview that banked one silenced the compulsory `goal-seat-reviewed` item for a
+        later, unrelated run - demonstrated end to end by an independent review.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            rc, _out, err = self._plan(root, "--goal-review-waived", "somebody")
+            self.assertEqual(2, rc, "a preview plan banked a permanent waiver")
+            import decisions
+            self.assertIsNone(
+                decisions.waiver_for(root, "rule:sprint-checklist:goal-seat-reviewed"),
+                "the decision log carries a waiver from a plan that wrote nothing")
+
+    def test_the_escape_is_refused_when_a_goal_was_stated(self) -> None:
+        """The gate is ARMED when a goal exists, so the escape is not the answer - and silently
+        ignoring the flag would leave the operator believing they had taken one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            rc, _out, err = self._plan(root, "--write", "--sprint-goal", "a goal",
+                                       "--goal-review-waived", "somebody")
+            self.assertEqual(2, rc)
+            self.assertIn("the gate is armed", err)
+
     def test_a_reviewed_goal_plans_cleanly(self) -> None:
         """Mutant: drop the `not reviewed` term, so a reviewed goal is refused too.
 

@@ -8398,7 +8398,21 @@ def cmd_plan(args: argparse.Namespace) -> int:
               "escape with `--goal-review-waived \"<who authorised it>\"` - which is written "
               "to the decision log now, while it can still be reconsidered.", file=sys.stderr)
         return 2
-    if waived_by and not sprint_goal:
+    if waived_by and not getattr(args, "write", False):
+        print("plan refused: `--goal-review-waived` records a permanent waiver in the decision "
+              "log, so it belongs only to a plan that is actually being written. A preview that "
+              "banked one silenced the compulsory close item for a LATER, unrelated run.",
+              file=sys.stderr)
+        return 2
+    if waived_by and sprint_goal:
+        print("plan refused: `--goal-review-waived` escapes the goal-review gate, and a goal was "
+              "stated - so the gate is armed and the escape is not the answer. Record the seat "
+              "review, or drop the goal.", file=sys.stderr)
+        return 2
+    # ... and only when the gate could actually have fired. Banking an escape from a refusal that
+    # was never armed leaves a row nothing asked for, holding open an item somebody else will
+    # meet at their close.
+    if waived_by and not sprint_goal and review["available_seats"]:
         try:
             import decisions  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
             decisions.record_waiver(
