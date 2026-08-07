@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0321: **L-0314: a guard that fails in the direction of inventing work is still wrong.** The resolvability sweep inherited the runner's working...**
+- **L-0320: **L-0313: an emergency bypass is a debt due on the NEXT commit.** Three lanes had been failing behind one `--no-verify`; the gate that...**
+- **L-0319: **L-0312: a fixture whose root is a PARAMETER will eventually be given the wrong one.** Writing to a real path looks exactly like writing...**
+- **L-0318: **L-0311: a repair judged only against its own finding can void the guarantee beside it.** Round 2 must re-run the SIBLING unit's mutants...**
+- **L-0317: **L-0310: a criterion asking for ONE implementation cannot be verified by two agreeing.** Agreement is what two correct-today...**
 - **L-0316: **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the**
 - **L-0315: **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the**
 - **L-0314: **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment**

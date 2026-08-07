@@ -148,3 +148,4 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 | RETRO0094 | 2026-08-05 | 6 | 0 | 6 | 14 | - | 658,490 | 4,953,336 | - | 353,810 | 0 | - | 0.1 | 0.0 | TOKENS_PER_POINT=25000 | out-of-sample | claude-opus-5 | - | harness |
 | RETRO0095 | 2026-08-05 | 12 | 0 | 12 | 41 | - | 1,787,764 | 3,017,995 | - | 73,610 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
 | RETRO0096 | 2026-08-06 | 7 | 0 | 7 | 29 | - | 1,264,516 | 1,058,453 | - | 36,498 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
+| RETRO0097 | 2026-08-07 | 19 | 0 | 18 | 18 | 48 | 2,973,570 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |

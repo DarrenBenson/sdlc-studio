@@ -66,3 +66,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0051](HO0051-a-unit-s-test-plan-is-derived-reviewed.md) | A unit's test plan is derived, reviewed and executed before its code, and the run reports what that cost against what code review costs | 2026-08-06 |
 | [HO-0052](HO0052-v5-release-sprint-the-verification-claim-is-half.md) | v5 release sprint: the verification claim is half true, twelve units remain | 2026-08-06 |
 | [HO-0053](HO0053-v5-release-sprint-the-verification-claim-is-half.md) | v5 release sprint: the verification claim is half true, twelve units remain | 2026-08-06 |
+| [HO-0054](HO0054-a-shipped-command-stops-reporting-a-success-it.md) | A shipped command stops reporting a success it did not achieve, the bug backlog becomes visible to the tooling that is supposed to execute it, and v5.0.0 is cut on that basis | 2026-08-07 |
