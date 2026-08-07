@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 35 |
+| Open | 39 |
 | In Progress | 0 |
 | Fixed | 423 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **545** |
+| **Total** | **549** |
 
 ## All Bugs
 
@@ -85,6 +85,10 @@
 | [BG0543](BG0543-the-warning-ratchet-still-exits-0-on-a.md) | the warning ratchet still exits 0 on a stale baseline, and its replacement headline contradicts the line below it | Open | High | 2026-08-07 | 2026-08-07 |
 | [BG0544](BG0544-ck-closing-review-reports-ran-for-a-unit.md) | _ck_closing_review reports `ran` for a unit the shared coverage reading calls uncovered, when its latest sprint-level verdict is APPROVE | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0545](BG0545-testplan-derive-and-the-bug-criteria-floor-each.md) | testplan derive and the bug criteria floor each mis-slice a checkbox-shaped Acceptance Criteria section, so one refuses a sound plan and the other reports Verify lines that are there as absent | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0546](BG0546-critic-py-record-refuses-a-plan-review-finding.md) | critic.py record refuses a plan-review finding for carrying no diff origin, when a plan review has no diff to attribute one to | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0547](BG0547-gate-warn-in-pre-write-gates-is-assigned.md) | one advisory silently replaces another: the transition gate ladder assigns its warning variable where its own docstring says the warnings accumulate | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0548](BG0548-the-acceptance-criteria-parser-silently-drops-a-criterion.md) | the acceptance-criteria parser silently drops a criterion whose heading is not AC<digits>, so a whole criterion and its Verify line vanish without a word | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0549](BG0549-the-non-convergence-escalation-is-sticky-a-converging.md) | the non-convergence escalation is sticky: a converging APPROVE still reports that the panel is not converging, because the notice counts historical REJECTs and never re-reads the latest verdict | Open | Medium | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

@@ -1,7 +1,7 @@
 # EP0212: Mutation evidence reports by default, and the evidence a measured run produces is the evidence the gate reads
 
 > **Status:** Draft
-> **Derived Point Total:** 10
+> **Derived Point Total:** 16
 > **Parent:** CR0537
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
