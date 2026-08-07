@@ -107,3 +107,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0095](RETRO0095-acceleration-ceremony-proportional-to-blast-radius.md) | Acceleration: ceremony proportional to blast radius | 2026-08-05 | -- | -- |
 | [RETRO-0096](RETRO0096-test-plan-before-code-the-mechanism-ships-the.md) | test-plan-before-code: the mechanism ships, the measurement lands next run | 2026-08-06 | -- | -- |
 | [RETRO-0097](RETRO0097-run-01kzcajx-the-v5-release-blocker-sprint-and.md) | RUN-01KZCAJX: the v5 release-blocker sprint, and what three review rounds cost | 2026-08-07 | -- | -- |
+| [RETRO-0098](RETRO0098-the-repair-evidence-rule-the-doctrine-states-is.md) | The repair-evidence rule the doctrine states is the rule the command performs, and the sprint's own thesis was turned on the sprint | 2026-08-07 | -- | -- |

@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 11 |
+| Draft | 8 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 201 |
+| Done | 204 |
 | **Total** | **212** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -38,8 +38,8 @@
 | [EP0181](EP0181-reconcile-s-sweeps-read-the-corpus-once-per.md) | reconcile's sweeps read the corpus once per run, not once per unit | Done | 3 | -- | 2026-07-28 | 2026-07-28 |
 | [EP0189](EP0189-the-close-costs-less-than-the-work-it.md) | The close costs less than the work it certifies: earn the gate verdict once, record a batch in one call, and refuse in one pass | Done | 7 | -- | 2026-07-29 | 2026-07-29 |
 | [EP0190](EP0190-the-review-happens-inside-the-sprint-batch-boundary.md) | The review happens inside the sprint: batch-boundary adversarial passes, so a finding is delivery work not close overhead | Done | 4 | -- | 2026-07-29 | 2026-07-29 |
-| [EP0191](EP0191-a-repair-is-held-by-a-mutant-it.md) | A repair is held by a mutant it kills: mutation is mandatory on a fix, gated on survivors at the transition | Draft | 4 | -- | 2026-07-29 | 2026-07-29 |
-| [EP0193](EP0193-the-mutation-lane-tells-an-uncommitted-surface-apart.md) | The mutation lane tells an uncommitted surface apart from an untested one | Draft | 1 | -- | 2026-07-30 | 2026-07-30 |
+| [EP0191](EP0191-a-repair-is-held-by-a-mutant-it.md) | A repair is held by a mutant it kills: mutation is mandatory on a fix, gated on survivors at the transition | Done | 4 | -- | 2026-07-29 | 2026-07-29 |
+| [EP0193](EP0193-the-mutation-lane-tells-an-uncommitted-surface-apart.md) | The mutation lane tells an uncommitted surface apart from an untested one | Done | 1 | -- | 2026-07-30 | 2026-07-30 |
 | [EP0194](EP0194-a-unit-review-is-bounded-briefed-by-the.md) | A unit review is bounded, briefed by the tool, and blocks only on what the unit broke | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0196](EP0196-hand-rolled-work-is-visible-the-close-names.md) | Hand-rolled work is visible: the close names what an agent did by hand instead of by tool | Draft | 5 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0197](EP0197-the-close-checklist-fires-where-an-item-can.md) | The close checklist fires where an item can still be satisfied, and reads verdicts rather than counts | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |
@@ -57,7 +57,7 @@
 | [EP0209](EP0209-the-reviewer-of-record-can-be-a-named.md) | The reviewer of record can be a named seat, and the operator leads from a derived summary | Done | 3 | -- | 2026-08-05 | 2026-08-05 |
 | [EP0210](EP0210-a-refusing-verb-can-be-asked-what-it.md) | A refusing verb can be asked what it demands, before it refuses | Draft | 6 | -- | 2026-08-07 | 2026-08-07 |
 | [EP0211](EP0211-the-surface-is-enumerable-from-the-parsers-that.md) | The surface is enumerable from the parsers that define it, and the documentation gap is a reported number | Draft | 8 | -- | 2026-08-07 | 2026-08-07 |
-| [EP0212](EP0212-mutation-evidence-reports-by-default-and-the-evidence.md) | Mutation evidence reports by default, and the evidence a measured run produces is the evidence the gate reads | Draft | 2 | -- | 2026-08-07 | 2026-08-07 |
+| [EP0212](EP0212-mutation-evidence-reports-by-default-and-the-evidence.md) | Mutation evidence reports by default, and the evidence a measured run produces is the evidence the gate reads | Done | 2 | -- | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

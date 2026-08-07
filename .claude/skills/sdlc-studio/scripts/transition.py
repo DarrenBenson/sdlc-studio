@@ -1329,7 +1329,11 @@ def _file_surviving_mutants(root, uid: str, text: str, type_: str) -> list[str]:
             f"is not pinned by the test {uid} closed on"), {
             "severity": severity,
             "points": 2,
-            "affects": f"{target}, {mu.get('test') or '(no test recorded)'}",
+            # PATHS ONLY. The test command was being written in here beside the target, and
+            # `Affects` is what a review brief derives its bounded scope from - so a brief
+            # built for this finding carried `pytest -k f` as if it were a file. The test is
+            # named in the summary and the fix, where it belongs.
+            "affects": str(target),
             "summary": (
                 f"{uid} reached a terminal status carrying a SURVIVING mutant. "
                 f"`{mu.get('mutant') or 'the mutant'}` was applied at {target}:{line} and "

@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0325: **A fixed line number in a fixture family probes past the end of the short ones.** Every severity fixture shared a probe line, and the...**
+- **L-0324: **A criterion whose premise is not decidable from what is stored gets satisfied by a fixture.** US0661 AC4 demanded that a registered claim...**
+- **L-0323: **A repair relocates its defect one construct over, and the second construct is the one nobody checks.** The terminality rule learned If...**
+- **L-0322: **A registered mutant is a claim; clear the ledger and apply them before believing the count.** 61 registrations, 47 applied for real, two...**
 - **L-0321: **L-0314: a guard that fails in the direction of inventing work is still wrong.** The resolvability sweep inherited the runner's working...**
 - **L-0320: **L-0313: an emergency bypass is a debt due on the NEXT commit.** Three lanes had been failing behind one `--no-verify`; the gate that...**
 - **L-0319: **L-0312: a fixture whose root is a PARAMETER will eventually be given the wrong one.** Writing to a real path looks exactly like writing...**

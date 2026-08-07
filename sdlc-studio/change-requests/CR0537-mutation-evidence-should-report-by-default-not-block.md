@@ -1,6 +1,6 @@
 # CR-0537: mutation evidence should REPORT by default, not block: a surviving mutant becomes a severity-rated bug and the close proceeds
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0212
 > **Priority:** High
 > **Type:** Improvement

@@ -4105,6 +4105,14 @@ class UncommittedSurfaceCLITests(unittest.TestCase):
                                   "--files", str(root / "src" / "thing.py"), "--test", "true")
             self.assertIn("worktree", out, f"the isolated-checkout route is missing:\n{out}")
             self.assertIn("register", out, "the hand-applied route is missing")
+            # ...and the DISCIPLINE, which is half the criterion and was unasserted: deleting
+            # the whole clause while keeping both route names left this test green. A hand run
+            # named without it sends a reader to a cached module reporting a false survival.
+            for discipline in ("anchor", "__pycache__", "python3 -B", "byte-identical"):
+                with self.subTest(discipline=discipline):
+                    self.assertIn(discipline, out,
+                                  "the hand route is named without the discipline that makes "
+                                  f"it trustworthy:\n{out}")
 
     def test_a_committed_untested_surface_still_reports_no_evidence(self) -> None:
         """AC3, THE CONTROL. Without it this change could be an excuse that silences the lane

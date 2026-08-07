@@ -1,6 +1,6 @@
 # US0565: The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0501
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
@@ -63,5 +63,6 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Created via `new` (deterministic) |
-| 2026-08-07 | sdlc-studio | Every `Verified: yes` stamp retracted and every verifier re-pointed at a test that drives the shipped command. The stamps were false: each criterion names `transition.py set` or the mutation lane as its When while its verifier called the library function, which is why BG0541's missing wiring passed this wave. Raised by the plan-time qa and engineering seats |
+| 2026-08-07 | sdlc-studio | Every `Verified: yes` stamp retracted and every verifier whose criterion names a COMMAND re-pointed at a test that drives it. The stamps were false: each criterion names `transition.py set` or the mutation lane as its When while its verifier called the library function, which is why BG0541's missing wiring passed this wave. Raised by the plan-time qa and engineering seats |
 | 2026-08-07 | sdlc-studio | Re-verified through the shipped command. AC2's ledger now carries a `line` that `register --line` can actually write, which is US0661's dependency: before it, this assertion passed on a fixture the tool itself could never have produced |
+| 2026-08-07 | sdlc-studio | Closing review APPROVEd and found the blanket claim - every verifier re-pointed at the shipped command - FALSE, which is the overclaim class this wave exists to retract. AC5 is excepted: its When is what the RUN does to bytecode, asserted on the shipped helpers the run uses. The prose is narrowed to what is true rather than the criteria bent to fit it |

@@ -1,6 +1,6 @@
 # US0566: Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0501
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
@@ -55,5 +55,6 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Created via `new` (deterministic) |
-| 2026-08-07 | sdlc-studio | Every `Verified: yes` stamp retracted and every verifier re-pointed at a test that drives the shipped command. The stamps were false: each criterion names `transition.py set` or the mutation lane as its When while its verifier called the library function, which is why BG0541's missing wiring passed this wave. Raised by the plan-time qa and engineering seats |
+| 2026-08-07 | sdlc-studio | Every `Verified: yes` stamp retracted and every verifier whose criterion names a COMMAND re-pointed at a test that drives it. The stamps were false: each criterion names `transition.py set` or the mutation lane as its When while its verifier called the library function, which is why BG0541's missing wiring passed this wave. Raised by the plan-time qa and engineering seats |
 | 2026-08-07 | sdlc-studio | Re-verified through the shipped command. AC4's exemption is now re-derived from the diff rather than from the record's own paths, and the fixture makes `Affects`, the diff and the record name three different files - with the same file in all three, the old derivation and the new one produce identical output |
+| 2026-08-07 | sdlc-studio | Closing review APPROVEd and found the blanket claim - every verifier re-pointed at the shipped command - FALSE, which is the overclaim class this wave exists to retract. AC2 is excepted: its When is `each is classified`, which is a derivation rather than an invocation. The prose is narrowed to what is true rather than the criteria bent to fit it |

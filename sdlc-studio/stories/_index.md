@@ -11,8 +11,8 @@
 | Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 15 |
-| Done | 615 |
+| Review | 8 |
+| Done | 622 |
 | Won't Implement | 2 |
 | Deferred | 0 |
 | Superseded | 2 |
@@ -38,11 +38,11 @@
 | [US0491](US0491-calling-a-sprint-at-a-point-is-an.md) | Calling a sprint at a point is an honest close: the unstarted remainder is descoped with a reason and returns to the backlog | Done | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0492](US0492-the-queue-lifecycle-is-documented-alongside-the-run.md) | The queue lifecycle is documented alongside the run lifecycle, with every invocation shown taken from the shipped parser | Done | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Won't Implement | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Review | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Review | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Review | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Review | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0573](US0573-an-uncommitted-changed-surface-is-reported-as-that.md) | an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence | Review | EP0193 | 2026-07-30 | 2026-07-30 |
+| [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Done | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Done | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Done | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Done | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0573](US0573-an-uncommitted-changed-surface-is-reported-as-that.md) | an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence | Done | EP0193 | 2026-07-30 | 2026-07-30 |
 | [US0581](US0581-a-finding-matching-an-open-bug-or-cr.md) | A finding matching an open Bug or CR is annotated with that id automatically and never blocks | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
 | [US0586](US0586-every-skill-script-records-the-artefact-it-touched.md) | Every skill script records the artefact it touched and the action it performed, per run | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0587](US0587-an-artefact-changed-in-the-run-diff-with.md) | An artefact changed in the run diff with no tool provenance is reported by name at the close | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
@@ -99,8 +99,8 @@
 | [US0657](US0657-the-budget-records-what-shipped-and-reports-the.md) | The budget records what shipped and reports the files sitting inside its tolerance | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
 | [US0658](US0658-every-reference-over-the-stated-threshold-carries-a.md) | Every reference over the stated threshold carries a Reading Guide with an anchor and a line span | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
 | [US0659](US0659-skill-md-carries-the-sections-its-own-checklist.md) | SKILL.md carries the sections its own checklist requires, and every reference is two hops away | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
-| [US0660](US0660-a-surviving-mutant-becomes-a-severity-rated-bug.md) | A surviving mutant becomes a severity-rated bug and the transition proceeds, and the run names the mode that held it | Review | EP0212 | 2026-08-07 | 2026-08-07 |
-| [US0661](US0661-a-measured-mutation-run-records-what-it-applied.md) | A measured mutation run records what it applied, attributed to a unit, so the gate is satisfiable by measurement rather than only by self-report | Review | EP0212 | 2026-08-07 | 2026-08-07 |
+| [US0660](US0660-a-surviving-mutant-becomes-a-severity-rated-bug.md) | A surviving mutant becomes a severity-rated bug and the transition proceeds, and the run names the mode that held it | Done | EP0212 | 2026-08-07 | 2026-08-07 |
+| [US0661](US0661-a-measured-mutation-run-records-what-it-applied.md) | A measured mutation run records what it applied, attributed to a unit, so the gate is satisfiable by measurement rather than only by self-report | Done | EP0212 | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

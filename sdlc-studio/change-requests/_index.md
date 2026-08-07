@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 18 |
 | Approved | 0 |
-| In Progress | 12 |
-| Complete | 485 |
+| In Progress | 9 |
+| Complete | 488 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
@@ -54,8 +54,8 @@
 | [CR-0498](CR0498-the-close-ceremony-costs-more-than-the-work.md) | The close ceremony costs more than the work it certifies: measured at ~32 minutes of gate and 57 process spawns to sign off 19 units | Complete | High | enhancement | 2026-07-29 | EP0189 |
 | [CR-0499](CR0499-a-sprint-is-never-asked-whether-it-produced.md) | A sprint is never asked whether it produced a SHIPPABLE increment: the release definition-of-done encodes mechanism, not outcome | Proposed | High | Improvement | 2026-07-29 | -- |
 | [CR-0500](CR0500-the-adversarial-review-runs-at-the-close-so.md) | The adversarial review runs at the close, so every defect it finds becomes close work - it belongs at the delivery cadence | Complete | High | Improvement | 2026-07-29 | EP0190 |
-| [CR-0501](CR0501-a-repair-is-held-only-by-a-test.md) | A repair is held only by a test its own author wrote, and repairs land in guards - mutation must be mandatory on a fix, not optional on a sprint | In Progress | High | Improvement | 2026-07-29 | EP0191 |
-| [CR-0502](CR0502-the-mutation-lane-asks-for-evidence-on-a.md) | the mutation lane asks for evidence on a changed surface the mutation runner refuses to mutate | In Progress | Medium | Improvement | 2026-07-30 | EP0193 |
+| [CR-0501](CR0501-a-repair-is-held-only-by-a-test.md) | A repair is held only by a test its own author wrote, and repairs land in guards - mutation must be mandatory on a fix, not optional on a sprint | Complete | High | Improvement | 2026-07-29 | EP0191 |
+| [CR-0502](CR0502-the-mutation-lane-asks-for-evidence-on-a.md) | the mutation lane asks for evidence on a changed surface the mutation runner refuses to mutate | Complete | Medium | Improvement | 2026-07-30 | EP0193 |
 | [CR-0503](CR0503-an-adversarial-review-can-be-run-outside-the.md) | an adversarial review can be run outside the seat ceremony, losing every standing practice, and nothing detects that it was | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0504](CR0504-closing-review-is-doing-the-work-development-should.md) | closing review is doing the work development should have done, and the same five defect classes recur every sprint | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0506](CR0506-a-reject-whose-findings-were-all-repaired-has.md) | a REJECT whose findings were all repaired has no route back to covered, so a fully repaired batch reads identically to one nobody reviewed | Complete | High | Improvement | 2026-07-30 | EP0205 |
@@ -87,7 +87,7 @@
 | [CR-0534](CR0534-a-project-s-configuration-is-a-surface-nobody.md) | a project's configuration is a surface nobody is introduced to and nobody revisits: the operator cannot see what is in force, what the default would have been, or which setting their own history says is wrong | Proposed | High | Improvement | 2026-08-06 | -- |
 | [CR-0535](CR0535-a-refusing-verb-cannot-state-its-contract-until.md) | a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand | In Progress | High | Improvement | 2026-08-06 | EP0210 |
 | [CR-0536](CR0536-the-spec-documents-do-not-learn-about-a.md) | the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail | Proposed | High | Improvement | 2026-08-06 | -- |
-| [CR-0537](CR0537-mutation-evidence-should-report-by-default-not-block.md) | mutation evidence should REPORT by default, not block: a surviving mutant becomes a severity-rated bug and the close proceeds | In Progress | High | Improvement | 2026-08-07 | EP0212 |
+| [CR-0537](CR0537-mutation-evidence-should-report-by-default-not-block.md) | mutation evidence should REPORT by default, not block: a surviving mutant becomes a severity-rated bug and the close proceeds | Complete | High | Improvement | 2026-08-07 | EP0212 |
 | [CR-0538](CR0538-the-skill-has-no-lane-that-counts-what.md) | the skill has no lane that counts what the tooling ships: 49 of 211 verbs and 72 of 677 flags are named in no hand-written doc, and the checker that would notice is switched out of the lint chain | In Progress | High | Improvement | 2026-08-07 | EP0211 |
 
 ## Archived Releases

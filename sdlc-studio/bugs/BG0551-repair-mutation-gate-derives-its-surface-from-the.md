@@ -36,3 +36,4 @@ Derive the gate's surface the way `verify_no_surface_claim` now does - from git'
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Filed |
+| 2026-08-07 | sdlc-studio | Raised again at panel sign-off, reproduced through the CLI: under `block` a repair declaring only a markdown `Affects` reaches Fixed with no evidence and no warning. `reference-doctrine.md` rule 21 called `block` a hard bar without caveat and told readers to set it, so a project taking that advice got false confidence - the one place the increment still overstated. The doctrine now names the gap and cites the exemption path beside it, which already derives from the diff. Fix this and the caveat comes out |

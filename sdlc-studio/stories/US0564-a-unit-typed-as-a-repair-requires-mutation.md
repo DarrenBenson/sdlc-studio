@@ -1,6 +1,6 @@
 # US0564: A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0501
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
@@ -55,5 +55,6 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Created via `new` (deterministic) |
-| 2026-08-07 | sdlc-studio | Every `Verified: yes` stamp retracted and every verifier re-pointed at a test that drives the shipped command. The stamps were false: each criterion names `transition.py set` or the mutation lane as its When while its verifier called the library function, which is why BG0541's missing wiring passed this wave. Raised by the plan-time qa and engineering seats |
+| 2026-08-07 | sdlc-studio | Every `Verified: yes` stamp retracted and every verifier whose criterion names a COMMAND re-pointed at a test that drives it. The stamps were false: each criterion names `transition.py set` or the mutation lane as its When while its verifier called the library function, which is why BG0541's missing wiring passed this wave. Raised by the plan-time qa and engineering seats |
 | 2026-08-07 | sdlc-studio | Re-verified through the shipped command. `RepairMutationGateCLITests` drives `transition.py set`, and `ChangedLineScopeCLITests` drives the scoping over a real git fixture whose diff touches one function of eight - with the whole-file enumeration asserted as strictly larger, so an empty scoping cannot pass an is-it-smaller check on its own |
+| 2026-08-07 | sdlc-studio | Closing review APPROVEd and found the blanket claim - every verifier re-pointed at the shipped command - FALSE, which is the overclaim class this wave exists to retract. AC2 is excepted and always was: its When is a derivation, not a command. The prose is narrowed to what is true rather than the criteria bent to fit it |

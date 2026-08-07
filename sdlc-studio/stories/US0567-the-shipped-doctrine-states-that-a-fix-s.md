@@ -1,6 +1,6 @@
 # US0567: The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0501
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

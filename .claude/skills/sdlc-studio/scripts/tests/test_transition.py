@@ -914,6 +914,23 @@ class MeasuredEvidenceCLITests(unittest.TestCase):
                                  f"{uid}'s measured evidence was erased by the other unit's "
                                  f"run over the same file:\n{out}")
 
+    def test_an_unreadable_ledger_refuses_rather_than_passing(self) -> None:
+        """The one check that fires in every mode - `off` included - must not pass silently
+        when the instrument cannot be read. An unreadable bar is not a passed one, which is
+        what both sibling gates say in the same position.
+
+        Mutant: return None from the except arm, as it did before the review found it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _lane_repo(d, mode="off", record="current")
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                "{ this is not json", encoding="utf-8")
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
+            self.assertNotEqual(0, code,
+                                "an unreadable ledger passed the check that refuses in every "
+                                "mode, which is the one condition it exists for")
+            self.assertIn("could not be read", out, f"the refusal does not say why:\n{out}")
+
     def test_a_cross_provenance_pair_does_not_refuse(self) -> None:
         """The one-provenance scope, asserted rather than assumed. A registered row names the
         author's prose and a measured one names the generator's fault class, so across the two

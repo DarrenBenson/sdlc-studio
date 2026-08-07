@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 42 |
-| In Progress | 1 |
-| Fixed | 423 |
+| Open | 43 |
+| In Progress | 0 |
+| Fixed | 424 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **553** |
+| **Total** | **554** |
 
 ## All Bugs
 
@@ -80,7 +80,7 @@
 | [BG0538](BG0538-a-release-cut-mints-an-affects-unresolvable-warning.md) | a release cut mints an affects-unresolvable warning for every unit that declared its own changelog fragment, because compose deletes the file the unit named | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0539](BG0539-critic-record-cannot-tell-a-review-round-from.md) | critic record cannot tell a review ROUND from a panel SEAT, so the ordinary reject-fix-approve loop escalates as an unresolved split | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0540](BG0540-a-retro-that-was-never-written-reports-ran.md) | a retro that was never written reports `ran` on the close checklist, because a missing file is graded as a structural error rather than an absence | Open | Medium | 2026-08-07 | 2026-08-07 |
-| [BG0541](BG0541-the-repair-mutation-gate-is-dead-code-transition.md) | the repair-mutation gate is dead code: transition.py set does not call it, while the shipped doctrine tells consuming projects that it refuses | In Progress | High | 2026-08-07 | 2026-08-07 |
+| [BG0541](BG0541-the-repair-mutation-gate-is-dead-code-transition.md) | the repair-mutation gate is dead code: transition.py set does not call it, while the shipped doctrine tells consuming projects that it refuses | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0542](BG0542-sprint-plan-under-affects-check-block-prints-refused.md) | sprint plan under affects_check: block prints REFUSED, exits 0, and writes the unit into the batch - worse than the honest advisory it replaced | Open | High | 2026-08-07 | 2026-08-07 |
 | [BG0543](BG0543-the-warning-ratchet-still-exits-0-on-a.md) | the warning ratchet still exits 0 on a stale baseline, and its replacement headline contradicts the line below it | Open | High | 2026-08-07 | 2026-08-07 |
 | [BG0544](BG0544-ck-closing-review-reports-ran-for-a-unit.md) | _ck_closing_review reports `ran` for a unit the shared coverage reading calls uncovered, when its latest sprint-level verdict is APPROVE | Open | Medium | 2026-08-07 | 2026-08-07 |
@@ -93,6 +93,7 @@
 | [BG0551](BG0551-repair-mutation-gate-derives-its-surface-from-the.md) | repair_mutation_gate derives its surface from the artefact's own Affects, so a mis-declared Affects bypasses the evidence demand entirely | Open | High | 2026-08-07 | 2026-08-07 |
 | [BG0552](BG0552-a-registered-mutant-cannot-be-joined-to-a.md) | a registered mutant cannot be joined to a measured one, so a cross-provenance contradiction in the mutation ledger is undetectable | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0553](BG0553-a-mistyped-mutation-verdict-cannot-be-corrected-and.md) | a mistyped mutation verdict cannot be corrected, and the contradiction check now turns that from a wrong number into a refusal in every mode | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0554](BG0554-survivor-severity-under-rates-the-explicit-return-none.md) | survivor severity under-rates the explicit return-None idiom, which is the shape that matters most in this codebase | Open | Medium | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

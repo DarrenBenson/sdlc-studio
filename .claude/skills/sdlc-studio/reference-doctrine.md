@@ -246,8 +246,11 @@ rules, the agents/services) live in that project's agent-instructions file
       the transition proceeds. A team then decides in its next sprint whether to fix it or
       live with it. A gate that turns every survivor into an immediate stoppage is one that
       gets switched off wholesale, and then it holds nothing.
-    + **`block`.** The hard bar: no evidence, stale evidence or a survivor refuses the
-      transition. Set this if your project wants what earlier versions described.
+    + **`block`.** No evidence, stale evidence or a survivor refuses the transition. Set this
+      if your project wants what earlier versions described. It is not yet airtight: the
+      demand is derived from the unit's declared `Affects`, so a unit that declares a surface
+      it did not change is not held to one. That gap is recorded rather than left for you to
+      discover, and the exemption path beside it already derives from the diff instead.
     + **`off`.** The lane stands down.
 
     Two things ignore the setting. A claimed exemption re-derived and found FALSE refuses in

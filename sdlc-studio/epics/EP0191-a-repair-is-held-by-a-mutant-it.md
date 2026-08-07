@@ -1,6 +1,6 @@
 # EP0191: A repair is held by a mutant it kills: mutation is mandatory on a fix, gated on survivors at the transition
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 15
 > **Parent:** CR0501
 > **Created:** 2026-07-29
@@ -14,10 +14,10 @@ Decomposed from CR0501. Delivers the work CR0501 requested.
 
 ## Story Breakdown
 
-- [ ] [US0564: A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status](../stories/US0564-a-unit-typed-as-a-repair-requires-mutation.md)
-- [ ] [US0565: The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line](../stories/US0565-the-gate-is-the-survivor-count-over-those.md)
-- [ ] [US0566: Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt](../stories/US0566-feature-work-keeps-the-cheaper-bar-and-a.md)
-- [ ] [US0567: The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson](../stories/US0567-the-shipped-doctrine-states-that-a-fix-s.md)
+- [x] [US0564: A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status](../stories/US0564-a-unit-typed-as-a-repair-requires-mutation.md)
+- [x] [US0565: The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line](../stories/US0565-the-gate-is-the-survivor-count-over-those.md)
+- [x] [US0566: Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt](../stories/US0566-feature-work-keeps-the-cheaper-bar-and-a.md)
+- [x] [US0567: The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson](../stories/US0567-the-shipped-doctrine-states-that-a-fix-s.md)
 
 ## Acceptance Criteria (Epic Level)
 

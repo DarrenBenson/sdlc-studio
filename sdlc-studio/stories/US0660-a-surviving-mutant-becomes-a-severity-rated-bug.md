@@ -1,6 +1,6 @@
 # US0660: A surviving mutant becomes a severity-rated bug and the transition proceeds, and the run names the mode that held it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0537
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new

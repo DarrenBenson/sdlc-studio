@@ -1,6 +1,6 @@
 # BG0541: the repair-mutation gate is dead code: transition.py set does not call it, while the shipped doctrine tells consuming projects that it refuses
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 8
 > **Verification depth:** functional (unit: the lane driven through `transition.py set` in all three modes, both arms of every refusal; mutation: 8 planned mutants applied and killed, sources restored byte-identically; live: the doctrine guard run over a doctored source with each named lane's call removed in turn)
@@ -31,7 +31,7 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
 
 ## Acceptance Criteria
 
-- [ ] **AC1:** The shipped verb reaches the gate. A bug whose mutation record is STALE against the
+- [x] **AC1:** The shipped verb reaches the gate. A bug whose mutation record is STALE against the
       edited bytes, under `review.mutation_evidence: block`, is REFUSED by `transition.py set
       --id <id> --status Fixed` naming STALE - so the command and the library give the same
       answer. Today the CLI exits 0 while the library returns STALE. `mutation_evidence_lane` is a
@@ -41,7 +41,7 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceLaneCLITests::test_the_command_refuses_what_the_library_refuses
       - **Verified:** yes (2026-08-07)
 
-- [ ] **AC2:** The default mode reports and proceeds. With no `review.mutation_evidence` set, the
+- [x] **AC2:** The default mode reports and proceeds. With no `review.mutation_evidence` set, the
       same fixture exits 0, the artefact reads `Fixed`, and the stale evidence is named as a
       warning. Wiring a new hard block would contradict the operator's decision in CR0537. The
       default is recorded in `templates/config-defaults.yaml` beside the other review keys, so a
@@ -49,7 +49,7 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceLaneCLITests::test_the_default_mode_reports_and_the_transition_proceeds
       - **Verified:** yes (2026-08-07)
 
-- [ ] **AC3:** The exemption is re-derived from the DIFF, and the fixture proves which source it
+- [x] **AC3:** The exemption is re-derived from the DIFF, and the fixture proves which source it
       read. A repair whose `Affects` names an UNCHANGED Python module while its diff changes a
       DIFFERENT Python module, carrying a hand-written `.local/no-mutatable-surface.json` naming
       `README.md`, is REFUSED under `block` naming the path taken from the diff - not the one
@@ -67,7 +67,7 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::NoSurfaceExemptionCLITests::test_the_refusal_names_the_path_the_diff_gives_not_the_one_affects_gives
       - **Verified:** yes (2026-08-07)
 
-- [ ] **AC4:** The guard can fail, over every lane the DOCTRINE names. `reference-doctrine.md`
+- [x] **AC4:** The guard can fail, over every lane the DOCTRINE names. `reference-doctrine.md`
       rule 21 is rewritten to ENUMERATE its lanes by name in backticks - `mutation_evidence_lane`,
       `repair_mutation_gate` and `verify_no_surface_claim` - and the reachability predicate takes
       its set from that passage, never from its own derived set and never from a list typed into
@@ -82,7 +82,7 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_removing_any_lane_the_doctrine_names_reddens_the_guard
       - **Verified:** yes (2026-08-07)
 
-- [ ] **AC5:** The lane does not inherit an unrelated cutoff. With `review.test_plan_after` absent
+- [x] **AC5:** The lane does not inherit an unrelated cutoff. With `review.test_plan_after` absent
       - so `_plan_gate_active` is False - a STALE repair under `review.mutation_evidence: block`
       is still REFUSED by the shipped verb. Today's repair branch sits inside that condition, so
       a lane hung there would be inert in every project that has not set a test-plan cutoff,
@@ -91,7 +91,7 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceLaneCLITests::test_the_lane_runs_with_no_test_plan_cutoff_set
       - **Verified:** yes (2026-08-07)
 
-- [ ] **AC6:** Sound evidence PASSES, and `off` refuses nothing and warns about nothing. A repair
+- [x] **AC6:** Sound evidence PASSES, and `off` refuses nothing and warns about nothing. A repair
       carrying a fresh hash-matching ledger entry over its own changed lines exits 0 under `block`
       and the artefact reads `Fixed`; the same STALE fixture that AC1 refuses exits 0 under `off`
       AND emits no mutation warning. Without this pair every other criterion is a refusal, and a
@@ -101,7 +101,7 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceLaneCLITests::test_sound_evidence_passes_and_off_refuses_nothing
       - **Verified:** yes (2026-08-07)
 
-- [ ] **AC7:** An empty base ref REFUSES the exemption. With no open run, so `run_state.base_ref`
+- [x] **AC7:** An empty base ref REFUSES the exemption. With no open run, so `run_state.base_ref`
       yields nothing, a repair carrying a `.local/no-mutatable-surface.json` is refused under
       `block` naming the missing base ref as the reason, asserted on that wording rather than on
       the exit code, for the same reason AC3 gives. The fallback fails the worse way here:

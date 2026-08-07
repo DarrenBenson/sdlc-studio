@@ -1,6 +1,6 @@
 # CR-0502: the mutation lane asks for evidence on a changed surface the mutation runner refuses to mutate
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0193
 > **Priority:** Medium
 > **Type:** Improvement

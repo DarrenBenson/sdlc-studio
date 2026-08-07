@@ -1,6 +1,6 @@
 # US0661: A measured mutation run records what it applied, attributed to a unit, so the gate is satisfiable by measurement rather than only by self-report
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0537
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
