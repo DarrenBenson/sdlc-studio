@@ -5236,6 +5236,17 @@ def _close_checklist(root, retro, state):
         return (False, f"the sprint checklist could not be composed: {type(exc).__name__}: {exc}",
                 "fix the error above, or run `sprint_report.py checklist --id "
                 f"{retro}` to see it directly")
+    # EXPIRED rows are reported on EVERY exit from this step. They do not HOLD the close - their
+    # enforcer ran hours ago and a waiver would be the only exit - but the close's report is
+    # where an operator learns what went unsatisfied, and naming them only in `render_checklist`
+    # took information out of it: four rows named at the base ref were named nowhere after.
+    # The first repair put this inside the `none outstanding` branch only - the branch that does
+    # not fire when anything IS outstanding, which is exactly the case the story cites. Reported
+    # and not held has to mean reported on the refusal path too, and on the stop-ship path.
+    expired = [r for r in ck["items"] if r["id"] in set(ck.get("expired") or [])]
+    past = ("; " + f"{len(expired)} past their window, reported not held: "
+            + ", ".join(f"{r['id']} (enforce at `{sprint_report._window(r)}`)" for r in expired)
+            if expired else "")
     if ck["stop_ship"]:
         # ANSWERED, and the answer stops the ship. Held separately from the unanswered items
         # because the remedy is the opposite one: an unanswered item needs somebody to look, a
@@ -5243,18 +5254,9 @@ def _close_checklist(root, retro, state):
         return (False,
                 "known-issues: " + ", ".join(ck["stop_ship"]) + " "
                 + ("is" if len(ck["stop_ship"]) == 1 else "are")
-                + " ruled STOP-SHIP in the retro's carried-issues table",
+                + " ruled STOP-SHIP in the retro's carried-issues table" + past,
                 "fix the finding, or have the ruler revise the ruling in the retro - a close "
                 "that proceeds over a stop-ship ruling makes every future ruling a note")
-    # EXPIRED rows are reported here too. They do not HOLD the close - their enforcer ran hours
-    # ago and a waiver would be the only exit - but the close's report is where an operator
-    # learns what went unsatisfied, and naming them only in `render_checklist` took information
-    # OUT of it: four rows named at the base ref were named nowhere afterwards. Reported and not
-    # held is the contract; dropping them from view is neither.
-    expired = [r for r in ck["items"] if r["id"] in set(ck.get("expired") or [])]
-    past = ("; " + f"{len(expired)} past their window, reported not held: "
-            + ", ".join(f"{r['id']} (enforce at `{sprint_report._window(r)}`)" for r in expired)
-            if expired else "")
     if not ck["outstanding"]:
         pending = (f"; {len(ck['pending_in_close'])} item(s) this close discharges itself"
                    if ck.get("pending_in_close") else "")
@@ -5264,7 +5266,7 @@ def _close_checklist(root, retro, state):
     detail = "\n".join(f"  {r['id']}: {r['title']} - {r['value']}"
                        + (f"\n      {r['detail']}" if r["detail"] else "") for r in named)
     return (False,
-            f"{len(named)} compulsory checklist item(s) unanswered:\n{detail}",
+            f"{len(named)} compulsory checklist item(s) unanswered{past}:\n{detail}",
             "answer each item by running the stage it names, or record a waiver naming it and "
             "why (`decisions.py waive --subject "
             f"{sprint_report.WAIVER_SUBJECT}:<item> --rationale '<why>'`) - closing without an "

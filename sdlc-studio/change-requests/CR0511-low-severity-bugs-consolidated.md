@@ -54,6 +54,11 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 
   The defect is therefore not coverage loss. It is that a reader cannot tell any of this from the code: the `False` records no reason, the comment describes a rule as though this branch carried it, and nothing says whether the disabling was a decision or an accident left behind. `git log -S 'elif False and recorded_mode'` is the only way to find out, which is the state AGENTS.md's own doctrine says a guard should never be in.
 - **the brief-provenance matcher defaults the tier, so a verdict honestly taken at --tier light is reported as matching no brief**: `_seats_whose_brief_matches` now takes the phase it is checking, but still calls `brief()` with `tier` at its default `full`. A brief legitimately taken at `--tier light` - which is what a low-band unit gets, by design - fingerprints differently, so recording that verdict prints `matches no brief this repo can currently produce`. The note is meant to distinguish a fabricated fingerprint from a real one; applied to every honest light-tier verdict, it becomes noise, and a note that is always present is a note nobody reads.
+- **_ck_review_attribution computes the shared coverage reading and then decides nothing with it, leaving an unreachable guard**: US0596 gave `_ck_review_attribution` a branch that treated a unit covered by a non-verdict lane as covered rather than uncovered. That branch made the row contradict itself - it appended to `covered` while the row's figures still came from `coverage_counts`, which has no evidence lane - so the repair removed it.
+
+  What the removal left behind is `shared = _coverage(ctx) or {}` still computed at the top of the row, and a guard reading `if not (shared.get(uid) or {}).get("covered") and not v:` whose first conjunct can no longer change the outcome. Collapsing both branches to a bare `if not v:` is behaviourally identical, and a reviewer proved it by executing the four-case truth table.
+
+  So the row computes the shared reading and decides nothing with it. US0596's claim that all three readers read one value is, in this row, no longer true - it reads the value and then ignores it.
 
 ## Revision History
 

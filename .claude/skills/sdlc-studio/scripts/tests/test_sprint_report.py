@@ -1123,6 +1123,27 @@ class CoverageConsistencyTests(ChecklistBase):
         self.assertIn("unreviewed", line)
         self.assertEqual(1, rc, "the uncovered unit did not hold the close")
 
+    def test_the_attribution_row_reads_the_shared_value_too(self) -> None:
+        """AC1 names THREE readers. Mutant: `shared = {}` in `_ck_review_attribution`.
+
+        It survived the whole suite before this test existed, which meant the row computed the
+        shared reading and decided nothing with it - AC1 false in the one row the story's own
+        notes single out. A unit covered by a lane that carries no per-unit verdict must be
+        reported as covered BY THAT LANE, and must not also appear as unreviewed: printing
+        `UNREVIEWED US0001` beside `US0001 by adversarial evidence` is the self-contradiction
+        this unit exists to remove.
+        """
+        with mock.patch.object(sr, "_coverage",
+                               return_value={"US0001": {"covered": True,
+                                                        "by": "adversarial evidence"},
+                                             "US0002": {"covered": False, "by": None}}):
+            self._run()
+            row = self._row(sr.checklist(self.root, "RETRO9100"), "review-attribution")
+        self.assertIn("by a non-verdict lane", row["value"], row["value"])
+        self.assertIn("US0001 by adversarial evidence", row["detail"])
+        self.assertNotIn("UNREVIEWED US0001", row["detail"],
+                         "a unit the shared reading covered was also printed as unreviewed")
+
     def test_two_agreeing_readings_are_answered(self) -> None:
         """The positive control. Without it a resolver hard-coded to the disagreement state
         kills neither mutant - the always-refuses guard."""
@@ -1305,6 +1326,49 @@ class TickVerificationTests(ChecklistBase):
         self.assertIn("US0001", row["detail"])
         self.assertIn("AC1", row["detail"])
 
+    def test_a_criterion_stamped_NO_is_not_a_tick(self) -> None:
+        """Mutant: widen `_VERIFIED_RE` to accept `no`.
+
+        Eight artefacts in the corpus carry `- **Verified:** no`. Counting an explicitly
+        UNVERIFIED criterion as a claim of doneness would make the row report contradictions
+        for work nobody claimed - the opposite error, and just as wrong.
+        """
+        body = ("# US0009: s\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: a\n\n- **Verified:** no\n\n### AC2: b\n\n"
+                "- **Verified:** yes (2026-08-07)\n")
+        self.assertEqual(["AC2"], sr._ticked_criteria(body),
+                         "a criterion stamped `no` was counted as a tick")
+
+    def test_the_number_it_reports_is_the_number_it_examined(self) -> None:
+        """Mutant: `examined += len(ticked)` -> `examined += 1`.
+
+        The row prints the count, and a printed figure nothing pins is a figure that drifts.
+        """
+        (self.root / "sdlc-studio" / "stories" / "US0001-s.md").write_text(
+            "# US0001: s\n\n> **Status:** Done\n> **Affects:** src/touched.py\n"
+            "> **Points:** 2\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+            "- **Verified:** yes (2026-08-07)\n\n### AC2: b\n\n"
+            "- **Verified:** yes (2026-08-07)\n\n### AC3: c\n\n"
+            "- **Verified:** yes (2026-08-07)\n", encoding="utf-8")
+        self._unit("US0002", "src/touched.py", ticked=True)
+        row = self._resolve({"src/touched.py"})
+        self.assertEqual(sr.RAN, row["state"], row["detail"])
+        self.assertIn("4 ticked", row["value"], f"the count is wrong: {row['value']}")
+
+    def test_a_diff_that_changed_NOTHING_is_not_an_unreadable_diff(self) -> None:
+        """Mutant: `if changed is None:` -> `if not changed:`.
+
+        An empty set is an ANSWER - the run changed nothing - and it must contradict every tick.
+        Treating it as unreadable reports the row unjudged, which is the failing-open direction.
+        """
+        self._unit("US0001", "src/never.py", ticked=True)
+        self._unit("US0002", "src/never2.py", ticked=True)
+        row = self._resolve(set())
+        self.assertEqual(sr.NOT_RUN, row["state"])
+        self.assertIn("unchanged since", row["detail"],
+                      f"an empty diff was reported as unreadable rather than as a "
+                      f"contradiction: {row['detail']}")
+
     def test_a_pass_over_no_ticks_at_all_is_refused(self) -> None:
         """A pass over an empty set is not a pass - the affirmative-over-nothing shape the
         sibling rows refuse by design. Mutant: return RAN when nothing was examined."""
@@ -1455,6 +1519,27 @@ class ClosingReviewVerdictTests(ChecklistBase):
                          "from outstanding because nothing was found")
         self.assertIn("unresolved", row["value"])
         self.assertIn("US0001", row["detail"])
+
+    def test_a_rejection_stays_terminal_even_when_a_lane_says_covered(self) -> None:
+        """Mutant: delete the terminal-verdict clause from `open_units`.
+
+        This is the regression US0596 introduced and the repair removed, and it had NO test:
+        deleting the clause left the whole suite green while a run whose verdicts were all
+        REJECT reported `N unit(s) approved`. The other fixtures cannot catch it, because
+        `review_coverage` already calls a rejected unit uncovered - so the clause only bites
+        where a NON-VERDICT lane says covered and a verdict says otherwise, which is exactly the
+        shape that produced the false green.
+        """
+        self._ledgers([("REJECT", "US0001,US0002", "2026-01-02")],
+                      [("REJECT", "US0001,US0002", "2026-01-02T10:00:00Z")])
+        self._run(review_rounds=getattr(self, "_extra_rounds", []))
+        with mock.patch.object(sr, "_coverage",
+                               return_value={"US0001": {"covered": True, "by": "evidence"},
+                                             "US0002": {"covered": True, "by": "evidence"}}):
+            row = self._row(sr.checklist(self.root, "RETRO9100"), "closing-review")
+        self.assertEqual(sr.NOT_RUN, row["state"],
+                         f"a recorded rejection stopped being terminal: {row['value']}")
+        self.assertIn("unresolved", row["value"])
 
     def test_an_approve_covering_every_unit_passes(self) -> None:
         """The control. A row that never clears satisfies the test above for free."""

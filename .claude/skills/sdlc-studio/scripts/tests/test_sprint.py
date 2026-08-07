@@ -3643,6 +3643,73 @@ def _goal_review(root: Path, goal: str, seats=(("product", "yes", "every unit Fi
                   for s, a, dm, oi in seats]}), encoding="utf-8")
 
 
+class CloseReportsExpiredRowsTests(unittest.TestCase):
+    """US0591. An expired row is REPORTED and not held - at every surface, not only the one
+    where it was first written.
+
+    The first repair named them inside `_close_checklist`'s `none outstanding` branch alone,
+    which is the branch that does NOT fire when anything is outstanding - precisely the case the
+    story cites. A round-2 review executed both branches and found four rows named nowhere.
+    """
+
+    CK = {"items": [{"id": "goal-seat-reviewed", "title": "Goal seat-reviewed",
+                     "window": "sprint plan", "value": "no goal", "detail": "d",
+                     "state": "expired"},
+                    {"id": "closing-review", "title": "Closing full-diff review",
+                     "value": "none recorded", "detail": "d", "state": "not-run"}],
+          "expired": ["goal-seat-reviewed"], "outstanding": [], "stop_ship": [],
+          "pending_in_close": []}
+
+    def _msg(self, **over) -> str:
+        mod = _load()
+        ck = {**self.CK, **over}
+        with unittest.mock.patch.object(mod, "sprint_report", create=True):
+            pass
+        import sprint_report
+        with unittest.mock.patch.object(sprint_report, "checklist", return_value=ck):
+            ok, msg, _ = mod._close_checklist(Path("."), "RETRO9100", {})
+        return msg
+
+    def test_the_clean_branch_names_the_expired_row(self) -> None:
+        self.assertIn("goal-seat-reviewed", self._msg())
+        self.assertIn("sprint plan", self._msg())
+
+    def test_the_REFUSAL_branch_names_it_too(self) -> None:
+        """Mutant: drop `{past}` from the unanswered-items message.
+
+        This is the branch that actually fires on a real close, and the one the first repair
+        missed - so the rows vanished exactly when there was something to vanish behind.
+        """
+        msg = self._msg(outstanding=["closing-review"])
+        self.assertIn("closing-review", msg)
+        self.assertIn("goal-seat-reviewed", msg,
+                      "an expired row is unnamed whenever anything else is outstanding")
+
+    def test_the_stop_ship_branch_names_it_too(self) -> None:
+        """The earliest return of the three, and it returned before the rows were computed."""
+        msg = self._msg(stop_ship=["BG9999"])
+        self.assertIn("BG9999", msg)
+        self.assertIn("goal-seat-reviewed", msg)
+
+    def test_a_checklist_with_nothing_expired_says_nothing_about_windows(self) -> None:
+        """The control. A line printed unconditionally is a line nobody reads."""
+        self.assertNotIn("past their window", self._msg(expired=[]))
+
+    def test_the_preflight_reports_expired_rows_without_blocking_on_them(self) -> None:
+        """Mutant: delete the pre-flight's expired loop - it survived the whole suite before."""
+        mod = _load()
+        import sprint_report
+        with unittest.mock.patch.object(sprint_report, "checklist",
+                                        return_value={**self.CK, "outstanding": ["closing-review"]}):
+            rows = mod._checklist_blockers(Path("."), "RETRO9100", {})
+        expired = [r for r in rows if "goal-seat-reviewed" in r["detail"]]
+        self.assertEqual(1, len(expired), f"the expired row is not reported by the pre-flight: {rows}")
+        self.assertIs(False, expired[0]["blocking"],
+                      "an expired row is HOLDING the dry run - reported, not held")
+        self.assertTrue([r for r in rows if "closing-review" in r["detail"]],
+                        "the genuinely outstanding row was lost")
+
+
 class GoalReviewWindowTests(unittest.TestCase):
     """US0592. The goal-review refusal was guarded on a goal being PRESENT, so omitting
     `--sprint-goal` walked past it for free: the plan returned 0, the run opened, and the close

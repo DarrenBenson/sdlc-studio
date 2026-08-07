@@ -1676,13 +1676,23 @@ def _ck_review_attribution(ctx: dict) -> tuple:
     # This row and the closing-review row above were each deciding the same question their own
     # way, which is how one close reported three different answers to it.
     shared = _coverage(ctx) or {}
+    by_lane = []
     for uid in units:
         v = critic.verdict_for(ctx["root"], uid)
+        # A unit with a VERDICT falls through to the covered/rejected split below - the shared
+        # reading marks a rejection as not-covered, and short-circuiting here lost the
+        # rejected-versus-never-opened distinction this row exists to draw. What the shared
+        # reading decides is the NO-VERDICT case: covered by another lane, or covered by nothing.
         if not (shared.get(uid) or {}).get("covered") and not v:
             uncovered.append(uid)
             continue
         if not v:
-            uncovered.append(uid)
+            # Covered, by a lane that carries no per-unit verdict. Counted and NAMED as that
+            # rather than folded into `covered` beside the verdicted ones: the first attempt did
+            # fold it, and the row then printed "2 unreviewed" next to "US0001 by adversarial
+            # evidence" because its figures come from a counter with no evidence lane. A row
+            # that contradicts itself in one line is the thing this unit exists to remove.
+            by_lane.append(f"{uid} by {(shared.get(uid) or {}).get('by') or 'an independent pass'}")
             continue
         who = (v.get("reviewer") or "").strip()
         reviewers.add(who)
@@ -1700,17 +1710,24 @@ def _ck_review_attribution(ctx: dict) -> tuple:
     # The uncovered bucket holds two DIFFERENT facts and the operator needs both: a rejection
     # nobody has answered, and a unit nobody has opened. Calling the first "unreviewed" would be
     # the same collapse this row exists to undo, one level down - it WAS reviewed, and rejected.
+    # `never` excludes anything the SHARED reading covered by a non-verdict lane. Without that,
+    # the row printed "UNREVIEWED US0001" beside "US0001 by adversarial evidence" - contradicting
+    # itself in one line, which is the failure this unit exists to remove. The rejected/unopened
+    # split is untouched: those are the two facts the bucket has to keep apart.
+    lane_ids = {s.split(" by ")[0] for s in by_lane}
     unanswered = [u for u in states[critic.COVERAGE_UNREVIEWED]
                   if critic.verdict_for(ctx["root"], u)]
     never = [u for u in states[critic.COVERAGE_UNREVIEWED]
-             if not critic.verdict_for(ctx["root"], u)]
+             if not critic.verdict_for(ctx["root"], u) and u not in lane_ids]
     value = (f"{len(states[critic.COVERAGE_APPROVED])} approved, {len(repaired)} repaired, "
-             f"{len(unanswered)} rejected, {len(never)} unreviewed; {lenses} lens(es)"
+             f"{len(unanswered)} rejected, {len(never)} unreviewed"
+             + (f", {len(by_lane)} by a non-verdict lane" if by_lane else "")
+             + f"; {lenses} lens(es)"
              + (" - UNDER-COVERED" if under else ""))
     # The unreviewed units are NAMED, never only counted: the failure being repaired is one real
     # gap hidden inside a crowd of false ones, so a count alone leaves the operator to find it.
     shown = ([f"UNREVIEWED {u}" for u in never]
-             + covered[:6] + [f"REJECTED {r}" for r in rejected[:6]])
+             + covered[:6] + by_lane[:6] + [f"REJECTED {r}" for r in rejected[:6]])
     dropped_from_view = (len(covered) - len(covered[:6])) + (len(rejected) - len(rejected[:6]))
     detail = "; ".join(shown) + (f" (+{dropped_from_view} more)" if dropped_from_view else "")
     if under:
