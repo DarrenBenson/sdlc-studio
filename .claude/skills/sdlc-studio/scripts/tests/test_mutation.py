@@ -3162,6 +3162,64 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
                          "the gate emitted no killer for a mutant its own runner named")
 
 
+class UncommittedSurfaceTests(unittest.TestCase):
+    """US0573: a surface the runner REFUSED to mutate is not a surface nobody tested.
+
+    Only the second is the author's omission. An advisory that says the same about both teaches
+    an author to ignore it, and then it reports nothing anybody reads.
+    """
+
+    def _row(self, m, **kw):
+        rep = {"summary": {"killed": 0, "survived": 0, "applied": 0},
+               "refused": False, "refusal_kind": None, "baseline": "pass",
+               "empty_surface": False}
+        rep.update(kw)
+        return m.series_reason(rep) if hasattr(m, "series_reason") else None
+
+    def test_an_uncommitted_surface_is_reported_as_that_reason(self) -> None:
+        """Mutant: fall through to the generic `run refused` reason - the two states read
+        identically and the one the author can still act on is indistinguishable from the one
+        that indicts them."""
+        m = _load()
+        uncommitted = self._row(m, refused=True, refusal_kind=m.UNCOMMITTED_SURFACE,
+                                baseline="not-run")
+        other = self._row(m, refused=True, refusal_kind=None, baseline="error")
+        self.assertIsNotNone(uncommitted, "series_reason is not reachable")
+        self.assertIn("UNCOMMITTED", uncommitted)
+        self.assertIn("not 'no evidence'", uncommitted)
+        self.assertNotEqual(uncommitted, other,
+                            "an uncommitted surface reads the same as any other refusal")
+
+    def test_the_reason_names_both_routes_to_measured_evidence(self) -> None:
+        """A reason that names the problem and no route is a complaint. Mutant: drop either
+        route, or the discipline that makes a hand run trustworthy - a reader is told to apply a
+        mutant by hand with no way to know that a cached module reports a false survival."""
+        m = _load()
+        reason = self._row(m, refused=True, refusal_kind=m.UNCOMMITTED_SURFACE,
+                           baseline="not-run")
+        self.assertIn("worktree add", reason, "the isolated-checkout route is missing")
+        self.assertIn("register", reason, "the hand-applied route is missing")
+        for discipline in ("anchor", "python3 -B", "byte-identical"):
+            with self.subTest(discipline=discipline):
+                self.assertIn(discipline, reason,
+                              "the hand route is named without the discipline that makes it "
+                              "trustworthy")
+
+    def test_a_committed_untested_surface_still_reports_no_evidence(self) -> None:
+        """THE CONTROL, without which this change is an excuse that silences the lane rather
+        than a distinction that sharpens it.
+
+        Mutant: report the uncommitted reason whenever a run produced no verdict - a committed
+        surface nobody ever tested is excused, which is the omission the lane exists to name.
+        """
+        m = _load()
+        untested = self._row(m, refused=False, refusal_kind=None, baseline="pass")
+        self.assertIsNotNone(untested)
+        self.assertNotIn("UNCOMMITTED", untested,
+                         "a committed, untested surface was excused as uncommitted")
+        self.assertIn("nothing was judged", untested)
+
+
 class AppliedWhereEnumeratedTests(unittest.TestCase):
     """BG0533: the engine reported a mutant at one line and applied it at another.
 

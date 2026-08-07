@@ -25,6 +25,7 @@
 - **When** the mutation lane reports
 - **Then** it names the uncommitted state as the reason, distinct from a surface nobody tested - only one of those is the author's omission, and an advisory that says the same thing either way gets read as scenery
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::UncommittedSurfaceTests::test_an_uncommitted_surface_is_reported_as_that_reason
+- **Verified:** yes (2026-08-06)
 
 ### AC2: the reason names BOTH routes to measured evidence
 
@@ -32,6 +33,7 @@
 - **When** it is printed
 - **Then** it names the isolated checkout and `register` for a hand-applied mutant, with the discipline that makes a hand run trustworthy - a unique anchor asserted, bytecode purged, the patch proven to have changed the file
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::UncommittedSurfaceTests::test_the_reason_names_both_routes_to_measured_evidence
+- **Verified:** yes (2026-08-06)
 
 ### AC3: a COMMITTED surface with no evidence still reports no evidence
 
@@ -39,6 +41,7 @@
 - **When** the mutation lane reports
 - **Then** it still reports no evidence - the control, without which this change could be an excuse that silences the lane rather than a distinction that sharpens it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::UncommittedSurfaceTests::test_a_committed_untested_surface_still_reports_no_evidence
+- **Verified:** yes (2026-08-06)
 
 ## Revision History
 

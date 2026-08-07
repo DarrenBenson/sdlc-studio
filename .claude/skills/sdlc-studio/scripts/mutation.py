@@ -159,6 +159,12 @@ class MutationAnchorError(RuntimeError):
     """
 
 
+#: The refusal that is NOT an absence of evidence. Named as its own kind so the lane can say
+#: which of the two it is: a surface nobody tested is an omission, a surface carrying
+#: uncommitted work is a state the runner is right to refuse and the author can still resolve.
+UNCOMMITTED_SURFACE = "uncommitted-surface"
+
+
 def _multiline_string_spans(text: str) -> tuple[set, bool]:
     """(line numbers inside multi-line string literals, tokenise_ok). Docstring
     interiors are code-shaped but mutate nothing - enumerating them yields false
@@ -1236,6 +1242,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     baseline = "error"
     refused = True
     remedy = None
+    refusal_kind = None      # WHICH refusal, so the lane can tell an omission from a state
     # Another declared writer in this tree makes this run the SECOND one, which is the hazard
     # itself: refuse before touching a byte, rather than interleaving two processes' rewrites.
     blocking = read_window(root)
@@ -1256,6 +1263,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                   f"{blocking['clear_with']}")
     elif (dirty := dirty_targets(root, files)):
         baseline = "not-run"
+        refusal_kind = UNCOMMITTED_SURFACE
         remedy = (f"uncommitted changes on {', '.join(dirty)} - refusing to mutate a file "
                   f"carrying work that is not committed. A mutant applied over uncommitted work "
                   f"cannot be told apart from that work when the file is restored, so a run that "
@@ -1353,6 +1361,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "targets": [str(Path(f)) for f in files],
         "baseline": baseline,
         "refused": refused,
+        "refusal_kind": refusal_kind,
         "empty_surface": empty_surface,
         "remedy": remedy,
         "blocked_by_window": blocking,
@@ -1449,6 +1458,46 @@ def _new_run_id() -> str:
     return f"MRUN-{stamp}-{secrets.token_hex(3)}"
 
 
+def series_reason(report: dict) -> str | None:
+    """Why this run carries no measured evidence, or None when it does.
+
+    A FUNCTION rather than a comprehension inside `append_series`, so a test has to call it
+    instead of recomputing the same expression - a test that recomputes production passes
+    whatever production does, and a mutant emptying it survives (the shape BG0516 hit).
+    """
+    s = report.get("summary") or {}
+    killed, survived = int(s.get("killed", 0)), int(s.get("survived", 0))
+    refused = bool(report.get("refused"))
+    # An empty surface carries no evidence, but for a different reason than a refusal or an
+    # all-errored run: there was nothing to mutate. Named as its own outcome so a summed series
+    # can tell a docs-only run from one whose mutants all failed to judge anything.
+    empty = bool(report.get("empty_surface"))
+    evidence = (not refused) and (not empty) and (killed + survived) > 0
+    if refused and report.get("refusal_kind") == UNCOMMITTED_SURFACE:
+        # NOT "no evidence". A surface the runner correctly refused to mutate and one nobody
+        # ever tested are different facts, and only the second is the author's omission. An
+        # advisory that says the same about both teaches an author to ignore it (US0573).
+        reason = (
+            "the changed surface carries UNCOMMITTED work, so the runner refused to mutate it - "
+            "this is not 'no evidence', it is evidence not yet obtainable here. Two routes give "
+            "a measured verdict: mutate an ISOLATED CHECKOUT (`git worktree add`), or apply the "
+            "mutant by hand and record it with `mutation.py register --unit <id> --criterion "
+            "ACn`. A hand run is only trustworthy with the discipline that makes it so - assert "
+            "the anchor occurs exactly once before patching, purge `__pycache__` and run the "
+            "child under `python3 -B` so a cached module cannot report a false survival, and "
+            "restore from captured bytes with the restoration asserted byte-identical.")
+    elif refused:
+        reason = f"run refused - baseline {report.get('baseline')}, no mutant was applied"
+    elif empty:
+        reason = "the selected surface has no mutatable sites - nothing to mutate"
+    elif not evidence:
+        reason = (f"{int(s.get('applied', 0))} mutant(s) applied and none returned a killed or "
+                  f"survived verdict (unviable, errored or timed out) - nothing was judged")
+    else:
+        reason = None
+    return reason
+
+
 def append_series(root: Path | str, report: dict, elapsed_s: float) -> dict:
     """Append this run's row to the series and report what happened to the file.
 
@@ -1466,20 +1515,12 @@ def append_series(root: Path | str, report: dict, elapsed_s: float) -> dict:
     s = report.get("summary") or {}
     killed, survived = int(s.get("killed", 0)), int(s.get("survived", 0))
     refused = bool(report.get("refused"))
-    # An empty surface carries no evidence, but for a different reason than a refusal or an
-    # all-errored run: there was nothing to mutate. Named as its own outcome so a summed series
-    # can tell a docs-only run from one whose mutants all failed to judge anything.
+    # Recomputed here because `series_reason` owns the WORDING and this row owns the FACT -
+    # one is prose a reader sees, the other a boolean a later lane sums. Deriving the boolean
+    # from the prose would make a rewording change what the series counts.
     empty = bool(report.get("empty_surface"))
     evidence = (not refused) and (not empty) and (killed + survived) > 0
-    if refused:
-        reason = f"run refused - baseline {report.get('baseline')}, no mutant was applied"
-    elif empty:
-        reason = "the selected surface has no mutatable sites - nothing to mutate"
-    elif not evidence:
-        reason = (f"{int(s.get('applied', 0))} mutant(s) applied and none returned a killed or "
-                  f"survived verdict (unviable, errored or timed out) - nothing was judged")
-    else:
-        reason = None
+    reason = series_reason(report)
     row = {
         "run_id": report.get("run_id"),
         "at": report.get("generated_at"),
