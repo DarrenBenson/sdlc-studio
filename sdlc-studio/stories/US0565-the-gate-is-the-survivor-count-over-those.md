@@ -1,6 +1,6 @@
 # US0565: The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0501
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

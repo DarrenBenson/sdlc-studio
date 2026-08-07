@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 16 |
-| Ready | 6 |
+| Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 4 |
+| Review | 5 |
 | Done | 615 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -39,7 +39,7 @@
 | [US0492](US0492-the-queue-lifecycle-is-documented-alongside-the-run.md) | The queue lifecycle is documented alongside the run lifecycle, with every invocation shown taken from the shipped parser | Done | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Won't Implement | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Review | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Ready | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Review | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Review | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Review | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0573](US0573-an-uncommitted-changed-surface-is-reported-as-that.md) | an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence | Review | EP0193 | 2026-07-30 | 2026-07-30 |
