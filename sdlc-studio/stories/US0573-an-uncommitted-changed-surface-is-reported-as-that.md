@@ -1,6 +1,6 @@
 # US0573: an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0502
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new
