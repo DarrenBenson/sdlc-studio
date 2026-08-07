@@ -96,7 +96,10 @@ stops a planned test from passing over a burn-down that burned nothing down:
    makes the shipped baseline the mutant surface. Every existing ratchet test builds an isolated
    tmp root with its own baseline, and against those, editing the shipped file changes nothing.
    The assertion names the fixture's own selector in `verdict["new"]`: `dup_ratchet` answers not-
-   ok for at least five distinct reasons, so a bare `assertFalse(ok)` passes for the wrong one.
+   ok for at least five distinct reasons, so a bare `assertFalse(ok)` passes for the wrong one -
+   and `read_dup_baseline` returns every live group as `new` for the `not-baselined` and
+   `corrupt` states, so the test asserts `state == "ok"` alongside, with the same live paths
+   minus the fixture as its control.
 
 Re-pointing these Verify lines invalidates the recorded AC fingerprint on thirteen mostly-Done
 stories. The burn-down re-verifies each split criterion rather than leaving a `**Verified:**`

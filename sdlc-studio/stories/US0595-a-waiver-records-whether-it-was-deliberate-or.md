@@ -26,9 +26,14 @@
 
 ### AC2: the retro counts the two kinds apart
 
-- **Given** a run holding one of each
+- **Given** a run holding two waivers whose window had already expired and one taken
+  deliberately - asymmetric on purpose, because with one of each both figures are 1 and an
+  implementation reporting the expired count under the deliberate label is byte-identical
+  to a correct one
 - **When** the sprint report is composed
-- **Then** it reports how many items expired before anyone was asked, separately from those set aside on purpose
+- **Then** `sprint_report.report()` carries `rep["waivers"]` with a distinct `expired` and
+  `deliberate` count, each asserted against its own number, and `render` prints both - so how
+  many items expired before anyone was asked is separate from those set aside on purpose
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::WaiverKindTests::test_expired_and_deliberate_are_counted_apart
 
 ### AC3: a waiver recorded before kinds existed counts as neither
@@ -58,15 +63,18 @@ Written after a plan review rejected the first draft.
 3. **AC2's fixture is asymmetric - two expired and one deliberate.** With one of each, both
    figures are 1 and an implementation that reports the expired count under the deliberate
    label is byte-identical to a correct one. Each figure is asserted against its own number.
-4. AC2 names the function and the field the figures live in, so a test asserting on one
-   renderer while the figures land in another cannot pass in both directions.
+4. AC2 names the function and the field: `report()` builds `rep["waivers"]` and `render`
+   prints it. Without that, `sprint_report.py` has four rendering surfaces - `report`/`render`,
+   `checklist`/`render_checklist`, `operator_summary` and `close_report` - and a test
+   asserting on one while the figures land in another is vacuous in both directions.
+5. AC3's unkinded row is counted by the same API, so the report layer sees it too.
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
 | AC1 | change `record_waiver` in decisions.py to compose the row with a constant kind whatever it was given, so both waivers read back the same | a waiver records its kind |
-| AC2 | collapse both figures into one in sprint_report.py | the retro counts the two kinds apart |
+| AC2 | collapse `expired` and `deliberate` into one figure in `report()`'s `rep["waivers"]` in sprint_report.py | the retro counts the two kinds apart |
 | AC3 | change decisions.py to read an unkinded legacy row as deliberate | a waiver recorded before kinds existed counts as neither |
 
 ## Revision History

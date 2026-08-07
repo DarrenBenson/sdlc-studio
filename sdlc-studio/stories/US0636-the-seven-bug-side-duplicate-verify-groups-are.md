@@ -53,8 +53,9 @@ claim waits.
 
 - **Given** a bug introducing a fresh duplicate group, added after the burn-down
 - **When** the ratchet runs with `--bugs`
-- **Then** it refuses, proving the entries were removed by splitting the selectors rather than
-  by weakening the check that protects them
+- **Then** it refuses, naming that fixture's own selector, with `verdict["state"]` still `ok` -
+  and the same live paths WITHOUT the fixture answer ok, the control - proving the entries were
+  removed by splitting the selectors rather than by weakening the check that protects them
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_a_fresh_duplicate_in_a_bug_is_still_refused
 
 ### AC3: with both halves landed, the baseline carries no intra-record group at all
@@ -87,8 +88,18 @@ in full; four things are specific to the bug side:
    while this unit's `Affects` excludes `sdlc-studio/stories` - so if the sibling had not landed,
    AC3 would fail on thirteen entries this unit is not permitted to touch.
 
+5. **A bare `assertFalse(ok)` is not a refusal assertion.** `read_dup_baseline` returns every
+   live group as `new` for the `not-baselined` and `corrupt` states, so once the fixture runs
+   against the LIVE baseline - a mis-resolved root, or a baseline broken while the seven
+   entries are being removed - the planned `assertIn` passes while the ratchet is holding
+   nothing. AC2 therefore asserts `state == "ok"` alongside, and carries its positive control:
+   the same live paths without the fixture answer ok.
+
 Nothing here asserts the baseline only shrank; that is `tools/tests/test_baselines_only_shrink.py`,
 which compares against HEAD. The reliance is deliberate rather than an omission.
+
+One line in Notes above - that this unit is shippable whichever order the pair runs in - is now
+wrong: `Depends on` makes US0635 hard. The dependency wins; the Notes line is the stale one.
 
 ## Test Plan
 
