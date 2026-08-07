@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 24 |
-| Ready | 3 |
+| Draft | 16 |
+| Ready | 11 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 8 |
@@ -91,14 +91,14 @@
 | [US0649](US0649-a-lint-lane-counts-contract-reporter-coverage-and.md) | A lint lane counts contract-reporter coverage and names every refusing verb it cannot reach | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
 | [US0650](US0650-help-and-reference-scripts-point-at-the-contract.md) | help and reference-scripts point at the contract reporter instead of restating any contract | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
 | [US0651](US0651-the-refusals-a-run-hits-are-counted-so.md) | The refusals a run hits are counted, so the round-trip saving is a figure in the retro | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
-| [US0652](US0652-every-script-exposes-build-parser-and-one-library.md) | Every script exposes build_parser, and one library enumerates the surface | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
-| [US0653](US0653-the-verb-catalogue-is-generated-from-the-parsers.md) | The verb catalogue is generated from the parsers, never typed | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
-| [US0654](US0654-the-coverage-gap-is-measured-against-hand-written.md) | The coverage gap is measured against hand-written docs only, never against the generator's own output | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
-| [US0655](US0655-the-coverage-number-surfaces-in-the-gate-the.md) | The coverage number surfaces in the gate, the lint aggregate and the close report | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
-| [US0656](US0656-the-reference-index-is-generated-from-the-filesystem.md) | The reference index is generated from the filesystem, so no reference can be missing from it | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
-| [US0657](US0657-the-budget-records-what-shipped-and-reports-the.md) | The budget records what shipped and reports the files sitting inside its tolerance | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
-| [US0658](US0658-every-reference-over-the-stated-threshold-carries-a.md) | Every reference over the stated threshold carries a Reading Guide with an anchor and a line span | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
-| [US0659](US0659-skill-md-carries-the-sections-its-own-checklist.md) | SKILL.md carries the sections its own checklist requires, and every reference is two hops away | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
+| [US0652](US0652-every-script-exposes-build-parser-and-one-library.md) | Every script exposes build_parser, and one library enumerates the surface | Ready | EP0211 | 2026-08-07 | 2026-08-07 |
+| [US0653](US0653-the-verb-catalogue-is-generated-from-the-parsers.md) | The verb catalogue is generated from the parsers, never typed | Ready | EP0211 | 2026-08-07 | 2026-08-07 |
+| [US0654](US0654-the-coverage-gap-is-measured-against-hand-written.md) | The coverage gap is measured against hand-written docs only, never against the generator's own output | Ready | EP0211 | 2026-08-07 | 2026-08-07 |
+| [US0655](US0655-the-coverage-number-surfaces-in-the-gate-the.md) | The coverage number surfaces in the gate, the lint aggregate and the close report | Ready | EP0211 | 2026-08-07 | 2026-08-07 |
+| [US0656](US0656-the-reference-index-is-generated-from-the-filesystem.md) | The reference index is generated from the filesystem, so no reference can be missing from it | Ready | EP0211 | 2026-08-07 | 2026-08-07 |
+| [US0657](US0657-the-budget-records-what-shipped-and-reports-the.md) | The budget records what shipped and reports the files sitting inside its tolerance | Ready | EP0211 | 2026-08-07 | 2026-08-07 |
+| [US0658](US0658-every-reference-over-the-stated-threshold-carries-a.md) | Every reference over the stated threshold carries a Reading Guide with an anchor and a line span | Ready | EP0211 | 2026-08-07 | 2026-08-07 |
+| [US0659](US0659-skill-md-carries-the-sections-its-own-checklist.md) | SKILL.md carries the sections its own checklist requires, and every reference is two hops away | Ready | EP0211 | 2026-08-07 | 2026-08-07 |
 | [US0660](US0660-a-surviving-mutant-becomes-a-severity-rated-bug.md) | A surviving mutant becomes a severity-rated bug and the transition proceeds, and the run names the mode that held it | Done | EP0212 | 2026-08-07 | 2026-08-07 |
 | [US0661](US0661-a-measured-mutation-run-records-what-it-applied.md) | A measured mutation run records what it applied, attributed to a unit, so the gate is satisfiable by measurement rather than only by self-report | Done | EP0212 | 2026-08-07 | 2026-08-07 |
 
