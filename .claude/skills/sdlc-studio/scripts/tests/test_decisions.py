@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import shutil
 import sys
 import tempfile
 import threading
@@ -455,6 +456,72 @@ class TableCellTests(unittest.TestCase):
         rows = [ln for ln in text.splitlines() if ln.startswith("|")]
         self.assertEqual(1, len({ln.count("|") - ln.count("\\|") for ln in rows}),
                          "an unescaped pipe added a column to one row")
+
+
+class WaiverKindTests(unittest.TestCase):
+    """US0595. A waiver taken on purpose and one whose window had already closed when the item
+    fired are different events, and recording them identically launders a process failure as a
+    decision.
+
+    Driven through the SHIPPED `waive` lane, not `record_waiver` directly: the subparser is what
+    an operator runs, and a library test cannot see a missing flag - the repo has already spent
+    a whole sprint on a function that passed in-process while its CLI printed nothing.
+    """
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        (d / "sdlc-studio").mkdir()
+        decisions.ensure_log(d)
+        return d
+
+    def _waive(self, root: Path, subject: str, kind: str | None) -> int:
+        argv = ["waive", "--subject", subject, "--rationale", "because", "--authorised-by",
+                "the operator", "--root", str(root)]
+        if kind:
+            argv += ["--kind", kind]
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return decisions.main(argv)
+
+    def test_a_waiver_records_its_kind(self) -> None:
+        """Mutant: compose the row with a constant kind whatever it was given.
+
+        Two waivers, and each must read back its OWN kind. Asserting merely that a kind comes
+        back is satisfied by an implementation that writes `deliberate` for everything, which is
+        exactly the laundering the criterion forbids.
+        """
+        root = self._root()
+        a = "rule:sprint-checklist:goal-seat-reviewed"
+        b = "rule:sprint-checklist:batch-groomed"
+        self.assertEqual(0, self._waive(root, a, "deliberate"))
+        self.assertEqual(0, self._waive(root, b, "expired"))
+        self.assertEqual("deliberate", decisions.waiver_kind(root, a))
+        self.assertEqual("expired", decisions.waiver_kind(root, b))
+        self.assertEqual("the operator", decisions.waiver_authoriser(root, a),
+                         "the kind marker displaced the authoriser the reader anchors to")
+
+    def test_a_legacy_unkinded_waiver_counts_as_neither(self) -> None:
+        """Mutant: read an unkinded legacy row as `deliberate`.
+
+        Every waiver written before the kind existed records none. Defaulting those on read
+        launders every historic process failure, so None is a real answer - as it already is
+        for the authoriser one function above.
+        """
+        root = self._root()
+        subject = "rule:sprint-checklist:retro"
+        self.assertEqual(0, self._waive(root, subject, None))
+        self.assertIsNone(decisions.waiver_kind(root, subject))
+        counts = decisions.waiver_kind_counts(root)
+        self.assertEqual(0, counts["deliberate"], "an unkinded row was counted as chosen")
+        self.assertEqual(0, counts["expired"])
+        self.assertEqual(1, counts["unkinded"])
+
+    def test_an_unknown_kind_is_refused(self) -> None:
+        """A kind nothing counts is a label rather than a record."""
+        root = self._root()
+        with self.assertRaises(ValueError):
+            decisions.record_waiver(root, "rule:sprint-checklist:retro", "because",
+                                    authorised_by="op", kind="probably-fine")
 
 
 if __name__ == "__main__":

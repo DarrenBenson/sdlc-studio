@@ -277,7 +277,7 @@ def _scope_tail_error(subject: str) -> str | None:
 
 
 def record_waiver(root: Path | str, subject: str, rationale: str,
-                  today: str | None = None, authorised_by: str = "") -> dict:
+                  today: str | None = None, authorised_by: str = "", kind: str = "") -> dict:
     """Record a machine-detectable waiver: a decision row `waiver: <subject>`, with the human
     reason in the rationale cell. General over any waivable subject (a review leg `leg:tsd`, or
     a rule `rule:engagement-floor`), so a later gate reuses the same primitive.
@@ -314,11 +314,67 @@ def record_waiver(root: Path | str, subject: str, rationale: str,
         raise ValueError(
             f"a waiver of {subject!r} must record WHO authorised it - a compulsory close item "
             "set aside by nobody in particular is a decision with no decider")
-    rationale = f"{rationale.strip()} [authorised by: {who}]" if who else rationale
+    # WAS IT CHOSEN, OR WAS IT FORCED? A waiver taken deliberately and one taken because the
+    # item could no longer be satisfied when it fired are different events, and recording them
+    # identically launders a process failure as a decision. Written as an in-cell marker rather
+    # than a new column: `decisions.md` ships a fixed six-column header, `list_decisions` parses
+    # by position, and a seventh cell would fail markdownlint on a tracked file.
+    kind = str(kind or "").strip().lower()
+    if kind and kind not in WAIVER_KINDS:
+        raise ValueError(
+            f"waiver kind {kind!r} is not one of {', '.join(sorted(WAIVER_KINDS))} - a kind "
+            "nothing counts is a label rather than a record")
+    rationale = rationale.strip()
+    if kind:
+        rationale = f"{rationale} [kind: {kind}]"
+    # The authoriser marker stays LAST: its reader is anchored to the end of the cell.
+    rationale = f"{rationale} [authorised by: {who}]" if who else rationale
     return add(root, f"{WAIVER_PREFIX} {subject}", rationale, today=today)
 
 
 _AUTHORISER_RE = re.compile(r"\[authorised by:\s*(.+?)\s*\]\s*$")
+
+#: A waiver taken on purpose, and one whose window had already closed when it fired. Kept as a
+#: closed set so a third spelling cannot enter the log and be counted as neither.
+WAIVER_KINDS = ("deliberate", "expired")
+
+_KIND_RE = re.compile(r"\[kind:\s*([a-z-]+)\s*\]")
+
+
+def waiver_kind(root: Path | str, subject: str) -> str | None:
+    """Which kind of waiver was accepted for `subject`, or None when the row records no kind.
+
+    None is a REAL answer, exactly as it is for `waiver_authoriser` one function above. Every
+    waiver written before the kind existed genuinely records none, and defaulting those to
+    `deliberate` on read would launder every historic process failure as a decision - which is
+    the single thing this field exists to stop.
+    """
+    want = f"{WAIVER_PREFIX} {_norm_subject(subject)}"
+    for rec in list_decisions(root):
+        if rec["status"] == "accepted" and rec["decision"].strip().lower() == want:
+            m = _KIND_RE.search(rec.get("rationale") or "")
+            return m.group(1) if m else None
+    return None
+
+
+def waiver_kind_counts(root: Path | str) -> dict:
+    """`{deliberate, expired, unkinded}` over every accepted waiver in the log.
+
+    Three buckets, not two. A row carrying no kind is counted as ITSELF rather than folded into
+    either side: it is a row nobody can classify, and a count that hides it reports more
+    certainty than the log holds.
+    """
+    counts = {k: 0 for k in WAIVER_KINDS}
+    counts["unkinded"] = 0
+    for rec in list_decisions(root):
+        if rec["status"] != "accepted":
+            continue
+        if not rec["decision"].strip().lower().startswith(WAIVER_PREFIX):
+            continue
+        m = _KIND_RE.search(rec.get("rationale") or "")
+        kind = m.group(1) if m else None
+        counts[kind if kind in WAIVER_KINDS else "unkinded"] += 1
+    return counts
 
 
 def waiver_authoriser(root: Path | str, subject: str) -> str | None:
@@ -465,7 +521,8 @@ def cmd_waive(args: argparse.Namespace) -> int:
         return 2
     try:
         r = record_waiver(args.root, subject, fields["rationale"],
-                          authorised_by=getattr(args, "authorised_by", "") or "")
+                          authorised_by=getattr(args, "authorised_by", "") or "",
+                          kind=getattr(args, "kind", "") or "")
     except ValueError as exc:
         print(f"waive refused: {exc}", file=sys.stderr)
         return 2
@@ -529,6 +586,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="who authorised setting the rule aside. Required for a "
                          "rule:sprint-checklist waiver: a compulsory close item set aside by "
                          "nobody in particular is a decision with no decider")
+    wv.add_argument("--kind", choices=list(WAIVER_KINDS),
+                    help="whether the waiver was taken deliberately, or its window had "
+                         "already closed when the item fired - a process failure and a "
+                         "decision must not be recorded identically")
     wv.set_defaults(func=cmd_waive)
     ls = sub.add_parser("list", help="List recorded decisions.")
     ls.add_argument("--status", help="filter by status")

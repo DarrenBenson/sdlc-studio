@@ -23,6 +23,7 @@
 - **When** each is recorded
 - **Then** each carries its kind, so a process failure is not laundered as a decision
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_decisions.py::WaiverKindTests::test_a_waiver_records_its_kind
+- **Verified:** yes (2026-08-07)
 
 ### AC2: the retro counts the two kinds apart
 
@@ -35,6 +36,7 @@
   `deliberate` count, each asserted against its own number, and `render` prints both - so how
   many items expired before anyone was asked is separate from those set aside on purpose
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::WaiverKindTests::test_expired_and_deliberate_are_counted_apart
+- **Verified:** yes (2026-08-07)
 
 ### AC3: a waiver recorded before kinds existed counts as neither
 
@@ -45,6 +47,7 @@
   `deliberate` launders every historic process failure on read - the sibling `waiver_authoriser`
   already documents that None is a real answer rather than a blank
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_decisions.py::WaiverKindTests::test_a_legacy_unkinded_waiver_counts_as_neither
+- **Verified:** yes (2026-08-07)
 
 ## Test-plan notes
 

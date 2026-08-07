@@ -314,6 +314,7 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
                      "n_measured": acc.get("n_measured"), "models": acc.get("models")},
         "lessons": [ln if isinstance(ln, str) else (ln.get("title") or ln.get("gist") or "")
                     for ln in val.get("lessons", [])],
+        "waivers": _waiver_kinds(root),
         "tickets": val.get("filed", []),
         "declined": val.get("declined", []),
     }
@@ -322,6 +323,37 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
     # and a close cannot be certified by a page that contradicts itself.
     out["checklist"] = checklist(root, retro_id, unit_ids=unit_ids, rep=out)
     return out
+
+
+def _waiver_kinds(root: Path) -> dict:
+    """How many waivers were CHOSEN against how many were forced, kept apart.
+
+    A waiver whose window had already closed when the item fired is a process failure; one
+    taken on purpose is a decision. Summing them reports a sprint as having made N decisions
+    when some of them were made for it by the clock, and only one of those is worth repeating.
+
+    Unreadable is not empty: an unresolvable log returns None so the renderer can say it could
+    not look, rather than printing zeroes that read as nothing to report.
+    """
+    try:
+        import decisions  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        return decisions.waiver_kind_counts(root)
+    except Exception as exc:  # noqa: BLE001 - a report must not die on a log read
+        sdlc_md.debug("sprint_report._waiver_kinds", exc)
+        return None
+
+
+def _waiver_lines(rep: dict) -> list[str]:
+    counts = rep.get("waivers")
+    if counts is None:
+        return ["WAIVERS: the decision log could not be read - not zero, unread"]
+    if not any(counts.values()):
+        return []
+    parts = [f"{counts.get('deliberate', 0)} deliberate",
+             f"{counts.get('expired', 0)} expired before anyone was asked"]
+    if counts.get("unkinded"):
+        parts.append(f"{counts['unkinded']} recorded before kinds existed")
+    return [f"WAIVERS: {', '.join(parts)}"]
 
 
 def _spend_line(sp: dict, sprint_tokens: int | None) -> str:
@@ -1969,6 +2001,7 @@ def render(rep: dict) -> str:
         lines.append(f"Models: {', '.join(acc['models'])}.")
     lines.extend(_mutation_lines(rep.get("mutation")))
     lines.extend(_execution_lines(rep))
+    lines.extend(_waiver_lines(rep))
     if rep.get("checklist"):
         # The checklist IS the report, not a second document beside it. Two close-time
         # documents that both claim to record the run is the drift this repo keeps filing bugs

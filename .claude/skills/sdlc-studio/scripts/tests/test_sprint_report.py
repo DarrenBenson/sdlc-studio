@@ -1030,6 +1030,46 @@ class ChecklistBase(unittest.TestCase):
         return next(r for r in ck["items"] if r["id"] == item_id)
 
 
+class WaiverKindTests(ChecklistBase):
+    """US0595 AC2. The retro counts the two kinds apart.
+
+    The fixture is ASYMMETRIC on purpose - two expired against one deliberate. With one of each
+    both figures are 1, and an implementation reporting the expired count under the deliberate
+    label is byte-identical to a correct one.
+    """
+
+    def _waive(self, subject: str, kind: str) -> None:
+        import decisions
+        decisions.ensure_log(self.root)
+        decisions.record_waiver(self.root, subject, "because", authorised_by="op", kind=kind)
+
+    def test_expired_and_deliberate_are_counted_apart(self) -> None:
+        """Mutant: collapse `expired` and `deliberate` into one figure in `rep["waivers"]`."""
+        self._waive("rule:sprint-checklist:goal-seat-reviewed", "expired")
+        self._waive("rule:sprint-checklist:batch-groomed", "expired")
+        self._waive("rule:sprint-checklist:retro", "deliberate")
+        self._run()
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(2, rep["waivers"]["expired"])
+        self.assertEqual(1, rep["waivers"]["deliberate"])
+        rendered = sr.render(rep)
+        self.assertIn("2 expired before anyone was asked", rendered)
+        self.assertIn("1 deliberate", rendered)
+
+    def test_a_log_with_no_waivers_prints_no_waiver_line(self) -> None:
+        """The control. A line printed unconditionally is a line nobody reads."""
+        self._run()
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual({"deliberate": 0, "expired": 0, "unkinded": 0}, rep["waivers"])
+        self.assertNotIn("WAIVERS:", sr.render(rep))
+
+    def test_an_unreadable_log_says_so_rather_than_reporting_zero(self) -> None:
+        """Unreadable is not empty. Zeroes read as nothing to report; only one of the two means
+        somebody should go and look."""
+        rep = {"waivers": None}
+        self.assertIn("not zero, unread", "\n".join(sr._waiver_lines(rep)))
+
+
 class ClosingReviewVerdictTests(ChecklistBase):
     """US0593. The row counted recorded passes and reported `ran` over four rounds of which
     three rejected. A count cannot see a verdict.
