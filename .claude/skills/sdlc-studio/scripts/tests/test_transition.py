@@ -151,8 +151,20 @@ class SurvivorGateTests(unittest.TestCase):
     """
 
     def _repo(self, d, mutants):
+        """Build the fixture UNDER `d`, and refuse to build it anywhere else.
+
+        A placeholder call left in this class passed `"."` and wrote `src/thing.py`, a fake
+        `sdlc-studio/bugs/BG0001-x.md` and - worst - `sdlc-studio/.local/mutation-runs.json`
+        into the REAL repository on every run, destroying 23 recorded mutation registrations.
+        A test fixture that can address the working tree will eventually write to it, so this
+        refuses rather than trusting every caller to pass a temp path.
+        """
         import json, hashlib
-        root = Path(d)
+        root = Path(d).resolve()
+        if not str(root).startswith(tempfile.gettempdir()):
+            raise AssertionError(
+                f"fixture root {root} is outside {tempfile.gettempdir()} - a test fixture must "
+                f"never be able to write into the working tree")
         (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
         (root / "src").mkdir(parents=True, exist_ok=True)
@@ -171,7 +183,6 @@ class SurvivorGateTests(unittest.TestCase):
     def test_a_completed_run_with_one_survivor_refuses(self) -> None:
         """Mutant: judge on the run's exit status instead of the survivor count - a run that
         completed cleanly while a mutant lived reads as evidence."""
-        root, text = self._repo(".", [])  # placeholder, replaced below
         with tempfile.TemporaryDirectory() as d:
             root, text = self._repo(d, [
                 {"unit": "BG0001", "criterion": "AC1", "verdict": "killed"},
