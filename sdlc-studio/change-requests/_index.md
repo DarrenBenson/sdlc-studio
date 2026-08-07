@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-08-06
+**Last Updated:** 2026-08-07
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 18 |
+| Proposed | 19 |
 | Approved | 0 |
 | In Progress | 10 |
 | Complete | 485 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **536** |
+| **Total** | **537** |
 
 ## All Changes
 
@@ -87,6 +87,7 @@
 | [CR-0534](CR0534-a-project-s-configuration-is-a-surface-nobody.md) | a project's configuration is a surface nobody is introduced to and nobody revisits: the operator cannot see what is in force, what the default would have been, or which setting their own history says is wrong | Proposed | High | Improvement | 2026-08-06 | -- |
 | [CR-0535](CR0535-a-refusing-verb-cannot-state-its-contract-until.md) | a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand | In Progress | High | Improvement | 2026-08-06 | EP0210 |
 | [CR-0536](CR0536-the-spec-documents-do-not-learn-about-a.md) | the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail | Proposed | High | Improvement | 2026-08-06 | -- |
+| [CR-0537](CR0537-mutation-evidence-should-report-by-default-not-block.md) | mutation evidence should REPORT by default, not block: a surviving mutant becomes a severity-rated bug and the close proceeds | Proposed | High | Improvement | 2026-08-07 | -- |
 
 ## Archived Releases
 
