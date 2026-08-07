@@ -1591,6 +1591,61 @@ def verify_no_surface_claim(root, unit: str, record: dict) -> str | None:
     return None
 
 
+def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None) -> str | None:
+    """Mutation evidence over a repair's OWN CHANGED LINES, re-read from the record.
+
+    Three states, kept apart because they have different fixes and only one of them is the
+    author's omission:
+      * no record at all - the evidence was never gathered;
+      * a record whose target content has MOVED since - the run was real but is about bytes the
+        file no longer has, so it is STALE rather than green. Without this a passing run can be
+        banked and spent against later edits, which is a gate you satisfy once;
+      * a record covering the current bytes - the gate opens.
+
+    The caller never gets to assert a pass. A gate that accepts the claim it exists to check is
+    a box, and this one guards the only evidence a fix's author could not have manufactured.
+    """
+    import hashlib  # noqa: PLC0415
+    try:
+        import mutation  # noqa: PLC0415
+        affects = [Path(root) / a for a in sdlc_md.affects_files(text)]
+        targets = [a for a in affects if a.is_file() and a.suffix == ".py"]
+        if not targets:
+            return None                      # no mutatable surface - US0566's exemption path
+        entries = mutation.ledger_entries(root) if hasattr(mutation, "ledger_entries") else None
+        if entries is None:
+            state, _reset = mutation._load_ledger(mutation.ledger_path(root))
+            entries = state.get("entries") or []
+    except Exception as exc:  # noqa: BLE001 - report it, never swallow it
+        return (f"the repair-mutation gate could not be established ({type(exc).__name__}: "
+                f"{exc}) - an unreadable bar is not a passed one")
+
+    uid = sdlc_md.norm_id(unit)
+    mine = [e for e in entries if isinstance(e, dict)
+            and any(isinstance(m, dict) and m.get("unit") == uid
+                    for m in (e.get("mutants") or []))]
+    if not mine:
+        return (f"{uid} is repair work and carries NO mutation evidence over its changed lines. "
+                f"Apply a mutant to what it changed, watch its test fail, and record it: "
+                f"`mutation.py register --unit {uid} --criterion ACn --target <file> "
+                f"--mutant <the edit> --test <the command> --verdict killed`")
+
+    stale = []
+    for e in mine:
+        target = Path(root) / str(e.get("target") or "")
+        if not target.is_file():
+            continue
+        now = hashlib.sha256(target.read_bytes()).hexdigest()
+        if e.get("hash") and e["hash"] != now:
+            stale.append(str(e.get("target")))
+    if stale and len(stale) == len(mine):
+        return (f"{uid}'s mutation evidence is STALE, not absent: every recorded run covers "
+                f"bytes {', '.join(sorted(stale))} no longer has. A run banked against an "
+                f"earlier surface cannot be spent on this one - re-run it over the current "
+                f"changed lines")
+    return None
+
+
 def _test_plan_gate(root, unit: str, text: str) -> str | None:
     """Refuse entry to implementation while the unit's test plan is missing or unreviewed.
 

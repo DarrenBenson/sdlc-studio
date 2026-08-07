@@ -1458,6 +1458,28 @@ def _new_run_id() -> str:
     return f"MRUN-{stamp}-{secrets.token_hex(3)}"
 
 
+def mutants_over_changed_lines(repo_root, files, since: str) -> tuple[list, dict]:
+    """Mutants confined to the lines this unit actually CHANGED since `since`.
+
+    `(mutations, changed)` - the second is the map the scoping was derived from, returned so a
+    caller can report what it measured rather than assert it.
+
+    The scope is the criterion, not an optimisation. A repair touching nine lines of a
+    two-thousand-line module should be held to those nine: generating over the whole `Affects`
+    makes the gate cost scale with the file rather than the change, and a gate nobody can afford
+    to run is one that gets switched off - which is how the release verify lane reached 106 red
+    criteria unobserved (BG0535).
+    """
+    changed = changed_lines(repo_root, since)
+    if not changed:
+        return [], {}
+    muts, _unchecked = enumerate_mutations(list(files))
+    scoped = [m for m in muts
+              if m["line"] in changed.get(str(Path(m["file"]).resolve()), set())
+              or m["line"] in changed.get(str(m["file"]), set())]
+    return scoped, changed
+
+
 def series_reason(report: dict) -> str | None:
     """Why this run carries no measured evidence, or None when it does.
 

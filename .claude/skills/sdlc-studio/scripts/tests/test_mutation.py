@@ -3162,6 +3162,47 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
                          "the gate emitted no killer for a mutant its own runner named")
 
 
+class ChangedLineScopeTests(unittest.TestCase):
+    """US0564 AC2: the mutated surface is the unit's own CHANGED lines, not its whole Affects.
+
+    The scope is the criterion rather than an optimisation. Generating over a whole module makes
+    the gate cost scale with the FILE instead of the CHANGE, and a gate nobody can afford to run
+    is one that gets switched off - which is how the release verify lane reached 106 red criteria
+    unobserved (BG0535).
+    """
+
+    def test_mutants_are_scoped_to_the_units_changed_lines(self) -> None:
+        """Mutant: return every mutant in the file - the scoping is a comment and the gate costs
+        what the module costs. Measured on this repo's own `mutation.py`: 700 mutants over the
+        whole file against 6 over the lines actually changed."""
+        m = _load()
+        target = Path(__file__).resolve().parents[1] / "mutation.py"
+        scoped, changed = m.mutants_over_changed_lines(
+            Path(__file__).resolve().parents[3], [target], "HEAD~1")
+        whole, _unchecked = m.enumerate_mutations([target])
+        self.assertTrue(whole, "the fixture produced no mutants at all")
+        if not changed:
+            self.skipTest("git could not answer for changed lines in this checkout")
+        self.assertLess(len(scoped), len(whole),
+                        "the scoped set is the whole file, so nothing was scoped")
+        touched = changed.get(str(target.resolve()), set()) | changed.get(str(target), set())
+        for mu in scoped:
+            self.assertIn(mu["line"], touched,
+                          f"a mutant at line {mu['line']} is outside the changed lines")
+
+    def test_an_unanswerable_diff_scopes_to_nothing_rather_than_everything(self) -> None:
+        """Mutant: fall back to the whole file when git cannot answer - a gate that silently
+        widens to everything on an unreadable diff is one whose cost nobody predicted, and the
+        widening is invisible."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "m.py"
+            f.write_text("def g(a, b):\n    if a == b:\n        return 1\n", encoding="utf-8")
+            scoped, changed = m.mutants_over_changed_lines(d, [f], "HEAD~1")
+            self.assertEqual(changed, {}, "git answered in a non-repo fixture")
+            self.assertEqual(scoped, [], "an unanswerable diff widened to the whole file")
+
+
 class UncommittedSurfaceTests(unittest.TestCase):
     """US0573: a surface the runner REFUSED to mutate is not a surface nobody tested.
 

@@ -142,6 +142,70 @@ class TransitionTests(unittest.TestCase):
             self.assertIn("**Points:** 3", line)
 
 
+class RepairMutationGateTests(unittest.TestCase):
+    """US0564: a repair carries mutation evidence over its OWN changed lines, re-read from the
+    record, and a record about bytes the file no longer has is STALE rather than green."""
+
+    def _repo(self, d, *, record=None, body="def g(a, b):\n    if a == b:\n        return 1\n"):
+        import json, hashlib
+        root = Path(d)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        src = root / "src" / "thing.py"
+        src.write_text(body, encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
+            "# BG0001: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Affects:** src/thing.py\n> **Points:** 3\n", encoding="utf-8")
+        if record is not None:
+            digest = (hashlib.sha256(src.read_bytes()).hexdigest() if record == "current"
+                      else "0" * 64)
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(json.dumps(
+                {"entries": [{"target": "src/thing.py", "hash": digest,
+                              "mutants": [{"unit": "BG0001", "criterion": "AC1",
+                                           "verdict": "killed"}]}]}), encoding="utf-8")
+        return root, (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+
+    def test_a_repair_without_mutation_evidence_is_refused(self) -> None:
+        """Mutant: return None when no record exists - the demand is a comment."""
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d)
+            r = tr.repair_mutation_gate(str(root), "BG0001", text)
+            self.assertIsNotNone(r, "a repair with no mutation evidence was let through")
+            self.assertIn("NO mutation evidence", r)
+            self.assertIn("register --unit BG0001", r, "the refusal names no command")
+
+    def test_an_asserted_pass_without_a_record_is_refused(self) -> None:
+        """The evidence is READ, never accepted. Mutant: trust a caller-supplied claim - the
+        gate accepts the very thing it exists to check."""
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d)
+            claimed = text + "\n> **Mutation-checked:** yes, all mutants killed\n"
+            self.assertIsNotNone(tr.repair_mutation_gate(str(root), "BG0001", claimed),
+                                 "a prose claim of mutation evidence opened the gate")
+
+    def test_a_record_predating_the_current_surface_is_stale(self) -> None:
+        """STALE is distinct from ABSENT - different fixes, and a passing run banked against an
+        earlier surface must not be spendable on this one.
+
+        Mutant: ignore the hash - a gate you satisfy once, then edit freely behind.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d, record="stale")
+            r = tr.repair_mutation_gate(str(root), "BG0001", text)
+            self.assertIsNotNone(r, "a record about bytes the file no longer has read as green")
+            self.assertIn("STALE", r)
+            self.assertIn("not absent", r, "stale is reported as if no record existed")
+
+    def test_a_current_record_opens_the_gate(self) -> None:
+        """THE POSITIVE CONTROL: a gate that refuses every repair satisfies the three criteria
+        above and stops all repair work. Mutant: refuse whatever the record says."""
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d, record="current")
+            self.assertIsNone(tr.repair_mutation_gate(str(root), "BG0001", text),
+                              "evidence covering the current bytes was refused")
+
+
 class RepairScopeTests(unittest.TestCase):
     """US0566: the mutation demand is scoped to REPAIRS, and the class is read from metadata.
 
