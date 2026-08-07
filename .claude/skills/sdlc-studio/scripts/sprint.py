@@ -8352,6 +8352,42 @@ def cmd_plan(args: argparse.Namespace) -> int:
     review = goal_review_status(args.root, sprint_goal,
                                 skip_personas=getattr(args, "skip_personas", False))
     data["goal_review"] = review
+    # OMITTING THE GOAL WAS THE FREE BYPASS. The refusal below is guarded on a goal being
+    # PRESENT, so a plan written with no `--sprint-goal` returned 0, opened the run, recorded
+    # `reviewed: False` - and the close then reported the item outstanding at a point where the
+    # batch had already been delivered and the only exit was a waiver. That is the flaw this
+    # unit exists to end, and it was surviving inside the fix for it.
+    #
+    # The escape is recorded HERE, where the decision can still be reconsidered, and it names
+    # who took it. `--skip-personas` cannot serve: it is a general `store_true` used by thirty
+    # other call sites and carries no authoriser, so it would record a decision with no decider.
+    #
+    # Carved out on `available_seats`, exactly as the sibling refusal below is: a project with
+    # no review seats configured has nobody who COULD have reviewed a goal, so refusing to plan
+    # without one refuses something nobody can satisfy - which is the shape that gets a gate
+    # switched off wholesale rather than answered.
+    waived_by = (getattr(args, "goal_review_waived", None) or "").strip()
+    if getattr(args, "write", False) and not sprint_goal and not waived_by \
+            and review["available_seats"]:
+        print("plan refused: no Sprint Goal was stated, so there is nothing for a seat to "
+              "review and the goal-review gate below never fires. Omitting the goal is not a "
+              "way past it. Nothing is written and no run is opened.", file=sys.stderr)
+        print("  state the goal with `--sprint-goal \"<goal>\"`, or record the deliberate "
+              "escape with `--goal-review-waived \"<who authorised it>\"` - which is written "
+              "to the decision log now, while it can still be reconsidered.", file=sys.stderr)
+        return 2
+    if waived_by and not sprint_goal:
+        try:
+            import decisions  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+            decisions.record_waiver(
+                args.root, "rule:sprint-checklist:goal-seat-reviewed",
+                "planned with no Sprint Goal, so no seat could review one",
+                authorised_by=waived_by, kind="deliberate")
+        except Exception as exc:  # noqa: BLE001 - a log that cannot be written must not pass
+            print(f"plan refused: the goal-review escape could not be recorded ({exc}) - an "
+                  f"escape nothing records is a silent one, which is what this replaces.",
+                  file=sys.stderr)
+            return 2
     if sprint_goal and not review["reviewed"] and review["available_seats"] \
             and not review["skipped"]:
         print(f"plan refused: the Sprint Goal has not been reviewed by any seat - "
@@ -9773,6 +9809,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--skip-personas", action="store_true", dest="skip_personas",
                    help="ignore review-seat WSJF inputs; the Cost of Delay is then derived from "
                         "the declared Priority, which is what WSJF runs on by default")
+    p.add_argument("--goal-review-waived", dest="goal_review_waived", metavar="WHO",
+                   default=None,
+                   help="plan with NO Sprint Goal, recording who authorised the escape. Written "
+                        "to the decision log at plan time, where the decision can still be "
+                        "reconsidered - not discovered at a close where the batch has already "
+                        "been delivered")
     p.add_argument("--override-goal-review", dest="override_goal_review", metavar="REASON",
                    default=None,
                    help="proceed past a seat verdict that judged the Sprint Goal NOT achievable, "

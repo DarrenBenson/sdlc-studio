@@ -3643,6 +3643,94 @@ def _goal_review(root: Path, goal: str, seats=(("product", "yes", "every unit Fi
                   for s, a, dm, oi in seats]}), encoding="utf-8")
 
 
+class GoalReviewWindowTests(unittest.TestCase):
+    """US0592. The goal-review refusal was guarded on a goal being PRESENT, so omitting
+    `--sprint-goal` walked past it for free: the plan returned 0, the run opened, and the close
+    reported the item outstanding at a point where the batch had already been delivered and the
+    only exit was a waiver. Enforce it where it can still be run.
+    """
+
+    def _plan(self, root, *extra):
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+            rc = mod.main(["plan", "--bugs", "Open", "--no-fetch", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_a_plan_with_no_sprint_goal_is_refused(self) -> None:
+        """Mutant: revert the goal-presence guard so the write path is reached with no goal."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            rc, _out, err = self._plan(root, "--write")
+            self.assertEqual(2, rc, "a plan with no Sprint Goal was written")
+            self.assertIn("no Sprint Goal", err)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists(),
+                             "the refusal still opened a run")
+
+    def test_the_escape_is_recorded_at_plan_time(self) -> None:
+        """Mutant: pass a constant authoriser rather than the one given on the command line.
+
+        Asserting merely that a waiver row exists is satisfied by an implementation writing an
+        empty or hard-coded authoriser, and "names its authoriser" is the whole criterion. The
+        name in the fixture is distinctive for exactly that reason, and the row is resolved
+        through `waiver_for` against the item id the CLOSE reads - a row written under a subject
+        nothing reads is a defect this repo has already had twice.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            rc, _out, err = self._plan(root, "--write", "--goal-review-waived",
+                                       "Wilhelmina Okonkwo-Reyes")
+            self.assertEqual(0, rc, err)
+            import decisions
+            subject = "rule:sprint-checklist:goal-seat-reviewed"
+            self.assertIsNotNone(decisions.waiver_for(root, subject),
+                                 "no waiver the close can read was recorded")
+            self.assertEqual("Wilhelmina Okonkwo-Reyes",
+                             decisions.waiver_authoriser(root, subject))
+            self.assertEqual("deliberate", decisions.waiver_kind(root, subject))
+
+    def test_the_escape_with_no_authoriser_is_refused(self) -> None:
+        """An escape taken by nobody in particular is a decision with no decider."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            rc, _out, err = self._plan(root, "--write", "--goal-review-waived", "   ")
+            self.assertEqual(2, rc)
+            self.assertIn("no Sprint Goal", err)
+
+    def test_a_reviewed_goal_plans_cleanly(self) -> None:
+        """Mutant: drop the `not reviewed` term, so a reviewed goal is refused too.
+
+        The control. Refusing the write path unconditionally reddens 33 existing tests and so
+        discriminates nothing; dropping that one term is the edit a careless implementer makes.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            _goal_review(root, "empty the sized backlog",
+                         seats=(("product", "yes", "every bug Fixed and signed off", "yes"),))
+            rc, _out, err = self._plan(root, "--write", "--sprint-goal",
+                                       "empty the sized backlog")
+            self.assertEqual(0, rc, err)
+
+    def test_a_project_with_no_seats_still_plans_without_a_goal(self) -> None:
+        """The carve-out, asserted rather than assumed. A project with no review seats has
+        nobody who COULD have reviewed a goal, so refusing there refuses something nobody can
+        satisfy - which is how a gate gets switched off wholesale instead of answered."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            rc, _out, err = self._plan(root, "--write")
+            self.assertEqual(0, rc, err)
+
+
 class GoalConsultTests(unittest.TestCase):
     """US0297/CR0354/D0045: the seats scored WSJF and nothing reviewed what the run was FOR.
 

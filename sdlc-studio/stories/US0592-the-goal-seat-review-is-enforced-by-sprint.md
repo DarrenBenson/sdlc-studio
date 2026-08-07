@@ -1,6 +1,6 @@
 # US0592: The goal seat review is enforced by sprint plan --write, so skipping it is refused where it can still be run
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -27,6 +27,7 @@
   `reviewed: False`, and the close then reports the item outstanding past its window - which is
   the flaw this story exists to end, surviving intact through its own fix
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalReviewWindowTests::test_a_plan_with_no_sprint_goal_is_refused
+- **Verified:** yes (2026-08-07)
 
 ### AC2: the recorded escape names its authoriser at the moment it is taken
 
@@ -34,6 +35,7 @@
 - **When** the plan is written with the recorded opt-out
 - **Then** the waiver is recorded then and there with its authoriser, so the decision is made when it can still be reconsidered
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalReviewWindowTests::test_the_escape_is_recorded_at_plan_time
+- **Verified:** yes (2026-08-07)
 
 ### AC3: a reviewed goal plans without complaint
 
@@ -41,6 +43,7 @@
 - **When** the plan is written
 - **Then** it succeeds silently - the control against a gate that refuses everything
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalReviewWindowTests::test_a_reviewed_goal_plans_cleanly
+- **Verified:** yes (2026-08-07)
 
 ## Test-plan notes
 
