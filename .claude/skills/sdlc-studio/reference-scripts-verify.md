@@ -153,10 +153,12 @@ counted, never silent).
   `sdlc-studio/.local/mutation-report.json` and appends this run's per-target evidence to
   the bounded ledger `sdlc-studio/.local/mutation-runs.json`; exits non-zero on
   survivors/errors
-- `register --target F --mutant M --test T --verdict killed|survived|equivalent`: record a
-  mutant a builder applied BY HAND, so the per-unit practice (write a test, mutate the code
-  it pins, see RED, restore) leaves a trace in the same ledger. Nothing here re-runs
-  anything, so the entry is marked `registered` and read as a claim, never as a measured run
+- `register --target F --line N --mutant M --test T --verdict killed|survived|equivalent`:
+  record a mutant a builder applied BY HAND, so the per-unit practice (write a test, mutate
+  the code it pins, see RED, restore) leaves a trace in the same ledger. Nothing here re-runs
+  anything, so the entry is marked `registered` and read as a claim, never as a measured run.
+  `--line` is required for `killed`/`survived`: a record with no line never joins a measured
+  one, and the refusal that quotes `target:line` would print a question mark
 - `prefilter --tests <paths>`: advisory list of test files with no recognisable
   assertion - the cheap static signal for which tests to mutate first
 

@@ -1758,6 +1758,18 @@ def _measured_mutant_rows(records: list[dict], fp, unit: str | None) -> list[dic
     return out
 
 
+def _entry_unit(entry: dict) -> str | None:
+    """The unit a ledger entry's rows are attributed to, or None when they carry none.
+
+    Entries are superseded per (target, unit), so this is the second half of that key. An entry
+    whose rows disagree about their unit is reported as None rather than picking one: a mixed
+    entry is not a statement about any single unit, and guessing which would be the silent
+    wrong answer.
+    """
+    units = {m.get("unit") for m in (entry.get("mutants") or []) if isinstance(m, dict)}
+    return units.pop() if len(units) == 1 else None
+
+
 def append_ledger(root: Path | str, report: dict, records: list[dict],
                   unit: str | None = None) -> dict:
     """Append this run's per-target evidence to the bounded ledger and return its state.
@@ -1802,13 +1814,21 @@ def append_ledger(root: Path | str, report: dict, records: list[dict],
                     "generated_at": report.get("generated_at"),
                     "test_cmd": report.get("test_cmd"), "summary": summary,
                     "mutants": _measured_mutant_rows(records, fp, unit)})
-    # A run supersedes its OWN kind only. A later run's numbers replace an earlier run's for the
-    # same target, but a hand-registered claim about that file is a different statement, not a
-    # stale copy of this one, and dropping it here would delete evidence this run never gathered.
-    superseded = {e["target"] for e in new}
+    # A run supersedes its OWN kind AND ITS OWN UNIT only. A later run's numbers replace an
+    # earlier run's for the same target, but a hand-registered claim about that file is a
+    # different statement, not a stale copy of this one, and dropping it here would delete
+    # evidence this run never gathered.
+    #
+    # The UNIT half was missing and cost a whole batch's evidence. Two units declaring the same
+    # file - which is what a sprint touching one module looks like - meant the second unit's run
+    # erased the first unit's rows, and the first unit's gate then read as carrying NO evidence
+    # while the ledger said nothing about the loss. The docstring's own argument for keeping a
+    # registered entry applies unchanged to another unit's measured one: it is a different
+    # statement, not a stale copy of this one.
+    superseded = {(e["target"], _entry_unit(e)) for e in new}
     entries = [e for e in state["entries"]
                if isinstance(e, dict)
-               and not (e.get("target") in superseded
+               and not ((e.get("target"), _entry_unit(e)) in superseded
                         and entry_provenance(e) == PROVENANCE_MEASURED)] + new
     return _store_ledger(path, state, entries, reset)
 
@@ -1930,6 +1950,12 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     elif not mutant or not test:
         raise ValueError("a registered mutant must name WHAT was mutated and WHICH test "
                          "returned the verdict - a bare count cannot be audited")
+    if verdict != EQUIVALENT_VERDICT and line is not None and int(line) < 1:
+        # `--line 0` passed the None check and then composed `target:?` through the
+        # `mu.get("line") or '?'` fallback - the exact string the refusal is supposed to have
+        # stopped printing. A line number below 1 names no line.
+        raise ValueError(f"--line must be 1 or greater, not {line} - a line number below one "
+                         "names no line, and the refusal that quotes it prints a question mark")
     if verdict != EQUIVALENT_VERDICT and line is None:
         # An OPTIONAL line is worse than none. The refusal composes `target:line` and would
         # print `target:?`; worse, a registered `line: None` never joins a measured `line: 2`,

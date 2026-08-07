@@ -2836,13 +2836,16 @@ class MutationSurvivorCountTests(unittest.TestCase):
     which is the outcome blocking was rejected to avoid, not the one that was chosen.
     """
 
-    def _bug(self, root, bid, severity, key):
+    RUN = "RUN-TESTAAA"
+
+    def _bug(self, root, bid, severity, key, run=RUN):
         d = root / "sdlc-studio" / "bugs"
         d.mkdir(parents=True, exist_ok=True)
         (d / f"{bid}-a-mutant-survives.md").write_text(
             f"# {bid}: a mutant survives at src/thing.py:2\n\n"
             f"> **Status:** Open\n> **Severity:** {severity}\n> **Points:** 2\n"
-            f"> **Mutation-survivor:** {key}\n\n## Summary\n\ns\n", encoding="utf-8")
+            f"> **Mutation-survivor:** {key}\n> **Mutation-survivor-run:** {run}\n\n"
+            f"## Summary\n\ns\n", encoding="utf-8")
 
     def test_the_close_counts_survivors_by_severity(self) -> None:
         """The THIRD artefact is written straight into the backlog, carrying the same header
@@ -2860,8 +2863,14 @@ class MutationSurvivorCountTests(unittest.TestCase):
             self._bug(root, "BG9002", "Medium", "BG0001@src/thing.py:9:dropped the branch")
             # Past the filer, and indistinguishable to a correct reader.
             self._bug(root, "BG9003", "Low", "BG0002@src/other.py:4:off by one")
-            state, value, detail = sr._ck_mutation_survivors({"root": str(root)})
+            # A survivor from ANOTHER run, which must not be counted: the row says THIS run.
+            self._bug(root, "BG9004", "High", "BG0003@src/x.py:1:earlier", run="RUN-EARLIER")
+            ctx = {"root": str(root), "run": {"run_id": self.RUN}}
+            state, value, detail = sr._ck_mutation_survivors(ctx)
             self.assertEqual(sr.RAN, state)
+            self.assertNotIn("4 survivor", value,
+                             "a survivor filed by an EARLIER run was counted, so the row's "
+                             "own title - this run - is false and the number only ever grows")
             self.assertIn("3 survivor(s)", value,
                           f"an artefact that did not pass through the filer was not counted, "
                           f"so the count comes from a tally rather than the backlog: {value}")
@@ -2880,7 +2889,8 @@ class MutationSurvivorCountTests(unittest.TestCase):
             (d2 / "BG9001-ordinary.md").write_text(
                 "# BG9001: an ordinary bug\n\n> **Status:** Open\n> **Severity:** High\n",
                 encoding="utf-8")
-            state, value, _ = sr._ck_mutation_survivors({"root": str(root)})
+            state, value, _ = sr._ck_mutation_survivors(
+                {"root": str(root), "run": {"run_id": self.RUN}})
             self.assertEqual(sr.RAN, state)
             self.assertIn("0 survivors", value,
                           "an ordinary bug was counted as a surviving mutant")

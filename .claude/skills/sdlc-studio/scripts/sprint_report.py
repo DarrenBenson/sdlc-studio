@@ -1649,7 +1649,8 @@ MIN_LENSES = 2
 def _ck_mutation_survivors(ctx: dict) -> tuple:
     """The survivors this run FILED rather than blocked on, counted by severity.
 
-    Derived by reading the filed artefacts, never from a tally the filer kept alongside them.
+    THIS RUN's, scoped by the run id stamped on each filed artefact, and derived by reading
+    those artefacts rather than a tally the filer kept alongside them.
     A tally is what a hurried implementation writes and it is invisible to any fixture whose
     artefacts all arrive through the filer - so the count would be right for exactly as long as
     nothing else ever wrote one.
@@ -1662,13 +1663,21 @@ def _ck_mutation_survivors(ctx: dict) -> tuple:
     bugs = root / "sdlc-studio" / "bugs"
     if not bugs.is_dir():
         return (NOT_RUN, "no backlog", "there is no bugs directory to count from")
+    # SCOPED TO THIS RUN. The first cut globbed every survivor bug ever filed, so the row's own
+    # title - and the criterion, and the changelog - claimed a scope the resolver did not have,
+    # and the number only ever grew. The run id is stamped on the artefact at filing.
+    run_id = ((ctx.get("run") or {}).get("run_id") or "").strip()
+    if not run_id:
+        return (NOT_RUN, "no run", "no run is recorded, so survivors cannot be scoped to one")
     counts: dict = {}
-    for f in sorted(bugs.glob("BG*.md")):
+    for f in sorted(bugs.rglob("BG*.md")):
         try:
             body = f.read_text(encoding="utf-8")
         except OSError:
             continue
         if not (sdlc_md.extract_field(body, "Mutation-survivor") or "").strip():
+            continue
+        if (sdlc_md.extract_field(body, "Mutation-survivor-run") or "").strip() != run_id:
             continue
         sev = (sdlc_md.extract_field(body, "Severity") or "unstated").strip() or "unstated"
         counts[sev] = counts.get(sev, 0) + 1

@@ -506,6 +506,14 @@ class MutationEvidenceLaneCLITests(unittest.TestCase):
                           "the stale evidence passed without being reported, so the default "
                           "mode is silent rather than reporting")
             self.assertIn("STALE", out, "the advisory does not say what it found")
+            # The other half of AC2, asserted rather than assumed: a consuming project must be
+            # able to READ the mode it is getting. The CLI half of this criterion passes with
+            # the key absent, so nothing else here pins it.
+            defaults = (Path(tr.__file__).resolve().parent.parent
+                        / "templates" / "config-defaults.yaml").read_text(encoding="utf-8")
+            self.assertIn("mutation_evidence: report", defaults,
+                          "the default mode is not recorded in config-defaults.yaml, so a "
+                          "consuming project has to infer which mode it is getting")
 
     def test_the_lane_runs_with_no_test_plan_cutoff_set(self) -> None:
         """AC5. Mutant: nest the lane call inside `_plan_gate_active` - it would then be inert
@@ -730,7 +738,8 @@ class MeasuredEvidenceCLITests(unittest.TestCase):
     inverse of the doctrine's phrase about evidence an author could not have manufactured.
     """
 
-    def _measured(self, root, *, unit="BG0001", verdicts=(("killed", 4),)):
+    def _measured(self, root, *, unit="BG0001", verdicts=(("killed", 4),),
+                  mutant="stub-return-null"):
         """Write a MEASURED ledger entry through `append_ledger`, the production writer."""
         import hashlib
         src = root / "src" / "thing.py"
@@ -738,7 +747,7 @@ class MeasuredEvidenceCLITests(unittest.TestCase):
                   "target_hashes": {str(src): hashlib.sha256(src.read_bytes()).hexdigest()},
                   "git_rev": "abc", "generated_at": "2026-08-07T00:00:00Z",
                   "test_cmd": "pytest x"}
-        records = [{"file": str(src), "line": line, "class": "stub-return-null",
+        records = [{"file": str(src), "line": line, "class": mutant,
                     "verdict": v, "test": "pytest x"} for v, line in verdicts]
         import importlib.util as iu
         spec = iu.spec_from_file_location("mutation", DIR / "mutation.py")
@@ -801,18 +810,65 @@ class MeasuredEvidenceCLITests(unittest.TestCase):
         which the control below catches.
         """
         with tempfile.TemporaryDirectory() as d:
-            root = _lane_repo(d, mode="off", record="current")   # registered killed at line 4
-            self._measured(root, verdicts=(("survived", 4),))    # measured survived at line 4
+            # ONE mutant, two verdicts: registered killed and measured survived at the same
+            # target, line and content hash, naming the SAME edit. That is the instrument lying
+            # about itself, which is the only thing this check is for.
+            root = _lane_repo(d, mode="off", record="current", mutants=[
+                {"unit": "BG0001", "criterion": "AC1", "verdict": "killed", "line": 4,
+                 "mutant": "stub-return-null", "test": "pytest x"}])
+            self._measured(root, verdicts=(("survived", 4),), mutant="stub-return-null")
             code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertNotEqual(0, code, "a self-contradicting ledger was accepted under `off`")
             self.assertIn("CONTRADICTS", out, f"the refusal does not say what it found:\n{out}")
         with tempfile.TemporaryDirectory() as d:
-            # THE CONTROL: the same co-located pair, AGREEING. A check that refuses on any pair
+            # CONTROL ONE: the same co-located pair, AGREEING. A check that refuses on any pair
             # passes the assertion above for the wrong reason.
-            root = _lane_repo(d, mode="off", record="current")
-            self._measured(root, verdicts=(("killed", 4),))
+            root = _lane_repo(d, mode="off", record="current", mutants=[
+                {"unit": "BG0001", "criterion": "AC1", "verdict": "killed", "line": 4,
+                 "mutant": "stub-return-null", "test": "pytest x"}])
+            self._measured(root, verdicts=(("killed", 4),), mutant="stub-return-null")
             self.assertEqual(0, _cli(root, "set", "--id", "BG0001", "--status", "Fixed")[0],
                              "two records AGREEING were read as a contradiction")
+        with tempfile.TemporaryDirectory() as d:
+            # CONTROL TWO, and it is the one that matters most. TWO DIFFERENT mutants at the
+            # same line, disagreeing in verdict because they are different edits. Keyed on the
+            # line alone this refuses - and since this branch ignores the mode by design, that
+            # false positive turns the DEFAULT reporting mode into a block no config can stand
+            # down, only `--force`.
+            root = _lane_repo(d, mode=None, record="current", mutants=[
+                {"unit": "BG0001", "criterion": "AC1", "verdict": "killed", "line": 4,
+                 "mutant": "inverted the a == b guard", "test": "pytest x"}])
+            self._measured(root, verdicts=(("survived", 4),), mutant="stub-return-null")
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
+            self.assertEqual(0, code,
+                             "two DIFFERENT mutants at one line were read as the instrument "
+                             f"contradicting itself:\n{out}")
+            self.assertNotIn("CONTRADICTS", out)
+
+    def test_two_units_over_one_file_each_keep_their_evidence(self) -> None:
+        """A sprint touching one module gives two units the same `Affects`, which is the
+        ordinary case rather than a corner. Superseding on the TARGET alone made the second
+        unit's run erase the first unit's rows, and the first unit's gate then read as carrying
+        NO evidence - silently, since the ledger says nothing about what it dropped.
+
+        Mutant: supersede on the target alone rather than on (target, unit).
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _lane_repo(d, mode="block", record="none")
+            # A second repair over the same file, declared and indexed like the first.
+            src = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            (root / "sdlc-studio" / "bugs" / "BG0002-y.md").write_text(
+                src.replace("BG0001", "BG0002"), encoding="utf-8")
+            idx = root / "sdlc-studio" / "bugs" / "_index.md"
+            idx.write_text(idx.read_text(encoding="utf-8")
+                           + "| [BG0002](BG0002-y.md) | b | Open |\n", encoding="utf-8")
+            self._measured(root, unit="BG0001", verdicts=(("killed", 4),))
+            self._measured(root, unit="BG0002", verdicts=(("killed", 2),))
+            for uid in ("BG0001", "BG0002"):
+                code, out = _cli(root, "set", "--id", uid, "--status", "Fixed")
+                self.assertEqual(0, code,
+                                 f"{uid}'s measured evidence was erased by the other unit's "
+                                 f"run over the same file:\n{out}")
 
     def test_the_refusal_quotes_the_registered_line(self) -> None:
         """AC6. The survivor listing composes `target:line`, and before `register --line` no
@@ -936,7 +992,12 @@ class SurvivorFilingCLITests(unittest.TestCase):
                           "the filed bug carries no survivor field, so nothing stops it "
                           "parenting another")
             cid = sdlc_md.extract_record_id(Path(child).stem)
-            _cli(root, "set", "--id", cid, "--status", "Fixed")
+            # The child close must actually SUCCEED, or the guard is never reached and this
+            # test passes on a refusal that has nothing to do with it - which is what it did:
+            # the filed bug's criteria are unticked, so the close exited 1 before the guard.
+            code, out = _cli(root, "set", "--id", cid, "--status", "Fixed", "--force",
+                             "--depth", "functional (unit: the survivor's own repair)")
+            self.assertEqual(0, code, f"the child close did not reach the guard:\n{out}")
             self.assertEqual([child], self._bugs(root),
                              "a survivor bug filed a survivor of its own")
 
@@ -953,6 +1014,39 @@ class SurvivorSeverityTests(unittest.TestCase):
         "Medium": "def decide(a, b):\n    if a == b:\n        print('x')\n    return 1\n",
         "Low": "DECIDE = 1\ndef other():\n    return 2\n",
     }
+    #: Bodies whose SIGNAL was false before the scope and terminality rules were fixed. Each is
+    #: Medium: no None path, and no raise the enclosing function performs.
+    HONEST_MEDIUM = {
+        "if/else returning on both arms":
+            "def decide(a, b):\n    if a == b:\n        return 1\n    else:\n        return 2\n",
+        "a nested helper that raises":
+            "def decide(a, b):\n    def _inner():\n        raise ValueError('no')\n"
+            "    print(a, b)\n    return 1\n",
+        "a try whose body and handler both return":
+            "def decide(a, b):\n    try:\n        return int(a)\n"
+            "    except ValueError:\n        return 0\n",
+    }
+
+    def test_a_signal_is_never_false_of_the_body_it_read(self) -> None:
+        """AC3 makes the signal string LAW, so a signal that is wrong is worse than none -
+        triage is handed a verdict it cannot check.
+
+        Mutant: walk nested scopes, so a reporter containing a helper that raises derives High
+        with the signal `decide raises on at least one path`.
+        Mutant: derive the None path from the tail node's TYPE, so an if/else returning a value
+        on both arms derives High for a path that does not exist.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "src").mkdir(parents=True)
+            for name, body in self.HONEST_MEDIUM.items():
+                with self.subTest(body=name):
+                    (root / "src" / "thing.py").write_text(body, encoding="utf-8")
+                    sev, signal = tr._survivor_severity(
+                        str(root), {"target": "src/thing.py", "line": 4})
+                    self.assertEqual("Medium", sev,
+                                     f"{name} derived {sev} with the signal {signal!r}, which "
+                                     f"is not true of that body")
 
     def test_severity_is_derived_from_the_enclosing_structure_and_names_its_signal(self) -> None:
         """Mutant: map severity from the target file's suffix rather than the enclosing
@@ -1013,13 +1107,18 @@ class NoSurfaceExemptionCLITests(unittest.TestCase):
                               affects="src/other.py")
             code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertNotEqual(0, code, "a false exemption over a mutatable surface was granted")
-            self.assertIn("src/thing.py", out,
-                          "the refusal does not name the file the DIFF gives - "
-                          f"got:\n{out}")
-            self.assertNotIn("src/other.py", out,
-                             "the refusal names the file `Affects` declares and the diff never "
-                             "touched, so the surface came from the declaration rather than "
-                             "from the change")
+            # The MUTANT's location is the assertion, not the presence of a filename: the
+            # refusal also quotes `Affects` as context, and a blanket "other.py is absent" check
+            # cannot tell context from derivation. What must be true is that the generator ran
+            # over the file the DIFF gives and not over the one the declaration names.
+            self.assertRegex(out, r"starting at \S*src/thing\.py:\d+",
+                             f"the mutant was not generated over the file the DIFF gives:\n{out}")
+            self.assertNotRegex(out, r"starting at \S*src/other\.py",
+                                "the generator ran over the file `Affects` declares and the "
+                                "diff never touched, so the surface came from the declaration")
+            self.assertIn("`Affects` declares src/other.py", out,
+                          "the refusal does not state the declared scope beside the derived "
+                          "one, so a reader cannot see that the two disagree")
             self.assertIn("README.md", out, "the refusal does not quote what was claimed")
 
     def test_a_false_exemption_is_refused_under_report_too(self) -> None:
@@ -1038,6 +1137,29 @@ class NoSurfaceExemptionCLITests(unittest.TestCase):
             root = _lane_repo(d, mode="off", exemption=["README.md"])
             code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertEqual(0, code, f"`off` refused a false exemption:\n{out}")
+
+    def test_an_unresolvable_base_ref_refuses_the_exemption(self) -> None:
+        """The wider half of AC7, and the one a real project hits. `changed_lines` swallows a
+        failed `git diff` and returns an empty map, so a base ref that does not RESOLVE - a SHA
+        lost to an amend, a stale clone, a branch that has gone - produced no mutant, and no
+        mutant read as the claim holding. An absent ref and an unresolvable one are different
+        conditions, and only the first was refused.
+
+        Mutant: drop the `rev-parse --verify` check and refuse only on an empty ref.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _lane_repo(d, mode="block", exemption=["README.md"])
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                               .read_text(encoding="utf-8"))
+            state["base_ref"] = "deadbeef" * 5
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps(state), encoding="utf-8")
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
+            self.assertNotEqual(0, code,
+                                "a base ref that does not resolve granted the exemption, so "
+                                "the derivation that could not run was read as a claim holding")
+            self.assertIn("does not resolve", out,
+                          f"the refusal does not name the unresolvable ref:\n{out}")
 
     def test_an_empty_base_ref_refuses_the_exemption(self) -> None:
         """AC7. The fallback fails the WORSE way here: a derivation that cannot run produces no

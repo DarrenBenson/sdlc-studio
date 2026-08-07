@@ -4241,5 +4241,71 @@ class ChangedLineScopeCLITests(unittest.TestCase):
                               f"touched - the gate can be passed by code the repair never "
                               f"changed")
 
+
+class RunUnitAttributionCLITests(unittest.TestCase):
+    """US0661 AC2, at the SHIPPED VERB. Every other test here calls `append_ledger` directly, so
+    the wiring between `run --unit` and the ledger - the part a library test does not exercise -
+    could be reverted with the whole suite green. It was: replacing the `unit=` argument in
+    `cmd_run` with `None` left 436 tests passing.
+    """
+
+    def test_run_records_the_unit_it_was_given(self) -> None:
+        """Mutant: drop `unit=` from `cmd_run`'s call into `run_gate`."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "src").mkdir(parents=True)
+            src = root / "src" / "thing.py"
+            src.write_text("def g(a, b):\n    if a == b:\n        return 1\n    return 2\n",
+                           encoding="utf-8")
+            _git_fixture(root)
+            _mut_cli(m, "run", "--root", str(root), "--files", str(src), "--unit", "BG0001",
+                     "--test", "true", "--max-mutations", "2")
+            rows = [mu for e in m.ledger_entries(root) for mu in (e.get("mutants") or [])]
+            self.assertTrue(rows, "the run recorded no per-mutant row at all")
+            self.assertEqual({"BG0001"}, {r["unit"] for r in rows},
+                             "the shipped verb was given a unit and did not record it, so the "
+                             "gate that selects on it cannot see this run's evidence")
+
+    def test_a_run_with_no_unit_records_none(self) -> None:
+        """The control: a run given no unit must not invent one, or the assertion above passes
+        on a value nothing supplied."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "src").mkdir(parents=True)
+            src = root / "src" / "thing.py"
+            src.write_text("def g(a, b):\n    if a == b:\n        return 1\n    return 2\n",
+                           encoding="utf-8")
+            _git_fixture(root)
+            _mut_cli(m, "run", "--root", str(root), "--files", str(src),
+                     "--test", "true", "--max-mutations", "2")
+            rows = [mu for e in m.ledger_entries(root) for mu in (e.get("mutants") or [])]
+            self.assertTrue(rows, "the run recorded no per-mutant row at all")
+            self.assertEqual({None}, {r["unit"] for r in rows}, "an unattributed run invented a unit")
+
+    def test_a_line_below_one_is_refused(self) -> None:
+        """`--line 0` passed the None check and composed `target:?` through the fallback - the
+        exact string the refusal exists to stop printing.
+
+        Mutant: test only `line is None`.
+        """
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "src").mkdir(parents=True)
+            (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
+            with self.assertRaises(ValueError) as ctx:
+                m.register_mutant(root, "src/thing.py", "m", "pytest x", "survived",
+                                  line=0, unit="BG0001")
+            self.assertIn("1 or greater", str(ctx.exception))
+            # The control: line 1 is accepted, or the refusal fires on everything.
+            self.assertEqual("survived",
+                             m.register_mutant(root, "src/thing.py", "m", "pytest x",
+                                               "survived", line=1, unit="BG0001")["verdict"])
+
 if __name__ == "__main__":
     unittest.main()

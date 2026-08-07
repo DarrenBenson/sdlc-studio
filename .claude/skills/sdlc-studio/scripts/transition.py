@@ -17,6 +17,7 @@ import argparse
 import contextlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -1271,7 +1272,10 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     # command, and the preflight pass would write during what is contractually a dry run. This
     # is past the `if dry_run: return` above, so a dry run predicts the filing and mints
     # nothing.
-    if not force and target_canon in _TERMINAL_FOR_PLAN:
+    if target_canon in _TERMINAL_FOR_PLAN:
+        # NOT gated on `force`. A force taken for an unrelated reason - a red AC, a missing
+        # sign-off - would otherwise drop the survivor silently, which is exactly the outcome
+        # `report` mode exists to prevent. `--force` waives a BAR; it does not waive a finding.
         filed = _file_surviving_mutants(root, sdlc_md.norm_id(artifact_id), text, type_)
         if filed:
             out["survivors_filed"] = filed
@@ -1284,6 +1288,10 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
 #: a survivor filed against a survivor bug, for ever - because a unit carrying this field
 #: never files another.
 SURVIVOR_FIELD = "Mutation-survivor"
+#: WHICH RUN let the survivor through. Separate from the key above, which must stay stable
+#: across runs so a survivor filed once is never filed again; this one is the scope the close's
+#: count needs, and folding it into the key would make every run re-mint the same finding.
+SURVIVOR_RUN_FIELD = "Mutation-survivor-run"
 
 
 def _file_surviving_mutants(root, uid: str, text: str, type_: str) -> list[str]:
@@ -1343,16 +1351,37 @@ def _file_surviving_mutants(root, uid: str, text: str, type_: str) -> list[str]:
         # a `.local` cache re-mints on cache loss, and the finding is then in the backlog twice
         # with nothing saying which is which.
         p = Path(res["path"])
-        p.write_text(_upsert_field(p.read_text(encoding="utf-8"), SURVIVOR_FIELD,
-                                   _survivor_key(uid, mu)), encoding="utf-8")
+        body = _upsert_field(p.read_text(encoding="utf-8"), SURVIVOR_FIELD,
+                             _survivor_key(uid, mu))
+        # WHICH RUN let this survivor through, so the close can count the ones IT let through
+        # rather than every survivor ever filed. Without it the row's own title - and the
+        # criterion, and the changelog - claim a scope the resolver does not have.
+        body = _upsert_field(body, SURVIVOR_RUN_FIELD, _open_run_id(root) or "none")
+        p.write_text(body, encoding="utf-8")
         filed.append(res["id"])
     return filed
 
 
+def _open_run_id(root) -> str | None:
+    """The open run's id, or None. Best-effort: a filing must never fail on the attribution."""
+    try:
+        from lib import run_state  # noqa: PLC0415
+        return (run_state.read(root) or {}).get("run_id")
+    except Exception as exc:  # noqa: BLE001 - attribution must never block a filing
+        sdlc_md.debug("transition._open_run_id", exc)
+        return None
+
+
 def _survivor_key(uid: str, mu: dict) -> str:
-    """The idempotence key, stamped on the filed artefact. Target, line and mutant - the three
-    things that make one survivor a different finding from another on the same file."""
-    return f"{uid}@{mu.get('target')}:{mu.get('line')}:{mu.get('mutant') or 'unnamed'}"
+    """The idempotence key, stamped on the filed artefact.
+
+    HASHED over unit, target, line and mutant. The free-text mutant description used to be in
+    the key verbatim, so rewording it inside the filed bug - which a triager does - re-minted
+    the same finding. A digest is not a description and nobody edits it into a near-miss.
+    """
+    import hashlib  # noqa: PLC0415
+    raw = f"{uid}@{mu.get('target')}:{mu.get('line')}:{mu.get('mutant') or 'unnamed'}"
+    return f"{uid}-{hashlib.sha256(raw.encode('utf-8')).hexdigest()[:16]}"
 
 
 def _existing_survivor_bug(root, uid: str, mu: dict) -> str | None:
@@ -1364,7 +1393,9 @@ def _existing_survivor_bug(root, uid: str, mu: dict) -> str | None:
     bugs = Path(root) / "sdlc-studio" / "bugs"
     if not bugs.is_dir():
         return None
-    for f in sorted(bugs.glob("BG*.md")):
+    # RECURSIVE. A non-recursive glob missed an archived finding, so archiving a survivor bug
+    # re-minted it - which is the one thing a triager does to a finding they have decided about.
+    for f in sorted(bugs.rglob("BG*.md")):
         try:
             body = f.read_text(encoding="utf-8")
         except OSError:
@@ -1412,23 +1443,76 @@ def _survivor_severity(root, mu: dict) -> tuple[str, str]:
                 enclosing = node                      # innermost wins
     if enclosing is None:
         return "Low", "the line is at module level, so no branch depends on it"
-    raises = any(isinstance(n, ast.Raise) for n in ast.walk(enclosing))
-    returns = [n for n in ast.walk(enclosing) if isinstance(n, ast.Return)]
+    own = list(_own_scope(enclosing))
+    raises = any(isinstance(n, ast.Raise) for n in own)
+    returns = [n for n in own if isinstance(n, ast.Return)]
     valued = any(r.value is not None for r in returns)
-    # A path that yields None: an explicit bare `return`, or a body that can fall off its end.
-    # `len(returns) < 2` was the first cut and it was wrong - it fired on every single-return
-    # function, so the Medium fixture derived High. Falling through is the structural fact:
-    # a body whose last statement returns or raises has no implicit-None path at all.
-    tail = enclosing.body[-1] if enclosing.body else None
-    falls_through = not isinstance(tail, (ast.Return, ast.Raise))
-    bare = any(r.value is None for r in returns) or falls_through
     if raises:
         return "High", (f"`{enclosing.name}` raises on at least one path, so an unpinned line "
                         f"in it is an unpinned decision about whether to refuse")
-    if valued and bare:
+    if valued and _has_none_path(enclosing):
         return "High", (f"`{enclosing.name}` returns a value on one path and None on another - "
                         f"this codebase's refusal idiom - so the mutant may have changed which")
     return "Medium", f"`{enclosing.name}` reports rather than refuses, so no gate turns on it"
+
+
+def _own_scope(fn):
+    """Every node in `fn`'s OWN body, excluding nested function and lambda bodies.
+
+    `ast.walk` descends into them, so a pure reporting function containing one nested helper
+    that raises derived High with the signal `<the reporter> raises on at least one path` - a
+    sentence false of the body it claims to have read. A signal that is wrong is worse than
+    none, because the criterion makes it law and triage has no way to check it.
+    """
+    import ast  # noqa: PLC0415
+    nested = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)
+    stack = list(fn.body)
+    while stack:
+        node = stack.pop()
+        yield node
+        # The test is on the NODE, not on its children: guarding the children still descended
+        # one level into a nested scope, so a helper's `raise` was read as the enclosing
+        # function's. The nested node is yielded (it IS a statement of this body) and its
+        # interior is not walked.
+        if isinstance(node, nested):
+            continue
+        stack.extend(ast.iter_child_nodes(node))
+
+
+def _has_none_path(fn) -> bool:
+    """Can `fn` yield None - a bare `return`, or a body that can fall off its end?
+
+    `not isinstance(tail, (Return, Raise))` was the first cut and it was wrong in the other
+    direction: an if/else returning a value on BOTH arms ends in an `If`, so it derived a None
+    path that does not exist, and the signal said so in words. Terminality is recursive - an
+    `If` terminates when both arms do, and a `Try` when its body and every handler do.
+    """
+    import ast  # noqa: PLC0415
+    if any(isinstance(n, ast.Return) and n.value is None for n in _own_scope(fn)):
+        return True
+    return not _terminates(fn.body)
+
+
+def _terminates(body) -> bool:
+    """Does this statement list always leave by a `return`, a `raise`, or an equivalent?"""
+    import ast  # noqa: PLC0415
+    if not body:
+        return False
+    tail = body[-1]
+    if isinstance(tail, (ast.Return, ast.Raise)):
+        return True
+    if isinstance(tail, ast.If):
+        return bool(tail.orelse) and _terminates(tail.body) and _terminates(tail.orelse)
+    if isinstance(tail, ast.Try):
+        handled = all(_terminates(h.body) for h in tail.handlers)
+        return _terminates(tail.finalbody) or (_terminates(tail.body) and handled
+                                               and (not tail.orelse or _terminates(tail.orelse)))
+    if isinstance(tail, ast.With):
+        return _terminates(tail.body)
+    if isinstance(tail, ast.While) and isinstance(getattr(tail, "test", None), ast.Constant) \
+            and tail.test.value is True:
+        return not any(isinstance(n, ast.Break) for n in ast.walk(tail))
+    return False
 
 
 def _print_result(res: dict, dry_run: bool) -> None:
@@ -1742,11 +1826,23 @@ def verify_no_surface_claim(root, unit: str, record: dict, text: str = "") -> st
         import mutation  # noqa: PLC0415
         from lib import run_state  # noqa: PLC0415
         base = (run_state.base_ref(root) or "").strip()
+        why = None
         if not base:
-            return (f"{unit}: the no-mutatable-surface claim cannot be re-derived because no "
-                    f"run is open, so there is no base ref to diff against. An exemption is "
-                    f"refused rather than granted here: a derivation that cannot run produces "
-                    f"no mutant, and no mutant is indistinguishable from a claim that holds")
+            why = "no run is open, so there is no base ref to diff against"
+        elif subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{base}^{{commit}}"],
+                            cwd=str(root), capture_output=True).returncode != 0:
+            # NOT the same condition as an absent ref, and it was the wider hole. `changed_lines`
+            # swallows a failed `git diff` and returns an empty map, so an unresolvable base -
+            # a SHA lost to an amend, a stale clone, a branch that has gone - produced no mutant,
+            # and no mutant read as the claim holding. That is AC7's own defect one condition
+            # over, and it is reachable without anybody trying.
+            why = (f"the recorded base ref {base[:12]} does not resolve to a commit in this "
+                   f"tree, so the diff it would be derived from cannot be taken")
+        if why:
+            return (f"{unit}: the no-mutatable-surface claim cannot be re-derived because "
+                    f"{why}. An exemption is refused rather than granted here: a derivation "
+                    f"that cannot run produces no mutant, and no mutant is indistinguishable "
+                    f"from a claim that holds")
         changed = mutation.changed_lines(root, base)
         surface = [p for p in (Path(f) for f in changed)
                    if p.is_file() and p.suffix == ".py"]
@@ -1758,8 +1854,10 @@ def verify_no_surface_claim(root, unit: str, record: dict, text: str = "") -> st
     if muts:
         first = muts[0]
         claimed = ", ".join(p for p in (record or {}).get("paths", []) if p) or "nothing"
+        declared = ", ".join(sdlc_md.affects_files(text or "")) or "nothing"
         return (f"{unit}: the no-mutatable-surface record claims nothing could be mutated over "
-                f"{claimed}, and the generator produces {len(muts)} mutant(s) over the changed "
+                f"{claimed} (its `Affects` declares {declared}), and the generator produces "
+                f"{len(muts)} mutant(s) over the changed "
                 f"lines the DIFF gives - starting at {first['file']}:{first['line']} "
                 f"({first['class']}). The scope is the diff against {base[:12]}, not the paths "
                 f"the record names: an exemption re-derived from its own declaration checks "
@@ -1813,6 +1911,12 @@ def mutation_evidence_lane(root, unit: str, text: str, type_: str) -> dict:
     contradiction = _ledger_contradiction(root, uid)
     if contradiction:
         out["blocks"].append(contradiction)
+    if mode == "off":
+        # STOOD DOWN, as the doctrine says, rather than run and discarded. Everything below
+        # shells out to git and runs the mutant generator; doing that work only to throw the
+        # answer away is not what "the lane stands down" means to somebody reading it, and it
+        # is a real cost on a project that chose `off` to avoid paying it.
+        return out
 
     record = no_surface_record(root, uid)
     if record:
@@ -1858,6 +1962,18 @@ def _survivor_records(root, uid: str) -> list[dict]:
     return out
 
 
+def _mutant_identity(mu: dict) -> str:
+    """What was applied, normalised enough to join a measured row to a registered one.
+
+    A measured row names its FAULT CLASS (`stub-return-null`); a registered one names the edit
+    in the author's own words. Neither is the other, so the join is on the normalised text and a
+    registered mutant that names its class joins the measured row for that class. Anything else
+    is a different mutant, which is the point: two different mutants at one line are two honest
+    statements, not the instrument contradicting itself.
+    """
+    return " ".join(str(mu.get("mutant") or "").lower().split())
+
+
 def _ledger_contradiction(root, uid: str) -> str | None:
     """A mutant recorded `killed` and MEASURED `survived` at the same target, line and hash.
 
@@ -1868,8 +1984,13 @@ def _ledger_contradiction(root, uid: str) -> str | None:
     try:
         import mutation  # noqa: PLC0415
         entries = mutation.ledger_entries(root)
-    except Exception:  # noqa: BLE001
-        return None
+    except Exception as exc:  # noqa: BLE001 - report it, never swallow it
+        # An unreadable bar is not a passed one, which is what both sibling gates say in the
+        # same position. Returning None here made the one check that refuses in EVERY mode -
+        # `off` included - silently pass exactly when the ledger could not be read.
+        return (f"{uid}: the mutation ledger could not be read to check it against itself "
+                f"({type(exc).__name__}: {exc}) - an instrument nobody can read is not one "
+                f"that has been shown honest")
     seen: dict = {}
     for e in entries:
         if not isinstance(e, dict):
@@ -1881,7 +2002,12 @@ def _ledger_contradiction(root, uid: str) -> str | None:
             verdict, line = mu.get("verdict"), mu.get("line")
             if verdict not in ("killed", "survived") or line is None:
                 continue
-            key = (*key_base, line)
+            # THE MUTANT is part of the key, not just the line. Two different mutants at one
+            # line are two honest statements, and reading them as a contradiction turned the
+            # default `report` mode into a block no config could stand down - this branch
+            # ignores the mode by design, so a false positive here is not survivable. The
+            # instrument lying about ITSELF means one mutant, two verdicts.
+            key = (*key_base, line, _mutant_identity(mu))
             prior = seen.get(key)
             if prior and prior[0] != verdict:
                 return (f"{uid}: the mutation ledger CONTRADICTS itself at "

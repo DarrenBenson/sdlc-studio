@@ -57,6 +57,18 @@ review:
   # files the findings and ships, as reference-review.md already allows for a missing leg.
   # Unrecognised values are refused, never defaulted.
   policy: block
+  # What a repair's MISSING, STALE or SURVIVING mutation evidence does to a terminal transition:
+  #   report  (default)  file a severity-rated bug and let the transition proceed - the team
+  #                      decides next sprint whether to fix it or live with it
+  #   block              the hard bar: no evidence, stale evidence or a survivor refuses
+  #   off                the lane stands down
+  # Two things ignore this setting. A claimed no-mutatable-surface exemption re-derived and found
+  # FALSE refuses under `report` too, because that is a written claim shown untrue rather than a
+  # bar being applied. And a ledger recording one mutant as both killed and survived refuses in
+  # every mode including `off` - the instrument lying about itself is not a quality bar.
+  # Unrecognised values are refused BY NAME: a typo must not switch a hard bar off silently.
+  # Quote it if you mean `off` - YAML 1.1 reads the bare word as a boolean.
+  mutation_evidence: report
   # The repair-plan gate (EP0106 / RFC0053). OFF by default: an upgrading project's close does
   # not change until it opts in. When on, a REJECT is answered by a written plan reviewed before
   # any code. `repair_design_threshold` is the failed-round count past which a repeat-class

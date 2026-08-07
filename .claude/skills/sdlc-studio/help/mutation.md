@@ -101,12 +101,19 @@ is committed.
   per target, so the ledger grows with the number of distinct files ever mutated, not with the
   number of runs. An unreadable ledger is replaced and says so (`reset`).
 - **`measured` against `registered`.** A `measured` entry is a run that applied the mutant and
-  observed the suite's answer. `mutation.py register --target F --mutant "..." --test "..."
-  --verdict killed|survived|equivalent` records a mutant a builder applied **by hand**, so the
+  observed the suite's answer. `mutation.py register --target F --line N --mutant "..."
+  --test "..." --verdict killed|survived|equivalent` records a mutant a builder applied **by
+  hand**, so the
   per-unit practice (write a test, mutate the code it pins, see RED, restore) leaves a trace.
   Nothing re-runs anything, so that entry is a self-report and is reported as a claim, never as
   a measured run; a measured entry outranks a registered one on the same content. A run
   supersedes only its own kind, so it never deletes a hand-registered claim about the same file.
+- **`--line` is required** for a `killed` or `survived` verdict. The refusal a gate composes
+  quotes `target:line`, and a record with no line never joins a measured one - so the check
+  that catches a ledger contradicting itself would silently never fire. An `equivalent` verdict
+  needs none: it is a statement about the mutant, not about a place anything quotes.
+- **`run --unit <id>`** attributes a measured run's per-mutant rows to a unit, which is what the
+  repair gate and the plan-execution join select on. A row nobody can attribute answers neither.
 - Registrations accumulate into one entry per (target, content). That entry's `mutants` list is
   bounded at 100 with a `dropped_mutants` count, while its `summary` tallies are never
   truncated - what is dropped is the description, never the count.

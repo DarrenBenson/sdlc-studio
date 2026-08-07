@@ -32,3 +32,4 @@ Accumulate in both arms through one helper, so the two cannot disagree, and add 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Filed |
+| 2026-08-07 | sdlc-studio | The CODE fix shipped with BG0541: the depth-parity arm now accumulates onto `gate_warn` through the same shape the AC-verify arm uses, because the mutation lane's only reporting path would otherwise have been thrown away by it. The bug stays OPEN because its own criterion and the test that pins it are still owed - a fixture firing both advisories at once and asserting each appears - and closing it on somebody else's diff would be a status its body cannot support. Groom it into a batch |
