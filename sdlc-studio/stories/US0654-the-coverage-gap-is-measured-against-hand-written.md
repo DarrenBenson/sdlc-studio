@@ -5,7 +5,7 @@
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, .claude/skills/sdlc-studio/scripts/docgen.py
 > **Epic:** EP0211
 > **Points:** 5
 > **Persona:** Maya Okafor
@@ -18,64 +18,89 @@
 
 ## Acceptance Criteria
 
-### AC1: the corpus EXCLUDES every generated target, and the number does not move when the page lands
+### AC1: a verb documented ONLY in a generated block reads UNDOCUMENTED
 
-- **Given** the coverage measurement taken before `reference-scripts-surface.md` exists, and
-  again after it is generated with every verb on it
-- **When** `command_audit.py --coverage` runs on each
-- **Then** the two numbers are THE SAME. This is the criterion the whole change turns on: the
-  moment a generated page lists every verb, a corpus that includes it makes the coverage query
-  return 100% and the gap vanishes without one word of hand-written documentation being added.
-  That is a document compared against a projection of itself, which this project has already
-  filed once. `docgen.py` exports `GENERATED_TARGETS` and `strip_generated_blocks()`, and
-  `command_audit.py` imports them - one definition, two readers, because two copies of this rule
-  would drift and the drift would be invisible in the flattering direction
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_the_generated_page_does_not_change_the_coverage_number
+- **Given** a fixture corpus with two verbs: one named in hand-written prose only, and one named
+  only inside a `<!-- BEGIN GENERATED -->` block
+- **When** `command_audit.py --coverage` runs
+- **Then** the first reads DOCUMENTED and the second reads UNDOCUMENTED. That PAIR is the
+  criterion, not an unchanged total: asserting only that the number does not move when the
+  generated page lands is satisfied by a corpus that strips too much, or by one that excludes
+  `reference-scripts*.md` wholesale - both of which measure nothing and pass. The moment a
+  generated page lists every verb, a corpus that includes it returns 100% and the gap vanishes
+  with no documentation added, which this project has already filed once as a document compared
+  against a projection of itself
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_a_verb_documented_only_in_a_generated_block_reads_undocumented
 
-### AC2: the gap is measured, and the number is the one a human can check
+### AC2: the corpus rule has ONE definition, and moving it moves the reader
 
-- **Given** the skill's hand-written markdown
+- **Given** `docgen.GENERATED_TARGETS` and `docgen.strip_generated_blocks()`
+- **When** the module attribute is PATCHED to a value `command_audit.py` could not have computed
+- **Then** the coverage corpus moves with it. Asserting the two are equal proves nothing - a
+  copy compares equal - so the mutant that gives `command_audit.py` its own list survives an
+  equality assertion untouched. One definition and two readers is the claim; a patch that only
+  one of them sees is the test of it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_patching_the_shared_rule_moves_the_corpus
+
+### AC3: a HAND-WRITTEN table of the same shape is not stripped
+
+- **Given** the generated verb table pasted verbatim into a file with no generation markers, and
+  beside it an ordinary hand-written table
+- **When** the corpus is built
+- **Then** the pasted block is stripped and the hand-written table is NOT. Excluding the
+  generated targets closes the front door; pasting the same table into a hand-written file walks
+  in the back one with no prose added. And a stripper that eats every table drives the count to
+  100% undocumented, which passes an unchanged-number assertion by measuring nothing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_a_pasted_generated_block_is_stripped_and_a_hand_written_table_is_not
+
+### AC4: the counts are pinned on a miniature corpus with stated literals
+
+- **Given** a fixture of three verbs across two scripts, one of which is named in prose without
+  its `script.py verb` token
 - **When** `--coverage` runs
-- **Then** it reports the count of enumerated verbs, the count carrying no `script.py verb` token
-  in that corpus, and the ratio - and the counts are reproducible by hand from the same corpus.
-  Measured today: 179 verbs enumerable, 69 undocumented. The plan estimated 211 and 49; the
-  difference is that 12 scripts build their parser inline and are not enumerable until US0652
-  lands, so the number is expected to MOVE when it does, and a criterion pinned to a constant
-  would be wrong by then
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_the_counts_are_reproducible_from_the_same_corpus
+- **Then** it reports 3 enumerated, 1 undocumented, against literals written in the test. The
+  repo-wide number is REPORTED and not asserted, because US0652 makes 12 more scripts enumerable
+  and it will move - but a test whose expectation is computed by the function under test can
+  never fail, so the fixture carries the numbers a human wrote down
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_the_counts_are_pinned_on_a_fixture_with_stated_literals
 
-### AC3: findings carry a severity that distinguishes absent from unusable
+### AC5: severity separates absent from unusable, each pinned to its own case
 
-- **Given** a verb whose token appears NOWHERE, one that appears in prose but never as an
-  invocable `script.py verb` form, and a flag named nowhere
+- **Given** a verb whose token appears NOWHERE, one named in prose but never as an invocable
+  `script.py verb` form, and a flag named nowhere
 - **When** each is filed
-- **Then** they carry high, medium and low. A verb a reader cannot find at all and one they can
-  read about but not invoke are different failures with different fixes, and one severity for
-  both gives triage nothing to sort on
+- **Then** they carry high, medium and low RESPECTIVELY - each case asserted against its own
+  severity, so a reversed mapping dies as well as a collapsed one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageFindingTests::test_severity_separates_absent_from_unusable
 
-### AC4: filing is idempotent and the lane always exits 0
+### AC6: the first run FILES, the second adds nothing, and both exit 0
 
 - **Given** `--coverage` run twice over the same tree
-- **When** the second run completes
-- **Then** no second artefact exists for the same `script.py verb` token, and both runs exit 0
-  whatever they found. A documentation guard that blocks is one that gets switched off, which is
-  the operator's stated decision and the reason this reports rather than refuses
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageFindingTests::test_filing_is_idempotent_and_the_lane_exits_zero
+- **When** each completes
+- **Then** the first files at least one artefact - asserted, because a filer that files nothing
+  is trivially idempotent and would pass the second half alone - and the second adds none, keyed
+  on the `script.py verb` token. Both exit 0 whatever they found: a documentation guard that
+  blocks is one that gets switched off
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageFindingTests::test_the_first_run_files_and_the_second_adds_nothing
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | include the generated targets in the corpus, so the page counts as its own documentation | the corpus EXCLUDES every generated target |
-| AC1 | give `command_audit.py` its own copy of the target list rather than importing docgen's | the corpus EXCLUDES every generated target |
-| AC2 | count a verb as documented when its SCRIPT is mentioned anywhere, not the `script.py verb` token | the gap is measured |
-| AC3 | file every coverage finding at one severity | findings carry a severity that distinguishes |
-| AC4 | key idempotence on the finding's title rather than the `script.py verb` token | filing is idempotent and the lane always exits 0 |
-| AC4 | exit non-zero when the coverage ratio is below a threshold | filing is idempotent and the lane always exits 0 |
+| AC1 | include the generated targets in the corpus, so the page counts as its own documentation | a verb documented ONLY in a generated block reads UNDOCUMENTED |
+| AC2 | give `command_audit.py` its own copy of the target list rather than importing docgen's | the corpus rule has ONE definition |
+| AC3 | strip every table-shaped block, not only generated ones | a HAND-WRITTEN table is not stripped |
+| AC3 | strip generated blocks only from the declared targets, not wherever they appear | a HAND-WRITTEN table is not stripped |
+| AC4 | count a verb as documented when its SCRIPT is mentioned anywhere, not the `script.py verb` token | the counts are pinned on a miniature corpus |
+| AC5 | file every coverage finding at one severity | severity separates absent from unusable |
+| AC5 | swap the absent and unusable severities | severity separates absent from unusable |
+| AC6 | key idempotence on the finding's title rather than the `script.py verb` token | the first run FILES, the second adds nothing |
+| AC6 | exit non-zero when the coverage ratio is below a threshold | the first run FILES, the second adds nothing |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-08 | sdlc-studio | AC5 added from the plan-time qa seat: excluding the generated TARGETS closes the front door, and pasting the same table into a hand-written file walks in the back one - the same flattery with one extra step and no prose |
+| 2026-08-08 | sdlc-studio | Plan review round 1 REJECTed on three blocking findings, all of them the same shape: a criterion asserting a number does NOT move is satisfied by measuring nothing. AC1 is now a PAIR - a verb documented only in prose reads documented, the same verb only inside a generated block reads undocumented. AC3 requires a hand-written table of the same shape to survive the stripper, so eating every table cannot pass. AC4 pins literals on a miniature corpus, since an expectation computed by the function under test can never fail. AC2 patches the shared rule rather than comparing two lists, because a copy compares equal. `docgen.py` joins the declared Affects, which AC2 imports |

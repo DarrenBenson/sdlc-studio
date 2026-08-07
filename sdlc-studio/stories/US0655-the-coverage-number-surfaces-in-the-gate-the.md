@@ -18,55 +18,66 @@
 
 ## Acceptance Criteria
 
-### AC1: the gate carries a non-blocking `doc-surface` lane
+### AC1: the gate carries a non-blocking `doc-surface` lane, distinguishable from `doc-coverage`
 
-- **Given** `gate.py`, beside its existing `_disclosure` and `_doc_coverage` advisory lanes
-- **When** the gate runs over a tree with undocumented verbs
-- **Then** a `doc-surface` lane reports the count and the gate's exit code is unchanged - a tree
-  that was green stays green. The lane sits with the other advisory ones because that is where a
-  reader already looks for a number they are not being stopped by
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DocSurfaceLaneTests::test_the_lane_reports_and_does_not_change_the_exit_code
+- **Given** `gate.py`, which ALREADY carries a blocking `doc-coverage` lane reporting
+  "N undocumented" - and that lane counts SCRIPTS without a `reference-scripts.md` entry, which
+  is at 71 of 71 today
+- **When** the gate runs over a tree with undocumented VERBS
+- **Then** a `doc-surface` lane reports "N of M verbs carry no invocable form", wording that
+  cannot be read as the other lane's number, and the gate's exit code is unchanged. Two lanes
+  both saying "undocumented" about different granularities is two numbers a reader has to
+  reconcile with nothing telling them they measure different things
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DocSurfaceLaneTests::test_the_lane_reports_verbs_distinguishably_and_does_not_change_the_exit_code
 
-### AC2: `lint:disclosure` joins the aggregate, and the aggregate still passes
+### AC2: the `lint` CHAIN runs `lint:disclosure`, which today it does not
 
-- **Given** `npm run lint`, which today runs every guard except `disclosure.py` - a checker with
-  28 open advisory findings that nothing invokes
-- **When** the aggregate runs
-- **Then** `lint:disclosure` is among its lanes and the aggregate's exit code is unchanged. This
-  is the cheapest real fix in the whole change: a checker nobody runs reports nothing, however
-  good it is, and it has been sitting one line away from being read
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::LintAggregateTests::test_disclosure_is_in_the_lint_aggregate
+- **Given** `package.json`, where `lint:disclosure` exists as a script key and the `lint` chain
+  does not call it - so a checker with 28 advisory findings is one line from being read and is
+  not read
+- **When** the aggregate is inspected
+- **Then** the `lint` chain's own command string contains `lint:disclosure`, and the aggregate
+  exits 0. Asserting the KEY exists is green today with nothing changed, which is a criterion
+  that cannot fail
+- **Verify:** pytest tools/tests/test_check_spec_claims.py::LintAggregateTests::test_the_lint_chain_calls_disclosure
 
 ### AC3: the close report carries one row, derived not typed
 
 - **Given** a close
 - **When** the report is composed
-- **Then** it carries one row naming the documented and undocumented verb counts, derived by
-  calling the coverage measurement rather than by reading a number somebody wrote down. A figure
-  typed into a report is a figure that stops being true the day after
+- **Then** it carries one row naming the verb counts, derived by calling the coverage
+  measurement rather than by reading a number somebody wrote down
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::DocSurfaceRowTests::test_the_close_row_is_derived_from_the_measurement
 
-### AC4: the three readers agree, because there is one measurement
+### AC4: the gate lane and the close row MOVE when the DEFINING module is patched
 
-- **Given** the gate lane, the lint lane and the close row over one tree
-- **When** each reports
-- **Then** all three quote the same number, because all three call the same function. Three
-  readers of one fact that compute it three times are three chances to disagree, and this
-  project has already paid for that shape more than once
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DocSurfaceLaneTests::test_the_three_readers_quote_one_measurement
+- **Given** the gate lane and the close row - the two readers that consume the coverage
+  measurement; the lint aggregate is deliberately NOT among them, because it shells out to
+  `disclosure.py`, a different checker with an unrelated count, and could never quote this one
+- **When** the measurement function is patched IN ITS DEFINING MODULE to an implausible sentinel
+  (4242, a value no real tree produces)
+- **Then** both readers quote 4242. The patch is on the defining module and each reader must
+  call through it rather than binding the name at import, or the mutant that gives the gate lane
+  its own re-derivation survives - a copy patched under the same name moves with it. Asserting
+  the two readers AGREE proves nothing either: two correct readers over one tree agree by
+  construction
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DocSurfaceLaneTests::test_both_readers_move_when_the_defining_module_is_patched
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
 | AC1 | make the `doc-surface` lane fail the gate when the count is non-zero | the gate carries a non-blocking lane |
-| AC1 | drop the lane from the gate's advisory list entirely | the gate carries a non-blocking lane |
-| AC2 | remove `lint:disclosure` from the aggregate again | `lint:disclosure` joins the aggregate |
+| AC1 | word the lane's detail as "N undocumented", identical to the `doc-coverage` lane | the gate carries a non-blocking lane |
+| AC2 | leave `lint:disclosure` defined as a key but absent from the `lint` chain | the `lint` CHAIN runs `lint:disclosure` |
 | AC3 | render the close row from a constant rather than from the measurement | the close report carries one row |
-| AC4 | give the gate lane its own re-derivation of the count | the three readers agree |
+| AC4 | give the gate lane its own re-derivation of the count | both readers MOVE when the defining module is patched |
+| AC4 | have each reader bind the measurement by `from ... import` at load time | both readers MOVE when the defining module is patched |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-08 | sdlc-studio | AC4 rewritten from the plan-time qa seat's finding: as written it asserted three readers AGREE, which three correct readers do by construction, so its own mutant survived. It patches the shared routine now and requires each reader to move with it |
+| 2026-08-08 | sdlc-studio | Plan review round 1 REJECTed. AC4 named THREE readers and one of them is not executable: the lint lane shells out to `disclosure.py`, a different checker with an unrelated count, so it could never quote a patched coverage value - it is scoped to the two readers that can, with the reason stated. The patch site is named as the DEFINING module, since patching each reader's own attribute leaves the re-derivation mutant alive. AC1 gains the finding that `gate.py` ALREADY reports `N undocumented` at script granularity, so the new lane must be worded so a reader cannot conflate them. AC2 asserts the `lint` CHAIN, not the key, which exists today |

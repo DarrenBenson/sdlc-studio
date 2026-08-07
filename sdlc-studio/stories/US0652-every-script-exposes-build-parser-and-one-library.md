@@ -18,26 +18,29 @@
 
 ## Acceptance Criteria
 
-### AC1: every CLI script exposes `build_parser`, and the two that are not CLIs are named
+### AC1: every CLI script exposes `build_parser`, and the one non-CLI is named
 
 - **Given** the 71 scripts under `scripts/`, of which 12 build their parser inline in `main()`
 - **When** each is read
 - **Then** all 12 expose a module-level `build_parser()` returning the configured parser, and
-  the two remaining exceptions are stated rather than silently passed: `carry_forward.py` is a
-  LIBRARY with no `main`, no entrypoint and no `ArgumentParser` at all, and `autosprint.py` is a
-  deprecated alias that re-exports `sprint`'s. Writing a parser for a library to satisfy a
-  blanket claim would be inventing a surface, which is the opposite of enumerating one
+  exactly ONE script is exempt: `carry_forward.py`, which has no `main`, no `__main__` guard and
+  no `ArgumentParser` at all. `autosprint.py` is NOT an exception - it re-exports `sprint`'s
+  `build_parser` by name, so `getattr` finds it. The exemption is asserted BOTH ways: every
+  non-exempt script has one, and the exempt one is exempt for a stated structural reason, so an
+  extra parser bolted onto a library cannot pass unnoticed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_surface.py::BuildParserCoverageTests::test_every_cli_script_exposes_build_parser
 
 ### AC2: the enumeration NAMES what it cannot read, and never skips it
 
-- **Given** three scripts that raise on in-process import today - `github_sync.py`,
-  `repo_map.py` and `verify_ac.py`, each `AttributeError` under a bare `import`
+- **Given** a synthetic module that raises on import, written into the fixture beside real ones
 - **When** `surface.enumerate()` runs
-- **Then** each appears in the result with its exception, and none is dropped. Silently
-  continuing past a module that will not import is the defect this library exists to fix:
-  `_all_parsers()` in `test_cli_grammar.py` does exactly that while its docstring claims to
-  sweep the whole family, so the count it reports is of what happened to load
+- **Then** it appears in the result with its exception, and the run continues over the rest.
+  Silently continuing past a module that will not import is the defect this library exists to
+  fix: `_all_parsers()` in `test_cli_grammar.py` does exactly that while its docstring claims to
+  sweep the whole family, so the count it reports is of what happened to load. The fixture is
+  synthetic because no real script in this tree fails to import - a claim that three of them do
+  was made from a measurement whose own loader manufactured the failure, and did not survive
+  being re-run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_surface.py::SurfaceEnumerationTests::test_a_module_that_will_not_import_is_named_not_skipped
 
 ### AC3: positional `choices` are walked, not only subparsers
@@ -67,6 +70,7 @@
 | --- | --- | --- |
 | AC1 | remove `build_parser` from one of the 12 converted scripts, leaving its inline parser in `main()` | every CLI script exposes `build_parser` |
 | AC1 | add a `build_parser` to `carry_forward.py`, so a library counts as a CLI surface | every CLI script exposes `build_parser` |
+| AC1 | list `autosprint.py` as exempt, though it re-exports `sprint`'s | every CLI script exposes `build_parser` |
 | AC2 | swallow the import exception and continue, as `_all_parsers()` does today | the enumeration NAMES what it cannot read |
 | AC3 | walk subparsers only, dropping the positional `choices` branch | positional `choices` are walked |
 | AC4 | give `test_cli_grammar.py` back its own parser map | the grammar tests read the shared library |
@@ -77,3 +81,5 @@
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-08 | sdlc-studio | Groomed, and the scope corrected against a measurement rather than the plan's estimate. The plan said 14 scripts lack `build_parser`; 12 do. `carry_forward.py` was in the declared `Affects` and is a LIBRARY - no `main`, no entrypoint, no `ArgumentParser` - so it is dropped, and `autosprint.py` already re-exports `sprint`'s. Both exclusions are stated in AC1 rather than left as a silent shortfall against a blanket title |
+| 2026-08-08 | sdlc-studio | AC2's premise was FALSE and the plan-time engineering seat caught it. The claim that `github_sync.py`, `repo_map.py` and `verify_ac.py` will not import in-process was an artefact of the measurement's own loader, which fabricated the module name; all three import cleanly under a bare `import`. The criterion keeps its subject - an enumeration must name what it cannot read - with a synthetic unimportable module as its fixture, and gains the real finding underneath: a loader that fabricates names manufactures failures that are not there |
+| 2026-08-08 | sdlc-studio | Plan review round 1 REJECTed both halves of my own correction. The fabricated-name claim does not reproduce - the reviewer loaded all three named scripts under a fabricated prefix and none raised - so AC2 drops it and uses a synthetic unimportable module, which is what the criterion was always about. And `autosprint.py` is NOT an exception: it re-exports `sprint`'s `build_parser`, so `getattr` finds it and an exact exception list fails on day one. `carry_forward.py` is the only one, asserted both ways |

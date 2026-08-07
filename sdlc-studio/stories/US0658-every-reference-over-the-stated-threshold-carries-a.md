@@ -20,11 +20,15 @@
 
 ### AC1: every reference over the threshold carries a GENERATED Reading Guide
 
-- **Given** the 27 `reference-*.md` files over 400 lines, of which 9 carry a hand-written
-  Reading Guide and 18 carry none - `reference-sprint.md` at 827 lines among them
+- **Given** the 26 `reference-*.md` files over 400 lines, of which exactly THREE carry a Reading
+  Guide today - `reference-cr.md`, `reference-epic.md` and `reference-story.md` - and 23 carry
+  none, `reference-sprint.md` at 827 lines among them
 - **When** `docgen.py reading-guides` runs
-- **Then** all 27 carry one, inside generation markers, and the 9 hand-written ones are replaced
-  by generated equivalents so there is one shape rather than two
+- **Then** all 26 carry one, inside generation markers, and the three hand-written ones are
+  replaced by generated equivalents so there is one shape rather than two. The count is DERIVED
+  from the threshold in the test rather than typed, and pinned by a second assertion that at
+  least one file which previously had none now has one - a derived count alone cannot catch the
+  mutant that generates only where a guide is absent, because every file still carries something
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReadingGuideTests::test_every_reference_over_the_threshold_has_one
 
 ### AC2: each entry carries a LINE SPAN, not only an anchor
@@ -46,25 +50,47 @@
 
 ### AC4: no file is split and no budget is raised to fit the guide
 
-- **Given** the guides add roughly 15 lines to each of 27 files, several already inside the
+- **Given** the guides add roughly 15 lines to each of 26 files, several already inside the
   budget tolerance
 - **When** the budgets are checked afterwards
-- **Then** they pass, because US0657 recorded the ceilings first. Splitting a reference to fit a
-  guide would be the tail wagging the dog, and raising a ceiling to accommodate a generator is
-  the ratchet running backwards
+- **Then** every ceiling equals the value US0657 recorded, asserted against a pinned expected
+  set. Asserting only that the budgets PASS is the wrong direction: raising a ceiling makes them
+  pass more easily, so the mutant this criterion is about would strengthen its own test.
+  Splitting a reference to fit a guide would be the tail wagging the dog, and raising a ceiling
+  to accommodate a generator is the ratchet running backwards
 - **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_the_budgets_pass_with_the_guides_in_place
+
+### AC5: a ceiling justification that names a Reading Guide must have one, and it does
+
+- **Given** `reference-sprint.md`'s budget justification, which asserts a Reading Guide twice
+  over a file that has none
+- **When** `check_budgets.py` runs
+- **Then** a justification naming a Reading Guide is required to have one in the file it
+  justifies, and every justification passes - because this story generated the guides FIRST. The
+  check lands here rather than in US0657 because `check_budgets.py` is a BLOCKING pre-commit
+  lane: a demand that arrives one story before the thing that satisfies it leaves the trunk red
+  in between, and the premise is fixed by making it TRUE rather than by deleting a sentence that
+  is right about what the file needs
+- **And** a positive control beside it: a justification naming a guide over a file that HAS one
+  must PASS. After this story `reference-sprint.md` is the only justification naming a guide, so
+  a checker that matched nothing would pass the refusal test for the wrong reason. The checker
+  and the guides land in ONE commit, since the lane blocks
+- **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_a_justification_naming_a_reading_guide_must_have_one
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | generate a guide only where one is absent, leaving the 9 hand-written ones as a second shape | every reference over the threshold carries one |
+| AC1 | generate a guide only where one is absent, leaving the three hand-written ones as a second shape | every reference over the threshold carries one |
 | AC2 | emit the anchor without the line span | each entry carries a LINE SPAN |
 | AC3 | report no drift when a section has moved | the spans are TRUE of the file |
-| AC4 | raise a ceiling to fit the generated guide | no file is split and no budget is raised |
+| AC4 | raise a ceiling to fit the generated guide, so the budgets pass more easily | no file is split and no budget is raised |
+| AC5 | accept a justification that names a Reading Guide the file does not have | a justification naming a guide must have one |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-08 | sdlc-studio | AC5 arrives from US0657, from the plan-time engineering seat's finding: `check_budgets.py` is a blocking lane, so the demand and the thing that satisfies it must land in one commit or the trunk is red between them |
+| 2026-08-08 | sdlc-studio | Plan review round 1 REJECTed on constants that were mine and wrong: 26 references exceed 400 lines and THREE carry a guide, not 27 and nine - the other six carrying the phrase sit under the threshold and are not the population. AC4's mutant made its own test pass MORE strongly, since raising a ceiling makes the budgets pass, so it asserts the recorded ceilings against a pinned set instead. AC5 gains its positive control and states that the checker and the guides land in one commit |
