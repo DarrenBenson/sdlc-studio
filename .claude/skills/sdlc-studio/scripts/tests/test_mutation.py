@@ -3367,19 +3367,40 @@ class AppliedWhereEnumeratedTests(unittest.TestCase):
             self.assertIn("ENUMERATED", str(caught.exception))
 
     def test_one_routine_counts_for_both_readers(self) -> None:
-        """Mutant: revert the shared routine so each reader has its own loop again - they agree
-        today and drift at the next edit, which is how this survived since c40e9c2c."""
+        """Mutant: revert the shared routine so each reader has its own loop again.
+
+        Asserted STRUCTURALLY - `_occurrences` is patched and both readers are required to move
+        with it - not by the two agreeing. Agreement is what two correct-today implementations
+        produce BY CONSTRUCTION, so an agreement assertion is satisfied by the exact duplication
+        the criterion forbids. An independent review executed both directions against the
+        earlier version of this test and found the declared mutant surviving in each, while the
+        ledger recorded it killed: a false KILLED on the instrument this bug exists to protect.
+        """
         m = _load()
         with tempfile.TemporaryDirectory() as d:
             f = self._file(d, self.DECOY)
             pattern, _ = m.PROFILES[".py"]["invert-guard"]
             lines = f.read_text(encoding="utf-8").splitlines()
             shared = m._occurrences(f, pattern, lines)
-            enumerated = [x["line"] for x in m.enumerate_mutations([f])[0]
-                          if x["class"] == "invert-guard"]
-            self.assertEqual(shared, enumerated,
-                             "the enumerator does not resolve through the shared routine")
+            self.assertTrue(shared, "the fixture matched nothing - this would be vacuous")
             self.assertNotIn(3, shared, "the docstring interior was counted")
+            # READER ONE: the enumerator's answer must come from the shared routine, so a
+            # sentinel it could not have computed itself has to appear in the output.
+            sentinel = [4242]
+            with unittest.mock.patch.object(m, "_occurrences", return_value=sentinel):
+                enumerated = [x["line"] for x in m.enumerate_mutations([f])[0]
+                              if x["class"] == "invert-guard"]
+            self.assertEqual(sentinel, enumerated,
+                             "the enumerator counts for itself rather than resolving through "
+                             "`_occurrences`, so the two readers can drift apart")
+            # READER TWO: `mutated_text` must consult the same routine. Fed a line the pattern
+            # does not sit on, it has to REFUSE - a second private loop would find the real one
+            # and edit happily, which is the disagreement this bug is about.
+            real = m.enumerate_mutations([f])[0]
+            target = next(x for x in real if x["class"] == "invert-guard")
+            with unittest.mock.patch.object(m, "_occurrences", return_value=sentinel):
+                with self.assertRaises(m.MutationAnchorError):
+                    m.mutated_text(target)
 
     def test_an_ordinary_mutant_still_applies_and_kills(self) -> None:
         """THE POSITIVE CONTROL, on a file that DOES carry docstrings - as every file in this

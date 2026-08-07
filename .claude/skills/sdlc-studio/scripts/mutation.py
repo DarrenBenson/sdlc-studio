@@ -201,9 +201,12 @@ def enumerate_mutations(paths, classes: tuple = FAULT_CLASSES) -> tuple[list[dic
             unchecked.extend({"file": str(path), "class": c, "reason": f"unreadable: {exc}"}
                              for c in classes)
             continue
-        excluded: set = set()
         if path.suffix == ".py":
-            excluded, tok_ok = _multiline_string_spans("\n".join(lines) + "\n")
+            # The spans themselves are NOT kept here. `_occurrences` derives them again as the
+            # one place that decides what a match is, and holding a second copy in this scope
+            # is what made "give the enumerator its own loop" a one-line edit - the duplication
+            # this bug exists to remove, left lying beside the fix for it.
+            _, tok_ok = _multiline_string_spans("\n".join(lines) + "\n")
             if not tok_ok:
                 unchecked.append({"file": str(path), "class": "docstring-exclusion",
                                   "reason": "tokenise failed - string-interior "
