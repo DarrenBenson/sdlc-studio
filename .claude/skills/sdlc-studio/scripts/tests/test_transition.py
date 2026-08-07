@@ -914,6 +914,37 @@ class MeasuredEvidenceCLITests(unittest.TestCase):
                                  f"{uid}'s measured evidence was erased by the other unit's "
                                  f"run over the same file:\n{out}")
 
+    def test_a_cross_provenance_pair_does_not_refuse(self) -> None:
+        """The one-provenance scope, asserted rather than assumed. A registered row names the
+        author's prose and a measured one names the generator's fault class, so across the two
+        the join has nothing but the line - and joining on the line alone reads two honest
+        different mutants as the instrument lying, which this branch cannot afford because it
+        ignores the mode by design.
+
+        That the cross-provenance case IS worth catching is not in dispute; it needs a recorded
+        fault class, which is filed. What must not happen is a refusal composed from a
+        comparison nobody can make.
+
+        Mutant: drop the provenance from the contradiction key.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            # The two rows name the SAME text, which is the only way this fixture can see the
+            # provenance term at all: with different names they never collide and the term
+            # decides nothing. An author CAN type the generator's class name, and even then the
+            # two are not comparable - a registered row is a claim about an edit somebody made
+            # by hand and a measured one is a verdict on the generator's own mutant, and
+            # nothing says they are the same mutant. That comparison needs a recorded fault
+            # class, which is filed rather than guessed at.
+            root = _lane_repo(d, mode="off", record="current", mutants=[
+                {"unit": "BG0001", "criterion": "AC1", "verdict": "killed", "line": 4,
+                 "mutant": "stub-return-null", "test": "pytest x"}])
+            self._measured(root, verdicts=(("survived", 4),), mutant="stub-return-null")
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
+            self.assertEqual(0, code,
+                             "a registered row and a measured row were read as one instrument "
+                             f"contradicting itself, which they are not:\n{out}")
+            self.assertNotIn("CONTRADICTS", out)
+
     def test_the_refusal_quotes_the_registered_line(self) -> None:
         """AC6. The survivor listing composes `target:line`, and before `register --line` no
         shipped verb could write one - so it printed a question mark, and every test asserting
@@ -1203,6 +1234,41 @@ class SurvivorSeverityTests(unittest.TestCase):
                                  f"{sev}, not {expected}")
                 self.assertTrue(signal.strip(),
                                 "the severity names no signal, so nothing can be disagreed with")
+
+    #: Bodies that genuinely DO have a None path, with the line to probe. Each is High: without
+    #: them the terminality rule can be widened until it says everything terminates, and every
+    #: HONEST_MEDIUM fixture above would still pass.
+    HONEST_HIGH = {
+        "a for-else whose body breaks past the else": (
+            "def decide(a, b):\n    for x in a:\n        if x:\n            break\n"
+            "        return x\n    else:\n        return b\n", 5),
+        "a for-else whose body does not terminate": (
+            "def decide(a, b):\n    for x in a:\n        print(x)\n    else:\n"
+            "        return b\n", 3),
+        "a match with no catch-all": (
+            "def decide(a, b):\n    match a:\n        case 1:\n            return 1\n"
+            "        case 2:\n            return 2\n", 4),
+    }
+
+    def test_a_body_that_really_can_yield_none_derives_high(self) -> None:
+        """The other side of the signal, and without it the terminality rule can be widened
+        until it claims everything terminates - every Medium fixture above would still pass.
+
+        Mutant: treat a for-else as terminating whatever its body does.
+        Mutant: drop the break check, so a body that jumps past the else counts as terminating.
+        Mutant: drop the catch-all requirement from the match rule.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "src").mkdir(parents=True)
+            for name, (body, line) in self.HONEST_HIGH.items():
+                with self.subTest(body=name):
+                    (root / "src" / "thing.py").write_text(body, encoding="utf-8")
+                    sev, signal = tr._survivor_severity(
+                        str(root), {"target": "src/thing.py", "line": line})
+                    self.assertEqual("High", sev,
+                                     f"{name} derived {sev} with the signal {signal!r}, but a "
+                                     f"None path really does exist in that body")
 
     def test_an_unparseable_file_is_medium_and_says_so(self) -> None:
         """Never High, which inflates triage on a file nobody could read; never Low, which

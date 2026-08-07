@@ -2879,6 +2879,26 @@ class MutationSurvivorCountTests(unittest.TestCase):
             self.assertIn("Low 1", value)
             self.assertTrue(detail.strip(), "the row states no reason a reader can act on")
 
+    def test_a_survivor_filed_with_no_run_open_is_reported_not_dropped(self) -> None:
+        """Scoping the count to a run must not become a new way of losing one. A survivor filed
+        outside a run is stamped `none` and belongs to no close, so it is REPORTED separately
+        rather than skipped.
+
+        Mutant: skip the unstamped artefacts silently, as the first cut did.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, "BG9001", "High", "BG0001@src/thing.py:2:x")
+            self._bug(root, "BG9002", "Low", "BG0002@src/other.py:4:y", run="none")
+            state, value, detail = sr._ck_mutation_survivors(
+                {"root": str(root), "run": {"run_id": self.RUN}})
+            self.assertEqual(sr.RAN, state)
+            self.assertIn("1 survivor(s)", value)
+            self.assertIn("no run open", value,
+                          f"a survivor belonging to no close was dropped rather than "
+                          f"reported: {value}")
+            self.assertTrue(detail.strip())
+
     def test_a_backlog_with_no_survivors_reports_zero(self) -> None:
         """The control. An ordinary bug carrying no survivor attribution must not be counted,
         or the row reports the backlog's size and says nothing about this run."""

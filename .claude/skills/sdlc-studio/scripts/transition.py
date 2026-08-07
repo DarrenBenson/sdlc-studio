@@ -1510,9 +1510,11 @@ def _terminates(body) -> bool:
     if isinstance(tail, (ast.With, ast.AsyncWith)):
         return _terminates(tail.body)
     if isinstance(tail, (ast.For, ast.AsyncFor)):
-        # A `for` may run zero times, so only its `else` can be relied on - and the loop body
-        # can `break` past the `else`, which is why the body has to terminate too.
-        return bool(tail.orelse) and _terminates(tail.body) and _terminates(tail.orelse)
+        # A `for` may run zero times, so only its `else` can be relied on. And a `break` in the
+        # body jumps PAST the `else`, so a body that can break has an escape the `else` never
+        # sees - checking only that the body's last statement terminates missed exactly that.
+        return (bool(tail.orelse) and not _breaks_this_loop(tail)
+                and _terminates(tail.body) and _terminates(tail.orelse))
     if getattr(ast, "Match", None) and isinstance(tail, ast.Match):
         # Every case terminates AND one of them is a catch-all, or the match can fall through
         # having matched nothing.
@@ -1996,20 +1998,26 @@ def _mutant_identity(mu: dict) -> str:
     """What was applied, normalised enough to join a measured row to a registered one.
 
     A measured row names its FAULT CLASS (`stub-return-null`); a registered one names the edit
-    in the author's own words. Neither is the other, so the join is on the normalised text and a
-    registered mutant that names its class joins the measured row for that class. Anything else
-    is a different mutant, which is the point: two different mutants at one line are two honest
-    statements, not the instrument contradicting itself.
+    in the author's own words. Neither is the other and nothing relates them, so this joins
+    rows of ONE provenance only - see `_ledger_contradiction`. Two different mutants at one
+    line are two honest statements, not the instrument contradicting itself.
     """
     return " ".join(str(mu.get("mutant") or "").lower().split())
 
 
 def _ledger_contradiction(root, uid: str) -> str | None:
-    """A mutant recorded `killed` and MEASURED `survived` at the same target, line and hash.
+    """ONE instrument recording one mutant twice, at the same target, line and content hash,
+    with opposite verdicts.
 
     Not a quality bar - the instrument reporting two different things about one fact. It refuses
     under `off` as well, which no other row here does, because `off` is a decision about whether
     mutation evidence holds a transition, not permission for the ledger to be false.
+
+    SAME PROVENANCE ONLY, because that is what the ledger can decide: a measured row names a
+    fault class and a registered one names the author's prose, so across the two the join has
+    nothing but the line - and joining on the line alone reads two honest different mutants as
+    a contradiction. The cross-provenance case is the more valuable one and it is filed rather
+    than guessed at; it needs `register` to record a fault class.
     """
     try:
         import mutation  # noqa: PLC0415

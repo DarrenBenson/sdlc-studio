@@ -1843,7 +1843,7 @@ class LedgerUnreadable(RuntimeError):
 
 
 def ledger_entries(root: Path | str) -> list[dict]:
-    """Every entry in the mutation ledger, or an empty list when it cannot be read.
+    """Every entry in the mutation ledger. RAISES `LedgerUnreadable` on a malformed one.
 
     A real function rather than a guessed one. `repair_mutation_gate` called it behind
     `hasattr(mutation, "ledger_entries")`, which was False for the whole of its life - so the
@@ -1857,9 +1857,10 @@ def ledger_entries(root: Path | str) -> list[dict]:
         # the check that refuses in every mode - `off` included - silently pass exactly when the
         # instrument was unreadable. `_load_ledger` reports the replacement; the callers just
         # never saw it.
-        raise LedgerUnreadable(f"{ledger_path(Path(root))} was malformed and has been replaced "
-                               f"- its previous contents are gone, so nothing can be checked "
-                               f"against them")
+        raise LedgerUnreadable(
+            f"{ledger_path(Path(root))} could not be parsed, so nothing can be checked against "
+            f"it. The file is left exactly as it is - a reader does not get to destroy the "
+            f"evidence it failed to read; the next WRITE replaces it and says so")
     return [e for e in (state.get("entries") or []) if isinstance(e, dict)]
 
 
@@ -2019,6 +2020,12 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
         entries.remove(entry)              # re-appended below, so the newest entry sorts last
         entry["git_rev"] = _git_rev(root)
         entry["generated_at"] = record["at"]
+    # NOT superseded by a later registration for the same mutant, though a review round asked
+    # for it. `plan_execution` holds the opposite rule deliberately - the WORST verdict per
+    # criterion wins, so a later kill cannot cancel an earlier survivor - and that rule exists
+    # because a genuine correction and an author registering their way out of a survivor are
+    # byte-identical here. Making the correction cheap would make the escape cheap with it.
+    # The cost is real and recorded rather than traded away: see the bug filed on it.
     entry.setdefault("mutants", []).append(record)
     entry["summary"]["applied"] += 1
     # setdefault, not [verdict] += 1: an entry written before this verdict existed has no such
