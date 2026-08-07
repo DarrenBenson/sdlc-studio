@@ -644,6 +644,88 @@ def _slice_rule(text: str) -> str:
     return rest[: len(m.group(0)) + end.start()] if end else rest
 
 
+def _defined_functions(source: str) -> set:
+    """Every function `source` DEFINES, by AST."""
+    import ast
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set()
+    return {n.name for n in ast.walk(tree)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+
+
+def _doctrine_lane_names(doctrine: str, source: str) -> set:
+    """The mechanisms rule 21 NAMES that `source` actually DEFINES.
+
+    Two independent sources, and neither is the property under test. The doctrine supplies the
+    claim; the module supplies which of the backticked tokens in it are functions rather than
+    mode values (`report`, `block`, `off`), config keys or filenames. What the guard then asks
+    is whether each is REACHED - and defining a function and reaching it are different
+    properties, which is the entire content of BG0541: `repair_mutation_gate` was defined,
+    tested and called by nothing while the doctrine said it refused.
+
+    So this is not the circularity round 2 rejected. That was a set derived from the predicate's
+    own reachability walk, which narrows exactly when the predicate narrows. This one does not
+    move when the ladder changes; it moves only when the doctrine stops naming a mechanism or
+    the module stops defining one, and the cardinality floor beside it catches both.
+    """
+    passage = _slice_rule(doctrine)
+    named = set(re.findall(r"`([A-Za-z_][A-Za-z0-9_]*)`", passage))
+    return named & _defined_functions(source)
+
+
+def _calls_within(source: str, func: str) -> set:
+    """Every name called inside `func`'s body, by AST rather than by substring.
+
+    A substring search over a function's text cannot tell a call from a mention in a docstring,
+    and every one of these names appears in prose somewhere in the module.
+    """
+    import ast
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == func:
+            out = set()
+            for sub in ast.walk(node):
+                if isinstance(sub, ast.Call):
+                    fn = sub.func
+                    if isinstance(fn, ast.Name):
+                        out.add(fn.id)
+                    elif isinstance(fn, ast.Attribute):
+                        out.add(fn.attr)
+            return out
+    return set()
+
+
+def _lanes_are_reachable(source: str, lanes: set) -> bool:
+    """Is every named lane reached from `_pre_write_gates`, directly or through one hop?
+
+    One hop, because the composition is the design: `_pre_write_gates` calls
+    `mutation_evidence_lane`, which calls the gates beneath it. A predicate demanding a direct
+    call would force the ladder to inline the composition to stay green, which is the guard
+    dictating the shape rather than checking the claim.
+    """
+    entry = _calls_within(source, "_pre_write_gates")
+    reached = set(entry)
+    for name in entry:
+        reached |= _calls_within(source, name)
+    return lanes <= reached
+
+
+def _drop_call(source: str, name: str) -> str:
+    """`source` with every statement calling `name` removed, for the doctored corpus.
+
+    Line-wise and deliberately crude: it only has to produce a source in which the call is
+    absent, and it asserts nothing about what else survives - the predicate re-parses it.
+    """
+    kept = [ln for ln in source.splitlines(keepends=True)
+            if f"{name}(" not in ln or ln.lstrip().startswith(("#", '"', "'", "def "))]
+    return "".join(kept)
+
+
 class DoctrineTests(unittest.TestCase):
     def test_doctrine_states_the_rule_and_names_the_enforcing_gate(self) -> None:
         """A reader must arrive at a MECHANISM, not at advice.
@@ -699,9 +781,21 @@ class DoctrineTests(unittest.TestCase):
         """
         dod = DOD.read_text(encoding="utf-8")
         story = dod[dod.index("## Story"): dod.index("## Delivery batch")]
-        self.assertIn("repair", story.lower(), "the Story contract carries no repair clause")
-        self.assertIn("mutant", story.lower(),
-                      "the clause does not name the evidence the gate demands")
+        # Anchored on the CLAUSE, not on the section: `repair` and `mutant` both appear
+        # elsewhere in the Story contract, so a whole-section substring check survived a mutant
+        # that gutted the clause itself. Found by applying that mutant rather than by reading.
+        clause = next((ln for ln in story.splitlines() if "REPAIR" in ln), "")
+        self.assertTrue(clause, "the Story contract carries no repair clause")
+        tail = story[story.index(clause):] if clause else ""
+        tail = tail[:tail.index("- [ ]", len(clause))] if "- [ ]" in tail[len(clause):] else tail
+        self.assertIn("mutant was applied", tail,
+                      "the clause does not demand the evidence the gate reads - it names the "
+                      "repair class and asks for nothing")
+        self.assertIn("changed lines", tail,
+                      "the clause does not scope the evidence to the repair's own change")
+        self.assertIn("block", tail,
+                      "the clause states a bar without naming the setting that makes it one, "
+                      "so a project cannot tell what it is being held to")
         # Tool-neutral and untagged: a consuming project copies this file, so an id that means
         # something only in THIS repo is noise there, and the house style refuses it.
         tags = re.findall(r"\((?:US|CR|BG|RFC|EP|RV)\d{3,4}[^)]*\)", story)
@@ -729,6 +823,85 @@ class DoctrineTests(unittest.TestCase):
                       "mechanism that does not exist")
         self.assertIn("review.test_plan_after", transition,
                       "the gate the doctrine names is not the one transition.py reads")
+
+    def test_removing_any_lane_the_doctrine_names_reddens_the_guard(self) -> None:
+        """Every mechanism rule 21 NAMES must be reachable from the gate ladder, not merely
+        defined. The whole of BG0541 is that `repair_mutation_gate` was defined, tested, and
+        called by nothing, while the doctrine told consuming projects it refused.
+
+        Three properties, and the second is the one that took three review rounds to get right:
+
+          1. the real source is wired - the positive control;
+          2. removing ANY ONE named lane's call reddens the predicate. The removal set comes
+             from the DOCTRINE, never from the predicate's own derived set: a set the predicate
+             computes narrows when the predicate narrows, so the mutant `pin this to one lane`
+             would leave the loop still red and survive. The doctrine is the text making the
+             claim, so checking the claim against the code is what this guard is for;
+          3. a floor of THREE lanes, so a doctrine passage edited down to one mechanism cannot
+             quietly satisfy the loop either. Both ends have to be pinned or the pair can be
+             satisfied by shrinking whichever end is not.
+
+        Mutant: narrow `_wired_lanes` to a single hard-coded name - this reddens on the floor.
+        Mutant: delete the `mutation_evidence_lane` call from `_pre_write_gates` - this reddens
+        on the loop, and it is the state of the tree BG0541 was filed against.
+        """
+        transition = (ROOT / ".claude/skills/sdlc-studio/scripts/transition.py").read_text(
+            encoding="utf-8")
+        lanes = _doctrine_lane_names(DOCTRINE.read_text(encoding="utf-8"), transition)
+        self.assertGreaterEqual(
+            len(lanes), 3,
+            f"rule 21 names {len(lanes)} mechanism(s) - {sorted(lanes)}. The floor is three: a "
+            f"passage edited down to one satisfies the reachability loop below without any "
+            f"mechanism being reached")
+        self.assertTrue(_lanes_are_reachable(transition, lanes),
+                        f"the positive control fails: {sorted(lanes)} are named by rule 21 and "
+                        f"not all reachable from _pre_write_gates")
+        for lane in sorted(lanes):
+            doctored = _drop_call(transition, lane)
+            self.assertNotEqual(doctored, transition,
+                                f"no call to {lane} was found to remove, so the mutant cannot "
+                                f"be applied and the loop proves nothing about it")
+            self.assertFalse(
+                _lanes_are_reachable(doctored, lanes),
+                f"removing every call to {lane} leaves the guard green - a mechanism the "
+                f"doctrine names can be unreached without this test noticing, which is "
+                f"precisely the state BG0541 was filed against")
+
+    def test_the_doctrine_names_the_mode_that_restores_refusal(self) -> None:
+        """US0567 AC5: a project that read this rule as a refusal is owed the sentence saying
+        the default changed.
+
+        A documented block quietly becoming a documented report lowers a bar on somebody else's
+        project without their knowing. The passage therefore has to state which of the three
+        modes an unset project gets, and name the one that restores what it used to promise.
+
+        Mutant: state the three modes without marking which is the default - a reader then has
+        to guess whether their existing project still refuses.
+        Mutant: drop `review.mutation_evidence` from the passage - the rule changes direction
+        with no way to change it back.
+        """
+        passage = _slice_rule(DOCTRINE.read_text(encoding="utf-8"))
+        self.assertIn("review.mutation_evidence", passage,
+                      "the rule states no setting, so a project cannot choose its consequence")
+        for mode in ("report", "block", "off"):
+            with self.subTest(mode=mode):
+                self.assertIn(f"`{mode}`", passage, f"the rule does not name the {mode} mode")
+        self.assertRegex(passage, r"`report`[^\n]*default|default[^\n]*`report`",
+                         "the rule names three modes without saying which one a project that "
+                         "sets nothing gets, so an existing reader cannot tell whether their "
+                         "bar moved")
+        # The upgrade sentence itself, not an ordering accident: a reader who installed an
+        # earlier version must be told, in one place, that the default moved and what to set to
+        # move it back. Asserted on the two things that sentence has to carry.
+        upgrade = next((ln for ln in passage.splitlines()
+                        if "no longer" in ln or "earlier version" in ln), "")
+        self.assertTrue(upgrade,
+                        "the rule states three modes but never tells a project that installed "
+                        "an earlier version that the default changed under it")
+        after = passage[passage.index(upgrade):]
+        self.assertIn("`review.mutation_evidence: block`", after,
+                      "the upgrade note does not name the setting that restores the refusal "
+                      "this rule used to describe")
 
     def test_the_carried_lesson_cites_the_gate(self) -> None:
         """The lesson must POINT at the doctrine and the enforcing verb, not restate their terms.

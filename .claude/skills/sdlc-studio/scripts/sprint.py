@@ -5218,6 +5218,35 @@ def _findings_outside_batches(root, spans) -> int:
     return outside
 
 
+def mutation_evidence_note(root) -> tuple[bool, str]:
+    """`(ok, sentence)` - which mutation-evidence mode held this run, named in the close.
+
+    A project that set nothing gets `report`, and it should learn that from the close rather
+    than from the source: the default decides whether a survivor stopped the run or landed in
+    the backlog, which is the difference the operator chose between.
+
+    An UNRECOGNISED value is refused by name and the close does not proceed on a guess. A typo
+    is the one case where defaulting is actively wrong - a project that wrote `blcok` asked for
+    a hard bar, and silently handing it the reporting default switches that bar off with
+    nothing said.
+    """
+    try:
+        import mutation  # noqa: PLC0415 - deferred, like the chain's sibling imports
+        mode = mutation.evidence_mode(root)
+    except ValueError as exc:
+        return (False, str(exc))
+    except Exception as exc:  # noqa: BLE001 - a note that cannot be composed must not pass
+        return (False, f"the mutation-evidence mode could not be read: "
+                       f"{type(exc).__name__}: {exc}")
+    explain = {"report": "a surviving mutant was FILED as a severity-rated bug and the "
+                         "transition proceeded",
+               "block": "a surviving or missing mutant REFUSED the transition",
+               "off": "the mutation-evidence lane stood down"}[mode]
+    stated = "set by this project" if sdlc_md.project_override(
+        root, "review.mutation_evidence", None) is not None else "the default, unset here"
+    return (True, f"mutation evidence: `{mode}` ({stated}) - {explain}")
+
+
 def _close_checklist(root, retro, state):
     """The compulsory checklist, as a chain step. Refuses on an unanswered item, naming it.
 
@@ -5257,16 +5286,24 @@ def _close_checklist(root, retro, state):
                 + " ruled STOP-SHIP in the retro's carried-issues table" + past,
                 "fix the finding, or have the ruler revise the ruling in the retro - a close "
                 "that proceeds over a stop-ship ruling makes every future ruling a note")
+    mode_ok, mode_note = mutation_evidence_note(root)
+    if not mode_ok:
+        return (False, mode_note,
+                "name one of report, block or off - refused rather than defaulted, because a "
+                "project that typed this asked for something and guessing which is how a hard "
+                "bar gets switched off by a typo nobody sees")
     if not ck["outstanding"]:
         pending = (f"; {len(ck['pending_in_close'])} item(s) this close discharges itself"
                    if ck.get("pending_in_close") else "")
         return (True,
-                f"{len(ck['items'])} compulsory item(s), none outstanding{pending}{past}", "")
+                f"{len(ck['items'])} compulsory item(s), none outstanding{pending}{past}"
+                f"; {mode_note}", "")
     named = [r for r in ck["items"] if r["id"] in set(ck["outstanding"])]
     detail = "\n".join(f"  {r['id']}: {r['title']} - {r['value']}"
                        + (f"\n      {r['detail']}" if r["detail"] else "") for r in named)
     return (False,
-            f"{len(named)} compulsory checklist item(s) unanswered{past}:\n{detail}",
+            f"{len(named)} compulsory checklist item(s) unanswered{past}; {mode_note}:"
+            f"\n{detail}",
             "answer each item by running the stage it names, or record a waiver naming it and "
             "why (`decisions.py waive --subject "
             f"{sprint_report.WAIVER_SUBJECT}:<item> --rationale '<why>'`) - closing without an "

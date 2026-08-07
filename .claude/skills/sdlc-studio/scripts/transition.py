@@ -169,31 +169,6 @@ def _acs_missing_evidence(text: str) -> tuple[list[str], list[str], str | None]:
     return bare_manual, bare_unspecified, None
 
 
-def _config_unparseable(cfg: Path) -> bool:
-    """True only when `.config.yaml` exists and genuinely cannot be READ or PARSED.
-
-    Tests the actual condition rather than inferring it from `project_override` returning None -
-    which a perfectly valid config that simply does not set the key returns too, so inferring
-    from it refuses projects that never adopted the rule. PyYAML being ABSENT is not this
-    condition: that stands the whole config down and is already warned about loudly at every
-    read, and turning it into a per-transition refusal would break the documented
-    PyYAML-less path rather than close a hole.
-    """
-    try:
-        raw = cfg.read_text(encoding="utf-8")
-    except (OSError, ValueError):
-        return True                      # a directory, a permissions error, non-UTF-8 bytes
-    try:
-        import yaml  # noqa: PLC0415
-    except ImportError:                  # pragma: no cover - documented degraded path
-        return False
-    try:
-        yaml.safe_load(raw)
-    except Exception:  # noqa: BLE001 - any parse fault means the bar cannot be established
-        return True
-    return False
-
-
 def _two_role_gate(root: Path, rid: str) -> str | None:
     """The two-role bar, asked by the verb that WRITES `Status: Done`. Block reason, or None.
 
@@ -227,7 +202,7 @@ def _two_role_gate(root: Path, rid: str) -> str | None:
     # one layer up in the gate written to close it. A project that DECLARES the rule and then
     # cannot be read has not waived it.
     cfg = root / "sdlc-studio" / ".config.yaml"
-    if cfg.exists() and _config_unparseable(cfg):
+    if cfg.exists() and sdlc_md.config_unparseable(cfg):
         return (f"`{cfg.name}` exists but could not be parsed, so the two-role cutoff is "
                 f"UNKNOWN - an unreadable bar is not a passed one. Fix the config, then retry; "
                 f"`--force` overrides")
@@ -948,20 +923,23 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         # with the answer in hand. A blanket demand on all work is the one that gets switched
         # off wholesale, and then it holds nothing.
         repair, why = is_repair_unit(type_, text)
-        uid = sdlc_md.norm_id(artifact_id)
         if repair:
-            record = no_surface_record(root, uid)
-            if record:
-                # The exemption is RE-DERIVED, never granted on the author's word. An exemption
-                # nobody checks is a box, and this one exempts a unit from the only evidence its
-                # author could not have manufactured.
-                refusal = verify_no_surface_claim(root, uid, record)
-                if refusal:
-                    blocks.append(f"{refusal}. Override with --force")
-            else:
-                block = _planned_mutant_gate(root, uid)
-                if block:
-                    blocks.append(f"{block} ({why}). Override with --force")
+            block = _planned_mutant_gate(root, sdlc_md.norm_id(artifact_id))
+            if block:
+                blocks.append(f"{block} ({why}). Override with --force")
+    # THE MUTATION-EVIDENCE LANE, and it is deliberately NOT nested inside the condition above.
+    # The two ask different questions - "was every PLANNED row executed" against "does this
+    # repair's changed surface carry evidence" - and they are governed by different settings.
+    # Hanging this inside `_plan_gate_active` would make `review.mutation_evidence: block` inert
+    # in every project that never set `review.test_plan_after`, while a fixture setting both went
+    # green: BG0541's own defect, recreated one level in. Sequential, so the exemption arm also
+    # stops silently waiving the planned-mutant gate beside it.
+    if not force and target_canon in _TERMINAL_FOR_PLAN:
+        lane = mutation_evidence_lane(root, sdlc_md.norm_id(artifact_id), text, type_)
+        for block in lane["blocks"]:
+            blocks.append(f"{block}. Override with --force")
+        if lane["warning"]:
+            gate_warn = f"{gate_warn}; {lane['warning']}" if gate_warn else lane["warning"]
     if type_ == "story" and target_canon == "Done":
         parity = _story_target_parity(text)
         if parity:
@@ -972,7 +950,13 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             if sdlc_md.project_override(root, "quality.depth_parity_gate", False) and not force:
                 blocks.append(f"{parity}. Override with --force")
             else:
-                gate_warn = f"depth-parity advisory: {parity}"
+                # ACCUMULATED, as this function's docstring says and as the AC-verify arm below
+                # already does. It was a plain assignment, so whichever advisory fired first was
+                # silently discarded and which survived depended on statement order.
+                # Found while wiring the mutation lane above, whose only reporting path this
+                # would have thrown away.
+                warn = f"depth-parity advisory: {parity}"
+                gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
     if type_ == "story" and not force and target_canon == "Done":
         # Asked HERE, by the verb that writes the status, rather than only by a lane that runs
         # afterwards. `--force` still overrides and is still recorded, on the same terms as
@@ -1279,8 +1263,172 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         if bypassed:
             new_text, result["forced_override"] = _record_force_override(
                 new_text, bypassed, result["id"], new_status)
-    return _post_write_sync_and_record(root, type_, path, new_text, result, current,
-                                       new_status, vocab, gate_warn, metrics)
+    out = _post_write_sync_and_record(root, type_, path, new_text, result, current,
+                                      new_status, vocab, gate_warn, metrics)
+    # SURVIVOR FILING, and it happens HERE for one reason: `_pre_write_gates` runs up to three
+    # times per `set` - the dry-run preflight, the real transition, and the force-bypass re-run
+    # with force off - so a filing inside the gate mints two or three artefacts from one
+    # command, and the preflight pass would write during what is contractually a dry run. This
+    # is past the `if dry_run: return` above, so a dry run predicts the filing and mints
+    # nothing.
+    if not force and target_canon in _TERMINAL_FOR_PLAN:
+        filed = _file_surviving_mutants(root, sdlc_md.norm_id(artifact_id), text, type_)
+        if filed:
+            out["survivors_filed"] = filed
+    return out
+
+
+#: Stamped on a filed survivor bug, and read back as the idempotence key. On the ARTEFACT
+#: rather than in a `.local` cache: a cache loss re-mints, and the finding is then in the
+#: backlog twice with nothing saying which is which. It also stops the generational hazard -
+#: a survivor filed against a survivor bug, for ever - because a unit carrying this field
+#: never files another.
+SURVIVOR_FIELD = "Mutation-survivor"
+
+
+def _file_surviving_mutants(root, uid: str, text: str, type_: str) -> list[str]:
+    """File each surviving mutant as a severity-rated bug. Returns the ids that now exist.
+
+    The operator's decision: a survivor is a finding to price, not a bar to clear.
+    Reporting rather than blocking is only an honest trade if the thing traded away lands
+    somewhere a person will see it, so it lands in the backlog rather than in a terminal
+    window that closes.
+    """
+    try:
+        import mutation  # noqa: PLC0415
+        if mutation.evidence_mode(root) != "report":
+            return []
+    except (ValueError, ImportError):
+        return []
+    if sdlc_md.extract_field(text, SURVIVOR_FIELD):
+        # A survivor bug never parents another. Without this the first filed finding is itself
+        # a repair with no mutation evidence, which files a second, and so on for ever.
+        return []
+    survivors = _survivor_records(root, uid)
+    if not survivors:
+        return []
+    import file_finding  # noqa: PLC0415
+    filed = []
+    for mu in survivors:
+        existing = _existing_survivor_bug(root, uid, mu)
+        if existing:
+            filed.append(existing)
+            continue
+        severity, signal = _survivor_severity(root, mu)
+        target, line = mu.get("target"), mu.get("line")
+        res = file_finding.file_finding(root, "bug", (
+            f"a mutant survives at {target}:{line} - {mu.get('mutant') or 'unnamed'} "
+            f"is not pinned by the test {uid} closed on"), {
+            "severity": severity,
+            "points": 2,
+            "affects": f"{target}, {mu.get('test') or '(no test recorded)'}",
+            "summary": (
+                f"{uid} reached a terminal status carrying a SURVIVING mutant. "
+                f"`{mu.get('mutant') or 'the mutant'}` was applied at {target}:{line} and "
+                f"{mu.get('test') or 'the recorded test'} stayed green, so nothing pins the "
+                f"behaviour that line implements. The finding is about the TEST, not the code: "
+                f"an assertion is missing for what the mutant changed.\n\n"
+                f"Filed rather than blocked, under `review.mutation_evidence: report`. Fix it, "
+                f"or decide to live with it - but decide, rather than not knowing.\n\n"
+                f"Severity {severity} was DERIVED: {signal}."),
+            "steps": (f"1. Apply `{mu.get('mutant') or 'the mutant'}` at {target}:{line}. "
+                      f"2. Run {mu.get('test') or 'the unit test for that behaviour'}. "
+                      f"3. It stays green."),
+            "fix": (f"Add the assertion the mutant escapes, then re-register: "
+                    f"`mutation.py register --unit {uid} --criterion "
+                    f"{mu.get('criterion') or 'ACn'} --target {target} --line {line} "
+                    f"--mutant '<the edit>' --test '<the command>' --verdict killed`"),
+        })
+        # The idempotence key is stamped on the ARTEFACT, upserted after the filer wrote it -
+        # a `.local` cache re-mints on cache loss, and the finding is then in the backlog twice
+        # with nothing saying which is which.
+        p = Path(res["path"])
+        p.write_text(_upsert_field(p.read_text(encoding="utf-8"), SURVIVOR_FIELD,
+                                   _survivor_key(uid, mu)), encoding="utf-8")
+        filed.append(res["id"])
+    return filed
+
+
+def _survivor_key(uid: str, mu: dict) -> str:
+    """The idempotence key, stamped on the filed artefact. Target, line and mutant - the three
+    things that make one survivor a different finding from another on the same file."""
+    return f"{uid}@{mu.get('target')}:{mu.get('line')}:{mu.get('mutant') or 'unnamed'}"
+
+
+def _existing_survivor_bug(root, uid: str, mu: dict) -> str | None:
+    """The id of a bug already filed for this survivor, or None.
+
+    Read off the ARTEFACTS, so a lost cache cannot re-mint what is already in the backlog.
+    """
+    key = _survivor_key(uid, mu)
+    bugs = Path(root) / "sdlc-studio" / "bugs"
+    if not bugs.is_dir():
+        return None
+    for f in sorted(bugs.glob("BG*.md")):
+        try:
+            body = f.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if (sdlc_md.extract_field(body, SURVIVOR_FIELD) or "").strip() == key:
+            return sdlc_md.extract_record_id(f.stem)
+    return None
+
+
+def _survivor_severity(root, mu: dict) -> tuple[str, str]:
+    """`(severity, the structural signal it was read from)`, by AST.
+
+    Structural rather than keyword-matched, and it RETURNS ITS REASON, because a severity with
+    no stated basis is a verdict triage cannot disagree with:
+
+      * **High** - the enclosing function raises, or returns a value on one path and `None` on
+        another. That is this codebase's refusal idiom, so an unpinned line there is an unpinned
+        decision about whether to refuse.
+      * **Medium** - any other function body: a reporting path.
+      * **Low** - module level, or a non-Python target: no decision to get wrong.
+
+    An unparseable file is **Medium, stated as underived**. Never High, which would inflate
+    triage on a file nobody could read; never Low, which would bury it. `Critical` is never
+    derived - the one machine-decidable critical case is the self-contradicting ledger, and
+    that blocks instead of being filed.
+    """
+    import ast
+    target = Path(root) / str(mu.get("target") or "")
+    line = mu.get("line")
+    if target.suffix != ".py" or not target.is_file() or not line:
+        return "Low", f"{mu.get('target')} is not a Python line, so no branch depends on it"
+    try:
+        tree = ast.parse(target.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, ValueError) as exc:
+        return "Medium", (f"the severity is UNDERIVED - {target.name} could not be parsed "
+                          f"({type(exc).__name__}). Medium by default rather than High, which "
+                          f"would inflate triage, or Low, which would bury it")
+    enclosing = None
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        end = getattr(node, "end_lineno", None) or node.lineno
+        if node.lineno <= int(line) <= end:
+            if enclosing is None or node.lineno > enclosing.lineno:
+                enclosing = node                      # innermost wins
+    if enclosing is None:
+        return "Low", "the line is at module level, so no branch depends on it"
+    raises = any(isinstance(n, ast.Raise) for n in ast.walk(enclosing))
+    returns = [n for n in ast.walk(enclosing) if isinstance(n, ast.Return)]
+    valued = any(r.value is not None for r in returns)
+    # A path that yields None: an explicit bare `return`, or a body that can fall off its end.
+    # `len(returns) < 2` was the first cut and it was wrong - it fired on every single-return
+    # function, so the Medium fixture derived High. Falling through is the structural fact:
+    # a body whose last statement returns or raises has no implicit-None path at all.
+    tail = enclosing.body[-1] if enclosing.body else None
+    falls_through = not isinstance(tail, (ast.Return, ast.Raise))
+    bare = any(r.value is None for r in returns) or falls_through
+    if raises:
+        return "High", (f"`{enclosing.name}` raises on at least one path, so an unpinned line "
+                        f"in it is an unpinned decision about whether to refuse")
+    if valued and bare:
+        return "High", (f"`{enclosing.name}` returns a value on one path and None on another - "
+                        f"this codebase's refusal idiom - so the mutant may have changed which")
+    return "Medium", f"`{enclosing.name}` reports rather than refuses, so no gate turns on it"
 
 
 def _print_result(res: dict, dry_run: bool) -> None:
@@ -1480,7 +1628,7 @@ def _plan_gate_active(root, text: str) -> bool:
     # this exact case with the helper below, and its comment enumerates the same four shapes -
     # the repair reached parity with that gate's LEDGER half and skipped its CONFIG half.
     cfg = Path(root) / "sdlc-studio" / ".config.yaml"
-    if cfg.exists() and _config_unparseable(cfg):
+    if cfg.exists() and sdlc_md.config_unparseable(cfg):
         return True          # in scope, and `_test_plan_gate` will report why it cannot judge
     after = sdlc_md.project_override(root, "review.test_plan_after", None)
     if not after:
@@ -1562,32 +1710,188 @@ def no_surface_record(root, unit: str) -> dict | None:
         return None
 
 
-def verify_no_surface_claim(root, unit: str, record: dict) -> str | None:
+def verify_no_surface_claim(root, unit: str, record: dict, text: str = "") -> str | None:
     """Re-derive the claim rather than trusting it. Returns a refusal, or None when it holds.
 
     An exemption nobody checks is a box, and this one exempts a unit from the only evidence its
-    author could not have manufactured. So the paths it names are put through the mutation
-    generator: if a mutant CAN be produced there, the claim is false and the transition is
-    refused naming the file that refutes it.
+    author could not have manufactured.
+
+    THE SCOPE IS THE DIFF, and ONLY the diff. Re-deriving over the author's own declaration
+    checks that the author was consistent with themselves, which is not a check at all: a
+    hand-written record naming `README.md` exempted a repair whose `Affects` was a mutatable
+    module, because the generator dutifully found nothing in the markdown file it was handed.
+
+    `Affects` is deliberately NOT intersected in, though the first draft did exactly that. A
+    declaration can only ever SHRINK the derived surface, so intersecting it hands the author
+    back the same fail-open one step over: mis-declare `Affects`, and the module you changed
+    stops being looked at. The diff is the one source the author does not get to write, so it
+    is the whole source. `Affects` appears in the refusal as context and decides nothing.
+
+    The cost is over-refusal in a multi-unit run, where the diff carries a sibling's work too.
+    That is the safe direction: an exemption wrongly refused is answered by recording an
+    accurate one, and an exemption wrongly granted is answered by nobody, because nothing
+    downstream can tell it happened.
+
+    An EMPTY base ref refuses rather than granting. The fallback fails the worse way here: a
+    derivation that cannot run returns an empty set, an empty set produces no mutant, and no
+    mutant reads as the claim holding - so every exemption would be granted by the one condition
+    under which nothing was checked. That is the fail-open this function exists to close, one
+    layer down from where it was found.
     """
-    paths = [p for p in (record or {}).get("paths", []) if p]
-    if not paths:
-        return (f"{unit}: the no-mutatable-surface record names no changed path, so there is "
-                f"nothing to re-derive the claim from - an exemption that states no scope "
-                f"cannot be checked and is not an exemption")
     try:
         import mutation  # noqa: PLC0415
-        targets = [Path(root) / p for p in paths]
-        muts, _unchecked = mutation.enumerate_mutations([t for t in targets if t.is_file()])
+        from lib import run_state  # noqa: PLC0415
+        base = (run_state.base_ref(root) or "").strip()
+        if not base:
+            return (f"{unit}: the no-mutatable-surface claim cannot be re-derived because no "
+                    f"run is open, so there is no base ref to diff against. An exemption is "
+                    f"refused rather than granted here: a derivation that cannot run produces "
+                    f"no mutant, and no mutant is indistinguishable from a claim that holds")
+        changed = mutation.changed_lines(root, base)
+        surface = [p for p in (Path(f) for f in changed)
+                   if p.is_file() and p.suffix == ".py"]
+        muts, _unchecked = (mutation.mutants_over_changed_lines(root, surface, base)
+                            if surface else ([], {}))
     except Exception as exc:  # noqa: BLE001 - report it, never swallow it
         return (f"{unit}: the no-mutatable-surface claim could not be re-derived "
                 f"({type(exc).__name__}: {exc}) - an unverifiable exemption is not a granted one")
     if muts:
         first = muts[0]
-        return (f"{unit}: the no-mutatable-surface record claims nothing could be mutated, and "
-                f"the generator produces {len(muts)} mutant(s) over the paths it names - "
-                f"starting at {first['file']}:{first['line']} ({first['class']}). An exemption "
-                f"is re-derived, never taken on the author's word")
+        claimed = ", ".join(p for p in (record or {}).get("paths", []) if p) or "nothing"
+        return (f"{unit}: the no-mutatable-surface record claims nothing could be mutated over "
+                f"{claimed}, and the generator produces {len(muts)} mutant(s) over the changed "
+                f"lines the DIFF gives - starting at {first['file']}:{first['line']} "
+                f"({first['class']}). The scope is the diff against {base[:12]}, not the paths "
+                f"the record names: an exemption re-derived from its own declaration checks "
+                f"only that its author was consistent with themselves")
+    return None
+
+
+def mutation_evidence_lane(root, unit: str, text: str, type_: str) -> dict:
+    """What this repair's mutation evidence says, and what the project's mode DOES about it.
+
+    A PURE READ. It writes nothing, mints nothing and has no side effect, so the gate ladder can
+    call it as many times as it likes - and `_pre_write_gates` runs up to three times per `set`.
+    Anything that must happen ONCE per command happens in `transition()`, on the far side of the
+    dry-run return, never here.
+
+    Returns `{mode, blocks, warning, survivors, exempt}`. The caller decides; this decides
+    nothing except what is true.
+
+    The mode table, and why two rows ignore it:
+
+    | state                              | report      | block | off   |
+    | ---------------------------------- | ----------- | ----- | ----- |
+    | no record / STALE / vacuous zero   | warning     | block | quiet |
+    | survivor                           | FILED + through | block | quiet |
+    | a FALSE exemption                  | **block**   | block | quiet |
+    | recorded `killed`, measured `survived` | **block** | block | **block** |
+
+    A false exemption blocks under `report` because it is not a quality bar: it is a claim
+    re-derived and found untrue. `report` trades a hard bar for a filed finding; it does not
+    trade away the truth of a statement the author made in writing.
+
+    A ledger that contradicts ITSELF blocks in every mode including `off`, because that is
+    instrument integrity rather than a bar. `off` says "do not hold my transitions on mutation
+    evidence"; it cannot say "let the instrument lie", because every figure derived from a false
+    verdict is wrong and nothing downstream can tell.
+    """
+    import mutation  # noqa: PLC0415
+    out: dict = {"mode": None, "blocks": [], "warning": None, "survivors": [], "exempt": False}
+    repair, why = is_repair_unit(type_, text)
+    if not repair:
+        return out
+    uid = sdlc_md.norm_id(unit)
+    try:
+        out["mode"] = mode = mutation.evidence_mode(root)
+    except ValueError as exc:
+        # Refused BY NAME, in every mode, because the mode is the thing that could not be read.
+        out["blocks"].append(str(exc))
+        return out
+
+    # The contradiction check runs FIRST and ignores the mode entirely - see the docstring.
+    contradiction = _ledger_contradiction(root, uid)
+    if contradiction:
+        out["blocks"].append(contradiction)
+
+    record = no_surface_record(root, uid)
+    if record:
+        out["exempt"] = True
+        refusal = verify_no_surface_claim(root, uid, record, text)
+        if refusal and mode != "off":
+            out["blocks"].append(refusal)
+        return out
+
+    reason = repair_mutation_gate(root, uid, text)
+    if not reason:
+        return out
+    out["survivors"] = _survivor_records(root, uid)
+    if mode == "block":
+        out["blocks"].append(f"{reason} ({why})")
+    elif mode == "report":
+        out["warning"] = f"mutation-evidence advisory ({why}): {reason}"
+    return out
+
+
+def _survivor_records(root, uid: str) -> list[dict]:
+    """The surviving mutants recorded for `uid`, as records rather than as a sentence.
+
+    Returned as data because the filer needs the target, the line, the criterion and the test
+    to compose a finding somebody can act on, and re-parsing them back out of the refusal's
+    prose is guesswork about a format nothing pinned.
+    """
+    try:
+        import mutation  # noqa: PLC0415
+        entries = mutation.ledger_entries(root)
+    except Exception:  # noqa: BLE001 - a lane that cannot read the ledger reports no survivor
+        return []
+    out = []
+    for e in entries:
+        if not isinstance(e, dict):
+            continue
+        for mu in (e.get("mutants") or []):
+            if (isinstance(mu, dict) and mu.get("unit") == uid
+                    and mu.get("verdict") == "survived"):
+                out.append({"target": e.get("target"), "line": mu.get("line"),
+                            "mutant": mu.get("mutant"), "test": mu.get("test"),
+                            "criterion": mu.get("criterion"), "unit": uid})
+    return out
+
+
+def _ledger_contradiction(root, uid: str) -> str | None:
+    """A mutant recorded `killed` and MEASURED `survived` at the same target, line and hash.
+
+    Not a quality bar - the instrument reporting two different things about one fact. It refuses
+    under `off` as well, which no other row here does, because `off` is a decision about whether
+    mutation evidence holds a transition, not permission for the ledger to be false.
+    """
+    try:
+        import mutation  # noqa: PLC0415
+        entries = mutation.ledger_entries(root)
+    except Exception:  # noqa: BLE001
+        return None
+    seen: dict = {}
+    for e in entries:
+        if not isinstance(e, dict):
+            continue
+        key_base = (e.get("target"), e.get("hash"))
+        for mu in (e.get("mutants") or []):
+            if not isinstance(mu, dict) or mu.get("unit") != uid:
+                continue
+            verdict, line = mu.get("verdict"), mu.get("line")
+            if verdict not in ("killed", "survived") or line is None:
+                continue
+            key = (*key_base, line)
+            prior = seen.get(key)
+            if prior and prior[0] != verdict:
+                return (f"{uid}: the mutation ledger CONTRADICTS itself at "
+                        f"{e.get('target')}:{line} - recorded {prior[0]!r} by "
+                        f"{prior[1]} and {verdict!r} by "
+                        f"{mutation.entry_provenance(e)}, under the same content hash. This "
+                        f"refuses in every mode, `off` included: the instrument is reporting "
+                        f"two different things about one fact, and every figure derived from "
+                        f"the false one is wrong with nothing downstream able to tell")
+            seen[key] = (verdict, mutation.entry_provenance(e))
     return None
 
 
@@ -1612,10 +1916,7 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
         targets = [a for a in affects if a.is_file() and a.suffix == ".py"]
         if not targets:
             return None                      # no mutatable surface - US0566's exemption path
-        entries = mutation.ledger_entries(root) if hasattr(mutation, "ledger_entries") else None
-        if entries is None:
-            state, _reset = mutation._load_ledger(mutation.ledger_path(root))
-            entries = state.get("entries") or []
+        entries = mutation.ledger_entries(root)
     except Exception as exc:  # noqa: BLE001 - report it, never swallow it
         return (f"the repair-mutation gate could not be established ({type(exc).__name__}: "
                 f"{exc}) - an unreadable bar is not a passed one")
@@ -1628,7 +1929,7 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
         return (f"{uid} is repair work and carries NO mutation evidence over its changed lines. "
                 f"Apply a mutant to what it changed, watch its test fail, and record it: "
                 f"`mutation.py register --unit {uid} --criterion ACn --target <file> "
-                f"--mutant <the edit> --test <the command> --verdict killed`")
+                f"--line <n> --mutant <the edit> --test <the command> --verdict killed`")
 
     stale = []
     for e in mine:
@@ -1662,8 +1963,9 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
     if survivors:
         listed = "; ".join(living[:5])
         return (f"{uid}: {survivors} of {applied} mutant(s) SURVIVED - {listed}. The finding is "
-                f"about the TEST: an assertion is missing for the behaviour each names. This "
-                f"refuses on the survivor count, not on the run's exit status")
+                f"about the TEST: an assertion is missing for the behaviour each names. The "
+                f"verdict is the SURVIVOR count, never the run's own exit status - a run that "
+                f"completes is evidence a run happened")
 
     if stale and len(stale) == len(mine):
         return (f"{uid}'s mutation evidence is STALE, not absent: every recorded run covers "

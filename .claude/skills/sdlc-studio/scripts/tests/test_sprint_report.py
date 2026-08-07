@@ -2827,5 +2827,63 @@ class OperatorSummaryTests(ReportBase):
         self.assertIn("Operator summary", out.getvalue())
         self.assertIn("What to overturn", out.getvalue())
 
+
+class MutationSurvivorCountTests(unittest.TestCase):
+    """US0660 AC6: the close counts the survivors this run let through, by severity.
+
+    Reporting rather than blocking is a trade the operator only gets to make if the thing
+    traded away is visible. A survivor filed and never counted is a survivor silently dropped,
+    which is the outcome blocking was rejected to avoid, not the one that was chosen.
+    """
+
+    def _bug(self, root, bid, severity, key):
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{bid}-a-mutant-survives.md").write_text(
+            f"# {bid}: a mutant survives at src/thing.py:2\n\n"
+            f"> **Status:** Open\n> **Severity:** {severity}\n> **Points:** 2\n"
+            f"> **Mutation-survivor:** {key}\n\n## Summary\n\ns\n", encoding="utf-8")
+
+    def test_the_close_counts_survivors_by_severity(self) -> None:
+        """The THIRD artefact is written straight into the backlog, carrying the same header
+        and `Mutation-survivor` attribution a filed one carries and differing only in never
+        having passed through the filer.
+
+        Mutant: count from a tally the filer wrote rather than from the filed artefacts. A
+        tally is what a hurried implementation writes, and it is invisible to any fixture whose
+        artefacts all arrive through the filer - so the count is right for exactly as long as
+        nothing else ever writes one.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, "BG9001", "High", "BG0001@src/thing.py:2:inverted the guard")
+            self._bug(root, "BG9002", "Medium", "BG0001@src/thing.py:9:dropped the branch")
+            # Past the filer, and indistinguishable to a correct reader.
+            self._bug(root, "BG9003", "Low", "BG0002@src/other.py:4:off by one")
+            state, value, detail = sr._ck_mutation_survivors({"root": str(root)})
+            self.assertEqual(sr.RAN, state)
+            self.assertIn("3 survivor(s)", value,
+                          f"an artefact that did not pass through the filer was not counted, "
+                          f"so the count comes from a tally rather than the backlog: {value}")
+            self.assertIn("High 1", value)
+            self.assertIn("Medium 1", value)
+            self.assertIn("Low 1", value)
+            self.assertTrue(detail.strip(), "the row states no reason a reader can act on")
+
+    def test_a_backlog_with_no_survivors_reports_zero(self) -> None:
+        """The control. An ordinary bug carrying no survivor attribution must not be counted,
+        or the row reports the backlog's size and says nothing about this run."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            d2 = root / "sdlc-studio" / "bugs"
+            d2.mkdir(parents=True)
+            (d2 / "BG9001-ordinary.md").write_text(
+                "# BG9001: an ordinary bug\n\n> **Status:** Open\n> **Severity:** High\n",
+                encoding="utf-8")
+            state, value, _ = sr._ck_mutation_survivors({"root": str(root)})
+            self.assertEqual(sr.RAN, state)
+            self.assertIn("0 survivors", value,
+                          "an ordinary bug was counted as a surviving mutant")
+
 if __name__ == "__main__":
     unittest.main()

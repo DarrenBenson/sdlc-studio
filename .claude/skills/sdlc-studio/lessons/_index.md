@@ -65,6 +65,7 @@ and from per-project memory (project-specific facts).
 | [LL0050](LL0050-name-the-mutant-before-writing-the-test-in-its-docstring.md) | Name the mutant before writing the test, in its docstring | testing, mutation, evidence, vacuous-test, review |
 | [LL0051](LL0051-apply-the-fix-as-a-mutant-if-tests-fail-they-were-pinning-the-defect.md) | Apply the FIX as a mutant: if tests fail, they were pinning the defect | testing, mutation, review, repair |
 | [LL0052](LL0052-a-repair-is-right-on-the-path-it-was-written-for-and-wrong-on-the-path-beside-it.md) | A repair is right on the path it was written for and wrong on the path beside it | testing, mutation, review, repair |
+| [LL0053](LL0053-a-registered-mutant-is-a-claim-clear-the-ledger-and-apply-them-before-believing-the-count.md) | A registered mutant is a claim; clear the ledger and apply them before believing the count | mutation, evidence, false-green, self-report, bug-class |
 
 ## Notes
 

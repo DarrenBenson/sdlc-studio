@@ -992,6 +992,9 @@ CHECKLIST = (
     {"id": "coverage-consistency", "kind": FIGURE, "authority": DERIVED,
      "title": "Coverage computed once, and the two readings agree",
      "command": "sprint report", "resolver": "_ck_coverage_consistency"},
+    {"id": "mutation-survivors", "kind": FIGURE, "authority": DERIVED,
+     "title": "Surviving mutants this run let through, by severity",
+     "command": "sprint report", "resolver": "_ck_mutation_survivors"},
     {"id": "review-attribution", "kind": FIGURE, "authority": DERIVED,
      "title": "Who reviewed what, under which seat, over how many lenses",
      "command": "critic record", "resolver": "_ck_review_attribution"},
@@ -1641,6 +1644,43 @@ def _ck_scope_creep(ctx: dict) -> tuple:
 #: A round is at least two reviewers on distinct lenses, whatever the diff size, because the
 #: defects a lone reviewer misses are the ones that reviewer's one lens does not point at.
 MIN_LENSES = 2
+
+
+def _ck_mutation_survivors(ctx: dict) -> tuple:
+    """The survivors this run FILED rather than blocked on, counted by severity.
+
+    Derived by reading the filed artefacts, never from a tally the filer kept alongside them.
+    A tally is what a hurried implementation writes and it is invisible to any fixture whose
+    artefacts all arrive through the filer - so the count would be right for exactly as long as
+    nothing else ever wrote one.
+
+    This row exists because reporting rather than blocking is a trade the operator only gets to
+    make if the thing traded away is visible. A survivor filed and never counted is a survivor
+    silently dropped, which is the outcome blocking was rejected to avoid, not the one chosen.
+    """
+    root = Path(ctx["root"])
+    bugs = root / "sdlc-studio" / "bugs"
+    if not bugs.is_dir():
+        return (NOT_RUN, "no backlog", "there is no bugs directory to count from")
+    counts: dict = {}
+    for f in sorted(bugs.glob("BG*.md")):
+        try:
+            body = f.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if not (sdlc_md.extract_field(body, "Mutation-survivor") or "").strip():
+            continue
+        sev = (sdlc_md.extract_field(body, "Severity") or "unstated").strip() or "unstated"
+        counts[sev] = counts.get(sev, 0) + 1
+    total = sum(counts.values())
+    if not total:
+        return (RAN, "0 survivors filed", "")
+    order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
+    split = ", ".join(f"{sev} {n}" for sev, n in
+                      sorted(counts.items(), key=lambda kv: (order.get(kv[0], 9), kv[0])))
+    return (RAN, f"{total} survivor(s) filed - {split}",
+            "these are mutants a repair let through, filed rather than blocked on. Fix them "
+            "or decide to live with them, but decide")
 
 
 def _ck_review_attribution(ctx: dict) -> tuple:

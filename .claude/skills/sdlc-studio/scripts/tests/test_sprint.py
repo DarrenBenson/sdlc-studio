@@ -15112,5 +15112,45 @@ class ConvergedLoopIsNotStoppedTests(unittest.TestCase):
         self.assertTrue(stop, "a loop that cleared and then re-broke its work escaped the cap")
 
 
+
+class MutationEvidenceModeTests(unittest.TestCase):
+    """US0660 AC5: the close names WHICH mutation-evidence mode held the run.
+
+    The default decides whether a survivor stopped the run or landed in the backlog, which is
+    the difference the operator chose between - so a reader of the close should learn it there
+    rather than from the source.
+    """
+
+    def _root(self, d, value=None):
+        root = Path(d)
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        if value is not None:
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                f"review:\n  mutation_evidence: {value}\n", encoding="utf-8")
+        return root
+
+    def test_the_close_names_the_resolved_mode(self) -> None:
+        """Mutant: default an unrecognised evidence mode instead of refusing it by name.
+
+        The accepted pair is the POSITIVE CONTROL: without it a resolver that refuses
+        everything passes the refusal assertion, and the flag becomes unusable.
+        """
+        sp = _load()
+        with tempfile.TemporaryDirectory() as d:
+            ok, note = sp.mutation_evidence_note(self._root(d, "block"))
+            self.assertTrue(ok, note)
+            self.assertIn("`block`", note, "the close does not name the mode that held it")
+            self.assertIn("set by this project", note)
+        with tempfile.TemporaryDirectory() as d:
+            ok, note = sp.mutation_evidence_note(self._root(d))
+            self.assertTrue(ok, note)
+            self.assertIn("`report`", note, "the close does not name the default")
+            self.assertIn("the default, unset here", note,
+                          "a project that set nothing cannot tell that from one that chose it")
+        with tempfile.TemporaryDirectory() as d:
+            ok, note = sp.mutation_evidence_note(self._root(d, "blcok"))
+            self.assertFalse(ok, "a typo was defaulted, switching a hard bar off silently")
+            self.assertIn("blcok", note, "the refusal does not quote the offending value")
+
 if __name__ == "__main__":
     unittest.main()

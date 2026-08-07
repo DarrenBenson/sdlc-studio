@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 24 |
-| Ready | 5 |
+| Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 13 |
+| Review | 15 |
 | Done | 615 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -99,8 +99,8 @@
 | [US0657](US0657-the-budget-records-what-shipped-and-reports-the.md) | The budget records what shipped and reports the files sitting inside its tolerance | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
 | [US0658](US0658-every-reference-over-the-stated-threshold-carries-a.md) | Every reference over the stated threshold carries a Reading Guide with an anchor and a line span | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
 | [US0659](US0659-skill-md-carries-the-sections-its-own-checklist.md) | SKILL.md carries the sections its own checklist requires, and every reference is two hops away | Draft | EP0211 | 2026-08-07 | 2026-08-07 |
-| [US0660](US0660-a-surviving-mutant-becomes-a-severity-rated-bug.md) | A surviving mutant becomes a severity-rated bug and the transition proceeds, and the run names the mode that held it | Ready | EP0212 | 2026-08-07 | 2026-08-07 |
-| [US0661](US0661-a-measured-mutation-run-records-what-it-applied.md) | A measured mutation run records what it applied, attributed to a unit, so the gate is satisfiable by measurement rather than only by self-report | Ready | EP0212 | 2026-08-07 | 2026-08-07 |
+| [US0660](US0660-a-surviving-mutant-becomes-a-severity-rated-bug.md) | A surviving mutant becomes a severity-rated bug and the transition proceeds, and the run names the mode that held it | Review | EP0212 | 2026-08-07 | 2026-08-07 |
+| [US0661](US0661-a-measured-mutation-run-records-what-it-applied.md) | A measured mutation run records what it applied, attributed to a unit, so the gate is satisfiable by measurement rather than only by self-report | Review | EP0212 | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

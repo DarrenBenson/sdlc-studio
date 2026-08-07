@@ -28,7 +28,10 @@ A story or bug is Done when:
 - [ ] The paperwork shipped in the same commit as the code (changelog fragment, status, index)
 - [ ] If it is a REPAIR: a mutant was applied to its own changed lines and its test was seen
       to fail on that mutant. A fix's author is not sufficient evidence for that fix - the
-      test is written after the answer is known, so it must be shown capable of failing
+      test is written after the answer is known, so it must be shown capable of failing.
+      By default a survivor is FILED as a severity-rated bug and the unit still closes, so
+      this box is about the evidence existing, not about the count being zero. Set
+      `review.mutation_evidence: block` to make a survivor refuse instead
       [check: repair.mutation-evidence]
 
 ## Delivery batch

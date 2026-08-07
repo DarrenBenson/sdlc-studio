@@ -1880,7 +1880,8 @@ class MutationProvenanceTests(unittest.TestCase):
             self._commit_all(root)
             (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
                 json.dumps(self.CLEAN), encoding="utf-8")
-            mod.register_mutant(root, "a.py", "returned 2 instead of 1", "test_a", "survived")
+            mod.register_mutant(root, "a.py", "returned 2 instead of 1", "test_a", "survived",
+                                line=2)
             self.assertIn("surviv", gate._mutation(str(root))["detail"].lower())
 
     def test_the_lane_reads_the_same_provenance_values_the_recorder_writes(self) -> None:

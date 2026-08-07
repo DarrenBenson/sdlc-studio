@@ -24,7 +24,7 @@
 - **When** `transition.py set --id <bug> --status Fixed` runs
 - **Then** it exits non-zero naming the missing mutation evidence and the command that produces it, in the same refusal shape the existing verification-depth demand already uses, because a repair is the least-reviewed code in a sprint and this is the point at which the claim is made. The mode is named in the Given rather than assumed: CR0537 makes reporting the default, so a criterion that says the transition simply refuses now describes only the mode a project opts into
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RepairMutationGateCLITests::test_a_repair_without_mutation_evidence_is_refused_by_the_command
-- **Verified:** no
+- **Verified:** yes (2026-08-07)
 
 ### AC2: the mutated surface is the unit's own changed lines, not its whole Affects
 
@@ -32,7 +32,7 @@
 - **When** the mutation evidence is derived for that unit
 - **Then** the mutant set is generated over those nine changed lines only, established from the unit's diff against the run's base ref, so the gate stays affordable and cannot be passed by mutants landing in code the repair never touched
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::ChangedLineScopeCLITests::test_mutants_are_scoped_to_the_units_changed_lines
-- **Verified:** no
+- **Verified:** yes (2026-08-07)
 
 ### AC3: the evidence is re-read from the record, never accepted from the caller
 
@@ -40,7 +40,7 @@
 - **When** the transition gate evaluates the unit
 - **Then** the claim is ignored and the gate reads the recorded mutation run for that unit id and that base ref, refusing when no such record exists, because a gate that trusts the thing it is gating checks nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RepairMutationGateCLITests::test_an_asserted_pass_without_a_record_is_refused_by_the_command
-- **Verified:** no
+- **Verified:** yes (2026-08-07)
 
 ### AC4: a record that does not match the unit's current surface is stale, not green
 
@@ -48,7 +48,7 @@
 - **When** the transition gate runs
 - **Then** it refuses as STALE, naming the uncovered line and distinguishing that state from "no record at all", so a passing run cannot be banked and spent against later changes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RepairMutationGateCLITests::test_a_record_predating_the_current_surface_is_stale_through_the_command
-- **Verified:** no
+- **Verified:** yes (2026-08-07)
 
 ## Revision History
 
@@ -56,3 +56,4 @@
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-07 | sdlc-studio | Every `Verified: yes` stamp retracted and every verifier re-pointed at a test that drives the shipped command. The stamps were false: each criterion names `transition.py set` or the mutation lane as its When while its verifier called the library function, which is why BG0541's missing wiring passed this wave. Raised by the plan-time qa and engineering seats |
+| 2026-08-07 | sdlc-studio | Re-verified through the shipped command. `RepairMutationGateCLITests` drives `transition.py set`, and `ChangedLineScopeCLITests` drives the scoping over a real git fixture whose diff touches one function of eight - with the whole-file enumeration asserted as strictly larger, so an empty scoping cannot pass an is-it-smaller check on its own |

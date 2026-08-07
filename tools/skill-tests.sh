@@ -122,6 +122,12 @@ fi
 # newly added. Ten `main(["build", ...])` calls in test_digest.py were leaking a `digest: wrote N`
 # line each with nothing capturing stdout; capturing them took 130 -> 120, and the ratchet is
 # lowered to match rather than raised to accommodate.
-TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-120}"
+# 121 -> 119 (BG0541 wave): the lane was RED on main again - measured at 121 on the
+# untouched tree and at 121 with this sprint's change, so the extra line was pre-existing
+# and the gate had been enforcing nothing since it arrived. `test_stats_runs_without_error`
+# was letting `repo_map.py stats` print its whole summary to the console while asserting
+# only the exit code; capturing it retires two lines and gives the test something to say.
+# Lowered to match rather than raised to accommodate, as the entries above.
+TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-119}"
 
 printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --baseline "$TEST_NOISE_BASELINE"

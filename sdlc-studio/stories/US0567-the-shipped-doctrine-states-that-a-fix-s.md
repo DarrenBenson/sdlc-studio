@@ -24,7 +24,7 @@
 - **When** the repair-evidence rule is added to it
 - **Then** the passage states the rule, states why the repair class specifically carries it, and names the transition gate as what enforces it, so a reader arrives at a mechanism rather than at advice
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_doctrine_states_the_rule_and_names_the_enforcing_gate
-- **Verified:** no
+- **Verified:** yes (2026-08-07)
 
 ### AC2: the definition-of-done template carries the clause
 
@@ -32,7 +32,7 @@
 - **When** it is read
 - **Then** it carries a repair-evidence clause consistent with the shipped gate, phrased tool-neutrally and without an internal provenance tag, so `tools/lint-style.sh` stays green on a consuming-facing file
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_the_definition_of_done_carries_a_consistent_clause
-- **Verified:** no
+- **Verified:** yes (2026-08-07)
 
 ### AC3: the guard discriminates, and its own Revision History cannot satisfy it
 
@@ -40,7 +40,7 @@
 - **When** the stating passage is deleted while every other line of the file, including the Revision History row describing this change, is left intact
 - **Then** the guard goes red. It anchors on the passage in its own section rather than on a whole-file substring, because a whole-file `assertIn` satisfied by the row describing the change is exactly the defect BG0457 records, and a guard shipped in the same change that introduces the prose is the easiest place to repeat it
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_deleting_the_stating_passage_reddens_the_guard
-- **Verified:** no
+- **Verified:** yes (2026-08-07)
 
 ### AC4: the carried lesson points at the mechanism instead of restating it
 
@@ -48,7 +48,7 @@
 - **When** the doctrine passage lands
 - **Then** the lesson cites the gate rather than repeating the advice, so the two cannot drift into disagreeing about what is required
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_the_carried_lesson_cites_the_gate
-- **Verified:** no
+- **Verified:** yes (2026-08-07)
 
 ### AC5: the doctrine tells an existing project how to keep the bar it was promised
 
@@ -60,7 +60,7 @@
   somebody else's project without their knowing, and a rule that changes direction owes its
   existing readers the sentence that tells them so
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_the_doctrine_names_the_mode_that_restores_refusal
-- **Verified:** no
+- **Verified:** yes (2026-08-07)
 
 ## Revision History
 
@@ -68,3 +68,4 @@
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-07 | sdlc-studio | AC5 added, and all four earlier stamps retracted. AC5 comes from the plan-time product seat: a doctrine-documented refusal quietly becoming a documented report lowers a bar on somebody else's project without telling them. The stamps are retracted because this sprint rewrites the passage and the clause they were taken over, and AC1's own subject - the doctrine naming the gate that enforces the rule - was satisfied by a passage BG0541 then proved false |
+| 2026-08-07 | sdlc-studio | Built. Rule 21 now enumerates its mechanisms so the reachability guard can check each is reached, states the three modes and which one an unset project gets, and carries the upgrade note. The DoD clause and the check registry say what the default DOES rather than promising a refusal neither performs |

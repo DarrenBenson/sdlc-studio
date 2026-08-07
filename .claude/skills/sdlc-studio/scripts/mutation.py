@@ -98,6 +98,57 @@ RUN_VERDICT_COUNTER = {"killed": "killed", "survived": "survived", "error": "err
 #: mutant, which is a statement about the mutant, not about what the suite pins. A file carrying
 #: only equivalent registrations has had nothing proven about its tests.
 COVERING_VERDICTS = ("killed", "survived")
+#: What a repair's missing or failing mutation evidence DOES to a terminal transition. The
+#: operator's decision: a survivor is a finding to price, not a bar to clear. `report`
+#: files it as a severity-rated bug and lets the transition through, so a team decides in the
+#: next sprint whether to fix it or live with it; `block` is the old hard bar, opted into;
+#: `off` stands the lane down. A gate that turns every survivor into an immediate stoppage is
+#: one that gets switched off wholesale, and then it holds nothing.
+#:
+#: `report` is FIRST because it is the default, and the default is what most projects run.
+EVIDENCE_MODES = ("report", "block", "off")
+EVIDENCE_MODE_DEFAULT = EVIDENCE_MODES[0]
+
+
+def evidence_mode(root) -> str:
+    """The project's `review.mutation_evidence`, refusing an unrecognised value BY NAME.
+
+    Two failure directions, and they resolve OPPOSITE ways on purpose:
+
+      * an unrecognised value RAISES. A project that typed `blcok` asked for a hard bar and
+        would otherwise get the reporting default, so a typo would quietly switch its bar off -
+        the one outcome no reading of CR0537 asks for.
+      * an UNPARSEABLE config resolves to `block`, never to the default. The config is the only
+        thing that could have said `off`, and a file nobody can read has not said it. This is
+        `_plan_gate_active`'s rule, applied to the same class of fault for the same reason.
+    """
+    cfg = Path(root) / "sdlc-studio" / ".config.yaml"
+    if cfg.exists() and sdlc_md.config_unparseable(cfg):
+        return "block"
+    raw = sdlc_md.project_override(root, "review.mutation_evidence", None)
+    if raw is None or str(raw).strip() == "":
+        return EVIDENCE_MODE_DEFAULT
+    # YAML 1.1 SPELLS `off` AS A BOOLEAN. `mutation_evidence: off` parses to `False` before
+    # this function ever sees it, so a project writing the mode this doctrine documents would
+    # be refused for typing it correctly. `False` is therefore `off` - the only thing it can
+    # honestly mean - while `True` is refused, because `on` is not one of the three modes and
+    # guessing which of `report` or `block` it meant is exactly the silent-default this
+    # function exists to refuse. Quoting the value also works and needs no special case.
+    if isinstance(raw, bool):
+        if raw is False:
+            return "off"
+        raise ValueError(
+            "review.mutation_evidence is `on` (YAML reads it as the boolean true), which is "
+            f"not one of {', '.join(EVIDENCE_MODES)}. Quote the mode you meant - "
+            "`mutation_evidence: 'report'` - rather than leaving it to be guessed")
+    mode = str(raw).strip().lower()
+    if mode not in EVIDENCE_MODES:
+        raise ValueError(
+            f"review.mutation_evidence is {raw!r}, which is not one of "
+            f"{', '.join(EVIDENCE_MODES)}. Refused by name rather than defaulted: a project "
+            f"that typed this asked for something, and silently giving it the default is how a "
+            f"hard bar gets switched off by a typo nobody sees")
+    return mode
 
 
 def entry_provenance(entry: dict) -> str:
@@ -1217,7 +1268,7 @@ def attribute_kill(row: dict, run_output: str) -> dict:
 def run_gate(repo_root: Path | str, files, test_cmd: str,
              max_mutations: int | None = None,
              classes: tuple = FAULT_CLASSES, write_report: bool = True,
-             changed: dict | None = None) -> dict:
+             changed: dict | None = None, unit: str | None = None) -> dict:
     """The gate: enumerate, apply one at a time, re-run tests, verdict each mutation.
 
     Baseline first: the tests must be green over UNMUTATED code. A red or broken baseline
@@ -1267,11 +1318,21 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     elif (dirty := dirty_targets(root, files)):
         baseline = "not-run"
         refusal_kind = UNCOMMITTED_SURFACE
+        # BOTH routes to a measured verdict, not one. `series_reason` has named both since
+        # US0573, but this is the message a person actually reads when the run refuses, and it
+        # named only the worktree - so the criterion's claim was true of a string nobody sees
+        # and false of the one they do. Found by re-verifying that criterion through the
+        # shipped verb rather than through the function.
         remedy = (f"uncommitted changes on {', '.join(dirty)} - refusing to mutate a file "
                   f"carrying work that is not committed. A mutant applied over uncommitted work "
                   f"cannot be told apart from that work when the file is restored, so a run that "
-                  f"proceeded here could revert it silently. Commit or stash it, or mutate an "
-                  f"isolated checkout of it (git worktree add) instead of this tree.")
+                  f"proceeded here could revert it silently. Two routes to a measured verdict: "
+                  f"mutate an ISOLATED CHECKOUT (`git worktree add`), or apply the mutant BY "
+                  f"HAND and record it with `mutation.py register --unit <id> --criterion ACn "
+                  f"--target <file> --line <n> --mutant '<the edit>' --test '<the command>' "
+                  f"--verdict killed` - asserting the anchor is unique, purging `__pycache__`, "
+                  f"running with `python3 -B`, and restoring the file byte-identically from a "
+                  f"saved copy. Committing or stashing the work also clears it.")
     else:
         try:
             recovered = _recover_stranded(root)
@@ -1378,7 +1439,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     }
     report["elapsed_s"] = round(time.monotonic() - started, 3)
     if write_report:
-        report["ledger"] = append_ledger(root, report, records)
+        report["ledger"] = append_ledger(root, report, records, unit=unit)
         # The per-run series, written whatever the outcome: a refused or all-errored run costs
         # wall-clock too, and a series that recorded only the runs that worked would flatter the
         # gate exactly where CR0379 wants it judged.
@@ -1507,7 +1568,8 @@ def series_reason(report: dict) -> str | None:
             "this is not 'no evidence', it is evidence not yet obtainable here. Two routes give "
             "a measured verdict: mutate an ISOLATED CHECKOUT (`git worktree add`), or apply the "
             "mutant by hand and record it with `mutation.py register --unit <id> --criterion "
-            "ACn`. A hand run is only trustworthy with the discipline that makes it so - assert "
+            "ACn --target <file> --line <n> --mutant <the edit> --test <the command> --verdict "
+            "killed`. A hand run is only trustworthy with the discipline that makes it so - assert "
             "the anchor occurs exactly once before patching, purge `__pycache__` and run the "
             "child under `python3 -B` so a cached module cannot report a false survival, and "
             "restore from captured bytes with the restoration asserted byte-identical.")
@@ -1668,7 +1730,36 @@ def _ledger_target(root: Path, fp) -> str:
         return str(p)
 
 
-def append_ledger(root: Path | str, report: dict, records: list[dict]) -> dict:
+def _measured_mutant_rows(records: list[dict], fp, unit: str | None) -> list[dict]:
+    """This target's per-mutant rows, in the shape the gate SELECTS on and the refusal QUOTES.
+
+    A measured run used to be reduced here to a counter block and its per-mutant records thrown
+    away, while `register_mutant` - the hand-typed claim - wrote a `mutants[]` list. Both the
+    repair gate and the plan-execution join filter on `mutants[].unit`, so the strongest
+    evidence in the system read as NO evidence and the weakest read as proof. Recording the
+    rows is what makes the gate satisfiable by measurement at all.
+
+    The `unit` key is half the change and the easier half to forget: a row nobody can attribute
+    answers no question the gate asks, so a run that persisted the list without it would leave
+    the gate shut for a second reason nobody had measured.
+    """
+    out = []
+    for r in records:
+        if str(Path(r["file"])) != str(Path(fp)):
+            continue
+        verdict = RUN_VERDICT_COUNTER.get(r.get("verdict"))
+        if verdict not in COVERING_VERDICTS:
+            continue                    # unviable, errored: evidence of nothing
+        out.append({"unit": sdlc_md.norm_id(unit) if unit else None,
+                    "criterion": r.get("criterion"),
+                    "line": r.get("line"), "mutant": r.get("class"),
+                    "test": r.get("test"), "verdict": verdict,
+                    "provenance": PROVENANCE_MEASURED})
+    return out
+
+
+def append_ledger(root: Path | str, report: dict, records: list[dict],
+                  unit: str | None = None) -> dict:
     """Append this run's per-target evidence to the bounded ledger and return its state.
 
     One report is last-write-wins: a per-unit run mid-sprint erases the previous unit's
@@ -1709,7 +1800,8 @@ def append_ledger(root: Path | str, report: dict, records: list[dict]) -> dict:
                     "provenance": PROVENANCE_MEASURED,
                     "git_rev": report.get("git_rev"),
                     "generated_at": report.get("generated_at"),
-                    "test_cmd": report.get("test_cmd"), "summary": summary})
+                    "test_cmd": report.get("test_cmd"), "summary": summary,
+                    "mutants": _measured_mutant_rows(records, fp, unit)})
     # A run supersedes its OWN kind only. A later run's numbers replace an earlier run's for the
     # same target, but a hand-registered claim about that file is a different statement, not a
     # stale copy of this one, and dropping it here would delete evidence this run never gathered.
@@ -1719,6 +1811,19 @@ def append_ledger(root: Path | str, report: dict, records: list[dict]) -> dict:
                and not (e.get("target") in superseded
                         and entry_provenance(e) == PROVENANCE_MEASURED)] + new
     return _store_ledger(path, state, entries, reset)
+
+
+def ledger_entries(root: Path | str) -> list[dict]:
+    """Every entry in the mutation ledger, or an empty list when it cannot be read.
+
+    A real function rather than a guessed one. `repair_mutation_gate` called it behind
+    `hasattr(mutation, "ledger_entries")`, which was False for the whole of its life - so the
+    fallback branch was the only branch, and any caller that reached for it inside a `try`
+    silently got nothing back. A defensive `hasattr` around a name that never existed is
+    indistinguishable from the feature working.
+    """
+    state, _reset = _load_ledger(ledger_path(Path(root)))
+    return [e for e in (state.get("entries") or []) if isinstance(e, dict)]
 
 
 def _load_ledger(path: Path) -> tuple[dict, bool]:
@@ -1765,7 +1870,8 @@ def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> 
 
 def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: str,
                     reason: str | None = None, run: str | None = None,
-                    unit: str | None = None, criterion: str | None = None) -> dict:
+                    unit: str | None = None, criterion: str | None = None,
+                    line: int | None = None) -> dict:
     """Record a mutant that was ALREADY applied by hand, against the target's content NOW.
 
     The practice this exists for: a builder writes a test, applies a mutant to the code it
@@ -1824,6 +1930,16 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     elif not mutant or not test:
         raise ValueError("a registered mutant must name WHAT was mutated and WHICH test "
                          "returned the verdict - a bare count cannot be audited")
+    if verdict != EQUIVALENT_VERDICT and line is None:
+        # An OPTIONAL line is worse than none. The refusal composes `target:line` and would
+        # print `target:?`; worse, a registered `line: None` never joins a measured `line: 2`,
+        # so the contradiction check silently never fires while its own fixture - which always
+        # supplies a line - stays green. Required here, at the only verb that writes one.
+        raise ValueError(
+            "a registered mutant must name the LINE it was applied at (--line N). The refusal "
+            "quotes `target:line`, and a record with no line never joins a measured one - so "
+            "the check that catches a ledger contradicting itself would never fire, and its "
+            "own tests would pass on fixtures the tool could not produce")
     run = str(run or "").strip() or None
     if run is not None and series_row(root, run) is None:
         raise ValueError(f"no mutation run {run} in the series - a verdict attributed to a run "
@@ -1834,7 +1950,7 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     state, reset = _load_ledger(lpath)
     entries = [e for e in state["entries"] if isinstance(e, dict)]
     record = {"mutant": mutant, "test": test or None, "verdict": verdict,
-              "reason": reason or None, "run": run,
+              "reason": reason or None, "run": run, "line": line,
               # THE JOIN KEY for `run --from-plan` (US0632). Recorded explicitly rather than
               # matched out of the mutant's prose: a matching rule that is convenient is a gate
               # that is optional, and a substring join would silently credit one criterion's
@@ -2234,7 +2350,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     # code nobody touched (L-0086).
     changed = changed_lines(root, args.since) if args.since else None
     report = run_gate(root, files, args.test, max_mutations=ceiling, changed=changed,
-                      write_report=not getattr(args, "dry_run", False))
+                      write_report=not getattr(args, "dry_run", False),
+                      unit=getattr(args, "unit", None))
     s = report["summary"]
     ser = report.get("series") or {}
     if ser.get("reset") and args.format != "json":
@@ -2419,6 +2536,7 @@ def cmd_register(args: argparse.Namespace) -> int:
                               reason=getattr(args, "reason", None),
                               run=getattr(args, "run", None),
                               unit=getattr(args, "unit", None),
+                              line=getattr(args, "line", None),
                               criterion=getattr(args, "criterion", None))
     except (ValueError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -2562,6 +2680,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="run the mutants and print the verdicts, but write no report, no "
                         "ledger entry and no series row - a rehearsal leaves no evidence")
     r.add_argument("--format", choices=("text", "json"), default="text")
+    r.add_argument("--unit", metavar="ID",
+                   help="the unit this run's evidence belongs to. Recorded on every per-mutant "
+                        "row, because the repair gate and the plan-execution join both select "
+                        "on it - a measured row nobody can attribute answers neither question")
     r.add_argument("--from-plan", action="store_true", dest="from_plan",
                    help="do not mutate: join --story's TEST PLAN rows to the ledger and report "
                         "which planned mutants were executed. A row never applied is `not-run`, "
@@ -2570,6 +2692,10 @@ def build_parser() -> argparse.ArgumentParser:
     g = sub.add_parser("register",
                        help="Record a mutant applied BY HAND - self-reported, never measured.")
     g.add_argument("--unit", help="the unit whose test plan this mutant belongs to")
+    g.add_argument("--line", type=int, metavar="N",
+                   help="the line the mutant was applied at. REQUIRED for killed/survived: the "
+                        "refusal quotes `target:line`, and an optional line never joins a "
+                        "measured one, so the contradiction check would silently never fire")
     g.add_argument("--criterion", metavar="ACn",
                    help="the criterion whose planned mutant this is - the JOIN KEY "
                         "`run --from-plan` reads, recorded rather than matched out of prose")

@@ -833,6 +833,7 @@ class RegisterTests(unittest.TestCase):
         args = ["register", "--target", str(root / kw.pop("target", "target.py")),
                 "--mutant", kw.pop("mutant", "classify: inverted the x > 0 guard"),
                 "--test", kw.pop("test", "test_good.T.test_classify"),
+                "--line", str(kw.pop("line", 2)),
                 "--verdict", kw.pop("verdict", "killed"), "--root", str(root)]
         assert not kw, kw
         buf = io.StringIO()
@@ -966,7 +967,7 @@ class RegisterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
             with self.assertRaises(ValueError) as caught:
-                mut.register_mutant(root, root / "nope.py", "m", "t", "killed")
+                mut.register_mutant(root, root / "nope.py", "m", "t", "killed", line=1)
             self.assertIn("content hash", str(caught.exception))
             buf = io.StringIO()
             with contextlib.redirect_stderr(buf):
@@ -985,7 +986,7 @@ class RegisterTests(unittest.TestCase):
             root = _fixture(Path(d))
             for mutant, test in (("", "t"), ("m", ""), ("   ", "t")):
                 with self.assertRaises(ValueError):
-                    mut.register_mutant(root, root / "target.py", mutant, test, "killed")
+                    mut.register_mutant(root, root / "target.py", mutant, test, "killed", line=1)
             self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-runs.json").exists())
 
     def test_a_verdict_the_runner_alone_can_observe_is_refused(self) -> None:
@@ -997,7 +998,7 @@ class RegisterTests(unittest.TestCase):
             root = _fixture(Path(d))
             for bad in ("error", "unviable", "passed", ""):
                 with self.assertRaises(ValueError):
-                    mut.register_mutant(root, root / "target.py", "m", "t", bad)
+                    mut.register_mutant(root, root / "target.py", "m", "t", bad, line=1)
             self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-runs.json").exists())
 
     def test_repeated_registration_on_one_file_is_bounded_too(self) -> None:
@@ -1009,7 +1010,7 @@ class RegisterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
             for i in range(mut.MUTANT_LIMIT + 25):
-                mut.register_mutant(root, root / "target.py", f"mutant {i}", "t", "killed")
+                mut.register_mutant(root, root / "target.py", f"mutant {i}", "t", "killed", line=1)
             entry = self._ledger(root)["entries"][0]
             self.assertEqual(len(entry["mutants"]), mut.MUTANT_LIMIT)
             self.assertEqual(entry["dropped_mutants"], 25)
@@ -1025,7 +1026,7 @@ class RegisterTests(unittest.TestCase):
             root = _fixture(Path(d))
             total = mut.MUTANT_LIMIT + 3
             for i in range(total):
-                res = mut.register_mutant(root, root / "target.py", f"m{i}", "t", "killed")
+                res = mut.register_mutant(root, root / "target.py", f"m{i}", "t", "killed", line=1)
             self.assertEqual(res["registered"], total)
             self.assertEqual(self._ledger(root)["entries"][0]["summary"]["applied"], total)
 
@@ -1844,7 +1845,7 @@ class EquivalentMutantExclusionTests(unittest.TestCase):
             (root / "sdlc-studio").mkdir()
             target = self._target(root)
             with self.assertRaises(ValueError):
-                mut.register_mutant(root, target, "a real mutant", None, "survived")
+                mut.register_mutant(root, target, "a real mutant", None, "survived", line=1)
 
 
 class WindowDeclarationTests(unittest.TestCase):
@@ -2783,7 +2784,7 @@ class LedgerSummaryVocabularyTests(unittest.TestCase):
         mut = _load()
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
-            mut.register_mutant(root, "target.py", "a -> b", "test_good", "killed")
+            mut.register_mutant(root, "target.py", "a -> b", "test_good", "killed", line=1)
             entry = json.loads(mut.ledger_path(root).read_text(encoding="utf-8"))["entries"][0]
             for key in mut.SUMMARY_VERDICTS:
                 self.assertIn(key, entry["summary"], key)
@@ -2799,7 +2800,7 @@ class RegisterRunAttributionRefusalTests(unittest.TestCase):
             root = _fixture(Path(d))
             with self.assertRaises(ValueError) as ctx:
                 mut.register_mutant(root, "target.py", "a -> b", "test_good", "killed",
-                                    run="MUT-nobody-recorded-this")
+                                    line=1, run="MUT-nobody-recorded-this")
             self.assertIn("MUT-nobody-recorded-this", str(ctx.exception))
             self.assertFalse(mut.ledger_path(root).exists(),
                              "a refused registration must write nothing")
@@ -2817,7 +2818,7 @@ class RegisterRunAttributionRefusalTests(unittest.TestCase):
                       "elapsed_seconds": 1.0, "test_cmd": "true"}
             mut.append_series(root, report, 1.0)
             out = mut.register_mutant(root, "target.py", "a -> b", "test_good", "killed",
-                                      run="MUT-real")
+                                      line=1, run="MUT-real")
             self.assertEqual(out["verdict"], "killed")
 
 
@@ -3450,7 +3451,7 @@ class FromPlanTests(unittest.TestCase):
 
     def _register(self, m, root, criterion, verdict):
         m.register_mutant(root, "src/thing.py", f"mutant for {criterion}", "pytest x",
-                          verdict, unit="BG0001", criterion=criterion)
+                          verdict, line=2, unit="BG0001", criterion=criterion)
 
     def test_an_unexecuted_planned_mutant_is_not_a_pass(self) -> None:
         """Mutant: treat `not-run` as killed, or omit unexecuted rows from `outstanding` - a plan
@@ -3576,7 +3577,7 @@ class FromPlanTests(unittest.TestCase):
                              "an identically-worded row was discharged by another's execution")
             # A registration with NO criterion discharges nothing at all.
             m.register_mutant(root, "src/thing.py", "in thing.py, delete the guard",
-                              "pytest x", "killed", unit="BG0001")
+                              "pytest x", "killed", line=2, unit="BG0001")
             self.assertEqual({r["ac"] for r in m.plan_execution(root, "BG0001")["outstanding"]},
                              {"AC2"}, "an unkeyed registration discharged a planned row")
 
@@ -3898,6 +3899,347 @@ class KillerScalarTests(unittest.TestCase):
             "run_gate does not CALL attribute_kill - the attribution seam is unwired, so the "
             "value assertions above cover a function no production path reaches")
 
+
+
+class MeasuredAttributionTests(unittest.TestCase):
+    """US0661 AC3: a MEASURED run records the shape the gate selects on.
+
+    `append_ledger` used to reduce a measured run to a counter block and throw its per-mutant
+    records away, while `register_mutant` - the hand-typed claim - wrote a `mutants[]` list.
+    Both the repair gate and the plan-execution join filter on `mutants[].unit`, so the
+    strongest evidence in the system read as NO evidence and the weakest read as proof.
+    """
+
+    def _report(self):
+        return {"targets": ["src/thing.py"], "target_hashes": {"src/thing.py": "d" * 64},
+                "git_rev": "abc", "generated_at": "2026-08-07T00:00:00Z", "test_cmd": "pytest x"}
+
+    def _records(self):
+        # The vocabulary a RUN produces, not the runner's raw pass/fail: `run_gate` maps
+        # outcome to verdict before the record is built, and a fixture using the raw words
+        # would exercise a shape production never writes.
+        return [{"file": "src/thing.py", "line": 4, "class": "stub-return-null",
+                 "verdict": "killed", "test": "tests/test_thing.py::T::test_g"},
+                {"file": "src/thing.py", "line": 7, "class": "invert-condition",
+                 "verdict": "survived"},
+                {"file": "src/thing.py", "line": 9, "class": "off-by-one",
+                 "verdict": "unviable", "reason": "does not parse"}]
+
+    def test_a_measured_entry_records_the_shape_the_gate_selects_on(self) -> None:
+        """Mutant: write the measured records with the file and verdict but no line.
+        Mutant: write them without the `unit` key - a row nobody can attribute answers no
+        question the gate asks, and persisting the list without it leaves the gate shut for a
+        second reason nobody measured.
+        """
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            m.append_ledger(root, self._report(), self._records(), unit="BG0001")
+            # Read back through the SHIPPED reader, not through append_ledger's return value:
+            # the gate reads the ledger from disk, and a test asserting the writer's in-memory
+            # answer proves nothing about what the reader will find there.
+            entry = next(e for e in m.ledger_entries(root) if e["target"] == "src/thing.py")
+            rows = entry.get("mutants") or []
+            self.assertEqual(2, len(rows),
+                             "the unviable mutant was recorded as evidence, or the killed and "
+                             "survived rows were not")
+            for row in rows:
+                self.assertEqual("BG0001", row["unit"],
+                                 "a measured row carries no unit, so nothing can attribute it")
+                self.assertIsNotNone(row["line"],
+                                     "a measured row carries no line, so the refusal composing "
+                                     "`target:line` can only print a question mark")
+                self.assertIn(row["verdict"], ("killed", "survived"))
+                self.assertTrue(row["mutant"], "the row does not name what was mutated")
+            self.assertEqual({4: "killed", 7: "survived"},
+                             {r["line"]: r["verdict"] for r in rows},
+                             "the run's verdicts were not mapped onto the ledger's vocabulary")
+
+    def test_an_unattributed_run_records_rows_with_no_unit(self) -> None:
+        """The control for the mutant above: a run given NO unit must not invent one, or the
+        attribution assertion passes on a value nothing supplied."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            m.append_ledger(root, self._report(), self._records(), unit=None)
+            rows = next(e for e in m.ledger_entries(root)
+                        if e["target"] == "src/thing.py")["mutants"]
+            self.assertEqual([None, None], [r["unit"] for r in rows],
+                             "an unattributed run invented a unit")
+
+
+class RegisteredLineTests(unittest.TestCase):
+    """US0661 AC5: `register` records a line, and refuses a non-equivalent verdict without one.
+
+    Every test that asserted a registered line used to pass on a fixture the tool itself could
+    never produce - the parser accepted no `--line` at all, so the key existed only in
+    hand-written JSON.
+    """
+
+    def _fixture(self, root):
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "thing.py").write_text(
+            "def g(a, b):\n    if a == b:\n        return 1\n    return 2\n", encoding="utf-8")
+
+    def test_register_records_a_line_and_refuses_a_missing_one(self) -> None:
+        """Mutant: accept `--line` and drop it before writing the record.
+        Mutant: leave `--line` optional for a `survived` verdict - a registered `line: None`
+        never joins a measured `line: 2`, so the contradiction check silently never fires
+        while its own fixture, which always supplies a line, stays green.
+        """
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                rc = m.main(["register", "--root", str(root), "--unit", "BG0001",
+                             "--target", "src/thing.py", "--line", "2",
+                             "--mutant", "inverted the guard", "--test", "pytest x",
+                             "--verdict", "survived"])
+            self.assertEqual(0, rc, buf.getvalue())
+            entry = next(e for e in m.ledger_entries(root) if e["target"] == "src/thing.py")
+            self.assertEqual([2], [mu["line"] for mu in entry["mutants"]],
+                             "the shipped verb accepted a line and did not record it, so every "
+                             "test asserting one passes on a fixture it could not produce")
+
+            with self.assertRaises(ValueError) as ctx:
+                m.register_mutant(root, "src/thing.py", "inverted the guard", "pytest x",
+                                  "survived", unit="BG0001")
+            self.assertIn("--line", str(ctx.exception),
+                          "a survivor was registered with no line, so the contradiction check "
+                          "can never join it to a measured record")
+
+    def test_an_equivalent_mutant_still_needs_no_line(self) -> None:
+        """The control. An equivalent verdict asserts that no test COULD have killed the
+        mutant, which is a statement about the mutant rather than about a place a refusal
+        quotes - so demanding a line there would be a bar with no reason behind it, and a
+        refusal that fired on everything would pass the test above."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            out = m.register_mutant(root, "src/thing.py", "reordered two assignments", None,
+                                    "equivalent", reason="no observable behaviour changed",
+                                    unit="BG0001")
+            self.assertEqual("equivalent", out["verdict"])
+
+
+def _git_fixture(root: Path) -> None:
+    """A real git repo with one commit, so `run` can tell committed from uncommitted.
+
+    Through `gitutil.git` rather than a raw `subprocess.run(["git", ...])`: the shared helper
+    fences upward repository discovery at the temp root and neutralises host config, and the
+    repo's own sweep freezes the count of unconfined callers at zero.
+    """
+    import gitutil  # noqa: PLC0415 - the tests dir is on the path by the time this runs
+    for args in (["init", "-q", "-b", "main"], ["add", "-A"], ["commit", "-qm", "base"]):
+        gitutil.git(args, cwd=root)
+
+
+def _mut_cli(m, *argv) -> tuple[int, str]:
+    """Drive `mutation.py` through its shipped entry point. `(exit_code, merged output)`."""
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+        try:
+            code = m.main(list(argv))
+        except SystemExit as exc:
+            code = int(exc.code or 0)
+    return code, buf.getvalue()
+
+
+class UncommittedSurfaceCLITests(unittest.TestCase):
+    """US0573, re-verified through `mutation.py run` rather than through `series_reason`.
+
+    A surface the runner REFUSED to mutate is not a surface nobody tested. Only the second is
+    the author's omission, and an advisory that says the same about both teaches an author to
+    ignore it - after which it reports nothing anybody reads.
+    """
+
+    def _repo(self, d, *, dirty: bool):
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "thing.py").write_text(
+            "def g(a, b):\n    if a == b:\n        return 1\n    return 2\n", encoding="utf-8")
+        _git_fixture(root)
+        if dirty:
+            (root / "src" / "thing.py").write_text(
+                "def g(a, b):\n    if a == b:\n        return 1\n    return 3\n",
+                encoding="utf-8")
+        return root
+
+    def test_an_uncommitted_surface_is_reported_as_that_reason(self) -> None:
+        """AC1. Mutant: fall through to the generic `run refused` reason - the two states read
+        identically and the one the author can still act on is indistinguishable from the one
+        that indicts them."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, dirty=True)
+            code, out = _mut_cli(m, "run", "--root", str(root), "--format", "json",
+                                 "--files", str(root / "src" / "thing.py"), "--test", "true")
+            self.assertNotEqual(0, code, "an uncommitted surface was mutated")
+            # Asserted on the machine-readable KIND, not only on the prose. The prose remedy is
+            # composed in the same branch that sets the kind, so a mutant clearing the kind
+            # leaves the sentence intact and a substring assertion survives it - which is what
+            # this test did until the mutant was actually applied and lived.
+            report = json.loads(out[out.index("{"):])
+            self.assertEqual(m.UNCOMMITTED_SURFACE, report.get("refusal_kind"),
+                             "the run refused without recording WHICH refusal, so a consumer "
+                             "cannot tell an uncommitted surface from any other refusal")
+            self.assertIn("uncommitted", out.lower(),
+                          f"the refusal does not name the uncommitted state:\n{out}")
+
+    def test_the_reason_names_both_routes_to_measured_evidence(self) -> None:
+        """AC2. A reason that names the problem and no route is a complaint. Mutant: drop
+        either route, or the discipline that makes a hand run trustworthy - a reader is told to
+        apply a mutant by hand with no way to know that a cached module reports a false
+        survival."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, dirty=True)
+            _code, out = _mut_cli(m, "run", "--root", str(root),
+                                  "--files", str(root / "src" / "thing.py"), "--test", "true")
+            self.assertIn("worktree", out, f"the isolated-checkout route is missing:\n{out}")
+            self.assertIn("register", out, "the hand-applied route is missing")
+
+    def test_a_committed_untested_surface_still_reports_no_evidence(self) -> None:
+        """AC3, THE CONTROL. Without it this change could be an excuse that silences the lane
+        rather than a distinction that sharpens it: a committed surface nobody tested must
+        still be reported as carrying no evidence."""
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, dirty=False)
+            code, out = _mut_cli(m, "run", "--root", str(root),
+                                 "--files", str(root / "src" / "thing.py"), "--test", "true")
+            self.assertNotIn("uncommitted", out.lower(),
+                             "a committed surface was reported as uncommitted, so the "
+                             "distinction fires on everything and sharpens nothing")
+            self.assertNotIn("REFUSED", out,
+                             "a committed surface was refused, so the run never reached a "
+                             "verdict about the tests at all")
+            # `--test true` passes on every mutant, so they all SURVIVE and the run exits
+            # non-zero. That is the point: a committed surface nobody tested still reports no
+            # evidence, rather than being excused by the uncommitted reason.
+            self.assertNotEqual(0, code, out)
+            self.assertIn("survived", out)
+
+
+class BytecodeIsolationCLITests(unittest.TestCase):
+    """US0565 AC5, asserted on what the shipped runner DOES rather than on a comment.
+
+    A cached bytecode file is keyed on (source mtime, source size), so a SAME-LENGTH mutant
+    written inside one mtime second runs the ORIGINAL bytecode and is recorded as survived.
+    That is a false verdict about the test rather than about the code, on the instrument every
+    other evidence claim in this repo leans on - and it has produced a wrong answer here twice.
+    """
+
+    def test_a_stale_pyc_cannot_decide_a_mutants_verdict(self) -> None:
+        """Mutants: drop `PYTHONDONTWRITEBYTECODE` from the suite env - the child caches and the
+        NEXT mutant inherits it; stop purging the cache - this mutant inherits the previous
+        one's; or skip the changed-file assertion - a patch that silently applied nothing is
+        recorded as a survivor.
+        """
+        m = _load()
+        self.assertEqual("1", m._suite_env().get("PYTHONDONTWRITEBYTECODE"),
+                         "the child may write bytecode, so a same-length mutant can run the "
+                         "original module and be recorded as survived")
+        with tempfile.TemporaryDirectory() as d:
+            src = Path(d) / "thing.py"
+            src.write_text("x = 1\n", encoding="utf-8")
+            cache = Path(d) / "__pycache__"
+            cache.mkdir()
+            stale = cache / "thing.cpython-311.pyc"
+            stale.write_bytes(b"stale bytecode from a previous mutant")
+            m._purge_bytecode(src)
+            self.assertFalse(stale.exists(),
+                             "a cached .pyc survived the purge, so the next mutant inherits it")
+
+    def test_a_real_run_leaves_no_bytecode_behind(self) -> None:
+        """The end-to-end half, through the shipped verb: after a complete `mutation.py run`
+        the target's cache directory holds nothing, so the next run cannot inherit a verdict
+        from this one. Asserting the helper alone leaves the WIRING unexercised, which is the
+        part a library test does not reach.
+        """
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "src").mkdir(parents=True)
+            src = root / "src" / "thing.py"
+            src.write_text("def g(a, b):\n    if a == b:\n        return 1\n    return 2\n",
+                           encoding="utf-8")
+            _git_fixture(root)
+            _mut_cli(m, "run", "--root", str(root), "--files", str(src),
+                     "--test", "true", "--max-mutations", "2")
+            cache = root / "src" / "__pycache__"
+            self.assertFalse(cache.exists() and any(cache.glob("*.pyc")),
+                             "a run left cached bytecode for its target, so the next run's "
+                             "same-length mutant can execute the previous run's module")
+            self.assertEqual(
+                "def g(a, b):\n    if a == b:\n        return 1\n    return 2\n",
+                src.read_text(encoding="utf-8"),
+                "the run did not restore its target byte-identically")
+
+
+class ChangedLineScopeCLITests(unittest.TestCase):
+    """US0564 AC2: the mutated surface is the unit's OWN CHANGED LINES, not its whole Affects.
+
+    The scope is the criterion, not an optimisation. A repair touching a handful of lines in a
+    large module must be held to those lines: generating over the whole file makes the gate
+    cost scale with the file rather than with the change, and a gate nobody can afford to run
+    is one that gets switched off.
+    """
+
+    def _repo(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "src").mkdir(parents=True)
+        body = "".join(f"def f{i}(a, b):\n    if a == b:\n        return {i}\n    return 0\n"
+                       for i in range(8))
+        (root / "src" / "big.py").write_text(body, encoding="utf-8")
+        _git_fixture(root)
+        import gitutil  # noqa: PLC0415
+        base = gitutil.git(["rev-parse", "HEAD"], cwd=root, text=True).stdout.strip()
+        # Change ONE function, then commit, so the diff names a handful of lines in a file
+        # carrying many mutatable ones.
+        (root / "src" / "big.py").write_text(
+            body.replace("        return 3\n", "        return 33\n"), encoding="utf-8")
+        gitutil.git(["commit", "-qam", "the repair"], cwd=root)
+        return root, base
+
+    def test_mutants_are_scoped_to_the_units_changed_lines(self) -> None:
+        """Mutant: generate over the whole file rather than over the changed lines - the gate's
+        cost then scales with the file, and it can be passed by mutants landing in code the
+        repair never touched.
+
+        THE CONTROL is in the same test: enumerating the whole file yields strictly more, so a
+        scoping that returned nothing at all would pass an is-it-smaller assertion on its own.
+        """
+        m = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root, base = self._repo(d)
+            target = root / "src" / "big.py"
+            whole, _unchecked = m.enumerate_mutations([target])
+            scoped, changed = m.mutants_over_changed_lines(root, [target], base)
+            self.assertTrue(whole, "the fixture produced no mutants at all")
+            self.assertTrue(scoped, "the changed line produced no mutant, so the scoping is "
+                                    "not narrower - it is empty, which passes for the wrong "
+                                    "reason")
+            self.assertLess(len(scoped), len(whole),
+                            "the scoped set is not smaller than the whole file's, so the "
+                            "scoping is not happening")
+            touched = set()
+            for lines in changed.values():
+                touched |= lines
+            for mu in scoped:
+                self.assertIn(mu["line"], touched,
+                              f"a mutant landed at line {mu['line']}, which the diff never "
+                              f"touched - the gate can be passed by code the repair never "
+                              f"changed")
 
 if __name__ == "__main__":
     unittest.main()

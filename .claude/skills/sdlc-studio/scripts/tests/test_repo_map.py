@@ -142,9 +142,20 @@ class RepoMapTests(unittest.TestCase):
         self.assertEqual(result, [])
 
     def test_stats_runs_without_error(self) -> None:
+        """Captured, and ASSERTED ON rather than discarded: `stats` prints a summary, and a
+        test that lets it reach the console makes a green suite noisy - which is where a real
+        error hides. The exit code alone also said nothing about whether the summary was
+        composed at all.
+        """
         self.build()
-        rc = repo_map.main(["stats", "--map", str(self.index_path)])
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = repo_map.main(["stats", "--map", str(self.index_path)])
         self.assertEqual(rc, 0)
+        out = buf.getvalue()
+        self.assertIn("generated_at:", out, "the summary states no generation time")
+        self.assertIn("root:", out, "the summary states no root")
+        self.assertIn("files:", out, "the summary states no file count")
 
     def test_tokenise_splits_camel_and_snake_case(self) -> None:
         tokens = repo_map.tokenise("AuthClient handles email_login flow")

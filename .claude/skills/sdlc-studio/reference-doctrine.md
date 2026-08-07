@@ -237,10 +237,36 @@ rules, the agents/services) live in that project's agent-instructions file
     that somebody wrote a test. The distinction is invisible in a green suite and it is
     exactly the distinction that matters here.
 
-    This is enforced, not advised. `transition.py` refuses the terminal status of a
-    repair-typed unit whose changed surface carries no surviving-mutant evidence, on the same
-    terms it already refuses a bug with no verification depth. A rule stated here with no
-    mechanism behind it is a rule this doctrine is explicit about distrusting.
+    This is mechanised, and what the mechanism DOES is the project's choice. On a terminal
+    transition `transition.py` runs `mutation_evidence_lane`, which composes
+    `repair_mutation_gate` over the repair's recorded evidence and `verify_no_surface_claim`
+    over any exemption it claims. `review.mutation_evidence` decides the consequence:
+
+    + **`report`, the default.** A survivor becomes a severity-rated bug in the backlog and
+      the transition proceeds. A team then decides in its next sprint whether to fix it or
+      live with it. A gate that turns every survivor into an immediate stoppage is one that
+      gets switched off wholesale, and then it holds nothing.
+    + **`block`.** The hard bar: no evidence, stale evidence or a survivor refuses the
+      transition. Set this if your project wants what earlier versions described.
+    + **`off`.** The lane stands down.
+
+    Two things ignore the setting. A claimed exemption re-derived and found FALSE refuses in
+    `report` too, because that is not a bar being applied - it is a written claim shown to be
+    untrue. And a ledger recording one mutant as both killed and survived refuses in every
+    mode including `off`, because `off` says evidence must not hold your transitions, not that
+    the instrument may lie: every figure derived from a false verdict is wrong, and nothing
+    downstream can tell.
+
+    **If you installed an earlier version and read this rule as a refusal, it no longer is by
+    default.** Set `review.mutation_evidence: block` in `sdlc-studio/.config.yaml` to keep the
+    bar you were promised. A project that sets nothing gets `report`. Saying so here is the
+    point: a documented refusal quietly becoming a documented report lowers a bar on somebody
+    else's project without their knowing, and a rule that changes direction owes its existing
+    readers the sentence that tells them.
+
+    A rule stated here with no mechanism behind it is a rule this doctrine is explicit about
+    distrusting - so the mechanisms are named above, and a guard asserts each one is reached
+    from the gate ladder rather than merely defined.
 
 ## Project constitution {#constitution}
 

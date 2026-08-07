@@ -1452,6 +1452,38 @@ def _parse_config_text(cfg_path: Path, text: str):
     return parsed
 
 
+def config_unparseable(cfg) -> bool:
+    """True only when `.config.yaml` exists and genuinely cannot be READ or PARSED.
+
+    Tests the actual condition rather than inferring it from `project_override` returning None -
+    which a perfectly valid config that simply does not set the key returns too, so inferring
+    from it refuses projects that never adopted the rule. PyYAML being ABSENT is not this
+    condition: that stands the whole config down and is already warned about loudly at every
+    read, and turning it into a per-transition refusal would break the documented PyYAML-less
+    path rather than close a hole.
+
+    Lives HERE rather than beside its first caller because two gates now decide the same
+    question - a gate stands down, or it resolves to its strictest setting - and two copies of
+    that decision drift apart. The first copy was written for `_two_role_gate`; its sibling
+    reached parity with the ledger half and skipped this one, which is the defect a shared
+    definition makes unavailable.
+    """
+    cfg = Path(cfg)
+    try:
+        raw = cfg.read_text(encoding="utf-8")
+    except (OSError, ValueError):
+        return True                      # a directory, a permissions error, non-UTF-8 bytes
+    try:
+        import yaml  # noqa: PLC0415
+    except ImportError:                  # pragma: no cover - documented degraded path
+        return False
+    try:
+        yaml.safe_load(raw)
+    except Exception:  # noqa: BLE001 - any parse fault means the bar cannot be established
+        return True
+    return False
+
+
 def project_override(repo_root, dotted: str, default=None):
     """Read a dotted key from the project's `sdlc-studio/.config.yaml` (the override
     file only, no defaults merge). Self-contained and fully degrading: a missing
@@ -2838,8 +2870,13 @@ DOR_DOD_CHECK_IDS = {
     # own test was seen to fail on. Registered here because a `[check:]` tag that resolves to
     # nothing is human intent wearing a machine tag - which is the state this tag was in for
     # one full suite run, and the registry test caught it.
+    # The description names what the DEFAULT does, not the refusal it stopped performing: a
+    # registry entry promising enforcement nobody performs is the same defect as a doctrine
+    # passage doing it, one layer down and read by the tag rather than by a person.
     "repair.mutation-evidence": "a repair carries a mutant over its own changed lines whose "
-                                "death was observed (transition -> terminal, review.test_plan_after)",
+                                "death was observed - filed as a severity-rated bug by default, "
+                                "refused under review.mutation_evidence: block "
+                                "(transition -> terminal)",
     "close.review-coverage": "every unit in the batch is covered by an independent review "
                              "(sprint close's first chain step - asserted, never performed there)",
     "close.retro": "the batch retro exists and validates (gate --require-retro)",
