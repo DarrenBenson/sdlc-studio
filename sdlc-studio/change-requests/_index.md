@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 19 |
+| Proposed | 18 |
 | Approved | 0 |
-| In Progress | 10 |
+| In Progress | 12 |
 | Complete | 485 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **537** |
+| **Total** | **538** |
 
 ## All Changes
 
@@ -87,7 +87,8 @@
 | [CR-0534](CR0534-a-project-s-configuration-is-a-surface-nobody.md) | a project's configuration is a surface nobody is introduced to and nobody revisits: the operator cannot see what is in force, what the default would have been, or which setting their own history says is wrong | Proposed | High | Improvement | 2026-08-06 | -- |
 | [CR-0535](CR0535-a-refusing-verb-cannot-state-its-contract-until.md) | a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand | In Progress | High | Improvement | 2026-08-06 | EP0210 |
 | [CR-0536](CR0536-the-spec-documents-do-not-learn-about-a.md) | the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail | Proposed | High | Improvement | 2026-08-06 | -- |
-| [CR-0537](CR0537-mutation-evidence-should-report-by-default-not-block.md) | mutation evidence should REPORT by default, not block: a surviving mutant becomes a severity-rated bug and the close proceeds | Proposed | High | Improvement | 2026-08-07 | -- |
+| [CR-0537](CR0537-mutation-evidence-should-report-by-default-not-block.md) | mutation evidence should REPORT by default, not block: a surviving mutant becomes a severity-rated bug and the close proceeds | In Progress | High | Improvement | 2026-08-07 | EP0212 |
+| [CR-0538](CR0538-the-skill-has-no-lane-that-counts-what.md) | the skill has no lane that counts what the tooling ships: 49 of 211 verbs and 72 of 677 flags are named in no hand-written doc, and the checker that would notice is switched out of the lint chain | In Progress | High | Improvement | 2026-08-07 | EP0211 |
 
 ## Archived Releases
 

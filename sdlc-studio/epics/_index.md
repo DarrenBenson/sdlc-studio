@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 9 |
+| Draft | 11 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 201 |
-| **Total** | **210** |
+| **Total** | **212** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -56,6 +56,8 @@
 | [EP0208](EP0208-ceremony-proportional-to-blast-radius-the-close-converges.md) | Ceremony proportional to blast radius: the close converges and the risk band drives the review | Done | 5 | -- | 2026-08-05 | 2026-08-05 |
 | [EP0209](EP0209-the-reviewer-of-record-can-be-a-named.md) | The reviewer of record can be a named seat, and the operator leads from a derived summary | Done | 3 | -- | 2026-08-05 | 2026-08-05 |
 | [EP0210](EP0210-a-refusing-verb-can-be-asked-what-it.md) | A refusing verb can be asked what it demands, before it refuses | Draft | 6 | -- | 2026-08-07 | 2026-08-07 |
+| [EP0211](EP0211-the-surface-is-enumerable-from-the-parsers-that.md) | The surface is enumerable from the parsers that define it, and the documentation gap is a reported number | Draft | 8 | -- | 2026-08-07 | 2026-08-07 |
+| [EP0212](EP0212-mutation-evidence-reports-by-default-and-the-evidence.md) | Mutation evidence reports by default, and the evidence a measured run produces is the evidence the gate reads | Draft | 2 | -- | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 
