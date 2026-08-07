@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 33 |
+| Open | 34 |
 | In Progress | 0 |
 | Fixed | 423 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **543** |
+| **Total** | **544** |
 
 ## All Bugs
 
@@ -83,6 +83,7 @@
 | [BG0541](BG0541-the-repair-mutation-gate-is-dead-code-transition.md) | the repair-mutation gate is dead code: transition.py set does not call it, while the shipped doctrine tells consuming projects that it refuses | Open | High | 2026-08-07 | 2026-08-07 |
 | [BG0542](BG0542-sprint-plan-under-affects-check-block-prints-refused.md) | sprint plan under affects_check: block prints REFUSED, exits 0, and writes the unit into the batch - worse than the honest advisory it replaced | Open | High | 2026-08-07 | 2026-08-07 |
 | [BG0543](BG0543-the-warning-ratchet-still-exits-0-on-a.md) | the warning ratchet still exits 0 on a stale baseline, and its replacement headline contradicts the line below it | Open | High | 2026-08-07 | 2026-08-07 |
+| [BG0544](BG0544-ck-closing-review-reports-ran-for-a-unit.md) | _ck_closing_review reports `ran` for a unit the shared coverage reading calls uncovered, when its latest sprint-level verdict is APPROVE | Open | Medium | 2026-08-07 | 2026-08-07 |
 
 ## Archived Releases
 

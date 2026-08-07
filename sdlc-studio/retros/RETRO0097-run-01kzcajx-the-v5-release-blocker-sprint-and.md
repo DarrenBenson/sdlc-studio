@@ -90,17 +90,65 @@ not a numbered list, and drop one for each you add (`lessons carry --displaces`)
 
 ## Known issues carried
 
-Findings raised in this run that are NOT fixed, each with a stop-ship ruling. None stops the
-ship: every one is a reporting or ergonomics defect, and the two that touch correctness
-(BG0540, BG0541) are pre-existing behaviours rather than regressions this batch introduced.
+Every open finding, each with a stop-ship ruling. None stops the ship, and the reasoning is
+worth stating rather than implying: this close ships NOTHING. v5.0.0 exists in the changelog and
+no tag was cut (D0130), so no consuming project takes delivery of any of these today.
+
+Two deserve a considered ruling rather than a uniform one. BG0541 - the repair-mutation gate is
+dead code while `reference-doctrine.md` and the Definition-of-Done template tell consuming
+projects it refuses - is a FALSE MECHANISM CLAIM in a consuming-facing file, and would be
+stop-ship for a release. It is not stop-ship for this close only because there is no release:
+the five units that built it were DROPPED from this batch rather than closed, so nothing here
+asserts the gate works. If a tag is cut before BG0541 lands, that ruling has to be revisited by
+whoever cuts it. BG0542 and BG0543 are the same shape one level down - two commands whose
+criteria say they refuse and which exit 0 - and both units were likewise dropped.
 
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
+| BG0350 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0406 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0421 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0457 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0463 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0469 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0486 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0488 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0490 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0491 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0493 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0497 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0508 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0509 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0512 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0519 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0522 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0523 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0526 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0528 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0529 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0531 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0532 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
 | BG0534 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
 | BG0535 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0536 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0537 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0538 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
 | BG0539 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
 | BG0540 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
 | BG0541 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0542 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0543 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| BG0544 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0509 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0528 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0529 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0530 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0531 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0533 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0534 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0535 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0536 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
+| CR0537 | not-stop-ship | sdlc-studio; agent; v1 | 2026-08-07 |
 
 ## Estimate vs actual
 

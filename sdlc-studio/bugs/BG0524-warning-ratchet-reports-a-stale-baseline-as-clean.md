@@ -48,7 +48,7 @@ Decide which criterion is right and make the other follow. The AC2 behaviour is 
 
 - **Given** a warning baseline the ratchet cannot establish against the current tree
 - **When** `validate.py warning-ratchet` runs
-- **Then** it exits non-zero and names the state, rather than printing `clean` and exiting 0
+- **Then** it exits non-zero and names the state, rather than printing `clean` - it names the state and does NOT exit non-zero, because STALE alone must not refuse the commit that repaired an instance, which is the deliberate design three paragraphs above and was never carried into this clause
 - **Mutant:** restore `ok = not new`, so a stale baseline leaves the verdict untouched. A seat showed the not-baselined and corrupt states ALREADY exit non-zero, so a mutant worded around them is survived - only this edit reddens this criterion
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::RatchetStatesTests::test_a_stale_baseline_is_not_clean
 - **Verified:** yes (2026-08-06)

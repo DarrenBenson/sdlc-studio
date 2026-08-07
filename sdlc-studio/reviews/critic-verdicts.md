@@ -709,6 +709,17 @@ One row has been removed since adoption.
 | US0593 | REJECT | engineering; delivery review subagent; round 1 | sdlc-studio; agent; v1 | 2026-08-07 | b8c97c1ab63b | - | [new] a declared mutant survived its own verifier, or a regression the diff introduced - all repaired in a65f0a4a and re-executed |
 | US0594 | REJECT | engineering; delivery review subagent; round 1 | sdlc-studio; agent; v1 | 2026-08-07 | b3fe2c673376 | - | [new] a declared mutant survived its own verifier, or a regression the diff introduced - all repaired in a65f0a4a and re-executed |
 | US0596 | REJECT | engineering; delivery review subagent; round 1 | sdlc-studio; agent; v1 | 2026-08-07 | 74741077bca8 | - | [new] a declared mutant survived its own verifier, or a regression the diff introduced - all repaired in a65f0a4a and re-executed |
+| BG0533 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | 623c264f3c2d | - | none blocking |
+| US0591 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | d191b4c5dce5 | - | none blocking |
+| US0593 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | b8c97c1ab63b | - | none blocking |
+| US0594 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | b3fe2c673376 | - | none blocking |
+| US0596 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | 74741077bca8 | - | none blocking |
+| CR0535 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | 9cc450de0ebd | - | none blocking |
+| BG0524 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | 00604d7ed67a | - | none blocking |
+| US0592 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | 31bb2437d358 | - | none blocking |
+| US0595 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | 7d61a4bd7793 | - | none blocking |
+| US0635 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | b153cca5807b | - | none blocking |
+| US0636 | APPROVE | engineering; final independent pass; RUN-01KZCAJX | sdlc-studio; agent; v1 | 2026-08-07 | c8d6b8f6de1c | - | none blocking |
 
 ## Supersessions
 
