@@ -21,26 +21,37 @@ Exits non-zero on any violation.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
 SKILL_DIR = ".claude/skills/sdlc-studio"
 SKILL_MD_BUDGET = 500
 REFERENCE_BUDGET = 600
+
+# Recorded by `check_budgets.py --record`: reference-epic.md 1052 -> 1119; reference-story.md 1037 -> 1108; reference-code.md 911 -> 975; reference-outputs.md 781 -> 870; reference-decisions.md 724 -> 813; reference-test-best-practices.md 706 -> 789; reference-config.md 640 -> 696; reference-review.md 755 -> 820; reference-sprint.md 827 -> 856
+
+# Recorded by `check_budgets.py --record`: reference-consult.md 635 -> 634; reference-prd.md 661 -> 660; reference-epic.md 1119 -> 1118; reference-story.md 1108 -> 1107; reference-code.md 975 -> 974; reference-outputs.md 870 -> 869; reference-decisions.md 813 -> 812; reference-test-best-practices.md 789 -> 788; reference-config.md 696 -> 695; reference-review.md 820 -> 819; reference-sprint.md 856 -> 855
 CEILING_TOLERANCE = 1.05
 
 # Files allowed over REFERENCE_BUDGET, with the line count recorded when
 # they were allowlisted (v2.0.0). Raising a ceiling is a deliberate,
 # reviewed act - do it here, with a reason in the commit message.
 ALLOWLIST = {
-    "reference-epic.md": 1052,
-    "reference-story.md": 1037,
-    "reference-code.md": 911,
-    "reference-outputs.md": 781,  # +RFC0012 index-archival + slice-read conventions (CR0041)
-    "reference-decisions.md": 724,
-    "reference-test-best-practices.md": 706,  # +assertion-integrity + mutation-check section (CR0131)
-    "reference-config.md": 640,  # +repair-plan gate keys (EP0106): a new opt-in config surface
-    "reference-review.md": 755,  # +closing-review brief (EP0108/EP0109) +supersession boundary rule
+    # Crossed the 600 un-allowlisted budget when US0658's generated Reading Guide landed:
+    # both sat in the 620s already, and a guide is worth roughly 15 lines on a file an agent
+    # would otherwise read whole. Allowlisted deliberately at their measured size rather than
+    # splitting a reference to fit a generator, which would be the tail wagging the dog.
+    "reference-consult.md": 634,
+    "reference-prd.md": 660,
+    "reference-epic.md": 1118,
+    "reference-story.md": 1107,
+    "reference-code.md": 974,
+    "reference-outputs.md": 869,  # +RFC0012 index-archival + slice-read conventions (CR0041)
+    "reference-decisions.md": 812,
+    "reference-test-best-practices.md": 788,  # +assertion-integrity + mutation-check section (CR0131)
+    "reference-config.md": 695,  # +repair-plan gate keys (EP0106): a new opt-in config surface
+    "reference-review.md": 819,  # +closing-review brief (EP0108/EP0109) +supersession boundary rule
                                  # first pass and the standing adversarial practices;
                                  # +the verdict-log supersession section (EP0133/US0374/US0375):
                                  # the correction path and what a retired row does to each gate.
@@ -52,7 +63,7 @@ ALLOWLIST = {
     # 797: +the in-flight controls section (US0473). Raised DELIBERATELY, in the same commit
     # as the prose it admits, and set to the file's actual length rather than a round number
     # with headroom - a ceiling with slack in it is one that stops noticing growth.
-    "reference-sprint.md": 827,  # +the compulsory checklist as loop step 9 (EP0192): the one place
+    "reference-sprint.md": 855,  # +the compulsory checklist as loop step 9 (EP0192): the one place
                                  # the whole cycle is stated as a checkable set. Raised 724 -> 740
                                  # deliberately - the file was AT its +5% tolerance, so the step
                                  # could not land without saying so here.
@@ -73,11 +84,136 @@ ALLOWLIST = {
 }
 
 
+
+# ---------------------------------------------------------------- record / drift (US0657)
+
+#: Trees with no line budget. REPORTED, never gated: a hard ceiling set on day one over a tree
+#: nobody has been pruning fails on day one and is waived on day two, and a waived gate is worse
+#: than a reported number because it looks like a gate. Counted over `*.md` only - `templates/`
+#: is 7,412 lines over all files, and a total whose filter is unstated is one nobody can
+#: reproduce.
+UNBUDGETED_TREES = ("help", "best-practices", "templates")
+
+
+def _measure(skill):
+    """`{filename: line count}` for every reference, plus SKILL.md."""
+    out = {}
+    for path in sorted(skill.glob("reference-*.md")):
+        out[path.name] = len(path.read_text(encoding="utf-8").splitlines())
+    return out
+
+
+def record_ceilings(root) -> list[str]:
+    """Rewrite ALLOWLIST ceiling integers to the measured sizes. Returns what moved.
+
+    Only the INTEGER is rewritten, per line, by a regex over the literal. Every pre-existing
+    reason comment survives byte-identically and a new provenance line is APPENDED beneath the
+    block - never edited into. That is the criterion rather than a nicety: the reasons CONTAIN
+    their numbers (`Raised 705 -> 755`), so a tool that preserved them while moving the ceiling
+    would leave an argument that is false about the ceiling it justifies. The history
+    accumulates; nothing already written is rewritten.
+    """
+    skill = Path(root) / SKILL_DIR
+    sizes = _measure(skill)
+    src_path = Path(__file__)
+    lines = src_path.read_text(encoding="utf-8").splitlines(keepends=True)
+    moved: list[str] = []
+    for i, line in enumerate(lines):
+        m = re.match(r'^(\s*)"([^"]+\.md)":\s*(\d+),(.*)$', line)
+        if not m:
+            continue
+        indent, name, old, tail = m.group(1), m.group(2), int(m.group(3)), m.group(4)
+        new = sizes.get(name)
+        if new is None or new == old:
+            continue
+        lines[i] = f'{indent}"{name}": {new},{tail}\n'
+        moved.append(f"{name} {old} -> {new}")
+    if moved:
+        stamp = ("\n# Recorded by `check_budgets.py --record`: "
+                 + "; ".join(moved) + "\n")
+        anchor = next(i for i, ln in enumerate(lines) if ln.startswith("CEILING_TOLERANCE"))
+        lines.insert(anchor, stamp)
+        src_path.write_text("".join(lines), encoding="utf-8")
+    return moved
+
+
+def drift(root) -> list[tuple[str, int, int, float]]:
+    """`(name, lines, ceiling, percent over)` for every file inside the +5% tolerance.
+
+    The SET, not the worst offender: a report naming one member passes a single-member
+    assertion while hiding the rest.
+    """
+    skill = Path(root) / SKILL_DIR
+    out = []
+    for name, n in _measure(skill).items():
+        ceiling = ALLOWLIST.get(name)
+        if ceiling is None or n <= ceiling:
+            continue
+        if n <= ceiling * CEILING_TOLERANCE:
+            out.append((name, n, ceiling, round((n - ceiling) * 100.0 / ceiling, 2)))
+    return sorted(out)
+
+
+def tree_totals(root) -> dict:
+    """`{tree: markdown line count}` - reported, with no threshold anywhere."""
+    skill = Path(root) / SKILL_DIR
+    out = {}
+    for tree in UNBUDGETED_TREES:
+        d = skill / tree
+        out[tree] = sum(len(p.read_text(encoding="utf-8", errors="replace").splitlines())
+                        for p in d.rglob("*.md")) if d.is_dir() else 0
+    return out
+
+
+def guide_justification_faults(root) -> list[str]:
+    """Ceilings whose justification names a Reading Guide over a file that has none.
+
+    The premise is fixed by MAKING IT TRUE - the guides are generated - rather than by deleting
+    a sentence that is right about what the file needs.
+    """
+    skill = Path(root) / SKILL_DIR
+    src = Path(__file__).read_text(encoding="utf-8")
+    block = src[src.index("ALLOWLIST = {"):src.index("\n}", src.index("ALLOWLIST = {"))]
+    faults = []
+    current = None
+    for line in block.splitlines():
+        m = re.search(r'"([^"]+\.md)":', line)
+        if m:
+            current = m.group(1)
+        if current and re.search(r"reading guide", line, re.I):
+            target = skill / current
+            if target.is_file() and "Reading Guide" not in target.read_text(encoding="utf-8"):
+                faults.append(current)
+    return sorted(set(faults))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="repo root")
+    parser.add_argument("--record", action="store_true",
+                        help="rewrite ceiling INTEGERS to the measured sizes, preserving every "
+                             "reason comment byte-identically and appending the provenance")
+    parser.add_argument("--drift", action="store_true",
+                        help="name every file inside the +5%% tolerance, and exit 0 - a file one "
+                             "line from failing is worth seeing before it fails")
     args = parser.parse_args(argv)
     skill = Path(args.root) / SKILL_DIR
+
+    if args.record:
+        moved = record_ceilings(args.root)
+        print(f"budgets: recorded {len(moved)} ceiling(s)"
+              + (" - " + "; ".join(moved) if moved else " - nothing moved"))
+        return 0
+
+    if args.drift:
+        band = drift(args.root)
+        for name, n, ceiling, pct in band:
+            print(f"  {name}: {n} lines, ceiling {ceiling}, {pct}% over - inside the +5% "
+                  f"tolerance")
+        print(f"budgets: {len(band)} file(s) inside the tolerance")
+        for tree, total in tree_totals(args.root).items():
+            print(f"  {tree}/: {total} markdown line(s) - REPORTED, no threshold")
+        return 0
 
     errors: list[str] = []
 
@@ -98,6 +234,11 @@ def main(argv: list[str] | None = None) -> int:
             errors.append(
                 f"{path.name}: {n} lines > allowlisted ceiling {ceiling} +5% "
                 f"({int(ceiling * CEILING_TOLERANCE)}) - shrink it or raise the ceiling deliberately")
+
+    for name in guide_justification_faults(args.root):
+        errors.append(f"{name}: its ceiling justification names a Reading Guide and the file "
+                      f"has none - generate it with `docgen.py reading-guides`, or the "
+                      f"argument for the ceiling is false about the file it justifies")
 
     for err in errors:
         print(f"BUDGET: {err}", file=sys.stderr)

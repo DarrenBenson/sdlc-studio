@@ -405,6 +405,7 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "triage.py": "rewrites the artefacts it dispositions",
     "rfc.py": "writes the RFC it is asked to amend",
     "lessons.py": "writes the lessons store it owns",
+    "docgen.py": "writes only between generation markers in the targets it owns, and refuses any file that carries none - the marker is the confinement",
     "digest.py": "writes the digest it owns",
     "changelog.py": "writes the changelog it owns",
     "release_cut.py": "writes the CHANGELOG section it cuts (via changelog.compose) and the "

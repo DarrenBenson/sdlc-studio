@@ -1,0 +1,391 @@
+#!/usr/bin/env python3
+"""Generate the documentation the tooling can derive, and refuse to touch the rest.
+
+Three targets, each a table or block a human should never type:
+
+  * `surface`         - the verb catalogue, from `lib/surface.py`
+  * `references`      - the reference index, from the filesystem
+  * `reading-guides`  - a per-section guide with LINE SPANS, for every long reference
+
+Everything is written between `<!-- BEGIN GENERATED -->` and `<!-- END GENERATED -->` markers,
+and a target carrying no markers is REFUSED rather than overwritten. That discipline is what
+makes this generation and not a rewrite: a generator that owns a whole file eventually eats a
+paragraph somebody wrote, and a malformed marker pair is the shape it eats it through.
+
+`--check` regenerates in memory, prints a drift count, and EXITS 0. The operator's decision is
+that documentation guards report and never block, so a lane that fails a commit on drift is the
+thing being refused here.
+
+FLAGS ARE DELIBERATELY NOT IN THE MARKDOWN. 286 option strings would need a budget allowlist
+entry on the day the page was born, and a page nobody can afford to keep goes stale rather than
+helping. The page answers WHETHER A VERB EXISTS; `--help` and `docgen surface --format json`
+answer WHAT FLAGS.
+
+Pure stdlib.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+# `from lib import sdlc_md`, as the rest of the family does. A bare `import sdlc_md` off the
+# `lib` path entry binds a DIFFERENT module object to the same file, so an identity check
+# against the shared resolver fails and the root census reads this script as unanchored.
+from lib import sdlc_md  # noqa: E402
+import surface  # noqa: E402
+
+SKILL = Path(__file__).resolve().parent.parent
+
+BEGIN = "<!-- BEGIN GENERATED -->"
+END = "<!-- END GENERATED -->"
+
+#: References at or over this many lines earn a Reading Guide. A long document an agent must
+#: read whole is a document an agent reads badly.
+GUIDE_THRESHOLD = 400
+
+#: The files this tool GENERATES. A coverage number measured over a corpus that includes them is
+#: a document compared against a projection of itself, so `command_audit.py` imports this and
+#: strips them. ONE definition, two readers - two copies of this rule would drift, and the drift
+#: would be invisible in the flattering direction.
+GENERATED_TARGETS = (
+    "reference-scripts-surface.md",
+    "help/references.md",
+)
+
+
+class MarkerError(ValueError):
+    """The target's generation markers are absent or malformed. Never overwrite on this."""
+
+
+def find_region(text: str, path: str = "<text>") -> tuple[int, int]:
+    """`(start, end)` of the region BETWEEN the markers, or raise.
+
+    Every malformed shape raises rather than guessing, because each guess eats prose:
+    a `BEGIN` with no `END` read as end-of-file truncates the rest of the document; an `END`
+    before its `BEGIN` inverts the region; two `BEGIN`s make the span ambiguous.
+    """
+    begins = [m.end() for m in re.finditer(re.escape(BEGIN), text)]
+    ends = [m.start() for m in re.finditer(re.escape(END), text)]
+    if not begins and not ends:
+        raise MarkerError(f"{path}: no generation markers - refusing to overwrite a file this "
+                          f"tool does not own. Add {BEGIN} / {END} around the region to generate")
+    if len(begins) != 1 or len(ends) != 1:
+        raise MarkerError(f"{path}: {len(begins)} BEGIN and {len(ends)} END marker(s) - exactly "
+                          f"one of each is required, because more than one makes the span "
+                          f"ambiguous and a generator guessing at a span eats prose")
+    if ends[0] < begins[0]:
+        raise MarkerError(f"{path}: the END marker precedes its BEGIN, so the region is "
+                          f"inverted - refusing rather than writing between them")
+    return begins[0], ends[0]
+
+
+def splice(text: str, body: str, path: str = "<text>") -> str:
+    """`text` with the marked region replaced by `body`. Every byte outside it is preserved."""
+    start, end = find_region(text, path)
+    return text[:start] + "\n" + body.rstrip("\n") + "\n" + text[end:]
+
+
+# ---------------------------------------------------------------- surface
+
+
+def surface_rows(scripts_dir=None) -> list[tuple[str, str]]:
+    """`(invocation, note)` per verb, from the shared enumerator."""
+    rows: list[tuple[str, str]] = []
+    for rec in surface.enumerate_scripts(scripts_dir):
+        if not rec.verbs:
+            continue
+        for verb in rec.verbs:
+            rows.append((f"{rec.name} {verb}", ""))
+    return rows
+
+
+def render_surface(scripts_dir=None) -> str:
+    rows = surface_rows(scripts_dir)
+    out = [
+        f"_{len(rows)} verb(s). Generated by `docgen.py surface` - do not edit between the "
+        f"markers._",
+        "",
+        "Flags are deliberately absent: this table answers whether a verb EXISTS. For what",
+        "flags it takes, run the script's own help, or `docgen.py surface --format json`.",
+        "",
+        "| Command |",
+        "| --- |",
+    ]
+    out += [f"| `{inv}` |" for inv, _note in rows]
+    return "\n".join(out)
+
+
+def surface_json(scripts_dir=None) -> str:
+    """The whole surface INCLUDING flags - what the markdown deliberately omits."""
+    payload = []
+    for rec in surface.enumerate_scripts(scripts_dir):
+        payload.append({"script": rec.name, "verbs": rec.verbs,
+                        "flags": sorted(rec.flags), "error": rec.error})
+    return json.dumps(payload, indent=2)
+
+
+# ---------------------------------------------------------------- references
+
+
+def _description(path: Path) -> str:
+    """The reference's own first descriptive line.
+
+    A file with none - front matter only, or a heading followed straight by a table - gets its
+    filename stem. Stated here rather than left for a caller to pick, because an unspecified
+    fallback is a thing no test can fail on.
+    """
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.strip()
+        if not line or line.startswith(("#", ">", "|", "-", "*", "<!--", "---", "```")):
+            continue
+        return re.sub(r"\s+", " ", line).rstrip(".")[:160]
+    return path.stem.replace("reference-", "").replace("-", " ")
+
+
+def reference_rows(skill=None) -> list[tuple[str, str]]:
+    """`(filename, description)` for every reference, walked from the FILESYSTEM.
+
+    Built by walking rather than by reading a list somebody maintains: an index of fifty-plus
+    files is wrong the first time somebody adds one and forgets, and it is wrong in the
+    direction nobody notices.
+    """
+    root = Path(skill or SKILL)
+    return [(p.name, _description(p)) for p in sorted(root.glob("reference-*.md"))]
+
+
+def render_references(skill=None) -> str:
+    rows = reference_rows(skill)
+    out = [f"_{len(rows)} reference(s). Generated by `docgen.py references` from the "
+           f"filesystem - do not edit between the markers._", "",
+           "| Reference | What it covers |", "| --- | --- |"]
+    out += [f"| [{name}]({name}) | {desc} |" for name, desc in rows]
+    return "\n".join(out)
+
+
+# ---------------------------------------------------------------- reading guides
+
+
+def guide_entries(path: Path) -> list[tuple[int, str, int, int]]:
+    return guide_entries_text(path.read_text(encoding="utf-8", errors="replace"))
+
+
+def guide_entries_text(text: str) -> list[tuple[int, str, int, int]]:
+    """`(level, heading, start, end)` per section, with LINE SPANS.
+
+    The span is what makes this more than a table of contents: an agent can `Read(offset,
+    limit)` the section it needs instead of grepping a thousand-line file.
+    """
+    lines = text.splitlines()
+    heads: list[tuple[int, str, int]] = []
+    fenced = False
+    for i, line in enumerate(lines, start=1):
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        m = re.match(r"^(#{2,3})\s+(.+?)\s*$", line)
+        if m:
+            heads.append((len(m.group(1)), m.group(2), i))
+    out = []
+    for idx, (level, title, start) in enumerate(heads):
+        end = heads[idx + 1][2] - 1 if idx + 1 < len(heads) else len(lines)
+        out.append((level, title, start, end))
+    return out
+
+
+def render_guide(path: Path) -> str:
+    return render_guide_text(path.read_text(encoding="utf-8", errors="replace"))
+
+
+def render_guide_text(text: str) -> str:
+    entries = guide_entries_text(text)
+    total = len(text.splitlines())
+    out = [f"**Reading Guide** - {total} lines, {len(entries)} section(s). Generated by "
+           f"`docgen.py reading-guides`; read a span with `Read(offset, limit)` rather than "
+           f"the whole file.", "",
+           "| Section | Lines |", "| --- | --- |"]
+    for level, title, start, end in entries:
+        indent = "&nbsp;&nbsp;" * (level - 2)
+        out.append(f"| {indent}{title} | {start}-{end} |")
+    return "\n".join(out)
+
+
+def long_references(skill=None) -> list[Path]:
+    """Every reference at or over the guide threshold - DERIVED, never a typed list."""
+    root = Path(skill or SKILL)
+    return [p for p in sorted(root.glob("reference-*.md"))
+            if len(p.read_text(encoding="utf-8", errors="replace").splitlines()) >= GUIDE_THRESHOLD]
+
+
+GUIDE_BEGIN = "<!-- BEGIN GENERATED reading-guide -->"
+GUIDE_END = "<!-- END GENERATED reading-guide -->"
+
+
+def _guide_block_for(text: str, path: Path) -> str:
+    """The block computed against `text` - the file as it WILL be, not as it was on disk."""
+    return f"{GUIDE_BEGIN}\n{render_guide_text(text)}\n{GUIDE_END}"
+
+
+def apply_guide(text: str, path: Path) -> str:
+    """Insert or replace `path`'s guide block, after its title and any metadata block.
+
+    ITERATED TO A FIXED POINT. The guide reports line spans and the guide itself occupies
+    lines, so inserting it moves every section below it - a single pass emits spans that were
+    true of the file before the guide existed and are wrong the moment it does. A wrong span is
+    worse than none: it sends a reader to the wrong place with confidence, where an anchor at
+    least fails visibly.
+    """
+    for _ in range(10):
+        settled = _apply_guide_once(text, path)
+        if settled == text:
+            return settled
+        text = settled
+    return text
+
+
+def _apply_guide_once(text: str, path: Path) -> str:
+    block = _guide_block_for(text, path)
+    if GUIDE_BEGIN in text and GUIDE_END in text:
+        head = text.index(GUIDE_BEGIN)
+        tail = text.index(GUIDE_END) + len(GUIDE_END)
+        return text[:head] + block + text[tail:]
+    lines = text.splitlines(keepends=True)
+    at = 0
+    for i, line in enumerate(lines):
+        if line.startswith("# "):
+            at = i + 1
+            break
+    while at < len(lines) and (lines[at].startswith(">") or not lines[at].strip()):
+        at += 1
+    head = "".join(lines[:at]).rstrip("\n")
+    rest = "".join(lines[at:]).lstrip("\n")
+    return f"{head}\n\n{block}\n\n{rest}"
+
+
+# ---------------------------------------------------------------- the corpus rule
+
+
+def strip_generated_blocks(text: str) -> str:
+    """`text` with every generated region removed, WHEREVER it appears.
+
+    Excluding the generated TARGETS closes the front door; pasting the same table into a
+    hand-written file walks in the back one with no prose added. So the rule is about the
+    BLOCK, not the file - and it strips only what is marked, so an ordinary hand-written table
+    survives. A stripper that ate every table would drive a coverage count to 100% undocumented,
+    which passes an unchanged-number assertion by measuring nothing.
+    """
+    for begin, end in ((BEGIN, END), (GUIDE_BEGIN, GUIDE_END)):
+        text = re.sub(re.escape(begin) + r".*?" + re.escape(end), "", text, flags=re.S)
+    # An unterminated BEGIN would otherwise leave its whole table in the corpus.
+    text = re.sub(re.escape(BEGIN) + r".*", "", text, flags=re.S)
+    return text
+
+
+# ---------------------------------------------------------------- commands
+
+
+def _write(path: Path, new: str, check: bool) -> int:
+    """Write `new` unless checking. Returns 1 when it differs from what is on disk."""
+    old = path.read_text(encoding="utf-8") if path.exists() else ""
+    if old == new:
+        return 0
+    if not check:
+        path.write_text(new, encoding="utf-8")
+    return 1
+
+
+def cmd_surface(args) -> int:
+    if args.format == "json":
+        print(surface_json())
+        return 0
+    target = Path(args.root) / ".claude/skills/sdlc-studio/reference-scripts-surface.md"
+    if not target.exists():
+        print(f"error: {target} does not exist - create it with the generation markers first",
+              file=sys.stderr)
+        return 2
+    text = target.read_text(encoding="utf-8")
+    try:
+        new = splice(text, render_surface(), str(target))
+    except MarkerError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    drift = _write(target, new, args.check)
+    print(f"docgen surface: {drift} drift item(s)" if args.check
+          else f"docgen surface: {'rewrote' if drift else 'no change to'} {target.name}")
+    return 0
+
+
+def cmd_references(args) -> int:
+    target = Path(args.root) / ".claude/skills/sdlc-studio/help/references.md"
+    if not target.exists():
+        print(f"error: {target} does not exist", file=sys.stderr)
+        return 2
+    text = target.read_text(encoding="utf-8")
+    try:
+        new = splice(text, render_references(), str(target))
+    except MarkerError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    drift = _write(target, new, args.check)
+    print(f"docgen references: {drift} drift item(s)" if args.check
+          else f"docgen references: {'rewrote' if drift else 'no change to'} {target.name}")
+    return 0
+
+
+def cmd_reading_guides(args) -> int:
+    skill = Path(args.root) / ".claude/skills/sdlc-studio"
+    drift = 0
+    for path in long_references(skill):
+        text = path.read_text(encoding="utf-8")
+        new = apply_guide(text, path)
+        drift += _write(path, new, args.check)
+    total = len(long_references(skill))
+    print(f"docgen reading-guides: {drift} drift item(s) over {total} reference(s)" if args.check
+          else f"docgen reading-guides: {drift} of {total} reference(s) rewritten")
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """The parser, module-level so `lib/surface.py` can enumerate this script like any other."""
+    p = argparse.ArgumentParser(
+        prog="docgen.py",
+        description="Generate the documentation the tooling can derive, between generation "
+                    "markers, and refuse to touch anything else.")
+    p.add_argument("--root", default=".", help="Repo root (default: .)")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    for name, fn, helptext in (
+            ("surface", cmd_surface, "the verb catalogue, from the enumerated surface"),
+            ("references", cmd_references, "the reference index, from the filesystem"),
+            ("reading-guides", cmd_reading_guides,
+             "a per-section guide with line spans, for every long reference")):
+        s = sub.add_parser(name, help=helptext)
+        s.add_argument("--root", default=".", help="Repo root (default: .)")
+        s.add_argument("--check", action="store_true",
+                       help="regenerate in memory, print the drift count, and EXIT 0 - a "
+                            "documentation guard reports, it does not block")
+        s.add_argument("--format", choices=("text", "json"), default="text",
+                       help="json emits the surface WITH flags, which the markdown omits")
+        s.set_defaults(func=fn)
+    # `--root` uniform across the family: valid before OR after the subcommand, with the
+    # subparser default suppressed so it cannot clobber a value given before the verb.
+    sdlc_md.add_global_root(p)
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    # Resolve the root ONCE and write it back, so every verb below anchors on the same tree.
+    # Resolving at only one call site lets the two disagree, and a run from a subdirectory then
+    # generates into a stray workspace beside the cwd.
+    args.root = str(sdlc_md.resolve_root(args))
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

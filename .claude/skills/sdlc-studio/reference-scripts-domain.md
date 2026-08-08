@@ -22,6 +22,28 @@ and an in-degree score. Queried by the Agent Prompt Template and
 Full workflow: `reference-repo-map.md`. User-facing help:
 `help/repo-map.md`.
 
+### `docgen.py`
+
+Generates the documentation the tooling can derive, and refuses to touch the rest.
+
+| Verb | What it generates |
+| --- | --- |
+| `surface` | the verb catalogue, from the enumerated parsers |
+| `references` | the reference index, walked from the filesystem |
+| `reading-guides` | a per-section guide with LINE SPANS, for every reference over 400 lines |
+
+Writes ONLY between `<!-- BEGIN GENERATED -->` and `<!-- END GENERATED -->`. A target carrying
+no markers is refused rather than overwritten, and so is a malformed pair - a `BEGIN` with no
+`END`, an `END` before its `BEGIN`, two `BEGIN`s - because each of those is how a generator eats
+a paragraph somebody wrote.
+
+`--check` regenerates in memory, prints a drift count and EXITS 0: a documentation guard reports
+and does not block. Flags are deliberately absent from the generated markdown, which answers
+whether a verb EXISTS; `--format json` carries them, as does each script's own help.
+
+The reading-guide generation iterates to a fixed point, because the guide reports line spans and
+occupies lines: one pass emits spans that were true before the guide existed.
+
 ### `complexity.py`
 
 Cognitive (SonarSource) + cyclomatic complexity per function from Python's
