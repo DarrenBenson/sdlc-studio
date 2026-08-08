@@ -74,7 +74,8 @@ def _load(path: Path):
         # the real script - and returning the cached one would report the fixture's surface as
         # the real script's, or the other way round. The name is the key argparse needs; the
         # PATH is the identity.
-        if getattr(cached, "__file__", None) and Path(cached.__file__) == path:
+        cached_file = getattr(cached, "__file__", None)
+        if cached_file and Path(cached_file).resolve() == path.resolve():
             return cached
         sys.modules.pop(name, None)
     spec = importlib.util.spec_from_file_location(name, path)

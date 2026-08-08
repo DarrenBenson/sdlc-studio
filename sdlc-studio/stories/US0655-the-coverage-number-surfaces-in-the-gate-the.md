@@ -39,7 +39,7 @@
 - **Then** the `lint` chain's own command string contains `lint:disclosure`, and the aggregate
   exits 0. Asserting the KEY exists is green today with nothing changed, which is a criterion
   that cannot fail
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::LintAggregateTests::test_the_lint_chain_calls_disclosure
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DocSurfaceLaneTests::test_the_lint_aggregate_runs_disclosure_and_the_aggregate_still_passes
 
 ### AC3: the close report carries one row, derived not typed
 

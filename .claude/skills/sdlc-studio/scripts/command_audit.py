@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import contextlib
 import re
 import subprocess
 import sys
@@ -1068,6 +1069,24 @@ def _coverage_corpus(skill: Path) -> str:
     return "\n".join(parts)
 
 
+def _surface_module(skill: Path):
+    """`lib/surface.py`, imported with the search path RESTORED afterwards.
+
+    A bare `sys.path.insert` per call grows the path without bound in a long-lived process and
+    leaves two skill trees' `scripts/` dirs on it at once, so the second caller resolves the
+    first one's modules.
+    """
+    added = [str(skill / "scripts"), str(skill / "scripts" / "lib")]
+    sys.path[:0] = added
+    try:
+        import surface  # noqa: PLC0415
+        return surface
+    finally:
+        for entry in added:
+            with contextlib.suppress(ValueError):
+                sys.path.remove(entry)
+
+
 def verb_coverage(root: str = ".") -> dict:
     """`{verbs, documented, undocumented, missing, ratio}` over the hand-written corpus.
 
@@ -1075,16 +1094,18 @@ def verb_coverage(root: str = ".") -> dict:
     script merely mentioned by name says nothing about whether a reader could invoke the verb.
     """
     skill = _skill_dir(root)
-    sys.path.insert(0, str(skill / "scripts"))
-    sys.path.insert(0, str(skill / "scripts" / "lib"))
-    import surface  # noqa: PLC0415
+    surface = _surface_module(skill)
     corpus = _coverage_corpus(skill)
     missing = []
     total = 0
     for script, verbs in surface.verbs(skill / "scripts").items():
         for verb in verbs:
             total += 1
-            if f"{script} {verb}" not in corpus:
+            # ANCHORED at the start of the script name. A bare substring test lets
+            # `autosprint.py plan` satisfy `sprint.py plan`, and the direction of that error is
+            # always to report a gap as closed.
+            token = re.compile(r"(?<![\w.-])" + re.escape(f"{script} {verb}"))
+            if not token.search(corpus):
                 missing.append(f"{script} {verb}")
     documented = total - len(missing)
     return {"verbs": total, "documented": documented, "undocumented": len(missing),

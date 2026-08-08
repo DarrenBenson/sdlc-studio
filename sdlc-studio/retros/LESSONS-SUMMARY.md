@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0328: A tool whose blast radius is its own source must be scoped to the literal it rewrites.**
+- **L-0327: Drive the claim through the COMMAND and it finds wiring the suite cannot see.**
+- **L-0326: A criterion is only as good as the mutant its test can fail on.**
 - **L-0325: **A fixed line number in a fixture family probes past the end of the short ones.** Every severity fixture shared a probe line, and the...**
 - **L-0324: **A criterion whose premise is not decidable from what is stored gets satisfied by a fixture.** US0661 AC4 demanded that a registered claim...**
 - **L-0323: **A repair relocates its defect one construct over, and the second construct is the one nobody checks.** The terminality rule learned If...**

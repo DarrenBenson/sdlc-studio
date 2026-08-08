@@ -179,6 +179,52 @@ class DisclosureTests(unittest.TestCase):
 
 
 
+class DepthReachesTheReportTests(unittest.TestCase):
+    """US0659 AC4 through `disclosure.py` itself. A measurement with no caller reports to
+    nobody - `nesting_depth` had zero non-test callers, which is the exact shape this project
+    filed as BG0541 and spent a whole sprint repairing."""
+
+    def _mod(self):
+        import importlib.util, sys as _s, pathlib as _p
+        d = _p.Path(__file__).resolve().parent.parent
+        _s.path.insert(0, str(d)); _s.path.insert(0, str(d / "lib"))
+        spec = importlib.util.spec_from_file_location("disclosure_cli", d / "disclosure.py")
+        m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+        return m, d
+
+    def test_the_command_prints_the_depth_and_still_exits_zero(self) -> None:
+        """Mutant: leave `nesting_depth` uncalled, so the library is right and nothing runs it.
+        Mutant: print a constant rather than the measurement.
+        Mutant: make a non-zero depth fail the lane, which runs inside the blocking `lint`."""
+        import io, contextlib, re
+        m, d = self._mod()
+        root = str(d.parents[3])
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = m.main(["--root", root])
+        out = buf.getvalue()
+        self.assertEqual(0, code, "the disclosure lane exited non-zero - it sits inside the "
+                                  "blocking `lint` chain, so a report there becomes a gate")
+        found = re.search(r"nesting depth (\d+) hop\(s\) from SKILL\.md to ([^,\s]+)", out)
+        self.assertIsNotNone(found, f"the command reported no depth at all: {out[-300:]}")
+        measured = m.nesting_depth(root)
+        self.assertEqual(measured["depth"], int(found.group(1)),
+                         "the printed depth is not the measured one")
+        self.assertEqual(measured["furthest"], found.group(2))
+
+    def test_the_json_form_carries_it_too(self) -> None:
+        """A reader parsing `--format json` must not have to scrape the text form."""
+        import io, contextlib, json as _json
+        m, d = self._mod()
+        root = str(d.parents[3])
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(0, m.main(["--root", root, "--format", "json"]))
+        payload = _json.loads(buf.getvalue())
+        self.assertIn("nesting", payload, "the json form drops the measurement")
+        self.assertEqual(m.nesting_depth(root)["depth"], payload["nesting"]["depth"])
+
+
 class NestingDepthTests(unittest.TestCase):
     """US0659 AC4: the depth is MEASURED, on a fixture whose true depth is known."""
 

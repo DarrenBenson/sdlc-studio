@@ -72,7 +72,7 @@ def nesting_depth(repo_root: Path | str = ".") -> dict:
     """
     import collections  # noqa: PLC0415
     import re as _re  # noqa: PLC0415
-    skill = _skill_dir(Path(repo_root))
+    skill = _depth_root(Path(repo_root))
     if skill is None or not (skill / "SKILL.md").is_file():
         return {"applicable": False, "depth": 0, "furthest": None, "reached": 0}
 
@@ -104,34 +104,13 @@ def nesting_depth(repo_root: Path | str = ".") -> dict:
             "reached": len(dist)}
 
 
-def _skill_dir(repo_root: Path) -> Path | None:
-    d = Path(repo_root) / _SKILL_REL
-    return d if (d / "SKILL.md").exists() else None
+def _depth_root(root: Path) -> Path | None:
+    """The skill tree for the DEPTH measurement, which accepts a bare skill dir as well.
 
-
-def _read(p: Path) -> str:
-    """Read text defensively - a non-UTF-8 or unreadable file must never crash an advisory
-    check (it would abort the whole gate). Degrades to '' / replacement chars."""
-    try:
-        return p.read_text(encoding="utf-8", errors="replace")
-    except OSError:
-        return ""
-
-
-def _indexed(name: str, index_text: str) -> bool:
-    """True if the filename appears as a whole token in an index (boundary-matched, so a short
-    name like `code.md` is not masked by `qrcode.md`)."""
-    return re.search(r"(?<![\w./-])" + re.escape(name) + r"(?![\w])", index_text) is not None
-
-
-def _disclosable(skill_dir: Path) -> list[Path]:
-    """The on-demand docs that should each declare a load trigger: reference-*.md + help/*.md."""
-    out = sorted(skill_dir.glob("reference-*.md"))
-    out += sorted((skill_dir / "help").glob("*.md"))
-    return out
-
-
-def _skill_dir(root: Path) -> Path | None:
+    Deliberately NOT named `_skill_dir`: that name belongs to `check()`, which requires a repo
+    root, and a widened copy under the same name silently changed what `check()` considers an
+    applicable tree - in a script the lint chain now blocks on.
+    """
     for cand in (root / ".claude/skills/sdlc-studio", root):
         if (cand / "SKILL.md").is_file():
             return cand
@@ -201,6 +180,11 @@ def check(repo_root: Path | str = ".") -> dict:
 
 def cmd_check(args: argparse.Namespace) -> int:
     r = check(args.root)
+    # The measured depth travels WITH the findings. `nesting_depth` had no caller outside its
+    # own tests - a measurement nothing invokes reports to nobody, which is the shape this
+    # project already filed once as BG0541, and the criterion asks for a number a reader can
+    # act on rather than a function that could produce one.
+    r = dict(r, nesting=nesting_depth(args.root))
     if args.format == "json":
         print(json.dumps(r, indent=2))
     elif not r["applicable"]:
@@ -208,6 +192,11 @@ def cmd_check(args: argparse.Namespace) -> int:
     else:
         for f in r["findings"]:
             print(f"  [warn] [{f['kind']}] {f['detail']}")
+        n = r["nesting"]
+        if n["applicable"]:
+            print(f"  [info] nesting depth {n['depth']} hop(s) from SKILL.md to "
+                  f"{n['furthest']}, over {n['reached']} reachable file(s) - MEASURED and "
+                  f"reported, gated on nothing")
         print(f"disclosure: {len(r['findings'])} advisory finding(s)")
     # advisory: exit 0 unless --strict (opt-in enforcement)
     return 1 if (args.strict and r["findings"]) else 0

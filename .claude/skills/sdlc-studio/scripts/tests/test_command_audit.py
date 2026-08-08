@@ -892,6 +892,66 @@ class UnjudgedRatchetTests(unittest.TestCase):
 
 
 
+class CoverageThroughTheCliTests(unittest.TestCase):
+    """US0654's load-bearing claim, driven through `command_audit.py` itself.
+
+    The exclusion is what stops this whole CR being a lie that looks like a triumph: the moment
+    a generated page lists all 257 verbs, a corpus including it returns 100% and the gap
+    vanishes with nothing improved. A library test cannot see the wiring - `--coverage` has to
+    reach `verb_coverage`, and `verb_coverage` has to reach the stripper.
+    """
+
+    def test_the_exclusion_holds_through_the_command_and_removing_it_shows_the_difference(self):
+        """Both directions, over the REAL tree, because the projection trap is about what the
+        real corpus contains.
+
+        Mutant: include the generated targets in the corpus.
+        Mutant: stop stripping generated blocks from hand-written files.
+        """
+        import io, contextlib, importlib.util, re, sys as _s
+        d = pathlib.Path(__file__).resolve().parent.parent
+        _s.path.insert(0, str(d)); _s.path.insert(0, str(d / "lib"))
+        spec = importlib.util.spec_from_file_location("command_audit", d / "command_audit.py")
+        ca = importlib.util.module_from_spec(spec)
+        _s.modules["command_audit"] = ca
+        spec.loader.exec_module(ca)
+        root = str(d.parents[3])
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = ca.main(["--coverage", "--root", root])
+        out = buf.getvalue()
+        self.assertEqual(0, code, "`--coverage` exited non-zero - it reports, it does not block")
+        m = re.search(r"verb coverage: (\d+) of (\d+)", out)
+        self.assertIsNotNone(m, f"the command printed no coverage headline: {out[:200]}")
+        documented, total = int(m.group(1)), int(m.group(2))
+        self.assertGreater(total, 200, "the enumeration found almost no verbs")
+        self.assertLess(documented, total,
+                        f"the command reports {documented}/{total} - FULL coverage, which is "
+                        f"what a corpus containing its own generated projection reports. The "
+                        f"exclusion is off and this measurement is worthless")
+
+        # THE CONTROL, and the reason this is not just an inequality: with the exclusion
+        # disabled the number must move UP toward the total. An assertion that it is merely
+        # below the total passes on a corpus that is empty for some unrelated reason.
+        real_strip, real_targets = None, None
+        import docgen
+        try:
+            real_strip = docgen.strip_generated_blocks
+            real_targets = docgen.GENERATED_TARGETS
+            docgen.strip_generated_blocks = lambda text: text
+            docgen.GENERATED_TARGETS = ()
+            unexcluded = ca.verb_coverage(root)
+        finally:
+            docgen.strip_generated_blocks = real_strip
+            docgen.GENERATED_TARGETS = real_targets
+        self.assertEqual(unexcluded["verbs"], unexcluded["documented"],
+                         "with the exclusion off the corpus should read FULL coverage - if it "
+                         "does not, the generated page is not the thing being excluded and the "
+                         "measured gap above is being produced by something else")
+        self.assertGreater(unexcluded["documented"], documented)
+
+
 class CoverageCorpusTests(unittest.TestCase):
     """US0654: the coverage corpus is HAND-WRITTEN markdown only.
 

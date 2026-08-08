@@ -28,7 +28,7 @@
   `END` before its `BEGIN`, and two `BEGIN`s. Treating a missing `END` as end-of-file is exactly
   how a generator eats a paragraph somebody wrote, and it is the shape the prose invokes without
   the plan covering it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GeneratedRegionTests::test_only_the_marked_region_is_rewritten_and_an_unmarked_file_is_refused
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GenerationThroughTheCliTests::test_a_target_without_markers_is_refused_by_the_cli
 
 ### AC2: `--check` reports drift and exits 0
 

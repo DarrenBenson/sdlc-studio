@@ -132,6 +132,25 @@ def surface_json(scripts_dir=None) -> str:
 # ---------------------------------------------------------------- references
 
 
+def strip_generated_blocks(text: str) -> str:
+    """`text` with every generated region removed, WHEREVER it appears.
+
+    Excluding the generated TARGETS closes the front door; pasting the same table into a
+    hand-written file walks in the back one with no prose added. So the rule is about the
+    BLOCK, not the file - and it strips only what is marked, so an ordinary hand-written table
+    survives. A stripper that ate every table would drive a coverage count to 100% undocumented,
+    which passes an unchanged-number assertion by measuring nothing.
+    """
+    for begin, end in ((BEGIN, END), (GUIDE_BEGIN, GUIDE_END)):
+        text = re.sub(re.escape(begin) + r".*?" + re.escape(end), "", text, flags=re.S)
+    # An unterminated or inverted BEGIN would otherwise leave its whole table in the corpus.
+    # BOTH pairs need this: covering one and not the other makes a mangled Reading Guide count
+    # as hand-written documentation, which is the exemption running backwards.
+    for begin in (BEGIN, GUIDE_BEGIN):
+        text = re.sub(re.escape(begin) + r".*", "", text, flags=re.S)
+    return text
+
+
 def _description(path: Path) -> str:
     """The reference's own first descriptive line.
 
@@ -139,11 +158,39 @@ def _description(path: Path) -> str:
     filename stem. Stated here rather than left for a caller to pick, because an unspecified
     fallback is a thing no test can fail on.
     """
-    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        line = raw.strip()
-        if not line or line.startswith(("#", ">", "|", "-", "*", "<!--", "---", "```")):
+    body = path.read_text(encoding="utf-8", errors="replace")
+    # Whole HTML comments and fenced blocks first. Skipping only the line that OPENS a comment
+    # left five references describing themselves with the tail of one ("... -->"), and skipping
+    # any line starting `*` treated a bold-opening paragraph as a bullet and began another
+    # mid-sentence. A description is prose, so the non-prose is removed before the search.
+    # The generated Reading Guide sits near the top of every long reference, so a search that
+    # does not remove it describes the file with its own generated table of contents.
+    body = strip_generated_blocks(body)
+    body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
+    body = re.sub(r"^```.*?^```", "", body, flags=re.S | re.M)
+    # PARAGRAPHS, not lines. Markdown wraps, so a line-by-line scan reads a continuation as if
+    # it were the start of a thought: `reference-delivery.md` described itself as "worktree,
+    # then merged" - the tail of a bullet two lines up.
+    for block in re.split(r"\n\s*\n", body):
+        first = block.strip().splitlines()[0].strip() if block.strip() else ""
+        if not first or first.startswith(("#", ">", "|", "-", "```", "1.")):
             continue
-        return re.sub(r"\s+", " ", line).rstrip(".")[:160]
+        if first.startswith("*") and not first.startswith("**"):
+            continue                      # a bullet, where `**bold**` opens a paragraph
+        line = re.sub(r"\s+", " ", block.strip()).strip()
+        # Inline emphasis is stripped BEFORE the sentence split. A table cell is a summary, not
+        # a rendering surface, and an asterisk pair carried into the payload fails its
+        # markdownlint emphasis-style rule - a generator that emits lint failures makes every
+        # run of it a two-step job.
+        line = re.sub(r"\*\*(.+?)\*\*", r"\1", line)
+        line = re.sub(r"(?<!\w)\*(.+?)\*(?!\w)", r"\1", line)
+        line = re.sub(r"(?<!\w)_(.+?)_(?!\w)", r"\1", line)
+        # One sentence: a truncation partway through the second reads as a fragment.
+        line = re.split(r"(?<=[a-z0-9)`])[.:]\s", line)[0].strip().rstrip(".:")
+        # A marker line ("Load when:") says WHEN to read the file, not what it covers.
+        if len(line) < 15:
+            continue
+        return line[:160].rstrip()
     return path.stem.replace("reference-", "").replace("-", " ")
 
 
@@ -232,6 +279,34 @@ def _guide_block_for(text: str, path: Path) -> str:
     return f"{GUIDE_BEGIN}\n{render_guide_text(text)}\n{GUIDE_END}"
 
 
+HAND_GUIDE = re.compile(r"^#{2,3}\s+Reading Guide\s*$", re.M)
+
+
+def strip_hand_written_guide(text: str) -> str:
+    """Remove a HAND-WRITTEN `## Reading Guide` section, so one shape replaces two.
+
+    Three references carried one before this generator existed. Leaving them produces a file
+    with two guides that disagree the moment either moves - and the generated one even lists
+    its rival as a section row, which is the shape of a document describing its own duplicate.
+    """
+    m = HAND_GUIDE.search(text)
+    if not m:
+        return text
+    rest = text[m.end():]
+    # BOUNDED BY THE TABLE, not by the next heading. A guide IS a table, and stopping at the
+    # next heading eats every paragraph between them - on a file whose guide is the last
+    # section there is no next heading and the rule runs to end-of-file, deleting the document.
+    # Falling back to the heading rule only when there is no table keeps the old shape for a
+    # guide written as prose.
+    table = re.match(r"\s*(?:\|[^\n]*\n)+", rest)
+    if table:
+        end = m.end() + table.end()
+    else:
+        nxt = re.search(r"^#{1,3}\s+\S", rest, re.M)
+        end = m.end() + (nxt.start() if nxt else len(rest))
+    return text[:m.start()] + text[end:].lstrip("\n")
+
+
 def apply_guide(text: str, path: Path) -> str:
     """Insert or replace `path`'s guide block, after its title and any metadata block.
 
@@ -241,6 +316,7 @@ def apply_guide(text: str, path: Path) -> str:
     worse than none: it sends a reader to the wrong place with confidence, where an anchor at
     least fails visibly.
     """
+    text = strip_hand_written_guide(text)
     for _ in range(10):
         settled = _apply_guide_once(text, path)
         if settled == text:
@@ -271,22 +347,6 @@ def _apply_guide_once(text: str, path: Path) -> str:
 # ---------------------------------------------------------------- the corpus rule
 
 
-def strip_generated_blocks(text: str) -> str:
-    """`text` with every generated region removed, WHEREVER it appears.
-
-    Excluding the generated TARGETS closes the front door; pasting the same table into a
-    hand-written file walks in the back one with no prose added. So the rule is about the
-    BLOCK, not the file - and it strips only what is marked, so an ordinary hand-written table
-    survives. A stripper that ate every table would drive a coverage count to 100% undocumented,
-    which passes an unchanged-number assertion by measuring nothing.
-    """
-    for begin, end in ((BEGIN, END), (GUIDE_BEGIN, GUIDE_END)):
-        text = re.sub(re.escape(begin) + r".*?" + re.escape(end), "", text, flags=re.S)
-    # An unterminated BEGIN would otherwise leave its whole table in the corpus.
-    text = re.sub(re.escape(BEGIN) + r".*", "", text, flags=re.S)
-    return text
-
-
 # ---------------------------------------------------------------- commands
 
 
@@ -304,14 +364,15 @@ def cmd_surface(args) -> int:
     if args.format == "json":
         print(surface_json())
         return 0
-    target = Path(args.root) / ".claude/skills/sdlc-studio/reference-scripts-surface.md"
+    skill = Path(args.root) / ".claude/skills/sdlc-studio"
+    target = skill / "reference-scripts-surface.md"
     if not target.exists():
         print(f"error: {target} does not exist - create it with the generation markers first",
               file=sys.stderr)
         return 2
     text = target.read_text(encoding="utf-8")
     try:
-        new = splice(text, render_surface(), str(target))
+        new = splice(text, render_surface(skill / "scripts"), str(target))
     except MarkerError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -322,13 +383,18 @@ def cmd_surface(args) -> int:
 
 
 def cmd_references(args) -> int:
-    target = Path(args.root) / ".claude/skills/sdlc-studio/help/references.md"
+    # The skill dir is resolved from --root and PASSED DOWN. Calling `render_references()` with
+    # no argument defaults it to the real installed tree, so `--root` selects which file gets
+    # written while the CONTENT comes from somewhere else entirely - a flag that looks wired and
+    # is not. Found by the first test to drive this through `main()`.
+    skill = Path(args.root) / ".claude/skills/sdlc-studio"
+    target = skill / "help/references.md"
     if not target.exists():
         print(f"error: {target} does not exist", file=sys.stderr)
         return 2
     text = target.read_text(encoding="utf-8")
     try:
-        new = splice(text, render_references(), str(target))
+        new = splice(text, render_references(skill), str(target))
     except MarkerError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

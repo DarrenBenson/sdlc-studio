@@ -27,7 +27,7 @@
   story becomes a new source of the broken links `check_links.py` exists to catch. The index is
   built by walking the directory rather than by reading a list somebody maintains, because a
   hand-maintained index of 50-plus files is wrong the first time somebody adds one and forgets
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReferenceIndexTests::test_a_reference_the_index_never_named_appears
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GenerationThroughTheCliTests::test_references_is_generated_from_the_filesystem_through_the_cli
 
 ### AC2: a row whose file has gone is REMOVED, not left pointing at nothing
 

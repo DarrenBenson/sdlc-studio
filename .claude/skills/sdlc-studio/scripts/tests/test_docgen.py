@@ -110,6 +110,59 @@ class GeneratedRegionTests(unittest.TestCase):
         self.assertIn("verbs", payload[0])
 
 
+class CheckExitsZeroTests(unittest.TestCase):
+    """AC2, driven through `main()`. The claim that `--check` reports and never blocks was true
+    by hand and pinned nowhere, so a revert to a blocking guard ships green - and this whole CR
+    exists under an operator decision that documentation guards REPORT."""
+
+    def _target(self, d: Path, name: str, sub: str) -> Path:
+        skill = d / ".claude/skills/sdlc-studio"
+        (skill / "help").mkdir(parents=True, exist_ok=True)
+        (skill / "SKILL.md").write_text("# S\n", encoding="utf-8")
+        target = skill / name
+        target.write_text(f"# T\n\n{docgen.BEGIN}\nSEEDED DRIFT\n{docgen.END}\n",
+                          encoding="utf-8")
+        return target
+
+    def test_check_reports_drift_and_still_exits_zero(self) -> None:
+        """Mutant: return 1 from `--check` when the regeneration differs.
+        Mutant: WRITE the file under `--check`, so the guard is a rewrite in disguise."""
+        import io, contextlib
+        for name, sub in (("reference-scripts-surface.md", "surface"),
+                          ("help/references.md", "references")):
+            with self.subTest(verb=sub), tempfile.TemporaryDirectory() as t:
+                d = Path(t)
+                target = self._target(d, name, sub)
+                before = target.read_text(encoding="utf-8")
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    code = docgen.main([sub, "--root", str(d), "--check"])
+                self.assertEqual(0, code,
+                                 f"`docgen.py {sub} --check` exited {code} on a seeded drift - a "
+                                 f"documentation guard that blocks is the thing the operator "
+                                 f"decided against")
+                self.assertIn("drift item(s)", buf.getvalue(),
+                              "`--check` exited 0 without reporting anything, which is silence "
+                              "rather than a report")
+                self.assertNotIn("0 drift", buf.getvalue(), "the seeded drift was not detected")
+                self.assertEqual(before, target.read_text(encoding="utf-8"),
+                                 "`--check` WROTE the file - it is a rewrite in disguise")
+
+    def test_a_settled_target_reports_zero_and_exits_zero(self) -> None:
+        """The positive control: a `--check` hard-wired to report drift passes the test above."""
+        import io, contextlib
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            target = self._target(d, "help/references.md", "references")
+            docgen.main(["references", "--root", str(d)])       # settle it
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                code = docgen.main(["references", "--root", str(d), "--check"])
+            self.assertEqual(0, code)
+            self.assertIn("0 drift item(s)", buf.getvalue(),
+                          "a settled target still reported drift, so the count is hard-wired")
+
+
 class ReferenceIndexTests(unittest.TestCase):
     """US0656: the index is walked, both ways, and each row speaks for its own file."""
 
@@ -157,6 +210,110 @@ class ReferenceIndexTests(unittest.TestCase):
             self.assertEqual("bare", rows["reference-bare.md"],
                              "a file with no descriptive line got an empty cell rather than the "
                              "stated fallback")
+
+    def test_every_real_row_reads_as_prose_about_its_own_file(self) -> None:
+        """AC3 OVER THE REAL TREE. A two-file synthetic fixture cannot see what the corpus
+        actually contains - seven rows shipped a comment tail, a marker line or a table
+        fragment as their description and the fixture was green throughout.
+
+        Mutant: take the first non-blank line, whatever it is.
+        Mutant: read through a generated block, an HTML comment or a fenced example.
+        """
+        skill = DIR.parent
+        rows = dict(docgen.reference_rows(skill))
+        self.assertGreater(len(rows), 40, "the walk found almost no references")
+        bad = {"-->", "<!--", "```", "|", "#", docgen.BEGIN, docgen.GUIDE_BEGIN}
+        for name, desc in rows.items():
+            with self.subTest(reference=name):
+                self.assertTrue(desc, f"{name} got an empty description")
+                for token in bad:
+                    self.assertNotIn(token, desc,
+                                     f"{name}'s row reads {desc!r} - markup rather than a "
+                                     f"sentence about the file")
+                self.assertGreater(len(desc), 14,
+                                   f"{name}'s row reads {desc!r}, which tells a reader choosing "
+                                   f"between 50 references nothing")
+
+
+class GenerationThroughTheCliTests(unittest.TestCase):
+    """The claims driven through `docgen.py` itself. A library test cannot see the wiring: the
+    splice, the marker refusal and the write are three functions the CLI has to compose, and
+    `brief_fingerprint(brief(...))` passed in-process for a whole sprint while the command
+    printed nothing."""
+
+    def test_references_is_generated_from_the_filesystem_through_the_cli(self) -> None:
+        """US0656 AC1. Mutant: build the index from the rows already in the file.
+        Mutant: leave `cmd_references` unwired, so the library is right and nothing calls it."""
+        import io, contextlib
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            skill = d / ".claude/skills/sdlc-studio"
+            (skill / "help").mkdir(parents=True)
+            (skill / "SKILL.md").write_text("# S\n", encoding="utf-8")
+            (skill / "reference-invented.md").write_text(
+                "# Invented\n\nA reference nothing has ever listed anywhere.\n", encoding="utf-8")
+            index = skill / "help/references.md"
+            index.write_text(f"# R\n\n{docgen.BEGIN}\n{docgen.END}\n", encoding="utf-8")
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(0, docgen.main(["references", "--root", str(d)]))
+            body = index.read_text(encoding="utf-8")
+            self.assertIn("reference-invented.md", body,
+                          "a reference the index never named did not appear after running the "
+                          "command - the walk is in the library and nothing calls it")
+            self.assertIn("A reference nothing has ever listed anywhere", body)
+
+    def test_a_target_without_markers_is_refused_by_the_cli(self) -> None:
+        """US0653 AC1 through the entry point: the refusal is what stops a generator eating a
+        hand-written page, and a library that raises into a `main` which swallows it refuses
+        nothing. Mutant: catch MarkerError in `main` and write anyway."""
+        import io, contextlib
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            skill = d / ".claude/skills/sdlc-studio"
+            (skill / "help").mkdir(parents=True)
+            (skill / "SKILL.md").write_text("# S\n", encoding="utf-8")
+            index = skill / "help/references.md"
+            index.write_text("# R\n\nhand-written prose nobody generated\n", encoding="utf-8")
+            before = index.read_text(encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()) as err:
+                code = docgen.main(["references", "--root", str(d)])
+            self.assertEqual(2, code, "an unmarked target was not refused")
+            self.assertIn("marker", err.getvalue().lower())
+            self.assertEqual(before, index.read_text(encoding="utf-8"),
+                             "the unmarked hand-written page was OVERWRITTEN")
+
+    def test_reading_guides_are_generated_through_the_cli(self) -> None:
+        """US0658 AC1. Mutant: leave `cmd_reading_guides` unwired."""
+        import io, contextlib
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            skill = d / ".claude/skills/sdlc-studio"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("# S\n", encoding="utf-8")
+            long = skill / "reference-long.md"
+            # Comfortably PAST the threshold, computed from it rather than typed: a fixture
+            # sized by hand sits under the bar the moment the bar moves, and the test then
+            # reports "no guide generated" about a file that was never eligible for one.
+            long.write_text("# Doc\n\n" + "".join(
+                f"## Section {i}\n\n" + "filler\n" * 30
+                for i in range(docgen.GUIDE_THRESHOLD // 20)), encoding="utf-8")
+            self.assertGreater(len(long.read_text(encoding="utf-8").splitlines()),
+                               docgen.GUIDE_THRESHOLD, "the fixture is under the threshold")
+            short = skill / "reference-short.md"
+            short.write_text("# Short\n\n## A\n\nbody\n", encoding="utf-8")
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(0, docgen.main(["reading-guides", "--root", str(d)]))
+            self.assertIn(docgen.GUIDE_BEGIN, long.read_text(encoding="utf-8"),
+                          f"a reference over {docgen.GUIDE_THRESHOLD} lines got no guide from "
+                          f"the command")
+            self.assertNotIn(docgen.GUIDE_BEGIN, short.read_text(encoding="utf-8"),
+                             "a SHORT reference got a guide, so the threshold is not applied")
+            self.assertIn("1 of 1 reference(s) rewritten", buf.getvalue())
 
 
 class ReadingGuideTests(unittest.TestCase):
@@ -230,6 +387,31 @@ class ReadingGuideTests(unittest.TestCase):
         # twice over a file that did not have it.
         sprint = skill / "reference-sprint.md"
         self.assertIn(docgen.GUIDE_BEGIN, sprint.read_text(encoding="utf-8"))
+
+    def test_the_generated_guide_REPLACES_a_hand_written_one(self) -> None:
+        """AC1's second clause. Asserting a guide is PRESENT is satisfied by a file with two,
+        which is what shipped: three references carried a hand-written guide and a generated one
+        underneath it, and the generated table listed its own rival as a section row.
+
+        Mutant: append the generated guide without removing the hand-written one.
+        """
+        skill = DIR.parent
+        for path in docgen.long_references(skill):
+            body = path.read_text(encoding="utf-8")
+            with self.subTest(reference=path.name):
+                self.assertEqual(1, body.count(docgen.GUIDE_BEGIN),
+                                 f"{path.name} carries {body.count(docgen.GUIDE_BEGIN)} generated "
+                                 f"guides")
+                self.assertEqual([], docgen.HAND_GUIDE.findall(body),
+                                 f"{path.name} still carries a HAND-WRITTEN Reading Guide beside "
+                                 f"the generated one, so a reader gets two answers about where a "
+                                 f"section starts - and the generated table lists its rival as a "
+                                 f"section row")
+        # ...and the stripper is what enforces it, over a file that HAS a hand-written one.
+        hand = "# T\n\n## Reading Guide\n\n| a | b |\n\nbody\n"
+        self.assertNotIn("Reading Guide", docgen.strip_hand_written_guide(hand))
+        self.assertIn("body", docgen.strip_hand_written_guide(hand),
+                      "the stripper ate prose past the guide it removed")
 
 
 class CorpusRuleTests(unittest.TestCase):

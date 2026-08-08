@@ -64,7 +64,7 @@
   that constant - and a test asserting "reports the measured depth" against a tree that really
   is 3 deep passes on a hardcoded 3. The 3-hop path is not fixable without a rewrite this change
   is not doing, so the honest disposition is a number somebody can act on
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_disclosure.py::NestingDepthTests::test_the_depth_is_measured_not_assumed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_disclosure.py::DepthReachesTheReportTests::test_the_command_prints_the_depth_and_still_exits_zero
 
 ## Test Plan
 

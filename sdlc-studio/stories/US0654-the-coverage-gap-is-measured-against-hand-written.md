@@ -33,7 +33,7 @@
   generated page lists every verb, a corpus that includes it returns 100% and the gap vanishes
   with no documentation added, which this project has already filed once as a document compared
   against a projection of itself
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_a_verb_documented_only_in_a_generated_block_reads_undocumented
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageThroughTheCliTests::test_the_exclusion_holds_through_the_command_and_removing_it_shows_the_difference
 
 ### AC2: the corpus rule has ONE definition, and moving it moves the reader
 

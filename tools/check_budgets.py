@@ -29,9 +29,7 @@ SKILL_DIR = ".claude/skills/sdlc-studio"
 SKILL_MD_BUDGET = 500
 REFERENCE_BUDGET = 600
 
-# Recorded by `check_budgets.py --record`: reference-epic.md 1052 -> 1119; reference-story.md 1037 -> 1108; reference-code.md 911 -> 975; reference-outputs.md 781 -> 870; reference-decisions.md 724 -> 813; reference-test-best-practices.md 706 -> 789; reference-config.md 640 -> 696; reference-review.md 755 -> 820; reference-sprint.md 827 -> 856
 
-# Recorded by `check_budgets.py --record`: reference-consult.md 635 -> 634; reference-prd.md 661 -> 660; reference-epic.md 1119 -> 1118; reference-story.md 1108 -> 1107; reference-code.md 975 -> 974; reference-outputs.md 870 -> 869; reference-decisions.md 813 -> 812; reference-test-best-practices.md 789 -> 788; reference-config.md 696 -> 695; reference-review.md 820 -> 819; reference-sprint.md 856 -> 855
 CEILING_TOLERANCE = 1.05
 
 # Files allowed over REFERENCE_BUDGET, with the line count recorded when
@@ -44,8 +42,8 @@ ALLOWLIST = {
     # splitting a reference to fit a generator, which would be the tail wagging the dog.
     "reference-consult.md": 634,
     "reference-prd.md": 660,
-    "reference-epic.md": 1118,
-    "reference-story.md": 1107,
+    "reference-epic.md": 1102,
+    "reference-story.md": 1091,
     "reference-code.md": 974,
     "reference-outputs.md": 869,  # +RFC0012 index-archival + slice-read conventions (CR0041)
     "reference-decisions.md": 812,
@@ -81,8 +79,11 @@ ALLOWLIST = {
                                  # deferred, and the command that refuses otherwise. A rule with
                                  # no gate behind it is a known-weak rule, so the statement ships
                                  # beside the gate rather than instead of it
-}
 
+# Recorded by `check_budgets.py --record`: reference-epic.md 1052 -> 1119; reference-story.md 1037 -> 1108; reference-code.md 911 -> 975; reference-outputs.md 781 -> 870; reference-decisions.md 724 -> 813; reference-test-best-practices.md 706 -> 789; reference-config.md 640 -> 696; reference-review.md 755 -> 820; reference-sprint.md 827 -> 856
+# Recorded by `check_budgets.py --record`: reference-consult.md 635 -> 634; reference-prd.md 661 -> 660; reference-epic.md 1119 -> 1118; reference-story.md 1108 -> 1107; reference-code.md 975 -> 974; reference-outputs.md 870 -> 869; reference-decisions.md 813 -> 812; reference-test-best-practices.md 789 -> 788; reference-config.md 696 -> 695; reference-review.md 820 -> 819; reference-sprint.md 856 -> 855
+# Recorded by `check_budgets.py --record`: reference-epic.md 1118 -> 1102; reference-story.md 1107 -> 1091
+}
 
 
 # ---------------------------------------------------------------- record / drift (US0657)
@@ -103,6 +104,29 @@ def _measure(skill):
     return out
 
 
+STAMP_PREFIX = "# Recorded by `check_budgets.py --record`:"
+#: How many `--record` runs the in-source history keeps. The trail is for a reader deciding
+#: whether a ceiling moved recently, not an archive - git already holds every one of them.
+HISTORY_KEEP = 5
+
+
+def _allowlist_span(text: str, path) -> tuple[int, int]:
+    """`(first, last)` line indices of the `ALLOWLIST` literal, or a NAMED failure.
+
+    `next(...)` over a generator raises a bare `StopIteration` if the constant is ever renamed,
+    which reaches the caller as a traceback with no sentence in it. A rewriter that has lost its
+    anchor must say which anchor and in which file.
+    """
+    try:
+        open_at = text.index("ALLOWLIST = {")
+        close_at = text.index("\n}", open_at)
+    except ValueError:
+        raise SystemExit(
+            f"check_budgets: no `ALLOWLIST = {{` ... `\\n}}` literal in {path} - `--record` "
+            f"rewrites that block and will not guess at a replacement anchor") from None
+    return text[:open_at].count("\n"), text[:close_at].count("\n")
+
+
 def record_ceilings(root) -> list[str]:
     """Rewrite ALLOWLIST ceiling integers to the measured sizes. Returns what moved.
 
@@ -116,9 +140,17 @@ def record_ceilings(root) -> list[str]:
     skill = Path(root) / SKILL_DIR
     sizes = _measure(skill)
     src_path = Path(__file__)
-    lines = src_path.read_text(encoding="utf-8").splitlines(keepends=True)
+    whole = src_path.read_text(encoding="utf-8")
+    lines = whole.splitlines(keepends=True)
+    # SCOPED TO THE ALLOWLIST LITERAL. Run line-wise over the whole source, the pattern rewrites
+    # any ceiling-shaped line anywhere - including one inside a docstring, demonstrated in
+    # review. This is a tool whose job is rewriting its own source, so the blast radius is the
+    # thing to bound. `guide_justification_faults` below already scopes the same way.
+    first, last = _allowlist_span(whole, src_path)
     moved: list[str] = []
     for i, line in enumerate(lines):
+        if not (first <= i <= last):
+            continue
         m = re.match(r'^(\s*)"([^"]+\.md)":\s*(\d+),(.*)$', line)
         if not m:
             continue
@@ -129,10 +161,15 @@ def record_ceilings(root) -> list[str]:
         lines[i] = f'{indent}"{name}": {new},{tail}\n'
         moved.append(f"{name} {old} -> {new}")
     if moved:
-        stamp = ("\n# Recorded by `check_budgets.py --record`: "
-                 + "; ".join(moved) + "\n")
-        anchor = next(i for i, ln in enumerate(lines) if ln.startswith("CEILING_TOLERANCE"))
-        lines.insert(anchor, stamp)
+        # BOUNDED, and BENEATH the block it describes. An unbounded history above the allowlist
+        # pushes the literal further down the file on every run, and the reader hits the audit
+        # trail before the thing being audited. `HISTORY_KEEP` runs are kept; git holds the rest.
+        stamp = "# Recorded by `check_budgets.py --record`: " + "; ".join(moved) + "\n"
+        kept = [ln for ln in lines if ln.startswith(STAMP_PREFIX)]
+        lines = [ln for ln in lines if not ln.startswith(STAMP_PREFIX)]
+        history = (kept + [stamp])[-HISTORY_KEEP:]
+        first, last = _allowlist_span("".join(lines), src_path)
+        lines[last + 1:last + 1] = ["\n"] + history
         src_path.write_text("".join(lines), encoding="utf-8")
     return moved
 

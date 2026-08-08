@@ -209,7 +209,12 @@ def _doc_surface(root: str) -> dict:
         import command_audit
         r = command_audit.verb_coverage(root)
     except Exception as exc:  # noqa: BLE001 - an advisory lane must never break the gate
-        return {"count": 0, "blocking": False, "detail": f"unreadable ({type(exc).__name__})"}
+        # COUNT 1, not 0. Zero is this lane's clean state, so a broken measurement reported as
+        # zero renders as perfect coverage with only the word `unreadable` to distinguish it -
+        # and a reader scanning counts never reads the word. The lane still does not block.
+        return {"count": 1, "blocking": False,
+                "detail": f"NOT MEASURED - command_audit.verb_coverage raised "
+                          f"{type(exc).__name__}: {exc}"}
     return {"count": r["undocumented"], "blocking": False,
             "detail": f"{r['undocumented']} of {r['verbs']} verbs carry no invocable form "
                       f"({r['ratio']}% do)"}

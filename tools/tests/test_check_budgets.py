@@ -86,6 +86,44 @@ class RecordTests(unittest.TestCase):
                              "a tree already in step was rewritten anyway")
 
 
+    def test_the_history_is_bounded_and_sits_beneath_the_block_it_describes(self) -> None:
+        """The trail is for a reader deciding whether a ceiling moved recently. Unbounded, it
+        pushes the allowlist further down the file on every run and the reader meets the audit
+        before the thing audited.
+
+        Mutant: append each stamp without evicting the oldest.
+        Mutant: insert the stamp above the allowlist.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            src, skill = self._sandbox(d, lines=250, ceiling=100)
+            mod = _load(src)
+            ref = skill / "reference-thing.md"
+            for n in range(mod.HISTORY_KEEP + 3):
+                ref.write_text("x\n" * (300 + n * 10), encoding="utf-8")
+                self.assertTrue(mod.record_ceilings(str(d)), "a grown file recorded nothing")
+
+            text = src.read_text(encoding="utf-8")
+            stamps = [ln for ln in text.splitlines() if ln.startswith(mod.STAMP_PREFIX)]
+            self.assertEqual(mod.HISTORY_KEEP, len(stamps),
+                             f"the history grew to {len(stamps)} entries - it accumulates "
+                             f"without bound, so the file grows on every run forever")
+            self.assertIn("-> 370", stamps[-1], "the newest run was not the one kept")
+            self.assertGreater(text.index(stamps[0]), text.index("ALLOWLIST = {"),
+                               "the history sits ABOVE the allowlist it describes")
+
+    def test_a_renamed_anchor_is_refused_by_name(self) -> None:
+        """Mutant: look the anchor up with `next(...)`, which raises a bare StopIteration."""
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            src, _skill = self._sandbox(d, lines=250, ceiling=100)
+            mod = _load(src)
+            with self.assertRaises(SystemExit) as caught:
+                mod._allowlist_span("no literal here at all\n", src)
+            self.assertIn("ALLOWLIST", str(caught.exception),
+                          "the refusal does not name the anchor it lost")
+
+
 class DriftTests(unittest.TestCase):
     """AC2-AC4, and the two criteria US0658 owns over this checker."""
 
@@ -192,8 +230,8 @@ class DriftTests(unittest.TestCase):
         Mutant: raise a ceiling to fit the generated guide.
         """
         expected = {
-            "reference-epic.md": 1118,
-            "reference-story.md": 1107,
+            "reference-epic.md": 1102,
+            "reference-story.md": 1091,
             "reference-code.md": 974,
             "reference-outputs.md": 869,
             "reference-decisions.md": 812,

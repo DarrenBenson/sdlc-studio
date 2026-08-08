@@ -159,6 +159,15 @@ class SurfaceEnumerationTests(unittest.TestCase):
                          "offered, so it is still building its own map rather than reading "
                          "lib/surface.py")
 
+        # THE POSITIVE CONTROL. Without it the assertion above is satisfied by a sweep that
+        # returns nothing at all - an `_all_parsers()` reduced to `return []` reads the shared
+        # library and reads its own map identically, and the criterion cannot tell them apart.
+        live = [n for n, _p in grammar._all_parsers()]
+        self.assertGreater(len(live), 50,
+                           "the unpatched sweep is empty or tiny, so the delegation assertion "
+                           "above passes by measuring nothing")
+        self.assertIn("sprint.py", live)
+
 
 if __name__ == "__main__":
     unittest.main()

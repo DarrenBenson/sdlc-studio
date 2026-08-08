@@ -48,6 +48,10 @@ def _load(name: str, rel: str):
 #: NAMED, not skipped - which is the whole difference from the bare `continue` this replaced.
 #: The set may only SHRINK: a script added tomorrow gets no entry here, and a repair removes
 #: one. The debt is recorded in BG0555 with the mechanical fix it needs.
+#:
+#: It exempts the THREE root-grammar tests below and NOTHING else. These twelve already
+#: satisfy the format and repeatable-flag families, so exempting them there would be a
+#: debt set silencing checks that pass - which is how an exemption outlives its reason.
 ROOT_GRAMMAR_DEBT = frozenset({
     "backfill_audit_runs.py", "backfill_authorship.py", "changelog.py", "digest.py",
     "doc_freshness.py", "flow.py", "migrate_v3.py", "persona_gen.py", "persona_resolve.py",
@@ -217,8 +221,6 @@ class FormatFlagConformance(unittest.TestCase):
 
     def test_every_format_flag_offers_text_and_json_defaulting_text(self) -> None:
         for name, parser in _all_parsers():
-            if name in ROOT_GRAMMAR_DEBT:
-                continue  # recorded debt, NAMED above and in BG0555 - the set only shrinks
             for sub, action in _walk(parser):
                 if "--format" in action.option_strings:
                     with self.subTest(script=name, sub=sub):
@@ -238,8 +240,6 @@ class RepeatableFlagConformance(unittest.TestCase):
     def test_combinable_flags_merge_rather_than_overwrite(self) -> None:
         multi_actions = (argparse._AppendAction, argparse._ExtendAction)
         for name, parser in _all_parsers():
-            if name in ROOT_GRAMMAR_DEBT:
-                continue  # recorded debt, NAMED above and in BG0555 - the set only shrinks
             for sub, action in _walk(parser):
                 help_l = (action.help or "").lower()
                 if "combinable" in help_l and "not combinable" not in help_l:

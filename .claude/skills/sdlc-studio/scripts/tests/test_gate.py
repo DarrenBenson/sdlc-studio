@@ -5743,6 +5743,55 @@ class DocSurfaceLaneTests(unittest.TestCase):
         self.assertIn("4242", value,
                       "the close row did not move when the defining module was patched")
 
+    def test_an_unmeasurable_lane_does_not_render_as_perfect_coverage(self):
+        """AC1's other half. Zero is this lane's CLEAN state, so a broken measurement reported as
+        zero renders identically to full coverage, and a reader scanning counts never reads the
+        word `unreadable` beside it.
+
+        Mutant: return count 0 when the measurement raises.
+        Mutant: let the exception escape, breaking an advisory lane's whole gate.
+        """
+        g = self._mod("gate")
+        ca = self._mod("command_audit")
+        root = str(pathlib.Path(__file__).resolve().parents[4])
+        real = ca.verb_coverage
+        try:
+            def _boom(*a, **k):  # noqa: ARG001
+                raise RuntimeError("the enumerator is broken")
+            ca.verb_coverage = _boom
+            res = g._doc_surface(root)
+        finally:
+            ca.verb_coverage = real
+        self.assertFalse(res["blocking"], "an advisory lane broke the gate")
+        self.assertNotEqual(0, res["count"],
+                            "a measurement that RAISED reported the same count as full "
+                            "coverage - the failure is invisible to anyone reading numbers")
+        self.assertIn("NOT MEASURED", res["detail"])
+        self.assertIn("RuntimeError", res["detail"], "the detail does not name what broke")
+
+    def test_the_lint_aggregate_runs_disclosure_and_the_aggregate_still_passes(self):
+        """AC2's SECOND clause, which was true by hand and pinned nowhere. The whole point of
+        joining `lint:disclosure` to `npm run lint` is that it reports without failing it; a
+        script under the aggregate that exits non-zero turns an advisory report into a blocker
+        for every contributor.
+
+        Mutant: add `lint:disclosure` to the aggregate but let disclosure.py exit non-zero.
+        Mutant: drop `lint:disclosure` from the aggregate again.
+        """
+        import json, subprocess
+        root = pathlib.Path(__file__).resolve().parents[5]   # the REPO root, not .claude/
+        pkg = json.loads((root / "package.json").read_text(encoding="utf-8"))
+        scripts = pkg["scripts"]
+        self.assertIn("lint:disclosure", scripts["lint"],
+                      "the disclosure lane is not in the `npm run lint` aggregate, so the "
+                      "checker that would catch this gap still runs nowhere")
+        proc = subprocess.run(scripts["lint:disclosure"], shell=True, cwd=root,  # noqa: S602
+                              capture_output=True, text=True, timeout=300)
+        self.assertEqual(0, proc.returncode,
+                         f"`lint:disclosure` exited {proc.returncode} inside the aggregate, so "
+                         f"`npm run lint` now fails on an advisory report: {proc.stderr[-400:]}")
+        self.assertTrue(proc.stdout.strip(), "the lane produced no report at all")
+
 
 
 if __name__ == "__main__":

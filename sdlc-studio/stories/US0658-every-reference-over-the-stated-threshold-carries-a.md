@@ -29,7 +29,7 @@
   from the threshold in the test rather than typed, and pinned by a second assertion that at
   least one file which previously had none now has one - a derived count alone cannot catch the
   mutant that generates only where a guide is absent, because every file still carries something
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReadingGuideTests::test_every_reference_over_the_threshold_has_one
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GenerationThroughTheCliTests::test_reading_guides_are_generated_through_the_cli
 
 ### AC2: each entry carries a LINE SPAN, not only an anchor
 
