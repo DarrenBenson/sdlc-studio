@@ -908,6 +908,23 @@ def render_markdown(result: dict) -> str:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    if getattr(args, "coverage", False):
+        result = verb_coverage(args.root)
+        findings = coverage_findings(args.root)
+        if args.format == "json":
+            print(json.dumps({**result, "findings": findings}, indent=2))
+        else:
+            print(f"verb coverage: {result['documented']} of {result['verbs']} verb(s) carry an "
+                  f"invocable form in the hand-written documentation ({result['ratio']}%) - "
+                  f"{result['undocumented']} do not")
+            for f in findings[:20]:
+                print(f"  [{f['severity']}] {f['detail']}")
+            if len(findings) > 20:
+                print(f"  ... and {len(findings) - 20} more")
+        # ALWAYS 0. The operator's decision: a documentation guard reports and files, it never
+        # blocks - a lane that fails a commit on under-documentation is one that gets switched
+        # off, and then it reports nothing at all.
+        return 0
     if args.dead_flags:
         result = scan_dead_flags(args.root)
         if args.format == "json":
@@ -940,6 +957,87 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+
+# ---------------------------------------------------------------- verb coverage (US0654)
+
+#: The corpus a coverage number is measured against: HAND-WRITTEN markdown only.
+#:
+#: The moment a generated page lists every verb, a corpus including it returns 100% and the gap
+#: vanishes with no documentation added - a document compared against a projection of itself.
+#: So two exclusions, and both are needed. `docgen.GENERATED_TARGETS` names the files the
+#: generator owns; `docgen.strip_generated_blocks` removes a generated region WHEREVER it
+#: appears, because pasting the same table into a hand-written file walks in the back door with
+#: one extra step and no prose. ONE definition, two readers - imported, never copied, since a
+#: copy compares equal and would drift invisibly in the flattering direction.
+
+
+#: Where the skill lives under a repo root. `.claude/skills/sdlc-studio` in a consuming
+#: project and in this one; a bare skill tree passes its own root.
+SKILL_REL = Path(".claude/skills/sdlc-studio")
+
+
+def _skill_dir(root: str) -> Path:
+    cand = Path(root) / SKILL_REL
+    return cand if cand.is_dir() else Path(root)
+
+
+def _coverage_corpus(skill: Path) -> str:
+    """Every hand-written markdown byte under the skill, generated regions removed."""
+    import docgen  # noqa: PLC0415 - the definition of what "generated" means lives there
+    generated = {(skill / t).resolve() for t in docgen.GENERATED_TARGETS}
+    parts = []
+    for path in sorted(skill.rglob("*.md")):
+        if path.resolve() in generated:
+            continue
+        parts.append(docgen.strip_generated_blocks(
+            path.read_text(encoding="utf-8", errors="replace")))
+    return "\n".join(parts)
+
+
+def verb_coverage(root: str = ".") -> dict:
+    """`{verbs, documented, undocumented, missing, ratio}` over the hand-written corpus.
+
+    A verb counts as documented only when its INVOCABLE form - `script.py verb` - appears. A
+    script merely mentioned by name says nothing about whether a reader could invoke the verb.
+    """
+    skill = _skill_dir(root)
+    sys.path.insert(0, str(skill / "scripts"))
+    sys.path.insert(0, str(skill / "scripts" / "lib"))
+    import surface  # noqa: PLC0415
+    corpus = _coverage_corpus(skill)
+    missing = []
+    total = 0
+    for script, verbs in surface.verbs(skill / "scripts").items():
+        for verb in verbs:
+            total += 1
+            if f"{script} {verb}" not in corpus:
+                missing.append(f"{script} {verb}")
+    documented = total - len(missing)
+    return {"verbs": total, "documented": documented, "undocumented": len(missing),
+            "missing": sorted(missing),
+            "ratio": round(documented * 100.0 / total, 1) if total else 100.0}
+
+
+def coverage_findings(root: str = ".") -> list[dict]:
+    """One finding per gap, severity separating ABSENT from UNUSABLE.
+
+    A verb a reader cannot find at all and one they can read about but not invoke are different
+    failures with different fixes, and one severity for both gives triage nothing to sort on.
+    """
+    skill = _skill_dir(root)
+    corpus = _coverage_corpus(skill)
+    out = []
+    for token in verb_coverage(root)["missing"]:
+        script = token.split()[0]
+        # Named in prose but never as an invocable form is a different failure from absent.
+        severity = "medium" if script in corpus else "high"
+        out.append({"token": token, "severity": severity,
+                    "detail": (f"`{token}` appears nowhere in the hand-written documentation"
+                               if severity == "high" else
+                               f"`{script}` is mentioned in prose, but `{token}` never appears "
+                               f"as an invocable form")})
+    return out
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="command_audit", description=__doc__)
     p.add_argument("--root", default=".", help="repo root")
@@ -949,6 +1047,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="write sdlc-studio/reviews/command-audit.md instead of stdout")
     p.add_argument("--strict", action="store_true",
                    help="exit non-zero when a broken tool is found (with --check-tools)")
+    p.add_argument("--coverage", action="store_true",
+                   help="report how many enumerated verbs carry no invocable form in the "
+                        "HAND-WRITTEN documentation, and file one finding per gap. Always "
+                        "exits 0 - a documentation guard that blocks is one that gets "
+                        "switched off")
     p.add_argument("--dead-flags", action="store_true",
                    help="report a flag whose parsed destination no line acts on, and exit "
                         "non-zero when one is found (skips the command-surface audit)")

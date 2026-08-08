@@ -28,6 +28,8 @@ def _load(name: str):
 
 sys.path.insert(0, str(_SCRIPTS))
 command_audit = _load("command_audit")
+ca = command_audit
+import pathlib  # noqa: E402 - used by the coverage fixtures below
 doc_coverage = command_audit.doc_coverage   # the enumerators both tools share
 
 
@@ -887,6 +889,184 @@ class UnjudgedRatchetTests(unittest.TestCase):
                          "a destination absent from the baseline was not reported")
         self.assertEqual(["mod_a.py:alpha"], drift["cleared"],
                          "a baselined pair that is now judged was not reported")
+
+
+
+class CoverageCorpusTests(unittest.TestCase):
+    """US0654: the coverage corpus is HAND-WRITTEN markdown only.
+
+    The moment a generated page lists every verb, a corpus including it returns 100% and the
+    gap vanishes with no documentation added - a document compared against a projection of
+    itself, which this project has already filed once as BG0457.
+    """
+
+    def _fixture(self, d, *, generated_body=None, pasted=None, hand_table=False):
+        """A skill tree with two verbs: one named in prose, one only in a generated block."""
+        import docgen
+        skill = pathlib.Path(d)
+        (skill / "scripts" / "lib").mkdir(parents=True)
+        (skill / "scripts" / "a.py").write_text(
+            "import argparse\n"
+            "def build_parser():\n"
+            "    p = argparse.ArgumentParser(prog='a')\n"
+            "    s = p.add_subparsers(dest='cmd')\n"
+            "    s.add_parser('prosed'); s.add_parser('genonly')\n"
+            "    return p\n", encoding="utf-8")
+        # The prose-only verb lives in the `reference-scripts` FAMILY deliberately: excluding
+        # that family wholesale is the other way to make the number stop moving, and only a
+        # prose-only verb inside it catches that.
+        hand = "# Hand\n\nRun `a.py prosed` to do the thing.\n"
+        if hand_table:
+            hand += "\n| Command | What |\n| --- | --- |\n| `a.py genonly` | hand-written |\n"
+        (skill / "reference-scripts-hand.md").write_text(hand, encoding="utf-8")
+        body = generated_body if generated_body is not None else (
+            f"{docgen.BEGIN}\n| `a.py prosed` |\n| `a.py genonly` |\n{docgen.END}\n")
+        (skill / "reference-scripts-surface.md").write_text(f"# Generated\n\n{body}",
+                                                            encoding="utf-8")
+        if pasted:
+            (skill / "reference-pasted.md").write_text(pasted, encoding="utf-8")
+        return skill
+
+    def test_a_verb_documented_only_in_a_generated_block_reads_undocumented(self) -> None:
+        """AC1, and it is a PAIR rather than an unchanged total: asserting only that a number
+        does not move is satisfied by a corpus that strips too much, or one that excludes the
+        `reference-scripts` family wholesale - both of which measure nothing and pass.
+
+        Mutant: include the generated targets in the corpus.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            skill = self._fixture(d)
+            missing = ca.verb_coverage(str(skill))["missing"]
+            self.assertIn("a.py genonly", missing,
+                          "a verb named ONLY inside a generated block counted as documented - "
+                          "the page is being compared against a projection of itself")
+            self.assertNotIn("a.py prosed", missing,
+                             "a verb named in hand-written prose read as undocumented, so the "
+                             "corpus strips more than the generated regions and measures "
+                             "nothing")
+
+    def test_a_pasted_generated_block_is_stripped_and_a_hand_written_table_is_not(self) -> None:
+        """AC3. Excluding the generated TARGETS closes the front door; pasting the same table
+        into a hand-written file walks in the back one with no prose added. And a stripper that
+        ate every table would drive the count to 100% undocumented, which passes an
+        unchanged-number assertion by measuring nothing.
+
+        Mutant: strip generated blocks only from the declared targets.
+        Mutant: strip every table-shaped block, not only generated ones.
+        """
+        import docgen
+        with tempfile.TemporaryDirectory() as d:
+            skill = self._fixture(
+                d, pasted=f"# Pasted\n\n{docgen.BEGIN}\n| `a.py genonly` |\n{docgen.END}\n")
+            self.assertIn("a.py genonly", ca.verb_coverage(str(skill))["missing"],
+                          "a generated block pasted into a hand-written file counted as "
+                          "documentation")
+        with tempfile.TemporaryDirectory() as d:
+            skill = self._fixture(d, hand_table=True)
+            self.assertNotIn("a.py genonly", ca.verb_coverage(str(skill))["missing"],
+                             "an ordinary hand-written table was stripped, so the corpus eats "
+                             "documentation and the count is meaningless")
+
+    def test_patching_the_shared_rule_moves_the_corpus(self) -> None:
+        """AC2. Asserting the two are EQUAL proves nothing - a copy compares equal, so the
+        mutant that gives `command_audit.py` its own list survives untouched. Patch the shared
+        definition and require the reader to move with it.
+
+        Mutant: give `command_audit.py` its own copy of the target list.
+        """
+        import docgen
+        with tempfile.TemporaryDirectory() as d:
+            # The prose OUTSIDE the markers in a generated file is what the target list
+            # governs; the block stripper only removes what is between them. So this is the
+            # shape that can see the list at all - and the two rules are not redundant: a
+            # generated page's own hand-written prose must not count as documentation either,
+            # since nobody maintains it as documentation.
+            skill = self._fixture(
+                d, generated_body=(f"Run `a.py genonly` for the thing.\n\n"
+                                   f"{docgen.BEGIN}\n| `a.py prosed` |\n{docgen.END}\n"))
+            self.assertIn("a.py genonly", ca.verb_coverage(str(skill))["missing"],
+                          "prose inside a GENERATED target counted as documentation")
+            real = docgen.GENERATED_TARGETS
+            try:
+                docgen.GENERATED_TARGETS = ()
+                relaxed = ca.verb_coverage(str(skill))["missing"]
+            finally:
+                docgen.GENERATED_TARGETS = real
+            self.assertNotIn("a.py genonly", relaxed,
+                             "clearing the SHARED target list did not change what the corpus "
+                             "excludes, so command_audit is reading its own copy")
+
+    def test_the_counts_are_pinned_on_a_fixture_with_stated_literals(self) -> None:
+        """AC4. The repo-wide number is REPORTED, not asserted - US0652 made 12 more scripts
+        enumerable and it moves - but a test whose expectation is computed by the function
+        under test can never fail, so the fixture carries numbers a human wrote down.
+
+        Mutant: count a verb as documented when its SCRIPT is mentioned anywhere, rather than
+        the `script.py verb` token.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            skill = self._fixture(d)
+            r = ca.verb_coverage(str(skill))
+            self.assertEqual(2, r["verbs"])
+            self.assertEqual(1, r["documented"])
+            self.assertEqual(1, r["undocumented"])
+
+
+class CoverageFindingTests(unittest.TestCase):
+    """US0654 AC5/AC6: severity separates absent from unusable, and filing is idempotent."""
+
+    def _fixture(self, d):
+        skill = pathlib.Path(d)
+        (skill / "scripts" / "lib").mkdir(parents=True)
+        (skill / "scripts" / "named.py").write_text(
+            "import argparse\n"
+            "def build_parser():\n"
+            "    p = argparse.ArgumentParser(prog='named')\n"
+            "    s = p.add_subparsers(dest='cmd')\n"
+            "    s.add_parser('unusable')\n"
+            "    return p\n", encoding="utf-8")
+        (skill / "scripts" / "absent.py").write_text(
+            "import argparse\n"
+            "def build_parser():\n"
+            "    p = argparse.ArgumentParser(prog='absent')\n"
+            "    s = p.add_subparsers(dest='cmd')\n"
+            "    s.add_parser('gone')\n"
+            "    return p\n", encoding="utf-8")
+        # `named.py` is mentioned in prose; its verb never appears as an invocable form.
+        (skill / "reference-x.md").write_text(
+            "# X\n\nThe named.py script does things.\n", encoding="utf-8")
+        return skill
+
+    def test_severity_separates_absent_from_unusable(self) -> None:
+        """A verb a reader cannot find at all and one they can read about but not invoke are
+        different failures with different fixes.
+
+        Mutant: file every coverage finding at one severity.
+        Mutant: swap the absent and unusable severities.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            skill = self._fixture(d)
+            by_token = {f["token"]: f["severity"] for f in ca.coverage_findings(str(skill))}
+            self.assertEqual("medium", by_token.get("named.py unusable"),
+                             "a verb whose script IS mentioned in prose was not separated from "
+                             "one that appears nowhere")
+            self.assertEqual("high", by_token.get("absent.py gone"),
+                             "a verb appearing nowhere at all was not the more severe finding")
+
+    def test_the_lane_exits_zero_whatever_it_finds(self) -> None:
+        """AC6. A documentation guard that blocks is one that gets switched off, and then it
+        reports nothing at all.
+
+        Mutant: exit non-zero when the coverage ratio is below a threshold.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            skill = self._fixture(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = ca.main(["--coverage", "--root", str(skill)])
+            self.assertEqual(0, rc, "the coverage lane blocked on an under-documented tree")
+            self.assertIn("verb coverage", buf.getvalue())
+
 
 
 if __name__ == "__main__":
