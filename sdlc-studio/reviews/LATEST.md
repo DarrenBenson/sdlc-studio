@@ -9,6 +9,51 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
+## RUN-01KZF9AF - the skill documents what the tooling ships, and the coverage number cannot be self-satisfied
+
+**8 of 8 units, 31 points, goal ACHIEVED under panel sign-off.** 49 of 211 verbs appeared in no
+hand-written doc as something a reader could type. The obvious fix - generate a page listing
+every verb - would have driven a coverage query to 100% with nothing improved, which this repo
+has already filed once as BG0457: a document compared against a projection of itself. So the
+corpus the number is measured against EXCLUDES every generated target and every fenced generated
+region, and the criterion asserts it in both directions: 132 of 257 with the exclusions on, 257
+of 257 with both off.
+
+| Unit | Pts | |
+| --- | --- | --- |
+| US0652 | 5 | one enumeration of the surface, NAMING what it cannot read rather than skipping it |
+| US0653 | 5 | the verb catalogue is generated between markers; an unmarked file is refused |
+| US0654 | 5 | the gap is measured against hand-written docs only - the load-bearing criterion |
+| US0655 | 3 | the number reaches the gate lane, the lint aggregate and the close report |
+| US0656 | 3 | the reference index is walked from the filesystem, each row reading its own file |
+| US0657 | 3 | budgets record what shipped and report the files inside the tolerance |
+| US0658 | 5 | 26 generated Reading Guides with LINE SPANS, replacing the 3 hand-written ones |
+| US0659 | 2 | SKILL.md carries its own checklist's sections; the nesting depth is measured |
+
+**Read this before the next review round.** The delivery review returned 4 APPROVE and 4 REJECT,
+and three of the four rejections were one failure: **a test asserting a weaker claim than the
+criterion above it.** US0658 asserted a guide was PRESENT where the criterion said REPLACES -
+three references shipped carrying two guides, the generated table listing its rival as a section
+row. US0656's description test ran on a two-file synthetic fixture where the criterion said the
+corpus - seven real rows shipped markup as prose. US0652's delegation test compared against an
+empty list, which an empty sweep also satisfies. All three were green from the day they were
+written, so no run could have surfaced them. Only reading each test back against its own
+criterion did.
+
+**The second thing worth carrying: drive the claim through the COMMAND.** `verify_ac lane-check`
+reported five of these eight units as verified only in-process. Paying that advisory - adding one
+CLI-driving verifier per unit - found two defects a 6354-test green suite held: `docgen.py
+references` and `surface` threaded `--root` to the file they WROTE but not to the content they
+READ, so the flag chose a target and the real installed tree supplied its contents; and
+`nesting_depth` had zero non-test callers, the same shape RUN-01KZEF9M spent itself repairing.
+`test_cli_grammar.py` checks a `--root`'s grammar exhaustively and its EFFECT not at all.
+
+Filed and open: **CR0539** (lane-check names 181 units corpus-wide and blocks none, so the rule
+AGENTS.md states has a checker nobody acts on - ratchet it rather than block on 181) and
+**BG0556** (no guard catches a decorative `--root`). Both are `not-stop-ship`; D0130 still holds
+the tag, so nothing here reaches a consumer until a release is cut, and that judgement is owed
+again then.
+
 ## RUN-01KZEF9M - the doctrine's claim and the command's behaviour are the same claim now
 
 **8 of 8 units, 42 points, goal ACHIEVED under panel sign-off.** The doctrine told consuming
