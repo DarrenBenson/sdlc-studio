@@ -178,5 +178,66 @@ class DisclosureTests(unittest.TestCase):
             self.assertNotIn("zombie.md", _kinds(Path(d), "orphan"))
 
 
+
+class NestingDepthTests(unittest.TestCase):
+    """US0659 AC4: the depth is MEASURED, on a fixture whose true depth is known."""
+
+    def _mod(self):
+        import importlib.util, sys as _s, pathlib as _p
+        d = _p.Path(__file__).resolve().parent.parent
+        _s.path.insert(0, str(d)); _s.path.insert(0, str(d / "lib"))
+        spec = importlib.util.spec_from_file_location("disclosure_ndt", d / "disclosure.py")
+        m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+        return m
+
+    def test_the_depth_is_measured_not_assumed(self) -> None:
+        """The fixture's depth is deliberately FOUR, not the three this story states about the
+        real tree: the mutant a hurried implementer writes is returning that constant, and a
+        test asserting 'reports the measured depth' against a tree that really is 3 deep passes
+        on a hardcoded 3.
+
+        Mutant: return the constant 3 that this story's prose states.
+        Mutant: walk depth-first for the longest path rather than breadth-first for the
+        shortest - that measures how far a reader could WANDER, not how deep the disclosure is.
+        """
+        import tempfile as _t, pathlib as _p
+        m = self._mod()
+        with _t.TemporaryDirectory() as d:
+            skill = _p.Path(d)
+            (skill / "help").mkdir()
+            (skill / "SKILL.md").write_text("# S\n\nSee reference-one.md\n", encoding="utf-8")
+            (skill / "reference-one.md").write_text("# 1\n\nSee reference-two.md\n", encoding="utf-8")
+            (skill / "reference-two.md").write_text("# 2\n\nSee help/three.md\n", encoding="utf-8")
+            (skill / "help" / "three.md").write_text("# 3\n\nSee reference-four.md\n", encoding="utf-8")
+            (skill / "reference-four.md").write_text("# 4\n\nNo further links.\n", encoding="utf-8")
+            r = m.nesting_depth(skill)
+            self.assertTrue(r["applicable"])
+            self.assertEqual(4, r["depth"],
+                             f"the fixture is four hops deep and the measurement said "
+                             f"{r['depth']} - a hardcoded constant, or a longest-path walk")
+            self.assertEqual("reference-four.md", r["furthest"])
+
+    def test_the_measurement_is_advisory(self) -> None:
+        """`disclosure.py` runs inside the blocking `lint` chain, so a non-zero exit here would
+        turn a reported measurement into a gate nobody agreed to.
+
+        Mutant: refuse when the depth exceeds some threshold.
+        """
+        import pathlib as _p
+        m = self._mod()
+        root = _p.Path(__file__).resolve().parents[4]
+        # The measurement RETURNS a number and raises nothing, whatever the depth: it is a
+        # reading, not a verdict, and the caller decides. Nothing in `check()` consults it.
+        self.assertNotIn("nesting", str(m.check(root)),
+                         "the depth reached the findings list, so it can fail a lane")
+        # Measured over the SKILL tree directly rather than a repo root, so the assertion does
+        # not depend on how deep this test file happens to sit.
+        skill = _p.Path(__file__).resolve().parent.parent.parent
+        self.assertGreater(m.nesting_depth(skill)["depth"], 0,
+                           "the skill tree measured a depth of zero, which no document that "
+                           "names fifty files can honestly have")
+
+
+
 if __name__ == "__main__":
     unittest.main()

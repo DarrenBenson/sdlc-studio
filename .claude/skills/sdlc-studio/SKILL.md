@@ -91,7 +91,16 @@ Examples: `/sdlc-studio epic help`, `/sdlc-studio code help`, `/sdlc-studio bug 
 
 ## When to Use
 
-Use when asked about: PRD, TRD, epics, stories, personas, bugs, code planning, implementation, testing, test specs, test automation, project status, or any `/sdlc-studio` command.
+Trigger phrases - any of these should reach this skill:
+
+- "write a PRD", "product requirements", "TRD", "technical requirements", "TSD", "test strategy"
+- "break this into epics", "write a story", "acceptance criteria", "groom the backlog"
+- "file a bug", "raise a CR", "write an RFC", "triage the findings"
+- "plan a sprint", "run a sprint", "close the sprint", "sprint status", "what's the next step"
+- "review this unit", "adversarial review", "sign this off", "two-role review"
+- "write a test spec", "test automation", "verify the acceptance criteria", "mutation check"
+- "reconcile the indexes", "project status", "what's outstanding", "repo map"
+- any `/sdlc-studio` command.
 
 ## Instructions
 
@@ -125,6 +134,10 @@ lines, honour its Reading Guide instead of a whole-file read:
 | Task Type | Primary Load | Secondary Load | Decision Load |
 | --- | --- | --- | --- |
 | Understanding a command | help/{type}.md | - | - |
+| Authoring a PRD | reference-prd.md | reference-persona.md | reference-doctrine.md |
+| Authoring a TRD | reference-trd.md | reference-architecture.md | reference-doctrine.md |
+| Authoring a TSD | reference-tsd.md | reference-test-spec.md | reference-test-best-practices.md |
+| Authoring a story | reference-story.md | reference-story-sections.md | reference-verify.md |
 | Full command catalogue | help/help.md | - | - |
 | Argument / flag reference | help/arguments.md | - | - |
 | Reference & template catalogue | help/references.md | - | - |
@@ -269,3 +282,12 @@ The catalogues that used to live inline are now loaded on demand to keep this ro
 ## Error Handling
 
 **Missing prerequisites:** Prompts to run earlier pipeline step (e.g., no PRD → `prd`, no epics → `epic`, no stories → `story`, no plans → `code plan`). **Existing files:** Warns and asks to continue unless `--force`. **No type:** Asks user which type. **ID collision:** Auto-increments. **Open questions:** Reports and pauses. **Unknown language:** Asks user to specify framework.
+
+## See Also
+
+- `help/help.md` - the full command catalogue
+- `help/references.md` - every reference file, generated from the filesystem
+- `reference-scripts.md` - the script catalogue; read it before hand-doing anything mechanical
+- `reference-scripts-surface.md` - every verb the scripts expose, generated from their parsers
+- `reference-doctrine.md` - the operating doctrine a consuming project inherits
+- `reference-sprint.md` - the sprint loop, with a Reading Guide for partial reads

@@ -36,6 +36,11 @@ def _load(name: str, rel: str):
     return mod
 
 
+#: HAND-MAINTAINED ON PURPOSE. This is a declared inventory of recorded debt, not a copy
+#: of the shipped script list: it names the twelve scripts whose `--root` grammar the
+#: sweep could not see, and it exists to be EMPTIED. Deriving it would defeat the point -
+#: a derived set would silently absorb the next offender instead of failing on it.
+#:
 #: Scripts whose `--root` grammar predates the sweep being able to SEE them. `_all_parsers()`
 #: swallowed every script without a module-level `build_parser`, so these twelve were never
 #: checked; US0652 made them enumerable and the conformance failures surfaced all at once.

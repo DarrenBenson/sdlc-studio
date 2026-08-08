@@ -2915,5 +2915,33 @@ class MutationSurvivorCountTests(unittest.TestCase):
             self.assertIn("0 survivors", value,
                           "an ordinary bug was counted as a surviving mutant")
 
+
+class DocSurfaceRowTests(unittest.TestCase):
+    """US0655 AC3: the close row is DERIVED, never a number somebody wrote down."""
+
+    def test_the_close_row_is_derived_from_the_measurement(self) -> None:
+        """Mutant: render the row from a constant rather than from the measurement."""
+        import importlib.util as _iu, sys as _s, pathlib as _p
+        d = _p.Path(__file__).resolve().parent.parent
+        _s.path.insert(0, str(d)); _s.path.insert(0, str(d / "lib"))
+        spec = _iu.spec_from_file_location("command_audit", d / "command_audit.py")
+        ca = _iu.module_from_spec(spec); _s.modules["command_audit"] = ca
+        spec.loader.exec_module(ca)
+        root = str(_p.Path(__file__).resolve().parents[4])
+        real = ca.verb_coverage
+        try:
+            ca.verb_coverage = lambda *a, **k: {  # noqa: ARG005
+                "verbs": 7, "documented": 3, "undocumented": 4, "ratio": 42.9, "missing": []}
+            state, value, detail = sr._ck_doc_surface({"root": root})
+        finally:
+            ca.verb_coverage = real
+        self.assertEqual(sr.RAN, state)
+        self.assertIn("3 of 7", value,
+                      "the close row is not derived from the measurement - a figure typed into "
+                      "a report is one that stops being true the day after")
+        self.assertTrue(detail.strip(), "the row states no reason a reader can act on")
+
+
+
 if __name__ == "__main__":
     unittest.main()

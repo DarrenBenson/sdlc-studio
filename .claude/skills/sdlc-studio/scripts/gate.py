@@ -197,6 +197,24 @@ def _doc_coverage(root: str) -> dict:
     return {"count": blocking, "blocking": True, "detail": detail}
 
 
+def _doc_surface(root: str) -> dict:
+    """ADVISORY: enumerated verbs carrying no invocable form in the hand-written documentation.
+
+    Deliberately worded as VERBS. The `doc-coverage` lane beside this one already prints
+    "N undocumented" and counts SCRIPTS with no `reference-scripts.md` entry - a different
+    granularity of the same word, and two numbers a reader would otherwise have to reconcile
+    with nothing telling them they measure different things.
+    """
+    try:
+        import command_audit
+        r = command_audit.verb_coverage(root)
+    except Exception as exc:  # noqa: BLE001 - an advisory lane must never break the gate
+        return {"count": 0, "blocking": False, "detail": f"unreadable ({type(exc).__name__})"}
+    return {"count": r["undocumented"], "blocking": False,
+            "detail": f"{r['undocumented']} of {r['verbs']} verbs carry no invocable form "
+                      f"({r['ratio']}% do)"}
+
+
 def _engagement_floor(root: str) -> dict:
     """Blocking standard-gate lane: no shipped multi-file unit may reach a done outcome with no
     planning artefact (an AC, a Verify line, or a linked plan). Deterministic - a source-file
@@ -1062,6 +1080,7 @@ DEFAULT_CHECKS = {
     "duplicate-id": _duplicate_id,
     "provenance": _provenance,
     "doc-coverage": _doc_coverage,
+    "doc-surface": _doc_surface,
     "engagement-floor": _engagement_floor,
     "disclosure": _disclosure,
     "doc-freshness": _doc_freshness,

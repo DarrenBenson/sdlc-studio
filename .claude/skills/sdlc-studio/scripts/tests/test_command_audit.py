@@ -1053,6 +1053,33 @@ class CoverageFindingTests(unittest.TestCase):
             self.assertEqual("high", by_token.get("absent.py gone"),
                              "a verb appearing nowhere at all was not the more severe finding")
 
+    def test_the_first_run_files_and_the_second_adds_nothing(self) -> None:
+        """AC6. The FIRST half is asserted because a filer that files nothing is trivially
+        idempotent and would pass the second half alone.
+
+        Mutant: key idempotence on the finding's title rather than the `script.py verb` token.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            skill = self._fixture(d)
+            root = pathlib.Path(d) / "repo"
+            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+            (root / ".claude" / "skills").mkdir(parents=True)
+            (root / ".claude" / "skills" / "sdlc-studio").symlink_to(skill)
+
+            first = ca.file_coverage_findings(str(root))
+            self.assertTrue(first, "the first run filed nothing, so idempotence is vacuous")
+
+            # The key is on the ARTEFACT: reword the title, which is what triage does.
+            filed = next((root / "sdlc-studio" / "bugs").glob("BG*.md"))
+            body = filed.read_text(encoding="utf-8")
+            filed.write_text(body.replace(body.splitlines()[0], "# BG0001: reworded by triage"),
+                             encoding="utf-8")
+
+            second = ca.file_coverage_findings(str(root))
+            self.assertEqual([], second,
+                             "the same gap minted a second artefact after its title was "
+                             "reworded, so idempotence keys on prose rather than the token")
+
     def test_the_lane_exits_zero_whatever_it_finds(self) -> None:
         """AC6. A documentation guard that blocks is one that gets switched off, and then it
         reports nothing at all.

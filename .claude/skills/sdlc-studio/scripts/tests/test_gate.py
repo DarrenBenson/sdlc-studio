@@ -42,6 +42,7 @@ def _fake(count: int, blocking: bool = True):
     return lambda root: {"count": count, "blocking": blocking, "detail": str(count)}
 
 
+import pathlib
 import unittest
 
 
@@ -284,7 +285,8 @@ class GateRealWrapperTests(unittest.TestCase):
     def test_default_checks_present(self) -> None:
         self.assertEqual(set(gate.DEFAULT_CHECKS),
                          {"conformance", "reconcile", "index-derived", "validate", "constitution",
-                          "integrity", "duplicate-id", "provenance", "doc-coverage", "engagement-floor",
+                          "integrity", "duplicate-id", "provenance", "doc-coverage", "doc-surface",
+                          "engagement-floor",
                           "disclosure", "doc-freshness", "mutation", "window", "hook-enabled",
                           "batch-size", "changelog-fragments"})
 
@@ -295,7 +297,7 @@ class GateRealWrapperTests(unittest.TestCase):
         # dev-repo guard rather than repeating it (BG0237).
         r = self._report()
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 17)
+        self.assertEqual(len(r["checks"]), 18)   # +doc-surface (US0655), advisory
         for c in r["checks"]:
             # `seconds` is part of the row shape: the cost report derives the dominant lane
             # from it, and a lane with no share of the total cannot be named as the cause.
@@ -5681,6 +5683,67 @@ class ReleaseVerifyScopeTests(unittest.TestCase):
                           f"did not walk: {detail}")
             self.assertIn("3 bug file(s)", detail,
                           f"the skipped count is not derived from the tree: {detail}")
+
+
+class DocSurfaceLaneTests(unittest.TestCase):
+    """US0655: the verb-coverage number reaches the places people already look."""
+
+    def _mod(self, name):
+        import importlib.util, sys as _s
+        d = pathlib.Path(__file__).resolve().parent.parent
+        _s.path.insert(0, str(d)); _s.path.insert(0, str(d / "lib"))
+        spec = importlib.util.spec_from_file_location(name, d / f"{name}.py")
+        m = importlib.util.module_from_spec(spec)
+        _s.modules[name] = m
+        spec.loader.exec_module(m)
+        return m
+
+    def test_the_lane_reports_verbs_distinguishably_and_does_not_change_the_exit_code(self):
+        """AC1. `gate.py` ALREADY prints "N undocumented" from `doc-coverage`, which counts
+        SCRIPTS - a different granularity of the same word. Two lanes saying it are two numbers
+        a reader has to reconcile with nothing telling them they differ.
+
+        Mutant: make the lane fail the gate when the count is non-zero.
+        Mutant: word the detail as "N undocumented", identical to the sibling lane.
+        """
+        g = self._mod("gate")
+        res = g._doc_surface(str(pathlib.Path(__file__).resolve().parents[4]))
+        self.assertFalse(res["blocking"],
+                         "the doc-surface lane blocks, so under-documentation fails a commit")
+        self.assertIn("verb", res["detail"],
+                      "the lane's wording does not say VERBS, so it reads as the script-level "
+                      "doc-coverage number beside it")
+
+    def test_both_readers_move_when_the_defining_module_is_patched(self):
+        """AC4. Asserting the two readers AGREE proves nothing: two correct readers over one
+        tree agree by construction, and the re-derivation mutant survives an equality check.
+
+        The patch is on `command_audit`, THE MODULE THAT DEFINES the measurement, and each
+        reader must call through it rather than bind the name at import.
+
+        Mutant: give the gate lane its own re-derivation of the count.
+        Mutant: have a reader bind the measurement by `from ... import` at load time.
+        """
+        g = self._mod("gate")
+        sr = self._mod("sprint_report")
+        ca = self._mod("command_audit")
+        root = str(pathlib.Path(__file__).resolve().parents[4])
+        sentinel = {"verbs": 4242, "documented": 4242, "undocumented": 4242, "ratio": 42.0,
+                    "missing": []}
+        real = ca.verb_coverage
+        try:
+            ca.verb_coverage = lambda *a, **k: sentinel  # noqa: ARG005
+            lane = g._doc_surface(root)
+            _state, value, _detail = sr._ck_doc_surface({"root": root})
+        finally:
+            ca.verb_coverage = real
+        self.assertEqual(4242, lane["count"],
+                         "the gate lane did not move when the DEFINING module was patched, so "
+                         "it re-derives its own count")
+        self.assertIn("4242", value,
+                      "the close row did not move when the defining module was patched")
+
+
 
 if __name__ == "__main__":
     unittest.main()

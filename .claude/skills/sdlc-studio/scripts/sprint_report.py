@@ -992,6 +992,9 @@ CHECKLIST = (
     {"id": "coverage-consistency", "kind": FIGURE, "authority": DERIVED,
      "title": "Coverage computed once, and the two readings agree",
      "command": "sprint report", "resolver": "_ck_coverage_consistency"},
+    {"id": "doc-surface", "kind": FIGURE, "authority": DERIVED,
+     "title": "Verbs the tooling ships that the documentation does not name",
+     "command": "sprint report", "resolver": "_ck_doc_surface"},
     {"id": "mutation-survivors", "kind": FIGURE, "authority": DERIVED,
      "title": "Surviving mutants this run let through, by severity",
      "command": "sprint report", "resolver": "_ck_mutation_survivors"},
@@ -1644,6 +1647,25 @@ def _ck_scope_creep(ctx: dict) -> tuple:
 #: A round is at least two reviewers on distinct lenses, whatever the diff size, because the
 #: defects a lone reviewer misses are the ones that reviewer's one lens does not point at.
 MIN_LENSES = 2
+
+
+def _ck_doc_surface(ctx: dict) -> tuple:
+    """How many enumerated verbs carry no invocable form in the hand-written documentation.
+
+    DERIVED by calling the measurement, never a number typed into a report - a figure written
+    down is one that stops being true the day after. It is the same call the gate lane makes,
+    so the two cannot disagree.
+    """
+    try:
+        import command_audit  # noqa: PLC0415
+        r = command_audit.verb_coverage(str(ctx["root"]))
+    except Exception as exc:  # noqa: BLE001 - a report must not die on a measurement
+        return (NOT_RUN, "unreadable",
+                f"the verb surface could not be measured ({type(exc).__name__}: {exc})")
+    return (RAN, f"{r['documented']} of {r['verbs']} verb(s) documented ({r['ratio']}%), "
+                 f"{r['undocumented']} not",
+            "a verb with no invocable form in the documentation is one a reader cannot find as "
+            "something they could type - reported, never blocking")
 
 
 def _ck_mutation_survivors(ctx: dict) -> tuple:

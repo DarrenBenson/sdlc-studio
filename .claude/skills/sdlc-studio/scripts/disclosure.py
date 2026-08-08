@@ -54,6 +54,90 @@ def _disclosable(skill_dir: Path) -> list[Path]:
     return out
 
 
+def nesting_depth(repo_root: Path | str = ".") -> dict:
+    """How many hops from SKILL.md a reader takes to reach the FURTHEST file, by shortest path.
+
+    BREADTH-FIRST, so each file is measured by the shortest route to it. A depth-first longest
+    path measures how far a reader could WANDER - 37 hops here - which is a wrong answer wearing
+    a number: nobody reads the graph that way, and the figure would be about the link density
+    rather than about the disclosure.
+
+    MEASURED, never asserted. The depth is reported and nothing is gated on it: the path is not
+    fixable without a rewrite this change is not doing, and a number somebody can act on is the
+    honest disposition where a silence reads as absence.
+
+    ADVISORY - the caller exits 0 whatever the depth. `disclosure.py` runs inside the blocking
+    `lint` chain, so refusing here would turn a reported measurement into a gate nobody agreed
+    to.
+    """
+    import collections  # noqa: PLC0415
+    import re as _re  # noqa: PLC0415
+    skill = _skill_dir(Path(repo_root))
+    if skill is None or not (skill / "SKILL.md").is_file():
+        return {"applicable": False, "depth": 0, "furthest": None, "reached": 0}
+
+    def links(name: str) -> set:
+        target = skill / name
+        if not target.is_file():
+            return set()
+        try:
+            body = target.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return set()
+        # BOTH shapes. SKILL.md points at most of its family by bare filename in a table cell
+        # (`reference-prd.md`), not as a markdown link - a link-only matcher measures a depth of
+        # zero over a document that names fifty files.
+        out = set(_re.findall(r"\]\(([^)#]+\.md)[^)]*\)", body))
+        out |= set(_re.findall(r"[\w./-]*(?:reference|help)[\w./-]*\.md", body))
+        return {n.lstrip("./") for n in out if (skill / n.lstrip("./")).is_file()}
+
+    dist = {"SKILL.md": 0}
+    q = collections.deque(["SKILL.md"])
+    while q:
+        name = q.popleft()
+        for nxt in sorted(links(name)):
+            if nxt not in dist:
+                dist[nxt] = dist[name] + 1
+                q.append(nxt)
+    furthest = max(dist, key=lambda k: dist[k])
+    return {"applicable": True, "depth": dist[furthest], "furthest": furthest,
+            "reached": len(dist)}
+
+
+def _skill_dir(repo_root: Path) -> Path | None:
+    d = Path(repo_root) / _SKILL_REL
+    return d if (d / "SKILL.md").exists() else None
+
+
+def _read(p: Path) -> str:
+    """Read text defensively - a non-UTF-8 or unreadable file must never crash an advisory
+    check (it would abort the whole gate). Degrades to '' / replacement chars."""
+    try:
+        return p.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _indexed(name: str, index_text: str) -> bool:
+    """True if the filename appears as a whole token in an index (boundary-matched, so a short
+    name like `code.md` is not masked by `qrcode.md`)."""
+    return re.search(r"(?<![\w./-])" + re.escape(name) + r"(?![\w])", index_text) is not None
+
+
+def _disclosable(skill_dir: Path) -> list[Path]:
+    """The on-demand docs that should each declare a load trigger: reference-*.md + help/*.md."""
+    out = sorted(skill_dir.glob("reference-*.md"))
+    out += sorted((skill_dir / "help").glob("*.md"))
+    return out
+
+
+def _skill_dir(root: Path) -> Path | None:
+    for cand in (root / ".claude/skills/sdlc-studio", root):
+        if (cand / "SKILL.md").is_file():
+            return cand
+    return None
+
+
 def check(repo_root: Path | str = ".") -> dict:
     """Advisory findings (all blocking=False). {findings, ok, applicable}."""
     skill_dir = _skill_dir(Path(repo_root))

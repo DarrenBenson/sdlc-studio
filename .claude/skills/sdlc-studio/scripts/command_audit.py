@@ -907,6 +907,76 @@ def render_markdown(result: dict) -> str:
     return "\n".join(out).rstrip("\n") + "\n"
 
 
+COVERAGE_MARKER = "Undocumented-verb"
+
+
+def file_coverage_findings(root: str, limit: int | None = None) -> list[str]:
+    """File one bug per undocumented verb, IDEMPOTENT on the `script.py verb` token.
+
+    Keyed on the token stamped into the artefact rather than on a title or a cache: a title is
+    reworded during triage and a cache is lost, and either way the same gap comes back as a
+    second artefact with nothing saying which is which.
+
+    Filing is an OPT-IN (`--file`) rather than a side effect of measuring, because there are 125
+    gaps today and a lane that mints 125 artefacts the first time somebody runs it is a lane
+    that gets switched off before anybody reads one.
+    """
+    import file_finding  # noqa: PLC0415
+    existing = _already_filed(root)
+    filed: list[str] = []
+    for finding in coverage_findings(root):
+        if finding["token"] in existing:
+            continue
+        if limit is not None and len(filed) >= limit:
+            break
+        res = file_finding.file_finding(root, "bug", (
+            f"`{finding['token']}` ships with no invocable form in the documentation"), {
+            "severity": "Medium" if finding["severity"] == "medium" else "High",
+            "points": 1,
+            "affects": ".claude/skills/sdlc-studio/reference-scripts.md",
+            "summary": (f"{finding['detail']}.\n\nThe verb is enumerable from its own parser, "
+                        f"so it exists and ships. A reader looking for it in the skill's "
+                        f"documentation finds no form they could type."),
+            "steps": (f"1. `command_audit.py --coverage` lists `{finding['token']}`. "
+                      f"2. Search the hand-written markdown for that token - it is not there."),
+            "fix": (f"Document `{finding['token']}` where its siblings are documented, in a "
+                    f"form a reader can invoke. The generated catalogue deliberately does not "
+                    f"count: it lists what exists, not what it is for."),
+        })
+        path = Path(res["path"])
+        body = path.read_text(encoding="utf-8")
+        path.write_text(_stamp(body, finding["token"]), encoding="utf-8")
+        filed.append(res["id"])
+    return filed
+
+
+def _stamp(body: str, token: str) -> str:
+    """Stamp the idempotence key onto the artefact, after its last metadata line."""
+    lines = body.splitlines(keepends=True)
+    at = 0
+    for i, line in enumerate(lines):
+        if line.startswith("> **"):
+            at = i + 1
+    return "".join(lines[:at]) + f"> **{COVERAGE_MARKER}:** {token}\n" + "".join(lines[at:])
+
+
+def _already_filed(root: str) -> set:
+    """Every verb token already carrying a filed finding, read off the ARTEFACTS."""
+    bugs = Path(root) / "sdlc-studio" / "bugs"
+    out = set()
+    if not bugs.is_dir():
+        return out
+    for path in bugs.rglob("BG*.md"):
+        try:
+            body = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for line in body.splitlines():
+            if line.startswith(f"> **{COVERAGE_MARKER}:**"):
+                out.add(line.split(":**", 1)[1].strip())
+    return out
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     if getattr(args, "coverage", False):
         result = verb_coverage(args.root)
@@ -921,6 +991,10 @@ def cmd_run(args: argparse.Namespace) -> int:
                 print(f"  [{f['severity']}] {f['detail']}")
             if len(findings) > 20:
                 print(f"  ... and {len(findings) - 20} more")
+        if getattr(args, "file", False):
+            filed = file_coverage_findings(args.root, limit=getattr(args, "limit", None))
+            print(f"  filed {len(filed)} new finding(s)"
+                  + (f": {', '.join(filed)}" if filed else " - every gap already carries one"))
         # ALWAYS 0. The operator's decision: a documentation guard reports and files, it never
         # blocks - a lane that fails a commit on under-documentation is one that gets switched
         # off, and then it reports nothing at all.
@@ -1052,6 +1126,12 @@ def build_parser() -> argparse.ArgumentParser:
                         "HAND-WRITTEN documentation, and file one finding per gap. Always "
                         "exits 0 - a documentation guard that blocks is one that gets "
                         "switched off")
+    p.add_argument("--file", action="store_true",
+                   help="with --coverage: FILE one bug per undocumented verb, idempotent on the "
+                        "`script.py verb` token. Opt-in, because there are 125 gaps and a lane "
+                        "that mints 125 artefacts unasked is one that gets switched off")
+    p.add_argument("--limit", type=int, default=None,
+                   help="with --file: stop after this many new findings")
     p.add_argument("--dead-flags", action="store_true",
                    help="report a flag whose parsed destination no line acts on, and exit "
                         "non-zero when one is found (skips the command-surface audit)")
