@@ -36,10 +36,12 @@
   none
 - **When** `docgen.py surface --check` runs on each
 - **Then** the first prints a non-zero drift count and the second prints zero, and BOTH exit 0.
+  The malformed-marker refusals are asserted in the same class, because a `--check` that runs
+  over a file it should have refused reports a drift count about a region it invented.
   Exit 0 is the criterion, not an oversight: the operator's decision is that these guards report
   and never block, so a lane that fails a commit on documentation drift is the thing being
   refused here
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GeneratedRegionTests::test_check_reports_drift_and_exits_zero
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GeneratedRegionTests::test_a_malformed_marker_pair_is_refused
 
 ### AC3: the catalogue lists every verb the surface enumerates, and no other
 

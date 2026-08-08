@@ -1,111 +1,228 @@
-"""Unit tests for tools/check_budgets.py (line-budget guard).
+"""Unit tests for tools/check_budgets.py - recording ceilings, reporting drift (US0657, US0658).
 
 Run from the repo root:
-    python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
+    python3 -m unittest discover -s tools/tests
 """
 from __future__ import annotations
 
-import contextlib
 import importlib.util
-import io
+import re
+import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-# tools/ lives at the repo root, six parents up from this test file.
-TOOLS = Path(__file__).resolve().parents[1] / "check_budgets.py"
-_spec = importlib.util.spec_from_file_location("check_budgets", TOOLS)
-assert _spec and _spec.loader
-check_budgets = importlib.util.module_from_spec(_spec)
-sys.modules["check_budgets"] = check_budgets
-_spec.loader.exec_module(check_budgets)
+ROOT = Path(__file__).resolve().parents[2]
+SKILL = ROOT / ".claude/skills/sdlc-studio"
 
 
-def _skill(root: Path, skill_lines=100) -> Path:
-    sd = root / ".claude/skills/sdlc-studio"
-    sd.mkdir(parents=True)
-    (sd / "SKILL.md").write_text("x\n" * skill_lines)
-    return sd
+def _load(src: Path):
+    """Load a COPY of check_budgets, so `--record` rewrites the copy and not the real thing."""
+    spec = importlib.util.spec_from_file_location(f"cb_{src.stem}_{id(src)}", src)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
 
-class BudgetTests(unittest.TestCase):
+class RecordTests(unittest.TestCase):
+    """AC1: `--record` moves a ceiling, appends its provenance, and rewrites no reason."""
+
+    def _sandbox(self, d: Path, lines: int, ceiling: int):
+        """A copy of the checker whose allowlist names one file, beside a tree holding it."""
+        skill = d / ".claude/skills/sdlc-studio"
+        skill.mkdir(parents=True)
+        (skill / "SKILL.md").write_text("# S\n", encoding="utf-8")
+        (skill / "reference-thing.md").write_text("x\n" * lines, encoding="utf-8")
+        src = d / "check_budgets.py"
+        text = (ROOT / "tools/check_budgets.py").read_text(encoding="utf-8")
+        text = re.sub(r"ALLOWLIST = \{.*?\n\}",
+                      'ALLOWLIST = {\n    "reference-thing.md": %d,  # Raised 100 -> %d for the '
+                      'reasons recorded here\n}' % (ceiling, ceiling),
+                      text, count=1, flags=re.S)
+        src.write_text(text, encoding="utf-8")
+        return src, skill
+
+    def test_record_moves_the_ceiling_appends_provenance_and_rewrites_no_reason(self) -> None:
+        """The fixture has GROWN past its ceiling, which is the whole point: one already in
+        step makes `--record` a no-op, and the file is byte-identical under the honest
+        implementation and under a mutant that writes nothing at all.
+
+        Mutant: leave the ceiling integer untouched while reporting success.
+        Mutant: rewrite the whole entry, reason comment included.
+        Mutant: edit the existing reason in place rather than appending a new line.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            src, _skill = self._sandbox(d, lines=250, ceiling=100)
+            before = src.read_text(encoding="utf-8")
+            self.assertIn("# Raised 100 -> 100 for the reasons recorded here", before)
+
+            mod = _load(src)
+            moved = mod.record_ceilings(str(d))
+
+            self.assertEqual(["reference-thing.md 100 -> 250"], moved,
+                             "the ceiling integer did not move, so `--record` recorded nothing "
+                             "while reporting success")
+            after = src.read_text(encoding="utf-8")
+            self.assertIn('"reference-thing.md": 250,', after)
+            self.assertIn("# Raised 100 -> 100 for the reasons recorded here", after,
+                          "the pre-existing reason was rewritten - and the reasons CONTAIN "
+                          "their numbers, so an edited one is an argument false about its own "
+                          "ceiling")
+            self.assertIn("Recorded by `check_budgets.py --record`", after,
+                          "no provenance line was appended, so the history does not accumulate")
+
+    def test_a_tree_already_in_step_records_nothing(self) -> None:
+        """The control. Without it, a `--record` that always rewrote would pass the test above."""
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            src, _skill = self._sandbox(d, lines=100, ceiling=100)
+            before = src.read_text(encoding="utf-8")
+            mod = _load(src)
+            self.assertEqual([], mod.record_ceilings(str(d)))
+            self.assertEqual(before, src.read_text(encoding="utf-8"),
+                             "a tree already in step was rewritten anyway")
+
+
+class DriftTests(unittest.TestCase):
+    """AC2-AC4, and the two criteria US0658 owns over this checker."""
+
     def setUp(self) -> None:
-        # the checker prints its report to stdout and findings to stderr; tests assert on
-        # the exit code, so capture both to keep the unittest summary clean
-        self._silence = contextlib.ExitStack()
-        self._silence.enter_context(contextlib.redirect_stdout(io.StringIO()))
-        self._silence.enter_context(contextlib.redirect_stderr(io.StringIO()))
+        self.cb = _load(ROOT / "tools/check_budgets.py")
 
-    def tearDown(self) -> None:
-        self._silence.close()
+    def test_drift_names_the_files_inside_the_tolerance_and_exits_zero(self) -> None:
+        """AC2, over a sandbox rather than the live tree, so the assertion does not depend on
+        which files happen to be in the band today.
 
-    def test_small_files_pass(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            sd = _skill(Path(d))
-            (sd / "reference-a.md").write_text("x\n" * 200)
-            self.assertEqual(check_budgets.main(["--root", d]), 0)
+        Mutant: exit non-zero when `--drift` finds a file inside the tolerance.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            skill = d / ".claude/skills/sdlc-studio"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("# S\n", encoding="utf-8")
+            for name, n in (("reference-inband.md", 103), ("reference-under.md", 90),
+                            ("reference-over.md", 200)):
+                (skill / name).write_text("x\n" * n, encoding="utf-8")
+            src = d / "check_budgets.py"
+            text = (ROOT / "tools/check_budgets.py").read_text(encoding="utf-8")
+            text = re.sub(r"ALLOWLIST = \{.*?\n\}",
+                          'ALLOWLIST = {\n    "reference-inband.md": 100,\n'
+                          '    "reference-under.md": 100,\n    "reference-over.md": 100,\n}',
+                          text, count=1, flags=re.S)
+            src.write_text(text, encoding="utf-8")
+            mod = _load(src)
 
-    def test_skill_md_over_budget_fails(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            _skill(Path(d), skill_lines=520)
-            self.assertEqual(check_budgets.main(["--root", d]), 1)
+            band = {name for name, *_rest in mod.drift(str(d))}
+            self.assertEqual({"reference-inband.md"}, band,
+                             "the tolerance band is not the SET of files inside it - a report "
+                             "naming only the worst offender hides the rest")
+            self.assertEqual(0, mod.main(["--drift", "--root", str(d)]),
+                             "`--drift` exited non-zero, so a report about a file one line from "
+                             "failing became a failure of its own")
 
-    def test_unallowlisted_reference_over_600_fails(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            sd = _skill(Path(d))
-            (sd / "reference-huge.md").write_text("x\n" * 700)
-            self.assertEqual(check_budgets.main(["--root", d]), 1)
+    def test_the_hard_threshold_still_fails(self) -> None:
+        """AC3. `--record` and `--drift` are reporting verbs added beside the gate, not a
+        softening of it.
 
-    def test_allowlisted_file_within_ceiling_passes(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            sd = _skill(Path(d))
-            (sd / "reference-epic.md").write_text("x\n" * 1052)
-            self.assertEqual(check_budgets.main(["--root", d]), 0)
+        Mutant: make the hard threshold advisory now that `--drift` reports.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            skill = d / ".claude/skills/sdlc-studio"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("# S\n", encoding="utf-8")
+            (skill / "reference-huge.md").write_text("x\n" * 5000, encoding="utf-8")
+            self.assertEqual(1, self.cb.main(["--root", str(d)]),
+                             "a file far past the un-allowlisted budget did not fail the gate")
 
-    def test_allowlisted_file_over_ceiling_tolerance_fails(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            sd = _skill(Path(d))
-            ceiling = check_budgets.ALLOWLIST["reference-epic.md"]
-            (sd / "reference-epic.md").write_text("x\n" * int(ceiling * 1.10))
-            self.assertEqual(check_budgets.main(["--root", d]), 1)
+    def test_the_unbudgeted_trees_are_reported_and_not_gated(self) -> None:
+        """AC4, both directions. A test checking only that a total appears passes on an
+        implementation that also added a ceiling.
 
-    def test_real_repo_passes(self) -> None:
-        repo = Path(__file__).resolve().parents[2]
-        self.assertEqual(check_budgets.main(["--root", str(repo)]), 0)
+        Mutant: give the three unbudgeted trees a hard ceiling from their current size.
+        Mutant: report the totals from a constant rather than by walking the trees.
+        """
+        totals = self.cb.tree_totals(str(ROOT))
+        self.assertEqual({"help", "best-practices", "templates"}, set(totals))
+        for tree, total in totals.items():
+            with self.subTest(tree=tree):
+                self.assertGreater(total, 0, f"{tree}/ reported no lines at all")
+                self.assertNotIn(tree, self.cb.ALLOWLIST,
+                                 f"{tree}/ acquired a ceiling - a hard budget over a tree "
+                                 f"nobody has pruned fails on day one and is waived on day two")
+        # Walked, not constant: a tree with one file must report that file's length.
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            (d / ".claude/skills/sdlc-studio/help").mkdir(parents=True)
+            (d / ".claude/skills/sdlc-studio/help/x.md").write_text("a\nb\nc\n", encoding="utf-8")
+            self.assertEqual(3, self.cb.tree_totals(str(d))["help"],
+                             "the total is a constant rather than a walk of the tree")
 
+    def test_a_justification_naming_a_reading_guide_must_have_one(self) -> None:
+        """US0658 AC5, with its positive control. After this work `reference-sprint.md` is the
+        only justification naming a guide, so a checker matching NOTHING would pass a
+        refusal-only assertion for the wrong reason.
 
-class ReferenceSprintCeilingTests(unittest.TestCase):
-    """The line ceiling admits the shipped file exactly, with no slack.
+        Mutant: accept a justification that names a Reading Guide the file does not have.
+        """
+        self.assertEqual([], self.cb.guide_justification_faults(str(ROOT)),
+                         "a ceiling justification names a Reading Guide over a file that has "
+                         "none, so the argument for that ceiling is false about its own file")
 
-    A ceiling raised with headroom stops noticing growth: the next few hundred lines land
-    silently, and the budget becomes a number nobody has looked at. Raised deliberately, in the
-    same commit as the prose it admits, and set to the file's actual length.
-    """
+        # The refusal fires when the guide is gone - checked on a COPY, never the live tree.
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            shutil.copytree(SKILL, d / ".claude/skills/sdlc-studio",
+                            ignore=shutil.ignore_patterns("scripts", ".local", "__pycache__"))
+            target = d / ".claude/skills/sdlc-studio/reference-sprint.md"
+            body = target.read_text(encoding="utf-8")
+            self.assertIn("Reading Guide", body, "the positive control has no guide to remove")
+            target.write_text(body.replace("Reading Guide", "Section Index"), encoding="utf-8")
+            self.assertIn("reference-sprint.md", self.cb.guide_justification_faults(str(d)),
+                          "the guide was removed and the justification still passed")
 
-    def test_the_recorded_ceiling_admits_the_shipped_file_without_tolerance(self) -> None:
-        """MUTANT: raise the ceiling to a round number above the file's length."""
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "check_budgets", Path(__file__).resolve().parents[1] / "check_budgets.py")
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules["check_budgets"] = mod
-        spec.loader.exec_module(mod)
-        repo = Path(__file__).resolve().parents[2]
-        target = repo / ".claude" / "skills" / "sdlc-studio" / "reference-sprint.md"
-        actual = len(target.read_text(encoding="utf-8").splitlines())
-        ceiling = None
-        for name, value in vars(mod).items():
-            if isinstance(value, dict) and "reference-sprint.md" in value:
-                ceiling = value["reference-sprint.md"]
-                break
-        self.assertIsNotNone(ceiling, "no recorded ceiling for reference-sprint.md")
-        self.assertGreaterEqual(ceiling, actual,
-                                f"the ceiling {ceiling} refuses the shipped file ({actual})")
-        self.assertEqual(ceiling, actual,
-                         f"the ceiling {ceiling} carries {ceiling - actual} lines of slack "
-                         f"over the shipped {actual} - headroom is how a budget stops noticing "
-                         f"growth")
+    def test_the_recorded_ceilings_are_unchanged_by_the_guides(self) -> None:
+        """US0658 AC4, pinned as VALUES. Asserting that the budgets merely PASS is the wrong
+        direction: raising a ceiling makes them pass more easily, so the mutant this criterion
+        is about would strengthen its own test.
+
+        Mutant: raise a ceiling to fit the generated guide.
+        """
+        expected = {
+            "reference-epic.md": 1118,
+            "reference-story.md": 1107,
+            "reference-code.md": 974,
+            "reference-outputs.md": 869,
+            "reference-decisions.md": 812,
+            "reference-test-best-practices.md": 788,
+            "reference-config.md": 695,
+            "reference-review.md": 819,
+            "reference-sprint.md": 855,
+            "reference-consult.md": 634,
+            "reference-prd.md": 660,
+        }
+        for name, ceiling in expected.items():
+            with self.subTest(reference=name):
+                self.assertEqual(ceiling, self.cb.ALLOWLIST.get(name),
+                                 f"{name}'s ceiling moved from the value recorded when the "
+                                 f"guides landed - a ceiling raised to fit a generator is the "
+                                 f"ratchet running backwards")
+
+    def test_skill_md_ceiling_is_unchanged(self) -> None:
+        """US0659 AC3. Asserting SKILL.md is INSIDE its budget is vacuous - it sits at 271
+        against 500, so the assertion is green before a word is written, and the mutant it
+        names would make it pass more easily still.
+
+        The checker enforces `n >= SKILL_MD_BUDGET`, so the effective cap is 499.
+
+        Mutant: raise SKILL.md's ceiling to fit the additions.
+        """
+        self.assertEqual(500, self.cb.SKILL_MD_BUDGET,
+                         "SKILL.md's ceiling moved - the router's size is the reason it is a "
+                         "router, and a section added past the ceiling trades that away")
 
 
 if __name__ == "__main__":

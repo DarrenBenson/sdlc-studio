@@ -47,7 +47,7 @@
 - **Then** it reports the drift, AND reports none over a reference whose sections have not
   moved - the silent case is the positive control, without which a checker that always reports
   drift passes the first half
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReadingGuideTests::test_a_moved_section_is_reported_as_drift
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReadingGuideTests::test_a_moved_section_is_reported_as_drift_and_a_settled_one_is_not
 
 ### AC4: no file is split and no budget is raised to fit the guide
 
