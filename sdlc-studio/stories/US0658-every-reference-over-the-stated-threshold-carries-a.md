@@ -1,6 +1,6 @@
 # US0658: Every reference over the stated threshold carries a Reading Guide with an anchor and a line span
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0538
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
@@ -30,6 +30,7 @@
   least one file which previously had none now has one - a derived count alone cannot catch the
   mutant that generates only where a guide is absent, because every file still carries something
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GenerationThroughTheCliTests::test_reading_guides_are_generated_through_the_cli
+- **Verified:** yes (2026-08-08)
 
 ### AC2: each entry carries a LINE SPAN, not only an anchor
 
@@ -39,6 +40,7 @@
   `Read(offset, limit)` rather than a grep. That is strictly more than the 9 hand-written guides
   offer, and it is the difference between a table of contents and something that saves a read
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReadingGuideTests::test_each_entry_carries_a_line_span
+- **Verified:** yes (2026-08-08)
 
 ### AC3: the spans are TRUE of the file, and stay true when it changes
 
@@ -48,6 +50,7 @@
   moved - the silent case is the positive control, without which a checker that always reports
   drift passes the first half
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReadingGuideTests::test_a_moved_section_is_reported_as_drift_and_a_settled_one_is_not
+- **Verified:** yes (2026-08-08)
 
 ### AC4: no file is split and no budget is raised to fit the guide
 
@@ -60,6 +63,7 @@
   Splitting a reference to fit a guide would be the tail wagging the dog, and raising a ceiling
   to accommodate a generator is the ratchet running backwards
 - **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_the_recorded_ceilings_are_unchanged_by_the_guides
+- **Verified:** yes (2026-08-08)
 
 ### AC5: a ceiling justification that names a Reading Guide must have one, and it does
 
@@ -77,6 +81,7 @@
   a checker that matched nothing would pass the refusal test for the wrong reason. The checker
   and the guides land in ONE commit, since the lane blocks
 - **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_a_justification_naming_a_reading_guide_must_have_one
+- **Verified:** yes (2026-08-08)
 
 ## Test Plan
 

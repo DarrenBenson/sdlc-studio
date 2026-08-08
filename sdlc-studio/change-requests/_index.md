@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 19 |
 | Approved | 0 |
-| In Progress | 9 |
-| Complete | 488 |
+| In Progress | 8 |
+| Complete | 489 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
@@ -88,7 +88,7 @@
 | [CR-0535](CR0535-a-refusing-verb-cannot-state-its-contract-until.md) | a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand | In Progress | High | Improvement | 2026-08-06 | EP0210 |
 | [CR-0536](CR0536-the-spec-documents-do-not-learn-about-a.md) | the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail | Proposed | High | Improvement | 2026-08-06 | -- |
 | [CR-0537](CR0537-mutation-evidence-should-report-by-default-not-block.md) | mutation evidence should REPORT by default, not block: a surviving mutant becomes a severity-rated bug and the close proceeds | Complete | High | Improvement | 2026-08-07 | EP0212 |
-| [CR-0538](CR0538-the-skill-has-no-lane-that-counts-what.md) | the skill has no lane that counts what the tooling ships: 49 of 211 verbs and 72 of 677 flags are named in no hand-written doc, and the checker that would notice is switched out of the lint chain | In Progress | High | Improvement | 2026-08-07 | EP0211 |
+| [CR-0538](CR0538-the-skill-has-no-lane-that-counts-what.md) | the skill has no lane that counts what the tooling ships: 49 of 211 verbs and 72 of 677 flags are named in no hand-written doc, and the checker that would notice is switched out of the lint chain | Complete | High | Improvement | 2026-08-07 | EP0211 |
 | [CR-0539](CR0539-lane-check-reports-181-units-whose-criteria-never.md) | lane-check reports 181 units whose criteria never enter a shipped entry point | Proposed | Medium | process | 2026-08-08 | -- |
 
 ## Archived Releases

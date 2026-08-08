@@ -1,6 +1,6 @@
 # US0656: The reference index is generated from the filesystem, so no reference can be missing from it
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0538
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
@@ -28,6 +28,7 @@
   built by walking the directory rather than by reading a list somebody maintains, because a
   hand-maintained index of 50-plus files is wrong the first time somebody adds one and forgets
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GenerationThroughTheCliTests::test_references_is_generated_from_the_filesystem_through_the_cli
+- **Verified:** yes (2026-08-08)
 
 ### AC2: a row whose file has gone is REMOVED, not left pointing at nothing
 
@@ -38,6 +39,7 @@
   an empty table. Generation has to run both ways or it is only an append, and a link to a
   deleted file is the failure `check_links.py` exists to catch
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReferenceIndexTests::test_a_row_whose_file_has_gone_is_removed
+- **Verified:** yes (2026-08-08)
 
 ### AC3: each row carries the description the reference states about itself
 
@@ -49,6 +51,7 @@
   table - gets its filename stem and says so, stated here rather than left for the implementer
   to pick and the test to be unable to fail on
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReferenceIndexTests::test_each_row_carries_the_references_own_description
+- **Verified:** yes (2026-08-08)
 
 ## Test Plan
 

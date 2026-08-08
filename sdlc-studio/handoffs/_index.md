@@ -68,3 +68,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0053](HO0053-v5-release-sprint-the-verification-claim-is-half.md) | v5 release sprint: the verification claim is half true, twelve units remain | 2026-08-06 |
 | [HO-0054](HO0054-a-shipped-command-stops-reporting-a-success-it.md) | A shipped command stops reporting a success it did not achieve, the bug backlog becomes visible to the tooling that is supposed to execute it, and v5.0.0 is cut on that basis | 2026-08-07 |
 | [HO-0055](HO0055-the-repair-mutation-evidence-rule-the-shipped-doctrine.md) | The repair-mutation evidence rule the shipped doctrine states is the rule the shipped command performs, in a mode the operator chose | 2026-08-07 |
+| [HO-0056](HO0056-the-skill-can-measure-what-it-fails-to.md) | The skill can MEASURE what it fails to document, by a number no generated page can flatter, and every long reference becomes navigable - the prose that closes the gap is the next sprint's work | 2026-08-08 |

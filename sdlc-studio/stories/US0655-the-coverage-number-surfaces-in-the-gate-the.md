@@ -1,6 +1,6 @@
 # US0655: The coverage number surfaces in the gate, the lint aggregate and the close report
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0538
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
@@ -29,6 +29,7 @@
   both saying "undocumented" about different granularities is two numbers a reader has to
   reconcile with nothing telling them they measure different things
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DocSurfaceLaneTests::test_the_lane_reports_verbs_distinguishably_and_does_not_change_the_exit_code
+- **Verified:** yes (2026-08-08)
 
 ### AC2: the `lint` CHAIN runs `lint:disclosure`, which today it does not
 
@@ -40,6 +41,7 @@
   exits 0. Asserting the KEY exists is green today with nothing changed, which is a criterion
   that cannot fail
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DocSurfaceLaneTests::test_the_lint_aggregate_runs_disclosure_and_the_aggregate_still_passes
+- **Verified:** yes (2026-08-08)
 
 ### AC3: the close report carries one row, derived not typed
 
@@ -48,6 +50,7 @@
 - **Then** it carries one row naming the verb counts, derived by calling the coverage
   measurement rather than by reading a number somebody wrote down
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::DocSurfaceRowTests::test_the_close_row_is_derived_from_the_measurement
+- **Verified:** yes (2026-08-08)
 
 ### AC4: the gate lane and the close row MOVE when the DEFINING module is patched
 
@@ -63,6 +66,7 @@
   the two readers AGREE proves nothing either: two correct readers over one tree agree by
   construction
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DocSurfaceLaneTests::test_both_readers_move_when_the_defining_module_is_patched
+- **Verified:** yes (2026-08-08)
 
 ## Test Plan
 

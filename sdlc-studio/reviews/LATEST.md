@@ -1,6 +1,6 @@
 
 <!-- close-status:begin -->
-> **RUN-01KZEF9M closed goal-reached.** 8 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01KZF9AF closed goal-reached.** 8 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **Run of record:** RUN-01KZ5YXM - the charter queue. 26 of 26 points across 6 units, every

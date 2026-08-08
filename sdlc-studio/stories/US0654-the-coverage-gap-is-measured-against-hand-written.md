@@ -1,6 +1,6 @@
 # US0654: The coverage gap is measured against hand-written docs only, never against the generator's own output
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0538
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
@@ -34,6 +34,7 @@
   with no documentation added, which this project has already filed once as a document compared
   against a projection of itself
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageThroughTheCliTests::test_the_exclusion_holds_through_the_command_and_removing_it_shows_the_difference
+- **Verified:** yes (2026-08-08)
 
 ### AC2: the corpus rule has ONE definition, and moving it moves the reader
 
@@ -44,6 +45,7 @@
   equality assertion untouched. One definition and two readers is the claim; a patch that only
   one of them sees is the test of it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_patching_the_shared_rule_moves_the_corpus
+- **Verified:** yes (2026-08-08)
 
 ### AC3: a HAND-WRITTEN table of the same shape is not stripped
 
@@ -55,6 +57,7 @@
   in the back one with no prose added. And a stripper that eats every table drives the count to
   100% undocumented, which passes an unchanged-number assertion by measuring nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_a_pasted_generated_block_is_stripped_and_a_hand_written_table_is_not
+- **Verified:** yes (2026-08-08)
 
 ### AC4: the counts are pinned on a miniature corpus with stated literals
 
@@ -66,6 +69,7 @@
   and it will move - but a test whose expectation is computed by the function under test can
   never fail, so the fixture carries the numbers a human wrote down
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageCorpusTests::test_the_counts_are_pinned_on_a_fixture_with_stated_literals
+- **Verified:** yes (2026-08-08)
 
 ### AC5: severity separates absent from unusable, each pinned to its own case
 
@@ -75,6 +79,7 @@
 - **Then** they carry high, medium and low RESPECTIVELY - each case asserted against its own
   severity, so a reversed mapping dies as well as a collapsed one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageFindingTests::test_severity_separates_absent_from_unusable
+- **Verified:** yes (2026-08-08)
 
 ### AC6: the first run FILES, the second adds nothing, and both exit 0
 
@@ -85,6 +90,7 @@
   on the `script.py verb` token. Both exit 0 whatever they found: a documentation guard that
   blocks is one that gets switched off
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::CoverageFindingTests::test_the_first_run_files_and_the_second_adds_nothing
+- **Verified:** yes (2026-08-08)
 
 ## Test Plan
 

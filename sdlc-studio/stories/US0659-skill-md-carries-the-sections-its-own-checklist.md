@@ -1,6 +1,6 @@
 # US0659: SKILL.md carries the sections its own checklist requires, and every reference is two hops away
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0538
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
@@ -29,6 +29,7 @@
   is on the trigger phrases being present, which is the rule, rather than on the shape of a list,
   which is a proxy that would outlive the reason for it
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::SkillSectionTests::test_skill_md_carries_the_sections_its_own_checklist_requires
+- **Verified:** yes (2026-08-08)
 
 ### AC2: the four missing Progressive Loading rows are present
 
@@ -38,6 +39,7 @@
 - **Then** each has a row. These are the four documents the doctrine calls the top-level human
   levers, and an agent following the loading guide is told about neither
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::SkillSectionTests::test_the_four_top_level_documents_are_in_the_loading_guide
+- **Verified:** yes (2026-08-08)
 
 ### AC3: SKILL.md's ceiling is unchanged at 500
 
@@ -51,6 +53,7 @@
   ceiling, would make that assertion pass MORE easily rather than fail. The ceiling is the thing
   this criterion is about, so the ceiling is the thing it pins
 - **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_skill_md_ceiling_is_unchanged
+- **Verified:** yes (2026-08-08)
 
 ### AC4: the nesting depth is MEASURED, on a fixture whose true depth is known
 
@@ -65,6 +68,7 @@
   is 3 deep passes on a hardcoded 3. The 3-hop path is not fixable without a rewrite this change
   is not doing, so the honest disposition is a number somebody can act on
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_disclosure.py::DepthReachesTheReportTests::test_the_command_prints_the_depth_and_still_exits_zero
+- **Verified:** yes (2026-08-08)
 
 ## Test Plan
 

@@ -1,6 +1,6 @@
 # US0652: Every script exposes build_parser, and one library enumerates the surface
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0538
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new

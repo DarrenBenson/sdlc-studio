@@ -1,6 +1,6 @@
 # CR-0538: the skill has no lane that counts what the tooling ships: 49 of 211 verbs and 72 of 677 flags are named in no hand-written doc, and the checker that would notice is switched out of the lint chain
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0211
 > **Priority:** High
 > **Type:** Improvement

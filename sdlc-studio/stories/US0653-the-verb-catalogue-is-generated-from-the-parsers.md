@@ -1,6 +1,6 @@
 # US0653: The verb catalogue is generated from the parsers, never typed
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0538
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
@@ -29,6 +29,7 @@
   how a generator eats a paragraph somebody wrote, and it is the shape the prose invokes without
   the plan covering it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GenerationThroughTheCliTests::test_a_target_without_markers_is_refused_by_the_cli
+- **Verified:** yes (2026-08-08)
 
 ### AC2: `--check` reports drift and exits 0
 
@@ -42,6 +43,7 @@
   and never block, so a lane that fails a commit on documentation drift is the thing being
   refused here
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GeneratedRegionTests::test_a_malformed_marker_pair_is_refused
+- **Verified:** yes (2026-08-08)
 
 ### AC3: the catalogue lists every verb the surface enumerates, and no other
 
@@ -53,6 +55,7 @@
   enumeration and comparing against the live enumeration is two things agreeing: truncation
   dies, and any mutant inside the shared enumerator survives on both sides at once
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GeneratedRegionTests::test_the_catalogue_lists_exactly_what_the_surface_enumerates
+- **Verified:** yes (2026-08-08)
 
 ### AC4: no row carries a flag, asserted structurally
 
@@ -67,6 +70,7 @@
   hold whatever the page contained. 677 rows would need a budget allowlist entry on the day the page
   was born, and a page nobody can afford to keep goes stale rather than helping
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GeneratedRegionTests::test_no_generated_row_carries_a_flag
+- **Verified:** yes (2026-08-08)
 
 ### AC5: `--format json` exists and answers what the page does not
 
@@ -75,6 +79,7 @@
 - **Then** it emits the surface with each verb's flags, and exits 0. The page points at this, so
   it has to be there: a pointer to an entry point nobody built is a worse answer than no pointer
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::GeneratedRegionTests::test_format_json_emits_the_flags_the_page_omits
+- **Verified:** yes (2026-08-08)
 
 ## Test Plan
 

@@ -1,6 +1,6 @@
 # US0657: The budget records what shipped and reports the files sitting inside its tolerance
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0538
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
@@ -32,6 +32,7 @@
   them byte-identically while moving the ceiling would leave an argument that is false about the
   ceiling it justifies. The history accumulates; nothing already written is rewritten
 - **Verify:** pytest tools/tests/test_check_budgets.py::RecordTests::test_record_moves_the_ceiling_appends_provenance_and_rewrites_no_reason
+- **Verified:** yes (2026-08-08)
 
 ### AC2: `--drift` names the files inside the tolerance, and exits 0
 
@@ -44,6 +45,7 @@
   failing a hard threshold is worth seeing before it fails, and a report that fails is a report
   that gets a bigger number rather than a smaller file
 - **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_drift_names_the_files_inside_the_tolerance_and_exits_zero
+- **Verified:** yes (2026-08-08)
 
 ### AC3: the hard threshold is unchanged, and a real breach still fails
 
@@ -53,6 +55,7 @@
   the gate, not a softening of it, and a test exercising only the new ones would let the old one
   be lost
 - **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_the_hard_threshold_still_fails
+- **Verified:** yes (2026-08-08)
 
 ### AC4: the three unbudgeted trees get a REPORTED total and NO threshold
 
@@ -67,6 +70,7 @@
   on day one and is waived on day two, and a waived gate is worse than a reported number because
   it looks like a gate
 - **Verify:** pytest tools/tests/test_check_budgets.py::DriftTests::test_the_unbudgeted_trees_are_reported_and_not_gated
+- **Verified:** yes (2026-08-08)
 
 ## Test Plan
 
