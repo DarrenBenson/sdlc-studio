@@ -1656,6 +1656,11 @@ def _ck_doc_surface(ctx: dict) -> tuple:
     down is one that stops being true the day after. It is the same call the gate lane makes,
     so the two cannot disagree.
     """
+    import doc_coverage  # noqa: PLC0415 - the ONE applicability reader, shared with the gate lane
+    if not doc_coverage.is_skill_repo(str(ctx["root"])):
+        return (NOT_RUN, "not applicable",
+                "the verb surface is the skill's own documentation, which this project does not "
+                "have - the row is undefined here rather than unmeasurable")
     try:
         import command_audit  # noqa: PLC0415
         r = command_audit.verb_coverage(str(ctx["root"]))

@@ -32,6 +32,25 @@ def _skill_dir(repo_root: Path) -> Path | None:
     return d if (d / "SKILL.md").exists() else None
 
 
+def is_skill_repo(repo_root: Path | str = ".") -> bool:
+    """Whether `repo_root` is the skill's OWN repository, and so whether a lane that measures the
+    skill's documentation has anything to measure at all.
+
+    THE ONE READER of that question. Every lane and report row that measures the skill's own
+    corpus asks it here, because the alternative is each deciding for itself and the answers
+    drifting: one lane reported `N/A (not the skill repo)` on a consuming project while its
+    neighbour raised `ModuleNotFoundError` on the same tree in the same run, and the second
+    reported a permanent non-zero advisory naming an internal Python module the operator had no
+    way to act on.
+
+    Deliberately asked HERE rather than inside the measurement. `command_audit` resolves a BARE
+    skill tree - one passed as the root itself rather than nested under `.claude/skills/` - and
+    measures it, which is what `command_audit.py --coverage` is for. Pushing this test down into
+    the measurement would switch that off, and no fixture shaped like a consuming project could
+    see it happen."""
+    return _skill_dir(Path(repo_root)) is not None
+
+
 def _type_ref_commands(skill_dir: Path) -> list[str]:
     text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
     if "## Type Reference" not in text:
@@ -116,9 +135,9 @@ def _changelog_unreleased_empty(repo_root: Path) -> bool | None:
 
 
 def check(repo_root: Path | str = ".") -> dict:
-    skill_dir = _skill_dir(Path(repo_root))
-    if skill_dir is None:  # not the skill repo - nothing to check
+    if not is_skill_repo(repo_root):  # not the skill repo - nothing to check
         return {"findings": [], "ok": True, "applicable": False}
+    skill_dir = _skill_dir(Path(repo_root))
     help_text = (skill_dir / "help" / "help.md").read_text(encoding="utf-8")
     # The script catalogue is a lean index (reference-scripts.md) plus grouped detail pages
     # (reference-scripts-*.md); a script's `### ` entry may live in any of them, so union them.

@@ -2927,7 +2927,10 @@ class DocSurfaceRowTests(unittest.TestCase):
         spec = _iu.spec_from_file_location("command_audit", d / "command_audit.py")
         ca = _iu.module_from_spec(spec); _s.modules["command_audit"] = ca
         spec.loader.exec_module(ca)
-        root = str(_p.Path(__file__).resolve().parents[4])
+        # BG0559: was `parents[4]`, which is `.claude` rather than the repository. The
+        # mocked measurement hid it - the row is now gated on the tree being a skill repo
+        # BEFORE the measurement is called, so the wrong root reads as not applicable.
+        root = str(_p.Path(__file__).resolve().parents[5])
         real = ca.verb_coverage
         try:
             ca.verb_coverage = lambda *a, **k: {  # noqa: ARG005
@@ -2941,6 +2944,20 @@ class DocSurfaceRowTests(unittest.TestCase):
                       "a report is one that stops being true the day after")
         self.assertTrue(detail.strip(), "the row states no reason a reader can act on")
 
+
+class DocSurfaceReportRowTests(unittest.TestCase):
+    """BG0559 AC5: the second reader. The close report calls the identical measurement, so a
+    repair that satisfied only the gate left the same permanent advisory in every consuming
+    project's close report."""
+
+    def test_doc_surface_row_is_not_applicable_outside_the_skill_repo(self) -> None:
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+        import sprint_report as sr  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            state, value, _detail = sr._ck_doc_surface({"root": d})
+            self.assertEqual(sr.NOT_RUN, state)
+            self.assertIn("not applicable", value)
+            self.assertNotIn("unreadable", value)
 
 
 if __name__ == "__main__":

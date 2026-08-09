@@ -205,6 +205,13 @@ def _doc_surface(root: str) -> dict:
     granularity of the same word, and two numbers a reader would otherwise have to reconcile
     with nothing telling them they measure different things.
     """
+    import doc_coverage
+    if not doc_coverage.is_skill_repo(root):
+        # Not applicable rather than unmeasurable. The measurement is DEFINED over the skill's own
+        # hand-written corpus, which a consuming project does not have - so asking and failing
+        # printed a permanent non-zero advisory naming an internal module, on every run, in every
+        # project. The sibling lane above answers the same question the same way.
+        return {"count": 0, "blocking": False, "detail": "N/A (not the skill repo)"}
     try:
         import command_audit
         r = command_audit.verb_coverage(root)

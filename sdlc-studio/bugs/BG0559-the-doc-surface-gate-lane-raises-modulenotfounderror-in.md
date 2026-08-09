@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** High
-> **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py
+> **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/doc_coverage.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Evidence:** Probed through the shipped CLI on a throwaway consuming-project fixture, 2026-08-09, during a v5 release-readiness sweep. `gate.py --root <fixture>` prints `[warn] doc-surface [0.0s]: NOT MEASURED - command_audit.verb_coverage raised ModuleNotFoundError: No module named 'surface'`. `git log -S '_doc_surface' -- scripts/gate.py` returns only 4e0e4a0f (RUN-01KZF9AF, US0654), which is not an ancestor of v4.1.0, so the lane and its defect are both new in v5 and reach a consumer the moment v5 ships.
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio file
@@ -28,19 +28,92 @@ Give `_doc_surface` the same applicability test its sibling `_doc_coverage` alre
 
 ## Acceptance Criteria
 
-- [ ] **AC1** `gate.py --root <consuming project>` reports the doc-surface lane as not applicable with count 0, proven on a fixture that is not the skill repo and holds no lib/surface.py
-- [ ] **AC2** `gate.py` run against a skill-repo tree still measures verb coverage and reports a real count, proving the lane was made inapplicable rather than switched off (positive control)
-- [ ] **AC3** An unexpected fault inside the skill repo still reports NOT MEASURED with count 1, and the not-applicable and not-measured states are distinguishable in the lane's output
-- [ ] **AC4** The applicability question has ONE reader shared with the doc-coverage lane, and the test proves the sharing by changing that reader and asserting both lanes follow
+> **Plan repaired after a REJECT at plan review (2026-08-09, qa seat, brief `6d3f4214540b`).**
+> Four blocking findings, and two changed what this unit is.
+>
+> **Ruling 1 - the predicate goes at the GATE, not inside `verb_coverage`.** The obvious repair
+> is to make `verb_coverage` answer "not applicable" itself. The seat measured why that is wrong:
+> `doc_coverage._skill_dir` returns None for a bare skill tree while `command_audit._skill_dir`
+> returns it, and `command_audit.py --root .claude/skills/sdlc-studio --coverage` measures 257
+> verbs there today. Pushing the test down would silently switch that CLI off, and no fixture
+> shaped like a consuming project could see it. So the applicability question is asked where the
+> LANE is, by the same predicate `doc-coverage` already answers it with.
+>
+> **Ruling 2 - the second reader is in scope, not deferred.** `sprint_report._ck_doc_surface`
+> calls the identical measurement and returns `unreadable` on the same fixture, so a repair that
+> satisfied only the gate would leave the identical permanent advisory in every consuming
+> project's close report. `Affects` is widened rather than the gap recorded as an exclusion: it
+> is one predicate and two callers, and splitting it would ship half a fix.
+
+### AC1
+
+- **Given** a project that is not the skill repo, built by `init run` in an empty tree
+- **When** `gate.py --root <fixture>` is run AS A SUBPROCESS and its printed lane lines are read
+- **Then** the `doc-surface` line reports the lane as not applicable with count 0, and the words
+  `NOT MEASURED` and `ModuleNotFoundError` appear nowhere in it.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k doc_surface_is_not_applicable_outside_the_skill_repo
+- **Verified:** yes (2026-08-09)
+- **Mutant:** in `gate.py`, delete the applicability guard from `_doc_surface` so it calls the measurement unconditionally.
+
+### AC2
+
+- **Given** the skill repository itself
+- **When** `gate.py --only doc-surface` is run AS A SUBPROCESS
+- **Then** the lane still reports a real verb count, proving the lane was made inapplicable
+  outside the skill repo rather than switched off everywhere, and
+  `command_audit.py --root .claude/skills/sdlc-studio --coverage` still measures a bare skill
+  tree - the CLI Ruling 1 exists to protect.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k doc_surface_still_measures_the_skill_repo_and_a_bare_tree
+- **Verified:** yes (2026-08-09)
+- **Mutant:** in `command_audit.py`, make `verb_coverage` consult the gate's applicability predicate itself, so a bare skill tree resolves to not-applicable.
+
+### AC3
+
+- **Given** a SKILL-SHAPED fixture - one the applicability predicate calls a skill repo - whose
+  `scripts/lib/surface.py` is absent, so the measurement raises an import fault where the
+  measurement IS defined
+- **When** `gate.py --root <fixture> --only doc-surface` is run as a subprocess
+- **Then** the lane reports `NOT MEASURED` with count 1, and the same fixture WITH the file
+  present reports a real count - the positive control, without which a fixture broken for some
+  unrelated reason passes for the wrong reason.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k an_import_fault_inside_a_skill_repo_still_reports_not_measured
+- **Verified:** yes (2026-08-09)
+- **Mutant:** in `gate.py`, narrow the `except Exception` on `_doc_surface` to `except ModuleNotFoundError` and return the not-applicable result from it, which is the careless repair this bug invites.
+
+### AC4
+
+- **Given** the two lanes `doc-coverage` and `doc-surface`, and the close report's
+  `_ck_doc_surface`
+- **When** the shared applicability predicate is replaced in-process
+- **Then** all three follow, so the question has one reader rather than three answers.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k one_applicability_predicate_decides_for_every_reader
+- **Verified:** yes (2026-08-09)
+- **Mutant:** in `gate.py`, give `_doc_surface` a DIVERGENT inline copy that tests for the skill directory rather than for `SKILL.md` inside it, pinned by a boundary fixture holding the directory without the file, where the two predicates disagree.
+
+### AC5
+
+- **Given** the consuming-project fixture from AC1
+- **When** the close report's doc-surface row is rendered through `sprint_report`
+- **Then** it reports the row as not applicable rather than `unreadable`, so the identical
+  permanent advisory does not survive in the report after being removed from the gate.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py -k doc_surface_row_is_not_applicable_outside_the_skill_repo
+- **Verified:** yes (2026-08-09)
+- **Mutant:** in `sprint_report.py`, restore the bare `verb_coverage` call in `_ck_doc_surface` without the applicability guard.
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | remove the applicability guard from `_doc_surface` - the consuming-project fixture must go from N/A back to NOT MEASURED with count 1 | `gate.py --root <consuming project>` reports the doc-surface lane as not applicable with count 0, proven on a fixture that is not the skill repo and holds no lib/surface.py |
-| AC2 | make the applicability guard always return False - the skill-repo fixture must stop reporting a real verb count, and the test must fail | `gate.py` run against a skill-repo tree still measures verb coverage and reports a real count, proving the lane was made inapplicable rather than switched off (positive control) |
-| AC3 | widen the applicability guard to swallow the in-repo import fault as not-applicable - the injected-fault test must fail | An unexpected fault inside the skill repo still reports NOT MEASURED with count 1, and the not-applicable and not-measured states are distinguishable in the lane's output |
-| AC4 | give `_doc_surface` its own copy of the is-skill-repo predicate - changing the shared reader must stop moving both lanes, and the test must fail | The applicability question has ONE reader shared with the doc-coverage lane, and the test proves the sharing by changing that reader and asserting both lanes follow |
+| AC1 | in `gate.py`, delete the applicability guard from `_doc_surface` so it calls the measurement unconditionally | |
+| AC2 | in `command_audit.py`, change `verb_coverage` to consult the gate's applicability predicate before measuring | |
+| AC3 | in `gate.py`, narrow `_doc_surface`'s `except Exception` to `except ModuleNotFoundError` and return the not-applicable result from it | |
+| AC4 | in `gate.py`, replace the shared call with a DIVERGENT inline copy testing for the skill directory rather than for `SKILL.md` inside it | |
+| AC5 | in `sprint_report.py`, delete the applicability guard from `_ck_doc_surface`, leaving the bare measurement call | |
 
 ## Revision History
 

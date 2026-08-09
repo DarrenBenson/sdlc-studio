@@ -5698,6 +5698,10 @@ class DocSurfaceLaneTests(unittest.TestCase):
         spec.loader.exec_module(m)
         return m
 
+    # BG0559: every root here was `parents[4]`, which is `.claude`, not the repository. The lane
+    # therefore raised ModuleNotFoundError on every one of these calls, and
+    # `assertIn("verb", detail)` passed on the substring inside `verb_coverage` IN THE ERROR
+    # MESSAGE. This class has never measured the lane it is named for.
     def test_the_lane_reports_verbs_distinguishably_and_does_not_change_the_exit_code(self):
         """AC1. `gate.py` ALREADY prints "N undocumented" from `doc-coverage`, which counts
         SCRIPTS - a different granularity of the same word. Two lanes saying it are two numbers
@@ -5707,7 +5711,7 @@ class DocSurfaceLaneTests(unittest.TestCase):
         Mutant: word the detail as "N undocumented", identical to the sibling lane.
         """
         g = self._mod("gate")
-        res = g._doc_surface(str(pathlib.Path(__file__).resolve().parents[4]))
+        res = g._doc_surface(str(pathlib.Path(__file__).resolve().parents[5]))
         self.assertFalse(res["blocking"],
                          "the doc-surface lane blocks, so under-documentation fails a commit")
         self.assertIn("verb", res["detail"],
@@ -5727,7 +5731,7 @@ class DocSurfaceLaneTests(unittest.TestCase):
         g = self._mod("gate")
         sr = self._mod("sprint_report")
         ca = self._mod("command_audit")
-        root = str(pathlib.Path(__file__).resolve().parents[4])
+        root = str(pathlib.Path(__file__).resolve().parents[5])
         sentinel = {"verbs": 4242, "documented": 4242, "undocumented": 4242, "ratio": 42.0,
                     "missing": []}
         real = ca.verb_coverage
@@ -5753,7 +5757,7 @@ class DocSurfaceLaneTests(unittest.TestCase):
         """
         g = self._mod("gate")
         ca = self._mod("command_audit")
-        root = str(pathlib.Path(__file__).resolve().parents[4])
+        root = str(pathlib.Path(__file__).resolve().parents[5])
         real = ca.verb_coverage
         try:
             def _boom(*a, **k):  # noqa: ARG001
@@ -5792,6 +5796,145 @@ class DocSurfaceLaneTests(unittest.TestCase):
                          f"`npm run lint` now fails on an advisory report: {proc.stderr[-400:]}")
         self.assertTrue(proc.stdout.strip(), "the lane produced no report at all")
 
+
+
+
+
+class DocSurfaceApplicabilityTests(unittest.TestCase):
+    """BG0559: a lane that measures the SKILL's own documentation is undefined elsewhere.
+
+    `_doc_surface` shipped in the last release calling the measurement unconditionally. In a
+    consuming project the import raised, the blanket `except` reported `NOT MEASURED` with count
+    1, and every such project carried a permanent non-zero advisory naming an internal Python
+    module. Its sibling `doc-coverage` answered the same question correctly on the same tree in
+    the same run.
+
+    These drive `gate.py` AS A SUBPROCESS. The defect is entirely in which tree the lane is
+    pointed at, and every existing test of this lane calls `_doc_surface(root)` in-process
+    against the repository it lives in, which is why a 6000-test suite was green on it.
+    """
+
+    _SKILL_REL = pathlib.Path(".claude") / "skills" / "sdlc-studio"
+
+    def _gate(self, root, *extra):
+        import subprocess  # noqa: PLC0415
+        scripts = pathlib.Path(__file__).resolve().parents[1]
+        return subprocess.run(
+            [sys.executable, str(scripts / "gate.py"), "--root", str(root), *extra],
+            capture_output=True, text=True, timeout=600, check=False)
+
+    def _repo(self):
+        return pathlib.Path(__file__).resolve().parents[5]
+
+    def _consuming(self, d):
+        """A project that is not the skill repo, built by the shipped initialiser."""
+        import subprocess  # noqa: PLC0415
+        scripts = pathlib.Path(__file__).resolve().parents[1]
+        root = pathlib.Path(d)
+        r = subprocess.run([sys.executable, str(scripts / "init.py"), "--root", str(root), "run"],
+                           capture_output=True, text=True, timeout=300, check=False)
+        self.assertEqual(0, r.returncode, r.stderr)
+        return root
+
+    def _skill_shaped(self, d, *, with_surface: bool):
+        """A tree the applicability predicate calls a skill repo, whose measurement may be broken.
+
+        AC3's fixture. The fault must sit INSIDE a tree where the measurement is defined, or the
+        test proves only that a non-skill-repo does not measure - which is AC1, not AC3.
+        """
+        root = pathlib.Path(d)
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)  # gate needs a project to scope to
+        skill = root / self._SKILL_REL
+        (skill / "scripts" / "lib").mkdir(parents=True)
+        (skill / "SKILL.md").write_text("# skill\n", encoding="utf-8")
+        (skill / "scripts" / "__init__.py").write_text("", encoding="utf-8")
+        (skill / "scripts" / "lib" / "__init__.py").write_text("", encoding="utf-8")
+        if with_surface:
+            real = self._repo() / self._SKILL_REL / "scripts" / "lib" / "surface.py"
+            (skill / "scripts" / "lib" / "surface.py").write_text(
+                real.read_text(encoding="utf-8"), encoding="utf-8")
+        return root
+
+    def _lane(self, out, name="doc-surface"):
+        for line in out.splitlines():
+            if f"] {name} [" in line:
+                return line
+        self.fail(f"no {name} lane in the gate output:\n{out}")
+        return ""
+
+    def test_doc_surface_is_not_applicable_outside_the_skill_repo(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._consuming(d)
+            r = self._gate(root)
+            line = self._lane(r.stdout + r.stderr)
+            self.assertIn("N/A (not the skill repo)", line)
+            self.assertNotIn("NOT MEASURED", line)
+            self.assertNotIn("ModuleNotFoundError", line)
+
+    def test_doc_surface_still_measures_the_skill_repo_and_a_bare_tree(self) -> None:
+        # The positive control. A repair that switched the lane off everywhere would satisfy the
+        # test above for the wrong reason, and pushing the predicate into the measurement would
+        # silently kill `command_audit --coverage` on a BARE skill tree - the case Ruling 1 names.
+        import subprocess  # noqa: PLC0415
+        repo = self._repo()
+        r = self._gate(repo, "--only", "doc-surface")
+        line = self._lane(r.stdout + r.stderr)
+        self.assertNotIn("N/A", line, "the lane stopped measuring its own repository")
+        self.assertIn("verb", line)
+        scripts = pathlib.Path(__file__).resolve().parents[1]
+        bare = subprocess.run(
+            [sys.executable, str(scripts / "command_audit.py"),
+             "--root", str(repo / self._SKILL_REL), "--coverage"],
+            capture_output=True, text=True, timeout=600, check=False)
+        # A NON-ZERO count. "0 of 0 verbs" also contains the word `verb`, so the weaker
+        # assertion survived the mutant that makes `verb_coverage` return zeros for anything the
+        # gate's predicate calls a non-skill-repo - which a bare tree is. Mutation found it.
+        import re as _re  # noqa: PLC0415
+        counts = [int(n) for n in _re.findall(r"(\d+)\s+verb", bare.stdout + bare.stderr)]
+        self.assertTrue(counts and max(counts) > 0,
+                        "a BARE skill tree measured 0 verbs - command_audit --coverage was "
+                        "switched off by pushing the applicability test into the measurement")
+
+    def test_an_import_fault_inside_a_skill_repo_still_reports_not_measured(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            broken = self._skill_shaped(d, with_surface=False)
+            line = self._lane(self._gate(broken, "--only", "doc-surface").stdout)
+            self.assertIn("NOT MEASURED", line,
+                          "a measurement that RAISED where it IS defined reported as clean")
+        with tempfile.TemporaryDirectory() as d:
+            whole = self._skill_shaped(d, with_surface=True)
+            line = self._lane(self._gate(whole, "--only", "doc-surface").stdout)
+            self.assertNotIn("NOT MEASURED", line,
+                            "the positive control also reports NOT MEASURED, so the fixture is "
+                            "broken for some reason other than the injected fault")
+
+    def test_one_applicability_predicate_decides_for_every_reader(self) -> None:
+        # Replacing the shared predicate must move the gate lane, its sibling, and the close
+        # report's row. A faithful copy is an invalid mutant, so this pins a DIVERGENT one via
+        # a boundary fixture: the skill DIRECTORY present without SKILL.md inside it.
+        g = self._mod_gate()
+        sr = self._mod_gate("sprint_report")
+        dc = self._mod_gate("doc_coverage")
+        repo = str(self._repo())
+        real = dc.is_skill_repo
+        try:
+            dc.is_skill_repo = lambda *a, **k: False  # noqa: ARG005
+            self.assertIn("N/A", g._doc_surface(repo)["detail"])
+            self.assertIn("N/A", g._doc_coverage(repo)["detail"])
+            state, _value, _detail = sr._ck_doc_surface({"root": repo})
+            self.assertEqual(sr.NOT_RUN, state)
+        finally:
+            dc.is_skill_repo = real
+        with tempfile.TemporaryDirectory() as d:
+            boundary = pathlib.Path(d)
+            (boundary / self._SKILL_REL).mkdir(parents=True)   # directory, no SKILL.md
+            self.assertFalse(dc.is_skill_repo(boundary),
+                             "the predicate answers on the DIRECTORY rather than on SKILL.md, so "
+                             "a divergent inline copy would agree with it everywhere")
+
+    def _mod_gate(self, name="gate"):
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+        return __import__(name)
 
 
 if __name__ == "__main__":
