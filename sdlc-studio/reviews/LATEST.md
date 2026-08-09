@@ -9,7 +9,47 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
-## v5.0.0 is BLOCKED on three bugs, not frozen - D0132, 2026-08-09
+## SUPERSEDED by D0133 - the v5 programme is six queued charters, and the blocking number was wrong
+
+**Read this before the section below.** D0132's three-bug gate is superseded. A release-readiness
+sweep on 2026-08-09 ran the two paths a consumer actually takes - greenfield `init` to a first
+sprint plan, and a v4-era project through `migrate` to `gate` - against throwaway fixtures, and
+found three defects that no backlog, test or lane could see. All three are consumer-facing, and
+none of D0132's three is:
+
+- **BG0558** - a greenfield project cannot plan its first sprint. Every `Affects` path in a new
+  project is legitimately unresolvable, because the story describes code not yet written, and the
+  blocking grooming lane calls that a fictional Affects. `sprint.breakdown` defaults to `enforce`
+  and `init run` writes no override, so a project created by the shipped initialiser is in the
+  refusing state from the moment it exists. The message says `lacks: Affects` about a story that
+  declares one. The advisory lane one call away holds the opposite rule and gets it right.
+- **BG0559** - `_doc_surface`, new in v5 at 4e0e4a0f, raises `ModuleNotFoundError: No module
+  named 'surface'` in every consuming project, reporting count 1 forever. Its sibling
+  `doc-coverage` returns `N/A (not the skill repo)` on the same fixture in the same run.
+- **BG0560** - README routes every existing user to `docs/existing-users.md`, which is the **v4**
+  page, and calls v5 a drop-in. Measured: `gate.py` FAILs on conformance, reconcile and
+  index-derived immediately after a clean `migrate --apply`. RFC0040 required this guide before
+  the post-freeze release and it was written for v4 and never revised.
+
+**BG0535's number was wrong.** `gate.py --release` re-run on 167e7e38: **53 red of 1876, not 106
+of 1824**, in 1663s. And they are stale selectors rather than broken features - `audit_check.py`
+and `test_review_generate.py` do not exist; four more name test methods renamed out of files that
+do. So the repair is mechanical, and CR0508's write-time guard is the part that has to land with
+it. The bug carries the re-measurement; the title was left standing, because a figure that moved
+by half is the finding.
+
+**The operator's bar, D0133:** zero open bugs at tag, every red criterion repaired, no KNOWN
+ISSUES section, and a project's first run reports the plan-review requirement rather than
+refusing it (CR0541). The programme is queued as SC0002 to SC0007 - first-run and upgrade paths,
+then the lying gates, then grandfathering, then a grooming run for the 20 units that carry no
+criteria, then the bug burn-down, then the cut. SC0001 is deferred to rank 7.
+
+**The transferable result is not any of the three bugs.** It is that twenty minutes of running the
+shipped commands against a fixture found what a 6354-test suite, twenty gate lanes and a 253-point
+backlog did not. SC0002's load-bearing unit is the rehearsal lane that makes that pass automatic,
+and it must fail on the tree as it stands before any of the three repairs land.
+
+## Superseded: v5.0.0 is BLOCKED on three bugs, not frozen - D0132, 2026-08-09
 
 D0130's blanket hold is lifted and superseded. The tag is back in scope and gated on three
 named defects rather than on an instruction with no end condition. Clearing these clears v5:

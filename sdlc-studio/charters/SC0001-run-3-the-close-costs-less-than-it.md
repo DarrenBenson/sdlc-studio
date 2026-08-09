@@ -1,6 +1,7 @@
 # SC0001: run 3: the close costs less than it returns
 
 > **Status:** Queued
+> **Queue rank:** 7
 > **Created:** 2026-08-04
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

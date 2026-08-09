@@ -12,6 +12,21 @@
 
 ## Summary
 
+> **RE-MEASURED 2026-08-09 on 167e7e38: 53 red of 1876, not 106 of 1824.** The second completed
+> `--release` run in this bug's history: `[FAIL] verify [1663.0s]: 53 red AC(s) ... [661
+> story/stories, 1876 executable AC(s) in 1662s (batched) - OVER the 600s declared budget]`,
+> `gate cost: 1778.0s`. The title and the figures below are the 2026-08-07 measurement and are
+> left standing rather than rewritten, because a number that moved by half is itself the finding
+> and LATEST.md had warned the original was never re-run. Sampling the ten the new run names
+> confirms the rot diagnosis and sharpens it: `US0063::AC1` invokes `audit_check.py` and
+> `US0070::AC1` invokes `test_review_generate.py`, neither of which exists on disk;
+> `US0021::AC1`, `US0040::AC3`, `US0042::AC2` and `US0052::AC4` name test methods absent from
+> files that do still exist. These are stale selectors, not broken features, so the repair is
+> mechanical and the guard against recurrence is the part that has to land with it - CR0508
+> already describes it: a `Verify:` selector naming a test that does not exist is accepted at
+> write time. Ruled under D0133: repair all of them rather than grandfather them. Planned in
+> charter SC0003.
+
 The first completed run of `gate.py --release` reports **106 red acceptance criteria out of 1824** across 645 stories - every one on a story already at Done. It had never completed before: the lane takes 1667 seconds against a declared 600s budget, and an earlier attempt in this same session was killed by a 28-minute timeout, so its verdict has never been read.
 
 This is the class the release gate exists to catch, and it is the one thing v5 cannot ship over. `README.md:399` says acceptance criteria "are executable and get run". For stories that is nearly true - 0.9% are unparseable, per BG0530's corpus scan - but 106 of the ones that DO parse are red, so the sentence is true of the mechanism and false of the corpus.

@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 20 |
+| Proposed | 21 |
 | Approved | 0 |
 | In Progress | 8 |
 | Complete | 489 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **540** |
+| **Total** | **541** |
 
 ## All Changes
 
@@ -91,6 +91,7 @@
 | [CR-0538](CR0538-the-skill-has-no-lane-that-counts-what.md) | the skill has no lane that counts what the tooling ships: 49 of 211 verbs and 72 of 677 flags are named in no hand-written doc, and the checker that would notice is switched out of the lint chain | Complete | High | Improvement | 2026-08-07 | EP0211 |
 | [CR-0539](CR0539-lane-check-reports-181-units-whose-criteria-never.md) | lane-check reports 181 units whose criteria never enter a shipped entry point | Proposed | Medium | process | 2026-08-08 | -- |
 | [CR-0540](CR0540-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-08-09 | -- |
+| [CR-0541](CR0541-a-project-s-first-sprint-reports-the-plan.md) | a project's first sprint reports the plan-review requirement instead of refusing it, so a first-time user reaches a Done story unaided and meets the gate before it can matter | Proposed | High | Improvement | 2026-08-09 | -- |
 
 ## Archived Releases
 
