@@ -35,6 +35,15 @@ A declared path that does not resolve should be distinguished by whether the uni
 - [ ] **AC3** The refusal message for a unit that declares Affects never says the unit `lacks: Affects`, and names the real condition and its remedy
 - [ ] **AC4** One reader decides whether an unresolvable path is fictional, and the test proves the sharing by changing that reader and asserting BOTH the blocking lane and the advisory lane follow
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint.py`, restore the unconditional `len(unresolvable) == len(declared)` refusal - the greenfield fixture must go from a written run to exit 2 | The shipped `sprint plan --write` accepts a unit whose declared Affects paths do not exist on disk when the unit creates them, on a fixture project containing none of those paths, and writes the run |
+| AC2 | delete the fictional-Affects refusal entirely - the brownfield typo fixture must stop being refused, proving the repair narrowed the rule rather than removing it | A unit whose Affects is a genuine typo against an existing tree is still refused, proving the repair did not delete the rule (positive control, same fixture family) |
+| AC3 | put `Affects` back into the `missing` list alongside the unresolvable detail - the assertion on the absent-field wording must fail | The refusal message for a unit that declares Affects never says the unit `lacks: Affects`, and names the real condition and its remedy |
+| AC4 | give the blocking lane its own copy of the resolvability predicate - changing the shared reader must stop moving the advisory lane, and the test must fail | One reader decides whether an unresolvable path is fictional, and the test proves the sharing by changing that reader and asserting BOTH the blocking lane and the advisory lane follow |
+
 ## Revision History
 
 | Date | Author | Change |

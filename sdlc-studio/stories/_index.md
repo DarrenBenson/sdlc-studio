@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-08-07
+**Last Updated:** 2026-08-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 16 |
+| Draft | 18 |
 | Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 2 |
 | Blocked | 0 |
-| **Total** | **661** |
+| **Total** | **663** |
 
 ## All Stories
 
@@ -101,6 +101,8 @@
 | [US0659](US0659-skill-md-carries-the-sections-its-own-checklist.md) | SKILL.md carries the sections its own checklist requires, and every reference is two hops away | Done | EP0211 | 2026-08-07 | 2026-08-07 |
 | [US0660](US0660-a-surviving-mutant-becomes-a-severity-rated-bug.md) | A surviving mutant becomes a severity-rated bug and the transition proceeds, and the run names the mode that held it | Done | EP0212 | 2026-08-07 | 2026-08-07 |
 | [US0661](US0661-a-measured-mutation-run-records-what-it-applied.md) | A measured mutation run records what it applied, attributed to a unit, so the gate is satisfiable by measurement rather than only by self-report | Done | EP0212 | 2026-08-07 | 2026-08-07 |
+| [US0662](US0662-a-project-with-no-closed-run-reports-the.md) | A project with no closed run reports the plan-review requirement at the terminal transition instead of refusing, and names the condition that arms it | Draft | EP0213 | 2026-08-09 | 2026-08-09 |
+| [US0663](US0663-the-softening-expires-on-run-history-alone-so.md) | The softening expires on run history alone, so a second run refuses and an upgrading project is unaffected byte-for-byte | Draft | EP0213 | 2026-08-09 | 2026-08-09 |
 
 ## Archived Releases
 

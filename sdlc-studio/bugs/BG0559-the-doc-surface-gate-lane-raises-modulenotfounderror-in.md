@@ -33,6 +33,15 @@ Give `_doc_surface` the same applicability test its sibling `_doc_coverage` alre
 - [ ] **AC3** An unexpected fault inside the skill repo still reports NOT MEASURED with count 1, and the not-applicable and not-measured states are distinguishable in the lane's output
 - [ ] **AC4** The applicability question has ONE reader shared with the doc-coverage lane, and the test proves the sharing by changing that reader and asserting both lanes follow
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | remove the applicability guard from `_doc_surface` - the consuming-project fixture must go from N/A back to NOT MEASURED with count 1 | `gate.py --root <consuming project>` reports the doc-surface lane as not applicable with count 0, proven on a fixture that is not the skill repo and holds no lib/surface.py |
+| AC2 | make the applicability guard always return False - the skill-repo fixture must stop reporting a real verb count, and the test must fail | `gate.py` run against a skill-repo tree still measures verb coverage and reports a real count, proving the lane was made inapplicable rather than switched off (positive control) |
+| AC3 | widen the applicability guard to swallow the in-repo import fault as not-applicable - the injected-fault test must fail | An unexpected fault inside the skill repo still reports NOT MEASURED with count 1, and the not-applicable and not-measured states are distinguishable in the lane's output |
+| AC4 | give `_doc_surface` its own copy of the is-skill-repo predicate - changing the shared reader must stop moving both lanes, and the test must fail | The applicability question has ONE reader shared with the doc-coverage lane, and the test proves the sharing by changing that reader and asserting both lanes follow |
+
 ## Revision History
 
 | Date | Author | Change |

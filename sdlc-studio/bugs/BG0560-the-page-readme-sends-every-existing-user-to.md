@@ -37,6 +37,15 @@ Rewrite docs/existing-users.md as the v5 page and keep the v4 content only where
 - [ ] **AC3** CHANGELOG.md carries a v5.0.0 breaking-change section naming the same set, and the release gate's changelog-fragments lane passes with no uncomposed fragments
 - [ ] **AC4** The v5.0.0 release notes are hand-authored for a reader outside this repository and carry no internal unit id as their only explanation of a change
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | revert docs/existing-users.md to the v4 text - the fixture-driven check that the page's own upgrade steps reach a green gate must fail | docs/existing-users.md describes v5 and names every default whose change alters what an existing project is held to, each with its remedy - verified by running the page's own upgrade steps against a v4-era fixture and reaching a green gate |
+| AC2 | restore the `drop-in: no project migration` wording in README.md - the claim-versus-fixture assertion must fail | No claim on the page survives that the fixture falsifies, and the drop-in wording in README.md is corrected to match whatever the fixture proves |
+| AC3 | delete the v5.0.0 breaking-change heading from CHANGELOG.md, and separately leave one fragment uncomposed - each must redden its own lane | CHANGELOG.md carries a v5.0.0 breaking-change section naming the same set, and the release gate's changelog-fragments lane passes with no uncomposed fragments |
+| AC4 | replace the hand-authored notes with the composed fragment body - the check that no change is explained by a bare unit id alone must fail | The v5.0.0 release notes are hand-authored for a reader outside this repository and carry no internal unit id as their only explanation of a change |
+
 ## Revision History
 
 | Date | Author | Change |

@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-08-07
+**Last Updated:** 2026-08-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 7 |
+| Draft | 8 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 205 |
-| **Total** | **212** |
+| **Total** | **213** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -58,6 +58,7 @@
 | [EP0210](EP0210-a-refusing-verb-can-be-asked-what-it.md) | A refusing verb can be asked what it demands, before it refuses | Draft | 6 | -- | 2026-08-07 | 2026-08-07 |
 | [EP0211](EP0211-the-surface-is-enumerable-from-the-parsers-that.md) | The surface is enumerable from the parsers that define it, and the documentation gap is a reported number | Done | 8 | -- | 2026-08-07 | 2026-08-07 |
 | [EP0212](EP0212-mutation-evidence-reports-by-default-and-the-evidence.md) | Mutation evidence reports by default, and the evidence a measured run produces is the evidence the gate reads | Done | 2 | -- | 2026-08-07 | 2026-08-07 |
+| [EP0213](EP0213-a-project-s-first-run-meets-the-plan.md) | A project's first run meets the plan-review gate as a report, and every run after it as a refusal | Draft | 2 | -- | 2026-08-09 | 2026-08-09 |
 
 ## Archived Releases
 
