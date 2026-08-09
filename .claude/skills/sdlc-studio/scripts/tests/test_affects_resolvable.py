@@ -81,9 +81,16 @@ def _refuses_for_affects(fn) -> bool:
 # parser cannot read as a path at all. Only the third is the resolvable-Affects refusal.
 _EVERY = "src/real.py"
 _SOME = "src/real.py, src/not-yet.py"
-_NONE = "nowhere/ghost.py"
+# BG0558: the rule catches a TYPO, not an unresolvable path. `_TYPO` names a wrong directory
+# for a file that really exists - the measured hazard BG0144 records - and must refuse.
+# `_CREATES` names a basename that exists nowhere, which is every path a greenfield story
+# declares, and must NOT: refusing it refused the first sprint plan of every new project.
+# The old `_NONE = "nowhere/ghost.py"` sat under the refusing expectation and was the creation
+# case wearing a typo's label, so it moves rather than being deleted.
+_TYPO = "elsewhere/real.py"
+_CREATES = "nowhere/ghost.py"
 _PROSE = "everything"
-_SHAPES = ((_EVERY, False), (_SOME, False), (_NONE, True), (_PROSE, False))
+_SHAPES = ((_EVERY, False), (_SOME, False), (_TYPO, True), (_CREATES, False), (_PROSE, False))
 
 
 class SharedPredicateTests(unittest.TestCase):
@@ -172,8 +179,12 @@ class SharedPredicateTests(unittest.TestCase):
         entry = next((u for u in bd["ungroomed"] if u["id"] == "BG0001"), None)
         if entry is None:
             return False
-        unres = entry.get("unresolvable") or []
-        return bool(declared) and len(unres) == len(declared)
+        # Read the gate's OWN verdict, never re-derive it. The previous form inferred "refused
+        # for resolvability" from "is ungroomed AND every path is unresolvable", so a unit
+        # ungroomed for a DIFFERENT reason - these fixtures carry no acceptance criteria - was
+        # counted as a resolvability refusal, and the invariant reported a disagreement that was
+        # the helper's own (BG0558). `typos` is what the gate decided on.
+        return bool(declared) and bool(entry.get("typos"))
 
     def _predicate_refuses(self, root: Path, affects: str) -> bool:
         try:
@@ -226,12 +237,24 @@ class ClosestMatchTests(unittest.TestCase):
             self.assertIn("cannot choose", msg)               # names none as THE answer
 
     def test_no_basename_match_offers_no_suggestion(self) -> None:
+        # BG0558: a lone no-match path is a file the unit CREATES and no longer refuses at all,
+        # so the refusal is raised by a typo BESIDE it. The no-match path is still named and
+        # still says so plainly - the author is never sent to a file the tool invented.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _proj(root)
-            msg = self._refuse_msg(root, "typo/nowhere-at-all.py")
+            _real(root)
+            msg = self._refuse_msg(root, "elsewhere/real.py, typo/nowhere-at-all.py")
             self.assertIn("typo/nowhere-at-all.py", msg)      # still named
             self.assertIn("no file named nowhere-at-all.py", msg)
+
+    def test_a_path_matching_nothing_is_a_creation_and_never_refuses(self) -> None:
+        # The positive control for the test above: on its own, that same path is accepted.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _proj(root)
+            _real(root)
+            ff.check_affects_resolvable(root, "typo/nowhere-at-all.py")
 
     def test_all_three_refusals_carry_the_same_suggestion(self) -> None:
         # The suggestion is built where the predicate lives, so every writer's refusal carries it.
@@ -266,6 +289,150 @@ class ClosestMatchTests(unittest.TestCase):
 
         for msg in _msgs("wrongdir/gate.py"):
             self.assertIn("real/gate.py", msg)
+
+
+
+
+class GreenfieldPlansTests(unittest.TestCase):
+    """BG0558: a project that has just been created can plan its first sprint.
+
+    Every criterion here drives the SHIPPED COMMAND as a subprocess. The defect lives in which
+    tree the predicate is pointed at and in what the CLI does with its verdict, and an in-process
+    call to `breakdown` or `check_affects_resolvable` sees neither - the plan review rejected the
+    first version of this plan for exactly that (LL0040, and BG0556's shape).
+    """
+
+    def _run(self, root: Path, *args: str):
+        import subprocess  # noqa: PLC0415 - local: only these tests spawn the CLI
+        return subprocess.run(
+            [sys.executable, str(_SCRIPTS / args[0]), "--root", str(root), *args[1:]],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def _project(self, root: Path) -> None:
+        # No `git init`: the initialiser does not need one, and the unconfined-raw-git ratchet is
+        # at zero. A fixture is not a reason to raise it.
+        r = self._run(root, "init.py", "run")
+        self.assertEqual(0, r.returncode, r.stderr)
+
+    def _story(self, root: Path, sid: str, affects: str) -> Path:
+        p = root / "sdlc-studio" / "stories" / f"{sid}-x.md"
+        p.write_text(
+            f"# {sid}: a visitor can sign up\n\n> **Status:** Ready\n> **Epic:** EP0001\n"
+            f"> **Priority:** High\n> **Affects:** {affects}\n> **Points:** 3\n\n"
+            f"## Acceptance Criteria\n\n### AC1: an account is created\n\n"
+            f"- **Given** a valid email\n- **When** the form is submitted\n"
+            f"- **Then** an account exists\n- **Verify:** shell true\n", encoding="utf-8")
+        return p
+
+    def _worklist(self, root: Path, *ids: str) -> Path:
+        p = root / "wl.txt"
+        p.write_text("\n".join(ids) + "\n", encoding="utf-8")
+        return p
+
+    def test_greenfield_creation_plans(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root)
+            # The lane must be ENFORCING, or the mutant survives on a fixture that opted out.
+            # Asserted before anything else, from the shipped config the initialiser wrote.
+            self.assertEqual("enforce", sprint.breakdown_mode(root))
+            self.assertFalse((root / "sdlc-studio" / "definition-of-ready.md").read_text()
+                             .strip() == "", "a blank DoR would downgrade grooming.affects")
+            self._story(root, "US0001", "src/auth/signup.py, tests/test_signup.py")
+            r = self._run(root, "sprint.py", "plan", "--worklist",
+                          str(self._worklist(root, "US0001")), "--write",
+                          "--sprint-goal", "a visitor can sign up")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertTrue((root / "sdlc-studio" / ".local" / "run-state.json").exists(),
+                            "no run was written: " + r.stdout + r.stderr)
+            self.assertIn("US0001", (root / "sdlc-studio" / ".local"
+                                     / "run-state.json").read_text())
+
+    def test_typo_and_creation_differ_in_one_tree(self) -> None:
+        # ONE tree, two units, opposite verdicts - so no repair keyed on "is this project empty"
+        # can satisfy this. The plan review named that as a blocking gap in the first version.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root)
+            _real(root, "src/auth/signup.py")
+            self._story(root, "US0001", "src/authh/signup.py")          # typo: basename exists
+            self._story(root, "US0002", "src/billing/invoice.py")       # creation: nowhere
+            typo = self._run(root, "sprint.py", "plan", "--worklist",
+                             str(self._worklist(root, "US0001")), "--write",
+                             "--sprint-goal", "g")
+            self.assertNotEqual(0, typo.returncode, "a typo must still refuse")
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists(),
+                             "a refused plan must write no run")
+            made = self._run(root, "sprint.py", "plan", "--worklist",
+                             str(self._worklist(root, "US0002")), "--write",
+                             "--sprint-goal", "g")
+            self.assertEqual(0, made.returncode, made.stdout + made.stderr)
+
+    def test_refusal_names_the_typo_not_a_missing_field(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root)
+            _real(root, "src/auth/signup.py")
+            self._story(root, "US0001", "src/authh/signup.py")
+            r = self._run(root, "sprint.py", "breakdown", "--worklist",
+                          str(self._worklist(root, "US0001")))
+            out = r.stdout + r.stderr
+            self.assertIn("src/authh/signup.py", out)          # names the path
+            # Names the MATCH that makes it a typo, not merely that the path is absent. Mutation
+            # found the first version of this assertion vacuous: shortening the message to the
+            # bare word `Affects` left the path in the output and every assertion green.
+            self.assertIn("src/auth/signup.py", out)
+            self.assertIn("found at", out)
+            self.assertNotIn("lacks: Affects", out,
+                             "a unit that DECLARES an Affects was told it lacks one")
+
+    def test_one_predicate_decides_for_every_writer(self) -> None:
+        # Replacing the shared predicate must move the writer check AND the grooming gate. A
+        # faithful copy would be an invalid mutant, so the mutant this pins is a DIVERGENT one.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _proj(root)
+            _real(root)
+            # Resolve the module the way PRODUCTION does. `sprint` does a function-local
+            # `import file_finding`, which reads `sys.modules` at call time; patching the
+            # test's own reference passed in isolation and failed in the full suite, where
+            # another module had bound a different object under that name. An order-dependent
+            # green is worse than a red, and it would have made this criterion untrustworthy
+            # in exactly the run that matters.
+            shared = sys.modules["file_finding"]
+            # Positive control FIRST: un-mocked, both the writer and the gate refuse. Without it
+            # a repair that never refuses anything satisfies the mocked half for the wrong reason.
+            with self.assertRaises(ValueError):
+                shared.check_affects_resolvable(root, _TYPO)
+            armed = sprint.breakdown(root, [self._unit_for(root, _TYPO)], skip_personas=True)
+            self.assertTrue([u for u in armed["ungroomed"] if u.get("typos")])
+            with mock.patch.object(shared, "fictional_affects", return_value=[]):
+                shared.check_affects_resolvable(root, _TYPO)   # writer: no longer refuses
+                bd = sprint.breakdown(root, [self._unit_for(root, _TYPO)], skip_personas=True)
+                self.assertEqual([], [u for u in bd["ungroomed"] if u.get("typos")],
+                                 "the grooming gate did not follow the shared predicate")
+
+    def _unit_for(self, root: Path, affects: str) -> dict:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "BG0001-x.md").write_text(
+            f"# BG0001: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Affects:** {affects}\n> **Points:** 2\n\n"
+            f"## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+            f"- **Given** x\n- **Verify:** shell true\n", encoding="utf-8")
+        return {"id": "BG0001", "type": "bug", "path": str(d / "BG0001-x.md")}
+
+    def test_refine_apply_mints_a_creating_story(self) -> None:
+        # The second call site. This is the one that refused CR0542's own rehearsal stories, so
+        # AC1 alone does not satisfy it: `refine apply` bottoms out on the writer check, not on
+        # the grooming gate.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _proj(root)
+            _real(root)
+            cid = _cr(root)
+            refine.refine(root, cid, "E", [("S", 3, "tools/not-yet-written.sh")],
+                          skip_personas=True)
 
 
 if __name__ == "__main__":

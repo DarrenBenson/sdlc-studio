@@ -342,6 +342,29 @@ def basename_matches(repo_root: Path | str, path: str) -> list[str]:
     return sorted(out)
 
 
+def fictional_affects(repo_root: Path | str, declared: list[str]) -> list[str]:
+    """The declared paths that are a TYPO, as opposed to a file the unit will CREATE.
+
+    THE ONE PREDICATE behind every refusal of a declared-but-unresolvable `Affects` - the writer
+    check here and the grooming gate in `sprint.breakdown` both bottom out on it, which is what
+    `test_the_predicate_and_the_grooming_gate_never_disagree` pins.
+
+    A path that does not resolve is not evidence of a mistake. In a project that has just been
+    created, EVERY path a story declares is unresolvable, because the story describes code nobody
+    has written yet - and refusing that refuses the first sprint plan of every new project.
+    What the rule was written for is the measured hazard: a wrong directory prefix on a file that
+    really exists, typed six times in one session.
+
+    The two are already distinguishable by the lookup the refusal's own suggestion uses. A
+    basename that exists elsewhere in the tree is a typo - the file is there and the path is
+    wrong. A basename that exists nowhere is a file the unit will create. So the decision and the
+    message it prints come from ONE computation rather than from a rule restated beside its own
+    explanation (LL0042), and no second heuristic is introduced for a question already answered.
+    """
+    root = Path(repo_root)
+    return [p for p in unresolvable_affects(root, declared) if basename_matches(root, p)]
+
+
 def affects_suggestions(repo_root: Path | str, unresolvable: list[str]) -> str:
     """The 'did you mean' lines for a refusal, one per unresolvable path. A UNIQUE basename match
     is named as the likely correction; SEVERAL are listed with a note that the tool cannot choose
@@ -372,9 +395,11 @@ def check_affects_resolvable(repo_root: Path | str, affects_value: str,
     `refine apply`), from the same seam the grooming gate reads, so a path one command mints
     another never refuses and a future writer added without it fails US0323's routing check.
 
-    Refuses only when a path is declared AND none resolves; an absent `Affects`, or one with at
-    least one resolving path (the file the unit will CREATE alongside an existing one), is
-    untouched - the ordinary case is unaffected. `type_`, when given, scopes the check to a unit
+    Refuses only when a path is declared, none resolves, AND at least one of them is a TYPO by
+    `fictional_affects` - a basename that exists elsewhere in the tree. An absent `Affects`, one
+    with at least one resolving path (the file the unit will CREATE alongside an existing one),
+    and one naming only files that exist nowhere at all (a greenfield unit, BG0558) are untouched
+    - the ordinary case is unaffected. `type_`, when given, scopes the check to a unit
     whose `Affects` is a sprint footprint (`_AFFECTS_CHECKED_TYPES`): an RFC's declared files are
     the output of its decision, so it is skipped exactly as the grooming gate skips it. Honours
     the recorded grooming opt-out (`sprint.breakdown: judgement`): a warning, not a refusal, so
@@ -389,6 +414,8 @@ def check_affects_resolvable(repo_root: Path | str, affects_value: str,
     unresolvable = unresolvable_affects(repo_root, declared)
     if len(unresolvable) != len(declared):
         return  # at least one path resolves - a file the unit will CREATE is legitimate
+    if not fictional_affects(repo_root, declared):
+        return  # nothing carries these basenames anywhere: the unit CREATES them all
     where = f"{label}: " if label else ""
     suggestions = affects_suggestions(repo_root, unresolvable)
     import sprint  # noqa: PLC0415 - local: the writer reads the planner's opt-out, not its weight
@@ -404,8 +431,10 @@ def check_affects_resolvable(repo_root: Path | str, affects_value: str,
         f"{suggestions}\n"
         f"  Why: a fictional footprint mis-groups the unit in the plan's collision analysis, "
         f"under-reads it in the engagement floor, and misreports it in gate's changed-surface "
-        f"pass - all while the command exits 0. A path to a file the unit will CREATE is fine; "
-        f"the check refuses only when NO declared path resolves.\n"
+        f"pass - all while the command exits 0. A path to a file the unit will CREATE is fine, "
+        f"and so is a whole `Affects` of them - the check refuses only when no declared path "
+        f"resolves AND one of them carries a filename that already exists elsewhere, which is "
+        f"a mistyped directory rather than a file you have not written yet.\n"
         f"  Fix the directory prefix (the basename is usually right), or drop the wrong path. "
         f"Opt out ONLY as a recorded decision: `sprint.breakdown: judgement` in "
         f"sdlc-studio/.config.yaml makes this a warning.")

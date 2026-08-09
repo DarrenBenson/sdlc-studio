@@ -2105,18 +2105,37 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
                    + ([] if sized or not _enforced("grooming.points") else [size_field])
                    + ([_AC_MISS[ac_why]] if ungroomed_ac else [])
                    + unnameable)
-        # All declared paths unresolvable = a fictional Affects. Named so the author can
-        # fix the typo. Not applied when Affects is absent (that is the plainer "Affects" miss).
-        if declared and len(unresolvable) == len(declared) and _enforced("grooming.affects"):
-            missing = missing + [f"Affects (no declared path resolves: {', '.join(unresolvable)})"]
+        # All declared paths unresolvable AND at least one of them a TYPO = a fictional Affects.
+        # Named so the author can fix the typo. Not applied when Affects is absent (that is the
+        # plainer "Affects" miss), and not applied when the basenames exist NOWHERE - a unit whose
+        # every declared path is a file it will create is the normal greenfield case, and refusing
+        # it refuses the first sprint plan of every new project. `fictional_affects` is the same
+        # predicate the writers refuse on, which is what keeps the two from disagreeing.
+        typos = (file_finding.fictional_affects(root, declared)
+                 if declared and _enforced("grooming.affects") else [])
+        if declared and len(unresolvable) == len(declared) and typos:
+            # Name the MATCH, not just the path. "src/authh/signup.py does not exist" leaves the
+            # author to work out why that is a typo rather than a file they have not written yet;
+            # naming `src/auth/signup.py` beside it IS the reason, and it comes from the same
+            # lookup that decided the verdict rather than from a second walk of the tree.
+            matches = {p: file_finding.basename_matches(root, p) for p in typos}
+            missing = missing + [
+                "Affects names a path that does not exist while its filename does: "
+                + "; ".join(f"{p} (found at {', '.join(m)})" for p, m in matches.items())]
         if missing:
             # `ac_why` is carried as a CODE beside the prose so a caller with a different
             # contract can filter on it without string-matching the message. `file_finding`
             # is that caller: it legitimately writes `derived-only` criteria, so refusing them
             # at CREATION would make filing a finding impossible, while refusing them at
             # PLANNING is the whole point. Two contracts, one definition, no second predicate.
+            # The VERB is derived here rather than hardcoded in the renderer, because a unit that
+            # declared an `Affects` and mistyped it does not LACK one, and telling its author it
+            # does sends them to add a field that is already present.
+            absences = [m for m in missing if not m.startswith("Affects names a path")]
             ungroomed.append({"id": it["id"], "type": it["type"], "path": it["path"],
                               "missing": missing, "unresolvable": unresolvable,
+                              "typos": typos,
+                              "verb": "lacks" if absences else "typo:",
                               "ac_why": ac_why})
         elif points is not None and points > ceiling and _enforced("grooming.split"):
             # Only a POINTED unit can be over the split ceiling; a T-shirt Size has no number to
@@ -3679,7 +3698,8 @@ def _render_downgrades(data: dict) -> None:
 
 def _breakdown_detail(bd: dict) -> list[str]:
     """The ungroomed units, one line each: which unit, what it lacks, where it lives."""
-    return [f"    {u['id']:<8} lacks: {', '.join(u['missing']):<15} {u['path']}"
+    return [f"    {u['id']:<8} {u.get('verb', 'lacks')} "
+            f"{', '.join(u['missing']):<15} {u['path']}"
             for u in bd["ungroomed"]]
 
 

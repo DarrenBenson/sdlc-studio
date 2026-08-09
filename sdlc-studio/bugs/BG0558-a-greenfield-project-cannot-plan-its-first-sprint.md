@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** High
-> **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Points:** 5
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py, .claude/skills/sdlc-studio/scripts/tests/test_bug_regressions.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Probed through the shipped CLI on a throwaway fixture, 2026-08-09, during a v5 release-readiness sweep. `init.py run` on a clean git repo, one story with `Affects: src/auth/signup.py, tests/test_signup.py` and `Points: 3`, then `sprint.py plan --write`: exit 2, no run written, `US0001 lacks: Affects (no declared path resolves: ...)`. Replacing one path with a file that exists on disk makes the same unit groom clean, which isolates the cause to path resolution rather than to the field being absent.
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio file
@@ -30,19 +30,110 @@ A declared path that does not resolve should be distinguished by whether the uni
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The shipped `sprint plan --write` accepts a unit whose declared Affects paths do not exist on disk when the unit creates them, on a fixture project containing none of those paths, and writes the run
-- [ ] **AC2** A unit whose Affects is a genuine typo against an existing tree is still refused, proving the repair did not delete the rule (positive control, same fixture family)
-- [ ] **AC3** The refusal message for a unit that declares Affects never says the unit `lacks: Affects`, and names the real condition and its remedy
-- [ ] **AC4** One reader decides whether an unresolvable path is fictional, and the test proves the sharing by changing that reader and asserting BOTH the blocking lane and the advisory lane follow
+> **Plan repaired after a REJECT at plan review (2026-08-09, qa seat, brief `6673725b2331`).**
+> The first plan was rejected on six blocking findings, and two of them changed what this unit
+> IS rather than how it is tested. Both rulings are stated here so the repair is not read as a
+> widening of convenience.
+>
+> **Ruling 1 - the discriminator is a basename match, not "does the path exist".** The rule was
+> written to catch a typo against an existing tree (BG0144). A typo and a creation are already
+> distinguishable by shipped code: `file_finding.affects_suggestions` answers `did you mean X?`
+> when the declared basename exists elsewhere in the repository, and `no file named X found in
+> the repo` when it does not. The first is a typo and must still refuse; the second is a file
+> the unit will create and must not. The decision and the message therefore come from ONE
+> computation (LL0042), and no new heuristic is invented.
+>
+> **Ruling 2 - the invariant HOLDS and two shipped fixtures MOVE.**
+> `test_affects_resolvable.py::test_the_predicate_and_the_grooming_gate_never_disagree` pins the
+> writer check and the grooming gate to one verdict. It must keep passing: both sides read the
+> same predicate and move together, which is the whole point of it. But two shipped fixtures -
+> `src/does-not-exist.py` and `nowhere/ghost.py` - have no basename anywhere in their tree, so
+> under the corrected rule they are creations rather than typos and stop being refused. Those
+> fixtures encode `unresolvable` where the rule means `typo`, which is this bug one level down.
+> They are replaced with genuine typos and carry a comment naming BG0558. A fixture changed to
+> keep a suite green is the thing this repository files bugs about, so the change is stated as a
+> ruling here before it is made, not explained afterwards.
+>
+> The advisory lane is deliberately NOT given a fictional-versus-creates verdict. It computes
+> none today, it is advisory by construction (`affects_mismatch`'s own docstring says a path to a
+> file the unit will create is legitimate), and forcing a verdict into it to satisfy a symmetry
+> would add a second decider of the thing this repair exists to have one decider of.
+
+### AC1
+
+- **Given** a project created by `init run` in an empty tree, on the shipped configuration with no
+`sprint.breakdown` override and no `definition-of-ready.md` (so the grooming lane is ENFORCING,
+which the fixture asserts before it asserts anything else), holding one story sized with `Points`
+and an `Affects` naming only files whose basenames exist nowhere in that tree
+- **When** `sprint.py plan --worklist <story> --write` is run as a subprocess
+- **Then** the exit status is 0, a run is written to `sdlc-studio/.local/run-state.json`, and the
+  story is in the batch.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py -k greenfield_creation_plans
+- **Verified:** yes (2026-08-09)
+- **Mutant:** in `file_finding.py`, make `fictional_affects` return every unresolvable path (the rule as it stands today) - the greenfield fixture must go from a written run to exit 2.
+
+### AC2
+
+- **Given** ONE tree containing a real file, and two units in it - one declaring a path whose
+  basename exists elsewhere in that tree (a typo), one declaring a path whose basename exists
+nowhere (a creation)
+- **When** each is put through `sprint.py plan --write` as a subprocess
+- **Then** the typo is REFUSED with a non-zero exit and no run written, and the creation is
+  accepted - the two verdicts differing within one tree, so no repair keyed on "is this project
+empty" can satisfy this criterion.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py -k typo_and_creation_differ_in_one_tree
+- **Verified:** yes (2026-08-09)
+- **Mutant:** widen `fictional_affects` to return nothing at all (accept every unresolvable path) - the typo half must fail, which is the OVER-WIDENING this repair actually risks and which deleting the rule entirely would also produce.
+
+### AC3
+
+- **Given** the typo fixture from AC2, whose refusal is the only one left after this repair
+- **When** the refusal is read
+- **Then** it names the unresolvable path and the basename match that makes it a typo, and it does
+NOT report the unit as lacking a field the unit declares: the substring `lacks: Affects` does not
+appear for a unit whose `Affects` is present.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py -k refusal_names_the_typo_not_a_missing_field
+- **Verified:** yes (2026-08-09)
+- **Mutant:** in `sprint.py`'s `_breakdown_detail` render, put the bare `Affects` entry back into `missing` beside the detail - the assertion on the absent-field wording must fail. And separately, strip the `did you mean` suggestion from the refusal - the assertion that the message names the match must fail, so both clauses of this criterion carry a mutant.
+
+### AC4
+
+- **Given** the three writers that refuse a declared-but-unresolvable `Affects` -
+`file_finding.check_affects_resolvable` (which `file_finding.file`, `artifact new` and `refine
+apply` all call) and the grooming gate `sprint.py` reads
+- **When** the shared predicate `file_finding.fictional_affects` is replaced in-process
+- **Then** every one of them follows, and
+`test_the_predicate_and_the_grooming_gate_never_disagree` still passes unchanged - the invariant
+holds because both sides read one predicate.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py -k one_predicate_decides_for_every_writer
+- **Verified:** yes (2026-08-09)
+- **Mutant:** give the grooming gate its own inline basename check instead of calling `fictional_affects` - replacing the shared predicate must then stop moving the gate, and the test must fail. A faithful copy is not a valid mutant here, so the copy is DIVERGENT: it compares the basename case-sensitively where the shared one does not.
+
+### AC5
+
+- **Given** the greenfield fixture from AC1
+- **When** a story is created through `refine.py apply` with an `Affects` naming only files it will
+  create
+- **Then** the story is minted - the second call site that refused CR0542's own rehearsal stories
+  and is the reason this criterion exists.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py -k refine_apply_mints_a_creating_story
+- **Verified:** yes (2026-08-09)
+- **Mutant:** restore the all-unresolvable refusal inside `check_affects_resolvable` only, leaving the grooming gate repaired - the test must fail, proving this criterion is not satisfied as a side effect of AC1.
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in `sprint.py`, restore the unconditional `len(unresolvable) == len(declared)` refusal - the greenfield fixture must go from a written run to exit 2 | The shipped `sprint plan --write` accepts a unit whose declared Affects paths do not exist on disk when the unit creates them, on a fixture project containing none of those paths, and writes the run |
-| AC2 | delete the fictional-Affects refusal entirely - the brownfield typo fixture must stop being refused, proving the repair narrowed the rule rather than removing it | A unit whose Affects is a genuine typo against an existing tree is still refused, proving the repair did not delete the rule (positive control, same fixture family) |
-| AC3 | put `Affects` back into the `missing` list alongside the unresolvable detail - the assertion on the absent-field wording must fail | The refusal message for a unit that declares Affects never says the unit `lacks: Affects`, and names the real condition and its remedy |
-| AC4 | give the blocking lane its own copy of the resolvability predicate - changing the shared reader must stop moving the advisory lane, and the test must fail | One reader decides whether an unresolvable path is fictional, and the test proves the sharing by changing that reader and asserting BOTH the blocking lane and the advisory lane follow |
+| AC1 | in `file_finding.py`, delete the basename-match branch of `fictional_affects` so it returns every path that does not resolve | |
+| AC2 | in `file_finding.py`, change `fictional_affects` to return an empty list unconditionally | |
+| AC3 | in `sprint.py`, re-add the bare `Affects` token to the `missing` list in `_breakdown_detail`; and separately drop the `affects_suggestions` call from the refusal string | |
+| AC4 | in `sprint.py`, replace the `fictional_affects` call with an inlined case-sensitive basename comparison | |
+| AC5 | add an early `return declared` guard to `check_affects_resolvable` in `file_finding.py`, bypassing the shared predicate for writers only | |
 
 ## Revision History
 

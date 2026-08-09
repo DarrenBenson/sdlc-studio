@@ -1835,6 +1835,11 @@ class AffectsValidatedAtMintTests(unittest.TestCase):
     def test_new_refuses_an_unresolvable_affects_and_allocates_no_id(self) -> None:
         repo, td = self._story_repo()
         with td:
+            # BG0558: the rule catches a TYPO, so the fixture names a wrong directory on
+            # a file that exists. `ghost/nope.py` matched no basename anywhere, which is
+            # a unit CREATING a file and is no longer refused.
+            (repo / "real").mkdir(exist_ok=True)
+            (repo / "real" / "nope.py").write_text("", encoding="utf-8")
             idx = repo / "sdlc-studio" / "stories" / "_index.md"
             before = idx.read_text(encoding="utf-8")
             with self.assertRaises(ValueError) as cm:
@@ -1886,6 +1891,11 @@ class AffectsValidatedAtMintTests(unittest.TestCase):
         import io
         repo, td = self._story_repo()
         with td:
+            # BG0558: the rule catches a TYPO, so the fixture names a wrong directory on
+            # a file that exists. `ghost/nope.py` matched no basename anywhere, which is
+            # a unit CREATING a file and is no longer refused.
+            (repo / "real").mkdir(exist_ok=True)
+            (repo / "real" / "nope.py").write_text("", encoding="utf-8")
             (repo / "sdlc-studio" / ".config.yaml").write_text(
                 "sprint:\n  breakdown: judgement\n", encoding="utf-8")
             err = io.StringIO()

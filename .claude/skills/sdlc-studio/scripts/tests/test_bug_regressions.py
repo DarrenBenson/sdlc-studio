@@ -53,16 +53,32 @@ class AffectsResolveGroomingTests(unittest.TestCase):
                 "path": str(root / "sdlc-studio" / "bugs" / f"BG{num:04d}-x.md")}
 
     def test_all_fictional_affects_is_ungroomed(self) -> None:
+        # BG0558 moved this fixture. It declared `src/does-not-exist.py` in a tree holding no
+        # file of that basename, which is a unit CREATING a file rather than the typo BG0144 was
+        # filed for - and refusing it refused the first sprint plan of every new project. The
+        # case this class is named for is a wrong directory on a file that really exists, so the
+        # fixture now states that, and the creation case is pinned beside it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            _write(root / "src" / "does-not-exist.py", "")
+            unit = self._bug(root, 1, "elsewhere/does-not-exist.py")
+            bd = sprint.breakdown(root, [unit])
+            ids = {u["id"] for u in bd["ungroomed"]}
+            self.assertIn("BG0001", ids)
+            # the refusal names the mistyped path so the author can fix it
+            u = next(u for u in bd["ungroomed"] if u["id"] == "BG0001")
+            self.assertIn("elsewhere/does-not-exist.py", u["typos"])
+
+    def test_a_greenfield_affects_matching_no_basename_is_groomed(self) -> None:
+        # The positive control for the test above, and BG0558's own case: identical shape, but
+        # nothing in the tree carries the basename, so the unit is creating it.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "sdlc-studio").mkdir(parents=True)
             unit = self._bug(root, 1, "src/does-not-exist.py")
             bd = sprint.breakdown(root, [unit])
-            ids = {u["id"] for u in bd["ungroomed"]}
-            self.assertIn("BG0001", ids)
-            # the refusal names the unresolvable path so the author can fix the typo
-            u = next(u for u in bd["ungroomed"] if u["id"] == "BG0001")
-            self.assertIn("src/does-not-exist.py", u["unresolvable"])
+            self.assertEqual(set(), {u["id"] for u in bd["ungroomed"]})
 
     def test_one_real_path_grooms_even_with_a_greenfield_sibling(self) -> None:
         with tempfile.TemporaryDirectory() as d:

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 50 |
+| Open | 51 |
 | In Progress | 0 |
 | Fixed | 424 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **561** |
+| **Total** | **562** |
 
 ## All Bugs
 
@@ -101,6 +101,7 @@
 | [BG0559](BG0559-the-doc-surface-gate-lane-raises-modulenotfounderror-in.md) | the doc-surface gate lane raises ModuleNotFoundError in every consuming project, so a new v5 lane reports NOT MEASURED forever on every user's gate run | Open | High | 2026-08-09 | 2026-08-09 |
 | [BG0560](BG0560-the-page-readme-sends-every-existing-user-to.md) | the page README sends every existing user to is the v4 upgrade page, so v5's breaking gate changes reach an upgrading project with no document that names them | Open | High | 2026-08-09 | 2026-08-09 |
 | [BG0561](BG0561-a-re-plan-over-an-open-run-resets.md) | a re-plan over an open run resets the appetite to the standing capacity while leaving the resize record standing, so the ledger and the breaker disagree about the ceiling | Open | Medium | 2026-08-09 | 2026-08-09 |
+| [BG0562](BG0562-then-clause-strips-the-bold-markers-off-a.md) | _then_clause strips the bold markers off a non-bulleted Then line before testing for them, so the criterion falls back to its whole block and the overlap check reports the author's own mutant as a 100% restatement | Open | Medium | 2026-08-09 | 2026-08-09 |
 
 ## Archived Releases
 

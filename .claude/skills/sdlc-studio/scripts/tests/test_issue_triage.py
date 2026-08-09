@@ -193,7 +193,8 @@ class TriageTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 triage.triage(root, iid,
                               [("good", 2, "Low", "src/a.py"),
-                               ("bad", 3, "Low", "src/does-not-exist.py")])
+                               # BG0558: a TYPO of src/a.py, not a path matching no basename.
+                               ("bad", 3, "Low", "elsewhere/a.py")])
             issue = (root / "sdlc-studio" / "issues" / "IS0001-checkout-500s.md").read_text()
             self.assertEqual(sdlc_md.extract_field(issue, "Status"), "Open")
             self.assertEqual(sdlc_md.decomposed_ids(issue), [])

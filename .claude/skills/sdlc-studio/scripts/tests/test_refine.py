@@ -400,10 +400,12 @@ class AffectsValidatedAtMintTests(unittest.TestCase):
             with self.assertRaises(ValueError) as cm:
                 refine.refine(root, "CR0001", "Batch epic",
                               [("A", 2, None), ("B", 3, "src/real.py"),
-                               ("C", 2, "wrongdir/ghost.py")],  # only the third is unresolvable
+                               # BG0558: a TYPO (real.py exists at src/), not merely a path that
+                               # does not resolve - the latter is a unit creating a file.
+                               ("C", 2, "wrongdir/real.py")],  # only the third is mistyped
                               skip_personas=True)
             msg = str(cm.exception)
-            self.assertIn("wrongdir/ghost.py", msg)            # names the offending path
+            self.assertIn("wrongdir/real.py", msg)             # names the offending path
             self.assertIn("'C'", msg)                          # ... and the story that carried it
             # the tree is untouched: no epic, none of the three stories, CR unchanged
             self.assertFalse((root / "sdlc-studio" / "epics").exists()
