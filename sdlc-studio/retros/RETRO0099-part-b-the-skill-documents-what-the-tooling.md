@@ -98,6 +98,15 @@ read the same.
 Ruling is one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`. A `stop-ship`
 ruling HOLDS the close, which is the point of being able to make one.
 
+> **SUPERSEDED 2026-08-09 by D0132 - read this before trusting the table below.** The basis
+> these 47 rulings rest on was that D0130 held the tag indefinitely. The operator lifted that
+> freeze the day after this retro was written, so the basis evaporated and the rulings were
+> re-made against an actual release. Three of them changed: **BG0535, BG0542 and BG0536 are now
+> ruled STOP-SHIP** and block v5.0.0. The other 44 stand as written. The original paragraph is
+> left below rather than edited, because a ruling's basis is the part worth being able to audit,
+> and a retro quietly rewritten to agree with a later decision is a retro that can teach nobody
+> anything.
+
 **The basis for these rulings, stated once rather than repeated 47 times.** Nothing ships out
 of this run: D0130 holds the tag, so no release carries any of these to a consumer. Every one
 is a finding this repo raised about its own tooling, none is in EP0211's declared `Affects`,
@@ -127,13 +136,13 @@ and BG0555 (the twelve scripts carrying root-grammar debt).
 | BG0531 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
 | BG0532 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
 | BG0534 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
-| BG0535 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
-| BG0536 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
+| BG0535 | stop-ship | product (D0132) | 2026-08-09 |
+| BG0536 | stop-ship | product (D0132) | 2026-08-09 |
 | BG0537 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
 | BG0538 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
 | BG0539 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
 | BG0540 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
-| BG0542 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
+| BG0542 | stop-ship | product (D0132) | 2026-08-09 |
 | BG0543 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
 | BG0544 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |
 | BG0545 | not-stop-ship | sdlc-studio-authoring-session | 2026-08-08 |

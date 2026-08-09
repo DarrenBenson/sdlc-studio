@@ -9,6 +9,32 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
+## v5.0.0 is BLOCKED on three bugs, not frozen - D0132, 2026-08-09
+
+D0130's blanket hold is lifted and superseded. The tag is back in scope and gated on three
+named defects rather than on an instruction with no end condition. Clearing these clears v5:
+
+- **BG0535** - `gate.py --release` reports 106 red acceptance criteria of 1824, every one on a
+  story already at Done, while `README.md` tells readers acceptance criteria are executable and
+  get run. True of the mechanism, false of the corpus. This is the class the release gate exists
+  to catch. **The 106 is the figure recorded when the bug was filed and has NOT been
+  re-measured** - the lane takes 1667s against a 600s budget and has completed once in its
+  history. Re-run it before ruling on it; trusting a remembered number is what put a false
+  disclosure figure in RUN-01KZF9AF's own plan.
+- **BG0542** - `sprint plan` under `sprint.affects_check: block` prints REFUSED, exits 0, and
+  writes the offending unit into the batch. A consuming project's gate announcing a refusal it
+  does not perform is worse than the honest advisory it replaced.
+- **BG0536** - a test fixture takes a caller-supplied root; one call passed `.` and wrote into
+  the real repository, destroying 23 mutation registrations that `.local/` being gitignored made
+  unrecoverable.
+
+The other ten open High bugs are internal-consistency defects - inert detectors, verifiers that
+cannot fail on what they claim. Real, and not reasons to hold a release.
+
+RETRO0099 ruled 47 findings `not-stop-ship` on the basis that D0130 meant nothing reached a
+consumer. That basis is gone; the retro carries a superseding note rather than a quiet rewrite,
+and the three above are re-ruled there.
+
 ## RUN-01KZF9AF - the skill documents what the tooling ships, and the coverage number cannot be self-satisfied
 
 **8 of 8 units, 31 points, goal ACHIEVED under panel sign-off.** 49 of 211 verbs appeared in no

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-08
+**Last Updated:** 2026-08-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 45 |
+| Open | 46 |
 | In Progress | 0 |
 | Fixed | 424 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **556** |
+| **Total** | **557** |
 
 ## All Bugs
 
@@ -96,6 +96,7 @@
 | [BG0554](BG0554-survivor-severity-under-rates-the-explicit-return-none.md) | survivor severity under-rates the explicit return-None idiom, which is the shape that matters most in this codebase | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0555](BG0555-twelve-scripts-declare-root-only-per-subcommand-a.md) | twelve scripts declare --root only per-subcommand, a grammar defect the conformance sweep could not see because it silently skipped them | Open | Medium | 2026-08-08 | 2026-08-08 |
 | [BG0556](BG0556-no-guard-catches-a-root-that-selects-the.md) | no guard catches a --root that selects the file written but not the content read | Open | Medium | 2026-08-08 | 2026-08-08 |
+| [BG0557](BG0557-sprint-close-dry-run-reports-a-checklist-stop.md) | sprint close --dry-run reports a checklist STOP the real close does not | Open | Medium | 2026-08-09 | 2026-08-09 |
 
 ## Archived Releases
 

@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-08-08
+**Last Updated:** 2026-08-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 19 |
+| Proposed | 20 |
 | Approved | 0 |
 | In Progress | 8 |
 | Complete | 489 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **539** |
+| **Total** | **540** |
 
 ## All Changes
 
@@ -90,6 +90,7 @@
 | [CR-0537](CR0537-mutation-evidence-should-report-by-default-not-block.md) | mutation evidence should REPORT by default, not block: a surviving mutant becomes a severity-rated bug and the close proceeds | Complete | High | Improvement | 2026-08-07 | EP0212 |
 | [CR-0538](CR0538-the-skill-has-no-lane-that-counts-what.md) | the skill has no lane that counts what the tooling ships: 49 of 211 verbs and 72 of 677 flags are named in no hand-written doc, and the checker that would notice is switched out of the lint chain | Complete | High | Improvement | 2026-08-07 | EP0211 |
 | [CR-0539](CR0539-lane-check-reports-181-units-whose-criteria-never.md) | lane-check reports 181 units whose criteria never enter a shipped entry point | Proposed | Medium | process | 2026-08-08 | -- |
+| [CR-0540](CR0540-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-08-09 | -- |
 
 ## Archived Releases
 
