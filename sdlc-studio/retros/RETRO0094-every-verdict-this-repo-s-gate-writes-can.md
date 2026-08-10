@@ -1,7 +1,7 @@
 # RETRO-0094: Every verdict this repo's gate writes can be trusted and read: a collapsed suite leaves no reusable green, a red runner names the test that failed, the close-owed headline agrees with its own exit code, and the charter queue is inspectable during a run and consumed at the end of one. With the instruments honest, the debt the v5 scope caps baselined is paid: the run lifecycle documented in the form the parser accepts, validate ratcheting its warnings rather than accumulating them, and the duplicate Verify groups split into selectors that can discriminate
 
 > **Date:** 2026-08-05
-> **Batch:** BG0507, BG0513, BG0500, BG0514, BG0515, BG0518
+> **Batch:** BG0507, BG0513, BG0500, BG0514, BG0515, BG0518, US0637
 > **Goal:** Every verdict this repo's gate writes can be trusted and read: a collapsed suite leaves no reusable green, a red runner names the test that failed, the close-owed headline agrees with its own exit code, and the charter queue is inspectable during a run and consumed at the end of one. With the instruments honest, the debt the v5 scope caps baselined is paid: the run lifecycle documented in the form the parser accepts, validate ratcheting its warnings rather than accumulating them, and the duplicate Verify groups split into selectors that can discriminate.
 > **Delivered:** {{n_done}} / {{n_total}}   **Blocked:** {{n_blocked}}
 
@@ -19,6 +19,11 @@ Six units reached terminal. Four more shipped their code and sit at Review, beca
 - BG0500 - the runbook guard runs in a lane, not only in the tools suite.
 
 Code shipped, awaiting sign-off at Review: US0468, US0480, US0481, US0637.
+US0637 is named in this retro's `Batch` above. Its code shipped in this run and its
+sign-off landed later, so the ledger read it as terminal with no retro accounting for it -
+the sentence below said otherwise while the field a machine reads did not. Naming it is the
+repair, and CR0497 records 54 earlier instances of exactly this: a retro that covered the
+work and never named the id. Its three siblings were already carried in RETRO0087's batch.
 BG0463 delivered narrowed and stays Open with its residue named.
 
 ## Blocked / deferred
