@@ -9,6 +9,68 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
+## RUN-01KZM49Y - a new project can plan its first sprint, and the paths a user arrives on are now driven rather than reasoned about
+
+**8 of 8 units, 44 points delivered, goal ACHIEVED. Sign-off is OWED and is the operator's.**
+
+| Unit | Pts | |
+| --- | --- | --- |
+| BG0558 | 5 | a greenfield project can plan its first sprint - the rule catches a TYPO, not a file nobody has written yet |
+| BG0559 | 3 | `doc-surface` is undefined outside the skill repo, not broken there |
+| BG0560 | 5 | the upgrade page describes v5, and is checked by EXECUTING its own steps |
+| US0662 | 5 | a project's first run reports the plan-review requirement and names what arms it |
+| US0663 | 3 | the softening expires on the first retro, and no config key can hold it open |
+| US0664 | 5 | the greenfield rehearsal, which FAILS on the tree as it shipped |
+| US0665 | 5 | the upgrade rehearsal, against a baseline that reddens in BOTH directions |
+| US0666 | 3 | the lane binds at the push and release boundaries, never per commit |
+
+**Read this before the next round.** Four adversarial rounds, and the pattern across all of
+them was not weak code - it was **tests that could not fail**. Round 1 rejected all five
+original plans before a line existed, including a verifier that passed HARDER when its own
+forbidden mutant was applied (a presence check cannot detect an addition). Round 2 found two
+DECLARED mutants surviving their own criteria. Round 3 found four repairs correct and UNGATED -
+reverting each left a green suite. Round 4 killed the last one by deleting `--apply` from the
+rehearsal and watching every test stay green.
+
+**The single worst thing was the author's.** US0664 AC3's own declared mutant points the work
+root at the repository; the harness's cleanup trap is `rm -rf "$WORK"`. Running it once wrote 41
+fixture files into the tree, which `git add -A` swept onto main IN THE COMMIT WHOSE AC3 ASSERTS
+NOTHING IS WRITTEN INSIDE THE REPOSITORY. Running it again deleted a reviewer's git worktree.
+Both classes are removed: the harness refuses a work root under the repository before the trap is
+armed, `.rehearsal-scratch/` is gitignored, and the criterion asserts no residue is TRACKED -
+because a `git status` check cannot see what is already committed.
+
+**The instrument this run leaves behind is the point.** `tools/rehearse-release.sh` drives
+greenfield-init to a written plan and a v4 workspace through `migrate --apply` to a gated
+comparison, at every push and release boundary. Twenty minutes of doing that by hand found three
+consumer-facing defects that a 6,391-test suite and twenty gate lanes had all missed. It is
+proven to fail on the tree as it shipped, which is the only thing that makes its green worth
+anything.
+
+**The upgrade path is NOT green, and the rehearsal says so.** conformance, reconcile and
+index-derived still fail after a clean `migrate --apply`. They are recorded in
+`tools/release-rehearsal-baseline.txt` against CR0497, with what each lane will say once cleared,
+and the comparison reddens in both directions - a new failure blocks, and a baselined lane that
+starts passing blocks too.
+
+**Owed:** the reviewer-of-record sign-off on all eight units. Structurally unavailable to the
+authoring session, which is the two-role gate working rather than failing. The tooling escalated
+non-convergence to the operator on five units after their third REJECT; every one of those
+findings is now closed or filed, and the escalation stands as the record that it took four rounds.
+
+**Filed this run, none fixed:** BG0561 (a re-plan resets a recorded appetite resize), BG0562
+(`_then_clause` strips the markers it is looking for), BG0563 (the edit-verb vocabulary has no
+additive verbs, so an absence-shaped criterion cannot state its own falsifier), BG0564 (a
+creation whose basename is common is still refused as a typo), BG0565 (`has_run_history` is
+non-recursive), BG0566 (`lint:fix` destroys an artefact whose title contains a dunder), BG0567
+(the upgrading baseline is captured from this tree minus a branch, not the base ref).
+
+**BG0566 is the one to read next.** `markdownlint --fix` infers emphasis style per file, so a
+bare `__init__.py` in a bug's TITLE made it rewrite every `> **Status:**` metadata line to
+`> __Status:__`, and `validate` then reported no Status on an artefact the tool had just
+rewritten. Restoring the asterisks makes markdownlint fail again. Two shipped guards with no
+shared fixed point, and the hook prints `npm run lint:fix` by name on every markdown failure.
+
 ## SUPERSEDED by D0133 - the v5 programme is six queued charters, and the blocking number was wrong
 
 **Read this before the section below.** D0132's three-bug gate is superseded. A release-readiness
