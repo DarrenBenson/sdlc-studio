@@ -4496,5 +4496,170 @@ class FirstRunPlanReviewSofteningTests(unittest.TestCase):
                          "an established project was given the first-run advisory")
 
 
+class EpicBreakdownGateTests(unittest.TestCase):
+    """BG0568: an epic's completion is derived from its breakdown, and something must CHECK it.
+
+    The test-plan gate was accidentally standing in for this and could not be forced, so every
+    epic `refine` minted was permanently un-closable. These drive `transition.py set` through the
+    shipped CLI - the defect lives in which gate fires on which entry, and no in-process call to
+    a single gate can see that.
+    """
+
+    _CFG = "schema_version: 3\nreview:\n  test_plan_after: 2020-01-01\n"
+
+    def _proj(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "epics").mkdir(parents=True)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(self._CFG, encoding="utf-8")
+        return root
+
+    def _story(self, root, sid, status, *, created="2026-08-10"):
+        (root / "sdlc-studio" / "stories" / f"{sid}-x.md").write_text(
+            f"# {sid}: s\n\n> **Status:** {status}\n> **Epic:** EP0001\n"
+            f"> **Created:** {created}\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+            f"- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n",
+            encoding="utf-8")
+
+    def _epic(self, root, rows, *, status="Draft", created="2026-08-10", plan=""):
+        body = "\n".join(f"- [ ] [{r}: t](../stories/{r}-x.md)" for r in rows)
+        (root / "sdlc-studio" / "epics" / "EP0001-e.md").write_text(
+            f"# EP0001: e\n\n> **Status:** {status}\n> **Created:** {created}\n\n"
+            f"## Story Breakdown\n\n{body}\n{plan}\n## Acceptance Criteria\n\n"
+            f"- [x] the unit behaves\n\n## Revision History\n\n"
+            f"| Date | Author | Change |\n| --- | --- | --- |\n"
+            f"| 2026-08-10 | fixture | Created |\n", encoding="utf-8")
+
+    def _run(self, root, *args):
+        import subprocess  # noqa: PLC0415
+        scripts = Path(__file__).resolve().parents[1]
+        return subprocess.run(
+            [sys.executable, str(scripts / "transition.py"), "--root", str(root), *args],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def test_an_epic_with_a_terminal_breakdown_closes(self) -> None:
+        # AC1. The cutoff is SET, the epic is created after it, and it carries no `## Test Plan` -
+        # all three pinned, because `_plan_gate_active` is False without them and the mutant would
+        # then survive on a fixture that never armed the gate it restores.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            self._story(root, "US0001", "Done")
+            self._epic(root, ["US0001"])
+            self.assertNotIn("## Test Plan",
+                             (root / "sdlc-studio" / "epics" / "EP0001-e.md").read_text())
+            r = self._run(root, "set", "--id", "EP0001", "--status", "Done")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+
+    def test_an_epic_over_unfinished_work_is_refused_from_every_entry(self) -> None:
+        # AC2. BOTH entries. The gate this replaces is entry-triggered, and `In Progress` is in an
+        # epic's own vocabulary - a seat measured `In Progress -> Done` closing at exit 0 over a
+        # Draft child under the first implementation, so the Draft-only half would have passed
+        # while the ordinary route stayed open.
+        for from_status in ("Draft", "In Progress"):
+            with self.subTest(from_status=from_status), tempfile.TemporaryDirectory() as d:
+                root = self._proj(d)
+                self._story(root, "US0001", "Draft")
+                self._epic(root, ["US0001"], status=from_status)
+                r = self._run(root, "set", "--id", "EP0001", "--status", "Done")
+                out = r.stdout + r.stderr
+                self.assertNotEqual(0, r.returncode, out)
+                self.assertIn("US0001", out, "the refusal does not name the unfinished unit")
+
+    def test_the_epic_gate_mirrors_the_drift_detectors_silences(self) -> None:
+        # AC3. Two silences mirrored, one deliberately inverted.
+        with tempfile.TemporaryDirectory() as d:          # empty breakdown -> closes
+            root = self._proj(d)
+            self._epic(root, [])
+            self.assertEqual(0, self._run(root, "set", "--id", "EP0001",
+                                          "--status", "Done").returncode)
+        with tempfile.TemporaryDirectory() as d:          # Deferred child -> closes
+            root = self._proj(d)
+            self._story(root, "US0001", "Deferred")
+            self._epic(root, ["US0001"])
+            r = self._run(root, "set", "--id", "EP0001", "--status", "Done")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        with tempfile.TemporaryDirectory() as d:          # unresolvable id -> REFUSES
+            root = self._proj(d)
+            self._epic(root, ["US0009"])                  # no backing file
+            r = self._run(root, "set", "--id", "EP0001", "--status", "Done")
+            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("US0009", r.stdout + r.stderr)
+
+    def test_only_the_epic_is_released_from_the_test_plan_gate(self) -> None:
+        # AC4. The story and the bug enter `In Progress` - a bug routed to `Fixed` never reaches
+        # this gate at all, so that phrasing would be vacuous on its bug half.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            self._story(root, "US0001", "Ready")
+            r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
+            self.assertNotEqual(0, r.returncode, "a story was released from the test-plan gate")
+            self.assertIn("Test Plan", r.stdout + r.stderr)
+            (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
+                "# BG0001: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                "> **Created:** 2026-08-10\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+                "- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n",
+                encoding="utf-8")
+            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
+            self.assertNotEqual(0, r.returncode, "a bug was released from the test-plan gate")
+            # The four OTHER types the gate holds today. Without these the criterion cannot tell
+            # `type_ != "epic"` from `type_ in ("story","bug")` - both refuse a story and a bug,
+            # and the second silently releases these four. Mutation found that exact gap.
+            (root / "sdlc-studio" / "change-requests").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").write_text(
+                "# CR-0001: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
+                "> **Created:** 2026-08-10\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+                "- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n",
+                encoding="utf-8")
+            r = self._run(root, "set", "--id", "CR0001", "--status", "In Progress")
+            self.assertNotEqual(0, r.returncode,
+                                "a CR was released from the test-plan gate - the change was "
+                                "scoped to code-carrying types rather than to the epic alone")
+            self.assertIn("Test Plan", r.stdout + r.stderr)
+
+    def test_the_gate_and_the_drift_detector_read_one_breakdown(self) -> None:
+        # AC5, as a CLI OUTCOME rather than a claim about which function is called. The declared
+        # table is wholly terminal; an extra child exists by BACK-LINK only. `children_of` would
+        # see it and refuse; `declared_breakdown_ids` - what the drift detector reads - does not.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            self._story(root, "US0001", "Done")
+            self._story(root, "US0002", "Draft")          # back-links to EP0001, not in the table
+            self._epic(root, ["US0001"])
+            r = self._run(root, "set", "--id", "EP0001", "--status", "Done")
+            self.assertEqual(0, r.returncode,
+                             "the gate followed the back-links rather than the declared table, "
+                             "so it and the drift detector disagree about the same epic:\n"
+                             + r.stdout + r.stderr)
+
+    def test_a_forced_epic_close_succeeds_and_is_recorded(self) -> None:
+        # AC6. Without this the defect returns in a brand-new gate: the one gate with no override.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            self._story(root, "US0001", "Draft")
+            self._epic(root, ["US0001"])
+            r = self._run(root, "set", "--id", "EP0001", "--status", "Done", "--force")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            body = (root / "sdlc-studio" / "epics" / "EP0001-e.md").read_text(encoding="utf-8")
+            # On the Forced-override LINE, not anywhere in the body. The fixture's Story Breakdown
+            # already contains `US0001` before the transition, so a whole-body `assertIn` cannot
+            # fail - a seat proved it vacuous by replacing the summary with a constant and
+            # watching this test stay green.
+            forced = [ln for ln in body.splitlines() if "Forced-override" in ln]
+            self.assertTrue(forced,
+                            "the bypass was not recorded, so a forced close is invisible")
+            self.assertIn("US0001", forced[0],
+                          "the Forced-override line does not name what was waived")
+            # ...and the Revision History row, the criterion's third conjunct, asserted rather
+            # than assumed. It was unassertable before: the fixture carried no such section, and
+            # `append_revision_row` is a no-op without one.
+            rows = [ln for ln in body.splitlines()
+                    if ln.startswith("| 2026-") and "Created" not in ln]
+            self.assertTrue(rows, "no Revision History row records the forced transition")
+            self.assertRegex(rows[-1], r"(?i)forc",
+                             f"the Revision History row does not say the gate was forced: "
+                             f"{rows[-1]}")
+
+
 if __name__ == "__main__":
     unittest.main()

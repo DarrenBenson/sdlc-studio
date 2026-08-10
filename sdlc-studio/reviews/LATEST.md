@@ -53,7 +53,18 @@ index-derived still fail after a clean `migrate --apply`. They are recorded in
 and the comparison reddens in both directions - a new failure blocks, and a baselined lane that
 starts passing blocks too.
 
-**Owed:** the reviewer-of-record sign-off on all eight units. Structurally unavailable to the
+**SIGNED OFF 2026-08-10** by the operator as reviewer of record, across all eight units. The five
+stories are Done; the three bugs rest at **Fixed**, which is the correct terminal state for
+functional-tier proof - `Verified` demands a depth above functional and none was taken.
+
+**EP0213 and EP0214 cannot be closed, and that is a defect rather than an omission - BG0568.**
+Every story under them is Done and signed off, but the test-plan gate holds a container that ships
+no code, `--force` does not clear it, and the `testplan derive` the refusal names cannot run
+because `refine apply` writes epic criteria in a shape the deriver cannot read. `reconcile` will
+report both as `epic-status-stale` until it is fixed, so the delivery backlog reads larger than it
+is.
+
+**Previously owed:** the reviewer-of-record sign-off on all eight units. Structurally unavailable to the
 authoring session, which is the two-role gate working rather than failing. The tooling escalated
 non-convergence to the operator on five units after their third REJECT; every one of those
 findings is now closed or filed, and the escalation stands as the record that it took four rounds.

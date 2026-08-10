@@ -186,6 +186,14 @@ Done is gated on its AC-verify result** (red or never-run executable ACs refuse 
 transition; `--force` overrides; non-story types are never gated). A manual criterion must carry
 a passing `**Verified:**` marker, and a criterion with NO `Verify:` line at all is refused the same
 way - omitting a verifier buys no discount over declaring an honest manual one.
+**An EPIC -> Done is refused while its declared breakdown holds unfinished work**, naming each
+unit. An epic's completion is DERIVED from its breakdown, so closing it over an unfinished child
+asserts a completion no unit agreed to. It reads the Story Breakdown table - the same reader
+`reconcile`'s stale-epic detector uses, so the ladder and the census can never disagree about the
+same epic. An empty breakdown and a `Deferred` child close; a declared id that resolves to nothing
+refuses, because that is an absence nobody decided rather than a decision somebody made. It is
+forceable, and the bypass is recorded. Correspondingly, an epic is the ONE type exempt from the
+test-plan gate: the evidence lives in its children, each held to that gate on its own.
 **A story or epic -> In Progress / Review / Done is refused while it is missing the sections
 the full template carries** (`artifact.py promote --id <ID>`), on every entry to an
 implementation status and in dry-run too. The judgement is keyed on the sections rather than

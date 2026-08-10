@@ -1,6 +1,6 @@
 # CR-0541: a project's first sprint reports the plan-review requirement instead of refusing it, so a first-time user reaches a Done story unaided and meets the gate before it can matter
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0213
 > **Priority:** High
 > **Type:** Improvement

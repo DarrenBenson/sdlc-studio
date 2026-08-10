@@ -1,6 +1,6 @@
 # US0665: A v4-era fixture is driven through migrate --apply to a gate matching its recorded baseline, asserting the upgrade's outcome rather than the migrate's report
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0542
 > **Created:** 2026-08-10
 > **Created-by:** sdlc-studio new

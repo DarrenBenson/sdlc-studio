@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 53 |
 | In Progress | 0 |
-| Fixed | 427 |
+| Fixed | 428 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **567** |
+| **Total** | **568** |
 
 ## All Bugs
 
@@ -107,6 +107,7 @@
 | [BG0565](BG0565-has-run-history-is-non-recursive-so-a.md) | has_run_history is non-recursive, so a project that archives its retros into a subdirectory reads as never having closed a sprint and is silently softened | Open | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0566](BG0566-npm-run-lint-fix-destroys-an-artefact-whose.md) | npm run lint:fix destroys an artefact whose title contains a dunder: markdownlint infers underscore emphasis and rewrites every metadata line, and the schema validator then cannot find a Status | Open | High | 2026-08-10 | 2026-08-10 |
 | [BG0567](BG0567-the-upgrading-project-baseline-compares-against-this-tree.md) | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere sits on both sides and is invisible | Open | Medium | 2026-08-10 | 2026-08-10 |
+| [BG0568](BG0568-an-epic-can-never-reach-done-the-test.md) | an epic can never reach Done - the test-plan gate holds a container whose completion is derived, and nothing else checks its breakdown | Fixed | High | 2026-08-10 | 2026-08-10 |
 
 ## Archived Releases
 

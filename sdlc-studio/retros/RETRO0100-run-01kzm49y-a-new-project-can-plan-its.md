@@ -186,6 +186,7 @@ ruling HOLDS the close, which is the point of being able to make one.
 | CR0540 | not-stop-ship | Claude Opus 5 session 6ee2f0cb, under D0133 - a discovery-backlog request, not a defect holding this increment | 2026-08-10 |
 | CR0541 | not-stop-ship | Claude Opus 5 session 6ee2f0cb, under D0133 - a discovery-backlog request, not a defect holding this increment | 2026-08-10 |
 | CR0542 | not-stop-ship | Claude Opus 5 session 6ee2f0cb, under D0133 - a discovery-backlog request, not a defect holding this increment | 2026-08-10 |
+| BG0568 | not-stop-ship | Claude Opus 5 session 6ee2f0cb, at the sign-off - EP0213 and EP0214 cannot close, so the delivery backlog reads larger than it is until this is fixed | 2026-08-10 |
 
 ## Estimate vs actual
 

@@ -1,6 +1,6 @@
 # EP0213: A project's first run meets the plan-review gate as a report, and every run after it as a refusal
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0541
 > **Created:** 2026-08-09
@@ -14,8 +14,8 @@ Decomposed from CR0541. Delivers the work CR0541 requested.
 
 ## Story Breakdown
 
-- [ ] [US0662: A project with no closed run reports the plan-review requirement at the terminal transition instead of refusing, and names the condition that arms it](../stories/US0662-a-project-with-no-closed-run-reports-the.md)
-- [ ] [US0663: The softening expires on run history alone, so a second run refuses and an upgrading project is unaffected byte-for-byte](../stories/US0663-the-softening-expires-on-run-history-alone-so.md)
+- [x] [US0662: A project with no closed run reports the plan-review requirement at the terminal transition instead of refusing, and names the condition that arms it](../stories/US0662-a-project-with-no-closed-run-reports-the.md)
+- [x] [US0663: The softening expires on run history alone, so a second run refuses and an upgrading project is unaffected byte-for-byte](../stories/US0663-the-softening-expires-on-run-history-alone-so.md)
 
 ## Acceptance Criteria (Epic Level)
 

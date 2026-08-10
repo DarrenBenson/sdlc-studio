@@ -1,6 +1,6 @@
 # EP0214: The two paths a user arrives on are rehearsed through the shipped CLI, on a tree that must fail before the repairs land
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 13
 > **Parent:** CR0542
 > **Created:** 2026-08-10
@@ -14,9 +14,9 @@ Decomposed from CR0542. Delivers the work CR0542 requested.
 
 ## Story Breakdown
 
-- [ ] [US0664: A greenfield fixture is built from nothing and driven through init run to a written sprint plan, and the lane reddens when that path is broken](../stories/US0664-a-greenfield-fixture-is-built-from-nothing-and.md)
-- [ ] [US0665: A v4-era fixture is driven through migrate --apply to a GREEN gate, asserting the upgrade's outcome rather than the migrate's report](../stories/US0665-a-v4-era-fixture-is-driven-through-migrate.md)
-- [ ] [US0666: The rehearsal runs as a gate lane at the push and release boundaries, with its cost recorded and its fixtures proven to write outside the working tree](../stories/US0666-the-rehearsal-runs-as-a-gate-lane-at.md)
+- [x] [US0664: A greenfield fixture is built from nothing and driven through init run to a written sprint plan, and the lane reddens when that path is broken](../stories/US0664-a-greenfield-fixture-is-built-from-nothing-and.md)
+- [x] [US0665: A v4-era fixture is driven through migrate --apply to a GREEN gate, asserting the upgrade's outcome rather than the migrate's report](../stories/US0665-a-v4-era-fixture-is-driven-through-migrate.md)
+- [x] [US0666: The rehearsal runs as a gate lane at the push and release boundaries, with its cost recorded and its fixtures proven to write outside the working tree](../stories/US0666-the-rehearsal-runs-as-a-gate-lane-at.md)
 
 ## Acceptance Criteria (Epic Level)
 

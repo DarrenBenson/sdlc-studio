@@ -1,6 +1,6 @@
 # US0663: The softening expires on run history alone, so a second run refuses and an upgrading project is unaffected byte-for-byte
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0541
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio new

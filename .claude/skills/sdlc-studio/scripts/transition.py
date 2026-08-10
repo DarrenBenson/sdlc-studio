@@ -1038,9 +1038,22 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     # point, and without it one approval clears both while neither reviewer read the other's
     # artefact. Fires on the same entry so a direct Ready->Done cannot smuggle an unreviewed
     # plan into the terminal state, and on EVERY type: a bug's test plan is a test plan.
-    if (target_canon in _IMPL_TARGETS and from_canon not in _IMPL_TARGETS
-            and _plan_gate_active(root, text)):
+    # EPIC is excluded, and ONLY the epic. Its completion is derived from its breakdown, so the
+    # evidence lives in children each held to this gate on its own; asking the container to name
+    # the production change its own test must fail on has no honest answer. The exclusion is
+    # written as `!= "epic"` rather than a story/bug allow-list on purpose - the latter would
+    # silently release cr, plan, test-spec and workflow, four types nothing in BG0568's evidence
+    # covers and 370 of whose CRs here carry an `Affects`.
+    if (type_ != "epic" and target_canon in _IMPL_TARGETS
+            and from_canon not in _IMPL_TARGETS and _plan_gate_active(root, text)):
         block = _test_plan_gate(root, sdlc_md.norm_id(artifact_id), text)
+        if block:
+            blocks.append(block)
+    # ...and in its place, the gate an epic SHOULD have had. NOT entry-triggered: `In Progress` is
+    # in an epic's own vocabulary, so a gate guarded by `from_canon not in _IMPL_TARGETS` is
+    # skipped entirely on the `In Progress -> Done` route, which is the ordinary one.
+    if not force and type_ == "epic" and target_canon in _EPIC_TERMINAL:
+        block = _epic_breakdown_gate(root, sdlc_md.norm_id(artifact_id), text)
         if block:
             blocks.append(block)
     if blocks:
@@ -1738,6 +1751,68 @@ def cmd_annotate(args: argparse.Namespace) -> int:
 _TICKED_RE = re.compile(r"^\s*[-*]\s*\[[xX]\]", re.M)
 _VERIFY_RE = re.compile(r"^\s*[-*]\s*\*\*Verify:\*\*", re.M)
 
+
+def _epic_breakdown_gate(root: Path, artifact_id: str, text: str) -> str | None:
+    """An epic reaches a terminal status only when its declared breakdown is finished.
+
+    THE COUNTERPART `reconcile.epic_status_stale_drift` already names. That detector is
+    deliberately detect-only - its docstring says so, "because closing an epic is a status
+    transition and `transition.py set` is where an epic's own gates live" - and until now no such
+    gate existed. The test-plan gate was accidentally standing in for one, and badly: it asked a
+    container to name the production change its own test must fail on, which has no honest answer,
+    and it could not be forced, so an epic minted by `refine` was permanently un-closable.
+
+    Reads `reconcile.declared_breakdown_ids`, the reader the DETECTOR reads, never
+    `sdlc_md.children_of`. The two disagree on 10 of this repository's 214 epics - one enumerates
+    the Story Breakdown table, the other follows `Parent:` back-links - and a gate reading one
+    while the census reads the other would let a closed epic keep reporting stale, which is the
+    class of defect this whole unit is about.
+
+    Mirrors the detector's silences, with one deliberate inversion, and the reason they differ is
+    the point rather than an inconsistency:
+
+    - An EMPTY or id-less breakdown closes. An epic that declares no children declares no roll-up.
+    - A `Deferred` child closes. Deferred is a RECORDED HUMAN DECISION about that child; the epic
+      is not waiting on it.
+    - An UNRESOLVABLE declared id REFUSES. That is not a decision, it is an absence nobody made -
+      the detector calls it "unknown, not finished", and an epic must not close over a child
+      nothing can confirm.
+
+    FORCEABLE, and that is load-bearing rather than a concession. It sits inside the `not force`
+    ladder so `_force_bypassed` re-runs the gates with force off and `_record_force_override`
+    stamps what was waived. A gate with no override and no honest answer is the defect this
+    replaces; reintroducing one here would be the same bug in a new place.
+    """
+    import reconcile  # noqa: PLC0415 - local: the breakdown reader lives with the detector
+    declared = reconcile.declared_breakdown_ids(text)
+    if not declared:
+        return None
+    # The resolver yields the child's TYPE beside its status, so terminality is judged against the
+    # right vocabulary. Deriving the type from the id prefix instead would read a bug's `Fixed`
+    # against the story vocabulary and call a finished bug unfinished.
+    resolved = {uid: (utype, status) for _ln, _ticked, uid, utype, status
+                in reconcile._breakdown_units(root, text)}
+    unfinished: list[str] = []
+    for uid in declared:
+        row = resolved.get(uid)
+        if row is None:
+            unfinished.append(f"{uid} (declared, but nothing resolves it)")
+            continue
+        utype, status = row
+        if status == "Deferred":
+            continue
+        if not sdlc_md.is_terminal_status(utype, status):
+            unfinished.append(f"{uid} ({status})")
+    if not unfinished:
+        return None
+    return (f"{artifact_id} declares breakdown work that is not finished: "
+            f"{', '.join(unfinished)} - an epic's completion is DERIVED from its breakdown, so "
+            f"closing it over unfinished work would assert a completion no unit agreed to. "
+            f"Finish or Defer them, or Override with --force")
+
+
+#: The epic statuses that assert a completion, and so the ones the breakdown gate holds.
+_EPIC_TERMINAL = ("Done",)
 
 #: Terminal statuses a test plan has to have been executed for.
 _TERMINAL_FOR_PLAN = ("Done", "Fixed")
