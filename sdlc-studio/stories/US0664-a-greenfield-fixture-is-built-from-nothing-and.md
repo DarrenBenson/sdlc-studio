@@ -56,7 +56,7 @@
 | --- | --- | --- |
 | AC1 | in `tools/rehearse-release.sh`, change the greenfield step to report success without invoking `sprint.py plan` | |
 | AC2 | in `tools/rehearse-release.sh`, change the greenfield step's story to declare a path that already exists, so the shipped refusal is never exercised | |
-| AC3 | in `tools/rehearse-release.sh`, change the fixture root from the temporary directory to the repository root | |
+| AC3 | in `tools/rehearse-release.sh`, change the work root to `$REPO/.rehearsal-scratch` - NEVER to `$REPO` itself, which the cleanup trap would delete | |
 
 ## Revision History
 

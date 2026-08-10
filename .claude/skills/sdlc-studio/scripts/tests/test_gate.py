@@ -5973,6 +5973,18 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
             self.assertIn("release-rehearsal", lanes,
                           f"the lane did not bind at the {boundary} boundary")
 
+    def test_a_scoped_boundary_run_is_not_refused(self) -> None:
+        """The round-2 REGRESSION, pinned. Binding the lane refused every
+        `--boundary push --only <lane>` run with a message naming mode flags the caller never
+        passed. The repair - registering rather than binding - was correct and ungated: a
+        round-3 seat re-added the `bound.append` and all 402 tests in this file still passed."""
+        r = self._gate("--boundary", "push", "--only", "duplicate-id")
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertNotIn("deselecting the bound lane", out,
+                         "a scoped boundary run is refused - the lane is BOUND again")
+        self.assertIn("duplicate-id", out, "the scoped run printed no lane at all")
+
     def test_the_rehearsal_lane_names_its_failing_half_and_records_its_cost(self) -> None:
         """The lane must say WHICH path broke. `the rehearsal failed` sends a reader to run it
         themselves to find out, and the two halves have entirely different owners."""

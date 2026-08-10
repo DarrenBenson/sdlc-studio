@@ -26,6 +26,13 @@ PY="${PYTHON:-python3}"
 # caller-supplied root that defaulted to `.` once destroyed 23 mutation registrations in this
 # working tree, so the root here is never taken from an argument.
 WORK="$(mktemp -d)"
+# REFUSE a work root inside the repository, before the cleanup trap is armed. The trap is
+# `rm -rf "$WORK"`, so a work root pointed at the repository deletes the working tree - a
+# reviewer applying this file's own declared mutant lost a git worktree that way. The guard
+# costs one comparison and removes the whole class.
+case "$WORK" in
+  "$REPO"|"$REPO"/*) echo "rehearsal REFUSED: the work root must not be inside the repository ($WORK)" >&2; exit 2 ;;
+esac
 trap 'rm -rf "$WORK"' EXIT
 
 fail() { echo "rehearsal FAILED: $*" >&2; exit 1; }

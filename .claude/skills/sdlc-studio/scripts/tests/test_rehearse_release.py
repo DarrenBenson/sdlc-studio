@@ -33,7 +33,11 @@ BASELINE = REPO / "tools" / "release-rehearsal-baseline.txt"
 def _git_status() -> str:
     """The working tree's porcelain status, through `gitutil.git` - the unconfined-raw-git
     ratchet is at zero and a fixture is not a reason to raise it."""
-    return gitutil.git(["status", "--porcelain"], cwd=REPO, check=False, text=True).stdout
+    # `--ignored=matching`: `.rehearsal-scratch/` is gitignored now, so a plain porcelain status
+    # cannot see residue at exactly the path this criterion hardened - the ignore rule that
+    # stopped the residue being COMMITTED also stopped it being VISIBLE. A round-3 seat caught it.
+    return gitutil.git(["status", "--porcelain", "--ignored=matching"],
+                       cwd=REPO, check=False, text=True).stdout
 
 
 def _run(*args, cwd: Path | None = None) -> subprocess.CompletedProcess:

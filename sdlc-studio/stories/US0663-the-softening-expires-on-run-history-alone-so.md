@@ -39,11 +39,19 @@
 
 ### AC2
 
+> **NARROWED at the round-3 review, 2026-08-10.** The first form demanded a baseline captured
+> from the base ref before this epic existed. The test captures from the CURRENT tree with the
+> softening branch disabled, which is a weaker comparison - a regression this epic introduced
+> elsewhere would sit on both sides and be invisible - and the criterion is amended to say what
+> is actually built rather than leaving prose that overstates it. The stronger form is worth
+> having and is filed rather than claimed.
+
 - **Given** a project that already holds retros - the upgrading case
 - **When** the transition is attempted
-- **Then** stdout, stderr and the exit status match a baseline captured from the base ref BEFORE
-  this epic's branch existed, with the run id and any timestamp normalised out, and the test
-  states which fields it normalised.
+- **Then** stdout, stderr and the exit status match a baseline captured from THIS tree with the
+  softening branch disabled - the nearest available counterfactual, not the base ref - with the
+  run id and absolute temporary paths normalised out, and the test naming both in a constant it
+  asserts against.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k an_upgrading_project_is_unchanged_against_a_captured_baseline
 - **Verified:** yes (2026-08-10)

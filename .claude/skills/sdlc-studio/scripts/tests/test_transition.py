@@ -4443,6 +4443,24 @@ class FirstRunPlanReviewSofteningTests(unittest.TestCase):
                     capture_output=True, text=True, timeout=300, check=False)
                 return r.returncode, self._norm(r.stdout), self._norm(r.stderr)
 
+    def test_an_approved_unit_carries_no_first_run_advisory(self) -> None:
+        """The round-2 defect, pinned. The advisory was keyed on `fired and not override`, which
+        also matches a unit with an independent plan-review APPROVE on record - so every properly
+        reviewed story in every project carried it. The repair keys on the gate's own `softened`
+        flag, and a round-3 seat found nothing failed when the repair was reverted."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, retros=0)
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+            import critic as _critic  # noqa: PLC0415
+            _critic.record_verdict(root, "US0001", "APPROVE", reviewer="qa-seat",
+                                   author="author-x", phase="plan-review")
+            r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
+            out = r.stdout + r.stderr
+            self.assertEqual(0, r.returncode, out)
+            self.assertNotIn("advisory", out,
+                             "a unit with an independent APPROVE on record was given the "
+                             "first-run advisory")
+
     def test_a_dormant_gate_is_unchanged_by_the_softening(self) -> None:
         # US0662 AC3, against a CAPTURED baseline: the same fixture run against a tree with the
         # softening branch disabled. stdout, stderr and the exit status all count; the normalised
