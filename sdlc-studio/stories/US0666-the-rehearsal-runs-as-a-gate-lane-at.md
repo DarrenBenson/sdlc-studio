@@ -5,7 +5,7 @@
 > **Created:** 2026-08-10
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, AGENTS.md, .claude/skills/sdlc-studio/scripts/tests/test_check_spec_claims.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, AGENTS.md, tools/tests/test_check_spec_claims.py
 > **Epic:** EP0214
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -27,6 +27,7 @@
   commit gets switched off.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k the_rehearsal_lane_runs_at_the_push_and_release_boundaries
+- **Verified:** yes (2026-08-10)
 
 ### AC2
 
@@ -36,6 +37,7 @@
   duration is recorded alongside the other lanes rather than being untimed.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k the_rehearsal_lane_names_its_failing_half_and_records_its_cost
+- **Verified:** yes (2026-08-10)
 
 ### AC3
 
@@ -45,7 +47,8 @@
 - **Then** it names the rehearsal lane and states that it runs at the push and release boundaries
   rather than per commit, and a guard checks the roster names it.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_check_spec_claims.py -k the_lane_roster_names_the_release_rehearsal
+- **Verify:** pytest tools/tests/test_check_spec_claims.py -k the_lane_roster_names_the_release_rehearsal
+- **Verified:** yes (2026-08-10)
 
 ## Test Plan
 

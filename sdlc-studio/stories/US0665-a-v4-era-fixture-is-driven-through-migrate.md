@@ -27,6 +27,7 @@
   through the shipped CLI, then runs `gate.py`, and reports the gate's lane verdicts.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py -k upgrade_migrates_then_gates
+- **Verified:** yes (2026-08-10)
 
 ### AC2
 
@@ -41,6 +42,7 @@
   that only ever tolerates is one that never empties.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py -k the_upgrade_baseline_reddens_in_both_directions
+- **Verified:** yes (2026-08-10)
 
 ### AC3
 
@@ -51,6 +53,7 @@
   file.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py -k every_baselined_lane_names_the_artefact_that_clears_it
+- **Verified:** yes (2026-08-10)
 
 ## Test Plan
 

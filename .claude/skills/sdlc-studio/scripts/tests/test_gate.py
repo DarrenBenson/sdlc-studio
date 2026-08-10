@@ -5937,5 +5937,70 @@ class DocSurfaceApplicabilityTests(unittest.TestCase):
         return __import__(name)
 
 
+class ReleaseRehearsalLaneTests(unittest.TestCase):
+    """US0666: the rehearsal binds at the push and release boundaries and nowhere else."""
+
+    def _repo(self):
+        return pathlib.Path(__file__).resolve().parents[5]
+
+    def _gate(self, *extra, root=None):
+        import subprocess  # noqa: PLC0415
+        scripts = pathlib.Path(__file__).resolve().parents[1]
+        return subprocess.run(
+            [sys.executable, str(scripts / "gate.py"), "--root", str(root or self._repo()),
+             *extra],
+            capture_output=True, text=True, timeout=1800, check=False)
+
+    def _lanes(self, out):
+        return {m.group(1) for m in re.finditer(r"^\s+\[(?:PASS|FAIL|warn)\] ([a-z-]+) ",
+                                                out, re.M)}
+
+    def test_the_rehearsal_lane_runs_at_the_push_and_release_boundaries(self) -> None:
+        # The PLAIN per-commit gate, not a `--only` selection: a bound lane that is deselected
+        # is refused by the selection guard rather than omitted, so a `--only` run cannot tell
+        # "not bound here" from "bound and excluded". Mutation found that; the mutant which binds
+        # the lane on every gate survived the narrower form.
+        plain = self._lanes(self._gate().stdout)
+        self.assertIn("integrity", plain,
+                      "the plain gate printed no lanes at all, so the absence below proves "
+                      "nothing - an invalid selection produces exactly this, and it hid the "
+                      "mutant that binds the rehearsal on every commit")
+        self.assertNotIn("release-rehearsal", plain,
+                         "the rehearsal ran on a per-commit gate - it builds two fixture "
+                         "projects, and the gate is already over its budget there")
+        for boundary in ("push", "release"):
+            lanes = self._lanes(self._gate("--boundary", boundary).stdout)
+            self.assertIn("release-rehearsal", lanes,
+                          f"the lane did not bind at the {boundary} boundary")
+
+    def test_the_rehearsal_lane_names_its_failing_half_and_records_its_cost(self) -> None:
+        """The lane must say WHICH path broke. `the rehearsal failed` sends a reader to run it
+        themselves to find out, and the two halves have entirely different owners."""
+        import shutil, tempfile  # noqa: PLC0415
+        repo = self._repo()
+        with tempfile.TemporaryDirectory() as d:
+            clone = pathlib.Path(d) / "repo"
+            (clone / "tools").mkdir(parents=True)
+            (clone / "sdlc-studio").mkdir(parents=True)
+            shutil.copy2(repo / "tools" / "release-rehearsal-baseline.txt", clone / "tools")
+            # A harness that fails its greenfield half and says so, so the lane's REPORTING is
+            # what is under test rather than the harness's own logic.
+            (clone / "tools" / "rehearse-release.sh").write_text(
+                "#!/usr/bin/env bash\n"
+                "echo 'rehearsal FAILED: greenfield: `sprint plan --write` refused' >&2\n"
+                "exit 1\n", encoding="utf-8")
+            shutil.copytree(repo / ".claude" / "skills" / "sdlc-studio",
+                            clone / ".claude" / "skills" / "sdlc-studio",
+                            ignore=shutil.ignore_patterns("__pycache__", ".local"))
+            r = self._gate("--boundary", "push", root=clone)
+            line = next((ln for ln in (r.stdout + r.stderr).splitlines()
+                         if "release-rehearsal" in ln), "")
+            self.assertTrue(line, f"no rehearsal lane in the output:\n{r.stdout}{r.stderr}")
+            self.assertIn("[FAIL]", line, "a failing rehearsal did not fail the lane")
+            self.assertIn("greenfield", line, "the lane did not name which half failed")
+            self.assertRegex(line, r"\[\d+\.\d+s\]",
+                             "the lane's duration is not recorded beside the other lanes")
+
+
 if __name__ == "__main__":
     unittest.main()

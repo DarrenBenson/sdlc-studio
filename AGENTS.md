@@ -59,6 +59,13 @@ prints each lane's rule and fix on failure, so this is the roster, not the manua
 `check_action_pins.sh`, `validate_skill.py`, `verify_ac.py`, `readiness.py`, `runbook.py`,
 `validate.py` (the warning ratchet), plus `gate.py`'s
 own block (conformance, reconcile, validate, integrity, duplicate-id, docs) and markdownlint.
+One lane is deliberately NOT per-commit: `release-rehearsal` binds at the **push and release
+boundaries only** (`gate.py --boundary push|release`). It drives `tools/rehearse-release.sh` -
+greenfield `init` to a written sprint plan, and a v4-era workspace through `migrate --apply` to a
+gate matching `tools/release-rehearsal-baseline.txt`. Those are the two situations this repository
+cannot occupy, and walking them by hand once found three consumer-facing defects the whole suite
+had missed. It is off the per-commit path because the gate is already over its budget there.
+
 One lane is ADVISORY and cannot fail a commit: `claim-drift`, which reports where a diff's
 code and the diff's own prose disagree. It ships advisory while its yield is measured,
 because a new blocking check on a gate already over its ceiling earns its place on a

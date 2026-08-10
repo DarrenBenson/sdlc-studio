@@ -27,6 +27,7 @@
   only if a run was written - reading each command's exit status directly, never through a pipe.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py -k greenfield_reaches_a_written_plan
+- **Verified:** yes (2026-08-10)
 
 ### AC2
 
@@ -37,6 +38,7 @@
   rehearsal that is green on a tree known to be broken proves nothing.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py -k greenfield_reddens_when_the_path_is_broken
+- **Verified:** yes (2026-08-10)
 
 ### AC3
 
@@ -46,6 +48,7 @@
   written inside the repository, asserted rather than assumed.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py -k the_rehearsal_writes_nothing_into_the_working_tree
+- **Verified:** yes (2026-08-10)
 
 ## Test Plan
 

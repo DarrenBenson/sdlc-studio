@@ -134,6 +134,25 @@ class GateLaneTests(unittest.TestCase):
                               f"name it - a guard nobody has written down is one nobody "
                               f"notices losing")
 
+    def test_the_lane_roster_names_the_release_rehearsal(self) -> None:
+        """US0666: a lane bound at a BOUNDARY is invisible to the hook-derived sweep above, which
+        reads the pre-commit hook - so the one lane that deliberately does not run per commit is
+        the one that roster cannot see. It is pinned here by name, with the boundary it binds at,
+        because a lane nobody has written down is one nobody notices losing (LL0013)."""
+        repo = Path(__file__).resolve().parents[2]
+        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("release-rehearsal", agents,
+                      "AGENTS.md's roster does not name the release-rehearsal lane")
+        self.assertIn("rehearse-release.sh", agents,
+                      "the roster names the lane but not the harness it runs")
+        self.assertRegex(agents, r"release-rehearsal[^.]*boundar",
+                         "the roster does not say the lane binds at a boundary rather than per "
+                         "commit, which is the only thing a reader needs to know about it")
+        gate = (repo / ".claude" / "skills" / "sdlc-studio" / "scripts"
+                / "gate.py").read_text(encoding="utf-8")
+        self.assertIn('"release-rehearsal"', gate,
+                      "AGENTS.md names a lane the gate does not register")
+
     def test_the_checker_exits_non_zero_on_a_contradiction(self) -> None:
         """The lane is only a lane if the command it runs can fail."""
         d = Path(tempfile.mkdtemp(prefix="claims_"))

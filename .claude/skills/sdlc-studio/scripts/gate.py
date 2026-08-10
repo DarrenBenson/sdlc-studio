@@ -1082,6 +1082,34 @@ def _validate_scoped(root: str) -> dict:
 #: everything, and the release lane says so by running exactly the same check unscoped.
 WHOLE_WORKSPACE_LANES = {"conformance": _conformance, "validate": _validate}
 
+def _release_rehearsal(root: str) -> dict:
+    """BOUNDARY lane: drive greenfield-init and a v4-upgrade end to end through the shipped CLI.
+
+    Every other lane here runs against THIS repository. The two situations a user is actually in
+    - a project that has just been created, and one being upgraded - are the two this repository
+    cannot occupy, and walking them by hand once turned up three consumer-facing defects that the
+    whole suite and every other lane had missed.
+
+    Bound to the push and release boundaries, never to a per-commit run. The gate is already over
+    its budget on most commits and this lane builds two fixture projects; a guard whose cost is
+    paid on every commit gets switched off, and then it guards nothing.
+    """
+    import subprocess  # noqa: PLC0415 - local: only this lane spawns the harness
+    script = Path(root) / "tools" / "rehearse-release.sh"
+    if not script.exists():
+        return {"count": 0, "blocking": False, "detail": "N/A (no rehearsal harness in this repo)"}
+    proc = subprocess.run(["bash", str(script), "all"], cwd=root, capture_output=True,
+                          text=True, check=False)
+    if proc.returncode == 0:
+        return {"count": 0, "blocking": True, "detail": "greenfield and upgrade both complete"}
+    # Name the failing HALF. "the rehearsal failed" sends a reader to run it themselves to find
+    # out which path broke, and the two have entirely different owners.
+    lines = [ln for ln in (proc.stdout + proc.stderr).splitlines()
+             if ln.startswith("rehearsal FAILED")]
+    why = lines[-1] if lines else "the harness exited non-zero without naming a step"
+    return {"count": 1, "blocking": True, "detail": why.replace("rehearsal FAILED: ", "")}
+
+
 DEFAULT_CHECKS = {
     "conformance": _conformance_scoped,
     "reconcile": _reconcile,
@@ -1844,7 +1872,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
              require_lessons: bool = False, require_handoff: str | None = None,
              require_review: bool = False, require_close: bool = False,
              conformance_scope: "set[str] | None" = None,
-             record_cost: bool = False) -> dict:
+             record_cost: bool = False, boundary_lanes: bool = False) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
     fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
     is the SPRINT-CLOSE gate: it binds a blocking check that the named batch retro exists,
@@ -1938,6 +1966,14 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             bound.append("changelog-fragments")
         else:
             downgraded.append("release.changelog")
+    if boundary_lanes:
+        # The two paths a user arrives on are DRIVEN, not reasoned about. Bound at the BOUNDARY -
+        # `--boundary push|release` - and NOT by the `--release` mode flag, which is the pre-tag
+        # lane set rather than a boundary. Binding it to the mode refused every existing
+        # `--release --only <lane>` run, and a lane nothing can select around makes the mode
+        # unusable for anything narrower than the whole gate.
+        registry["release-rehearsal"] = _release_rehearsal
+        bound.append("release-rehearsal")
     # The sprint close scopes conformance to the BATCH it owns. On a clean tree the diff scope is
     # empty, so the default lane judges the whole workspace and blocks an in-batch close on another
     # author's out-of-batch debt. Applied AFTER the release swap - a TAG still judges
@@ -3298,7 +3334,16 @@ def cmd_gate(args: argparse.Namespace) -> int:
     if getattr(args, "suite_decision", False):
         return cmd_suite_decision(args)
     release = getattr(args, "release", False)
+    # The boundary decides which lanes are BOUND, on the same terms `--release` already does.
+    # Resolved through the shared reader so `--boundary` and SDLC_GATE_BOUNDARY agree, and an
+    # unrecognised value is refused rather than quietly read as "no boundary".
+    try:
+        at_boundary = resolve_boundary(args) in ("push", "release")
+    except BoundaryError as exc:
+        print(f"gate: refused - {exc}", file=sys.stderr)
+        return 2
     report = run_gate(args.root, only=_split(args.only), skip=_split(args.skip),
+                      boundary_lanes=at_boundary,
                       require_retro=getattr(args, "require_retro", None), release=release,
                       allow_external=getattr(args, "allow_external", False),
                       require_lessons=getattr(args, "require_lessons", False),
