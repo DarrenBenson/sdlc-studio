@@ -29,12 +29,19 @@ critic = _load("critic", "critic.py")
 telemetry = _load("telemetry", "telemetry.py")
 
 
-def _repo(root: Path, v3: bool = True, cfg_extra: str = "") -> Path:
+def _repo(root: Path, v3: bool = True, cfg_extra: str = "", *, retros: int = 1) -> Path:
     sd = root / "sdlc-studio"
     (sd / "stories").mkdir(parents=True, exist_ok=True)
     (sd / "reviews").mkdir(parents=True, exist_ok=True)
     if v3:
         (sd / ".config.yaml").write_text("schema_version: 3\n" + cfg_extra, encoding="utf-8")
+    # US0662: the gate REPORTS rather than refuses on a project that has closed no sprint, and
+    # every fixture in this file means "an established project" - they exist to test the refusal.
+    # One retro arms them. Pass `retros=0` for the first-run case, which is its own test class.
+    rd = sd / "retros"
+    rd.mkdir(parents=True, exist_ok=True)
+    for i in range(retros):
+        (rd / f"RETRO{i:04d}-x.md").write_text(f"# RETRO{i:04d}\n", encoding="utf-8")
     return root
 
 
@@ -453,6 +460,95 @@ class ResolutionAndFailLoudTests(unittest.TestCase):
             res = pr.gate(root, "US9999")
             self.assertFalse(res["ok"])
             self.assertIn("not found", res["reason"])
+
+
+class RunHistoryArmsTheGateTests(unittest.TestCase):
+    """US0662/US0663 under D0134: the gate is a report on a project that has closed no sprint,
+    and a refusal on every project that has. The arming fact is the COMMITTED retros."""
+
+    _STORY = ("# US0001: s\n\n> **Status:** Ready\n> **Epic:** EP0001\n"
+              "> **Affects:** src/a.py, src/b.py, src/c.py, src/d.py, src/e.py, src/f.py\n"
+              "> **Points:** 3\n\n## Acceptance Criteria\n\n### AC1: it works\n\n"
+              "- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n")
+
+    def _proj(self, root: Path, *, retros: int = 0) -> Path:
+        _repo(root, retros=0)
+        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(self._STORY,
+                                                                     encoding="utf-8")
+        d = root / "sdlc-studio" / "retros"
+        d.mkdir(parents=True, exist_ok=True)
+        for i in range(retros):
+            (d / f"RETRO{i:04d}-x.md").write_text(f"# RETRO{i:04d}\n", encoding="utf-8")
+        return root
+
+    def test_a_project_with_no_retro_reports_the_plan_review_requirement(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(Path(d), retros=0)
+            res = pr.gate(root, "US0001")
+            self.assertTrue(res["ok"], "a project with no closed sprint was refused")
+            self.assertTrue(res["fired"], "the trigger did not trip, so nothing was softened")
+            self.assertIn("retros", res["reason"],
+                          "the report does not name the condition that arms the gate")
+
+    def test_an_armed_project_still_refuses(self) -> None:
+        # Pinned HERE, not only in the sibling unit: every criterion of the first plan passed on
+        # an implementation that deleted the gate outright, which would have put a commit on main
+        # with the flagship gate off and nothing in this unit able to notice.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(Path(d), retros=1)
+            res = pr.gate(root, "US0001")
+            self.assertFalse(res["ok"], "one retro on disk and the gate still did not refuse")
+            self.assertIn("plan-review required", res["reason"])
+
+    def test_the_softening_expires_on_the_first_retro(self) -> None:
+        # US0663 AC1: both halves in ONE test, so it cannot pass on the pre-epic tree where every
+        # project refuses.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._proj(root, retros=0)
+            self.assertTrue(pr.gate(root, "US0001")["ok"])
+            (root / "sdlc-studio" / "retros" / "RETRO0001-x.md").write_text("# RETRO0001\n",
+                                                                           encoding="utf-8")
+            self.assertFalse(pr.gate(root, "US0001")["ok"],
+                             "the concession survived the first retro, so it does not expire")
+
+    def test_an_unreadable_history_counts_as_armed(self) -> None:
+        # US0662 AC4. The direction this must not fail in is a long-lived project being silently
+        # softened, so anything the predicate cannot read counts as history rather than absence.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._proj(root, retros=0)
+            real = pr.Path
+            try:
+                class _Boom(type(root)):
+                    def is_dir(self):
+                        raise OSError("unreadable")
+                pr.Path = lambda *a, **k: _Boom(*a, **k)  # noqa: ARG005
+                self.assertTrue(pr.has_run_history(root),
+                                "an unreadable retro directory read as 'no history', which "
+                                "softens the gate on every project it cannot inspect")
+            finally:
+                pr.Path = real
+
+    def test_no_configuration_key_can_hold_the_softening_open(self) -> None:
+        # US0663 AC3, replacing a verifier that asserted the PRESENCE of two strings while its
+        # own mutant was an ADDITION - so adding the forbidden key made it pass harder. This is
+        # an ABSENCE assertion over both files, with a positive control below it.
+        forbidden = "first_run"
+        for rel in ("reference-config.md", "templates/config-defaults.yaml"):
+            text = (DIR.parent / rel).read_text(encoding="utf-8")
+            self.assertNotIn(f"plan_review.{forbidden}", text, f"{rel} names a knob that could "
+                             "hold the first-run softening open")
+            self.assertNotIn(f"{forbidden}:", text.split("plan_review:")[-1][:400],
+                             f"{rel} adds a first_run key under plan_review")
+
+    def test_the_absence_check_reddens_when_such_a_key_is_added(self) -> None:
+        # The positive control for the test above: without it, a check that can never fail
+        # passes for the wrong reason, which is exactly the defect it replaced.
+        sample = "plan_review:\n  affects_files_threshold: 5\n  first_run: report\n"
+        self.assertIn("first_run:", sample.split("plan_review:")[-1][:400],
+                      "the absence assertion cannot detect an added key, so it proves nothing")
+
 
 if __name__ == "__main__":
     unittest.main()

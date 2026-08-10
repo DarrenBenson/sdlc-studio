@@ -1023,6 +1023,14 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         pr_res = plan_review.gate(root, artifact_id, path)
         if not pr_res["ok"]:
             blocks.append(pr_res["reason"])
+        elif pr_res["fired"] and not pr_res["override"]:
+            # The trigger tripped and the gate let it through anyway - a project with no closed
+            # sprint yet. Reported rather than silent: a concession nobody is told about is one
+            # they meet as a surprise refusal on the next run, which is the shape this softening
+            # exists to remove. Accumulated, never assigned, so it cannot discard a sibling
+            # advisory depending on statement order.
+            warn = f"plan-review advisory: {pr_res['reason']}"
+            gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
     # TEST-PLAN gate (US0630). A SECOND pre-code gate, beside the spec one above and keyed to a
     # different `Kind`, so neither discharges the other - that separation is BG0510's whole
     # point, and without it one approval clears both while neither reviewer read the other's

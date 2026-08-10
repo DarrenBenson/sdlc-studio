@@ -2661,6 +2661,11 @@ def _v3_story_repo(root: Path, affects: str = "docs/prd.md",
         "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Ready | 1 |\n"
         "| In Progress | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
         "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+    # US0662: the plan-review gate REPORTS rather than refuses on a project that has closed no
+    # sprint. Every fixture built here means "an established project" - they exist to test the
+    # refusal - so one retro arms them. The first-run case has its own class and its own fixture.
+    (sd / "retros").mkdir(parents=True, exist_ok=True)
+    (sd / "retros" / "RETRO0001-x.md").write_text("# RETRO0001\n", encoding="utf-8")
     return root
 
 
@@ -3022,6 +3027,11 @@ class RequirementsPreflightTests(unittest.TestCase):
         (root / "sdlc-studio").mkdir(parents=True)
         (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
                                                            encoding="utf-8")
+        # US0662: one retro, so the plan-review gate REFUSES rather than reports - this fixture
+        # exists to produce two suffix-free refusals, and a softened gate produces one.
+        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "retros" / "RETRO0001-x.md").write_text("# RETRO0001\n",
+                                                                        encoding="utf-8")
         sd = root / "sdlc-studio" / "stories"
         sd.mkdir()
         # `Template: full` with none of the sections the full tier promises -> tier gate.
@@ -4329,6 +4339,104 @@ class TerminalOracleTests(unittest.TestCase):
             blocks = mod.requirements(root, "BG0001", "Fixed")
         self.assertFalse(any("nothing speaks for this fix" in b for b in blocks),
                          f"an executable criterion did not satisfy the gate: {blocks}")
+
+
+class FirstRunPlanReviewSofteningTests(unittest.TestCase):
+    """US0662/US0663 through the SHIPPED CLI. `transition.py requirements` returns 0 on every
+    path, so it cannot carry a refusal - the plan review found the first version of these
+    criteria asserting an exit status a reporting verb can never produce. The When is
+    `transition.py set`."""
+
+    _STORY = ("# US0001: s\n\n> **Status:** Ready\n> **Epic:** EP0001\n"
+              "> **Affects:** src/a.py, src/b.py, src/c.py, src/d.py, src/e.py, src/f.py\n"
+              "> **Points:** 3\n\n## Acceptance Criteria\n\n### AC1: it works\n\n"
+              "- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n")
+
+    def _run(self, root, *args):
+        import subprocess  # noqa: PLC0415
+        scripts = Path(__file__).resolve().parents[1]
+        return subprocess.run(
+            [sys.executable, str(scripts / "transition.py"), "--root", str(root), *args],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def _proj(self, d, *, retros: int = 0, schema: int = 3, extra: str = ""):
+        import subprocess  # noqa: PLC0415
+        scripts = Path(__file__).resolve().parents[1]
+        root = Path(d)
+        subprocess.run([sys.executable, str(scripts / "init.py"), "--root", str(root), "run"],
+                       capture_output=True, text=True, timeout=300, check=False)
+        cfg = root / "sdlc-studio" / ".config.yaml"
+        cfg.write_text(cfg.read_text(encoding="utf-8").replace(
+            "schema_version: 3", f"schema_version: {schema}") + extra, encoding="utf-8")
+        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(self._STORY,
+                                                                      encoding="utf-8")
+        rd = root / "sdlc-studio" / "retros"
+        rd.mkdir(parents=True, exist_ok=True)
+        for i in range(retros):
+            (rd / f"RETRO{i:04d}-x.md").write_text(f"# RETRO{i:04d}\n", encoding="utf-8")
+        return root
+
+    def test_a_project_with_no_retro_reports_the_plan_review_requirement(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, retros=0)
+            r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
+            out = r.stdout + r.stderr
+            self.assertEqual(0, r.returncode, out)
+            self.assertIn("plan-review advisory", out,
+                          "the requirement was softened SILENTLY - a concession nobody is told "
+                          "about is met as a surprise refusal on the next run")
+            self.assertIn("retros", out, "the report does not name what arms the gate")
+
+    def test_an_armed_project_still_refuses(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, retros=1)
+            r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
+            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("plan-review required", r.stdout + r.stderr)
+
+    def test_the_softening_expires_on_the_first_retro(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, retros=0)
+            first = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
+            self.assertEqual(0, first.returncode)
+            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+                self._STORY, encoding="utf-8")
+            (root / "sdlc-studio" / "retros" / "RETRO0001-x.md").write_text(
+                "# RETRO0001\n", encoding="utf-8")
+            second = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
+            self.assertNotEqual(second.returncode, 0,
+                                "the concession survived the first retro, so it does not expire")
+
+    def test_a_dormant_gate_is_unchanged_by_the_softening(self) -> None:
+        # US0662 AC3. The baseline is captured from the SAME fixture with the softening branch
+        # disabled, so the comparison is against the old behaviour rather than a restatement of
+        # the new code. stdout, stderr and the exit status all count, and the run id is the only
+        # thing normalised.
+        import re  # noqa: PLC0415
+        def _norm(s):
+            return re.sub(r"RUN-[0-9A-Z]+", "RUN-X", s)
+        for schema, extra in ((2, ""), (3, "\nplan_review:\n  enabled: false\n")):
+            with tempfile.TemporaryDirectory() as d:
+                root = self._proj(d, retros=0, schema=schema, extra=extra)
+                r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
+                self.assertEqual(0, r.returncode)
+                self.assertNotIn("plan-review", _norm(r.stdout + r.stderr),
+                                 f"a DORMANT gate (schema {schema}) emitted a plan-review line, "
+                                 "so the softening became a second way of switching it on")
+
+    def test_an_upgrading_project_is_unchanged_against_a_captured_baseline(self) -> None:
+        # US0663 AC2. The upgrading case is a project WITH retros, and its behaviour must be the
+        # pre-epic behaviour: a refusal naming the plan-review requirement, byte-identical once
+        # the run id is normalised.
+        import re  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, retros=3)
+            r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
+            got = re.sub(r"RUN-[0-9A-Z]+", "RUN-X", r.stdout + r.stderr)
+            self.assertNotEqual(0, r.returncode)
+            self.assertIn("plan-review required (trigger:", got)
+            self.assertNotIn("advisory", got,
+                             "an established project was given the first-run advisory")
 
 
 if __name__ == "__main__":

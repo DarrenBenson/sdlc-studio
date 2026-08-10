@@ -5,7 +5,7 @@
 > **Created:** 2026-08-10
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, AGENTS.md, .claude/skills/sdlc-studio/scripts/tests/test_check_spec_claims.py, AGENTS.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, AGENTS.md, .claude/skills/sdlc-studio/scripts/tests/test_check_spec_claims.py
 > **Epic:** EP0214
 > **Points:** 3
 > **Persona:** Maya Okafor

@@ -34,6 +34,7 @@
   cannot pass on the pre-epic tree where every project refuses.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k the_softening_expires_on_the_first_retro
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in `plan_review.py`, change the arming predicate to read a config key defaulting to softened, which no retro can expire.
 
 ### AC2
@@ -45,6 +46,7 @@
   states which fields it normalised.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k an_upgrading_project_is_unchanged_against_a_captured_baseline
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in `plan_review.py`, widen the arming predicate from `no retro exists` to `no run is currently open`.
 
 ### AC3
@@ -56,6 +58,7 @@
   key to each in turn and asserts the check reddens for both.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py -k no_configuration_key_can_hold_the_softening_open
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in `templates/config-defaults.yaml`, add a `plan_review.first_run` key.
 
 ## Test Plan

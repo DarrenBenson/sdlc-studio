@@ -40,6 +40,7 @@
   condition that will arm it named.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k a_project_with_no_retro_reports_the_plan_review_requirement
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in `plan_review.py`, make the first-run branch return the refusal rather than the report.
 
 ### AC2
@@ -50,6 +51,7 @@
   its sibling and shipping a commit in which the flagship gate is off with nothing able to notice.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k an_armed_project_still_refuses
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in `plan_review.py`, make the softening unconditional rather than reading the retro count.
 
 ### AC3
@@ -62,7 +64,8 @@
   restatement of the new code.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k a_dormant_gate_is_unchanged_by_the_softening
-- **Mutant:** in `plan_review.py`, evaluate the first-run branch before the dormancy check.
+- **Verified:** yes (2026-08-10)
+- **Mutant:** in `plan_review.py`, change the dormancy check to `not active(root) and has_run_history(root)`, so a dormant project without history reaches the softening. Reordering the branch alone is EQUIVALENT - the dormant return carries no plan-review wording and sets `fired` False, so nothing observable moves; that was found by applying it.
 
 ### AC4
 
@@ -73,6 +76,7 @@
   than as its absence.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py -k an_unreadable_history_counts_as_armed
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in `plan_review.py`, return the softened verdict from the predicate's exception path.
 
 ## Test Plan
@@ -81,7 +85,7 @@
 | --- | --- | --- |
 | AC1 | in `plan_review.py`, change the first-run branch to return the refusal rather than the report | |
 | AC2 | in `plan_review.py`, change the softening to apply unconditionally instead of reading the retro count | |
-| AC3 | in `plan_review.py`, reorder the first-run branch to run before the dormancy check | |
+| AC3 | in `plan_review.py`, change the dormancy check so a dormant project without history reaches the softening branch | |
 | AC4 | in `plan_review.py`, change the arming predicate's exception path to return the softened verdict | |
 
 ## Revision History

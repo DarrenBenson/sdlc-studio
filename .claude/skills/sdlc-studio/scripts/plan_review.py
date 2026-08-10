@@ -214,6 +214,36 @@ def active(root) -> bool:
     return config.feature_enabled(root, "plan_review")
 
 
+#: Where a project's closed sprints are recorded. A retro is COMMITTED and travels with the
+#: repository, which is the whole reason it is the source here.
+_RETRO_REL = Path("sdlc-studio") / "retros"
+
+
+def has_run_history(root) -> bool:
+    """Whether this project has ever closed a sprint.
+
+    Read from the COMMITTED retros, never from `sdlc-studio/.local/`. The obvious source is the
+    run archive, and it is the wrong one: `.local/` is gitignored and documented as state you can
+    delete and lose nothing, so a fresh clone, a CI checkout or a cleaned working directory would
+    report an established project as brand new - and any concession granted to a new project would
+    come back every time, for ever. A retro is written per closed run and is committed, so a clone
+    answers this the same way the machine that did the work does.
+
+    FAILS TOWARDS HISTORY. Anything unreadable, absent or ambiguous answers True. The direction
+    this must not fail in is a long-lived project being silently treated as new, because that is
+    the direction in which a gate quietly stops applying; erring the other way merely asks a new
+    project for one more thing, which it can see and act on.
+    """
+    d = Path(root) / _RETRO_REL
+    try:
+        if not d.is_dir():
+            return False
+        return any(f.suffix == ".md" and f.stem.upper().startswith("RETRO")
+                   for f in d.iterdir())
+    except OSError:
+        return True  # unreadable is not the same as absent, and only one of them is safe
+
+
 def gate(root, story_id: str, path: Path | str | None = None) -> dict:
     """Evaluate the plan-review gate for a story. Returns {ok, reason, fired, override,
     signals}. A no-op (ok True) unless `active(root)` - see there for what decides it."""
@@ -246,6 +276,17 @@ def gate(root, story_id: str, path: Path | str | None = None) -> dict:
     if _has_independent_plan_approval(root, story_id, text):
         return {"ok": True, "reason": "independent plan-review APPROVE on record",
                 "fired": True, "override": None, "signals": trig["signals"]}
+    if not has_run_history(root):
+        # A project that has never closed a sprint has never had the chance to meet this gate,
+        # and meeting it is the first thing it would be asked to do. Report, do not refuse - the
+        # concession expires the moment the first retro exists, so nothing has to switch it back
+        # on and no setting can hold it open.
+        return {"ok": True, "fired": True, "override": None, "signals": trig["signals"],
+                "reason": ("plan-review REPORTED, not required: this project has closed no "
+                           "sprint yet, so the gate arms once its first retro exists under "
+                           "sdlc-studio/retros/. Trigger: " + ", ".join(trig["signals"]) +
+                           ". From the next run this is a refusal, cleared by an independent "
+                           "plan-review APPROVE or a `> **Plan-Review-Override:**`")}
     return {"ok": False, "fired": True, "override": None, "signals": trig["signals"],
             "reason": ("plan-review required (trigger: " + ", ".join(trig["signals"]) +
                        ") - record an independent plan-review APPROVE (reviewer != plan "
