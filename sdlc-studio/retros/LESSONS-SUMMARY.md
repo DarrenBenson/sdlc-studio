@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0333: **A test that passes only because a sibling ran first is not passing.** US0664 AC3 held for a whole round because two tests above it warmed...**
+- **L-0332: **A declared mutant is executed by strangers - write it so it cannot destroy their work.** "Change the fixture root to the repository root"...**
+- **L-0331: **A guard that hides a fault also hides the evidence of it.** Gitignoring the residue path stopped it being committed and stopped `git...**
+- **L-0330: **A presence check can never detect an addition.** US0663 AC3 asserted two strings were PRESENT while its own declared mutant was an...**
+- **L-0329: **A repair that is correct and ungated is not a repair.** Rounds 3 and 5 each reverted the previous round's fix against a green suite and...**
 - **L-0328: A tool whose blast radius is its own source must be scoped to the literal it rewrites.**
 - **L-0327: Drive the claim through the COMMAND and it finds wiring the suite cannot see.**
 - **L-0326: A criterion is only as good as the mutant its test can fail on.**

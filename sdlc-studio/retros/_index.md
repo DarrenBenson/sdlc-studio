@@ -109,3 +109,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0097](RETRO0097-run-01kzcajx-the-v5-release-blocker-sprint-and.md) | RUN-01KZCAJX: the v5 release-blocker sprint, and what three review rounds cost | 2026-08-07 | -- | -- |
 | [RETRO-0098](RETRO0098-the-repair-evidence-rule-the-doctrine-states-is.md) | The repair-evidence rule the doctrine states is the rule the command performs, and the sprint's own thesis was turned on the sprint | 2026-08-07 | -- | -- |
 | [RETRO-0099](RETRO0099-part-b-the-skill-documents-what-the-tooling.md) | Part B: the skill documents what the tooling ships | 2026-08-08 | -- | -- |
+| [RETRO-0100](RETRO0100-run-01kzm49y-a-new-project-can-plan-its.md) | RUN-01KZM49Y: a new project can plan its first sprint, and five review rounds all found the same thing | 2026-08-10 | -- | -- |
