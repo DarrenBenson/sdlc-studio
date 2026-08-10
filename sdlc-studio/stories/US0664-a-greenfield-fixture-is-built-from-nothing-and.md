@@ -1,6 +1,6 @@
 # US0664: A greenfield fixture is built from nothing and driven through init run to a written sprint plan, and the lane reddens when that path is broken
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0542
 > **Created:** 2026-08-10
 > **Created-by:** sdlc-studio new

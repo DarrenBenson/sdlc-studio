@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 56 |
+| Open | 53 |
 | In Progress | 0 |
-| Fixed | 424 |
+| Fixed | 427 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -97,9 +97,9 @@
 | [BG0555](BG0555-twelve-scripts-declare-root-only-per-subcommand-a.md) | twelve scripts declare --root only per-subcommand, a grammar defect the conformance sweep could not see because it silently skipped them | Open | Medium | 2026-08-08 | 2026-08-08 |
 | [BG0556](BG0556-no-guard-catches-a-root-that-selects-the.md) | no guard catches a --root that selects the file written but not the content read | Open | Medium | 2026-08-08 | 2026-08-08 |
 | [BG0557](BG0557-sprint-close-dry-run-reports-a-checklist-stop.md) | sprint close --dry-run reports a checklist STOP the real close does not | Open | Medium | 2026-08-09 | 2026-08-09 |
-| [BG0558](BG0558-a-greenfield-project-cannot-plan-its-first-sprint.md) | a greenfield project cannot plan its first sprint: every Affects path is unresolvable because the code does not exist yet, and the blocking grooming lane calls that a fictional Affects | Open | High | 2026-08-09 | 2026-08-09 |
-| [BG0559](BG0559-the-doc-surface-gate-lane-raises-modulenotfounderror-in.md) | the doc-surface gate lane raises ModuleNotFoundError in every consuming project, so a new v5 lane reports NOT MEASURED forever on every user's gate run | Open | High | 2026-08-09 | 2026-08-09 |
-| [BG0560](BG0560-the-page-readme-sends-every-existing-user-to.md) | the page README sends every existing user to is the v4 upgrade page, so v5's breaking gate changes reach an upgrading project with no document that names them | Open | High | 2026-08-09 | 2026-08-09 |
+| [BG0558](BG0558-a-greenfield-project-cannot-plan-its-first-sprint.md) | a greenfield project cannot plan its first sprint: every Affects path is unresolvable because the code does not exist yet, and the blocking grooming lane calls that a fictional Affects | Fixed | High | 2026-08-09 | 2026-08-09 |
+| [BG0559](BG0559-the-doc-surface-gate-lane-raises-modulenotfounderror-in.md) | the doc-surface gate lane raises ModuleNotFoundError in every consuming project, so a new v5 lane reports NOT MEASURED forever on every user's gate run | Fixed | High | 2026-08-09 | 2026-08-09 |
+| [BG0560](BG0560-the-page-readme-sends-every-existing-user-to.md) | the page README sends every existing user to is the v4 upgrade page, so v5's breaking gate changes reach an upgrading project with no document that names them | Fixed | High | 2026-08-09 | 2026-08-09 |
 | [BG0561](BG0561-a-re-plan-over-an-open-run-resets.md) | a re-plan over an open run resets the appetite to the standing capacity while leaving the resize record standing, so the ledger and the breaker disagree about the ceiling | Open | Medium | 2026-08-09 | 2026-08-09 |
 | [BG0562](BG0562-then-clause-strips-the-bold-markers-off-a.md) | _then_clause strips the bold markers off a non-bulleted Then line before testing for them, so the criterion falls back to its whole block and the overlap check reports the author's own mutant as a 100% restatement | Open | Medium | 2026-08-09 | 2026-08-09 |
 | [BG0563](BG0563-the-test-plan-edit-verb-vocabulary-enumerates-only.md) | the test-plan edit-verb vocabulary enumerates only subtractive verbs, so a mutant that ADDS something cannot be stated and gets reworded until it parses | Open | Medium | 2026-08-10 | 2026-08-10 |

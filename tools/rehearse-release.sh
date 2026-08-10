@@ -123,6 +123,19 @@ AGE
   "$PY" "$SCRIPTS/migrate.py" --root "$root" --apply >/dev/null 2>&1 \
     || fail "upgrade: \`migrate --apply\` did not complete"
 
+  # ASSERT THE MIGRATE HAPPENED, on its real deterministic outputs. Dropping `--apply` above
+  # left every test of this path green: the failing lane set is identical on a migrated and an
+  # unmigrated fixture, so nothing downstream could tell them apart. A seat proved it by deleting
+  # the flag. These are what `migrate --apply` actually writes - it does NOT bump schema_version.
+  [ -f "$root/sdlc-studio/.version" ] \
+    || fail "upgrade: migrate --apply wrote no sdlc-studio/.version - the migration did not run"
+  grep -q '^> \*\*Size:\*\* M' "$root/sdlc-studio/change-requests/CR0001-legacy.md" \
+    || fail "upgrade: the legacy CR's Effort was not converted to a Size"
+  # NOT "and no Effort": measured on the real tool, `migrate --apply` ADDS the derived `Size` and
+  # LEAVES the legacy `Effort` in place. Asserting its removal would fail on correct behaviour -
+  # the review suggested it, and running the command decided it.
+  echo "    migrated: .version written, CR0001 carries a derived Size"
+
   step "gate"
   echo "    order: gate"
   local out; out="$("$PY" "$SCRIPTS/gate.py" --root "$root" 2>&1)"

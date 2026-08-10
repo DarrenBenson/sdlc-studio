@@ -1,10 +1,11 @@
 # BG0558: a greenfield project cannot plan its first sprint: every Affects path is unresolvable because the code does not exist yet, and the blocking grooming lane calls that a fictional Affects
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py, .claude/skills/sdlc-studio/scripts/tests/test_bug_regressions.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Probed through the shipped CLI on a throwaway fixture, 2026-08-09, during a v5 release-readiness sweep. `init.py run` on a clean git repo, one story with `Affects: src/auth/signup.py, tests/test_signup.py` and `Points: 3`, then `sprint.py plan --write`: exit 2, no run written, `US0001 lacks: Affects (no declared path resolves: ...)`. Replacing one path with a file that exists on disk makes the same unit groom clean, which isolates the cause to path resolution rather than to the field being absent.
+> **Verification depth:** functional (unit: both directions driven through `sprint.py plan --write` and `refine apply` as subprocesses on fixtures built from nothing; mutation: 6 planned mutants applied and killed on the final tree, one recorded equivalent with its reason; live: the greenfield and typo fixtures re-run under the release rehearsal on every boundary gate)
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

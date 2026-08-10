@@ -1,6 +1,6 @@
 # US0666: The rehearsal runs as a gate lane at the push and release boundaries, with its cost recorded and its fixtures proven to write outside the working tree
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0542
 > **Created:** 2026-08-10
 > **Created-by:** sdlc-studio new

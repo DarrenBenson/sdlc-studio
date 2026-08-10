@@ -1,6 +1,6 @@
 # US0662: A project with no closed run reports the plan-review requirement at the terminal transition instead of refusing, and names the condition that arms it
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0541
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio new

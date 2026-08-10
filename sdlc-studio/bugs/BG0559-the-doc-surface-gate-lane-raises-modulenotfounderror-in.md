@@ -1,10 +1,11 @@
 # BG0559: the doc-surface gate lane raises ModuleNotFoundError in every consuming project, so a new v5 lane reports NOT MEASURED forever on every user's gate run
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/doc_coverage.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Evidence:** Probed through the shipped CLI on a throwaway consuming-project fixture, 2026-08-09, during a v5 release-readiness sweep. `gate.py --root <fixture>` prints `[warn] doc-surface [0.0s]: NOT MEASURED - command_audit.verb_coverage raised ModuleNotFoundError: No module named 'surface'`. `git log -S '_doc_surface' -- scripts/gate.py` returns only 4e0e4a0f (RUN-01KZF9AF, US0654), which is not an ancestor of v4.1.0, so the lane and its defect are both new in v5 and reach a consumer the moment v5 ships.
+> **Verification depth:** functional (unit: `gate.py` driven as a subprocess against a consuming-project fixture, the skill repo, and a skill-shaped fixture with an injected import fault; mutation: 5 planned mutants applied and killed, including a divergent-copy mutant pinned by a boundary fixture where the two predicates disagree)
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

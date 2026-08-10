@@ -149,13 +149,14 @@ class UpgradeRehearsalTests(unittest.TestCase):
                  for ln in r.stdout.splitlines() if "order:" in ln]
         self.assertEqual(["migrate", "gate"], order,
                          f"the upgrade did not run migrate before gate: {order}")
-        # And the migrate's OUTCOME, not its report: the fixture is aged to schema 2 and must
-        # come back at 3. The story promises the upgrade's outcome rather than the report, and
-        # every assertion here had been on the printed report.
-        self.assertIn("schema_version: 2", (REPO / "tools" / "rehearse-release.sh")
-                      .read_text(encoding="utf-8"),
-                      "the fixture is no longer aged back to schema 2, so the migrate has "
-                      "nothing to do and this assertion proves nothing")
+        # And the migrate's OUTCOME. The previous form asserted a string in the HARNESS SOURCE and
+        # claimed the fixture "comes back at 3" - migrate does not bump schema_version at all. A
+        # seat proved the whole path unmeasured by deleting `--apply`: every test stayed green,
+        # because the failing lane set is identical on a migrated and an unmigrated fixture. The
+        # harness now checks what migrate really writes, and reports it.
+        self.assertIn("migrated: .version written", r.stdout,
+                      "the harness does not assert the migration happened, so the rehearsal "
+                      "passes on a fixture that was never migrated")
         self.assertIn("known gap:", r.stdout)
 
     def test_the_upgrade_baseline_reddens_in_both_directions(self) -> None:

@@ -1,10 +1,11 @@
 # BG0560: the page README sends every existing user to is the v4 upgrade page, so v5's breaking gate changes reach an upgrading project with no document that names them
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
 > **Affects:** README.md, docs/existing-users.md, .claude/skills/sdlc-studio/reference-upgrade.md, .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py
 > **Evidence:** Read on the tracked tree, 2026-08-09, during a v5 release-readiness sweep. `docs/existing-users.md:1` is `# SDLC Studio v4 for existing projects` and its body describes v4's changes and the v3 numbering question. README.md lines 150, 382 and 440 all route an existing user to it, line 382 calling the update `a drop-in: no project migration, existing sdlc-studio/ directories keep working`. Measured against a v4-era fixture (schema_version 2, legacy stories, a CR carrying `Effort: M`): `migrate` reports and applies correctly, and `gate.py` immediately after it returns FAIL on conformance, reconcile and index-derived. The drop-in claim is therefore false for the gate, which is the surface an upgrading project runs in CI.
+> **Verification depth:** functional (unit: the page's own upgrade steps parsed out of its fenced block and executed against a v4-era fixture, the resolved config defaults compared with the page's stated ones; mutation: 4 planned mutants applied and killed, including emptying the page's block and restoring the drop-in wording on one of three README routes)
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
