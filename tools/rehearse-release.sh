@@ -21,6 +21,12 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPTS="$REPO/.claude/skills/sdlc-studio/scripts"
 BASELINE="$REPO/tools/release-rehearsal-baseline.txt"
 PY="${PYTHON:-python3}"
+# The harness runs the repository's own scripts, and CPython writes `__pycache__` beside them -
+# INSIDE the repository, which is what US0664 AC3 says must not happen. It was invisible until
+# round 3 taught `_git_status` to report ignored files, and then the criterion's own verifier
+# passed only because a sibling test warmed the cache first. Set at the harness, so a caller
+# overriding PYTHON cannot lose it.
+export PYTHONDONTWRITEBYTECODE=1
 
 # Fixtures are built under a temporary root and NOTHING is written inside the repository. A
 # caller-supplied root that defaulted to `.` once destroyed 23 mutation registrations in this
@@ -46,7 +52,7 @@ rehearse_greenfield() {
   mkdir -p "$root"
 
   step "init run"
-  "$PY" "$SCRIPTS/init.py" --root "$root" run >/dev/null 2>&1 \
+  $PY "$SCRIPTS/init.py" --root "$root" run >/dev/null 2>&1 \
     || fail "greenfield: \`init run\` did not complete"
 
   # An ordinary first story: it describes code nobody has written, so NONE of its declared paths
@@ -73,7 +79,7 @@ STORY
   echo "US0001" > "$root/worklist.txt"
 
   step "sprint plan --write"
-  "$PY" "$SCRIPTS/sprint.py" --root "$root" plan --worklist "$root/worklist.txt" --write \
+  $PY "$SCRIPTS/sprint.py" --root "$root" plan --worklist "$root/worklist.txt" --write \
         --sprint-goal "a visitor can sign up" >/dev/null 2>&1 \
     || fail "greenfield: \`sprint plan --write\` refused a first sprint (exit $?)"
 
@@ -99,9 +105,9 @@ rehearse_upgrade() {
   mkdir -p "$root"
 
   step "init run, then age the workspace back to v4"
-  "$PY" "$SCRIPTS/init.py" --root "$root" run >/dev/null 2>&1 \
+  $PY "$SCRIPTS/init.py" --root "$root" run >/dev/null 2>&1 \
     || fail "upgrade: \`init run\` did not complete"
-  "$PY" - "$root" <<'AGE'
+  $PY - "$root" <<'AGE'
 import pathlib, sys
 root = pathlib.Path(sys.argv[1])
 cfg = root / "sdlc-studio" / ".config.yaml"
@@ -120,7 +126,7 @@ AGE
 
   step "migrate --apply"
   echo "    order: migrate" 
-  "$PY" "$SCRIPTS/migrate.py" --root "$root" --apply >/dev/null 2>&1 \
+  $PY "$SCRIPTS/migrate.py" --root "$root" --apply >/dev/null 2>&1 \
     || fail "upgrade: \`migrate --apply\` did not complete"
 
   # ASSERT THE MIGRATE HAPPENED, on its real deterministic outputs. Dropping `--apply` above
@@ -138,7 +144,7 @@ AGE
 
   step "gate"
   echo "    order: gate"
-  local out; out="$("$PY" "$SCRIPTS/gate.py" --root "$root" 2>&1)"
+  local out; out="$($PY "$SCRIPTS/gate.py" --root "$root" 2>&1)"
   local failing; failing="$(echo "$out" | sed -n 's/^  \[FAIL\] \([a-z-]*\) .*/\1/p' | sort -u)"
   local baselined; baselined="$(sed -n 's/^\([a-z-]*\)|.*/\1/p' "$BASELINE" | sort -u)"
 

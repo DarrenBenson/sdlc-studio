@@ -102,6 +102,13 @@ class GreenfieldRehearsalTests(unittest.TestCase):
             self.assertIn("refused a first sprint", r.stdout + r.stderr)
 
     def test_the_rehearsal_writes_nothing_into_the_working_tree(self) -> None:
+        # COLD. This criterion passed for a whole review round only because two sibling tests
+        # defined above it ran the harness first and warmed the bytecode cache, so the
+        # `__pycache__` the harness itself wrote was already present in `before`. Purging here
+        # makes the test hold when run alone, which is how a reviewer following this repo's own
+        # mutation protocol runs it.
+        for cache in (REPO / ".claude" / "skills" / "sdlc-studio" / "scripts").rglob("__pycache__"):
+            shutil.rmtree(cache, ignore_errors=True)
         before = _git_status()
         r = _run("all")
         # The exit status is checked. Without it this test passes on a rehearsal that failed
