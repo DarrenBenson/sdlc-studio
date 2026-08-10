@@ -145,9 +145,10 @@ Generated into personas/seats/ (provisional until you accept):
 Every card is yours to edit - and the moment you edit one, generation treats it as
 authored and will never overwrite it.
 
-**Already running SDLC Studio on a project?** Nothing changes until you say so - the
-upgrade asks explicit questions (including the numbering one, with three supported
-answers). Your page is **[docs/existing-users.md](docs/existing-users.md)**.
+**Already running SDLC Studio on a project?** Your artifacts are safe and nothing is
+rewritten without asking - but two v5 gates refuse work on day one until you clear them,
+each with a one-line remedy. Your page is
+**[docs/existing-users.md](docs/existing-users.md)**.
 
 ## You just ask
 
@@ -379,7 +380,7 @@ Dani (Engineering), Sam (QA), and Lena (Product) - editable persona cards that b
 <details>
 <summary>How do I upgrade?</summary>
 
-Re-run the installer, or `/sdlc-studio skill-update`. It is a drop-in: no project migration, existing `sdlc-studio/` directories keep working. Everything an existing project needs - what changed (including the two-backlog workflow), the explicit numbering question and its three answers, upgrade steps, breaking-change honesty - lives in **[docs/existing-users.md](docs/existing-users.md)** and, in full, at **[sdlc-studio.com](https://sdlc-studio.com)**.
+Re-run the installer, or `/sdlc-studio skill-update`, then `migrate --apply`. Your existing `sdlc-studio/` directories keep working and nothing is rewritten without asking - but v5 is not a drop-in for the GATE: `sprint plan` refuses a backlog that predates the sizing fields, and `gate.py` fails on history that predates the conformance rule, until you groom or set an adoption cutoff. Both remedies, the two dormant gates you can opt into, the numbering question and its three answers live in **[docs/existing-users.md](docs/existing-users.md)** and, in full, at **[sdlc-studio.com](https://sdlc-studio.com)**.
 
 </details>
 
@@ -437,7 +438,7 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 - **[sdlc-studio.com](https://sdlc-studio.com)** - the documentation home: getting started with guided `init`, greenfield and brownfield worked walkthroughs, the specification layer (PRD, TRD, TSD and the multi-repo PVD), personas and the Three Amigos, the concept guides (two-backlog, sprint planning, two-role review, executable acceptance criteria), the FAQ, and the multi-harness install guide. The files below are the in-repo reference the skill loads at runtime.
 - [The white paper](docs/whitepaper.md) - the mill, described properly: the operating model, the measured evidence, governance, and adoption, for the engineering leader evaluating an agentic SDLC
 - [docs/why-sdlc-studio.md](docs/why-sdlc-studio.md) - the full value argument: thesis, evidence (field + benchmark), economics, and honest caveats
-- [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? What changed (the two-backlog workflow, the numbering question), upgrade steps
+- [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? What v5 refuses on day one and how to clear it, the two-backlog workflow, the numbering question, upgrade steps
 - [docs/INSTALL.md](docs/INSTALL.md) - full installer reference
 - `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths

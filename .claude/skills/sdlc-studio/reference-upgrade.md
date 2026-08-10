@@ -38,6 +38,19 @@
 
 <!-- Load when: upgrading a project's schema version (/sdlc-studio upgrade) -->
 
+## The v5 gate delta - read the consuming page first
+
+This reference covers SCHEMA identity: v1 to v3, the numbering question, and what
+`project upgrade` rewrites. It does NOT cover what v5 will refuse you.
+
+Two v5 gate defaults change what an existing project is held to the moment it upgrades:
+`sprint.breakdown` (default `enforce`) refuses a plan over a backlog that predates the
+`Affects`/`Points` fields, and `conformance.adopt_after` (default unset) judges every
+story a project has ever written. Both have a one-line remedy and neither is a schema
+question, so they live with the consuming-facing upgrade page rather than here:
+**`docs/existing-users.md` in the skill's own repository**, and the same content at
+sdlc-studio.com. Read that first, then come back here for the identity question.
+
 ## Contents
 
 - [Three things called "upgrade"](#three-upgrades)

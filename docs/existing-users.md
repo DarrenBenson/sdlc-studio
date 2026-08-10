@@ -1,15 +1,32 @@
-# SDLC Studio v4 for existing projects
+# SDLC Studio v5 for existing projects
 
-You already run SDLC Studio on a project and want to know what v4 changes, what it
-asks you, and what it will never do without asking. This page is the whole answer;
-the [README](../README.md) stays focused on newcomers.
+You already run SDLC Studio on a project and want to know what v5 changes, what it
+asks you, and what it will refuse until you act. This page is the whole answer; the
+[README](../README.md) stays focused on newcomers.
 
-**The one-line summary: nothing about your running project changes until you say so.**
-v4 is a drop-in skill update - existing `sdlc-studio/` directories keep working,
-sequential ids stay valid, and every new behaviour that affects your artifacts arrives
-as an explicit question, never a silent switch.
+**The one-line summary: your artifacts are safe, but two gates will refuse work on
+day one until you clear them.** Nothing rewrites your files without asking, sequential
+ids stay valid, and every change to your *artifacts* still arrives as an explicit
+question. What is NOT a drop-in is the gate: `sprint plan` refuses a backlog that
+predates the sizing fields, and `gate.py` fails on a history that predates the
+conformance rule. Both have a one-line remedy, both are below, and the upgrade steps in
+this page are executed against a fixture on every boundary gate run - so if they stop
+working, this page reddens a build rather than misleading you.
 
-## What v4 changes
+## What v5 refuses on day one, and how to clear it
+
+| Gate | What it does on an upgraded project | Remedy |
+| --- | --- | --- |
+| `sprint.breakdown` (default `enforce`) | `sprint plan` refuses any batch holding a unit with no `Affects` or `Points`. Your existing backlog predates both fields, so this fires on the first plan. | Groom the units you are about to plan (`sprint breakdown --stories Ready --bugs Open` lists them), or record `sprint.breakdown: judgement` in `sdlc-studio/.config.yaml` as a deliberate decision. Omission is not an escape - an absent config blocks. |
+| `conformance.adopt_after` (default unset) | Unset judges EVERY story you have ever written, so `gate.py` fails on history written before the rule existed. | Set `conformance: { adopt_after: US0123 }` to the last id of your pre-v5 era. Ids at or below it are reported `exempt (pre-adoption)` and the gate judges forward only. |
+| `plan_review` (schema v3) | An independent review of a story's acceptance criteria before it is implemented. Fires on most units. | Nothing to do on an upgrade: it already applied in v4. A project that has never closed a sprint gets a report instead of a refusal for its first run only. |
+| `review.two_role_after` (unset) | Dormant. Set it to a date to require adversarial evidence plus an independent sign-off before Done. | Opt in when you want it; an unset value changes nothing. |
+| `review.test_plan_after` (unset) | Dormant, same shape. | Opt in when you want it. |
+
+The last three are listed because operators ask; only the first two change what your
+project is held to the moment you upgrade.
+
+## What v5 inherits from v4
 
 | Area | What is new | Affects you when |
 | --- | --- | --- |
@@ -41,17 +58,26 @@ letting two writers mint in different modes silently.
 
 ## Upgrade steps
 
+These are the steps the release rehearsal executes against a v4-era fixture on every
+boundary gate run. They are parsed out of this block, so a step that stops working here
+fails a build rather than misleading a reader.
+
 ```bash
-# 1. Update the skill itself (drop-in; no project migration happens here)
-/sdlc-studio skill-update          # or re-run the installer
-
-# 2. Walk your project through the upgrade (asks the numbering question,
-#    offers the generated team, reports every change before applying)
-/sdlc-studio project upgrade       # add --apply when you accept the plan
-
-# 3. Reconcile, so the census confirms the state
-/sdlc-studio reconcile
+migrate.py --apply
+gate.py
 ```
+
+`migrate` is the orchestrator: it runs `project upgrade` (conventions and version),
+`migrate_v3 sizing` (a container's legacy `Effort` to a T-shirt `Size`) and the
+artefact-review sweep, then reports what it upgraded deterministically and what needs a
+human. It auto-applies only the reversible set and never guesses a judgement - a
+request's breakdown, an Issue's triage and a unit's re-size are REPORTED with the exact
+command, never done for you.
+
+Then `gate.py`. Expect it to FAIL the first time, on `conformance`, `reconcile` and
+`index-derived`. That is the honest state of the upgrade path today and it is recorded
+in `tools/release-rehearsal-baseline.txt` with the artefact that will close it. Set
+`conformance.adopt_after` and run `reconcile apply`, and it goes green.
 
 `project upgrade` without `--apply` is a report: it lists what would change (including
 a `team-offer` entry and any legacy amigo cards that would migrate to `seats/`) and

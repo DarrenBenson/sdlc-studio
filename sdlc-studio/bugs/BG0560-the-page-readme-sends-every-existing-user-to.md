@@ -57,6 +57,7 @@ Rewrite docs/existing-users.md as the v5 page and keep the v4 content only where
   longer says anything.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py -k the_pages_own_steps_are_parsed_and_executed
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in the test, hardcode the command sequence instead of parsing it from the page - reverting the page to its v4 text must then stop reddening the test.
 
 ### AC2
@@ -68,6 +69,7 @@ Rewrite docs/existing-users.md as the v5 page and keep the v4 content only where
   page whose own title says v5. The previous plan covered one of the three.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py -k every_readme_route_points_at_the_v5_page_and_claims_no_drop_in
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in `README.md`, restore the drop-in wording on ONE of the three routes - a test checking only the best-known route must fail to notice.
 
 ### AC3
@@ -81,6 +83,7 @@ Rewrite docs/existing-users.md as the v5 page and keep the v4 content only where
   dormant - reddens rather than reassuring a reader who is about to be refused.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py -k the_pages_gate_table_agrees_with_the_resolved_defaults
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in `docs/existing-users.md`, change one row's stated default to the opposite value.
 
 ### AC4
@@ -92,6 +95,7 @@ Rewrite docs/existing-users.md as the v5 page and keep the v4 content only where
   document a migration reads first does not silently omit the half that will refuse them.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py -k the_upgrade_reference_hands_off_the_v5_gate_delta
+- **Verified:** yes (2026-08-10)
 - **Mutant:** in `reference-upgrade.md`, delete the hand-off paragraph.
 
 ## Test Plan

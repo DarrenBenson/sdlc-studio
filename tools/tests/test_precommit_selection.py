@@ -65,6 +65,12 @@ class RunTests(unittest.TestCase):
         `reference-sprint.md` is read by test_docs_single_writer.py, so it selects."""
         self.assertTrue(_selects(".claude/skills/sdlc-studio/reference-sprint.md"))
         self.assertTrue(_selects(".claude/skills/sdlc-studio/help/sprint.md"))
+        # BG0560 moved README here from the skip list. It is asserted over by
+        # test_existing_users_page.py, which reads its three routes to the upgrade page and
+        # checks none of them still calls v5 a drop-in - so a README edit CAN now change a
+        # test outcome, and this class's rule is that such a file selects. The skip entry was
+        # correct until the day a test started reading it.
+        self.assertTrue(_selects("README.md"))
 
     def test_a_hook_a_test_reads_runs_the_suite(self) -> None:
         """The hooks assert over themselves - a change to one can break its own suite, and
@@ -74,9 +80,6 @@ class RunTests(unittest.TestCase):
 
 class SkipTests(unittest.TestCase):
     """AC1: only files that genuinely cannot alter a test outcome may skip."""
-
-    def test_readme_skips(self) -> None:
-        self.assertFalse(_selects("README.md"))
 
     def test_changelog_skips(self) -> None:
         self.assertFalse(_selects("CHANGELOG.md"))
