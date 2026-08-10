@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** docs/existing-users.md, README.md, CHANGELOG.md, .claude/skills/sdlc-studio/reference-upgrade.md
+> **Affects:** README.md, docs/existing-users.md, .claude/skills/sdlc-studio/reference-upgrade.md, .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py
 > **Evidence:** Read on the tracked tree, 2026-08-09, during a v5 release-readiness sweep. `docs/existing-users.md:1` is `# SDLC Studio v4 for existing projects` and its body describes v4's changes and the v3 numbering question. README.md lines 150, 382 and 440 all route an existing user to it, line 382 calling the update `a drop-in: no project migration, existing sdlc-studio/ directories keep working`. Measured against a v4-era fixture (schema_version 2, legacy stories, a CR carrying `Effort: M`): `migrate` reports and applies correctly, and `gate.py` immediately after it returns FAIL on conformance, reconcile and index-derived. The drop-in claim is therefore false for the gate, which is the surface an upgrading project runs in CI.
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio file
@@ -32,19 +32,76 @@ Rewrite docs/existing-users.md as the v5 page and keep the v4 content only where
 
 ## Acceptance Criteria
 
-- [ ] **AC1** docs/existing-users.md describes v5 and names every default whose change alters what an existing project is held to, each with its remedy - verified by running the page's own upgrade steps against a v4-era fixture and reaching a green gate
-- [ ] **AC2** No claim on the page survives that the fixture falsifies, and the drop-in wording in README.md is corrected to match whatever the fixture proves
-- [ ] **AC3** CHANGELOG.md carries a v5.0.0 breaking-change section naming the same set, and the release gate's changelog-fragments lane passes with no uncomposed fragments
-- [ ] **AC4** The v5.0.0 release notes are hand-authored for a reader outside this repository and carry no internal unit id as their only explanation of a change
+> **Plan repaired after a REJECT at plan review (2026-08-09, qa seat, brief `3e9a0bbc44b9`), and
+> NARROWED under D0135.** The release-notes half - the 4,001-line composed draft and the 34
+> uncomposed fragments - moves to SC0007, the charter that cuts the release. The seat proved the
+> two halves mechanically contradictory rather than merely large: `changelog.py compose` folds
+> only into `[Unreleased]`, is destructive and all-or-nothing, and its output carries unit ids on
+> essentially every bullet, so clearing the fragments produces exactly the id-laden section the
+> release-notes criterion required to be free of them.
+>
+> **Ruling - the page is checked by EXECUTING what it says, not by grepping it.** The seat's
+> sharpest finding was that "run the page's own upgrade steps" is mechanised nowhere, so a test
+> hardcoding the sequence still passes after the page is reverted: it measures the fixture, not
+> the document. The steps are therefore PARSED OUT of the page's own fenced command block and
+> run, so a page that stops saying something stops having it checked, and a page whose steps do
+> not work reddens. `Affects` gains the test file the previous plan had nowhere legal to put.
+
+### AC1
+
+- **Given** `docs/existing-users.md` and a v4-era fixture project
+- **When** the shell commands in the page's upgrade-steps fenced block are PARSED FROM THE PAGE
+  and each is run in order against the fixture
+- **Then** every one exits as the page says it will, and the test fails if the page's block is
+  emptied or replaced with commands that do not run - so the check cannot pass on a page that no
+  longer says anything.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py -k the_pages_own_steps_are_parsed_and_executed
+- **Mutant:** in the test, hardcode the command sequence instead of parsing it from the page - reverting the page to its v4 text must then stop reddening the test.
+
+### AC2
+
+- **Given** every route in `README.md` that sends an existing user to the upgrade page - the three
+  at lines 150, 382 and 440, each verified present today
+- **When** they are read
+- **Then** none of them describes v5 as a drop-in requiring no migration, and each points at a
+  page whose own title says v5. The previous plan covered one of the three.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py -k every_readme_route_points_at_the_v5_page_and_claims_no_drop_in
+- **Mutant:** in `README.md`, restore the drop-in wording on ONE of the three routes - a test checking only the best-known route must fail to notice.
+
+### AC3
+
+- **Given** the defaults that decide what an existing project is held to on upgrade -
+  `sprint.breakdown`, `conformance.adopt_after`, `review.two_role_after`, `review.test_plan_after`
+  and `plan_review.enabled`
+- **When** the page's table of what changes is compared against the values those keys actually
+  resolve to
+- **Then** they agree, so a page claiming a gate is dormant when it fires - or fires when it is
+  dormant - reddens rather than reassuring a reader who is about to be refused.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py -k the_pages_gate_table_agrees_with_the_resolved_defaults
+- **Mutant:** in `docs/existing-users.md`, change one row's stated default to the opposite value.
+
+### AC4
+
+- **Given** `reference-upgrade.md`, which covers schema v1 to v3 identity and says nothing about
+  the v5 gate changes
+- **When** it is read
+- **Then** it names the v5 gate delta or explicitly hands the reader to the page that does, so the
+  document a migration reads first does not silently omit the half that will refuse them.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py -k the_upgrade_reference_hands_off_the_v5_gate_delta
+- **Mutant:** in `reference-upgrade.md`, delete the hand-off paragraph.
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | revert docs/existing-users.md to the v4 text - the fixture-driven check that the page's own upgrade steps reach a green gate must fail | docs/existing-users.md describes v5 and names every default whose change alters what an existing project is held to, each with its remedy - verified by running the page's own upgrade steps against a v4-era fixture and reaching a green gate |
-| AC2 | restore the `drop-in: no project migration` wording in README.md - the claim-versus-fixture assertion must fail | No claim on the page survives that the fixture falsifies, and the drop-in wording in README.md is corrected to match whatever the fixture proves |
-| AC3 | delete the v5.0.0 breaking-change heading from CHANGELOG.md, and separately leave one fragment uncomposed - each must redden its own lane | CHANGELOG.md carries a v5.0.0 breaking-change section naming the same set, and the release gate's changelog-fragments lane passes with no uncomposed fragments |
-| AC4 | replace the hand-authored notes with the composed fragment body - the check that no change is explained by a bare unit id alone must fail | The v5.0.0 release notes are hand-authored for a reader outside this repository and carry no internal unit id as their only explanation of a change |
+| AC1 | in `test_existing_users_page.py`, hardcode the command sequence instead of parsing it from `docs/existing-users.md` | |
+| AC2 | in `README.md`, restore the drop-in wording on ONE of the three routes | |
+| AC3 | in `docs/existing-users.md`, change one row's stated default to the opposite value | |
+| AC4 | in `reference-upgrade.md`, delete the hand-off paragraph | |
 
 ## Revision History
 

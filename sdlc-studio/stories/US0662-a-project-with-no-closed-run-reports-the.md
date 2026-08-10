@@ -5,7 +5,7 @@
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/plan_review.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/plan_review.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Epic:** EP0213
 > **Points:** 5
 > **Persona:** Maya Okafor
@@ -18,47 +18,71 @@
 
 ## Acceptance Criteria
 
+> **Plan repaired after a REJECT at plan review (2026-08-09, qa seat, brief `392666879ac1`), and
+> its premise replaced under D0134.** The seat found the arming fact lived in
+> `sdlc-studio/.local/run-archive`, which `.gitignore` documents as state you can delete and lose
+> nothing - so a fresh clone, a CI checkout or a cleaned `.local` re-granted the concession
+> indefinitely, and a project that never runs a sprint was softened permanently. D0134 moves the
+> answer to the COMMITTED retros under `sdlc-studio/retros/`: one per closed run, travelling with
+> the repository, so a clone gives the same verdict as the machine that did the work.
+>
+> Two further findings changed the criteria rather than their wording. `transition.py requirements`
+> returns 0 on every path, so it cannot carry a refusal - the When moves to `transition.py set`.
+> And every row of the first plan passed on an implementation that deleted the gate outright, so
+> the armed case is pinned HERE rather than only in the sibling unit.
+
 ### AC1
 
-**Given** a project created by `init run` that has never closed a run, holding one ordinary
-sized story whose routed band trips the plan-review trigger
-**When** `transition.py requirements --id <story> --status Done` is invoked through the shipped
-CLI
-**Then** the plan-review requirement is REPORTED and the transition is not refused on that
-ground, and the reported line names the condition that will arm it.
+- **Given** a project holding no retro at all, and one story whose routed band trips the
+  plan-review trigger
+- **When** `transition.py set --id <story> --status Done` is run through the shipped CLI
+- **Then** it is not refused on plan-review grounds, and the requirement is REPORTED with the
+  condition that will arm it named.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k first_run_reports_plan_review
-- **Mutant:** in `transition.py`, make the first-run branch return the refusal string instead of the report - the test must fail on the exit status, not only on the wording.
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k a_project_with_no_retro_reports_the_plan_review_requirement
+- **Mutant:** in `plan_review.py`, make the first-run branch return the refusal rather than the report.
 
 ### AC2
 
-**Given** the same fixture
-**When** the reported condition is read back and compared with the predicate the gate itself
-evaluates
-**Then** they are the same expression, so the report cannot describe a condition the gate does
-not use.
+- **Given** the SAME fixture with one retro added under `sdlc-studio/retros/`
+- **When** the identical transition is attempted
+- **Then** it is REFUSED - so this unit proves the gate still exists, rather than leaving that to
+  its sibling and shipping a commit in which the flagship gate is off with nothing able to notice.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py -k arming_condition_is_the_gate_predicate
-- **Mutant:** restate the condition in the message as a literal string rather than deriving it from the predicate - the test must fail (LL0042: derive a message from the guard, never restate it beside it).
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k an_armed_project_still_refuses
+- **Mutant:** in `plan_review.py`, make the softening unconditional rather than reading the retro count.
 
 ### AC3
 
-**Given** a project whose plan-review gate is DORMANT for a reason unrelated to run history
-(schema v2, or `plan_review.enabled: false`)
-**When** the same transition is attempted
-**Then** the output is byte-identical to the current behaviour, so the softening did not become
-a second way of switching the gate off.
+- **Given** a project whose plan-review gate is dormant for an unrelated reason - schema v2, or
+  `plan_review.enabled: false`
+- **When** the same transition is attempted, with stdout, stderr and the exit status all captured
+- **Then** all three are identical to a baseline captured from the SAME fixture with this unit's
+  softening branch disabled, so the comparison is against the old behaviour rather than against a
+  restatement of the new code.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k dormant_gate_unchanged_by_first_run_softening
-- **Mutant:** make the first-run branch run before the dormancy check - the test must fail.
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k a_dormant_gate_is_unchanged_by_the_softening
+- **Mutant:** in `plan_review.py`, evaluate the first-run branch before the dormancy check.
+
+### AC4
+
+- **Given** the retro directory absent, unreadable, or holding files that are not retros
+- **When** the arming predicate is evaluated
+- **Then** it answers ARMED in every one of those cases: the direction this must not fail in is a
+  long-lived project being silently softened, so anything it cannot read counts as history rather
+  than as its absence.
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py -k an_unreadable_history_counts_as_armed
+- **Mutant:** in `plan_review.py`, return the softened verdict from the predicate's exception path.
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in `transition.py`, make the first-run branch return the refusal string instead of the report - the test must fail on the exit status, not only on the wording | |
-| AC2 | restate the arming condition in the message as a literal string rather than deriving it from the predicate - the test must fail (LL0042) | |
-| AC3 | run the first-run branch before the dormancy check - the dormant-gate fixture's output must change, and the test must fail | |
+| AC1 | in `plan_review.py`, change the first-run branch to return the refusal rather than the report | |
+| AC2 | in `plan_review.py`, change the softening to apply unconditionally instead of reading the retro count | |
+| AC3 | in `plan_review.py`, reorder the first-run branch to run before the dormancy check | |
+| AC4 | in `plan_review.py`, change the arming predicate's exception path to return the softened verdict | |
 
 ## Revision History
 

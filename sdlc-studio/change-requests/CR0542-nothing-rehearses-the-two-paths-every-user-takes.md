@@ -1,6 +1,7 @@
 # CR-0542: nothing rehearses the two paths every user takes first, so a defect on them is found by a user: drive greenfield-to-first-plan and v4-to-green-gate through the shipped CLI on every gate run
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0214
 > **Priority:** High
 > **Type:** Feature
 > **Size:** L

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 21 |
+| Proposed | 20 |
 | Approved | 0 |
-| In Progress | 9 |
+| In Progress | 10 |
 | Complete | 489 |
 | Rejected | 1 |
 | Deferred | 0 |
@@ -92,7 +92,7 @@
 | [CR-0539](CR0539-lane-check-reports-181-units-whose-criteria-never.md) | lane-check reports 181 units whose criteria never enter a shipped entry point | Proposed | Medium | process | 2026-08-08 | -- |
 | [CR-0540](CR0540-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-08-09 | -- |
 | [CR-0541](CR0541-a-project-s-first-sprint-reports-the-plan.md) | a project's first sprint reports the plan-review requirement instead of refusing it, so a first-time user reaches a Done story unaided and meets the gate before it can matter | In Progress | High | Improvement | 2026-08-09 | EP0213 |
-| [CR-0542](CR0542-nothing-rehearses-the-two-paths-every-user-takes.md) | nothing rehearses the two paths every user takes first, so a defect on them is found by a user: drive greenfield-to-first-plan and v4-to-green-gate through the shipped CLI on every gate run | Proposed | High | Feature | 2026-08-09 | -- |
+| [CR-0542](CR0542-nothing-rehearses-the-two-paths-every-user-takes.md) | nothing rehearses the two paths every user takes first, so a defect on them is found by a user: drive greenfield-to-first-plan and v4-to-green-gate through the shipped CLI on every gate run | In Progress | High | Feature | 2026-08-09 | EP0214 |
 
 ## Archived Releases
 
