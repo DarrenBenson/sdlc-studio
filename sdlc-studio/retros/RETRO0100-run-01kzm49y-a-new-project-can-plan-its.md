@@ -86,6 +86,15 @@ store. A ranking is a fact about the past; this is a decision, re-made every ret
   structurally cannot see.
 
 ## Known issues carried
+>
+> **Close-repair-override:** BG0568 - the epic-breakdown gate. It genuinely could not wait, and the
+> reason is unusual enough to state: taking this batch's five stories to Done at sign-off made
+> EP0213 and EP0214 stale, and nothing could close them. That drift then failed the gate on the
+> commit carrying the SIGN-OFF PAPERWORK ITSELF, so the run's own record could not be committed
+> until the defect was fixed. It was filed first (BG0568), reviewed over three plan rounds and a
+> delivery round like any other unit, and repaired on an explicit operator instruction rather than
+> inline during the ceremony. The rule that a finding surfaced during a close is filed and deferred
+> is the right one, and this is the case it does not cover: a close that cannot record itself.
 
 Every finding this sprint leaves OPEN, with the ruling somebody made on it. This is the one
 compulsory close item the tree cannot derive: whether an open defect stops the ship is a
