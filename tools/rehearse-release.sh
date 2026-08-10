@@ -112,10 +112,12 @@ cfg.write_text(cfg.read_text(encoding="utf-8").replace("schema_version: 3", "sch
 AGE
 
   step "migrate --apply"
+  echo "    order: migrate" 
   "$PY" "$SCRIPTS/migrate.py" --root "$root" --apply >/dev/null 2>&1 \
     || fail "upgrade: \`migrate --apply\` did not complete"
 
   step "gate"
+  echo "    order: gate"
   local out; out="$("$PY" "$SCRIPTS/gate.py" --root "$root" 2>&1)"
   local failing; failing="$(echo "$out" | sed -n 's/^  \[FAIL\] \([a-z-]*\) .*/\1/p' | sort -u)"
   local baselined; baselined="$(sed -n 's/^\([a-z-]*\)|.*/\1/p' "$BASELINE" | sort -u)"
@@ -131,6 +133,11 @@ AGE
     fail "upgrade: baselined lane(s) now PASS and must be removed from $BASELINE: $(echo "$now_passing" | tr '\n' ' ')"
   fi
 
+  while IFS='|' read -r lane artefact _rest; do
+    case "$lane" in ''|\#*) continue ;; esac
+    [ -n "$artefact" ] || fail "upgrade: baseline row for '$lane' names no clearing artefact"
+    echo "    known gap: $lane -> $artefact"
+  done < "$BASELINE"
   echo "upgrade: OK ($(echo "$baselined" | wc -w) known gap(s), none new)"
 }
 

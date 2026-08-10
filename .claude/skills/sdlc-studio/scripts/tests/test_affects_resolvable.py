@@ -383,8 +383,16 @@ class GreenfieldPlansTests(unittest.TestCase):
             # bare word `Affects` left the path in the output and every assertion green.
             self.assertIn("src/auth/signup.py", out)
             self.assertIn("found at", out)
-            self.assertNotIn("lacks: Affects", out,
-                             "a unit that DECLARES an Affects was told it lacks one")
+            # NOT `assertNotIn("lacks: Affects")`: the same commit changed the render from a
+            # hardcoded `lacks: ` to a derived verb, so that literal appears nowhere and the
+            # assertion could not fail - a round-2 seat proved the declared mutant survived it.
+            # Assert the verb the render CHOSE, and that no absence is claimed of a present field.
+            line = next((ln for ln in out.splitlines() if "US0001" in ln and "Affects" in ln), "")
+            self.assertTrue(line, f"no ungroomed line for US0001 in:\n{out}")
+            self.assertIn("typo:", line,
+                          "a unit that DECLARES an Affects was not reported as a typo")
+            self.assertNotRegex(line, r"\blacks\b",
+                                "a unit that DECLARES an Affects was told it lacks one")
 
     def test_one_predicate_decides_for_every_writer(self) -> None:
         # Replacing the shared predicate must move the writer check AND the grooming gate. A

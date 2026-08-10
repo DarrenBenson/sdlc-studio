@@ -4407,36 +4407,75 @@ class FirstRunPlanReviewSofteningTests(unittest.TestCase):
             self.assertNotEqual(second.returncode, 0,
                                 "the concession survived the first retro, so it does not expire")
 
-    def test_a_dormant_gate_is_unchanged_by_the_softening(self) -> None:
-        # US0662 AC3. The baseline is captured from the SAME fixture with the softening branch
-        # disabled, so the comparison is against the old behaviour rather than a restatement of
-        # the new code. stdout, stderr and the exit status all count, and the run id is the only
-        # thing normalised.
+    _NORMALISED = ("the run id (RUN-...)", "absolute temporary paths")
+
+    def _norm(self, s: str) -> str:
         import re  # noqa: PLC0415
-        def _norm(s):
-            return re.sub(r"RUN-[0-9A-Z]+", "RUN-X", s)
+        s = re.sub(r"RUN-[0-9A-Z]+", "RUN-X", s)
+        return re.sub(r"/tmp/[^\s'\"]+", "/TMP", s)
+
+    def _capture_with_softening_disabled(self, schema, extra):
+        """The BASELINE: this same fixture, run against a copy of the tree with the softening
+        branch removed. Captured rather than described - two round-2 seats found the first form
+        of this test asserting hand-written properties of the NEW behaviour, which is exactly the
+        restatement the criterion was repaired to forbid."""
+        import shutil  # noqa: PLC0415
+        # The whole SKILL tree, not just scripts/: config resolution reads
+        # ../templates/config-defaults.yaml, and a clone missing it warns on every run - which
+        # would show up as a difference and be mistaken for one the softening caused.
+        skill = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory() as d:
+            skill_clone = Path(d) / "sdlc-studio"
+            shutil.copytree(skill, skill_clone,
+                            ignore=shutil.ignore_patterns("__pycache__", "tests", ".local"))
+            clone = skill_clone / "scripts"
+            pr = clone / "plan_review.py"
+            text = pr.read_text(encoding="utf-8")
+            marker = "    if not has_run_history(root):"
+            assert text.count(marker) == 1, "the softening branch moved - the baseline is stale"
+            pr.write_text(text.replace(marker, "    if False:"), encoding="utf-8")
+            with tempfile.TemporaryDirectory() as fd:
+                root = self._proj(fd, retros=0, schema=schema, extra=extra)
+                import subprocess  # noqa: PLC0415
+                r = subprocess.run(
+                    [sys.executable, str(clone / "transition.py"), "--root", str(root),
+                     "set", "--id", "US0001", "--status", "In Progress"],
+                    capture_output=True, text=True, timeout=300, check=False)
+                return r.returncode, self._norm(r.stdout), self._norm(r.stderr)
+
+    def test_a_dormant_gate_is_unchanged_by_the_softening(self) -> None:
+        # US0662 AC3, against a CAPTURED baseline: the same fixture run against a tree with the
+        # softening branch disabled. stdout, stderr and the exit status all count; the normalised
+        # fields are named in _NORMALISED so a reader can see what the comparison ignores.
+        self.assertEqual(("the run id (RUN-...)", "absolute temporary paths"), self._NORMALISED)
         for schema, extra in ((2, ""), (3, "\nplan_review:\n  enabled: false\n")):
-            with tempfile.TemporaryDirectory() as d:
-                root = self._proj(d, retros=0, schema=schema, extra=extra)
-                r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
-                self.assertEqual(0, r.returncode)
-                self.assertNotIn("plan-review", _norm(r.stdout + r.stderr),
-                                 f"a DORMANT gate (schema {schema}) emitted a plan-review line, "
-                                 "so the softening became a second way of switching it on")
+            with self.subTest(schema=schema):
+                want = self._capture_with_softening_disabled(schema, extra)
+                with tempfile.TemporaryDirectory() as d:
+                    root = self._proj(d, retros=0, schema=schema, extra=extra)
+                    r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
+                    got = (r.returncode, self._norm(r.stdout), self._norm(r.stderr))
+                self.assertEqual(want, got,
+                                 f"a DORMANT gate (schema {schema}) behaves differently with the "
+                                 "softening in place, so the softening became a second way of "
+                                 "switching it on")
 
     def test_an_upgrading_project_is_unchanged_against_a_captured_baseline(self) -> None:
-        # US0663 AC2. The upgrading case is a project WITH retros, and its behaviour must be the
-        # pre-epic behaviour: a refusal naming the plan-review requirement, byte-identical once
-        # the run id is normalised.
-        import re  # noqa: PLC0415
+        # US0663 AC2, against the same CAPTURED baseline mechanism: a project WITH retros must
+        # behave exactly as it did before this epic, which is the tree with the softening branch
+        # disabled. Asserting properties of the new output instead was the finding two seats
+        # raised, and it is the difference between a comparison and a description.
+        want = self._capture_with_softening_disabled(3, "")
         with tempfile.TemporaryDirectory() as d:
             root = self._proj(d, retros=3)
             r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
-            got = re.sub(r"RUN-[0-9A-Z]+", "RUN-X", r.stdout + r.stderr)
-            self.assertNotEqual(0, r.returncode)
-            self.assertIn("plan-review required (trigger:", got)
-            self.assertNotIn("advisory", got,
-                             "an established project was given the first-run advisory")
+            got = (r.returncode, self._norm(r.stdout), self._norm(r.stderr))
+        self.assertEqual(want, got,
+                         "an established project's behaviour changed - the upgrading case must "
+                         "be byte-identical to the pre-epic tree")
+        self.assertNotEqual(0, got[0])
+        self.assertNotIn("advisory", got[1] + got[2],
+                         "an established project was given the first-run advisory")
 
 
 if __name__ == "__main__":

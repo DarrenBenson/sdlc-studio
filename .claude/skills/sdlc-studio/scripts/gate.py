@@ -1973,7 +1973,10 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         # `--release --only <lane>` run, and a lane nothing can select around makes the mode
         # unusable for anything narrower than the whole gate.
         registry["release-rehearsal"] = _release_rehearsal
-        bound.append("release-rehearsal")
+        # REGISTERED, not BOUND. Binding it refused every `--boundary push --only <lane>` run,
+        # which the base ref supported for every other lane - a scoped boundary run is a caller
+        # deliberately narrowing, and the refusal named mode flags they had not passed. The same
+        # argument that kept this lane off `--release` applies here.
     # The sprint close scopes conformance to the BATCH it owns. On a clean tree the diff scope is
     # empty, so the default lane judges the whole workspace and blocks an in-batch close on another
     # author's out-of-batch debt. Applied AFTER the release swap - a TAG still judges

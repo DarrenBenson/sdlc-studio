@@ -69,11 +69,18 @@
 
 ### AC4
 
-- **Given** the retro directory absent, unreadable, or holding files that are not retros
+> **RETRACTED and narrowed at the round-2 review, 2026-08-10.** The first form demanded ARMED for
+> an absent directory too. Two independent seats proved the code answers SOFTENED there, and the
+> criterion is the half that is wrong: git cannot track an empty directory, so `retros/` is simply
+> missing in a freshly cloned or freshly initialised project, and arming on absence would mean the
+> concession never applied to the population it exists for. The docstring claiming otherwise is
+> corrected in the same commit. What remains is the case that IS load-bearing.
+
+- **Given** a retro directory that exists and cannot be read
 - **When** the arming predicate is evaluated
-- **Then** it answers ARMED in every one of those cases: the direction this must not fail in is a
-  long-lived project being silently softened, so anything it cannot read counts as history rather
-  than as its absence.
+- **Then** it answers ARMED, because something is there and cannot be inspected - and separately,
+  an ABSENT directory and one holding no retro both answer SOFTENED, asserted here so the three
+  cases are distinguished rather than assumed alike.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py -k an_unreadable_history_counts_as_armed
 - **Verified:** yes (2026-08-10)

@@ -529,25 +529,52 @@ class RunHistoryArmsTheGateTests(unittest.TestCase):
                                 "softens the gate on every project it cannot inspect")
             finally:
                 pr.Path = real
+            # The other two named cases, asserted rather than assumed alike: absent, and a
+            # directory holding no retro, both answer SOFTENED. A round-2 seat found the first
+            # form of this criterion demanding ARMED for all three, which the code does not do
+            # and must not - git cannot track an empty directory.
+            with tempfile.TemporaryDirectory() as d2:
+                bare = Path(d2)
+                self.assertFalse(pr.has_run_history(bare), "an ABSENT retro directory armed")
+                (bare / "sdlc-studio" / "retros").mkdir(parents=True)
+                (bare / "sdlc-studio" / "retros" / "_index.md").write_text("x", encoding="utf-8")
+                self.assertFalse(pr.has_run_history(bare),
+                                 "a retro directory holding no retro armed")
+
+    #: The forbidden knob, and the WHOLE-FILE predicate that decides whether a document declares
+    #: it. Shared by the assertion and by its positive control, so the control exercises the
+    #: predicate under test rather than a copy of it - a round-2 seat found the first version
+    #: asserting over a string literal the test had just written, which no production change can
+    #: redden.
+    @staticmethod
+    def _declares_forbidden(text: str) -> bool:
+        import re as _re  # noqa: PLC0415
+        return (bool(_re.search(r"(^|[\s.`])first_run\s*[:=]", text, _re.M))
+                or "plan_review.first_run" in text)
 
     def test_no_configuration_key_can_hold_the_softening_open(self) -> None:
-        # US0663 AC3, replacing a verifier that asserted the PRESENCE of two strings while its
-        # own mutant was an ADDITION - so adding the forbidden key made it pass harder. This is
-        # an ABSENCE assertion over both files, with a positive control below it.
-        forbidden = "first_run"
+        # US0663 AC3. The first verifier asserted the PRESENCE of two strings while its own
+        # mutant was an ADDITION, so adding the key made it pass harder. Its replacement scanned
+        # only 400 characters after `plan_review:` - which reference-config.md does not contain
+        # at all - so the key could be added at the end of the block and escape. This scans the
+        # WHOLE file, in both documents.
         for rel in ("reference-config.md", "templates/config-defaults.yaml"):
             text = (DIR.parent / rel).read_text(encoding="utf-8")
-            self.assertNotIn(f"plan_review.{forbidden}", text, f"{rel} names a knob that could "
-                             "hold the first-run softening open")
-            self.assertNotIn(f"{forbidden}:", text.split("plan_review:")[-1][:400],
-                             f"{rel} adds a first_run key under plan_review")
+            self.assertFalse(self._declares_forbidden(text),
+                             f"{rel} declares a knob that could hold the first-run softening "
+                             f"open - the concession must expire on run history alone")
 
     def test_the_absence_check_reddens_when_such_a_key_is_added(self) -> None:
-        # The positive control for the test above: without it, a check that can never fail
-        # passes for the wrong reason, which is exactly the defect it replaced.
-        sample = "plan_review:\n  affects_files_threshold: 5\n  first_run: report\n"
-        self.assertIn("first_run:", sample.split("plan_review:")[-1][:400],
-                      "the absence assertion cannot detect an added key, so it proves nothing")
+        # The positive control, through the SAME predicate the assertion uses, over the REAL
+        # documents with the key appended at the END - the position the previous window let
+        # escape - and again as prose, which is how reference-config.md would carry it.
+        for rel in ("reference-config.md", "templates/config-defaults.yaml"):
+            text = (DIR.parent / rel).read_text(encoding="utf-8")
+            self.assertTrue(self._declares_forbidden(text + "\n  first_run: report\n"),
+                            f"the absence check cannot detect the key appended to {rel}")
+            self.assertTrue(
+                self._declares_forbidden(text + "\n`plan_review.first_run` - a knob\n"),
+                f"the absence check cannot detect the key documented in prose in {rel}")
 
 
 if __name__ == "__main__":

@@ -21,10 +21,17 @@ from pathlib import Path
 # parents[5], not [4]: [4] is `.claude`. That off-by-one made the doc-surface lane's own tests
 # assert against an error message rather than the lane (BG0559).
 REPO = Path(__file__).resolve().parents[5]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import config  # noqa: E402 - the module under test here: the page's table is checked against
+               # the values config.py resolves, so this file belongs to config.py
 SCRIPTS = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"
 PAGE = REPO / "docs" / "existing-users.md"
 README = REPO / "README.md"
 UPGRADE_REF = REPO / ".claude" / "skills" / "sdlc-studio" / "reference-upgrade.md"
+
+#: The one step the page tells a reader to expect a non-zero exit from, named once rather than
+#: string-matched twice.
+_EXPECTED_TO_FAIL = "gate.py"
 
 #: The defaults that decide what an EXISTING project is held to on upgrade, and what the page must
 #: say about each. Derived here in one place so the page's table and the resolved values cannot
@@ -34,7 +41,13 @@ GATE_TABLE = {
     "conformance.adopt_after": None,
     "review.two_role_after": None,
     "review.test_plan_after": None,
+    "plan_review.enabled": None,
 }
+
+#: Rows the page must describe as DORMANT, because they resolve unset. A round-2 seat rewrote one
+#: of these to "Fires on every story from the moment you upgrade" and the criterion's own Then -
+#: "fires when it is dormant reddens" - did not notice.
+DORMANT_ROWS = ("review.two_role_after", "review.test_plan_after")
 
 
 def _steps_from_page() -> list[str]:
@@ -93,11 +106,11 @@ class PageStepsAreExecutedTests(unittest.TestCase):
                                 f"exist - the page names a command nobody can type")
                 r = subprocess.run([sys.executable, str(path), "--root", str(root), *args],
                                    capture_output=True, text=True, timeout=900, check=False)
-                # `gate.py` is EXPECTED to fail here - the page says so, and the rehearsal
+                # The gate step is EXPECTED to fail here - the page says so, and the rehearsal
                 # baseline records which lanes. What must not happen is a step that cannot run.
                 self.assertNotIn("Traceback", r.stderr,
                                  f"the page's step `{step}` crashed:\n{r.stderr[-800:]}")
-                if script != "gate.py":
+                if script != _EXPECTED_TO_FAIL:
                     self.assertEqual(0, r.returncode,
                                      f"the page's step `{step}` failed:\n{r.stdout}{r.stderr}")
 
@@ -122,8 +135,6 @@ class PageClaimsTests(unittest.TestCase):
             "the page every route points at does not say v5 in its own title")
 
     def test_the_pages_gate_table_agrees_with_the_resolved_defaults(self) -> None:
-        sys.path.insert(0, str(SCRIPTS))
-        import config  # noqa: PLC0415
         text = PAGE.read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -152,8 +163,14 @@ class PageClaimsTests(unittest.TestCase):
         # The two that FIRE must be described as firing, and the dormant ones as dormant.
         self.assertRegex(text, r"`sprint\.breakdown`[^|]*\|[^|]*refuses",
                          "the page does not say sprint.breakdown REFUSES on an upgraded project")
-        self.assertRegex(text, r"`review\.two_role_after`[^|]*\|\s*Dormant",
-                         "the page does not say review.two_role_after is dormant")
+        for key in DORMANT_ROWS:
+            row = next((ln for ln in text.splitlines() if ln.startswith(f"| `{key}`")), "")
+            self.assertTrue(row, f"the page has no row for {key}")
+            self.assertRegex(row, r"\|\s*Dormant",
+                             f"the page's row for {key} does not say it is dormant, though it "
+                             f"resolves unset - a reader is told a gate fires when it does not")
+            self.assertNotRegex(row, r"(?i)\bfires on every\b|\bfrom the moment you upgrade\b",
+                                f"the page's row for {key} describes a dormant gate as firing")
 
     def test_the_upgrade_reference_hands_off_the_v5_gate_delta(self) -> None:
         text = UPGRADE_REF.read_text(encoding="utf-8")

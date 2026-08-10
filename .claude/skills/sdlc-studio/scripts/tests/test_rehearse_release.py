@@ -33,7 +33,7 @@ BASELINE = REPO / "tools" / "release-rehearsal-baseline.txt"
 def _git_status() -> str:
     """The working tree's porcelain status, through `gitutil.git` - the unconfined-raw-git
     ratchet is at zero and a fixture is not a reason to raise it."""
-    return gitutil.git(["status", "--porcelain"], cwd=REPO, check=False).stdout
+    return gitutil.git(["status", "--porcelain"], cwd=REPO, check=False, text=True).stdout
 
 
 def _run(*args, cwd: Path | None = None) -> subprocess.CompletedProcess:
@@ -99,7 +99,10 @@ class GreenfieldRehearsalTests(unittest.TestCase):
 
     def test_the_rehearsal_writes_nothing_into_the_working_tree(self) -> None:
         before = _git_status()
-        _run("all")
+        r = _run("all")
+        # The exit status is checked. Without it this test passes on a rehearsal that failed
+        # outright and therefore wrote nothing - a green that means "it did not run".
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         after = _git_status()
         self.assertEqual(before, after,
                          "the rehearsal changed the working tree - every fixture must be built "
@@ -113,6 +116,14 @@ class GreenfieldRehearsalTests(unittest.TestCase):
                       "the work root is not an mktemp directory, so a fixture can be built "
                       "inside the repository and swept away before anyone sees it")
         self.assertNotIn('WORK="$REPO', text, "the work root is derived from the repository")
+        # And nothing shaped like rehearsal residue is TRACKED. The mutant for this criterion
+        # points the work root inside the repository; running it once and committing swept 41
+        # fixture files onto main, in the very commit whose criterion asserts this cannot happen.
+        # A git-status check cannot see that, because by then the files are committed and clean.
+        tracked = gitutil.git(["ls-files", ".rehearsal-scratch"], cwd=REPO,
+                              check=False, text=True).stdout
+        self.assertEqual("", (tracked or "").strip(),
+                         "rehearsal fixture output is tracked in the repository")
 
 
 class UpgradeRehearsalTests(unittest.TestCase):
@@ -126,9 +137,22 @@ class UpgradeRehearsalTests(unittest.TestCase):
     def test_upgrade_migrates_then_gates(self) -> None:
         r = _run("upgrade")
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-        self.assertIn("migrate --apply", r.stdout)
-        self.assertIn("gate", r.stdout)
         self.assertIn("upgrade: OK", r.stdout)
+        # ORDER, not merely presence. A round-2 seat swapped the two steps and this test stayed
+        # green: the baselined lane set is identical either way, so the criterion's central claim
+        # - migrate THEN gate - was unmeasured. The harness now reports each step as it takes it.
+        order = [ln.split("order:", 1)[1].strip()
+                 for ln in r.stdout.splitlines() if "order:" in ln]
+        self.assertEqual(["migrate", "gate"], order,
+                         f"the upgrade did not run migrate before gate: {order}")
+        # And the migrate's OUTCOME, not its report: the fixture is aged to schema 2 and must
+        # come back at 3. The story promises the upgrade's outcome rather than the report, and
+        # every assertion here had been on the printed report.
+        self.assertIn("schema_version: 2", (REPO / "tools" / "rehearse-release.sh")
+                      .read_text(encoding="utf-8"),
+                      "the fixture is no longer aged back to schema 2, so the migrate has "
+                      "nothing to do and this assertion proves nothing")
+        self.assertIn("known gap:", r.stdout)
 
     def test_the_upgrade_baseline_reddens_in_both_directions(self) -> None:
         """A baseline that only ever tolerates is one that never empties.
@@ -163,6 +187,20 @@ class UpgradeRehearsalTests(unittest.TestCase):
             self.assertIn("now PASS", stale.stdout + stale.stderr)
 
     def test_every_baselined_lane_names_the_artefact_that_clears_it(self) -> None:
+        # Driven through the HARNESS, not by reading the file: a round-2 seat found the first
+        # version reading the baseline directly, so a harness that ignored the clearing-artefact
+        # column could not fail it - the criterion was satisfiable without the CLI ever running.
+        r = _run("upgrade")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        reported = {ln.split("known gap:", 1)[1].split("->")[0].strip()
+                    for ln in r.stdout.splitlines() if "known gap:" in ln}
+        self.assertEqual(self._baseline_lanes(), reported,
+                         "the harness does not report the baseline rows it read, so nothing "
+                         "outside the file can see whether it read the artefact column")
+        for ln in r.stdout.splitlines():
+            if "known gap:" in ln:
+                self.assertRegex(ln, r"->\s*(CR|BG|RFC|US|EP)\d{4}\s*$",
+                                 f"the harness reported a gap with no clearing artefact: {ln}")
         for line in BASELINE.read_text(encoding="utf-8").splitlines():
             if not line.strip() or line.startswith("#"):
                 continue

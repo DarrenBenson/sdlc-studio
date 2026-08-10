@@ -104,3 +104,8 @@ evals/.results/
 
 # Transient agent worktrees (parallel-delivery scratch) - never committed
 .claude/worktrees/
+
+# Rehearsal fixture output. The harness builds under mktemp and never writes here; this exists
+# so a MUTANT that points the work root at the repository cannot be committed by a `git add -A`,
+# which is exactly how 41 fixture files reached main once.
+.rehearsal-scratch/

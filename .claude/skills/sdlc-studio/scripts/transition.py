@@ -1023,9 +1023,11 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         pr_res = plan_review.gate(root, artifact_id, path)
         if not pr_res["ok"]:
             blocks.append(pr_res["reason"])
-        elif pr_res["fired"] and not pr_res["override"]:
-            # The trigger tripped and the gate let it through anyway - a project with no closed
-            # sprint yet. Reported rather than silent: a concession nobody is told about is one
+        elif pr_res.get("softened"):
+            # The SOFTENING fired - a project with no closed sprint yet. Keyed on the gate's own
+            # flag, never re-derived from `fired and not override`: that shape also matched a unit
+            # with an independent APPROVE on record, so every properly reviewed story in every
+            # project carried a spurious advisory. Reported rather than silent: a concession nobody is told about is one
             # they meet as a surprise refusal on the next run, which is the shape this softening
             # exists to remove. Accumulated, never assigned, so it cannot discard a sibling
             # advisory depending on statement order.

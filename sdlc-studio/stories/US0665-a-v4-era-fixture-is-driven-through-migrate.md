@@ -1,4 +1,4 @@
-# US0665: A v4-era fixture is driven through migrate --apply to a GREEN gate, asserting the upgrade's outcome rather than the migrate's report
+# US0665: A v4-era fixture is driven through migrate --apply to a gate matching its recorded baseline, asserting the upgrade's outcome rather than the migrate's report
 
 > **Status:** Draft
 > **Delivers:** CR0542
@@ -13,7 +13,7 @@
 ## User Story
 
 **As a** Maya Okafor
-**I want** A v4-era fixture is driven through migrate --apply to a GREEN gate, asserting the upgrade's outcome rather than the migrate's report
+**I want** A v4-era fixture is driven through migrate --apply to a gate matching its recorded baseline, asserting the upgrade's outcome rather than the migrate's report
 **So that** CR0542 is delivered by work that can be planned and checked
 
 ## Acceptance Criteria

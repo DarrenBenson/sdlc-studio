@@ -229,10 +229,16 @@ def has_run_history(root) -> bool:
     come back every time, for ever. A retro is written per closed run and is committed, so a clone
     answers this the same way the machine that did the work does.
 
-    FAILS TOWARDS HISTORY. Anything unreadable, absent or ambiguous answers True. The direction
-    this must not fail in is a long-lived project being silently treated as new, because that is
-    the direction in which a gate quietly stops applying; erring the other way merely asks a new
-    project for one more thing, which it can see and act on.
+    An UNREADABLE directory answers True - armed. That is the one case where failing towards
+    history is right: something is there and cannot be inspected, and treating it as absence would
+    soften the gate on every project the predicate cannot read.
+
+    An ABSENT directory, and one holding no retro, answer False - softened. Those are not the
+    same case, and an earlier version of this docstring claimed they were. git cannot track an
+    empty directory, so `sdlc-studio/retros/` is simply MISSING in a freshly cloned or freshly
+    initialised project; arming on absence would soften nothing and the concession would never
+    apply to the population it exists for. A project that has closed a sprint has a retro FILE,
+    which is the fact being read.
     """
     d = Path(root) / _RETRO_REL
     try:
@@ -281,7 +287,8 @@ def gate(root, story_id: str, path: Path | str | None = None) -> dict:
         # and meeting it is the first thing it would be asked to do. Report, do not refuse - the
         # concession expires the moment the first retro exists, so nothing has to switch it back
         # on and no setting can hold it open.
-        return {"ok": True, "fired": True, "override": None, "signals": trig["signals"],
+        return {"ok": True, "fired": True, "override": None, "softened": True,
+                "signals": trig["signals"],
                 "reason": ("plan-review REPORTED, not required: this project has closed no "
                            "sprint yet, so the gate arms once its first retro exists under "
                            "sdlc-studio/retros/. Trigger: " + ", ".join(trig["signals"]) +

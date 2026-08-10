@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 52 |
+| Open | 55 |
 | In Progress | 0 |
 | Fixed | 424 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **563** |
+| **Total** | **566** |
 
 ## All Bugs
 
@@ -103,6 +103,9 @@
 | [BG0561](BG0561-a-re-plan-over-an-open-run-resets.md) | a re-plan over an open run resets the appetite to the standing capacity while leaving the resize record standing, so the ledger and the breaker disagree about the ceiling | Open | Medium | 2026-08-09 | 2026-08-09 |
 | [BG0562](BG0562-then-clause-strips-the-bold-markers-off-a.md) | _then_clause strips the bold markers off a non-bulleted Then line before testing for them, so the criterion falls back to its whole block and the overlap check reports the author's own mutant as a 100% restatement | Open | Medium | 2026-08-09 | 2026-08-09 |
 | [BG0563](BG0563-the-test-plan-edit-verb-vocabulary-enumerates-only.md) | the test-plan edit-verb vocabulary enumerates only subtractive verbs, so a mutant that ADDS something cannot be stated and gets reworded until it parses | Open | Medium | 2026-08-10 | 2026-08-10 |
+| [BG0564](BG0564-a-creation-whose-basename-is-a-common-one.md) | a creation whose basename is a common one - `__init__.py`, `README.md` - is still refused as a typo, so the greenfield repair is incomplete for exactly the files new packages create | Open | Medium | 2026-08-10 | 2026-08-10 |
+| [BG0565](BG0565-has-run-history-is-non-recursive-so-a.md) | has_run_history is non-recursive, so a project that archives its retros into a subdirectory reads as never having closed a sprint and is silently softened | Open | Medium | 2026-08-10 | 2026-08-10 |
+| [BG0566](BG0566-npm-run-lint-fix-destroys-an-artefact-whose.md) | npm run lint:fix destroys an artefact whose title contains a dunder: markdownlint infers underscore emphasis and rewrites every metadata line, and the schema validator then cannot find a Status | Open | High | 2026-08-10 | 2026-08-10 |
 
 ## Archived Releases
 
