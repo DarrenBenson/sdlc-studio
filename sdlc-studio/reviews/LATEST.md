@@ -9,6 +9,52 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
+## RUN-01KZQ03V (SC0003) is OPEN - 6 of 8 units delivered, 2 owed
+
+**Every gate that prints a refusal now performs one.** Delivered green, each with its mutants
+applied and killed and a full suite at its commit:
+
+| Unit | |
+| --- | --- |
+| BG0542 | `sprint plan` under `affects_check: block` refuses - exit 2, no run written |
+| BG0543 | the warning ratchet's stale message states the exit code it returns |
+| BG0557 | the close's dry run names what it refused on instead of cutting the name off |
+| BG0536 | the mutation fixture's temp-root guard is pinned in both directions |
+| US0667 | a `Verify:` selector naming no test is refused where it is WRITTEN |
+| US0668 | a selector that cannot be JUDGED is accepted and reported, never refused |
+
+**OWED, and neither is started:**
+
+- **BG0535** - the 53 red criteria. They are STALE SELECTORS, not broken features: `audit_check.py`
+  and `test_review_generate.py` do not exist, and four more name methods renamed out of surviving
+  files. US0667 has now closed the door on new ones; these are the backlog behind it.
+- **US0669** - wiring the corpus sweep into a lane. MEASURED: the `stamps` verb exists, costs 29s,
+  is wired into NOTHING (not npm, not the hook, not the gate), and **exits 1 today** on 5 dead
+  stamps - US0063 AC2, US0273 AC2, US0473 AC4, BG0357 AC4 and AC5. So US0669 is BLOCKED BEHIND
+  BG0535: wiring it before those clear turns every commit red.
+
+**US0667 and US0668 rest at Draft.** The test-plan gate wants an independent plan review before
+they transition, and it has not been run. Nothing is transitioned around it.
+
+### Three premises were checked before coding, and three were wrong
+
+BG0543 demanded every ratchet state exit non-zero: four of five already did, and the fifth exits 0
+by a decision the code documents - *a repaired instance is good news, and refusing the commit that
+repaired it would teach an author to stop repairing*. Building what was asked would have broken it.
+BG0557's first half - dry-run and the real close composing different checklists - could not be
+reproduced; it was a state change between two runs. BG0536's guard was already in the tree; what
+was missing was anything that failed when it was removed.
+
+### BG0569 is the finding to read
+
+**Four instances in three days of a tool or fixture writing into the working tree, every one
+caught by a gate and none by its author.** The fixture that destroyed 23 mutation registrations;
+the rehearsal harness that wrote 41 files onto `main` in the commit whose criterion says it cannot;
+a `verify_ac run --batch` started without `--dry-run` that back-annotated seven untouched stories;
+and a stray `BG0001-x.md` found untracked while repairing the first. Three local guards now exist
+and are correct, and none of them would catch the next one. BG0569 asks for the check that would:
+snapshot the tree including gitignored `.local/`, run the suite, refuse on any difference.
+
 ## RUN-01KZM49Y - a new project can plan its first sprint, and the paths a user arrives on are now driven rather than reasoned about
 
 **8 of 8 units, 44 points delivered, goal ACHIEVED. Sign-off is OWED and is the operator's.**
