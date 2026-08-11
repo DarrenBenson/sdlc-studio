@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 8 |
+| Draft | 9 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 207 |
-| **Total** | **215** |
+| **Total** | **216** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -61,6 +61,7 @@
 | [EP0213](EP0213-a-project-s-first-run-meets-the-plan.md) | A project's first run meets the plan-review gate as a report, and every run after it as a refusal | Done | 2 | -- | 2026-08-09 | 2026-08-09 |
 | [EP0214](EP0214-the-two-paths-a-user-arrives-on-are.md) | The two paths a user arrives on are rehearsed through the shipped CLI, on a tree that must fail before the repairs land | Done | 3 | -- | 2026-08-10 | 2026-08-10 |
 | [EP0215](EP0215-a-verify-selector-that-resolves-to-nothing-is.md) | A Verify selector that resolves to nothing is refused where it is WRITTEN, and the existing corpus is swept | Draft | 3 | -- | 2026-08-11 | 2026-08-11 |
+| [EP0216](EP0216-a-release-states-the-bar-it-was-held.md) | A release states the bar it was held to and discloses, by id, every finding it ships open | Draft | 1 | -- | 2026-08-11 | 2026-08-11 |
 
 ## Archived Releases
 

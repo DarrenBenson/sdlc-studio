@@ -443,6 +443,8 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 - `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths
 - [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - the operating doctrine for running any project with this skill
+- [docs/release-notes-v5.0.0.md](docs/release-notes-v5.0.0.md) - what v5 is, what it refuses, and what changed, for a reader deciding whether to upgrade
+- [docs/known-issues.md](docs/known-issues.md) - the defects this release ships with, by id, and the bar it was held to
 - [CHANGELOG.md](CHANGELOG.md) - release history | [SECURITY.md](SECURITY.md) | [SUPPORT.md](SUPPORT.md)
 
 ## Contributing

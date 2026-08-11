@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 19 |
-| Ready | 3 |
+| Ready | 4 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 8 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 2 |
 | Blocked | 0 |
-| **Total** | **669** |
+| **Total** | **670** |
 
 ## All Stories
 
@@ -109,6 +109,7 @@
 | [US0667](US0667-every-writer-refuses-a-verify-selector-that-resolves.md) | Every writer refuses a Verify selector that resolves to nothing, naming the near miss, and reuses selector_resolves rather than reimplementing it | Draft | EP0215 | 2026-08-11 | 2026-08-11 |
 | [US0668](US0668-a-selector-that-cannot-be-judged-is-accepted.md) | A selector that cannot be JUDGED is accepted and reported unjudged, never refused, so a missing runner never makes the writer unusable | Draft | EP0215 | 2026-08-11 | 2026-08-11 |
 | [US0669](US0669-validate-sweeps-the-existing-corpus-for-unresolvable-selectors.md) | validate sweeps the existing corpus for unresolvable selectors, giving unresolvable_stamps its first caller | Draft | EP0215 | 2026-08-11 | 2026-08-11 |
+| [US0670](US0670-the-release-discloses-every-open-medium-and-low.md) | The release discloses every open Medium and Low finding by id, and the page is derived from the bug corpus rather than maintained by hand | Ready | EP0216 | 2026-08-11 | 2026-08-11 |
 
 ## Archived Releases
 

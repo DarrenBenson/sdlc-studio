@@ -1,0 +1,43 @@
+# US0670: The release discloses every open Medium and Low finding by id, and the page is derived from the bug corpus rather than maintained by hand
+
+> **Status:** Ready
+> **Created:** 2026-08-11
+> **Created-by:** sdlc-studio new
+> **Raised-by:** sdlc-studio; agent; v1
+> **Affects:** docs/known-issues.md, docs/release-notes-v5.0.0.md, tools/tests/test_known_issues.py, README.md
+> **Epic:** EP0216
+> **Points:** 2
+> **Persona:** Maya Okafor
+
+## User Story
+
+**As an** engineering lead deciding whether to adopt a release
+**I want** the defects it ships with listed by id, and the list held true by a guard
+**So that** I can judge what I am taking on rather than infer it from what the notes chose to mention
+
+## Acceptance Criteria
+
+- **AC1:** Given the bug corpus holds an open finding at Medium or Low severity that `docs/known-issues.md` does not list, when the tools suite runs, then it FAILS and names the absent id. Mutant: delete any row from the page's table; the suite must redden.
+- **Verify:** pytest tools/tests/test_known_issues.py -k every_open_medium_or_low_bug_is_disclosed
+- **Verified:** yes (2026-08-11)
+- **AC2:** Given `docs/known-issues.md` lists an id that is not an open Medium or Low finding, when the tools suite runs, then it FAILS and names the stale id. Mutant: add a row for `BG0001`, which is not open; the suite must redden.
+- **Verify:** pytest tools/tests/test_known_issues.py -k nothing_is_listed_that_is_not_open
+- **Verified:** yes (2026-08-11)
+- **AC3:** Given the page's prose states a total and a Medium/Low split, when the tools suite runs, then those figures are recomputed from the page's own table and a disagreement FAILS. Mutant: change the count line without changing the table; the suite must redden.
+- **Verify:** pytest tools/tests/test_known_issues.py -k the_stated_counts_are_read_from_the_table
+- **Verified:** yes (2026-08-11)
+- **AC4:** Given a listed finding's severity differs from the severity in its bug file, when the tools suite runs, then it FAILS and prints both values. Mutant: change one row's severity cell; the suite must redden.
+- **Verify:** pytest tools/tests/test_known_issues.py -k severities_agree_with_the_corpus
+- **Verified:** yes (2026-08-11)
+
+## Summary
+
+D0136 moves the v5.0.0 bar to zero open High-severity findings and rules that the Medium and Low residue ships OPEN, listed by id, triaged to v5.1. A disclosure is only worth something if it cannot quietly stop being true: a page maintained by hand decays in the direction that flatters, because a finding filed after the page was written is simply absent and nothing notices.
+
+So the page ships with the guard that makes its own claim true. D0139 rules the release notes hand-authored for a reader outside this repository, with the composed changelog linked rather than shipped as the notes.
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-08-11 | sdlc-studio | Created via `new` (deterministic) |
