@@ -1,6 +1,6 @@
 # US0668: A selector that cannot be JUDGED is accepted and reported unjudged, never refused, so a missing runner never makes the writer unusable
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0508
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new

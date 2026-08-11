@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0338: Reviewing the PLAN catches what code review cannot: a wrong discriminator, an exemption inherited unscoped, and a missing step that makes...**
+- **L-0337: A number nobody re-measures is wrong.**
+- **L-0336: A guard narrowed to the RIGHT question can be less safe than the wrong one it replaced.**
+- **L-0335: A comparison is satisfied by agreement, INCLUDING agreement the defect produces.**
+- **L-0334: A test that proves a guard works must not depend on the guard working.**
 - **L-0333: **A test that passes only because a sibling ran first is not passing.** US0664 AC3 held for a whole round because two tests above it warmed...**
 - **L-0332: **A declared mutant is executed by strangers - write it so it cannot destroy their work.** "Change the fixture root to the repository root"...**
 - **L-0331: **A guard that hides a fault also hides the evidence of it.** Gitignoring the residue path stopped it being committed and stopped `git...**

@@ -163,8 +163,8 @@ defects and they are tracked. They are not experiences a consumer of the lifecyc
 What it buys you is a release you can read the whole truth about, which is the only kind
 worth shipping from a tool that exists to stop people hiding things.
 
-One item is worth naming here rather than leaving in the list. **58 executable acceptance
-criteria, of 1,899 across 669 stories already at Done, fail when run.** They are stale
+One item is worth naming here rather than leaving in the list. **50 executable acceptance
+criteria, of 1,918 across 673 stories already at Done, fail when run.** They are stale
 selectors rather than broken features: test methods renamed, test files deleted, the criterion
 left pointing at a name that is gone. v5 ships the write-time guard that refuses a new one, and
 puts the 35-minute verification lane on a schedule so the count is reported between releases

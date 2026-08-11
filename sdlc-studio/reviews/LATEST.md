@@ -1,15 +1,34 @@
-
 <!-- close-status:begin -->
-> **RUN-01KZM49Y closed goal-reached.** 8 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
-> Stamped by `sprint close` - edit the prose below, not this block.
+> **RUN-01KZQ03V closing goal-reached.** 19 unit(s) in the batch, all terminal, all signed off
+> under D0138. Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **Run of record:** RUN-01KZ5YXM - the charter queue. 26 of 26 points across 6 units, every
-> one approved at the third review round and signed off under D0126. Two earlier rounds returned
-> REJECT, and the tooling escalated the second to the operator for non-convergence. That
-> escalation stands: both rejected versions passed every automated check in this repository
-> while being wrong.
+> **Run of record:** RUN-01KZQ03V - the v5.0.0 release run. Fourteen High-severity findings
+> closed on evidence, four of them after a REJECT that was answered through `critic repair`
+> rather than re-recorded. Six review rounds in total; every round found something real, and two
+> of them found defects in repairs made earlier in the same run.
 
-## THE v5.0.0 BAR, and where the High backlog stands
+## THE v5.0.0 BAR: MET
+
+`python3 tools/known_issues.py --bar` exits 0: no open finding at Critical or High severity. It
+is a command rather than a sentence, and it refused the tag five times before it stopped.
+
+**41 Medium and Low findings ship OPEN**, listed by id in `docs/known-issues.md`, which is
+GENERATED from the bug corpus and compared byte for byte. Each carries a `not-stop-ship` ruling
+in RETRO0101 under D0136.
+
+**What this run found in its own work, and fixed:** BG0573 - the test written to pin the fixture
+guard is the one that destroyed a reviewer's checkout, because it handed the guard the real root
+and trusted it to refuse. BG0574 - a `--dry-run` took the allocation lock on the repository it
+was asked only to describe, which deadlocked every commit until it was fixed.
+
+**Filed and carried to v5.1:** BG0571 (the spec-agreement guards match word patterns, so a
+passage stating the opposite rule passes), BG0572 (the repo-writes lane attributes any concurrent
+write to the test run), CR0543 (`plan_review` has no adoption cutoff, so the one hard plan gate
+here cannot be turned on by any project with history - including this one), CR0544 (nothing
+reviews a repair's approach or a procedure's plan before it is executed).
+
+**The lesson this run paid for three times:** a comparison is satisfied by agreement, including
+agreement the defect produces. Three tests written here claimed more than they could observe.
 
 **Ten High bugs stand between here and the tag** (D0136): BG0406, BG0457, BG0469, BG0488,
 BG0497, BG0522, BG0523, BG0528, BG0566, BG0569 - 44 points. Three are done: BG0535, BG0551 and

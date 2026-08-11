@@ -1,6 +1,6 @@
 # EP0216: A release states the bar it was held to and discloses, by id, every finding it ships open
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,7 +11,7 @@ A release that reports only what it fixed is a release a reader cannot judge. v5
 
 ## Story Breakdown
 
-- [ ] [US0670: The release discloses every open Medium and Low finding by id, and the page is derived from the bug corpus rather than maintained by hand](../stories/US0670-the-release-discloses-every-open-medium-and-low.md)
+- [x] [US0670: The release discloses every open Medium and Low finding by id, and the page is derived from the bug corpus rather than maintained by hand](../stories/US0670-the-release-discloses-every-open-medium-and-low.md)
 
 ## Revision History
 

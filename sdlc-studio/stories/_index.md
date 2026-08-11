@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 19 |
-| Ready | 4 |
+| Draft | 16 |
+| Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 643 |
+| Done | 647 |
 | Won't Implement | 2 |
 | Deferred | 0 |
 | Superseded | 2 |
@@ -106,10 +106,10 @@
 | [US0664](US0664-a-greenfield-fixture-is-built-from-nothing-and.md) | A greenfield fixture is built from nothing and driven through init run to a written sprint plan, and the lane reddens when that path is broken | Done | EP0214 | 2026-08-10 | 2026-08-10 |
 | [US0665](US0665-a-v4-era-fixture-is-driven-through-migrate.md) | A v4-era fixture is driven through migrate --apply to a gate matching its recorded baseline, asserting the upgrade's outcome rather than the migrate's report | Done | EP0214 | 2026-08-10 | 2026-08-10 |
 | [US0666](US0666-the-rehearsal-runs-as-a-gate-lane-at.md) | The rehearsal runs as a gate lane at the push and release boundaries, with its cost recorded and its fixtures proven to write outside the working tree | Done | EP0214 | 2026-08-10 | 2026-08-10 |
-| [US0667](US0667-every-writer-refuses-a-verify-selector-that-resolves.md) | Every writer refuses a Verify selector that resolves to nothing, naming the near miss, and reuses selector_resolves rather than reimplementing it | Draft | EP0215 | 2026-08-11 | 2026-08-11 |
-| [US0668](US0668-a-selector-that-cannot-be-judged-is-accepted.md) | A selector that cannot be JUDGED is accepted and reported unjudged, never refused, so a missing runner never makes the writer unusable | Draft | EP0215 | 2026-08-11 | 2026-08-11 |
-| [US0669](US0669-validate-sweeps-the-existing-corpus-for-unresolvable-selectors.md) | validate sweeps the existing corpus for unresolvable selectors, giving unresolvable_stamps its first caller | Draft | EP0215 | 2026-08-11 | 2026-08-11 |
-| [US0670](US0670-the-release-discloses-every-open-medium-and-low.md) | The release discloses every open Medium and Low finding by id, and the page is derived from the bug corpus rather than maintained by hand | Ready | EP0216 | 2026-08-11 | 2026-08-11 |
+| [US0667](US0667-every-writer-refuses-a-verify-selector-that-resolves.md) | Every writer refuses a Verify selector that resolves to nothing, naming the near miss, and reuses selector_resolves rather than reimplementing it | Done | EP0215 | 2026-08-11 | 2026-08-11 |
+| [US0668](US0668-a-selector-that-cannot-be-judged-is-accepted.md) | A selector that cannot be JUDGED is accepted and reported unjudged, never refused, so a missing runner never makes the writer unusable | Done | EP0215 | 2026-08-11 | 2026-08-11 |
+| [US0669](US0669-validate-sweeps-the-existing-corpus-for-unresolvable-selectors.md) | validate sweeps the existing corpus for unresolvable selectors, giving unresolvable_stamps its first caller | Done | EP0215 | 2026-08-11 | 2026-08-11 |
+| [US0670](US0670-the-release-discloses-every-open-medium-and-low.md) | The release discloses every open Medium and Low finding by id, and the page is derived from the bug corpus rather than maintained by hand | Done | EP0216 | 2026-08-11 | 2026-08-11 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # CR-0508: a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0215
 > **Priority:** High
 > **Type:** Improvement

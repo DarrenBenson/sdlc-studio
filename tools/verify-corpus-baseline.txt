@@ -1,10 +1,10 @@
 # The corpus verification baseline - what the scheduled `corpus-verify` lane tolerates today.
 #
 # WHY A BASELINE AND NOT A GREEN BAR. `gate.py --release` reports red acceptance criteria across
-# stories already at Done. Measured 2026-08-11 on 1d6b51ea: 58 red of 1,899 across 669 stories in
-# 2,145s. The figure MOVES - it was 106 of 1,824 on 2026-08-07 and 53 of 1,876 on 2026-08-09 - and
+# stories already at Done. Measured 2026-08-12 at the v5.0.0 close: 50 red of 1,918 across 673 stories in 1,825s. The figure MOVES - it was 106 of 1,824 on 2026-08-07 and 53 of 1,876 on 2026-08-09 - and
 # it has been wrong in this repository's own records every time it was carried forward instead of
-# re-run. That is the argument for the lane, not a footnote to it: a number nobody re-measures is
+# re-run - 106, then 53, then 58, and 50 at the tag, with the dead-stamp row moving 5 to 3 in the
+# same measurement. That is the argument for the lane, not a footnote to it: a number nobody re-measures is
 # a number that is wrong, and this one was out by half once and by five two days later.
 # They are stale SELECTORS, not broken features - renamed test methods, deleted test files - and
 # D0137 rules the repairs into v5.1 as their own sweep, because a repair that merely makes a
@@ -24,5 +24,5 @@
 # not yet written, because that is ordinary test-after-story ordering and every greenfield project.
 #
 # metric|count|what it counts
-red-criteria|58|executable acceptance criteria that FAIL when run, across stories already at Done
-dead-stamps|5|criteria stamped `Verified: yes` whose selector now selects nothing
+red-criteria|50|executable acceptance criteria that FAIL when run, across stories already at Done
+dead-stamps|3|criteria stamped `Verified: yes` whose selector now selects nothing

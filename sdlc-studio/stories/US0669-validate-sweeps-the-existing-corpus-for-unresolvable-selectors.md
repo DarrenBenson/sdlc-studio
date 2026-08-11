@@ -1,6 +1,6 @@
 # US0669: validate sweeps the existing corpus for unresolvable selectors, giving unresolvable_stamps its first caller
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0508
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new
@@ -26,6 +26,7 @@
   writes being guarded. `unresolvable_stamps` already does this work and has had no caller.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k validate_reports_an_unresolvable_verify_selector
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `validate.py`, drop the unresolvable-selector sweep from the check.
 
 ### AC2
@@ -35,6 +36,7 @@
 - **Then** neither is reported, so the sweep discriminates rather than flagging the corpus.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k the_sweep_reports_only_what_it_can_judge_and_finds_absent
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `validate.py`, report every selector the sweep examines.
 
 ## Test Plan

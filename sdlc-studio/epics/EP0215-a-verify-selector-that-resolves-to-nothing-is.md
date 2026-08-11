@@ -1,6 +1,6 @@
 # EP0215: A Verify selector that resolves to nothing is refused where it is WRITTEN, and the existing corpus is swept
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 11
 > **Parent:** CR0508
 > **Created:** 2026-08-11
@@ -14,9 +14,9 @@ Decomposed from CR0508. Delivers the work CR0508 requested.
 
 ## Story Breakdown
 
-- [ ] [US0667: Every writer refuses a Verify selector that resolves to nothing, naming the near miss, and reuses selector_resolves rather than reimplementing it](../stories/US0667-every-writer-refuses-a-verify-selector-that-resolves.md)
-- [ ] [US0668: A selector that cannot be JUDGED is accepted and reported unjudged, never refused, so a missing runner never makes the writer unusable](../stories/US0668-a-selector-that-cannot-be-judged-is-accepted.md)
-- [ ] [US0669: validate sweeps the existing corpus for unresolvable selectors, giving unresolvable_stamps its first caller](../stories/US0669-validate-sweeps-the-existing-corpus-for-unresolvable-selectors.md)
+- [x] [US0667: Every writer refuses a Verify selector that resolves to nothing, naming the near miss, and reuses selector_resolves rather than reimplementing it](../stories/US0667-every-writer-refuses-a-verify-selector-that-resolves.md)
+- [x] [US0668: A selector that cannot be JUDGED is accepted and reported unjudged, never refused, so a missing runner never makes the writer unusable](../stories/US0668-a-selector-that-cannot-be-judged-is-accepted.md)
+- [x] [US0669: validate sweeps the existing corpus for unresolvable selectors, giving unresolvable_stamps its first caller](../stories/US0669-validate-sweeps-the-existing-corpus-for-unresolvable-selectors.md)
 
 ## Acceptance Criteria (Epic Level)
 

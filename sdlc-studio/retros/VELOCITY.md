@@ -64,6 +64,19 @@ figure an operator TYPED, which is a claim about what a sprint cost, not a measu
 An empty Source is unrecorded - the rows written before the column existed - and unrecorded is
 what it stays, because back-filling provenance would invent the very thing the column records.
 
+Read the Overhead bound column before comparing two Overhead ratios. The ratio is overhead time
+against delivery time, and delivery is DERIVED by taking the measured overhead out of the run's
+measured span - so every minute the instruments failed to attribute is credited to delivery, and
+the ratio flatters the loop exactly in proportion to how poorly the run was measured. `exact`
+means every component was measured; `lower` means the ratio is a floor and the close report for
+that sprint names the components it excludes. An empty cell is UNRECORDED - a row written before
+this column existed, which every row carrying a ratio and no bound is - and unrecorded is never
+the same as `exact`. Treat such a ratio as a floor of unknown tightness: recomputed with every
+component, the four in this file that carry one all resolve to `lower`, which is the direction
+an unmeasured component always moves it. They are left as written rather than back-filled,
+because this file publishes what was measured at the time and a figure computed today under a
+row dated two months ago is a different claim wearing that row's date.
+
 A `harness` figure is a LOWER BOUND, never an equality. The meter is the session transcript,
 and the transcript records no subagent usage at all: measured on one live session, 6,624,813
 tokens of usage carried ZERO sidechain records. So a sprint that delegated work to agents cost
@@ -74,7 +87,7 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 -->
 # Velocity history
 
-| Retro | Date | Units | Measured | Forecast | Points | Written | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Overhead | Unattributed (s) | Constants | Sample | Model | Note | Source |
+| Retro | Date | Units | Measured | Forecast | Points | Written | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Overhead | Overhead bound | Constants | Sample | Model | Note | Source |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | RETRO0024 | 2026-07-14 | 6 | 6 | 6 | - | - | 1,285,000 | 384,278 | 3.34x | - | - | 1,848 | - | - | base=50000 tpc=5000 | in-sample | claude-opus-4-8 | - | - |
 | RETRO0025 | 2026-07-14 | 5 | 5 | 5 | - | - | 352,600 | 642,358 | 0.55x | - | - | 3,807 | - | - | base=50000 tpc=600 | in-sample | claude-opus-4-8 | - | - |
@@ -136,19 +149,20 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 | RETRO0081 | 2026-07-28 | 31 | 0 | 31 | 102 | - | 6,082,362 | 2,693,917 | - | 26,411 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | mixed | - | harness |
 | RETRO0082 | 2026-07-28 | 34 | 0 | 31 | 112 | - | 5,007,180 | 5,192,890 | - | 46,365 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | mixed | - | harness |
 | RETRO0083 | 2026-07-29 | 52 | 0 | 48 | 107 | - | 6,829,164 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
-| RETRO0084 | 2026-07-30 | 37 | 0 | 32 | 130 | - | 5,168,016 | - | - | - | 0 | - | 3.0 | 0.0 | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
+| RETRO0084 | 2026-07-30 | 37 | 0 | 32 | 130 | - | 5,168,016 | - | - | - | 0 | - | 3.0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
 | RETRO0085 | 2026-07-30 | 44 | 0 | 32 | 115 | - | 5,168,016 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
 | RETRO0086 | 2026-07-31 | 46 | 0 | 39 | 57 | - | 5,675,589 | 4,538,485 | - | 79,623 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
 | RETRO0087 | 2026-08-01 | 37 | 0 | 31 | 27 | - | 5,814,018 | 1,142,349 | - | 42,309 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
-| RETRO0088 | 2026-08-01 | 9 | 0 | 9 | 36 | - | 1,704,600 | 5,731,741 | - | 159,215 | 0 | - | 0.1 | 0.0 | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
+| RETRO0088 | 2026-08-01 | 9 | 0 | 9 | 36 | - | 1,704,600 | 5,731,741 | - | 159,215 | 0 | - | 0.1 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
 | RETRO0089 | 2026-08-02 | 44 | 0 | 43 | 148 | - | 6,705,576 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
 | RETRO0091 | 2026-08-03 | 13 | 0 | 13 | 39 | - | 1,786,590 | 3,332,847 | - | 85,458 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | mixed | - | harness |
-| RETRO0092 | 2026-08-04 | 7 | 0 | 7 | 22 | - | 1,101,627 | 1,802,395 | - | 81,927 | 0 | - | 0.0 | 0.0 | TOKENS_PER_POINT=25000 | out-of-sample | mixed | - | harness |
+| RETRO0092 | 2026-08-04 | 7 | 0 | 7 | 22 | - | 1,101,627 | 1,802,395 | - | 81,927 | 0 | - | 0.0 | - | TOKENS_PER_POINT=25000 | out-of-sample | mixed | - | harness |
 | RETRO0093 | 2026-08-04 | 6 | 0 | 6 | 26 | - | 1,199,718 | 1,055,132 | - | 40,582 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | mixed | - | harness |
-| RETRO0094 | 2026-08-05 | 6 | 0 | 6 | 14 | - | 658,490 | 4,953,336 | - | 353,810 | 0 | - | 0.1 | 0.0 | TOKENS_PER_POINT=25000 | out-of-sample | claude-opus-5 | - | harness |
+| RETRO0094 | 2026-08-05 | 6 | 0 | 6 | 14 | - | 658,490 | 4,953,336 | - | 353,810 | 0 | - | 0.1 | - | TOKENS_PER_POINT=25000 | out-of-sample | claude-opus-5 | - | harness |
 | RETRO0095 | 2026-08-05 | 12 | 0 | 12 | 41 | - | 1,787,764 | 3,017,995 | - | 73,610 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
 | RETRO0096 | 2026-08-06 | 7 | 0 | 7 | 29 | - | 1,264,516 | 1,058,453 | - | 36,498 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
 | RETRO0097 | 2026-08-07 | 19 | 0 | 18 | 18 | 48 | 2,973,570 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
 | RETRO0098 | 2026-08-07 | 8 | 0 | 8 | 42 | - | 1,491,831 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
 | RETRO0099 | 2026-08-08 | 8 | 0 | 8 | 31 | - | 1,377,237 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
 | RETRO0100 | 2026-08-10 | 8 | 0 | 5 | 13 | 34 | 799,686 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
+| RETRO0101 | 2026-08-11 | 19 | 0 | 11 | 77 | - | 2,066,052 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |

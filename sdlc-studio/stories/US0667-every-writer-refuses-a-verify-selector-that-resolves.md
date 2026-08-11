@@ -1,6 +1,6 @@
 # US0667: Every writer refuses a Verify selector that resolves to nothing, naming the near miss, and reuses selector_resolves rather than reimplementing it
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0508
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new

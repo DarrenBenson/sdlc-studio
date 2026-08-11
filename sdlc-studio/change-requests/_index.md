@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 21 |
 | Approved | 0 |
-| In Progress | 7 |
-| Complete | 493 |
+| In Progress | 6 |
+| Complete | 494 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
@@ -60,7 +60,7 @@
 | [CR-0504](CR0504-closing-review-is-doing-the-work-development-should.md) | closing review is doing the work development should have done, and the same five defect classes recur every sprint | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0506](CR0506-a-reject-whose-findings-were-all-repaired-has.md) | a REJECT whose findings were all repaired has no route back to covered, so a fully repaired batch reads identically to one nobody reviewed | Complete | High | Improvement | 2026-07-30 | EP0205 |
 | [CR-0507](CR0507-closing-a-sprint-asks-twenty-questions-when-it.md) | closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies | Proposed | High | Improvement | 2026-07-30 | -- |
-| [CR-0508](CR0508-a-verify-selector-naming-a-test-that-does.md) | a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships | In Progress | High | Improvement | 2026-07-30 | EP0215 |
+| [CR-0508](CR0508-a-verify-selector-naming-a-test-that-does.md) | a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships | Complete | High | Improvement | 2026-07-30 | EP0215 |
 | [CR-0509](CR0509-a-review-worktree-opens-at-a-stale-base.md) | A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet | Proposed | High | Improvement | 2026-07-31 | -- |
 | [CR-0510](CR0510-ceremony-proportional-to-blast-radius-the-process-spends.md) | Ceremony proportional to blast radius: the process spends gate-grade rigour on prose-grade changes, and the machinery that would stop it is built and switched off | Complete | High | Improvement | 2026-07-31 | EP0208 |
 | [CR-0511](CR0511-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-07-31 | -- |
