@@ -732,6 +732,15 @@ class AffectsCheckModesTests(unittest.TestCase):
                 f"> **Affects:** src/thing.py, src/GHOST.py\n> **Points:** 3\n\n"
                 f"## Acceptance Criteria\n\n### AC1: it works\n\n- **Then** it works\n"
                 f"- **Verify:** pytest x\n", encoding="utf-8")
+        # BG0003 is CLEAN. BG0542 made `plan` under `block` actually refuse a contradicted batch,
+        # so the two `batch add` tests below - which used a contradicted unit merely to get a run
+        # open - can no longer use one for setup. Their subject is `batch add`, not `plan`, and a
+        # clean unit keeps each testing what it is named for.
+        (root / "sdlc-studio" / "bugs" / "BG0003-x.md").write_text(
+            "# BG0003: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Affects:** src/thing.py\n> **Points:** 3\n\n"
+            "## Acceptance Criteria\n\n### AC1: it works\n\n- **Then** it works\n"
+            "- **Verify:** pytest src/thing.py\n", encoding="utf-8")
 
     def _cli(self, argv):
         out, err = io.StringIO(), io.StringIO()
@@ -744,19 +753,23 @@ class AffectsCheckModesTests(unittest.TestCase):
             (root / "sdlc-studio" / ".local" / "run-state.json").read_text())["batch"]
 
     def test_block_and_warn_differ_at_plan(self) -> None:
-        """Mutant: announce "nothing is refused" whatever the mode - the two outputs become
-        byte-identical and the config key decides nothing on this path."""
-        outs = {}
+        """BG0521 asked that the two modes differ; BG0542 asked that the difference be a REFUSAL
+        rather than a differently-worded advisory. This asserts the exit code, because the earlier
+        repair changed only the wording and left the command planning either way.
+
+        Mutant: remove the affects-block refusal - `block` returns to advising and the two modes
+        differ only in their prose again.
+        """
+        rcs = {}
         for mode in ("block", "warn"):
             with tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 self._repo(root, mode)
-                _rc, text = self._cli(["plan", "--bugs", "Open", "--no-fetch", "--root", str(root)])
-                outs[mode] = [l for l in text.splitlines() if "Affects contradicted" in l]
-        self.assertTrue(outs["block"] and outs["warn"], outs)
-        self.assertNotEqual(outs["block"], outs["warn"],
-                            "`block` and `warn` produce identical plan output")
-        self.assertIn("REFUSED", outs["block"][0])
+                (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+                rcs[mode] = self._cli(["plan", "--worklist", str(root / "w.txt"), "--write",
+                                       "--no-fetch", "--root", str(root)])[0]
+        self.assertNotEqual(0, rcs["block"], "`block` planned a contradicted batch")
+        self.assertEqual(0, rcs["warn"], "`warn` refused, so the mode decides nothing again")
 
     def test_batch_add_refuses_before_writing(self) -> None:
         """Mutant: reorder the affects check below the batch write - the unit is in the batch
@@ -765,13 +778,13 @@ class AffectsCheckModesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._repo(root, "block")
-            (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+            (root / "w.txt").write_text("BG0003\n", encoding="utf-8")
             rc, _ = self._cli(["plan", "--worklist", str(root / "w.txt"), "--write",
                                "--no-fetch", "--root", str(root)])
             self.assertEqual(rc, 0)
             rc, text = self._cli(["batch", "add", "BG0002", "--reason", "t", "--root", str(root)])
             self.assertEqual(rc, 2, "a blocked unit was accepted")
-            self.assertEqual(self._batch(root), ["BG0001"],
+            self.assertEqual(self._batch(root), ["BG0003"],
                              "the unit was written into the batch before being refused")
             self.assertIn("NOT added", text)
 
@@ -781,13 +794,13 @@ class AffectsCheckModesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._repo(root, "block")
-            (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+            (root / "w.txt").write_text("BG0003\n", encoding="utf-8")
             self._cli(["plan", "--worklist", str(root / "w.txt"), "--write", "--no-fetch",
                        "--root", str(root)])
             rc, _ = self._cli(["batch", "add", "BG0002", "--reason", "t", "--format", "json",
                                "--root", str(root)])
             self.assertEqual(rc, 2, "the json path skipped the check")
-            self.assertEqual(self._batch(root), ["BG0001"])
+            self.assertEqual(self._batch(root), ["BG0003"])
 
     def test_warn_still_warns_and_a_clean_batch_passes(self) -> None:
         """THE POSITIVE CONTROL, which a seat found missing from the whole plan: a refusal wired
@@ -799,7 +812,7 @@ class AffectsCheckModesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._repo(root, "warn")
-            (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+            (root / "w.txt").write_text("BG0003\n", encoding="utf-8")
             self._cli(["plan", "--worklist", str(root / "w.txt"), "--write", "--no-fetch",
                        "--root", str(root)])
             rc, _ = self._cli(["batch", "add", "BG0002", "--reason", "t", "--root", str(root)])
@@ -15151,6 +15164,67 @@ class MutationEvidenceModeTests(unittest.TestCase):
             ok, note = sp.mutation_evidence_note(self._root(d, "blcok"))
             self.assertFalse(ok, "a typo was defaulted, switching a hard bar off silently")
             self.assertIn("blcok", note, "the refusal does not quote the offending value")
+
+
+class AffectsCheckBlockRefusesTests(unittest.TestCase):
+    """BG0542: `sprint.affects_check: block` printed REFUSED, exited 0 and wrote the run anyway.
+
+    BG0521 was filed because `plan` under `block` was byte-identical to `warn`. Its repair made
+    the MESSAGE say REFUSED and left the command unchanged - a gate announcing a refusal it does
+    not perform teaches an operator to read every other refusal as decoration. The exit status and
+    the absence of a written run are the assertions here; the wording is not.
+    """
+
+    _SCRIPTS = Path(__file__).resolve().parents[1]
+
+    def _proj(self, d, *, mode):
+        import subprocess  # noqa: PLC0415
+        root = Path(d)
+        subprocess.run([sys.executable, str(self._SCRIPTS / "init.py"), "--root", str(root),
+                        "run"], capture_output=True, text=True, timeout=300, check=False)
+        (root / "src").mkdir(exist_ok=True)
+        (root / "src" / "real.py").write_text("", encoding="utf-8")
+        cfg = root / "sdlc-studio" / ".config.yaml"
+        cfg.write_text(cfg.read_text(encoding="utf-8")
+                       + f"\nsprint:\n  affects_check: {mode}\n", encoding="utf-8")
+        # A unit whose own Verify line targets a file its Affects does not declare - the
+        # contradiction the mode judges.
+        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+            "# US0001: s\n\n> **Status:** Ready\n> **Epic:** EP0001\n"
+            "> **Affects:** src/real.py\n> **Points:** 3\n\n## Acceptance Criteria\n\n"
+            "### AC1: a\n\n- **Given** x\n- **When** y\n- **Then** z\n"
+            "- **Verify:** pytest tests/test_other.py\n", encoding="utf-8")
+        (root / "wl.txt").write_text("US0001\n", encoding="utf-8")
+        return root
+
+    def _plan(self, root):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPTS / "sprint.py"), "--root", str(root), "plan",
+             "--worklist", str(root / "wl.txt"), "--write", "--sprint-goal", "g"],
+            capture_output=True, text=True, timeout=600, check=False)
+
+    def test_block_refuses_with_a_non_zero_exit_and_writes_no_run(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, mode="block")
+            r = self._plan(root)
+            self.assertNotEqual(0, r.returncode,
+                                "the plan printed a refusal and exited 0:\n" + r.stdout + r.stderr)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists(),
+                             "a REFUSED plan opened a run anyway")
+            self.assertIn("REFUSED", r.stdout + r.stderr)
+
+    def test_warn_still_advises_and_plans(self) -> None:
+        # The positive control. Without it, "block refuses" is satisfied by a plan that refuses
+        # every contradiction whatever the mode - which is the state BG0521 was filed about,
+        # inverted.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, mode="warn")
+            r = self._plan(root)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertTrue((root / "sdlc-studio" / ".local" / "run-state.json").exists(),
+                            "the advisory mode refused the plan")
+
 
 if __name__ == "__main__":
     unittest.main()

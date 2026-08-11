@@ -1,6 +1,6 @@
 # SC0003: v5 run 2: every gate that refuses actually refuses, and the criteria the README claims are run do run
 
-> **Status:** Queued
+> **Status:** Spent
 > **Queue rank:** 2
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio new

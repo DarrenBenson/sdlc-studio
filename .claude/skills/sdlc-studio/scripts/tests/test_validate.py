@@ -2956,5 +2956,69 @@ class RatchetStatesTests(unittest.TestCase):
         self.assertIn("clean.", validate.render_ratchet(
             {"state": "ok", "live": 0, "new": [], "stale": []}).splitlines()[0])
 
+
+class WarningRatchetExitCodeTests(unittest.TestCase):
+    """BG0543: the ratchet's message and its EXIT CODE must agree.
+
+    Every shipped verifier for this lane called `render_ratchet` in-process, which is why an
+    earlier repair could change the wording and leave the exit status untouched. These run the
+    command as a SUBPROCESS and assert the code.
+    """
+
+    _SCRIPTS = pathlib.Path(__file__).resolve().parents[1]
+
+    def _run(self, root):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPTS / "validate.py"), "warning-ratchet",
+             "--root", str(root)],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def _baseline(self, root, entries):
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".validate-warning-baseline.json").write_text(
+            json.dumps({"stamped": "2026-01-01", "entries": entries}), encoding="utf-8")
+
+    _ENTRY = {"id": "US0001", "rule": "affects-undeclared", "target": "x.py", "reason": "r"}
+
+    def test_a_stale_ratchet_baseline_says_it_is_not_refusing(self) -> None:
+        # The measured gap. Stale exits 0 BY DESIGN - a repaired instance is good news - but the
+        # headline said "Not `clean`", and the whole `npm run lint` chain reads exit 0 as clean.
+        # A message and an exit status that disagree is a refusal that does not refuse, pointing
+        # the other way.
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            self._baseline(root, [dict(self._ENTRY)])
+            r = self._run(root)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("REPORTED, not refused", r.stdout,
+                          "the stale headline does not say it is reporting rather than refusing, "
+                          "so a reader infers a refusal from `Not clean` while the command "
+                          "exits 0")
+            self.assertIn("exit 0", r.stdout, "the message does not state the exit code it has")
+
+    def test_every_refusing_ratchet_state_exits_non_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as d:          # corrupt
+            root = pathlib.Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".validate-warning-baseline.json").write_text(
+                "not json", encoding="utf-8")
+            self.assertNotEqual(0, self._run(root).returncode, "a corrupt baseline exited 0")
+        with tempfile.TemporaryDirectory() as d:          # reasonless
+            root = pathlib.Path(d)
+            self._baseline(root, [{**self._ENTRY, "reason": ""}])
+            self.assertNotEqual(0, self._run(root).returncode, "a reasonless entry exited 0")
+
+    def test_a_clean_ratchet_baseline_exits_zero(self) -> None:
+        # The positive control: without it, "every refusing state exits non-zero" is satisfied by
+        # a command that always fails.
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            self._baseline(root, [])
+            r = self._run(root)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("clean", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -983,10 +983,18 @@ def render_ratchet(report: dict) -> str:
         # to stop repairing. But a baseline recording what the tree no longer carries is not a
         # clean one, and saying `clean` here contradicted the very next line this function
         # prints. BG0524: the defect was the WORD, not the exit code.
+        # ...and it SAYS it is not refusing. "Not `clean`" reads as a refusal to anyone who has
+        # not read this function, and the whole `npm run lint` chain treats exit 0 as clean, so
+        # the headline and the exit code disagreed - the same class as a refusal that does not
+        # refuse, pointing the other way. The status is derived from the value actually returned
+        # rather than restated beside it, so the two cannot drift apart again.
         lines.append(f"warning-ratchet: NO NEW instance(s), and the baseline is STALE - "
                      f"{report['live']} recorded, {len(report['stale'])} of them repaired and "
                      f"removable. Not `clean` while the baseline records what the tree no "
-                     f"longer carries.")
+                     f"longer carries - REPORTED, not refused "
+                     f"(exit {0 if report.get('ok', True) else 1}): a repaired instance is good news, "
+                     f"and "
+                     f"refusing the commit that repaired it would teach an author to stop.")
     else:
         lines.append(f"warning-ratchet: clean. {report['live']} recorded instance(s), none new.")
     if report["stale"]:

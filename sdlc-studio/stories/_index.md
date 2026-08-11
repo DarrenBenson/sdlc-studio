@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-08-10
+**Last Updated:** 2026-08-11
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 16 |
+| Draft | 19 |
 | Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 2 |
 | Blocked | 0 |
-| **Total** | **666** |
+| **Total** | **669** |
 
 ## All Stories
 
@@ -106,6 +106,9 @@
 | [US0664](US0664-a-greenfield-fixture-is-built-from-nothing-and.md) | A greenfield fixture is built from nothing and driven through init run to a written sprint plan, and the lane reddens when that path is broken | Done | EP0214 | 2026-08-10 | 2026-08-10 |
 | [US0665](US0665-a-v4-era-fixture-is-driven-through-migrate.md) | A v4-era fixture is driven through migrate --apply to a gate matching its recorded baseline, asserting the upgrade's outcome rather than the migrate's report | Done | EP0214 | 2026-08-10 | 2026-08-10 |
 | [US0666](US0666-the-rehearsal-runs-as-a-gate-lane-at.md) | The rehearsal runs as a gate lane at the push and release boundaries, with its cost recorded and its fixtures proven to write outside the working tree | Done | EP0214 | 2026-08-10 | 2026-08-10 |
+| [US0667](US0667-every-writer-refuses-a-verify-selector-that-resolves.md) | Every writer refuses a Verify selector that resolves to nothing, naming the near miss, and reuses selector_resolves rather than reimplementing it | Draft | EP0215 | 2026-08-11 | 2026-08-11 |
+| [US0668](US0668-a-selector-that-cannot-be-judged-is-accepted.md) | A selector that cannot be JUDGED is accepted and reported unjudged, never refused, so a missing runner never makes the writer unusable | Draft | EP0215 | 2026-08-11 | 2026-08-11 |
+| [US0669](US0669-validate-sweeps-the-existing-corpus-for-unresolvable-selectors.md) | validate sweeps the existing corpus for unresolvable selectors, giving unresolvable_stamps its first caller | Draft | EP0215 | 2026-08-11 | 2026-08-11 |
 
 ## Archived Releases
 

@@ -3729,6 +3729,30 @@ SPLIT_FIX = """  split each one into units of {ceiling} points or fewer, then re
   them with low confidence and the words "should be split"."""
 
 
+def _refuse_affects_blocked(items: list, root) -> None:
+    """The refusal `sprint.affects_check: block` names and, until now, did not perform.
+
+    BG0521 was filed because `plan` under `block` was byte-identical to `warn`. Its repair made
+    the message say REFUSED. It did not make the command refuse: the renderer printed the word,
+    the plan was written and the run opened, and the exit status was 0. That is worse than the
+    honest advisory it replaced - a gate announcing a refusal it does not perform teaches an
+    operator to read every other refusal as decoration.
+    """
+    print(f"sprint plan REFUSED under `sprint.affects_check: block`: {len(items)} unit(s) whose "
+          f"declared Affects is contradicted by their own content. NO PLAN WAS PRINTED and no "
+          f"run was opened.\n", file=sys.stderr)
+    for it in items:
+        if it.get("unresolvable"):
+            print(f"    {it['id']}: declared but not on disk - "
+                  f"{', '.join(it['unresolvable'])}", file=sys.stderr)
+        if it.get("undeclared"):
+            print(f"    {it['id']}: targeted by its own Verify lines but undeclared - "
+                  f"{', '.join(it['undeclared'])}", file=sys.stderr)
+    print("\n  Fix the declaration on the artefact, or set `sprint.affects_check: warn` in\n"
+          "  sdlc-studio/.config.yaml as a recorded decision - the mode is the ONE reader, so\n"
+          "  changing it changes every path at once.", file=sys.stderr)
+
+
 def _refuse_ungroomed(bd: dict, count: int, sel: str) -> None:
     """The refusal. It is the only message the operator gets, so it teaches: what is wrong,
     why a plan over it would be worse than no plan, exactly how to fix each unit, and how to
@@ -8388,6 +8412,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
     # either, and it cannot place a unit whose collisions are invisible. The counterweight that
     # stops this becoming a blanket escape is on the close, which reports what the rung actually
     # groomed.
+    # The affects-check block, performed where every other refusal is performed: BEFORE the run
+    # is opened and before the plan is written, with a non-zero exit. The renderer that prints
+    # `REFUSED` runs later and is a renderer; it decided nothing, which is BG0542.
+    _aff = (bd or {}).get("affects_advisories") or []
+    if _aff and _affects_blocking(args.root):
+        _refuse_affects_blocked(_aff, args.root)
+        return 2
     ungroomed_blocks = bool(bd and bd["ungroomed"]) and _ungroomed_blocks_at(args)
     if bd and (bd["ungroomed"] or bd["oversized"]):
         if bd["blocking"]:
