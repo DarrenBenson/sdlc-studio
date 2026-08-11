@@ -27,6 +27,7 @@
   selector and the near miss it can find.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k a_verify_selector_naming_no_test_is_refused_at_write
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `file_finding.py`, remove the selector check from the write path.
 
 ### AC2
@@ -38,6 +39,7 @@
   question is the divergent-reader defect this repository has now filed four times.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k one_reader_answers_whether_a_selector_resolves
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `file_finding.py`, inline a copy of the resolution test that differs on a method-in-another-class selector.
 
 ### AC3
@@ -46,7 +48,8 @@
 - **When** it is written
 - **Then** it is accepted, proving the guard discriminates rather than refusing every write.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py -k a_resolving_verify_selector_is_accepted
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k a_resolving_verify_selector_is_accepted
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `file_finding.py`, make the selector check refuse unconditionally.
 
 ## Test Plan

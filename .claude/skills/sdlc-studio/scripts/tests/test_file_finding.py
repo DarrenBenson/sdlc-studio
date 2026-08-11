@@ -2624,5 +2624,77 @@ class WriterMatchesParserTests(unittest.TestCase):
         self.assertTrue(va.parse_story(text),
                         f"the DERIVED criteria block is unreadable:\n{block}")
 
+
+class VerifySelectorWriteGuardTests(unittest.TestCase):
+    """US0667/US0668 (CR0508): a `Verify:` selector naming no test is refused where it is WRITTEN.
+
+    `verify_ac.selector_resolves` already answered this and no writer called it, so an AC could be
+    authored, committed and read as evidence while pointing at nothing - surfacing only if
+    somebody later ran `verify_ac`. This repository's scar: four units shipped with Verify lines
+    verifying NOTHING, and it recurred twice in one session.
+    """
+
+    _SCRIPTS = Path(__file__).resolve().parents[1]
+
+    def _file(self, ac):
+        import json, subprocess, tempfile  # noqa: PLC0415
+        fields = {"title": "probe", "severity": "Low", "points": 1,
+                  "affects": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+                  "summary": "probe", "steps": "probe", "fix": "probe", "acs": [ac]}
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+            json.dump(fields, fh)
+            path = fh.name
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPTS / "file_finding.py"), "file", "--type", "bug",
+             "--fields-file", path, "--dry-run"],
+            capture_output=True, text=True, timeout=900, check=False)
+
+    def test_a_verify_selector_naming_no_test_is_refused_at_write(self) -> None:
+        # A REAL file, a REAL method name, the WRONG class - the exact shape that recurred twice.
+        r = self._file("it works. **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/"
+                       "test_validate.py::NoSuchClassHere::test_nope")
+        self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("names no test that exists", r.stdout + r.stderr)
+
+    def test_one_reader_answers_whether_a_selector_resolves(self) -> None:
+        """AC2: `verify_ac.selector_resolves` decides, never a second copy. Replacing it must move
+        the WRITER - a divergent reader is the defect this repository has filed four times, and it
+        would be especially pointless here where the first implementation is complete and tested.
+        """
+        sys.path.insert(0, str(self._SCRIPTS))
+        import file_finding as ff, verify_ac  # noqa: PLC0415
+        real = verify_ac.selector_resolves
+        try:
+            verify_ac.selector_resolves = lambda *a, **k: False  # noqa: ARG005
+            with self.assertRaises(ValueError):
+                ff.check_verify_selectors(".", {"acs": ["x. **Verify:** shell true"]})
+            verify_ac.selector_resolves = lambda *a, **k: True  # noqa: ARG005
+            self.assertEqual([], ff.check_verify_selectors(
+                ".", {"acs": ["x. **Verify:** pytest nowhere::Nope::test_nope"]}),
+                "the writer did not follow the shared resolver")
+        finally:
+            verify_ac.selector_resolves = real
+
+    def test_a_resolving_verify_selector_is_accepted(self) -> None:
+        # The positive control: the guard must discriminate, not refuse every write.
+        r = self._file("it works. **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/"
+                       "test_validate.py -k WarningRatchetExitCode")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+
+    def test_an_unjudgeable_selector_is_accepted_and_reported(self) -> None:
+        # US0668. Refusing what cannot be judged would make every writer unusable on a machine
+        # missing one runner - a worse failure than the one being fixed.
+        r = self._file("it works. **Verify:** shell true")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("not judged here", r.stdout + r.stderr)
+
+    def test_a_judgeable_unresolvable_selector_is_still_refused(self) -> None:
+        # The control for the control: "accept what cannot be judged" is otherwise satisfied by
+        # accepting everything.
+        r = self._file("it works. **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/"
+                       "test_validate.py::AlsoNotAClass::test_nope")
+        self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

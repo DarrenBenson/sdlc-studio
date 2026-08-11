@@ -388,6 +388,69 @@ def affects_suggestions(repo_root: Path | str, unresolvable: list[str]) -> str:
     return "\n".join(lines)
 
 
+def _verify_selectors(fields: dict) -> list[str]:
+    """Every `Verify:` expression this artefact's criteria carry, from the fields a writer holds."""
+    import re as _re  # noqa: PLC0415 - local: only the write path parses these
+    out: list[str] = []
+    for value in (fields.get("acs") or []):
+        for m in _re.finditer(r"\*\*Verify:\*\*\s*(.+)", str(value)):
+            out.append(m.group(1).strip())
+    for key in ("verify", "acs_text", "body"):
+        for m in _re.finditer(r"\*\*Verify:\*\*\s*(.+)", str(fields.get(key) or "")):
+            out.append(m.group(1).strip())
+    return [s for s in out if s]
+
+
+def check_verify_selectors(repo_root: Path | str, fields: dict) -> list[str]:
+    """Refuse - BEFORE an id is allocated or a byte written - a `Verify:` selector naming a test
+    that does not exist. Returns the selectors it could not JUDGE, for the caller to report.
+
+    `verify_ac.selector_resolves` already answers this and `unresolvable_stamps` already reports
+    it; no writer called either, so an AC could be authored, committed and read as evidence while
+    pointing at nothing. The error surfaced only when somebody later ran `verify_ac`, and only if
+    they did. This repository's own scar: four units shipped with Verify lines verifying NOTHING,
+    and it recurred twice in one session - the author typed the class name the test OUGHT to have
+    had rather than reading the file, both times a single `awk` away.
+
+    THE ONE READER. `selector_resolves` decides, never a second copy: a divergent reader is the
+    defect this repository has now filed four times, and it would be especially pointless here
+    where the first implementation is complete and tested.
+
+    UNJUDGEABLE IS NOT UNRESOLVABLE. An unknown runner, a `shell` verifier, a runner not installed
+    on this machine - all return None and are ACCEPTED, then reported. Refusing what cannot be
+    judged would make every writer unusable on a machine missing one runner, which is a worse
+    failure than the one being fixed.
+    """
+    selectors = _verify_selectors(fields)
+    if not selectors:
+        return []
+    import verify_ac  # noqa: PLC0415 - local: the ONE resolver, shared with the sweep
+    root = Path(repo_root)
+    dead, unjudged = [], []
+    for expr in selectors:
+        try:
+            verdict = verify_ac.selector_resolves(expr, cwd=root)
+        except Exception:  # noqa: BLE001 - a resolver fault must not become a refusal
+            verdict = None
+        if verdict is False:
+            dead.append(expr)
+        elif verdict is None:
+            unjudged.append(expr)
+    if dead:
+        raise ValueError(
+            "a `Verify:` selector names no test that exists - refused. Nothing was allocated, "
+            "nothing was written.\n"
+            + "\n".join(f"    {e}" for e in dead)
+            + "\n  Why: the Verify line is the only mechanical part of an acceptance criterion, "
+              "so a selector resolving to nothing turns a checkable claim into prose while "
+              "keeping the appearance of a check - and the failure is silent and time-shifted, "
+              "surfacing only if somebody later runs `verify_ac`.\n"
+              "  The overwhelmingly common cause is a real test named slightly wrong: read the "
+              "file rather than typing the name it ought to have had."
+        )
+    return unjudged
+
+
 def check_affects_resolvable(repo_root: Path | str, affects_value: str,
                              type_: str | None = None, label: str = "") -> None:
     """Refuse - BEFORE an id is allocated or a byte written - a declared `Affects` that resolves
@@ -1663,6 +1726,12 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # ... and refuse a declared `Affects` that resolves to nothing, before an id is allocated,
     # from the ONE seam every writer shares - naming the closest basename match where there is one.
     check_affects_resolvable(root, fields.get("affects"), type_)
+    # ... and refuse a `Verify:` selector that names no test that exists, from the same seam and
+    # for the same reason: writing a reference before establishing its referent is an ordering
+    # mistake a machine can catch and a human reliably will not.
+    for _unjudged in check_verify_selectors(root, fields):
+        print(f"note: `Verify:` selector not judged here (unknown runner, shell verifier, or a "
+              f"runner not installed): {_unjudged}", file=sys.stderr)
     # ... and COMPLETE an understated one: a source file declared without its existing test is a
     # footprint smaller than the change, and the tool holds the exact path at the moment it would
     # otherwise only complain about it. Written, then reported - never silently.

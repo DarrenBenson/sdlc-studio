@@ -28,6 +28,7 @@
   being fixed.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k an_unjudgeable_selector_is_accepted_and_reported
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `file_finding.py`, treat an unjudgeable selector as unresolvable and refuse it.
 
 ### AC2
@@ -38,6 +39,7 @@
   judged" is satisfied by accepting everything.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k a_judgeable_unresolvable_selector_is_still_refused
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `file_finding.py`, classify every selector as unjudgeable.
 
 ## Test Plan
