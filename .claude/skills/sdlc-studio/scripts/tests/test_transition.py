@@ -4661,5 +4661,47 @@ class EpicBreakdownGateTests(unittest.TestCase):
                              f"{rows[-1]}")
 
 
+class FixtureRootGuardTests(unittest.TestCase):
+    """BG0536: a fixture helper that takes its root as a parameter will eventually be given the
+    wrong one, and writing to a real path looks exactly like writing to a temp path until you
+    check what changed.
+
+    A placeholder call passed `"."` and wrote `src/thing.py`, a fake bug and - worst -
+    `sdlc-studio/.local/mutation-runs.json` into the REAL repository on every run, destroying 23
+    mutation registrations that `.local/` being gitignored made unrecoverable. The guard that
+    stops it has been in the tree since; nothing failed if it was removed, which is the
+    difference between a guard and a comment.
+    """
+
+    def test_the_fixture_refuses_to_build_outside_a_temp_directory(self) -> None:
+        repo = Path(__file__).resolve().parents[5]
+        # The WHOLE workspace, not `repo.glob("*")`. The paths this fixture writes are NESTED -
+        # `sdlc-studio/bugs/BG0001-x.md`, `sdlc-studio/.local/mutation-runs.json`, `src/thing.py` -
+        # so a top-level listing cannot see any of them. The first version of this assertion made
+        # exactly that mistake, and a stray `BG0001-x.md` from another fixture was sitting in the
+        # tree at the time, invisible to it.
+        watched = ("sdlc-studio/bugs", "sdlc-studio/.local", "src")
+        def _snap():
+            out = {}
+            for rel in watched:
+                d = repo / rel
+                out[rel] = sorted(p.name for p in d.rglob("*")) if d.is_dir() else []
+            return out
+        before = _snap()
+        with self.assertRaises(AssertionError) as ctx:
+            SurvivorGateTests()._repo(str(repo), [])
+        self.assertIn("working tree", str(ctx.exception).lower(),
+                      "the refusal does not say why the root was rejected")
+        self.assertEqual(before, _snap(),
+                         "the fixture wrote into the repository before refusing")
+
+    def test_the_fixture_still_builds_under_a_temp_directory(self) -> None:
+        # The positive control: "refuses the wrong root" is otherwise satisfied by a helper that
+        # refuses every root, leaving a fixture nobody can build.
+        with tempfile.TemporaryDirectory() as d:
+            root = SurvivorGateTests()._repo(d, [])
+            self.assertTrue(Path(root if isinstance(root, (str, Path)) else d).exists())
+
+
 if __name__ == "__main__":
     unittest.main()
