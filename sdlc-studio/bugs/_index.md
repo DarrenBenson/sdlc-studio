@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 51 |
+| Open | 49 |
 | In Progress | 0 |
-| Fixed | 432 |
+| Fixed | 434 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -74,7 +74,7 @@
 | [BG0532](BG0532-alias-map-decodes-every-artefact-in-the-project.md) | alias_map decodes every artefact in the project with a bare read_text, so one unreadable file takes down any command that resolves an id | Open | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0533](BG0533-the-mutation-engine-enumerates-a-mutant-at-one.md) | the mutation engine enumerates a mutant at one line and applies it at another, because only the enumerator excludes multiline-string spans when counting occurrences | Fixed | High | 2026-08-06 | 2026-08-06 |
 | [BG0534](BG0534-testplan-derive-s-edit-verb-check-is-an.md) | testplan derive's edit-verb check is an enumeration, so it refuses honest mutants written with a verb nobody listed | Open | Medium | 2026-08-06 | 2026-08-06 |
-| [BG0535](BG0535-106-of-1824-executable-acceptance-criteria-are-red.md) | 106 of 1824 executable acceptance criteria are RED across stories already marked Done, and the lane that would have said so has never run to completion | Open | High | 2026-08-07 | 2026-08-07 |
+| [BG0535](BG0535-106-of-1824-executable-acceptance-criteria-are-red.md) | 106 of 1824 executable acceptance criteria are RED across stories already marked Done, and the lane that would have said so has never run to completion | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0536](BG0536-a-test-fixture-that-accepts-a-caller-supplied.md) | a test fixture that accepts a caller-supplied root can write into the working tree, and one did - destroying 23 recorded mutation registrations | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0537](BG0537-check-root-docs-reads-raw-lines-while-check.md) | check_root_docs reads raw lines while check_body_links blanks code spans, so a link inside backticks is an example in one directory and a broken reference in another | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0538](BG0538-a-release-cut-mints-an-affects-unresolvable-warning.md) | a release cut mints an affects-unresolvable warning for every unit that declared its own changelog fragment, because compose deletes the file the unit named | Open | Medium | 2026-08-07 | 2026-08-07 |
@@ -109,7 +109,7 @@
 | [BG0567](BG0567-the-upgrading-project-baseline-compares-against-this-tree.md) | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere sits on both sides and is invisible | Open | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0568](BG0568-an-epic-can-never-reach-done-the-test.md) | an epic can never reach Done - the test-plan gate holds a container whose completion is derived, and nothing else checks its breakdown | Fixed | High | 2026-08-10 | 2026-08-10 |
 | [BG0569](BG0569-nothing-stops-a-tool-or-fixture-writing-into.md) | nothing stops a tool or fixture writing into the working tree, and it happened three times in two days - each caught by a gate rather than by its author | Open | High | 2026-08-11 | 2026-08-11 |
-| [BG0570](BG0570-the-write-time-verify-guard-cannot-tell-a.md) | the write-time Verify guard cannot tell a typo from an ordering, so it refuses the first story of every greenfield project | Open | High | 2026-08-11 | 2026-08-11 |
+| [BG0570](BG0570-the-write-time-verify-guard-cannot-tell-a.md) | the write-time Verify guard cannot tell a typo from an ordering, so it refuses the first story of every greenfield project | Fixed | High | 2026-08-11 | 2026-08-11 |
 
 ## Archived Releases
 

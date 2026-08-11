@@ -1,9 +1,10 @@
 # BG0570: the write-time Verify guard cannot tell a typo from an ordering, so it refuses the first story of every greenfield project
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -31,6 +32,7 @@ Separate the two facts before deciding. A helper on `verify_ac` - the module tha
 - **Then** BOTH still REFUSE, so the fix narrows the guard without disarming it.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k a_node_absent_from_an_existing_file_is_still_refused
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `file_finding.py`, treat every False verdict as unjudged.
 
 ### AC2: an ordering is accepted, and so is a file that will not collect
@@ -63,6 +65,7 @@ Separate the two facts before deciding. A helper on `verify_ac` - the module tha
   criterion asserting a behaviour nobody can observe would be a criterion that cannot fail.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k a_selector_that_is_not_a_typo_is_accepted_and_reported
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `file_finding.py`, refuse whenever the target file yields no node list, collapsing the uncollectable case back into the typo case.
 
 ### AC3: a misspelled FILENAME is still a typo
@@ -76,6 +79,7 @@ Separate the two facts before deciding. A helper on `verify_ac` - the module tha
   misspelled filename into "greenfield ordering", which is the hole the guard exists to close.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k a_misspelled_test_filename_is_still_refused
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `file_finding.py`, drop the basename check so an absent target file is always unjudged.
 
 ### AC4: one reader still answers
@@ -89,11 +93,21 @@ Separate the two facts before deciding. A helper on `verify_ac` - the module tha
   the divergence this criterion exists to prevent more likely, not less.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k one_reader_answers_which_file_a_selector_targets
+- **Verified:** yes (2026-08-11)
 - **Mutant:** in `file_finding.py`, inline a regex that splits the selector on `::` instead of calling the helper.
 
 ## Impact
 
 Who: every greenfield project, and any author who writes a story before its test. What breaks: `artifact.py new` and `file_finding.file` refuse to create the artefact at all, so the ordinary TDD sequence is unavailable and a new project cannot write its first story with a Verify line. This is the same consumer-facing class as BG0558, which D0133 was re-scoped around: a guard correct about this repository's mature corpus and wrong about a tree that has not been written yet.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `file_finding.py`, treat every False verdict as unjudged | a typo is still refused |
+| AC2 | in `file_finding.py`, refuse whenever the target file yields no node list, collapsing the uncollectable case into the typo case | an ordering is accepted, and so is a file that will not collect |
+| AC3 | in `file_finding.py`, drop the basename check so an absent target file is always unjudged | a misspelled FILENAME is still a typo |
+| AC4 | in `file_finding.py`, inline a regex splitting the selector instead of calling the shared helper | one reader still answers |
 
 ## Revision History
 

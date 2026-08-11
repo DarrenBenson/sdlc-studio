@@ -1,9 +1,10 @@
 # BG0535: 106 of 1824 executable acceptance criteria are RED across stories already marked Done, and the lane that would have said so has never run to completion
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 8
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Affects:** tools/verify-corpus.sh, tools/verify-corpus-baseline.txt, tools/tests/test_verify_corpus.py, .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
 > **Evidence:** RUN-01KZCAJX, first completed `--release` run, 2026-08-07. `[FAIL] verify [1666.9s]: 106 red AC(s) ... [645 story/stories, 1824 executable AC(s) in 1666s (batched) - OVER the 600s declared budget]`; `[FAIL] conformance [50.9s]: 1 non-conformant unit(s)`; `gate cost: 1726.7s - OVER the 45s budget by 1681.7s; dominant lane: verify at 1666.9s; 940% slower than the 166.0s baseline`. An earlier attempt the same session died at exit 124 under a 1700s timeout.
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio file
@@ -49,8 +50,61 @@ The lane must become runnable. At 1667s against a 600s budget it is outside any 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The first completed run of `gate.py --release` reports **106 red acceptance criteria out of 1824** across 645 stories - every one on a story already at Done.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Two separable problems, and the second is why the first accumulated.
+Narrowed by the recorded ruling of 2026-08-11: this bug closes on the two things that stop the
+rot - the write-time guard and a lane that reads the count between releases. The stale-selector
+repairs are v5.1 work, because a repair that merely makes a criterion pass is worse than the red
+it replaced: it turns a visible stale selector into an invisible vacuous one, and each of the 58
+has to still discriminate for the criterion it was written for.
+
+The guard half of this bug is NOT restated here as a criterion. It is US0667's, whose
+criterion already says both writers refuse a selector naming a test that does not exist,
+and BG0570's, which narrowed that refusal to a typo. A criterion here would share their
+verifier, and two criteria sharing a verifier cannot both discriminate - a regression in
+either fails both and neither says which. What this bug closes on that nothing else does
+is the LANE: the count is now read between releases instead of never.
+
+### AC1: the count is read between releases, and a rise blocks
+
+- **Given** the reason these criteria rotted unobserved - the release verify lane costs ~2,145s
+  against a 600s budget, so nothing ran it and its verdict was never read
+- **When** the scheduled corpus lane runs and finds MORE than the recorded baseline
+- **Then** it BLOCKS, naming the rise, so a new dead selector is caught by the lane rather than by
+  the next release.
+
+- **Verify:** pytest tools/tests/test_verify_corpus.py -k a_count_above_the_baseline_blocks
+- **Verified:** yes (2026-08-11)
+- **Mutant:** in `tools/verify-corpus.sh`, compare only for a fall so a rise passes.
+
+### AC2: a fall blocks too, so the baseline empties
+
+- **Given** a baseline that only ever tolerates, which is one that never empties
+- **When** the lane finds FEWER than the recorded baseline
+- **Then** it BLOCKS as well, requiring the figure to be lowered in the same commit, so a repair is
+  banked rather than left as tolerance available to admit a different defect later.
+
+- **Verify:** pytest tools/tests/test_verify_corpus.py -k a_count_below_the_baseline_also_blocks
+- **Verified:** yes (2026-08-11)
+- **Mutant:** in `tools/verify-corpus.sh`, return early when the observed count is under baseline.
+
+### AC3: the lane reads the tool's own total
+
+- **Given** that the first version of this lane counted output rows containing `::` and reported 3
+  for a corpus of 5, because a `-k` pattern and a bare file target carry no node address
+- **When** the lane needs the count
+- **Then** it reads the total the tool itself printed, because the number a lane prints is the one
+  nobody re-derives - and a lane that miscounts is worse than no lane.
+
+- **Verify:** pytest tools/tests/test_verify_corpus.py -k the_count_is_the_tools_own_total_not_a_count_of_node_shaped_rows
+- **Verified:** yes (2026-08-11)
+- **Mutant:** in `tools/verify-corpus.sh`, count rows matching the node separator instead of parsing the total.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `tools/verify-corpus.sh`, compare only for a fall so a rise passes | the count is read between releases, and a rise blocks |
+| AC2 | in `tools/verify-corpus.sh`, return early when the observed count is under baseline | a fall blocks too, so the baseline empties |
+| AC3 | in `tools/verify-corpus.sh`, count rows matching the node separator instead of parsing the total | the lane reads the tool's own total |
 
 ## Revision History
 
