@@ -9,6 +9,27 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
+## THE v5.0.0 BAR, and where the High backlog stands
+
+**Ten High bugs stand between here and the tag** (D0136): BG0406, BG0457, BG0469, BG0488,
+BG0497, BG0522, BG0523, BG0528, BG0566, BG0569 - 44 points. Three are done: BG0535, BG0551 and
+BG0570. The 37 Medium and 1 Low ship disclosed against v5.1.
+
+Then SC0007's mechanics: compose 48 changelog fragments, decide `conformance.adopt_after` for the
+2 non-conformant units, sign off the 8 stories at Review and 3 at Ready, `release_cut record-green`
+then `tag-check`, hand-authored notes (D0139), tag, push.
+
+**Six of these ten carry criteria that restate the finding and state nothing about passing**
+(BG0469, BG0488, BG0497, BG0522, BG0523, BG0528). Budget the grooming on top of the points -
+`refine --into` output carries placeholders, and a unit cannot transition without criteria a test
+can fail on. Every one of the three closed so far needed its criteria rewritten before it moved.
+
+**What the three closed units cost, as a pace input:** roughly an hour each at the rigour the
+gates enforce. Each took two independent review rounds, every one returning REJECT on something
+real - a discriminator that would have refused every selector in a fresh clone, a near miss
+computed and discarded, a criterion that could not be observed, a shipped doctrine falsified by
+its own diff. Not one round was ceremony.
+
 ## 2026-08-11: the release bar MOVED, and BG0535 is closed against the new one
 
 The operator re-scoped v5.0.0 on 2026-08-11. Read the four rulings before planning anything:
