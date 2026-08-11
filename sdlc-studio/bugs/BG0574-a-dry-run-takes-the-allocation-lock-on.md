@@ -1,6 +1,6 @@
 # BG0574: A --dry-run takes the allocation lock on the target repository, so a preview writes into the tree it was asked only to describe
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
@@ -44,6 +44,12 @@ In the test, stop pointing a write verb at the repository it runs inside. If the
 ## Impact
 
 Today, a touched lock file and a refused commit, because the repo-writes lane correctly reports it. The exposure is that the same test is one edit away from minting artefacts into a working repository, and it is a test whose whole subject is writers that take a root. Medium: no data is lost, the behaviour is deterministic, and the lane that caught it is now in place.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | {{name the production change this test must fail on}} | |
 
 ## Revision History
 

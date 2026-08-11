@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 51 |
+| Open | 40 |
 | In Progress | 0 |
-| Fixed | 436 |
+| Fixed | 447 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -20,16 +20,16 @@
 | ID | Title | Status | Severity | Created | Updated |
 | --- | --- | --- | --- | --- | --- |
 | [BG0350](BG0350-25-done-stories-carry-no-independent-critic-verdict.md) | 25 Done stories carry no independent critic verdict, waived rather than cleared | Open | Low | 2026-07-28 | 2026-07-28 |
-| [BG0406](BG0406-three-units-delivered-nothing-bg0372-writes-no-velocity.md) | Three units delivered nothing: BG0372 writes no velocity column, BG0359's detector is inert and would be wrong, and BG0357's consumer key was wrong | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0406](BG0406-three-units-delivered-nothing-bg0372-writes-no-velocity.md) | Three units delivered nothing: BG0372 writes no velocity column, BG0359's detector is inert and would be wrong, and BG0357's consumer key was wrong | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0457](BG0457-four-spec-agreement-guards-pin-prose-to-prose.md) | Four spec-agreement guards pin prose to prose: a set comparison that cannot fail in the reverse direction, a whole-file substring satisfied by the Revision History row describing the change, a word-presence check an unrelated sentence already satisfies, and a source-substring wiring check a comment satisfies | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Open | Medium | 2026-07-31 | 2026-07-31 |
-| [BG0469](BG0469-close-owed-reports-a-close-that-already-happened.md) | close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0469](BG0469-close-owed-reports-a-close-that-already-happened.md) | close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0477](BG0477-refine-mints-stories-nothing-can-plan-placeholder-acceptance.md) | refine mints stories nothing can plan: placeholder acceptance criteria, unfilled user-story fields, and a persona that is no seat | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0485](BG0485-the-goal-review-panel-maps-a-seat-s.md) | the goal-review panel maps a seat's no to partial, and fans a whole-goal answer across every clause | Fixed | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0486](BG0486-duplicate-verifiers-are-grouped-on-a-normalised-string.md) | duplicate verifiers are grouped on a normalised string, so two ACs running the same command can read as distinct | Open | Medium | 2026-08-02 | 2026-08-02 |
-| [BG0488](BG0488-us0608-and-us0609-ship-a-feature-no-cli.md) | US0608 and US0609 ship a feature no CLI invocation can reach, and their tests survive its deletion | Open | High | 2026-08-02 | 2026-08-02 |
+| [BG0488](BG0488-us0608-and-us0609-ship-a-feature-no-cli.md) | US0608 and US0609 ship a feature no CLI invocation can reach, and their tests survive its deletion | Fixed | High | 2026-08-02 | 2026-08-02 |
 | [BG0489](BG0489-the-commit-msg-suite-verdict-is-written-before.md) | the commit-msg suite verdict is written before the tool-tests lane runs, so a green verdict survives its failure | Closed | High | 2026-08-02 | 2026-08-02 |
 | [BG0490](BG0490-four-bug-repairs-are-fixed-with-half-their.md) | four bug repairs are Fixed with half their title undelivered and no recorded narrowing | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0491](BG0491-lane-check-scans-only-stories-so-487-bugs.md) | lane-check scans only stories, so 487 bugs are outside the number a blocking decision would rest on | Open | Medium | 2026-08-02 | 2026-08-02 |
@@ -37,7 +37,7 @@
 | [BG0493](BG0493-four-more-verifiers-pass-on-a-delivery-that.md) | four more verifiers pass on a delivery that has been made inert | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0494](BG0494-resolve-affects-tries-the-prefix-stripped-candidate-against.md) | resolve_affects tries the prefix-stripped candidate against the repo root first, so a consuming project's own file wins | Fixed | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0495](BG0495-the-velocity-row-understates-twice-it-counts-only.md) | the velocity row understates twice - it counts only accepted points, over a wall-clock with no idle deducted | Fixed | Medium | 2026-08-02 | 2026-08-02 |
-| [BG0497](BG0497-three-units-ship-a-check-whose-own-criterion.md) | three units ship a check whose own criterion names the mechanism that was not implemented | Open | High | 2026-08-02 | 2026-08-02 |
+| [BG0497](BG0497-three-units-ship-a-check-whose-own-criterion.md) | three units ship a check whose own criterion names the mechanism that was not implemented | Fixed | High | 2026-08-02 | 2026-08-02 |
 | [BG0499](BG0499-panel-escalation-reads-a-different-ledger-from-the.md) | panel escalation reads a different ledger from the one review-batch writes, so two REJECT rounds through the CLI notify nobody | Closed | High | 2026-08-03 | 2026-08-03 |
 | [BG0500](BG0500-the-runbook-guard-runs-in-no-gate-lane.md) | the runbook guard runs in no gate lane, so the runbook can rot between tool-suite runs | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0501](BG0501-batch-add-epic-and-batch-swap-price-stories.md) | batch add-epic and batch swap price stories at zero because they hand-roll the points reader instead of using the shared one | Fixed | Medium | 2026-08-03 | 2026-08-03 |
@@ -61,13 +61,13 @@
 | [BG0519](BG0519-the-tools-leg-s-remaining-slowdown-inside-the.md) | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed | Open | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0520](BG0520-the-triage-session-cap-is-a-lifetime-cap.md) | the triage session cap is a LIFETIME cap: the session key defaults to a constant, so the counter never resets and filing eventually refuses for good | Fixed | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0521](BG0521-us0481-ships-a-config-key-that-does-nothing.md) | US0481 ships a config key that does nothing at plan time, and batch add writes the unit before it refuses it | Fixed | High | 2026-08-05 | 2026-08-05 |
-| [BG0522](BG0522-bg0515-s-fix-reproduces-bg0515-a-charter-with.md) | BG0515's fix reproduces BG0515: a charter with an unresolved Open Question leaves the run open and the charter Queued | Open | High | 2026-08-05 | 2026-08-05 |
-| [BG0523](BG0523-five-acceptance-criteria-are-pinned-by-verifiers-that.md) | Five acceptance criteria are pinned by verifiers that cannot fail on what they claim | Open | High | 2026-08-05 | 2026-08-05 |
+| [BG0522](BG0522-bg0515-s-fix-reproduces-bg0515-a-charter-with.md) | BG0515's fix reproduces BG0515: a charter with an unresolved Open Question leaves the run open and the charter Queued | Fixed | High | 2026-08-05 | 2026-08-05 |
+| [BG0523](BG0523-five-acceptance-criteria-are-pinned-by-verifiers-that.md) | Five acceptance criteria are pinned by verifiers that cannot fail on what they claim | Fixed | High | 2026-08-05 | 2026-08-05 |
 | [BG0524](BG0524-warning-ratchet-reports-a-stale-baseline-as-clean.md) | warning-ratchet reports a stale baseline as clean and exits 0, contradicting US0480 AC4 and its own docstring | Fixed | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0525](BG0525-us0629-ac2-asks-derive-to-detect-a-polarity.md) | US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written | Fixed | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0526](BG0526-loop-guard-budget-has-no-programmatic-caller-the.md) | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers | Open | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0527](BG0527-the-one-run-slot-gate-reads-a-run.md) | the one-run-slot gate reads a run as history the moment its goal verdict is recorded, so the next plan can open over a run whose close has 20 unmet prerequisites | Fixed | High | 2026-08-06 | 2026-08-06 |
-| [BG0528](BG0528-a-delivered-unit-left-at-ready-is-invisible.md) | a delivered unit left at Ready is invisible to every close gate: twenty blockers were reported and not one of them said the units had never been transitioned | Open | High | 2026-08-06 | 2026-08-06 |
+| [BG0528](BG0528-a-delivered-unit-left-at-ready-is-invisible.md) | a delivered unit left at Ready is invisible to every close gate: twenty blockers were reported and not one of them said the units had never been transitioned | Fixed | High | 2026-08-06 | 2026-08-06 |
 | [BG0529](BG0529-four-run-01kz9315-units-carry-no-verifier-that.md) | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing | Open | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0530](BG0530-verify-ac-reports-a-unit-whose-criteria-it.md) | verify_ac reports a unit whose criteria it could not parse as a clean pass: ac=0 pass=0 fail=0, exit 0 - and every bug delivered in the last two sprints is in that state | Fixed | High | 2026-08-06 | 2026-08-06 |
 | [BG0531](BG0531-a-hand-applied-mutant-is-registered-with-no.md) | a hand-applied mutant is registered with no assertion that its anchor was unique, so a mutation run can report a false SURVIVED for a function it never edited | Open | Medium | 2026-08-06 | 2026-08-06 |
@@ -105,15 +105,15 @@
 | [BG0563](BG0563-the-test-plan-edit-verb-vocabulary-enumerates-only.md) | the test-plan edit-verb vocabulary enumerates only subtractive verbs, so a mutant that ADDS something cannot be stated and gets reworded until it parses | Open | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0564](BG0564-a-creation-whose-basename-is-a-common-one.md) | a creation whose basename is a common one - `__init__.py`, `README.md` - is still refused as a typo, so the greenfield repair is incomplete for exactly the files new packages create | Open | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0565](BG0565-has-run-history-is-non-recursive-so-a.md) | has_run_history is non-recursive, so a project that archives its retros into a subdirectory reads as never having closed a sprint and is silently softened | Open | Medium | 2026-08-10 | 2026-08-10 |
-| [BG0566](BG0566-npm-run-lint-fix-destroys-an-artefact-whose.md) | npm run lint:fix destroys an artefact whose title contains a dunder: markdownlint infers underscore emphasis and rewrites every metadata line, and the schema validator then cannot find a Status | Open | High | 2026-08-10 | 2026-08-10 |
+| [BG0566](BG0566-npm-run-lint-fix-destroys-an-artefact-whose.md) | npm run lint:fix destroys an artefact whose title contains a dunder: markdownlint infers underscore emphasis and rewrites every metadata line, and the schema validator then cannot find a Status | Fixed | High | 2026-08-10 | 2026-08-10 |
 | [BG0567](BG0567-the-upgrading-project-baseline-compares-against-this-tree.md) | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere sits on both sides and is invisible | Open | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0568](BG0568-an-epic-can-never-reach-done-the-test.md) | an epic can never reach Done - the test-plan gate holds a container whose completion is derived, and nothing else checks its breakdown | Fixed | High | 2026-08-10 | 2026-08-10 |
-| [BG0569](BG0569-nothing-stops-a-tool-or-fixture-writing-into.md) | nothing stops a tool or fixture writing into the working tree, and it happened three times in two days - each caught by a gate rather than by its author | Open | High | 2026-08-11 | 2026-08-11 |
+| [BG0569](BG0569-nothing-stops-a-tool-or-fixture-writing-into.md) | nothing stops a tool or fixture writing into the working tree, and it happened three times in two days - each caught by a gate rather than by its author | Fixed | High | 2026-08-11 | 2026-08-11 |
 | [BG0570](BG0570-the-write-time-verify-guard-cannot-tell-a.md) | the write-time Verify guard cannot tell a typo from an ordering, so it refuses the first story of every greenfield project | Fixed | High | 2026-08-11 | 2026-08-11 |
 | [BG0571](BG0571-the-repaired-spec-agreement-guards-pin-word-patterns.md) | The repaired spec-agreement guards pin word patterns rather than claims, so a passage stating the OPPOSITE rule passes | Open | Medium | 2026-08-11 | 2026-08-11 |
 | [BG0572](BG0572-the-repo-writes-guard-attributes-any-concurrent-edit.md) | The repo-writes guard attributes any concurrent edit to the test run, so editing during a 15-minute background commit refuses it and names the author's own files as fixture damage | Open | Medium | 2026-08-11 | 2026-08-11 |
-| [BG0573](BG0573-running-the-suite-from-inside-scripts-empties-the.md) | Running the suite from inside scripts/ empties the checkout and replaces it with a greenfield tree, and the temp-root guard is disarmed for any clone under /tmp | Open | High | 2026-08-11 | 2026-08-11 |
-| [BG0574](BG0574-a-dry-run-takes-the-allocation-lock-on.md) | A --dry-run takes the allocation lock on the target repository, so a preview writes into the tree it was asked only to describe | Open | Medium | 2026-08-11 | 2026-08-11 |
+| [BG0573](BG0573-running-the-suite-from-inside-scripts-empties-the.md) | Running the suite from inside scripts/ empties the checkout and replaces it with a greenfield tree, and the temp-root guard is disarmed for any clone under /tmp | Fixed | High | 2026-08-11 | 2026-08-11 |
+| [BG0574](BG0574-a-dry-run-takes-the-allocation-lock-on.md) | A --dry-run takes the allocation lock on the target repository, so a preview writes into the tree it was asked only to describe | Fixed | Medium | 2026-08-11 | 2026-08-11 |
 
 ## Archived Releases
 

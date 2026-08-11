@@ -147,7 +147,7 @@ every boundary gate run, so if they stop working this project finds out before y
 
 ## Known issues
 
-**v5.0.0 ships with 41 open defects: 40 Medium, 1 Low. Zero Critical, zero High.**
+**v5.0.0 ships with 40 open defects: 39 Medium, 1 Low. Zero Critical, zero High.**
 
 They are listed by id, with their reproductions, in [docs/known-issues.md](known-issues.md),
 and each is triaged to v5.1.

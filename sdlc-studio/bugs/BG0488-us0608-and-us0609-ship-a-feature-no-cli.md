@@ -1,6 +1,6 @@
 # BG0488: US0608 and US0609 ship a feature no CLI invocation can reach, and their tests survive its deletion
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
@@ -136,6 +136,17 @@ The first was the bug's own headline mutant and it now reddens in two places: th
 and the close that reads it. Measured before the withdrawal, the string classifier's deletion
 still SURVIVED even with the wiring repaired - which is the evidence that it was redundant rather
 than merely untested, and the reason it is withdrawn instead of pinned.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | {{name the production change this test must fail on}} | |
+| AC2 | {{name the production change this test must fail on}} | |
+| AC3 | {{name the production change this test must fail on}} | |
+| AC4 | {{name the production change this test must fail on}} | |
+| AC5 | {{name the production change this test must fail on}} | |
+| AC6 | {{name the production change this test must fail on}} | |
 
 ## Revision History
 

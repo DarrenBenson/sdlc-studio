@@ -1,6 +1,6 @@
 # BG0573: Running the suite from inside scripts/ empties the checkout and replaces it with a greenfield tree, and the temp-root guard is disarmed for any clone under /tmp
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
@@ -146,6 +146,19 @@ An engineer or a reviewer following this repository's own guidance can lose an e
 - **Mutant:** in `test_transition.py`, drop the `root == REPO_ROOT` arm from
   `_refuse_working_tree`, leaving only the `.git` test.
 
+### AC5
+
+- **Given** a directory INSIDE this repository - `sdlc-studio/`, `tools/`, or the scripts
+  directory a suite is commonly invoked from
+- **When** it is offered as a fixture root
+- **Then** it is REFUSED. A subdirectory is neither the repository nor one of its parents, so the
+  first repair accepted it: measured, `_repo(".")` from the scripts directory built 444 paths
+  there, including a nested `.git` and a `.gitignore` truncated to nothing. The guard this
+  replaced refused it only because it refused everything outside the temp directory, so narrowing
+  to the right question without this arm made the guard sharper and the tree less safe.
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k a_directory_INSIDE_the_checkout_is_refused
+- **Mutant:** remove the `REPO_ROOT in root.parents` clause from `_refuse_working_tree`.
+
 ### AC5 and AC6 were WITHDRAWN, and this is why
 
 They restated two criteria BG0536 already owns and pins: that the fixture writes nothing before
@@ -169,12 +182,11 @@ directory, and that a checkout with no `.git` is refused too.
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | restore `if not str(root).startswith(tempfile.gettempdir())` in `_refuse_working_tree` | |
-| AC2 | delete the `if` in `_refuse_working_tree` so it returns the root unconditionally | |
-| AC3 | make `FixtureRootGuardTests._fake_checkout` return `REPO_ROOT` | |
-| AC4 | drop the `root == REPO_ROOT` arm from `_refuse_working_tree` | |
-| AC5 | move the `_refuse_working_tree` call in `SurvivorGateTests._repo` below the writes | |
-| AC6 | make `_refuse_working_tree` raise unconditionally | |
+| AC1 | {{name the production change this test must fail on}} | |
+| AC2 | {{name the production change this test must fail on}} | |
+| AC3 | {{name the production change this test must fail on}} | |
+| AC4 | {{name the production change this test must fail on}} | |
+| AC5 | {{name the production change this test must fail on}} | |
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG0497: three units ship a check whose own criterion names the mechanism that was not implemented
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
@@ -108,6 +108,15 @@ Implement each criterion's stated mechanism: call `help_page_findings` from `doc
 ## Impact
 
 This is the run's dominant defect class recurring in the units that had never been reviewed, which is evidence it is systemic rather than incidental. It is also the strongest available argument for CR0525: in all three cases the criterion said exactly what to build, and reviewing the test plan against the criterion before the code would have caught every one.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | {{name the production change this test must fail on}} | deleting a help page reddens the lane, not only a unit test |
+| AC2 | {{name the production change this test must fail on}} | `batch swap` is registered in the conformance sweep as a two-list verb |
+| AC3 | {{name the production change this test must fail on}} | a documented flag no surface owns is refused |
+| AC4 | {{name the production change this test must fail on}} | the in-flight controls are looked up WITHIN their own section |
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG0569: nothing stops a tool or fixture writing into the working tree, and it happened three times in two days - each caught by a gate rather than by its author
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
 > **Affects:** tools/repo_writes.py, tools/tests/test_repo_writes.py, .githooks/pre-commit, .githooks/commit-msg

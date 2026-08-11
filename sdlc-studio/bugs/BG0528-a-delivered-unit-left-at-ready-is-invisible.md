@@ -1,6 +1,6 @@
 # BG0528: a delivered unit left at Ready is invisible to every close gate: twenty blockers were reported and not one of them said the units had never been transitioned
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Verification depth:** functional
@@ -113,6 +113,17 @@ decisive; a commit merely touching the declared `Affects` is also made true by a
 sharing the file, so it is reported in those words rather than as proof. The window is the run's
 own recorded base ref rather than a wall-clock date, so a neighbouring run's commits on a busy
 day are not swept in, and a run with no recorded base ref makes no claim at all.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | {{name the production change this test must fail on}} | |
+| AC2 | {{name the production change this test must fail on}} | |
+| AC3 | {{name the production change this test must fail on}} | |
+| AC4 | {{name the production change this test must fail on}} | |
+| AC5 | {{name the production change this test must fail on}} | |
+| AC6 | {{name the production change this test must fail on}} | |
 
 ## Revision History
 

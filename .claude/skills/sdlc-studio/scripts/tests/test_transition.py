@@ -60,7 +60,15 @@ def _refuse_working_tree(root) -> Path:
     whether the tree sits under /tmp, under $HOME, or anywhere else.
     """
     root = Path(root).resolve()
-    if (root / ".git").exists() or root == REPO_ROOT or root in REPO_ROOT.parents:
+    # FOUR relations, not two. The first repair asked only whether the root IS the repository or
+    # CONTAINS it, and an independent pass measured what that leaves open: a directory INSIDE the
+    # checkout is none of those, so `_repo(".")` from the scripts directory - the exact relative
+    # placeholder BG0536 was filed for - built 444 paths there, including a nested `.git` and a
+    # `.gitignore` truncated to nothing. The shipped guard it replaced refused every path outside
+    # the temp directory, which covered that case for the wrong reason; narrowing to the right
+    # question without the containment arm made the guard SHARPER and the tree less safe.
+    inside = REPO_ROOT == root or REPO_ROOT in root.parents
+    if (root / ".git").exists() or root == REPO_ROOT or root in REPO_ROOT.parents or inside:
         raise AssertionError(
             f"fixture root {root} is a working tree - a test fixture must never be able to "
             f"write into the working tree")
@@ -4891,6 +4899,25 @@ class FixtureRootGuardTests(unittest.TestCase):
             _refuse_working_tree(repo)
         self.assertIn(str(repo), str(ctx.exception),
                       "the refusal does not name the root it rejected")
+
+    def test_a_directory_INSIDE_the_checkout_is_refused(self) -> None:
+        """The hole the first repair left, found by an independent pass measuring rather than
+        reading.
+
+        `_refuse_working_tree` asked whether the root IS the repository or CONTAINS it, and never
+        whether it sits INSIDE it. A subdirectory is neither, so `_repo(".")` called from
+        `<repo>/.claude/skills/sdlc-studio/scripts` - the exact relative placeholder BG0536 was
+        filed for - built 444 paths there, including a nested `.git` and a `.gitignore` truncated
+        to nothing. The guard this replaced refused every path outside the temp directory, which
+        covered that case for the wrong reason, so narrowing to the right question without the
+        containment arm made the guard sharper and the tree less safe.
+
+        Mutant: drop `REPO_ROOT in root.parents` from the containment test.
+        """
+        for rel in ("sdlc-studio", ".claude/skills/sdlc-studio/scripts", "tools"):
+            with self.subTest(inside=rel):
+                with self.assertRaises(AssertionError, msg=f"{rel} was accepted"):
+                    _refuse_working_tree(REPO_ROOT / rel)
 
     def test_a_checkout_with_no_git_directory_is_still_refused(self) -> None:
         """An exported or rsync-ed copy has no `.git`, and `REPO_ROOT` is how it is still

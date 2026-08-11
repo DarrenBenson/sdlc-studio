@@ -64,9 +64,8 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0567` | Medium | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere... |
 | `BG0571` | Medium | The repaired spec-agreement guards pin word patterns rather than claims, so a passage stating the OPPOSITE rule passes |
 | `BG0572` | Medium | The repo-writes guard attributes any concurrent edit to the test run, so editing during a 15-minute background commit refuses it and names the auth... |
-| `BG0574` | Medium | A --dry-run takes the allocation lock on the target repository, so a preview writes into the tree it was asked only to describe |
 
-41 findings: 40 Medium, 1 Low.
+40 findings: 39 Medium, 1 Low.
 
 ## Not carried
 

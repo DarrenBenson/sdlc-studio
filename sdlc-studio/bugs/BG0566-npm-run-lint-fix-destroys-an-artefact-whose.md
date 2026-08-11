@@ -1,6 +1,6 @@
 # BG0566: npm run lint:fix destroys an artefact whose title contains a dunder: markdownlint infers underscore emphasis and rewrites every metadata line, and the schema validator then cannot find a Status
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .markdownlint.json, tools/lint-style.sh, tools/tests/test_markdown_style.py, tools/tests/test_lint_style.py

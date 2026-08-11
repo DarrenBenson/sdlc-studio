@@ -940,7 +940,8 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
     # Serialise allocate -> collision-check -> write -> index-append against concurrent
     # writers (retro/review/handoff ids are always sequential, the case the lock most
     # matters for), so two waves closing at once never mint the same id or clobber the index.
-    with sdlc_md.allocation_lock(root):
+    import contextlib  # noqa: PLC0415 - local, only this path needs it
+    with (contextlib.nullcontext() if dry_run else sdlc_md.allocation_lock(root)):
         n = next_id.allocate_number(type_, root)
         rel, prefix = next_id.META_TYPES[type_]
         file_id = f"{prefix}{n:04d}"
@@ -1228,8 +1229,12 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             it["persona"] = _resolve_persona(root, it.get("persona"),
                                              label=str(it.get("title") or ""))
     # CR0183/BG0076: allocate the id block + write all files under the advisory lock,
-    # so a concurrent `new`/`new_batch` cannot mint an overlapping id block.
-    with sdlc_md.allocation_lock(root):
+    # so a concurrent `new`/`new_batch` cannot mint an overlapping id block. NOT under a preview,
+    # for the reason the single-artefact path carries: taking the lock OPENS a file in the target
+    # repository, and a preview that writes into the tree it was asked only to describe is the
+    # defect, not the serialisation. A preview reserves no block, so there is nothing to serialise.
+    import contextlib  # noqa: PLC0415 - local, only this path needs it
+    with (contextlib.nullcontext() if dry_run else sdlc_md.allocation_lock(root)):
         v3 = _schema_v3(root)
         create_status = _create_status(type_, root)  # era-aware: findings file into inbox under v3
         n0 = None if v3 else file_finding._next_number(root, type_)

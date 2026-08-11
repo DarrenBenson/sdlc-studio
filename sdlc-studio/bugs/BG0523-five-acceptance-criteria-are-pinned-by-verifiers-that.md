@@ -1,6 +1,6 @@
 # BG0523: Five acceptance criteria are pinned by verifiers that cannot fail on what they claim
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
 > **Verification depth:** functional (each of the five criteria's named mutants applied to the shipped file, bytecode purged, run under `python3 -B`, the anchor asserted unique, the patch asserted to have changed the file, and the tree verified byte-identical afterwards; every one KILLED, and each was reproduced as SURVIVED against the pre-repair verifier first)
@@ -103,6 +103,16 @@ Take them one at a time; they are five separate repairs sharing a cause. Derive 
 ## Impact
 
 Five criteria read as evidence and are not. The changelog for US0468 states that a renamed ledger key now fails the test; it does not. This is the class the mutation discipline exists to prevent, and it reached a batch boundary with every unit reporting green.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | {{name the production change this test must fail on}} | the recorded ledger keys are read by running the writers, not by scanning for them |
+| AC2 | {{name the production change this test must fail on}} | the cross-kind masking fixture carries both kinds |
+| AC3 | {{name the production change this test must fail on}} | the lane's refusal is attributable to the ratchet and actionable on its own |
+| AC4 | {{name the production change this test must fail on}} | the exempt set follows the resolver where a verb heuristic would disagree |
+| AC5 | {{name the production change this test must fail on}} | the late-`fail` property is anchored on an assignment, not on one spelling |
 
 ## Revision History
 

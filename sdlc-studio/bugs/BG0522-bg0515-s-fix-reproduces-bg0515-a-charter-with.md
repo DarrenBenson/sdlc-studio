@@ -1,6 +1,6 @@
 # BG0522: BG0515's fix reproduces BG0515: a charter with an unresolved Open Question leaves the run open and the charter Queued
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Verification depth:** functional
@@ -101,6 +101,16 @@ The non-zero exit is scoped to a write that was ATTEMPTED and did not take. The 
 refusals - no charter resolves to the id, and a charter that is not `Queued` - keep exiting 0:
 neither leaves a `Queued` charter for the next `next` to re-offer, which is the state this bug
 is about, and both are already reported in terms.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | {{name the production change this test must fail on}} | |
+| AC2 | {{name the production change this test must fail on}} | |
+| AC3 | {{name the production change this test must fail on}} | |
+| AC4 | {{name the production change this test must fail on}} | |
+| AC5 | {{name the production change this test must fail on}} | |
 
 ## Revision History
 

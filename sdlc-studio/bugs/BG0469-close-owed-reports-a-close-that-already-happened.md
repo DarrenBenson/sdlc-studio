@@ -1,6 +1,6 @@
 # BG0469: close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
 > **Verification depth:** functional

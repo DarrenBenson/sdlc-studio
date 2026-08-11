@@ -556,15 +556,26 @@ class LazyIndexTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
-            (repo / "sdlc-studio").mkdir()
-            before = {p for p in repo.rglob("*")}
+            (repo / "sdlc-studio" / ".local").mkdir(parents=True)
+            # The lock file ALREADY EXISTS, which is the state of every real project and of the
+            # repository this defect was found in. Asserted over CONTENT rather than over the set
+            # of paths: the first version of this test compared path sets, so re-opening an
+            # existing file was invisible and the declared mutant survived against any tree that
+            # had ever minted an artefact. It killed the mutant only because its fixture was bare.
+            (repo / "sdlc-studio" / ".local" / "allocation.lock").write_text("", encoding="utf-8")
+
+            def snapshot():
+                return {p.relative_to(repo).as_posix(): (p.stat().st_size, p.stat().st_mtime_ns)
+                        for p in repo.rglob("*") if p.is_file()}
+
+            before = snapshot()
             r = artifact.new(repo, "epic", "preview", dry_run=True)
             self.assertTrue(r["dry_run"])
-            after = {p for p in repo.rglob("*")}
+            after = snapshot()
             self.assertEqual(
-                set(), after - before,
+                before, after,
                 "a --dry-run wrote into the repository it was asked only to describe: "
-                f"{sorted(str(p.relative_to(repo)) for p in after - before)}")
+                f"{sorted(set(after) ^ set(before)) or 'a file was rewritten in place'}")
 
     def test_dry_run_reports_would_create_index_without_writing(self) -> None:
         with tempfile.TemporaryDirectory() as d:
