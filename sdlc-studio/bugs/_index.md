@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 48 |
+| Open | 51 |
 | In Progress | 0 |
-| Fixed | 435 |
+| Fixed | 436 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **570** |
+| **Total** | **574** |
 
 ## All Bugs
 
@@ -23,7 +23,7 @@
 | [BG0406](BG0406-three-units-delivered-nothing-bg0372-writes-no-velocity.md) | Three units delivered nothing: BG0372 writes no velocity column, BG0359's detector is inert and would be wrong, and BG0357's consumer key was wrong | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
-| [BG0457](BG0457-four-spec-agreement-guards-pin-prose-to-prose.md) | Four spec-agreement guards pin prose to prose: a set comparison that cannot fail in the reverse direction, a whole-file substring satisfied by the Revision History row describing the change, a word-presence check an unrelated sentence already satisfies, and a source-substring wiring check a comment satisfies | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0457](BG0457-four-spec-agreement-guards-pin-prose-to-prose.md) | Four spec-agreement guards pin prose to prose: a set comparison that cannot fail in the reverse direction, a whole-file substring satisfied by the Revision History row describing the change, a word-presence check an unrelated sentence already satisfies, and a source-substring wiring check a comment satisfies | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Open | Medium | 2026-07-31 | 2026-07-31 |
 | [BG0469](BG0469-close-owed-reports-a-close-that-already-happened.md) | close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch | Open | High | 2026-07-31 | 2026-07-31 |
 | [BG0477](BG0477-refine-mints-stories-nothing-can-plan-placeholder-acceptance.md) | refine mints stories nothing can plan: placeholder acceptance criteria, unfilled user-story fields, and a persona that is no seat | Fixed | High | 2026-08-01 | 2026-08-01 |
@@ -110,6 +110,10 @@
 | [BG0568](BG0568-an-epic-can-never-reach-done-the-test.md) | an epic can never reach Done - the test-plan gate holds a container whose completion is derived, and nothing else checks its breakdown | Fixed | High | 2026-08-10 | 2026-08-10 |
 | [BG0569](BG0569-nothing-stops-a-tool-or-fixture-writing-into.md) | nothing stops a tool or fixture writing into the working tree, and it happened three times in two days - each caught by a gate rather than by its author | Open | High | 2026-08-11 | 2026-08-11 |
 | [BG0570](BG0570-the-write-time-verify-guard-cannot-tell-a.md) | the write-time Verify guard cannot tell a typo from an ordering, so it refuses the first story of every greenfield project | Fixed | High | 2026-08-11 | 2026-08-11 |
+| [BG0571](BG0571-the-repaired-spec-agreement-guards-pin-word-patterns.md) | The repaired spec-agreement guards pin word patterns rather than claims, so a passage stating the OPPOSITE rule passes | Open | Medium | 2026-08-11 | 2026-08-11 |
+| [BG0572](BG0572-the-repo-writes-guard-attributes-any-concurrent-edit.md) | The repo-writes guard attributes any concurrent edit to the test run, so editing during a 15-minute background commit refuses it and names the author's own files as fixture damage | Open | Medium | 2026-08-11 | 2026-08-11 |
+| [BG0573](BG0573-running-the-suite-from-inside-scripts-empties-the.md) | Running the suite from inside scripts/ empties the checkout and replaces it with a greenfield tree, and the temp-root guard is disarmed for any clone under /tmp | Open | High | 2026-08-11 | 2026-08-11 |
+| [BG0574](BG0574-a-dry-run-takes-the-allocation-lock-on.md) | A --dry-run takes the allocation lock on the target repository, so a preview writes into the tree it was asked only to describe | Open | Medium | 2026-08-11 | 2026-08-11 |
 
 ## Archived Releases
 

@@ -308,6 +308,32 @@ printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
 # Both lanes together are what a code commit pays for, so the scope check reads their sum.
 suite_tests=$(( ${suite_tests:-0} + ${tool_tests:-0} ))
 
+# THE AFTER HALF OF THE REPO-WRITES LANE. `pre-commit` recorded the working tree at the moment
+# it selected the suites; this compares it against the tree the suites have just left behind and
+# refuses on any difference, naming every path.
+#
+# The invariant broke four times in two days - a fixture helper handed `.` as its root, a
+# rehearsal harness whose work root was the repository, a batch verb run without --dry-run, and
+# a stray artefact from a fixture - and every one was found by an unrelated gate rather than by
+# its author. One destroyed 23 mutation registrations in gitignored `sdlc-studio/.local/`, which
+# nothing could restore.
+#
+# Placed HERE, below `tool_tests` and the log-saving block, because those read `last_run_out`
+# and `run` overwrites it: a lane inserted above them would silently replace a failing suite's
+# evidence with this lane's output. And above the verdict record below, which is the last thing
+# a passing hook does - anything that can still set `fail` belongs before it.
+#
+# The record is one-shot, like the handover: read once, then gone.
+writes_snapshot="$(git rev-parse --git-path sdlc-repo-writes 2>/dev/null || true)"
+[ -n "$writes_snapshot" ] || writes_snapshot="$git_dir/sdlc-repo-writes"
+if [ -r "$writes_snapshot" ]; then
+  run "repo-writes" \
+    "running the unit suites leaves the working tree unchanged: no tracked file modified, no untracked file created, nothing written into gitignored sdlc-studio/.local/" \
+    "find the root the fixture took - a helper that accepts a root and was handed \`.\`, a work root not under tempfile, or a batch verb missing --dry-run - then restore the paths named above (a .local/ path cannot be restored, so check what it held)" \
+    -- python3 tools/repo_writes.py check --root . --since "$writes_snapshot"
+  rm -f "$writes_snapshot" 2>/dev/null
+fi
+
 # What this commit actually cost, end to end, and how that sits against the declared budget
 # (RFC0048 D6). The total is pre-commit's share plus this hook's, so it still measures the
 # WHOLE gate: recording only the half that runs last would quietly redefine the series the

@@ -3,7 +3,8 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
+> **Verification depth:** functional
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Evidence:** Independent review of RUN-01KYNKDP. BG0372: VELOCITY.md header and row emitter unchanged, `unattributed_s` is 0.0 by construction. BG0359: `spawned_column_drift` returns [] on every real index; unblinded it reports 16 TRUE cells as drift.
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio file
@@ -30,13 +31,83 @@ BG0359: re-pin the header at any table row carrying an ID column, as `project_fi
 
 ## Acceptance Criteria
 
-- [ ] A recorded velocity row carries the overhead ratio and the unattributed span in VELOCITY.md, asserted by reading the file back.
-- [ ] The unattributed span is a measured quantity, not the arithmetic residue of the other two, or it is absent.
-- [ ] `_overhead_terms` computes the same number the close report computes, from the same components.
-- [ ] `spawned_column_drift` finds its column in an index whose first table is a Summary table.
-- [ ] A true spawned-work cell is not reported as drift, for every parent-child link spelling this corpus uses.
-- [ ] Each of the three units' status reflects what it actually delivers.
-- [ ] `critic signoff --from-run` does not record a sign-off row against a non-terminal unit, or it reports which ones it included and why.
+- [x] **AC1: the velocity term is the number the close report printed, from the same components.**
+  - **Given** a run whose gate time, mutation time and review time are all recorded, so that
+    supplying the components and blanking them give different answers
+  - **When** `retro._overhead_terms` computes the ratio for that batch
+  - **Then** it equals `sprint_report.report(...)["overhead"]["ratio"]`, and the test asserts
+    the blanked call gives something else, so it cannot pass on a fixture that cannot tell them
+    apart. The mutant: pass `{}` for either component in the call `_overhead_terms` makes.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::VelocityOverheadTermAgreesWithTheCloseTests::test_the_velocity_term_is_the_number_the_close_reports
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC2: the row says whether that ratio is exact or a floor.**
+  - **Given** a sprint whose every overhead component is measured, and the same sprint with its
+    mutation series emptied
+  - **When** the terms are computed
+  - **Then** the first records `exact` and the second `lower`, because a floor measured from one
+    component of three is not the same quantity as an exact figure and this file is read row
+    against row. The mutant: return the bound as `exact` regardless of what the report said.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::VelocityOverheadTermAgreesWithTheCloseTests::test_the_row_records_whether_the_ratio_is_exact_or_a_floor
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC3: no term in the row is an arithmetic residue that can only be zero.**
+  - **Given** the close report's own figures for a measured sprint
+  - **When** `total - overhead - delivery` is evaluated on them
+  - **Then** it is exactly 0, because delivery is DEFINED as `total - overhead` - so the terms
+    are the ratio and its bound and nothing else, and no column named `Unattributed` remains in
+    the shipped header. The mutant: reinstate `unattributed_s` in `_overhead_terms`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::VelocityOverheadTermAgreesWithTheCloseTests::test_no_term_is_a_residue_that_can_only_be_zero
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC4: the spawned-work detector finds its column past a Summary table.**
+  - **Given** a discovery index in the shape every real one has - a `## Summary` status/count
+    table, then the data table - carrying one stale cell
+  - **When** `spawned_column_drift` runs over it
+  - **Then** the stale cell is reported, where before the column position was pinned from the
+    summary block and every data row was skipped. The mutant: pin the header once, at the first
+    table in the file.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnPastTheSummaryTableTests::test_the_column_is_found_past_a_summary_table
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC5: a true cell is not reported as drift, for the link spellings this corpus writes.**
+  - **Given** an index cell naming a CR that links upward with `> **RFC:** RFC-0001`, the
+    spelling 20 artefacts here use and none of them pairs with `Parent:`
+  - **When** the detector censuses that request's children
+  - **Then** the cell agrees with the census and nothing is reported. The mutant: drop the
+    `rfc_ref` limb from `child_parent`. Measured over the full historical RFC index of 57 rows,
+    that mutant reports 16 rows of which 7 name links the census cannot see.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnPastTheSummaryTableTests::test_a_child_linked_by_the_rfc_field_is_not_drift
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC6: a cell claiming work no file links back is never told to blank itself.**
+  - **Given** a cell naming an id the census cannot see
+  - **When** the drift item is composed
+  - **Then** the remedy names that id and says to record the link in the child file, warning
+    that the cell may be the sole record of it - while a cell the census can see PAST is still
+    simply brought up to date. The mutant: restore the single "correct it from the census"
+    remedy, which reads as an instruction to delete the evidence.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnPastTheSummaryTableTests::test_an_over_claiming_cell_is_not_told_to_blank_itself
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC7: the sweep prints the item instead of dying on it.**
+  - **Given** an index that produces a spawned-column drift item
+  - **When** `reconcile.py detect` runs over it
+  - **Then** it prints the item and exits 1, where before it exited on `error: 'fix'` - the item
+    named its advice `remedy` while the printer and every other item use `fix`, a crash
+    unreachable only for as long as the detector found nothing. The mutant: name the key
+    `remedy` again.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SpawnedColumnPastTheSummaryTableTests::test_the_sweep_prints_the_item_rather_than_dying_on_it
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC8: a sign-off is not recorded against a unit that has not been delivered.**
+  - **Given** a story at a non-terminal, pre-delivery status named in an approved batch
+  - **When** `critic signoff --from-run` fans out over that batch
+  - **Then** the unit is withheld and named, rather than taking a row that reads as approval of
+    work that does not exist. Delivered by RUN-01KYPZ1G; the mutant is to take the batch as the
+    scope without consulting each unit's status.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ASignoffSkipsAUnitThatDeliveredNothingTests::test_an_undelivered_STORY_is_still_withheld
+  - **Verified:** yes (2026-08-11)
 
 ## The sign-off fan-out repeats the same shape
 
@@ -53,4 +124,5 @@ Three units marked Fixed that deliver nothing is worse than three units left ope
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Filed |
+| 2026-08-11 | Claude Opus 5 | The REMAINING halves are fixed and the criteria were rewritten to name the production change each one must fail on - the tool-derived list restated the finding and stated nothing a test could redden. The velocity term now comes from one entry point that supplies every overhead component, so it is the number the close report printed rather than a smaller one computed from a third of the evidence; the unattributed span is gone, because delivery is defined as the measured span minus the measured overhead and a residue of the three is zero by construction, and the row records the ratio's BOUND instead. The spawned-work detector re-pins its column at any header carrying an ID cell, so a Summary table no longer blinds it, and `children_of` reads the `RFC:` field this corpus writes - measured over the full historical index of 57 rows, that removes 7 rows of false drift from 16. The remedy now distinguishes a cell the census can see past from one naming a link no file records, which it no longer offers to blank. BG0372 and BG0359 stay `Fixed` and are now true. |
 | 2026-07-29 | Claude Opus 5 (RUN-01KYPZ1G) | The SIGN-OFF FAN-OUT half is FIXED and the bug stays OPEN for the rest. `critic signoff` now reads each unit's status and SKIPS a non-terminal one, naming it on stderr - closing the previous run wrote three rows against units that delivered nothing (two bugs reopened for exactly that reason, one story reverted to Blocked), and a row reading as approval of work that does not exist is the same defect as a status asserting a repair that did not happen. An unreadable unit reports cannot-say and proceeds, because refusing a sign-off over an unreadable file would make the check more important than the thing it guards. STILL OPEN: the velocity row's overhead ratio and unattributed span, `_overhead_terms` agreeing with the close report, `spawned_column_drift` finding its column past a Summary table, and the three units' statuses reflecting what they actually deliver. |

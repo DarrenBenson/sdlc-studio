@@ -128,16 +128,30 @@ class SwapTests(unittest.TestCase):
         self.assertEqual(2, rc, "a one-sided swap was accepted")
 
     def test_the_out_list_accepts_every_house_form_identically(self) -> None:
-        """MUTANT: split on commas only, or accept only a repeated flag.
+        """MUTANT: split on commas only, accept only a repeated flag, or return 99 from the
+        `batch swap` dispatch.
 
         `--out A --out B` and `--out A,B` are the same request in this project's grammar, and a
-        verb that honours one is a second grammar.
+        verb that honours one is a second grammar. Driven through the CLI: this asserted on
+        `sdlc_md.split_id_list` alone, loading `sprint` into an unused variable, so a swap
+        dispatch that never ran survived it while five sibling tests failed (BG0497).
         """
-        sprint = _load()
-        from lib import sdlc_md
-        self.assertEqual(sdlc_md.split_id_list(["US0001", "US0002"]),
-                         sdlc_md.split_id_list(["US0001,US0002"]),
-                         "the repeated and comma forms are not read identically")
+        reached = []
+        for form in (["--out", "US0001", "--out", "US0002"], ["--out", "US0001,US0002"]):
+            with self.subTest(form=" ".join(form)), tempfile.TemporaryDirectory() as d:
+                root = self._root(d)
+                rc, out = self._run(root, "swap", *form, "--in", "US0003",
+                                    "--reason", "the house grammar")
+                self.assertEqual(0, rc, f"`batch swap {' '.join(form)}` did not run:\n{out}")
+                state = json.loads(
+                    (root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+                reached.append((sorted(state["batch"]), state["batch_swaps"][-1]["out"]))
+        self.assertEqual(reached[0], reached[1],
+                         "the repeated and comma forms reach different batches or record "
+                         "different outgoing sets - `--out A --out B` and `--out A,B` are one "
+                         "request in this project's grammar")
+        self.assertEqual((["US0003"], ["US0001", "US0002"]), reached[0],
+                         "the swap did not take both outgoing units")
 
 
 

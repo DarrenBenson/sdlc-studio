@@ -994,5 +994,158 @@ class HeadlineAndExitCodeAgreeTests(CloseRepairOverrideTests):
                          f"the command exits 0 and still claims a close is owed: {head}")
 
 
+def _archived_run(root: Path, run_id: str, started: str, ended: str, outcome: str) -> None:
+    """One archived run record, the shape `run_state.archive` writes."""
+    import json as _json
+    p = root / "sdlc-studio" / ".local" / "run-archive" / f"{run_id}.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(_json.dumps({"schema": 1, "run_id": run_id, "started_at": started,
+                              "ended_at": ended, "outcome": outcome, "batch": ["BG0001"]}),
+                 encoding="utf-8")
+
+
+def _raised_bug(root: Path, bid: str, status: str, raised: str) -> None:
+    _write(root / "sdlc-studio" / "bugs" / f"{bid}-b.md",
+           f"# {bid}: A bug\n\n> **Status:** {status}\n> **Points:** 2\n"
+           f"> **Raised-in-batch:** {raised}\n")
+
+
+class RunAttributedTests(CloseOwedBase):
+    """BG0469: the detector demanded a close for work whose close already ran.
+
+    A finding filed against an OPEN run becomes a tracked unit and is never added to that run's
+    recorded batch, so the retro records fewer units than the run delivered. Twelve of fourteen
+    reported units were this, and the operator's only remedy was to hand-correct `Batch` lines
+    against git timestamps.
+
+    Of the two repairs the bug offers, this is the second: `close_owed` attributes by the run
+    window it ALREADY reads. Chosen because the accretion route has to fire at the moment a unit
+    reaches terminal, which is `transition`'s write path - a second writer into run state on the
+    hottest status path in the tool, for a fact this module can derive from records it already
+    opens. Deriving cannot drift; a second writer can.
+    """
+
+    WINDOW = ("2026-07-29T13:02:54Z", "2026-07-30T22:48:16Z")
+
+    def _tree(self, *, raised: str, terminal_day: str, outcome: str = "goal-reached") -> dict:
+        _bug(self.root, "BG0001", "Fixed")
+        close_owed.stamp_baseline(self.root, date="2026-01-01")
+        _raised_bug(self.root, "BG0005", "Fixed", raised)
+        _dated_retro(self.root, "RETRO0002", "BG0001", "2026-07-30",
+                     override="no plan-time forecast for this fixture")
+        _actuals(self.root, terminal_day, ["BG0005"])
+        _archived_run(self.root, "RUN-01KYPZ1G", self.WINDOW[0], self.WINDOW[1], outcome)
+        _run_state(self.root, "running")
+        return close_owed.owed(self.root)
+
+    def test_a_unit_with_no_terminal_date_is_not_attributed_on_absent_evidence(self) -> None:
+        """The `not when` half, which nothing could fail on until an independent pass tried.
+
+        `run_attributed` documents this condition as REQUIRED in three places - its own comment,
+        the bug's verification evidence, and the changelog - and every test supplied a terminal
+        date, so removing the guard changed no result. It is reachable: 305 of this workspace's
+        1371 terminal units carry no telemetry row, because `scan_delivery` reads STATUSES while
+        `terminal_dates` reads the actuals ledger, and those are different populations. The two
+        do not currently overlap with a timestamped raise stamp, which is a property of today's
+        corpus rather than a guard.
+
+        Crediting a unit on an unknown terminal date would attribute one filed in one run and
+        fixed two runs later to the run that only filed it - the silent "none owed" this module
+        exists to prevent.
+
+        Mutant: `if not when or when > ended[:10]` -> `if when and when > ended[:10]`.
+        """
+        _bug(self.root, "BG0001", "Fixed")
+        close_owed.stamp_baseline(self.root, date="2026-01-01")
+        _raised_bug(self.root, "BG0005", "Fixed", "2026-07-29T15:35:33Z")
+        _dated_retro(self.root, "RETRO0002", "BG0001", "2026-07-30",
+                     override="no plan-time forecast for this fixture")
+        # Deliberately NO actuals row for BG0005: it reached terminal, and nothing recorded when.
+        _actuals(self.root, "2026-07-30", ["BG0001"])
+        _archived_run(self.root, "RUN-01KYPZ1G", self.WINDOW[0], self.WINDOW[1], "goal-reached")
+        _run_state(self.root, "running")
+        r = close_owed.owed(self.root)
+        self.assertEqual([], r["run_attributed"],
+                         "a unit with no recorded terminal date was credited to a run on the "
+                         "strength of its raise stamp alone")
+        self.assertIn("BG0005", [c for c, _t in r["unaccounted"]],
+                      "the unattributable unit must still be reported, not dropped")
+
+    def test_a_unit_raised_and_delivered_inside_a_closed_run_is_attributed_to_it(self) -> None:
+        """MUTANT: delete the `run_attributed` call from `owed` and keep the old split.
+
+        The unit stays in `owed` - nothing is forgiven - but it leaves `unaccounted`, which is
+        what the exit code and the headline are derived from, so the detector stops demanding a
+        second close for work one already accounted for.
+        """
+        r = self._tree(raised="2026-07-29T15:35:33Z", terminal_day="2026-07-30")
+        self.assertEqual([("BG0005", "bug", "RUN-01KYPZ1G")], r["run_attributed"])
+        self.assertEqual([], r["unaccounted"])
+        self.assertEqual({"BG0005"}, {cid for cid, _ in r["owed"]},
+                         "attribution must not forgive the unit - it is still reported")
+        self.assertFalse(close_owed.is_owed(r))
+
+    def test_a_unit_raised_outside_every_window_is_still_unaccounted(self) -> None:
+        """THE CONTROL. MUTANT: attribute on the terminal date alone and ignore the raise.
+
+        Without the raise test any terminal unit falling in a window would be credited, including
+        the standing backlog tail the baseline exists for - the ledger becomes a rubber stamp.
+        """
+        r = self._tree(raised="2026-06-01T09:00:00Z", terminal_day="2026-07-30")
+        self.assertEqual([], r["run_attributed"])
+        self.assertEqual([("BG0005", "bug")], r["unaccounted"])
+
+    def test_a_unit_delivered_after_the_run_ended_is_not_credited_to_it(self) -> None:
+        """MUTANT: drop the terminal-date test and attribute on the raise alone.
+
+        A bug raised in one run and fixed two runs later would be credited to the run that only
+        FILED it - a run which delivered nothing of it and whose retro cannot have described it.
+        """
+        r = self._tree(raised="2026-07-29T15:35:33Z", terminal_day="2026-08-04")
+        self.assertEqual([], r["run_attributed"])
+        self.assertEqual([("BG0005", "bug")], r["unaccounted"])
+
+    def test_a_run_that_never_completed_its_close_credits_nothing(self) -> None:
+        """MUTANT: accept any outcome that is not `running`.
+
+        `budget-spent`, `blocked` and `stopped` are mid-flight states that filed no account.
+        Crediting one would forgive work no retro ever described, which is the silent 'none owed'
+        this module exists to prevent.
+        """
+        r = self._tree(raised="2026-07-29T15:35:33Z", terminal_day="2026-07-30",
+                       outcome="stopped")
+        self.assertEqual([], r["run_attributed"])
+        self.assertEqual([("BG0005", "bug")], r["unaccounted"])
+
+    def test_a_stamp_that_names_no_moment_attributes_nothing(self) -> None:
+        """The corpus's other stamp shapes, driven rather than assumed.
+
+        `batch` and `none open - raised outside a delivery batch` are both present on real
+        artefacts. Nothing here guards their SHAPE - a letter sorts after every digit, so such a
+        token can never fall inside an ISO window - and this is the test that says so rather
+        than a branch no input could reach.
+        """
+        r = self._tree(raised="none open - raised outside a delivery batch",
+                       terminal_day="2026-07-30")
+        self.assertEqual([], r["run_attributed"])
+        self.assertEqual([("BG0005", "bug")], r["unaccounted"])
+
+    def test_the_shipped_command_names_the_run_that_already_accounts_for_it(self) -> None:
+        """THE LANE TEST. MUTANT: attribute in `owed` and print nothing about it.
+
+        An operator reading the report has to learn WHICH close already ran, or the only
+        actionable reading left is the one that sent them hand-correcting Batch lines.
+        """
+        import argparse
+        self._tree(raised="2026-07-29T15:35:33Z", terminal_day="2026-07-30")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = close_owed.cmd_detect(argparse.Namespace(root=str(self.root), format="text"))
+        page = buf.getvalue()
+        self.assertEqual(rc, 0, page)
+        self.assertIn("BG0005 -> RUN-01KYPZ1G", page)
+        self.assertIn("close already ran", page)
+
+
 if __name__ == "__main__":
     unittest.main()

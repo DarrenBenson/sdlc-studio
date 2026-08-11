@@ -80,6 +80,12 @@ EXPECTED_LANES = {
 #: refusal - including the commit-message rules - has had its chance.
 EXPENSIVE_LANES = {"skill-tests", "tool-tests"}
 
+#: Every lane `commit-msg` declares, on the same hand-maintained terms as EXPECTED_LANES above.
+#: `repo-writes` is cheap and still lives here rather than in `pre-commit`, because what it
+#: checks is what the SUITES did: it compares the tree against the snapshot `pre-commit` took
+#: when it selected them, so it cannot run until they have.
+MSG_HOOK_LANES = EXPENSIVE_LANES | {"repo-writes"}
+
 
 class LensSignatureLaneTests(unittest.TestCase):
     """The lens-signature contract must run in the gate people actually run.
@@ -160,7 +166,14 @@ class LaneOrderTests(unittest.TestCase):
     def test_no_lane_is_lost_in_the_reorder(self) -> None:
         # A dropped lane is a silent coverage cut.
         self.assertEqual(set(_lane_keys(HOOK)), EXPECTED_LANES)
-        self.assertEqual(set(_lane_keys(MSG_HOOK)), EXPENSIVE_LANES)
+        self.assertEqual(set(_lane_keys(MSG_HOOK)), MSG_HOOK_LANES)
+
+    def test_the_repo_writes_lane_runs_after_the_suites_it_judges(self) -> None:
+        """It compares the tree against a snapshot taken before the suites ran, so a lane
+        placed above them would report on a run that had not happened yet."""
+        for suite in EXPENSIVE_LANES:
+            self.assertLess(_lane_line(suite, MSG_HOOK), _lane_line("repo-writes", MSG_HOOK),
+                            f"repo-writes runs before the {suite} lane it is meant to judge")
 
     def test_every_lane_key_is_unique(self) -> None:
         keys = _lane_keys(HOOK) + _lane_keys(MSG_HOOK)
@@ -267,6 +280,31 @@ class ShortCircuitTests(unittest.TestCase):
             "the short-circuit skip must SAY it skipped and why, like the docs-only skip does")
 
 
+#: An ASSIGNMENT to `fail`, in every form the shell writes one IN PLACE. Anchored on the name
+#: and the operator rather than on one literal: the check greped for `fail=1`, so
+#: `fail=$(( fail + 1 ))` appended below the verdict write survived - door four left open by the
+#: very test that pins the property (BG0523). The second branch is the arithmetic context, where
+#: the name carries no `=` of its own: `(( fail++ ))` and `: $(( fail += 1 ))` both write `fail`
+#: and both walked past the first branch.
+#:
+#: NOT every conceivable write. A shell can also set the variable through a command that names
+#: it - `read fail`, `declare fail=`, `printf -v fail` - and those are out of scope here rather
+#: than covered: the hook uses none of them, and a detector claiming a completeness it does not
+#: have is the shape this repair is about. Extend both this pattern and the executed spellings
+#: below together, or the new case turns the suite red on itself.
+#:
+#: The lookbehind keeps `skill_fail=` and `window_fail=` out; `$fail` has no `=` after the name
+#: and so is never a match.
+_FAIL_ASSIGNMENT = re.compile(r"(?<![\w])fail\+?=|\(\(\s*fail\s*(?:\+\+|--|[-+*/%]?=)")
+
+
+def _fail_assignments_below_verdict(text: str) -> list[str]:
+    """Every line below the suite-verdict write that can still set `fail`, comments excluded."""
+    after = text[text.index("--record-suite-verdict"):]
+    return [ln.strip() for ln in after.splitlines()
+            if _FAIL_ASSIGNMENT.search(ln) and not ln.strip().startswith("#")]
+
+
 class SuiteVerdictFailOpenTests(unittest.TestCase):
     """A green verdict must never be recorded beside a failing lane.
 
@@ -319,18 +357,51 @@ class SuiteVerdictFailOpenTests(unittest.TestCase):
         The executing tests pin the three doors that were actually found. This pins the
         PROPERTY, so door four fails here when it is written rather than when it is exploited -
         an enumeration of a rule is a lower bound, not a boundary (LL0043).
+
+        The detector is anchored on an ASSIGNMENT to `fail`, not on the literal `fail=1`: one
+        spelling is an enumeration of a rule too, and `fail=$(( fail + 1 ))` walked straight
+        past it. Arithmetic-context writes - `(( fail++ ))`, `: $(( fail += 1 ))` - are matched
+        as well; writes made through a command that NAMES the variable, such as `read fail`, are
+        stated as out of scope beside the pattern rather than claimed.
         """
-        text = self.HOOK.read_text(encoding="utf-8")
-        verdict = text.index("--record-suite-verdict")
-        after = text[verdict:]
-        offenders = [ln.strip() for ln in after.splitlines()
-                     if "fail=1" in ln and not ln.strip().startswith("#")]
+        offenders = _fail_assignments_below_verdict(self.HOOK.read_text(encoding="utf-8"))
         self.assertEqual(
             offenders, [],
             "these lines can still set `fail` AFTER the suite verdict has been written, so a "
             "commit they block leaves a reusable green verdict at that HEAD and the "
             f"byte-identical retry skips the suites: {offenders}. The verdict must be the LAST "
             "thing a passing hook does - move the write below them.")
+
+    def test_the_property_check_catches_a_late_fail_however_it_is_spelled(self) -> None:
+        """MUTANT: narrow the detector back to `"fail=1" in ln`.
+
+        The property test greped one literal, so the mutant its own criterion names -
+        appending an assignment below the verdict write - survived in every spelling but that
+        one. Each spelling here is applied to a COPY of the shipped hook, so this is the
+        criterion's mutant executed rather than a shape asserted about; the real hook is
+        asserted clean beside them, without which the detector could simply return everything.
+
+        The two arithmetic spellings were added with the pattern that catches them. A spelling
+        added to this loop alone would redden the suite on its own new case, and one added to
+        the pattern alone would go unexecuted - which is how the literal `fail=1` survived.
+        """
+        real = self.HOOK.read_text(encoding="utf-8")
+        self.assertEqual(_fail_assignments_below_verdict(real), [],
+                         "the shipped hook already carries a late assignment - the positive "
+                         "control below would then prove nothing")
+        for spelling in ('fail=$(( fail + 1 ))', 'fail=2', 'fail+=1',
+                         '  [ -n "$x" ] && fail=1', 'export fail=1',
+                         '(( fail++ ))', ': $(( fail += 1 ))'):
+            with self.subTest(spelling=spelling):
+                caught = _fail_assignments_below_verdict(f"{real}\n{spelling}\n")
+                self.assertTrue(
+                    caught,
+                    f"{spelling!r} appended below the suite-verdict write was not reported, so "
+                    f"a commit it blocks still leaves a reusable green verdict at that HEAD")
+        # And the complement: a MENTION of the name below the write is not an assignment, or
+        # the detector would refuse the hook's own `if [ "$fail" -ne 0 ]` exit branch.
+        self.assertEqual(_fail_assignments_below_verdict(f'{real}\nprintf "$fail"\n'), [],
+                         "reading `$fail` was reported as setting it")
 
     def test_a_failing_tool_lane_also_leaves_its_output_behind(self) -> None:
         """MUTANT: drop the tool lane's log capture.

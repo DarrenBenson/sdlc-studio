@@ -459,6 +459,12 @@ fi
 handoff="$(git rev-parse --git-path sdlc-gate-suites 2>/dev/null || true)"
 [ -n "$handoff" ] || handoff="$(git rev-parse --git-dir 2>/dev/null)/sdlc-gate-suites"
 rm -f "$handoff" 2>/dev/null
+# The BEFORE half of the repo-writes lane, and it lives in the same git directory and under the
+# same one-shot rule as the handover above, for the same reason: a gate that dirties the tree it
+# is gating trains people to stage past it.
+writes_snapshot="$(git rev-parse --git-path sdlc-repo-writes 2>/dev/null || true)"
+[ -n "$writes_snapshot" ] || writes_snapshot="$(git rev-parse --git-dir 2>/dev/null)/sdlc-repo-writes"
+rm -f "$writes_snapshot" 2>/dev/null
 #
 # WHICH paths are test-relevant is no longer just a regex written here. That hand list -
 # three directories - is a lower bound: the suites also read the hooks, the workflow file,
@@ -531,6 +537,33 @@ if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
      } > "$handoff" 2>/dev/null; then
     printf '  %snote%s unit suites selected - they run in the commit-msg hook, after the commit\n' "$Y" "$N"
     printf '       message rules, so a message defect is refused in seconds instead of after them.\n'
+    # THE BEFORE HALF OF THE REPO-WRITES LANE. Running the tests must not modify a tracked file,
+    # create an untracked one, or touch gitignored `sdlc-studio/.local/` - an invariant broken
+    # four times in two days, each time caught by an unrelated gate rather than by the author,
+    # and once destroying 23 mutation registrations nothing could restore. `commit-msg` takes
+    # the second reading once the suites have finished and refuses on any difference.
+    #
+    # It sits INSIDE the selection block deliberately: a snapshot with no suite run between its
+    # two halves is evidence of nothing, and taking one on every commit would charge a
+    # docs-only commit for a question nobody asked. Cost is one `git status` plus a walk of
+    # `.local/`, paid twice, on a commit that was already paying for the suites.
+    #
+    # A failure here is NAMED and does not block. The snapshot is unavailable in exactly one
+    # situation - a tree without the checker, which is every hook fixture in this repo's own
+    # suite - and refusing those would make the gate untestable. `check` refuses on a missing
+    # record, so a snapshot that silently failed cannot read as a clean comparison either.
+    #
+    # The RECORD is what decides, not the exit code. A stub checker exits 0 and writes nothing,
+    # and reading only the status would leave the lane un-runnable AND unmentioned - the silent
+    # skip this hook names every other skip to avoid.
+    if python3 tools/repo_writes.py snapshot --root . --out "$writes_snapshot" 2>/dev/null \
+       && [ -s "$writes_snapshot" ]; then
+      :
+    else
+      rm -f "$writes_snapshot" 2>/dev/null
+      printf '  %sSKIP%s repo-writes - the working tree could not be snapshotted, so whether the\n' "$Y" "$N"
+      printf '       suites write into it will NOT be checked for this commit.\n'
+    fi
   else
     # A handover that cannot be written means the suites will not run at all. Refused, not
     # warned: an unrunnable expensive lane inside an otherwise green gate is the silent
@@ -559,8 +592,10 @@ fi
 if [ "$fail" -ne 0 ]; then
   printf '\n%sCommit blocked.%s Fix the failures above (each lists how), then commit again.\n' "$R" "$N"
   printf 'Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
-  # A blocked commit never reaches commit-msg, so the handover must not survive it.
-  rm -f "$handoff" 2>/dev/null
+  # A blocked commit never reaches commit-msg, so neither record may survive it. The snapshot
+  # goes with the handover: a record left behind would describe a tree from a run that never
+  # happened, and the next commit-msg-only operation would compare against it.
+  rm -f "$handoff" "$writes_snapshot" 2>/dev/null
   exit 1
 fi
 # Honest about what is still owed: "green" over a gate whose expensive half has not run yet

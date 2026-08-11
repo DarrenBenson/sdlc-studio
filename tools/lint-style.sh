@@ -7,6 +7,8 @@
 #   3. No internal provenance tags in consuming-facing files.
 #   4. British English: a bounded list of American spellings is flagged (same
 #      allowlist mechanism for cited names, quotations, and API identifiers).
+#   5. No bare double-underscore pair in markdown prose - markdownlint reads it
+#      as strong emphasis and `--fix` REWRITES it. Backtick it.
 #
 # Prints every offender and exits non-zero on any violation. Run via
 # `npm run lint` (which CI runs), or directly: bash tools/lint-style.sh
@@ -92,6 +94,55 @@ if [ -n "$am_hits" ]; then
   echo "Style error: American spelling found - the house style is British English."
   echo "Use the British form (-ize -> -ise, -ization -> -isation, behavior -> behaviour, color -> colour, analyze -> analyse), or add the line's context to tools/style-allowlist.txt."
   printf '%s\n' "$am_hits"
+  status=1
+fi
+
+# 5. A bare double-underscore PAIR in markdown prose. markdownlint's MD050 reads `__x__` as
+#    strong emphasis wherever it sits - including a filename in a heading - and `--fix`
+#    REWRITES it. Two guards then fought over one file: with the style inferred per file, one
+#    `__init__.py` in a bug title made the whole document underscore-styled, so `npm run
+#    lint:fix` converted every `> **Status:**` metadata line to `> __Status:__` and the schema
+#    reader could no longer find a Status. `.markdownlint.json` now pins MD050 to `asterisk`,
+#    which protects the metadata block; this lane protects the TOKEN, which a pinned style
+#    would instead rewrite to `**init**.py`. Inside a code span or a fenced block no emphasis
+#    rule reaches it, so backticking is the fix and the exemption at the same time.
+#
+#    What is deliberately NOT flagged, measured over this corpus before the lane shipped:
+#    a lone run of underscores (`___`, the persona questionnaire's answer blank - 12 of the
+#    12 lines carrying `__` outside code), because it is not a pair; and an intraword pair
+#    (`mcp__a__b`), because CommonMark gives underscore emphasis no intraword meaning and
+#    markdownlint reports none. Hence the left word boundary and the required closing pair.
+dunder_files="$(grep -rIl --include='*.md' --exclude-dir=node_modules --exclude-dir=worktrees \
+  -e '__' . 2>/dev/null || true)"
+dunder_hits=""
+if [ -n "$dunder_files" ]; then
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    hit="$(awk '
+      FNR == 1 { fence = 0 }
+      /^[[:space:]]*(```|~~~)/ { fence = 1 - fence; next }
+      fence { next }
+      {
+        line = $0
+        gsub(/`[^`]*`/, "", line)            # a code span is already safe from --fix
+        if (match(line, /(^|[^_[:alnum:]])__[^_[:space:]]([^_]|_[^_])*__/))
+          printf "%s:%d:%s\n", FILENAME, FNR, $0
+      }' "$f" 2>/dev/null || true)"
+    [ -n "$hit" ] && dunder_hits="${dunder_hits}${hit}
+"
+  done < <(printf '%s\n' "$dunder_files")
+fi
+if [ -n "$dunder_hits" ] && [ -f "$allowlist" ]; then
+  allow="$(grep -vE '^[[:space:]]*(#|$)' "$allowlist" || true)"
+  if [ -n "$allow" ]; then
+    dunder_hits="$(printf '%s\n' "$dunder_hits" | grep -ivF -- "$allow" || true)"
+  fi
+fi
+dunder_hits="$(printf '%s' "$dunder_hits" | grep -v '^$' || true)"
+if [ -n "$dunder_hits" ]; then
+  printf '%s\n' 'Style error: a bare double-underscore pair in markdown. markdownlint reads it as strong emphasis, and --fix REWRITES it - which is how one __init__.py in a bug title turned every "> **Status:**" metadata line into "> __Status:__" and unmade the artefact.'
+  printf '%s\n' 'Wrap it in backticks, or add the line'"'"'s context to tools/style-allowlist.txt.'
+  printf '%s\n' "$dunder_hits"
   status=1
 fi
 

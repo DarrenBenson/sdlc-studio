@@ -2740,6 +2740,28 @@ def _ratchet_story(root: Path, sid: str, verify_target: str, affects: str) -> No
         f"- **Verify:** pytest {verify_target}\n", encoding="utf-8")
 
 
+def _masking_story(root: Path) -> Path:
+    """A story carrying two `affects-unresolvable` instances - the OTHER kind, the one a
+    repair elsewhere could be spent to mask a regression in `affects-undeclared`.
+
+    TERMINAL on purpose. `affects-unresolvable` is reported only at a terminal status -
+    declaring the file you are about to create is what a Draft story is for - so the `Ready`
+    this fixture carried emitted ZERO instances of the kind it exists to be about, and the
+    masking scenario reduced to the single-kind one its sibling already covers (BG0523).
+    """
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    (root / "src").mkdir(parents=True, exist_ok=True)
+    p = d / "US0003-x.md"
+    p.write_text(
+        "# US0003: a story\n\n> **Status:** Done\n> **Epic:** EP0100\n"
+        "> **Points:** 2\n> **Affects:** src/gone-one.py, src/gone-two.py\n\n"
+        "## Acceptance Criteria\n\n### AC1: it behaves\n\n- **Given** a thing\n"
+        "- **When** it runs\n- **Then** it works\n- **Verify:** shell true\n",
+        encoding="utf-8")
+    return p
+
+
 def _stamp(root: Path, instances, reason: str = "recorded at adoption") -> None:
     (root / validate.WARNING_RATCHET_FILE).parent.mkdir(parents=True, exist_ok=True)
     (root / validate.WARNING_RATCHET_FILE).write_text(json.dumps({
@@ -2797,26 +2819,55 @@ class WarningRatchetTests(unittest.TestCase):
                          "the repaired entry is not reported as stale and removable")
 
     def test_a_kind_paid_down_elsewhere_cannot_mask_another(self) -> None:
-        """MUTANT: make the rule a per-kind tally rather than part of each identity."""
+        """MUTANT: make the rule a per-kind tally rather than part of each identity.
+
+        The fixture must actually CARRY the other kind, which is where this failed: with the
+        masking story at `Ready` it emitted none, so the scenario reduced to AC1's and dropping
+        the rule from the identity survived. The surplus is asserted, not assumed.
+        """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
-            # two instances of a DIFFERENT kind, which the change below repairs
-            d2 = root / "sdlc-studio" / "stories"
-            (root / "src").mkdir(parents=True, exist_ok=True)
-            (d2 / "US0003-x.md").write_text(
-                "# US0003: a story\n\n> **Status:** Ready\n> **Epic:** EP0100\n"
-                "> **Points:** 2\n> **Affects:** src/gone-one.py, src/gone-two.py\n\n"
-                "## Acceptance Criteria\n\n### AC1: it behaves\n\n- **Given** a thing\n"
-                "- **When** it runs\n- **Then** it works\n- **Verify:** shell true\n",
-                encoding="utf-8")
+            other = _masking_story(root)          # two of a DIFFERENT kind, repaired below
+            surplus = [x for x in validate.ratchet_instances(root)
+                       if x[1] == "affects-unresolvable"]
+            self.assertEqual(len(surplus), 2,
+                             f"the fixture carries no surplus of the other kind, so it cannot "
+                             f"show that one cannot mask the other: {surplus}")
             _stamp(root, sorted(validate.ratchet_instances(root)))
-            (d2 / "US0003-x.md").unlink()                                  # two repaired
+            other.unlink()                                                 # two repaired
             _ratchet_story(root, "US0002", "src/b.py", "src/other.py")     # one introduced
             rep = validate.warning_ratchet(root)
         self.assertFalse(rep["ok"],
                          "a surplus repaired in one kind masked a regression in another")
         self.assertEqual({r for _i, r, _t in rep["new"]}, {"affects-undeclared"})
+        self.assertEqual({r for _i, r, _t in rep["stale"]}, {"affects-unresolvable"},
+                         "the repaired surplus was not of the other kind")
+
+    def test_the_masking_fixture_emits_the_second_kind_it_is_named_for(self) -> None:
+        """MUTANT: drop `affects-unresolvable` from `validate.RATCHET_RULES`, or put the masking
+        story back at a non-terminal status.
+
+        The cross-kind scenario is only a cross-kind scenario if TWO kinds are present. Its
+        fixture emitted one, so `a kind paid down elsewhere` was tested by a workspace that had
+        no elsewhere - the finding BG0523 records. Both kinds are named here, and the second is
+        asserted on its own so a rule quietly leaving the ratchet's judgement cannot go unseen.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
+            _masking_story(root)
+            live = validate.ratchet_instances(root)
+        by_rule = {}
+        for unit, rule, target in live:
+            by_rule.setdefault(rule, set()).add((unit, target))
+        self.assertEqual(
+            sorted(by_rule), ["affects-undeclared", "affects-unresolvable"],
+            f"the fixture carries fewer than the two kinds the masking scenario needs: {live}")
+        self.assertEqual(
+            by_rule["affects-unresolvable"],
+            {("US0003", "src/gone-one.py"), ("US0003", "src/gone-two.py")},
+            "the masking story does not emit its two unresolvable instances by identity")
 
     def test_no_untrustworthy_baseline_reports_clean(self) -> None:
         """MUTANT: treat an absent, unreadable or reasonless baseline as an empty one.

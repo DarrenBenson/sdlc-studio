@@ -162,5 +162,86 @@ class ProvenanceGuardTests(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stdout)
 
 
+#: An artefact's metadata block, in the shape the schema reader matches. Every case below
+#: carries it, so a rewrite of these lines is visible in the fixture rather than inferred.
+_METADATA = "> **Status:** Open\n> **Severity:** High\n"
+
+
+def _md_fixture(root: Path, body: str, allow: str = "") -> Path:
+    """A fixture tree holding one markdown file, for the bare-dunder lane."""
+    (root / "artefact.md").write_text(body, encoding="utf-8")
+    tools = root / "tools"
+    tools.mkdir()
+    (tools / "style-allowlist.txt").write_text(allow, encoding="utf-8")
+    return root
+
+
+class BareDunderTests(unittest.TestCase):
+    """BG0566: a bare `__x__` pair is what makes markdownlint rewrite a whole artefact.
+
+    MD050 is now pinned to `asterisk`, so the metadata block can no longer be flipped to
+    underscores - but a pinned style makes `--fix` rewrite the OTHER side of the same
+    disagreement, turning `__init__.py` in a title into `**init**.py`. The only shape both
+    guards leave alone is a code span, so this lane refuses the token anywhere else.
+    """
+
+    def test_a_bare_dunder_pair_in_a_heading_is_refused_before_fix_can_reach_it(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            r = _run(_md_fixture(Path(d),
+                                 f"# BG0001: the loader skips __init__.py\n\n{_METADATA}"))
+            self.assertEqual(r.returncode, 1, r.stdout)
+            self.assertIn("double-underscore", r.stdout)
+            self.assertIn("artefact.md:1:", r.stdout, "the offending line must be named")
+            self.assertIn("backticks", r.stdout, "the remedy must be printed")
+
+    def test_a_backticked_dunder_passes_because_no_emphasis_rule_reaches_a_code_span(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            r = _run(_md_fixture(Path(d),
+                                 f"# BG0001: the loader skips `__init__.py`\n\n{_METADATA}"))
+            self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_a_dunder_inside_a_fenced_block_is_not_flagged(self) -> None:
+        """Every best-practice page shows `if __name__ == "__main__":`. markdownlint does not
+        read a fenced block as emphasis and neither does this lane, so a guard that flagged it
+        would refuse the corpus it ships with."""
+        body = ('Prose.\n\n```python\n'
+                'if __name__ == "__main__":\n    main()\n```\n')
+        with tempfile.TemporaryDirectory() as d:
+            r = _run(_md_fixture(Path(d), body))
+            self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_a_lone_underscore_run_is_not_a_pair_and_is_not_flagged(self) -> None:
+        """The persona questionnaire's answer blanks. Measured before this lane shipped, they
+        were 12 of the 12 corpus lines carrying `__` outside code - so a lane keyed on `__`
+        rather than on a PAIR would have arrived red against the tree it guards."""
+        with tempfile.TemporaryDirectory() as d:
+            r = _run(_md_fixture(Path(d),
+                                 "- Or enter custom name: ___\n\n| ___ | ___ |\n"))
+            self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_an_intraword_pair_is_not_flagged_because_it_is_not_emphasis(self) -> None:
+        """CommonMark gives an underscore no intraword emphasis meaning, so markdownlint
+        reports nothing on `mcp__a__b` and `--fix` leaves it alone. A lane flagging it would
+        refuse a line no tool would ever rewrite."""
+        with tempfile.TemporaryDirectory() as d:
+            r = _run(_md_fixture(Path(d),
+                                 "Use mcp__sequential-thinking__sequentialthinking here.\n"))
+            self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_underscore_strong_emphasis_in_prose_is_refused_too(self) -> None:
+        """The same token by a different intent. House style is asterisk emphasis, and this is
+        the line `--fix` would rewrite in the opposite direction."""
+        with tempfile.TemporaryDirectory() as d:
+            r = _run(_md_fixture(Path(d), "This is __very__ important.\n"))
+            self.assertEqual(r.returncode, 1, r.stdout)
+
+    def test_the_metadata_block_alone_is_clean(self) -> None:
+        """The positive control for every case above: the artefact shape this lane exists to
+        protect passes untouched."""
+        with tempfile.TemporaryDirectory() as d:
+            r = _run(_md_fixture(Path(d), f"# BG0001: a title\n\n{_METADATA}"))
+            self.assertEqual(r.returncode, 0, r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

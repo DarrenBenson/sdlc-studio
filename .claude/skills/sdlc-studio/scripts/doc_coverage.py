@@ -93,11 +93,11 @@ def help_page_findings(skill_dir: Path) -> list[dict]:
         commands = _type_ref_commands(skill_dir)
         pages = {p.stem for p in (skill_dir / "help").glob("*.md")}
     except OSError as exc:
-        return [{"kind": "help-page", "severity": "error",
+        return [{"kind": "help-page", "severity": "error", "name": "unreadable-skill-tree",
                  "detail": f"the skill tree could not be read ({exc.__class__.__name__}) - "
                            f"reporting the failure rather than a clean pass"}]
     if not commands:
-        return [{"kind": "help-page", "severity": "error",
+        return [{"kind": "help-page", "severity": "error", "name": "no-type-reference",
                  "detail": "SKILL.md names no Type Reference commands - a check that reads "
                            "nothing reports clean, which is the failure it exists to remove"}]
     for cmd in commands:
@@ -105,12 +105,12 @@ def help_page_findings(skill_dir: Path) -> list[dict]:
             continue
         if cmd in HELP_PAGE_WAIVERS:
             continue
-        out.append({"kind": "help-page", "severity": "error",
+        out.append({"kind": "help-page", "severity": "error", "name": cmd,
                     "detail": f"command `{cmd}` is in the Type Reference and has no "
                               f"`help/{cmd}.md` page"})
     for waived in sorted(HELP_PAGE_WAIVERS):
         if waived in pages:
-            out.append({"kind": "help-page", "severity": "error",
+            out.append({"kind": "help-page", "severity": "error", "name": waived,
                         "detail": f"the waiver for `{waived}` is STALE - the page now exists, "
                                   f"so the waiver hides nothing and must be dropped"})
     return out
@@ -156,6 +156,13 @@ def check(repo_root: Path | str = ".") -> dict:
             findings.append({"kind": "script-undocumented", "name": s, "blocking": True,
                              "detail": f"scripts/{s}.py has no reference-scripts*.md entry "
                                        "(the lean index or a grouped detail page)"})
+    # CALLED FROM HERE, which is the lane. `help_page_findings` shipped with no caller: the gate
+    # runs `check`, so a deleted help page reddened one unit test and nothing an operator runs.
+    # A finding gains `name` and `blocking` here rather than in the enumerator, because those are
+    # this function's report shape and the enumerator is also read directly by its own tests.
+    for f in help_page_findings(skill_dir):
+        findings.append({"kind": f["kind"], "name": f["name"], "blocking": True,
+                         "detail": f["detail"]})
     if _changelog_unreleased_empty(Path(repo_root)) is True:
         findings.append({"kind": "changelog-empty", "name": "CHANGELOG", "blocking": False,
                          "detail": "CHANGELOG [Unreleased] is empty - add an entry for the release work (LL0004)"})

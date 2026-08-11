@@ -59,6 +59,10 @@ prints each lane's rule and fix on failure, so this is the roster, not the manua
 `check_action_pins.sh`, `validate_skill.py`, `verify_ac.py`, `readiness.py`, `runbook.py`,
 `validate.py` (the warning ratchet), plus `gate.py`'s
 own block (conformance, reconcile, validate, integrity, duplicate-id, docs) and markdownlint.
+One lane spans BOTH hooks: `repo-writes` (`tools/repo_writes.py`) snapshots the
+working tree in `pre-commit` at the moment the suites are selected, and refuses in `commit-msg`
+if running them modified a tracked file, created an untracked one, or touched gitignored
+`sdlc-studio/.local/`. It costs two directory reads and never a second suite run.
 One lane is deliberately NOT per-commit: `release-rehearsal` binds at the **push and release
 boundaries only** (`gate.py --boundary push|release`). It drives `tools/rehearse-release.sh` -
 greenfield `init` to a written sprint plan, and a v4-era workspace through `migrate --apply` to a

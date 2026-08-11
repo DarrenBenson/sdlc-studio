@@ -22,10 +22,16 @@ dc = _load()
 
 
 def _skill(repo: Path, *, type_ref_cmds=("foo",), help_cmds=("foo",),
-           scripts=("foo",), ref_scripts=("foo",), changelog="- a change\n") -> None:
+           scripts=("foo",), ref_scripts=("foo",), changelog="- a change\n",
+           help_pages=None) -> None:
     sd = repo / ".claude" / "skills" / "sdlc-studio"
     (sd / "help").mkdir(parents=True, exist_ok=True)
     (sd / "scripts").mkdir(parents=True, exist_ok=True)
+    # The per-command PAGES, distinct from the catalogue rows above. A fully covered tree needs
+    # both, and `help_pages` defaults to the Type Reference so a fixture only has to say which
+    # it is short of. Kept separate so a test can be short of exactly one of the two.
+    for c in (type_ref_cmds if help_pages is None else help_pages):
+        (sd / "help" / f"{c}.md").write_text(f"# {c}\n", encoding="utf-8")
     rows = "\n".join(f"| `{c}` | desc |" for c in type_ref_cmds)
     (sd / "SKILL.md").write_text(
         f"# SKILL\n\n## Type Reference\n\n| Type | Description |\n| --- | --- |\n{rows}\n\n"
@@ -133,6 +139,41 @@ class HelpPageCoverageTests(unittest.TestCase):
                       "the page never states its invocation form")
         self.assertIn("not** priced by the story's points", body.replace("*", "*"),
                       "the page does not state that grooming is unpriced work")
+
+    def test_deleting_a_help_page_reddens_the_lane_the_gate_runs(self) -> None:
+        """MUTANT: remove the `help_page_findings` call from `doc_coverage.check`.
+
+        `help_page_findings` shipped with NO caller. `check` is what the gate runs as the
+        `doc-coverage` lane and what `conformance` reads for its `documented` stage, so deleting
+        a help page reddened one unit test and nothing an operator runs (BG0497). Driven through
+        `main`, the shipped entry point, because the wiring is the part a library call cannot
+        see: `help_page_findings(skill)` answered correctly for a whole sprint while the lane
+        exited 0 over the same tree.
+        """
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _skill(root, type_ref_cmds=("foo", "bar"), help_cmds=("foo", "bar"),
+                   scripts=("foo",), ref_scripts=("foo",))
+            covered = mod.check(str(root))
+            self.assertTrue(covered["ok"],
+                            f"the fixture is not covered to begin with: {covered['findings']}")
+            self.assertEqual(0, mod.main(["--root", str(root)]),
+                             "the shipped command refuses a fully covered tree")
+
+            (root / ".claude" / "skills" / "sdlc-studio" / "help" / "bar.md").unlink()
+            after = mod.check(str(root))
+            self.assertFalse(after["ok"],
+                             "a deleted help page left the lane green - `check` never asks")
+            gaps = [f for f in after["findings"] if f["kind"] == "help-page"]
+            self.assertEqual(1, len(gaps), after["findings"])
+            self.assertTrue(gaps[0]["blocking"], "the gap is advisory, so the lane still passes")
+            self.assertIn("bar", gaps[0]["detail"])
+            self.assertEqual("bar", gaps[0]["name"],
+                             "the finding does not NAME the command, so the conformance stage "
+                             "that lists the gaps cannot say which page is missing")
+            self.assertEqual(1, mod.main(["--root", str(root)]),
+                             "the shipped command exits 0 with a help page deleted")
 
     def test_missing_page_stale_waiver_and_unreadable_tree_all_fail_loud(self) -> None:
         """MUTANT: return [] on any of the three.

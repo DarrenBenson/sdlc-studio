@@ -44,7 +44,7 @@
 
 ### AC4: AC4: the line ceiling was raised deliberately in the same commit as the prose
 
-- **Given** reference-sprint.md at 760 lines against a recorded ceiling of 724 with CEILING_TOLERANCE 1.05 (724 x 1.05 = 760.2), so one added line breaks the budget guard
+- **Given** reference-sprint.md was at 760 lines against a recorded ceiling of 724 with CEILING_TOLERANCE 1.05 (724 x 1.05 = 760.2), so it cleared the guard only on the tolerance and one added line would have broken it
 - **When** the recorded ceiling for reference-sprint.md is read from tools/check_budgets.py and compared with the shipped file's line count
 - **Then** the ceiling is greater than 724 and the file is within it WITHOUT relying on the 5% tolerance, so the prose and its ceiling land together rather than the prose landing on borrowed headroom
 - **Verify:** pytest tools/tests/test_check_budgets.py::ReferenceSprintCeilingTests::test_the_recorded_ceiling_admits_the_shipped_file_without_tolerance

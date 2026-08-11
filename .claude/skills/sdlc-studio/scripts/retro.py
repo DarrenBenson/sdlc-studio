@@ -681,6 +681,19 @@ figure an operator TYPED, which is a claim about what a sprint cost, not a measu
 An empty Source is unrecorded - the rows written before the column existed - and unrecorded is
 what it stays, because back-filling provenance would invent the very thing the column records.
 
+Read the Overhead bound column before comparing two Overhead ratios. The ratio is overhead time
+against delivery time, and delivery is DERIVED by taking the measured overhead out of the run's
+measured span - so every minute the instruments failed to attribute is credited to delivery, and
+the ratio flatters the loop exactly in proportion to how poorly the run was measured. `exact`
+means every component was measured; `lower` means the ratio is a floor and the close report for
+that sprint names the components it excludes. An empty cell is UNRECORDED - a row written before
+this column existed, which every row carrying a ratio and no bound is - and unrecorded is never
+the same as `exact`. Treat such a ratio as a floor of unknown tightness: recomputed with every
+component, the four in this file that carry one all resolve to `lower`, which is the direction
+an unmeasured component always moves it. They are left as written rather than back-filled,
+because this file publishes what was measured at the time and a figure computed today under a
+row dated two months ago is a different claim wearing that row's date.
+
 A `harness` figure is a LOWER BOUND, never an equality. The meter is the session transcript,
 and the transcript records no subagent usage at all: measured on one live session, 6,624,813
 tokens of usage carried ZERO sidechain records. So a sprint that delegated work to agents cost
@@ -691,7 +704,7 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 -->
 # Velocity history
 
-| Retro | Date | Units | Measured | Forecast | Points | Written | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Overhead | Unattributed (s) | Constants | Sample | Model | Note | Source |
+| Retro | Date | Units | Measured | Forecast | Points | Written | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Overhead | Overhead bound | Constants | Sample | Model | Note | Source |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 """
 
@@ -715,10 +728,24 @@ VELOCITY_COLUMNS = (
     ("actual", "actual_tokens"), ("ratio", "ratio"), ("oversized", "oversized"),
     ("wall", "wall_time_s"),
     # The overhead split, so the instrument that computes it once per sprint stops forgetting
-    # it. `overhead` is the ratio of overhead time to delivery time and `unattributed` is the
-    # measured span neither side accounts for; both are absent rather than zero when the run
+    # it. `overhead` is the ratio of overhead time to delivery time and `overhead bound` says
+    # whether that ratio is exact or a floor; both are absent rather than zero when the run
     # could not attribute them, because a 0 here would read as a sprint with no overhead.
-    ("overhead", "overhead_ratio"), ("unattributed", "unattributed_s"),
+    #
+    # The bound column replaced an `unattributed` span that was 0.0 for every row that ever
+    # carried it, and could not have been anything else: delivery is DEFINED as the measured
+    # span minus the measured overhead, so what is left over is zero by construction. A residue
+    # of two figures one of which is the difference of the other two measures nothing, and this
+    # file publishes measurements. The unattributed time is real, but it is inside the delivery
+    # figure, and the bound is the honest statement of that.
+    #
+    # `overhead bound` starts with `overhead`, so these two names OVERLAP. `_velocity_index`
+    # resolves that by taking the longest unclaimed prefix and filing exactly one key per cell,
+    # so the order they are declared in here does not matter. It used to: an earlier note claimed
+    # this list's order was the protection, and it was not - reversing it changed nothing, while
+    # the case the note warned about (a header carrying the bound and no ratio) was broken in
+    # BOTH orders.
+    ("overhead bound", "overhead_bound"), ("overhead", "overhead_ratio"),
     ("constants", "constants"), ("sample", "sample"),
     ("model", "model"), ("note", "note"), ("source", "source"),
 )
@@ -1774,6 +1801,14 @@ def _velocity_num(cell: str):
         return None
 
 
+def _velocity_word(cell: str) -> str | None:
+    """A one-word cell, or None for the `-` this file writes into an empty one. Absence has one
+    spelling on the way in and another on the way out, and a reader that missed the difference
+    would report the dash as a recorded value."""
+    raw = (cell or "").strip()
+    return raw if raw and raw != "-" else None
+
+
 def _velocity_index(line: str) -> dict[str, int] | None:
     """Column name -> position, from the table's header row. None when the line is not one."""
     cells = sdlc_md.table_cells(line)
@@ -1782,9 +1817,19 @@ def _velocity_index(line: str) -> dict[str, int] | None:
     idx: dict[str, int] = {}
     for pos, cell in enumerate(cells):
         name = cell.strip().lower()
+        # The LONGEST unclaimed prefix wins, and a cell files exactly one key. `overhead bound`
+        # starts with `overhead`, so a first-match rule gave one cell to both keys whenever the
+        # narrower name had not already been claimed by an earlier column - which is precisely a
+        # header carrying the bound and no ratio, where the bound was then read as the ratio.
+        # Declaration order used to matter and no longer does, which is the point: the ordering
+        # was load-bearing, undocumented in the only place it acted, and the comment that did
+        # describe it was wrong about what protected it.
+        best: tuple[str, str] | None = None
         for prefix, key in VELOCITY_COLUMNS:
-            if name.startswith(prefix) and key not in idx:
-                idx[key] = pos
+            if name.startswith(prefix) and key not in idx and (best is None or len(prefix) > len(best[0])):
+                best = (prefix, key)
+        if best is not None:
+            idx[best[1]] = pos
     return idx
 
 
@@ -1860,9 +1905,12 @@ def velocity_history(root) -> list[dict]:
                     # declared in VELOCITY_COLUMNS and computed into the row, and both the
                     # header and this reader dropped them - so the figure reached the file's
                     # contract and nothing downstream could ever see it. Absent stays absent;
-                    # a 0 here would read as a sprint with no overhead at all.
+                    # a 0 here would read as a sprint with no overhead at all. The bound is a
+                    # word, not a number, and a row written before the column existed carries
+                    # none - which reads as a ratio of unrecorded provenance, never as an exact
+                    # one.
                     "overhead_ratio": _velocity_num(cell("overhead_ratio")),
-                    "unattributed_s": _velocity_num(cell("unattributed_s")),
+                    "overhead_bound": _velocity_word(cell("overhead_bound")),
                     "constants": parse_constants(cell("constants")),
                     "sample": cell("sample") or None,
                     "model": model if model and model != "-" else None,
@@ -2255,25 +2303,30 @@ def _actual_source(res: dict, actual, existing=None) -> str | None:
 
 
 def _overhead_terms(root, unit_ids) -> dict:
-    """`{overhead_ratio, unattributed_s}` for this batch, or both absent.
+    """`{overhead_ratio, overhead_bound}` for this batch, or both absent.
 
-    Read from `sprint_report`, which owns the computation. Never recomputed: two readings of
-    one question is how they come to disagree, and this one is written to the file the next
-    sprint plans from. Any failure yields ABSENCE, because a reporting figure must not break a
-    close and a zero would read as a sprint with no overhead."""
+    Read from `sprint_report`, which owns the computation, through the one entry point that
+    supplies EVERY component. Never recomputed: two readings of one question is how they come to
+    disagree, and this one is written to the file the next sprint plans from. Passing the
+    components in blank does not fail either - it quietly drops the gate and mutation time and
+    returns a smaller ratio than the close report printed from the same run.
+
+    The BOUND travels with the ratio because it is what makes two rows comparable: a floor
+    measured from one component of three is not the same quantity as an exact figure, and a bare
+    number in a history invites exactly that comparison. It is a fact about which records the run
+    wrote, not an arithmetic residue of the figures beside it.
+
+    Any failure yields ABSENCE, because a reporting figure must not break a close and a zero
+    would read as a sprint with no overhead."""
     try:
         import sprint_report  # noqa: PLC0415 - deferred; validate must not pay for it
-        ov = sprint_report._overhead_ratio(  # noqa: SLF001 - the module's own computation
-            Path(root), list(unit_ids or []), {}, {})
+        ov = sprint_report.overhead_split(Path(root), list(unit_ids or []))
     except Exception as exc:  # noqa: BLE001 - a reporting term never fails a close
         sdlc_md.debug("retro._overhead_terms", exc)
         return {}
     if not ov.get("measured"):
         return {}
-    total, overhead, delivery = ov.get("total_s"), ov.get("overhead_s"), ov.get("delivery_s")
-    unattributed = (round(total - overhead - delivery, 1)
-                    if None not in (total, overhead, delivery) else None)
-    return {"overhead_ratio": ov.get("ratio"), "unattributed_s": unattributed}
+    return {"overhead_ratio": ov.get("ratio"), "overhead_bound": ov.get("bound")}
 
 
 def record_velocity(root, res: dict) -> Path:
@@ -2334,14 +2387,13 @@ def record_velocity(root, res: dict) -> Path:
            "actual_tokens": (b["actual_tokens"] if res["n_measured"]
                              else (b.get("sprint_actual_tokens") or b["actual_tokens"])),
            "ratio": b["ratio"], "wall_time_s": b["wall_time_s"],
-           # The overhead ratio and the span neither delivery nor overhead accounts for. The
-           # ratio reached the close report and stopped there, and VELOCITY.md is the only file
-           # a figure survives in to be compared across sprints - so the measurement answered
-           # its question once per sprint and forgot. Absent (not 0) when unattributable: this
-           # file is read as evidence, and a zero would be evidence of a sprint with no
-           # overhead at all.
+           # The overhead ratio and whether it is exact or a floor. The ratio reached the close
+           # report and stopped there, and VELOCITY.md is the only file a figure survives in to
+           # be compared across sprints - so the measurement answered its question once per
+           # sprint and forgot. Absent (not 0) when unattributable: this file is read as
+           # evidence, and a zero would be evidence of a sprint with no overhead at all.
            "overhead_ratio": b.get("overhead_ratio"),
-           "unattributed_s": b.get("unattributed_s"),
+           "overhead_bound": b.get("overhead_bound"),
            "constants": res.get("constants"), "sample": res.get("sample"),
            "model": model_cell(res)}
     history = velocity_history(root)
@@ -2404,7 +2456,7 @@ def record_velocity(root, res: dict) -> Path:
                      f"{_fmt(r['actual_tokens'])} | {ratio} | {_fmt(rate)} | "
                      f"{_fmt(r.get('oversized'))} | {_fmt(r['wall_time_s'])} | "
                      f"{_fmt(r.get('overhead_ratio'))} | "
-                     f"{_fmt(r.get('unattributed_s'))} | "
+                     f"{r.get('overhead_bound') or '-'} | "
                      f"{constants_cell(r.get('constants'))} | {sample} | "
                      f"{r.get('model') or '-'} | {_note_cell(r.get('note'))} | "
                      f"{r.get('source') or '-'} |")

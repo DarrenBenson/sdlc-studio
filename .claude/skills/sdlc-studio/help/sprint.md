@@ -38,7 +38,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint --crs Proposed --goal design    # just the backlog (no code)
 /sdlc-studio sprint --crs Proposed --goal plan       # select+sequence+estimate a sprint, stop
 /sdlc-studio sprint plan --prd prd.md --goal design  # greenfield: PRD -> epics -> stories
-/sdlc-studio sprint <worklist.md> --order wsjf       # a tranche file, WSJF order
+/sdlc-studio sprint --worklist <file> --order wsjf   # a tranche file, WSJF order
 /sdlc-studio sprint --bugs Open --autonomous         # unattended: deterministic guardrails on
 /sdlc-studio sprint decision defer --unit US0001 --question "..." --option "a|..." --option "b|..."  # set the unit aside, batch continues
 /sdlc-studio sprint decision list                    # every accumulated decision, asked together, structured
@@ -212,12 +212,12 @@ Open a span over the units a batch will land, and review it when the batch is co
 
 ```bash
 # open the span as the batch starts
-sprint.py review-batch --open US0560,US0561,US0562,US0563
+python3 <skill>/scripts/sprint.py review-batch --open US0560,US0561,US0562,US0563
 
 # ... deliver ...
 
 # record the INDEPENDENT pass and close the span
-sprint.py review-batch \
+python3 <skill>/scripts/sprint.py review-batch \
   --reviewer "the fresh context that did not write this" \
   --author   "whoever wrote it" \
   --verdict  APPROVE \
@@ -448,8 +448,8 @@ A delivery lane is dispatched with a brief and accepted back with evidence. Both
 the obligations travel with the work rather than with whoever wrote the prompt.
 
 ```bash
-sprint lane brief  --units US0123 US0124     # the contract, the obligations, the proof owed, the carried lessons
-sprint lane return --units US0123 --proof unit="<evidence>"   # runs the unit's OWN criteria and reports each
+python3 <skill>/scripts/sprint.py lane brief  --units US0123 US0124     # the contract, the obligations, the proof owed, the carried lessons
+python3 <skill>/scripts/sprint.py lane return --units US0123 --proof unit="<evidence>"   # runs the unit's OWN criteria and reports each
 ```
 
 `lane brief` **refuses** a unit that carries no authored acceptance criteria, or criteria the

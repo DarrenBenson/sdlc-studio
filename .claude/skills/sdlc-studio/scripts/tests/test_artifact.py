@@ -538,6 +538,34 @@ class LazyIndexTests(unittest.TestCase):
             self.assertIn(first["id"], text)
             self.assertIn(second["id"], text)       # both rows present
 
+    def test_a_dry_run_writes_NOTHING_into_the_target_repository(self) -> None:
+        """BG0574. A preview whose contract is that it writes nothing was opening the allocation
+        lock in the target repository before deciding not to write anything else.
+
+        Found by the repo-writes lane refusing a commit, then traced by instrumenting the lock
+        rather than by reading it: a test drives `artifact.py new --root <the live repo>
+        --dry-run`, and the only thing between that and minting artefacts into a working
+        repository was a single flag. The lock has nothing to serialise on this path - a preview
+        allocates no id and appends no row, and two previews naming the same candidate id is
+        harmless because neither consumes it.
+
+        Asserted over the WHOLE tree rather than over the lock alone, so the next thing a preview
+        starts writing fails here too.
+
+        Mutant: take `sdlc_md.allocation_lock(root)` unconditionally again.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir()
+            before = {p for p in repo.rglob("*")}
+            r = artifact.new(repo, "epic", "preview", dry_run=True)
+            self.assertTrue(r["dry_run"])
+            after = {p for p in repo.rglob("*")}
+            self.assertEqual(
+                set(), after - before,
+                "a --dry-run wrote into the repository it was asked only to describe: "
+                f"{sorted(str(p.relative_to(repo)) for p in after - before)}")
+
     def test_dry_run_reports_would_create_index_without_writing(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)

@@ -1080,7 +1080,14 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             + " - nothing was minted. Re-run without --strict to file anyway.")
     # Serialise allocate -> collision-check -> write -> index-append against concurrent
     # writers, so two agents in one wave never mint the same id or clobber the index.
-    with sdlc_md.allocation_lock(root):
+    #
+    # NOT under `--dry-run`. Taking the lock OPENS a file in the target repository, so a preview
+    # whose whole contract is that it writes nothing wrote into the tree it was asked only to
+    # describe - found when the repo-writes lane refused a commit and the cause was traced rather
+    # than assumed. A preview has nothing to serialise: it mints no id and appends no row, and two
+    # previews naming the same candidate id is harmless because neither consumes it.
+    import contextlib  # noqa: PLC0415 - local, only this path needs it
+    with (contextlib.nullcontext() if dry_run else sdlc_md.allocation_lock(root)):
         file_id, disp = _alloc_ids(root, type_)
         slug = file_finding._slug(title)
         path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"

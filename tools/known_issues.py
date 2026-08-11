@@ -29,6 +29,14 @@ BUGS_REL = "sdlc-studio/bugs"
 #: rather than met, and the page would be reporting a decision nobody recorded.
 DISCLOSED = ("Medium", "Low")
 
+#: The severities the release BAR is stated in. Zero open at the tag is the whole claim v5.0.0
+#: rests on, and until now nothing checked it: the disclosure guard compared the Medium and Low
+#: sets in both directions and was silent on the one sentence a reader actually acts on.
+BARRED = ("Critical", "High")
+
+#: The page that states the bar in prose, for a reader outside this repository.
+NOTES_REL = "docs/release-notes-v5.0.0.md"
+
 #: Titles are the finding's own H1. Long ones are elided rather than wrapped, because a table
 #: cell that wraps to five lines is a table nobody reads to the bottom of.
 TITLE_MAX = 150
@@ -97,6 +105,27 @@ def corpus(repo: Path | None = None) -> dict[str, tuple[str, str]]:
     return found
 
 
+def barred_open(repo: Path | None = None) -> dict[str, str]:
+    """`{bug id: severity}` for every OPEN finding at a severity the release bar forbids.
+
+    Non-empty means the tag would ship against a bar it does not meet. This is deliberately a
+    separate read from `corpus()` rather than a filter on it: the two answer different questions,
+    and folding them together is how a residue check ends up standing in for a bar check.
+    """
+    root = (repo or REPO) / BUGS_REL
+    found: dict[str, str] = {}
+    for path in sorted(root.glob("BG*.md")):
+        text = path.read_text(encoding="utf-8")
+        status, severity, heading = _STATUS.search(text), _SEVERITY.search(text), _HEADING.search(text)
+        if not (status and severity and heading):
+            continue
+        if status.group(1).strip() != "Open":
+            continue
+        if severity.group(1).strip() in BARRED:
+            found[heading.group(1)] = severity.group(1).strip()
+    return found
+
+
 def listed(repo: Path | None = None) -> dict[str, str]:
     """`{bug id: severity}` as the shipped page's table states it."""
     page = (repo or REPO) / PAGE_REL
@@ -126,8 +155,24 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--write", action="store_true", help="regenerate the page")
     ap.add_argument("--check", action="store_true",
                     help="exit non-zero when the page and the corpus disagree")
+    ap.add_argument("--bar", action="store_true",
+                    help="exit non-zero when any finding at a barred severity is still open. "
+                         "A RELEASE-boundary check, not a per-commit one: an open High is "
+                         "ordinary mid-sprint and is only a defect at the tag")
     ap.add_argument("--root", default=str(REPO))
     args = ap.parse_args(argv)
+
+    if args.bar:
+        root = Path(args.root).resolve()
+        open_barred = barred_open(root)
+        if not open_barred:
+            print(f"release bar met: no open finding at {' or '.join(BARRED)} severity")
+            return 0
+        listing = ", ".join(f"{b} ({s})" for b, s in sorted(open_barred.items()))
+        print(f"release bar NOT met: {len(open_barred)} open finding(s) at a barred severity - "
+              f"{listing}. {NOTES_REL} claims zero; fix them or change the bar in a recorded "
+              f"decision, but do not tag against a claim the corpus contradicts.", file=sys.stderr)
+        return 1
 
     if args.write == args.check:
         # Neither, or both. A generator whose default action is to WRITE rewrites the page for

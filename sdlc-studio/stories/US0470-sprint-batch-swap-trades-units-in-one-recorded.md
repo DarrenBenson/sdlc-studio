@@ -52,9 +52,9 @@
 
 ### AC5: AC5: the swap takes ids in the house grammar and joins the conformance sweep
 
-- **Given** the shipped parser: the incoming id positional (matching `batch add <id>` and the `transition set <ID>` form the last shipped commit moved to), the outgoing set as a repeatable `--out` plus a comma-separated `--outs`
-- **When** `swap X --out A --out B` and `swap X --out A,B` (and `--outs A,B`) are parsed and read back through the shared sdlc_md id-list helper
-- **Then** all forms resolve to the identical list, and `batch swap` is registered in test_cli_grammar's conformance table so a future id verb that reinvents the grammar fails the sweep. A literal ID_VERBS row does not fit because `resolve_ids` hard-reads `args.ids` (sdlc_md.py:2012) and swap carries a second list, so the helper gains a list-dest parameter and the sweep gains a second table rather than the verb being left uncovered
+- **Given** the shipped parser: both sides of the trade as flags, `--out` and `--in`, each repeatable and each accepting a comma list - the house grammar `sdlc_md.split_id_list` defines
+- **When** `swap --out A --out B --in C` and `swap --out A,B --in C` are run THROUGH THE CLI against a temp run
+- **Then** both reach the identical batch and record the identical outgoing set, and `batch swap` is registered in test_cli_grammar's conformance sweep so a future id verb that reinvents the grammar fails it. A literal ID_VERBS row does not fit because `resolve_ids` hard-reads the `--id`/`--ids` pair and swap carries a second list, so the sweep gains a second table rather than the verb being left uncovered
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_batch_capacity.py::SwapTests::test_the_out_list_accepts_every_house_form_identically
 - **Verified:** yes (2026-08-02)
 
@@ -64,3 +64,4 @@
 | --- | --- | --- |
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-27 | Claude Fable 5 | Groomed: authored from the reviewed breakdown (two adversarial rounds), scope capped to the request per D0069 |
+| 2026-08-11 | Claude Opus 5 (BG0497) | AC5 corrected to the grammar that shipped. It named a positional incoming id and an `--outs` alias, and neither was built: the positional would collide with the `id` positional `drop`/`add` use for a different thing, and `--outs` would be a second spelling of a list the comma form already covers - the second grammar the conformance sweep exists to prevent. What the criterion asserts is unchanged and now stronger: both house forms are driven through the CLI rather than read off `split_id_list` beside an unused parser, so a swap dispatch that never runs no longer passes it |

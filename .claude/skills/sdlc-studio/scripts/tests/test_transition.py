@@ -8,6 +8,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import shutil
 import sys
 import contextlib
 import re
@@ -35,6 +36,35 @@ sys.path.insert(0, str(DIR / "lib"))
 import sdlc_md  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
+
+# The repository this test file itself lives in. `parents[5]` walks
+# tests/ -> scripts/ -> sdlc-studio/ -> skills/ -> .claude/ -> the checkout root, and it is
+# taken from `__file__` rather than from `cwd`, so it names the same tree whichever directory
+# the suite is discovered from.
+REPO_ROOT = Path(__file__).resolve().parents[5]
+
+
+def _refuse_working_tree(root) -> Path:
+    """Refuse a fixture root that is somebody's checkout. Returns the resolved root.
+
+    BG0573. The guard this replaces asked `str(root).startswith(tempfile.gettempdir())`, which
+    answers "is this path under /tmp" - a question about WHERE the tree lives, not about WHAT
+    it is. Every reviewer in this repository's process works in a copy under /tmp, so for the
+    whole population most likely to hit it the refusal could not fire, and a fixture handed the
+    repository root built its workspace there instead: an emptied `.gitignore`, a fake
+    `BG0001-x.md`, `src/thing.py`, a clobbered `sdlc-studio/.local/`, and `git add -A` over the
+    lot.
+
+    The discriminating facts do not mention location. A directory holding `.git` is a checkout.
+    This file's own repository root is known without asking the filesystem. Either one refuses
+    whether the tree sits under /tmp, under $HOME, or anywhere else.
+    """
+    root = Path(root).resolve()
+    if (root / ".git").exists() or root == REPO_ROOT or root in REPO_ROOT.parents:
+        raise AssertionError(
+            f"fixture root {root} is a working tree - a test fixture must never be able to "
+            f"write into the working tree")
+    return root
 
 
 def _repo(root: Path) -> Path:
@@ -209,13 +239,13 @@ class SurvivorGateTests(unittest.TestCase):
         into the REAL repository on every run, destroying 23 recorded mutation registrations.
         A test fixture that can address the working tree will eventually write to it, so this
         refuses rather than trusting every caller to pass a temp path.
+
+        BG0573: the refusal now asks whether the root IS a checkout, not whether it sits under
+        /tmp. The location test was inert for every copy under /tmp, and this fixture then built
+        its workspace over one.
         """
         import json, hashlib
-        root = Path(d).resolve()
-        if not str(root).startswith(tempfile.gettempdir()):
-            raise AssertionError(
-                f"fixture root {root} is outside {tempfile.gettempdir()} - a test fixture must "
-                f"never be able to write into the working tree")
+        root = _refuse_working_tree(d)
         (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
         (root / "src").mkdir(parents=True, exist_ok=True)
@@ -318,16 +348,13 @@ class RepairMutationGateTests(unittest.TestCase):
 
     def _repo(self, d, *, record=None, body="def g(a, b):\n    if a == b:\n        return 1\n"):
         import json, hashlib
-        root = Path(d).resolve()
         # The BG0536 guard, which this fixture needed the moment it started COMMITTING. Its
         # sibling has carried it since a placeholder call passed "." and wrote into the real
         # repository, destroying 23 mutation registrations; the blast radius here is now a git
         # commit rather than stray files, and a fixture that can address the working tree will
-        # eventually be given it.
-        if not str(root).startswith(tempfile.gettempdir()):
-            raise AssertionError(
-                f"fixture root {root} is outside {tempfile.gettempdir()} - a test fixture must "
-                f"never be able to write into the working tree")
+        # eventually be given it. BG0573 moved the question from where the root lives to what
+        # it is, so one helper now answers it for both fixtures.
+        root = _refuse_working_tree(d)
         (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
         (root / "src").mkdir(parents=True, exist_ok=True)
@@ -4762,29 +4789,121 @@ class FixtureRootGuardTests(unittest.TestCase):
     mutation registrations that `.local/` being gitignored made unrecoverable. The guard that
     stops it has been in the tree since; nothing failed if it was removed, which is the
     difference between a guard and a comment.
+
+    BG0573: and then the test written to pin that guard became the instance. It handed the REAL
+    repository root to the fixture and relied on the guard to refuse it, so the moment the guard
+    stopped refusing - which it does for any checkout under /tmp, where every reviewer works -
+    the test itself built the greenfield workspace over the checkout. A test must not need the
+    thing under test to be correct in order to be safe to run, so the destructive root is now a
+    fake checkout under `tempfile` and the real repository is pinned through the predicate,
+    which writes nothing.
     """
 
-    def test_the_fixture_refuses_to_build_outside_a_temp_directory(self) -> None:
+    def _fake_checkout(self, d: str) -> Path:
+        """A directory that IS a checkout by the only fact that matters: it holds `.git`.
+
+        Under `tempfile`, resolved absolutely, and named from `d` rather than from `cwd` - so
+        if the guard ever stops refusing, the blast radius is a temp directory rather than
+        somebody's work.
+        """
+        fake = Path(d).resolve() / "checkout"
+        (fake / ".git").mkdir(parents=True)
+        return fake
+
+    def test_the_destructive_root_is_disposable_and_independent_of_cwd(self) -> None:
+        """The criterion the shipped test could not state about itself: whatever the guard
+        does, the root this class hands it must be disposable. The shipped version passed
+        `Path(__file__).resolve().parents[5]` - the checkout - and was safe only for as long as
+        the guard it was testing stayed correct, which is a test that cannot be run to find out
+        whether the guard is correct.
+
+        Mutant: in `_fake_checkout`, return `REPO_ROOT` - the root the shipped test used.
+        """
+        cwd = os.getcwd()
+        seen = []
+        try:
+            with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as elsewhere:
+                for where in (Path(d), Path(elsewhere)):
+                    os.chdir(where)
+                    fake = self._fake_checkout(d)
+                    self.assertTrue(fake.is_absolute(), f"{fake} is not an absolute path")
+                    self.assertEqual(Path(d).resolve(), fake.parent,
+                                     "the root is not under the temporary directory it was given")
+                    self.assertNotEqual(REPO_ROOT, fake, "the root IS the repository")
+                    self.assertNotIn(REPO_ROOT, [fake, *fake.parents],
+                                     "the root is inside the repository")
+                    seen.append(fake)
+                    shutil.rmtree(fake)
+                self.assertEqual(seen[0], seen[1],
+                                 "the root moved when the working directory did")
+        finally:
+            os.chdir(cwd)
+
+    def test_the_fixture_refuses_a_root_that_is_a_checkout(self) -> None:
+        """The refusal, exercised where it can do no harm.
+
+        Mutant: restore `if not str(root).startswith(tempfile.gettempdir())`. The fake checkout
+        is under /tmp, so the location test passes it and the fixture builds - which is BG0573
+        exactly, with a temp directory standing in for the repository.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            fake = self._fake_checkout(d)
+            # The WHOLE workspace, not `fake.glob("*")`. The paths this fixture writes are
+            # NESTED - `sdlc-studio/bugs/BG0001-x.md`, `sdlc-studio/.local/mutation-runs.json`,
+            # `src/thing.py` - so a top-level listing cannot see any of them. The first version
+            # of this assertion made exactly that mistake, and a stray `BG0001-x.md` from
+            # another fixture was sitting in the tree at the time, invisible to it.
+            before = sorted(str(p.relative_to(fake)) for p in fake.rglob("*"))
+            with self.assertRaises(AssertionError) as ctx:
+                SurvivorGateTests()._repo(str(fake), [])
+            self.assertIn("working tree", str(ctx.exception).lower(),
+                          "the refusal does not say why the root was rejected")
+            self.assertEqual(before, sorted(str(p.relative_to(fake)) for p in fake.rglob("*")),
+                             "the fixture wrote into the checkout before refusing")
+
+    def test_a_checkout_under_the_temp_directory_is_still_refused(self) -> None:
+        """THE CASE THE SHIPPED GUARD COULD NOT SEE. `startswith(tempfile.gettempdir())` is
+        satisfied by every rsync copy this repository's own review process makes, so its
+        negative case could not be constructed by the population most likely to hit it.
+
+        Mutant: restore the location test. The precondition below asserts the fixture root IS
+        under the temp directory, so the restored guard accepts it and no refusal is raised.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            fake = self._fake_checkout(d)
+            self.assertTrue(
+                str(fake).startswith(tempfile.gettempdir()),
+                "this checkout is not under the temp directory, so it is not the case the "
+                "location-based guard was blind to")
+            with self.assertRaises(AssertionError) as ctx:
+                _refuse_working_tree(fake)
+            self.assertIn("working tree", str(ctx.exception).lower())
+
+    def test_this_repository_root_is_refused_without_being_written_to(self) -> None:
+        """The original claim, kept, but asked of the predicate rather than of the fixture -
+        a question costs nothing, whereas building the workspace to find out is the defect.
+
+        Mutant: drop the `root == REPO_ROOT` arm AND the `.git` arm together; either alone
+        still refuses a checkout that has both properties.
+        """
         repo = Path(__file__).resolve().parents[5]
-        # The WHOLE workspace, not `repo.glob("*")`. The paths this fixture writes are NESTED -
-        # `sdlc-studio/bugs/BG0001-x.md`, `sdlc-studio/.local/mutation-runs.json`, `src/thing.py` -
-        # so a top-level listing cannot see any of them. The first version of this assertion made
-        # exactly that mistake, and a stray `BG0001-x.md` from another fixture was sitting in the
-        # tree at the time, invisible to it.
-        watched = ("sdlc-studio/bugs", "sdlc-studio/.local", "src")
-        def _snap():
-            out = {}
-            for rel in watched:
-                d = repo / rel
-                out[rel] = sorted(p.name for p in d.rglob("*")) if d.is_dir() else []
-            return out
-        before = _snap()
         with self.assertRaises(AssertionError) as ctx:
-            SurvivorGateTests()._repo(str(repo), [])
-        self.assertIn("working tree", str(ctx.exception).lower(),
-                      "the refusal does not say why the root was rejected")
-        self.assertEqual(before, _snap(),
-                         "the fixture wrote into the repository before refusing")
+            _refuse_working_tree(repo)
+        self.assertIn(str(repo), str(ctx.exception),
+                      "the refusal does not name the root it rejected")
+
+    def test_a_checkout_with_no_git_directory_is_still_refused(self) -> None:
+        """An exported or rsync-ed copy has no `.git`, and `REPO_ROOT` is how it is still
+        recognised. Mutant: drop the `root == REPO_ROOT` arm.
+        """
+        import unittest.mock as mock
+        with tempfile.TemporaryDirectory() as d:
+            bare = Path(d).resolve() / "export"
+            bare.mkdir()
+            self.assertFalse((bare / ".git").exists(), "the fixture has a .git after all")
+            with mock.patch.object(sys.modules[__name__], "REPO_ROOT", bare):
+                with self.assertRaises(AssertionError):
+                    _refuse_working_tree(bare)
 
     def test_the_fixture_still_builds_under_a_temp_directory(self) -> None:
         # The positive control: "refuses the wrong root" is otherwise satisfied by a helper that

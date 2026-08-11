@@ -280,6 +280,87 @@ def close_time_repairs(root: Path, uncovered: list) -> tuple[list, list]:
     return sorted(repairs), sorted(unaccounted)
 
 
+#: The run outcomes that mean THIS RUN'S CLOSE COMPLETED. Read from the run vocabulary rather
+#: than "not running": `budget-spent`, `blocked` and `stopped` are mid-flight states that filed
+#: no account, and crediting a unit to one of them would forgive work no retro ever described.
+#: The same pair `--file-and-close` refuses to re-file over, for the same reason.
+_CLOSED_OUTCOMES = (run_state.GOAL_REACHED, run_state.CLOSED_OUTSTANDING)
+
+
+def _raised_in_batch_stamp(root: Path, cid: str) -> str:
+    """When this unit was RAISED, from the `Raised-in-batch` stamp, or "" when it carries none.
+
+    The stamp is `<batch> <timestamp>` or a bare timestamp, so the moment is its last token -
+    read exactly as `sprint_report._open_findings` reads it, because the two must agree about
+    which run a finding belongs to or the close and the ledger would attribute it differently.
+
+    Not every stamp in the corpus ends in a time: `batch` and `none open - raised outside a
+    delivery batch` are both present. Those are compared against the window's ISO bounds as
+    ordinary strings and can never fall inside one, because a letter sorts after every digit -
+    so no separate shape test is written here. A guard for it would be a branch no input can
+    reach, which is the defect class this cluster of repairs is about.
+    """
+    hit = sdlc_md.find_by_id(root, cid)
+    if not hit:
+        return ""
+    stamp = (sdlc_md.extract_field(sdlc_md.read_text_safe(Path(hit[0])),
+                                   "Raised-in-batch") or "").strip()
+    return stamp.split()[-1] if stamp else ""
+
+
+def run_attributed(root: Path, uncovered: list) -> tuple[list, list]:
+    """Split `uncovered` into `(attributed to a closed run, still unattributed)`.
+
+    A finding filed while a run is open becomes a tracked unit and is never added to that run's
+    recorded batch, so the retro names fewer units than the run delivered - and this detector
+    then demands a close for work whose close already ran. Twelve of fourteen reported units were
+    this, and the operator's only remedy was to hand-correct `Batch` lines against git timestamps.
+
+    THREE conditions, and all three are load-bearing:
+
+    * the unit was RAISED inside the run's recorded window. Without it, any terminal unit falling
+      in a window would be credited, including the standing backlog tail the baseline exists for.
+    * it reached TERMINAL on or before the run ended. Without it, a bug raised in one run and
+      fixed two runs later would be credited to the run that only filed it - which delivered
+      nothing.
+    * the run's outcome says its CLOSE COMPLETED. Without it, a run abandoned mid-flight would
+      forgive the work it never accounted for, which is the silent "none owed" this whole module
+      exists to prevent.
+
+    Nothing is forgiven: both halves stay in `owed`, exactly as the close-time-repair split does.
+    What changes is that the operator is told WHICH run's retro already accounts for the unit
+    instead of being sent to write a second close for it.
+    """
+    windows = [r for r in run_state.archived(root)
+               if r.get("run_id") and r.get("started_at") and r.get("ended_at")
+               and str(r.get("outcome") or "") in _CLOSED_OUTCOMES]
+    if not windows:
+        return [], list(uncovered)
+    dates = terminal_dates(root)
+    attributed, rest = [], []
+    for cid, t in uncovered:
+        raised = _raised_in_batch_stamp(root, cid)
+        when = dates.get(sdlc_md.norm_id(cid), "")
+        hit = ""
+        for rec in windows:
+            started, ended = str(rec["started_at"]), str(rec["ended_at"])
+            if not raised or not (started <= raised <= ended):
+                continue
+            # The terminal date is a DAY; the window's end is an instant. Compared day-to-day,
+            # so a unit closed hours before the run ended is not excluded by the clock.
+            #
+            # REQUIRED, not merely respected. Treating an unknown terminal date as satisfying
+            # the test would credit a unit filed in one run and fixed two runs later to the run
+            # that only filed it - and an attribution made on absent evidence is the silent
+            # "none owed" this whole module exists to prevent.
+            if not when or when > ended[:10]:
+                continue
+            hit = str(rec["run_id"])
+            break
+        (attributed.append((cid, t, hit)) if hit else rest.append((cid, t)))
+    return sorted(attributed), sorted(rest)
+
+
 def _latest_retro_date(root: Path) -> str:
     """The most recent `> **Date:**` across the retros, or "" when none is dated."""
     best = ""
@@ -480,6 +561,7 @@ def owed(root: Path) -> dict:
         # re-stamp nudge. The enforcement halves must fail closed and direct a repair.
         return {"baselined": False, "corrupt": True, "error": str(exc), "owed": [],
                 "close_time_repairs": [], "unaccounted": [],
+                "run_attributed": [],
                 "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
                 "dead_breakdown_ids": dead_ids, "unreadable": degraded,
                 **_no_velocity_demand()}
@@ -488,16 +570,25 @@ def owed(root: Path) -> dict:
         # would be the unclearable tail again; the baseline nudge below stands on its own.
         return {"baselined": False, "corrupt": False, "owed": sorted(uncovered),
                 "close_time_repairs": [], "unaccounted": sorted(uncovered),
+                "run_attributed": [],
                 "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
                 "dead_breakdown_ids": dead_ids, "unreadable": degraded,
                 **_no_velocity_demand()}
     forgiven = {sdlc_md.norm_id(x) for x in baseline["grandfathered"]}
     owed_units = [(cid, t) for (cid, t) in uncovered if sdlc_md.norm_id(cid) not in forgiven]
+    # THE RUN THE UNIT WAS ACTUALLY DELIVERED IN, before anything else is decided. A finding
+    # filed against an open run becomes a tracked unit and never joins that run's recorded
+    # batch, so the retro names fewer units than the run delivered - and this detector then
+    # demanded a close for work whose close had already run, with hand-corrected `Batch` lines
+    # as the only remedy. Attributed FIRST because the close-time-repair split below reads the
+    # LATEST retro's date, and a unit belonging to an earlier run is not a repair made during
+    # the most recent close.
+    attributed, owed_after = run_attributed(root, owed_units)
     # The split the ledger could not make: a unit fixed DURING a close is not a unit nobody
     # accounted for. Both stay in `owed` - nothing is forgiven here - but they are named
     # separately, because an advisory that reports a run which did account for itself is one
     # people learn to step over.
-    repairs, unaccounted = close_time_repairs(root, owed_units)
+    repairs, unaccounted = close_time_repairs(root, owed_after)
     # An override is per unit and reasoned. Recorded ones are split out so the exception is
     # COUNTABLE rather than routine - CR0527 asks for visible, not for forgiven, and an
     # exception nobody can count is indistinguishable from the inline repair the rule forbids.
@@ -507,6 +598,9 @@ def owed(root: Path) -> dict:
     vel = velocity_owed(root, str(baseline.get("stamped") or ""))
     return {"baselined": True, "corrupt": False, "owed": sorted(owed_units),
             "close_time_repairs": repairs, "unaccounted": unaccounted,
+            # Reported with the run id that accounts for them, so the operator reads "that
+            # close already ran" rather than "write another one".
+            "run_attributed": attributed,
             "close_repair_overrides": sorted(
                 (cid, t, overrides[sdlc_md.norm_id(cid)]) for cid, t in overridden),
             "grandfathered": len(uncovered) - len(owed_units),
@@ -623,6 +717,16 @@ def render(report: dict) -> str:
         lines.append("    Amend that retro's Batch, or - if the repair genuinely could not "
                      "wait - record `> **Close-repair-override:** <UNIT> - <why>` in the retro. "
                      "The rule is that a finding surfaced during a close is FILED and deferred.")
+    # The close that ALREADY RAN, named. A unit raised inside an open run and delivered before
+    # that run closed belongs to that run, whatever its `Batch` line says - and telling an
+    # operator to write a second close for it is what sent them hand-correcting Batch lines
+    # against git timestamps.
+    if attributed := report.get("run_attributed") or []:
+        lines.append(f"  {len(attributed)} of these was RAISED AND DELIVERED inside a run whose "
+                     f"close already ran - the retro's Batch line never accreted them: "
+                     + ", ".join(f"{cid} -> {rid}" for cid, _t, rid in attributed))
+        lines.append("    No close is owed for these. Add them to that run's retro Batch if you "
+                     "want the account to read completely; nothing is blocked either way.")
     # Counted and NAMED, with the reason. An override nobody sees is indistinguishable from the
     # inline repair the rule forbids, so it is reported on every run rather than filed away.
     if ov := report.get("close_repair_overrides") or []:

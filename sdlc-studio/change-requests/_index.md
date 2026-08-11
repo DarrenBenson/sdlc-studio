@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-08-09
+**Last Updated:** 2026-08-11
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 19 |
+| Proposed | 21 |
 | Approved | 0 |
 | In Progress | 7 |
 | Complete | 493 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **542** |
+| **Total** | **544** |
 
 ## All Changes
 
@@ -93,6 +93,8 @@
 | [CR-0540](CR0540-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-08-09 | -- |
 | [CR-0541](CR0541-a-project-s-first-sprint-reports-the-plan.md) | a project's first sprint reports the plan-review requirement instead of refusing it, so a first-time user reaches a Done story unaided and meets the gate before it can matter | Complete | High | Improvement | 2026-08-09 | EP0213 |
 | [CR-0542](CR0542-nothing-rehearses-the-two-paths-every-user-takes.md) | nothing rehearses the two paths every user takes first, so a defect on them is found by a user: drive greenfield-to-first-plan and v4-to-green-gate through the shipped CLI on every gate run | Complete | High | Feature | 2026-08-09 | EP0214 |
+| [CR-0543](CR0543-plan-review-has-no-adoption-cutoff-so-the.md) | plan_review has no adoption cutoff, so the one hard risk-proportional plan gate in the codebase cannot be turned on by any project with history - including this one | Proposed | High | enhancement | 2026-08-11 | -- |
+| [CR-0544](CR0544-nothing-reviews-a-repair-s-approach-or-a.md) | Nothing reviews a REPAIR's approach or a PROCEDURE's plan before it is executed, and that is where this session's most expensive findings were | Proposed | High | enhancement | 2026-08-11 | -- |
 
 ## Archived Releases
 

@@ -1140,6 +1140,10 @@ class DocCoverageGapNamedTests(unittest.TestCase):
             f"# S\n\n## Type Reference\n\n| Type | What |\n| --- | --- |\n{rows}\n\n"
             "## Full Reference\n", encoding="utf-8")
         (sd / "help" / "help.md").write_text("# help\n", encoding="utf-8")
+        # A per-command help page each, so the fixture's ONLY gap is the catalogue one this
+        # test is about: the lane also resolves every Type Reference command to `help/<cmd>.md`.
+        for c in commands:
+            (sd / "help" / f"{c}.md").write_text(f"# {c}\n", encoding="utf-8")
         (sd / "reference-scripts.md").write_text("# scripts\n", encoding="utf-8")
 
     def test_the_undocumented_items_are_named_not_merely_counted(self) -> None:

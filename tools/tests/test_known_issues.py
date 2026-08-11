@@ -142,5 +142,66 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(0, ki.main(["--check", "--root", str(root)]))
 
 
+class ReleaseBarTests(unittest.TestCase):
+    """The bar itself: `--bar` is what makes "zero open High" a check rather than a sentence.
+
+    Deliberately NOT asserted against the live corpus here. An open High finding is ordinary
+    mid-sprint and is a defect only at the tag, so a per-commit test that demanded zero would
+    be red for most of a release cycle and would be switched off. The behaviour is pinned on
+    fixtures; the live reading belongs on the release path.
+    """
+
+    def _corpus(self, *bugs):
+        root = Path(tempfile.mkdtemp(prefix="release_bar_"))
+        (root / ki.BUGS_REL).mkdir(parents=True)
+        (root / "docs").mkdir(parents=True)
+        for bug_id, status, severity in bugs:
+            (root / ki.BUGS_REL / f"{bug_id}-x.md").write_text(
+                f"# {bug_id}: t\n\n> **Status:** {status}\n> **Severity:** {severity}\n",
+                encoding="utf-8")
+        return root
+
+    def test_an_open_high_finding_fails_the_bar(self):
+        root = self._corpus(("BG0001", "Open", "High"), ("BG0002", "Open", "Medium"))
+        self.assertEqual(1, ki.main(["--bar", "--root", str(root)]))
+
+    def test_an_open_critical_finding_fails_the_bar(self):
+        """Critical is barred too. A bar that only reads High would let the worse case through."""
+        root = self._corpus(("BG0001", "Open", "Critical"))
+        self.assertEqual(1, ki.main(["--bar", "--root", str(root)]))
+
+    def test_a_disclosed_residue_alone_meets_the_bar(self):
+        """The positive control, and the whole point of D0136: Medium and Low ship OPEN."""
+        root = self._corpus(("BG0001", "Open", "Medium"), ("BG0002", "Open", "Low"))
+        self.assertEqual(0, ki.main(["--bar", "--root", str(root)]))
+
+    def test_a_fixed_high_finding_does_not_hold_the_bar(self):
+        root = self._corpus(("BG0001", "Fixed", "High"), ("BG0002", "Won't Fix", "High"))
+        self.assertEqual(0, ki.main(["--bar", "--root", str(root)]))
+
+    def test_the_bar_and_the_residue_are_separate_reads(self):
+        """Folding the bar into a filter over the disclosed set is how a residue check ends up
+        standing in for a bar check. A High finding must appear in NEITHER list."""
+        root = self._corpus(("BG0001", "Open", "High"))
+        self.assertEqual({}, ki.corpus(root))
+        self.assertEqual({"BG0001": "High"}, ki.barred_open(root))
+
+
+class ReleaseNotesClaimTests(unittest.TestCase):
+    """The hand-authored notes state a count in prose. Prose drifts; this is what stops it."""
+
+    def test_the_notes_state_the_number_of_findings_the_corpus_holds(self):
+        notes = (ki.REPO / ki.NOTES_REL).read_text(encoding="utf-8")
+        found = ki.corpus()
+        mediums = sum(1 for s, _t in found.values() if s == "Medium")
+        lows = sum(1 for s, _t in found.values() if s == "Low")
+        expected = (f"**v5.0.0 ships with {len(found)} open defects: {mediums} Medium, "
+                    f"{lows} Low. Zero Critical, zero High.**")
+        self.assertIn(
+            expected, notes,
+            "the release notes state a finding count the bug corpus contradicts. It should "
+            f"read:\n  {expected}")
+
+
 if __name__ == "__main__":
     unittest.main()

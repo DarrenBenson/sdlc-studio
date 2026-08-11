@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import shutil
+import time
 import types
 import unittest
 import unittest.mock
@@ -6933,6 +6934,50 @@ class ClosePreflightTests(unittest.TestCase):
             self.assertTrue(res["ready"], res["blockers"])
             self.assertEqual(res["blockers"], [])
 
+    def test_a_non_blocking_checklist_row_reaches_the_preflight_still_non_blocking(self) -> None:
+        """The WIRING, which the producer-side test could not see.
+
+        `_checklist_blockers` sets `blocking: False` on an expired window and a sibling test
+        asserts it does. The pre-flight then rebuilt each entry through a helper that takes
+        three strings, so the flag was dropped in transit, `held_blockers` defaulted the
+        flagless row to held, and the close was stopped by the exact row the change claims to
+        have stopped holding it - while the changelog and the comment beside the line both said,
+        in the past tense, that it no longer did.
+
+        Mutant: rebuild the entry as `block(entry["stage"], entry["detail"], entry["remedy"])`
+        instead of appending it whole.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
+            rid = self._retro(root)
+            reported = {"stage": "checklist", "blocking": False,
+                        "detail": "goal-seat-reviewed is past its window",
+                        "remedy": "enforce it, or move the window"}
+            with unittest.mock.patch.object(mod, "_checklist_blockers", return_value=[reported]):
+                res = mod.close_preflight(root, rid)
+            rows = [b for b in res["blockers"] if b["stage"] == "checklist"]
+            self.assertEqual(1, len(rows), res["blockers"])
+            self.assertIs(False, rows[0].get("blocking"),
+                          "the pre-flight dropped the non-blocking flag in transit")
+            self.assertTrue(res["ready"],
+                            f"a REPORTED row is holding the close: {mod.held_blockers(res['blockers'])}")
+
+    def test_a_blocking_checklist_row_still_holds_the_close(self) -> None:
+        """The positive control. Appending every entry whole would also pass the test above if
+        the flag were simply ignored, so the holding direction is pinned beside it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
+            rid = self._retro(root)
+            held = {"stage": "checklist", "blocking": True,
+                    "detail": "closing-review is unanswered", "remedy": "answer it"}
+            with unittest.mock.patch.object(mod, "_checklist_blockers", return_value=[held]):
+                res = mod.close_preflight(root, rid)
+            self.assertFalse(res["ready"], "an unanswered checklist item let the close through")
+
     def test_preflight_names_missing_signoff_prerequisites(self) -> None:
         """US0274 AC1: the prerequisites that surface LAST today are surfaced first."""
         with tempfile.TemporaryDirectory() as d:
@@ -13344,39 +13389,69 @@ class CadenceDebtFileAndCloseTests(unittest.TestCase):
     the plain close blocked on a stale repo-wide ceremony, and `--file-and-close` classed the
     same lane a hard correctness blocker and refused to file it. A close with no exit is worse
     than either behaviour on its own.
+
+    BG0469's sibling finding withdrew the prose classifier that used to answer this - any
+    blocker whose detail contained `CADENCE DEBT` - because it was a second reader of one fact
+    and could never fire: the only lane emitting the string emits it on the branch that also
+    sets the flag. These now read the flag, which is the declaration that exists.
     """
 
     def test_a_stale_periodic_review_is_filed_as_debt(self) -> None:
-        """MUTANT: drop the cadence test from the hard-blocker filter."""
+        """MUTANT: drop the blocking test from the hard-blocker filter.
+
+        Same claim as before, read from the declaration that exists. The name is kept because
+        US0609's criteria select it, and the criterion it answers is unchanged: a periodic
+        ceremony being overdue is ceremony debt and the bounded exit may file it.
+        """
         sprint = _load()
-        blocker = {"stage": "gate", "detail": "CADENCE DEBT (reported, not blocking): "
-                                              "reviews/LATEST.md is stale"}
-        self.assertTrue(sprint._is_cadence_debt(blocker),
-                        "a lane declaring itself cadence debt was not recognised as filable")
+        blocker = {"stage": "gate", "blocking": False,
+                   "detail": "review-current: reviews/LATEST.md is stale, and this run's units "
+                             "are all independently covered"}
+        self.assertEqual([], sprint.hard_blockers([blocker]),
+                         "a lane declaring itself non-blocking was not recognised as filable")
 
     def test_a_correctness_blocker_is_still_refused(self) -> None:
-        """The positive control. MUTANT: treat every gate blocker as cadence debt.
+        """The positive control. MUTANT: treat every gate blocker as ceremony debt.
 
         That would turn the bounded exit into a way to file away a red gate, which is the
         bypass it exists to prevent.
         """
         sprint = _load()
-        blocker = {"stage": "gate", "detail": "conformance: 3 unit(s) have no critiqued verdict"}
-        self.assertFalse(sprint._is_cadence_debt(blocker),
+        blocker = {"stage": "gate", "blocking": True,
+                   "detail": "conformance: 3 unit(s) have no critiqued verdict"}
+        self.assertEqual([blocker], sprint.hard_blockers([blocker]),
                          "a real correctness lane was classed as filable ceremony debt")
 
     def test_the_classification_is_read_from_the_lane_not_a_second_list(self) -> None:
-        """MUTANT: replace the marker test with a hardcoded list of lane names here.
+        """MUTANT: replace the flag test with a hardcoded list of lane names here.
 
         A second list drifts from the first, and a lane added tomorrow is silently classed
-        correctness - the enumeration failure this project keeps meeting.
+        correctness - the enumeration failure this project keeps meeting. Driven, not grepped:
+        two rows differing ONLY in the declaration the lane made get opposite answers, which no
+        list of lane names can produce.
         """
+        sprint = _load()
+        detail = "review-current: reviews/LATEST.md is stale"
+        held = {"stage": "gate", "blocking": True, "detail": detail}
+        reported = {"stage": "gate", "blocking": False, "detail": detail}
+        self.assertEqual([held], sprint.hard_blockers([held]))
+        self.assertEqual([], sprint.hard_blockers([reported]))
         src = (Path(__file__).resolve().parent.parent / "sprint.py").read_text(encoding="utf-8")
-        body = src.split("def _is_cadence_debt")[1][:500]
-        self.assertIn("_CADENCE_MARKER", body,
-                      "the classifier does not read the lane's own declaration")
+        body = src.split("def hard_blockers")[1][:1600]
         self.assertNotIn("review-current", body,
                          "the classifier names lanes directly - a second list that will drift")
+
+    def test_a_row_that_says_nothing_is_treated_as_holding_the_close(self) -> None:
+        """MUTANT: default the flag to False.
+
+        A producer that forgets to declare must fail towards holding the close. Defaulting the
+        other way makes every future blocker filable until somebody remembers to say otherwise,
+        which is the bypass arriving by omission.
+        """
+        sprint = _load()
+        blocker = {"stage": "gate", "detail": "conformance: something is red"}
+        self.assertEqual([blocker], sprint.hard_blockers([blocker]),
+                         "a row with no declaration was filed away rather than held")
 
 
 class ReviewBatchFieldsFileTests(unittest.TestCase):
@@ -14536,16 +14611,414 @@ class CharterIsSpentWhenItsRunOpensTests(unittest.TestCase):
             self.assertEqual(self._status(root), "Withdrawn", "a Withdrawn charter was re-spent")
         self.assertIn("not Queued", text, f"the run said nothing about skipping it:\n{text}")
 
-    def test_Spent_is_reachable_from_the_shipped_code_at_all(self) -> None:
-        """MUTANT: delete the writer and leave the vocabulary entry.
+    def test_the_charter_terminal_has_exactly_one_writer(self) -> None:
+        """MUTANT: add a second `"Spent"` writer anywhere in sprint.py.
 
-        The exact state this bug was: `Spent` declared in the charter vocabulary and in the
-        schema contract, and found nowhere else outside the tests. This asserts the terminal has
-        a setter, which is the check that found the defect.
+        The previous form of this asserted `'"Spent"' in src`, which is MONOTONE in the number
+        of writers: it passes harder as writers are added, so it could not fail on the mutant its
+        own criterion named, and a second writer added to `cmd_next` left the whole suite green.
+        Counting is the non-monotone form - it reddens on a deleted writer AND on an added one,
+        which is the pair the one-writer rule is actually about.
         """
         src = (Path(_load().__file__).parent / "sprint.py").read_text(encoding="utf-8")
-        self.assertIn('"Spent"', src,
-                      "no shipped module sets the charter terminal, so the queue has no exit")
+        self.assertEqual(1, src.count('"Spent"'),
+                         "the charter terminal must have exactly ONE writer - none means the "
+                         "queue has no exit, two means two readers of one fact")
+
+
+class CharterWithAnOpenQuestionIsStillSpentTests(unittest.TestCase):
+    """BG0522: the fix for BG0515 reproduced BG0515.
+
+    `spend_charter` routes through `transition.main`, and `Spent` is a charter TERMINAL, so
+    transition applied its terminal Open-Questions gate to it. A charter carrying one unresolved
+    Open Question was refused, the refusal was swallowed, and `plan --write` exited 0 with the run
+    OPEN and the charter still `Queued` - which is exactly the symptom BG0515 was filed to close.
+    """
+
+    def _charter(self, root, cid="SC0001", *, tail=""):
+        d = root / "sdlc-studio" / "charters"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{cid}-x.md").write_text(
+            f"# {cid}: charter {cid}\n\n> **Status:** Queued\n"
+            f"> **Appetite:** 480min/8units\n> **Scope query:** --bugs Open\n\n"
+            f"## Sprint Goal\n\ngoal of {cid}\n{tail}", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Sprint Charter Queue\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [{cid}]({cid}-x.md) | c | Queued |\n", encoding="utf-8")
+
+    def _status(self, root, cid="SC0001"):
+        import glob as _g
+        return _load().sdlc_md.extract_field(
+            Path(_g.glob(str(root / "sdlc-studio" / "charters" / f"{cid}-*.md"))[0])
+            .read_text(encoding="utf-8"), "Status").strip()
+
+    @contextlib.contextmanager
+    def _fixture(self, *, open_question: bool):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            tail = ("\n## Open Questions\n\n- [ ] is the appetite right for this scope\n"
+                    if open_question else "")
+            self._charter(root, tail=tail)
+            _bug(root, 1)
+            yield root
+
+    def _plan(self, root):
+        sprint = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sprint.main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                              "--sprint-goal", "g", "--charter", "SC0001", "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_an_open_question_does_not_stop_the_charter_being_spent(self) -> None:
+        """MUTANT: drop `--force` from `spend_charter`'s transition argv.
+
+        The terminal Open-Questions gate then refuses the write and the charter stays Queued -
+        the exact defect. Consuming a charter is not answering its questions: the run is opened
+        to answer them, so the gate is stood down for THIS write and recorded on the artefact.
+        """
+        with self._fixture(open_question=True) as root:
+            rc, out, err = self._plan(root)
+            self.assertEqual(0, rc, out + err)
+            self.assertEqual("Spent", self._status(root),
+                             "a charter with one Open Question was left Queued while its run ran")
+
+    def test_a_refused_write_leaves_the_plan_non_zero_and_says_so(self) -> None:
+        """MUTANT: delete `cmd_plan`'s `charter_refused` branch and return 0 unconditionally.
+
+        A run that opened while its charter stayed Queued has HALF succeeded, and exiting 0 makes
+        it indistinguishable from one that worked - which is how this shipped. The two pre-write
+        refusals (no such charter, not Queued) keep exiting 0 and are covered separately: neither
+        leaves a Queued charter the next `next` can re-offer.
+        """
+        sprint = _load()
+        import transition as transition_mod
+        self.addCleanup(setattr, transition_mod, "main", transition_mod.main)
+        transition_mod.main = lambda argv: 2
+        with self._fixture(open_question=False) as root:
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = sprint.main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                                  "--sprint-goal", "g", "--charter", "SC0001", "--root", str(root)])
+            page = out.getvalue() + err.getvalue()
+            self.assertEqual(3, rc, page)
+            self.assertIn("NOT marked Spent", page)
+            self.assertEqual("Queued", self._status(root))
+
+    def test_a_system_exit_from_transition_is_caught_not_propagated(self) -> None:
+        """MUTANT: narrow the except back to `Exception`.
+
+        `SystemExit` is not an `Exception`, and `transition.main` raises it on some paths, so the
+        original guard let a process exit out of the middle of a plan whose run was already open.
+        """
+        sprint = _load()
+        import transition as transition_mod
+        self.addCleanup(setattr, transition_mod, "main", transition_mod.main)
+
+        def _exits(argv):
+            raise SystemExit(2)
+
+        transition_mod.main = _exits
+        with self._fixture(open_question=False) as root:
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = sprint.main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                                  "--sprint-goal", "g", "--charter", "SC0001", "--root", str(root)])
+            page = out.getvalue() + err.getvalue()
+            self.assertEqual(3, rc, page)
+            self.assertIn("could not be marked Spent", page)
+
+    def test_transitions_own_output_is_captured_and_attributed(self) -> None:
+        """MUTANT: stop capturing transition's streams and let them print where they land.
+
+        Unindented and unattributed, transition's words read as the plan's own - which is how a
+        refusal travelled out of here looking like ordinary plan output.
+        """
+        sprint = _load()
+        import transition as transition_mod
+        self.addCleanup(setattr, transition_mod, "main", transition_mod.main)
+
+        def _talks(argv):
+            print("REFUSED: 1 unresolved Open Question(s)")
+            return 2
+
+        transition_mod.main = _talks
+        with self._fixture(open_question=False) as root:
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                sprint.main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                             "--sprint-goal", "g", "--charter", "SC0001", "--root", str(root)])
+            lines = out.getvalue().splitlines()
+            said = [ln for ln in lines if "unresolved Open Question" in ln]
+            self.assertTrue(said, out.getvalue())
+            self.assertTrue(all(ln.startswith("    transition: ") for ln in said),
+                            f"transition's output leaked unattributed into the plan: {said}")
+
+
+class CadenceDebtReachesTheCloseTests(unittest.TestCase):
+    """BG0488: two units of one epic shipped a feature no CLI invocation could reach.
+
+    `gate._review_current` declares a stale unified review cadence debt and non-blocking when the
+    run's own units are all covered. `close_preflight` then dropped every non-blocking failure,
+    so the declaration reached no surface: not the pre-flight's page, and not the bounded exit's
+    classifier, whose marker is produced in exactly one place. Deleting the classifier's test
+    survived all 701 tests of this file, and it has since been withdrawn as the duplicate reader
+    it was.
+
+    These drive the LANE's real output - `gate._review_current`, not a hand-written dict -
+    through the shipped `preflight` verb, so the join between the two units is what is pinned.
+    """
+
+    def _root(self, d, *, covered: bool = True):
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        rv = root / "sdlc-studio" / "reviews"
+        rv.mkdir(parents=True)
+        (rv / "LATEST.md").write_text("# review\n\nthe anchor\n", encoding="utf-8")
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0101-x.md").write_text(
+            "# US0101: x\n\n> **Status:** Done\n> **Points:** 2\n\n"
+            "## Acceptance Criteria\n\n- [ ] it behaves\n", encoding="utf-8")
+        old = time.time() - 10_000
+        os.utime(rv / "LATEST.md", (old, old))
+        _close_state(root, batch=["US0101"])
+        import critic as critic_mod
+        for name in ("verdict_for", "evidence_for", "signoff_for", "is_independent_signoff",
+                     "sprint_review_for", "sprint_covers_independently", "is_independent"):
+            self.addCleanup(setattr, critic_mod, name, getattr(critic_mod, name))
+        critic_mod.verdict_for = lambda r, u, phase="delivery": {"verdict": "APPROVE"}
+        critic_mod.evidence_for = lambda r, u: {"unit": u, "reviewer": "a", "author": "b",
+                                                "date": "2026-08-02", "findings": "probed"}
+        critic_mod.signoff_for = lambda r, u: {"principal": "p"}
+        critic_mod.is_independent_signoff = lambda r, u, s: True
+        critic_mod.sprint_review_for = lambda r, u: None
+        critic_mod.sprint_covers_independently = lambda r, u, v: covered
+        critic_mod.is_independent = lambda rec: True
+        return root
+
+    def _preflight_with_the_real_lane(self, root):
+        """`sprint.py preflight` with the gate composed of the REAL review-current lane.
+
+        Stubbing the lane's verdict here would test the pre-flight against a fixture rather than
+        against the unit it has to join to, which is precisely the gap the bug records.
+        """
+        mod = _load()
+        import gate as gate_mod
+        import sprint_report as report_mod
+        self.addCleanup(setattr, gate_mod, "run_gate", gate_mod.run_gate)
+        self.addCleanup(setattr, report_mod, "checklist", report_mod.checklist)
+        report_mod.checklist = lambda r, rid, **kw: {"items": [], "outstanding": [],
+                                                     "stop_ship": [], "pending_in_close": []}
+        lane = dict(gate_mod._review_current(str(root)), check="review-current", status="fail")
+        gate_mod.run_gate = lambda *a, **k: {"ok": False, "checks": [lane]}
+        return mod, lane
+
+    def _retro(self, root, rid="RETRO0001"):
+        d = root / "sdlc-studio" / "retros"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{rid}-x.md").write_text(
+            f"# {rid}: r\n\n## Delivered\n\n- a thing\n\n"
+            "## What went well\n\n- it went\n\n"
+            "## What was hard / what stalled\n\n- it stalled\n\n"
+            "## Lessons\n\n- a real lesson worth carrying forward\n\n"
+            "## Actions raised\n\n| Finding | Disposition |\n| --- | --- |\n"
+            "| a finding | declined: not worth it |\n", encoding="utf-8")
+        return rid
+
+    def test_the_cadence_lane_is_printed_and_does_not_hold_the_close(self) -> None:
+        """MUTANT (gate.py): `"blocking": False` back to `True`.
+        MUTANT (sprint.py): drop the non-blocking failures from the pre-flight's gate loop.
+
+        Either one reddens here, which is the join neither unit's own tests could see: the first
+        makes the run held, the second makes the declaration invisible.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            mod, lane = self._preflight_with_the_real_lane(root)
+            rid = self._retro(root)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["preflight", "--retro", rid, "--root", str(root)])
+            page = out.getvalue() + err.getvalue()
+            self.assertIs(False, lane["blocking"], "the fixture did not reach the cadence branch")
+            self.assertEqual(0, rc, page)
+            self.assertIn("CADENCE DEBT", page)
+            self.assertIn("reported not blocking", page)
+
+    def test_the_same_lane_blocking_holds_the_close(self) -> None:
+        """THE POSITIVE CONTROL, one fact changed. MUTANT: treat every gate row as advisory.
+
+        With the batch uncovered the identical lane returns blocking, and the pre-flight must
+        hold - or the repair has turned the gate off rather than made it legible.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, covered=False)
+            mod, lane = self._preflight_with_the_real_lane(root)
+            rid = self._retro(root)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["preflight", "--retro", rid, "--root", str(root)])
+            page = out.getvalue() + err.getvalue()
+            self.assertIs(True, lane["blocking"], "the fixture did not reach the blocking branch")
+            self.assertEqual(1, rc, page)
+            self.assertIn("reviews/LATEST.md is stale", page)
+
+    def test_the_bounded_exit_classes_the_real_cadence_row_as_filable(self) -> None:
+        """MUTANT: drop the lane's blocking flag when the pre-flight builds its row.
+
+        The row here is the one the pre-flight actually built from the REAL lane, so the two
+        units are joined on the declaration itself rather than on a fixture's copy of it. This
+        is the join neither unit's own tests could see: US0609's filing path was reachable only
+        through a row US0608 produces, and nothing ever produced one.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            mod, _lane = self._preflight_with_the_real_lane(root)
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid, record_cost=False)
+            rows = [b for b in res["blockers"] if b["stage"] == "gate"]
+            self.assertEqual(1, len(rows), res["blockers"])
+            self.assertIs(False, rows[0]["blocking"],
+                          f"the lane's own declaration did not reach the pre-flight: {rows[0]}")
+            self.assertEqual([], mod.hard_blockers(rows),
+                             "ceremony debt is classed a hard correctness blocker, so the "
+                             "bounded exit refuses to file the one thing it exists to file")
+
+
+class DeliveredUnitLeftAtReadyTests(unittest.TestCase):
+    """BG0528: a delivered unit left at `Ready` was invisible to every close gate.
+
+    Eight of RUN-01KZ9315's twelve units were committed with a green full suite and never
+    transitioned. The close reported twenty unmet prerequisites - review coverage, verdicts,
+    sign-offs, a blocked Done gate on each story - and not one of them named the cause. The
+    diagnosis arrived only from `critic.py signoff`, the single command in the chain that reads
+    the status directly. The pre-flight is the command that promises every blocker in one pass,
+    so the question belongs there and ahead of the consequences.
+    """
+
+    def _repo(self, d, *, status="Ready", touch=True, message="work"):
+        """A real git repo whose run window carries a commit for US0101, with the unit's status
+        under test. Real git, because the claim IS about git history."""
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "src").mkdir()
+        _run(root, "init", "-q")
+        _run(root, "checkout", "-q", "-b", "main")
+        _run(root, "config", "user.email", "t@t")
+        _run(root, "config", "user.name", "t")
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0101-x.md").write_text(
+            f"# US0101: x\n\n> **Status:** {status}\n> **Points:** 2\n"
+            f"> **Affects:** src/a.py\n\n## Acceptance Criteria\n\n- [ ] it behaves\n",
+            encoding="utf-8")
+        (root / "src" / "a.py").write_text("base\n", encoding="utf-8")
+        (root / "src" / "unrelated.py").write_text("base\n", encoding="utf-8")
+        _run(root, "add", "-A")
+        _run(root, "commit", "-qm", "base")
+        base = _run(root, "rev-parse", "HEAD").stdout.strip()
+        target = "src/a.py" if touch else "src/unrelated.py"
+        (root / target).write_text("changed\n", encoding="utf-8")
+        _run(root, "add", "-A")
+        _run(root, "commit", "-qm", message)
+        _close_state(root, batch=["US0101"], base_ref=base)
+        return root
+
+    def _blockers(self, root):
+        return _load().undelivered_blockers(root, json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
+
+    def test_a_ready_unit_whose_code_landed_is_named_by_the_preflight(self) -> None:
+        """MUTANT: delete the `undelivered_blockers` call from `close_preflight`.
+
+        Driven through the shipped verb, because a library call cannot see whether the check is
+        WIRED - which is the whole shape of this defect: the rule existed in `critic signoff` and
+        nothing upstream asked it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            mod = _load()
+            import gate as gate_mod
+            self.addCleanup(setattr, gate_mod, "run_gate", gate_mod.run_gate)
+            gate_mod.run_gate = lambda *a, **k: {"ok": True, "checks": []}
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["preflight", "--root", str(root)])
+            page = out.getvalue() + err.getvalue()
+            self.assertEqual(1, rc, page)
+            self.assertIn("[status]", page)
+            self.assertIn("US0101", page)
+            self.assertIn("'Ready'", page)
+            self.assertIn("transition.py set --id US0101", page)
+
+    def test_the_cause_is_reported_before_its_consequences(self) -> None:
+        """MUTANT: append the status blockers after the coverage/sign-off ones instead.
+
+        Twenty blockers described consequences of the status that had not moved. Reporting the
+        cause anywhere but first leaves an operator to read nineteen downstream facts before the
+        one that explains them.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            mod = _load()
+            import gate as gate_mod
+            self.addCleanup(setattr, gate_mod, "run_gate", gate_mod.run_gate)
+            gate_mod.run_gate = lambda *a, **k: {"ok": True, "checks": []}
+            res = mod.close_preflight(root, None, record_cost=False)
+            stages = [b["stage"] for b in res["blockers"]]
+            self.assertIn("status", stages, res["blockers"])
+            self.assertLess(stages.index("status"),
+                            min(i for i, s in enumerate(stages) if s != "status"),
+                            f"the cause is reported after its own consequences: {stages}")
+
+    def test_a_delivered_unit_at_its_review_status_is_not_accused(self) -> None:
+        """THE CONTROL, and the discriminator. MUTANT: test only `is_terminal_status` and drop
+        the awaiting-sign-off half.
+
+        A unit at `Review` HAS been delivered - that status is what a sign-off exists to resolve -
+        so accusing it would fire on every correctly delivered run, and a check that fires on
+        everything is one people switch off.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, status="Review")
+            self.assertEqual([], self._blockers(root))
+
+    def test_a_pre_delivery_unit_with_no_commits_behind_it_is_not_accused(self) -> None:
+        """THE OTHER CONTROL. MUTANT: drop the git evidence test and accuse on status alone.
+
+        A batch unit that is simply not started yet is at `Ready` for the honest reason, and a
+        pre-flight that demanded a transition for it would be asking for a status the tree does
+        not support.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, touch=False)
+            self.assertEqual([], self._blockers(root))
+
+    def test_a_commit_naming_the_unit_counts_even_when_affects_is_untouched(self) -> None:
+        """MUTANT: delete the `--grep` pass and read `Affects` alone.
+
+        `Affects` is a DECLARATION and it goes stale; the commit subject naming the unit is the
+        stronger signal and the one that survives a declaration nobody updated.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, touch=False, message="fix(US0101): the thing")
+            rows = self._blockers(root)
+            self.assertEqual(1, len(rows), rows)
+            self.assertIn("name it", rows[0]["detail"])
+
+    def test_the_pre_delivery_set_is_derived_from_the_vocabulary_not_a_name_list(self) -> None:
+        """MUTANT: hard-code `("Ready", "In Progress")` instead of asking the vocabulary.
+
+        A project that adds its own pre-delivery status would be exempted by a name list. This
+        drives a status the shipped vocabulary carries and no such list would contain.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, status="Blocked")
+            rows = self._blockers(root)
+            self.assertEqual(1, len(rows), rows)
+            self.assertIn("'Blocked'", rows[0]["detail"])
 
 
 class BatchValidationTests(unittest.TestCase):

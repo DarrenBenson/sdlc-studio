@@ -2069,15 +2069,21 @@ def spawned_column_drift(repo_root: Path | str) -> list[dict]:
         path = root / rel / "_index.md"
         if not path.is_file():
             continue
-        header: list[str] | None = None
         col: int | None = None
         for line in sdlc_md.read_text_safe(path).splitlines():
             cells = sdlc_md.table_cells(line)
             if not cells:
                 continue
-            if header is None:
-                header = [c.strip().lower() for c in cells]
-                col = next((i for i, h in enumerate(header)
+            lowered = [c.strip().lower() for c in cells]
+            # Re-pin at ANY header carrying an ID column, as `project_fields` does. Pinning once
+            # at the first table read the SUMMARY table every discovery index opens with - a
+            # `| Status | Count |` block that carries no spawned column - so the position was
+            # None for the rest of the file and every data row below was skipped. The detector
+            # was inert on every real index while its tests, whose fixtures had no summary
+            # block, passed. Re-pinning also RESETS the column, so a later table that does not
+            # carry one is exempt instead of inheriting this table's positions.
+            if "id" in lowered:
+                col = next((i for i, h in enumerate(lowered)
                             if any(h.startswith(a) for a in SPAWNED_COLUMN_ALIASES)), None)
                 continue
             if col is None or col >= len(cells):
@@ -2096,9 +2102,35 @@ def spawned_column_drift(repo_root: Path | str) -> list[dict]:
                            f"and the census finds {sorted(actual) or '(none)'} - a column that "
                            f"is right only on the day somebody sweeps it is one nobody can "
                            f"trust"),
-                "remedy": f"correct the {rel}/_index.md cell for {rid} from the census",
+                # `fix`, which is the key every drift item carries and the one the sweep's
+                # printer reads. This item called it `remedy`, so the first index to produce one
+                # would have killed `reconcile detect` with a KeyError - unreachable only for as
+                # long as the detector found nothing.
+                "fix": _spawned_remedy(rel, rid, claimed, actual),
             })
     return drift
+
+
+def _spawned_remedy(rel: str, rid: str, claimed: set, actual: set) -> str:
+    """What to do about a disagreeing cell, and it depends on WHICH WAY it disagrees.
+
+    A cell the census can see past is derived output and is simply brought up to date. A cell
+    naming work the census CANNOT see is the opposite case: the child file records no upward
+    link, so the cell may be the only surviving record that the link exists, and "correct it from
+    the census" reads as an instruction to delete evidence. The link is recorded in the child,
+    where every other reader can see it, and the cell follows from there."""
+    missing = sorted(actual - claimed)
+    extra = sorted(claimed - actual)
+    parts = []
+    if missing:
+        parts.append(f"add {', '.join(missing)} to the {rel}/_index.md cell for {rid} - the "
+                     f"files already say so")
+    if extra:
+        parts.append(f"{', '.join(extra)} name(s) no upward link to {rid} in the file: record "
+                     f"the link there (`Parent:`, or the spelling this project uses) so the "
+                     f"census can see it, and only remove the cell entry if the link is not real "
+                     f"- the cell may be the sole record of it")
+    return "; ".join(parts) or f"correct the {rel}/_index.md cell for {rid} from the census"
 
 
 def detect_all(repo_root: Path | str, scope: str | None = None) -> tuple[dict, list[dict]]:

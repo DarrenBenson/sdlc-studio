@@ -4390,6 +4390,13 @@ class UnanswerableGroupTests(unittest.TestCase):
             # the set is DERIVED from the resolver - is unheld. A hard-coding mutant survived
             # the first version for exactly that reason.
             self._story(root, "US0005", "jest some/spec.test.js -t a thing")
+            # THE CASE A VERB HEURISTIC CANNOT REACH. `jest` above is outside `_COLLECTABLE`, so
+            # `head not in _COLLECTABLE` short-circuits before the absent-runner branch ever runs
+            # and "the resolver answered None" is operationally the same sentence as "the verb is
+            # not pytest" - which is why swapping the resolver for a verb comparison survived
+            # (BG0523). This selector's verb IS pytest, and the resolver still answers None: it
+            # names no file target, so no collection can decide what it selects.
+            self._story(root, "US0006", "pytest -k a_thing")
             text = self._lint(root)
         self.assertIn("unanswerable", text, "no unanswerable section was produced")
         exempt = text.split("unanswerable", 1)[1]
@@ -4398,6 +4405,9 @@ class UnanswerableGroupTests(unittest.TestCase):
         self.assertIn("US0005", exempt,
                       "a selector whose RUNNER is absent was not reported exempt - the set is "
                       "being guessed from the verb rather than derived from the resolver")
+        self.assertIn("US0006", exempt,
+                      "a COLLECTABLE-verb selector the resolver cannot answer was not reported "
+                      "exempt - the set is a verb comparison wearing the resolver's name")
 
     def test_each_member_is_named_with_its_verb_and_claimants(self) -> None:
         """MUTANT: print a count of exempt groups instead of a line each.
@@ -4415,6 +4425,35 @@ class UnanswerableGroupTests(unittest.TestCase):
         for ac in ("US0003 AC1", "US0003 AC2", "US0003 AC3"):
             with self.subTest(ac=ac):
                 self.assertIn(ac, exempt, f"{ac} claims the group but is not named")
+
+    def test_the_resolver_and_a_verb_heuristic_disagree_and_the_report_follows_the_resolver(self):
+        """MUTANT: replace the `selector_resolves(...) is None` call in the lint with
+        `verb != "pytest"`.
+
+        The disagreement is asserted FIRST, as the premise: `pytest` is inside `_COLLECTABLE`,
+        so a verb heuristic calls this selector answerable, while the resolver answers None
+        because the selector names no file any collection could be run over. Every fixture the
+        set was previously derived over used a verb outside `_COLLECTABLE`, where the two
+        agree by construction - so the derivation claim was unpinned however the report read.
+        """
+        self.assertIn("pytest", verify_ac._COLLECTABLE,
+                      "the premise is gone: `pytest` is no longer a collectable verb, so this "
+                      "selector no longer separates the resolver from a verb comparison")
+        self.assertIsNone(verify_ac.selector_resolves("pytest -k a_thing"),
+                          "the resolver now answers a selector naming no file target, so this "
+                          "case no longer discriminates - find another and say why")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            self._story(root, "US0007", "pytest -k a_thing")
+            text = self._lint(root)
+        self.assertIn("unanswerable", text, "no unanswerable section was produced")
+        splittable, exempt = text.split("unanswerable", 1)
+        self.assertIn("US0007", exempt,
+                      "a group the resolver cannot answer was not reported exempt")
+        self.assertNotIn("US0007", splittable,
+                         "the same group was also told to split into discriminating halves, so "
+                         "the report is following the verb rather than the resolver")
 
     def test_an_unanswerable_group_is_not_also_reported_as_splittable(self) -> None:
         """MUTANT: report every group in both places.

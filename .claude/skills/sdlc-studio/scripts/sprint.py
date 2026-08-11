@@ -3200,35 +3200,59 @@ def spend_charter(repo_root: Path | str, charter_id: str, run_id: str) -> dict:
     """Mark the charter this run was materialised from as `Spent`. The queue's only exit.
 
     Refuses rather than guesses: a charter that does not resolve, or is not Queued, leaves the
-    queue untouched and says so. Spending a charter twice is not an error worth failing a run
-    for - the run is already open - so it is REPORTED, never silently ignored.
+    queue untouched and says so. A refusal is REPORTED, never silently ignored - and the run is
+    already open by the time this runs, so `plan --write` carries the refusal out in its exit
+    code rather than exiting 0 over an unadvanced queue. That combination is what reproduced the
+    defect this exists to close: a green plan, a run running, and a charter still Queued that the
+    next `next` re-offers at the head of the queue.
+
+    THREE things the first version got wrong, each of them a way for the refusal to vanish:
+
+    * `transition.main` RAISES `SystemExit` on some paths, and `except Exception` does not catch
+      it - so a refusal became a process exit through the middle of a plan.
+    * transition prints its own refusal to stdout, which leaked unindented into the plan's page
+      and read as the plan's own words. It is CAPTURED and re-emitted under this function's
+      indent, attributed.
+    * `Spent` is a charter TERMINAL, so transition applies the terminal Open-Questions gate to it
+      and refuses a charter carrying one. Consuming a charter is not answering its questions -
+      the run is opened to answer them - so the gate is stood down for THIS write with `--force`,
+      and only for it. Every other gate transition runs still runs.
     """
     root = Path(repo_root)
     cid = sdlc_md.norm_id(charter_id)
     hit = sdlc_md.find_by_id(root, cid)
     if not hit:
-        return {"ok": False, "detail": f"{cid}: no charter on disk resolves to this id - the run "
-                                       f"is open and the queue is untouched"}
+        return {"ok": False, "attempted": False, "output": "",
+                "detail": f"{cid}: no charter on disk resolves to this id - the run "
+                          f"is open and the queue is untouched"}
     path = Path(hit[0])
     text = sdlc_md.read_text_safe(path) or ""
     status = (sdlc_md.extract_field(text, "Status") or "").strip()
     if status != "Queued":
-        return {"ok": False, "detail": f"{cid} is {status or 'unreadable'}, not Queued - left "
-                                       f"as it is rather than re-spent by this run"}
+        return {"ok": False, "attempted": False, "output": "",
+                "detail": f"{cid} is {status or 'unreadable'}, not Queued - left "
+                          f"as it is rather than re-spent by this run"}
+    said = io.StringIO()
     try:
         import transition  # noqa: PLC0415 - deferred sibling; the one status writer
         # Through transition's own entry point, not around it: it is what syncs the index and
         # runs the status gates, and a second writer that skipped those would leave the charter
         # index disagreeing with the charter.
-        rc = transition.main(["set", cid, "Spent", "--root", str(root)])
+        with contextlib.redirect_stdout(said), contextlib.redirect_stderr(said):
+            rc = transition.main(["set", cid, "Spent", "--force", "--root", str(root)])
         if rc != 0:
-            return {"ok": False, "detail": f"{cid} was refused by transition (rc {rc}) - the run "
-                                           f"is open; resolve that, or the queue will re-offer it"}
-    except Exception as exc:  # noqa: BLE001 - a charter write must not lose an opened run
+            return {"ok": False, "attempted": True, "output": said.getvalue(),
+                    "detail": f"{cid} was NOT marked Spent - transition refused it (rc {rc}). "
+                              f"The run is open; resolve this or the queue will re-offer it"}
+    # SystemExit is not an Exception. `transition.main` raises it on some paths, and the first
+    # version's `except Exception` let it out of a half-finished plan.
+    except (Exception, SystemExit) as exc:  # noqa: BLE001 - a charter write must not lose a run
         sdlc_md.debug("sprint.spend_charter", exc)
-        return {"ok": False, "detail": f"{cid} could not be marked Spent ({exc}) - the run is "
-                                       f"open; mark it by hand or the queue will re-offer it"}
-    return {"ok": True, "detail": f"{cid} is Spent - consumed by {run_id}, so the queue advances"}
+        return {"ok": False, "attempted": True, "output": said.getvalue(),
+                "detail": f"{cid} could not be marked Spent ({type(exc).__name__}: {exc}) - the "
+                          f"run is open; mark it by hand or the queue will re-offer it"}
+    return {"ok": True, "attempted": True, "output": said.getvalue(),
+            "detail": f"{cid} is Spent - consumed by {run_id}, so the queue advances"}
 
 
 def run_opened_line(state: dict, appetite: dict) -> str:
@@ -6306,6 +6330,110 @@ def _draw_report(root, retro_id) -> None:
               f"unaffected; draw it with `sprint.py report --id {retro_id}`", file=sys.stderr)
 
 
+def _pre_delivery_status(root, unit: str) -> str:
+    """The unit's status when it is BEFORE delivery, or "" when it is not (or cannot be read).
+
+    Derived from the shared vocabulary rather than from a list of `Ready` and `In Progress` kept
+    here: a project that adds its own pre-delivery status would be exempted by a name list, which
+    is the enumeration failure this repository keeps meeting. A unit is pre-delivery when its
+    status is neither TERMINAL nor AWAITING SIGN-OFF, and both predicates are asked of their one
+    owner - `sdlc_md.is_terminal_status` and `critic.is_awaiting_signoff`, the second being the
+    exact rule whose refusal message was the only one in the whole close chain that named this.
+
+    Unreadable answers "" - cannot say is not the same as not delivered.
+    """
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in the close path
+    try:
+        found = sdlc_md.find_by_id(Path(root), unit)
+        if not found:
+            return ""
+        path, type_ = found
+        text = sdlc_md.read_text_safe(path)
+        status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
+                                          sdlc_md.status_vocab(type_, Path(root)))
+        if not status or sdlc_md.is_terminal_status(type_, status):
+            return ""
+        return "" if critic.is_awaiting_signoff(status) else status
+    except Exception as exc:  # noqa: BLE001 - a read-only report never fails the preflight
+        sdlc_md.debug("sprint._pre_delivery_status", exc)
+        return ""
+
+
+def _delivery_evidence(root, unit: str) -> str:
+    """Why this unit looks DELIVERED to git, or "" when it does not.
+
+    Two signals, and the stronger one is preferred because they discriminate differently:
+
+    * a commit in the run window whose MESSAGE names the unit id. Decisive - nothing else names
+      a unit in a commit subject.
+    * a commit in the run window touching the unit's declared `Affects`. Weaker, because a
+      sibling unit sharing a file makes it true too, so it is reported in those words rather
+      than as proof. It is kept because it is the signal that catches the commit whose subject
+      forgot the id, which is the population this check exists for.
+
+    The window is the run's own recorded base ref, not a date: `git log <base>..HEAD` is exactly
+    "what this run committed", and a `--since` on the wall clock would sweep in a neighbouring
+    run's commits on a busy day. No base ref recorded means no window, so no claim is made.
+    """
+    base = str((run_state.read(root) or {}).get(run_state.BASE_REF) or "")
+    if not base:
+        return ""
+    named = _git(root, "log", "--format=%H", f"{base}..HEAD", "--grep", unit, "-i")
+    if named and named.returncode == 0 and named.stdout.strip():
+        n = len(named.stdout.split())
+        return f"{n} commit(s) in this run name it"
+    text = sdlc_md.read_text_safe(Path(sdlc_md.find_by_id(Path(root), unit)[0]))
+    paths = sdlc_md.affects_files(text)
+    if not paths:
+        return ""
+    touched = _git(root, "log", "--format=%H", f"{base}..HEAD", "--", *paths)
+    if touched and touched.returncode == 0 and touched.stdout.strip():
+        n = len(touched.stdout.split())
+        return (f"{n} commit(s) in this run touch its declared Affects "
+                f"({', '.join(paths[:3])}{', ...' if len(paths) > 3 else ''})")
+    return ""
+
+
+def undelivered_blockers(root, state) -> list:
+    """Batch units whose code landed and whose STATUS never moved, as preflight blockers.
+
+    THE FIRST QUESTION the close should ask, and until now nothing asked it. Eight of one run's
+    twelve units were committed with a green suite and left at `Ready`; the close then reported
+    twenty unmet prerequisites across four categories - no review coverage, no verdict, no
+    sign-off, a blocked Done gate on each story - and not one of them named the cause. Every
+    message described a downstream consequence of a status that had not moved, so the run was
+    held open for over a day while the real fault was one command away.
+
+    It belongs in the PRE-FLIGHT rather than at the sign-off step because the pre-flight is the
+    command that promises every blocker in one pass, and a blocker it cannot see makes the other
+    nineteen unreadable.
+
+    Read-only, and silent when git cannot answer: a unit whose delivery cannot be evidenced is
+    not accused of anything.
+    """
+    out: list[dict] = []
+    for unit in [u for u in (sdlc_md.norm_id(x) for x in (state.get("batch") or [])) if u]:
+        try:
+            status = _pre_delivery_status(root, unit)
+            if not status:
+                continue
+            evidence = _delivery_evidence(root, unit)
+        except Exception as exc:  # noqa: BLE001 - a read-only report never fails the preflight
+            sdlc_md.debug("sprint.undelivered_blockers", exc)
+            continue
+        if not evidence:
+            continue
+        out.append({"stage": "status",
+                    "cause": "a unit was delivered and never transitioned",
+                    "detail": (f"{unit}: its code landed - {evidence} - and its status is still "
+                               f"{status!r}, which is neither terminal nor awaiting sign-off. "
+                               f"Every review, sign-off and Done-gate blocker reported below "
+                               f"for it is a consequence of this"),
+                    "remedy": (f"`transition.py set --id {unit} --status Review` (then the "
+                               f"sign-off steps), or move it to its type's terminal")})
+    return out
+
+
 def coverage_blockers(root, state) -> list:
     """The review-coverage chain step, asked READ-ONLY, as a list of preflight blockers.
 
@@ -6387,6 +6515,11 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
     if not state.get("sprint_goal_verdict"):
         block("goal-verdict", "the Sprint Goal is unjudged",
               '`sprint.py goal-verdict --verdict achieved|partial|missed --note "..."`')
+    # AHEAD of the review-coverage check, because it is upstream of it in fact as well as in
+    # order: a unit that was never transitioned has no coverage, no verdict and no sign-off
+    # BECAUSE of that, and reporting the consequences first buries the cause under them.
+    for entry in undelivered_blockers(root, state):
+        blockers.append(entry)
     for entry in coverage_blockers(root, state):
         block(entry["stage"], entry["detail"], entry["remedy"])
 
@@ -6414,7 +6547,15 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
     # the retro blocker above already says so, so a second blocker would be one fact twice.
     if retro_id:
         for entry in _checklist_blockers(root, retro_id, state):
-            block(entry["stage"], entry["detail"], entry["remedy"])
+            # Appended WHOLE, never rebuilt through `block()`. That helper takes three strings and
+            # constructs a fresh dict, so it silently drops `blocking` - and `_checklist_blockers`
+            # is the one producer that sets it False, for an expired window. Rebuilt, the entry
+            # arrived flagless, `held_blockers` defaulted it to held, and the close was stopped by
+            # the exact row this change claims to have stopped holding it. The claim was in the
+            # changelog and in the comment beside this line, in the past tense, while the code did
+            # the opposite: found by an independent pass driving `close_preflight` with one expired
+            # item and nothing else wrong.
+            blockers.append(entry)
 
     # The gate block, which already reports all of its lanes at once. Conformance is scoped to
     # THIS run's batch: on a clean tree the diff scope is empty, so the unscoped lane judges the
@@ -6445,12 +6586,21 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
                                  seconds=time.monotonic() - started,
                                  verdict="pass" if report.get("ok") else "fail",
                                  run_id=(state or {}).get("run_id"))
+        # EVERY failing lane, carrying the lane's OWN blocking flag. Dropping the non-blocking
+        # ones made "reported, not blocking" mean invisible: the review-current lane declares
+        # itself cadence debt and non-blocking when this run's units are all independently
+        # covered, and that declaration reached no surface at all - not the pre-flight's page,
+        # and not the bounded exit whose whole job is to file ceremony debt. A lane that says
+        # "reported" and is reported nowhere has been switched off, not relaxed.
         for c in report.get("checks", []):
-            if c.get("status") == "fail" and c.get("blocking"):
-                block("gate", f"{c['check']}: {c.get('detail', '')}",
-                      sdlc_md.remediation_lines("gate", [c["check"]])[0]
-                      if sdlc_md.remediation_lines("gate", [c["check"]])
-                      else f"address the {c['check']} lane")
+            if c.get("status") != "fail":
+                continue
+            entry = {"stage": "gate", "blocking": bool(c.get("blocking")),
+                     "detail": f"{c['check']}: {c.get('detail', '')}",
+                     "remedy": (sdlc_md.remediation_lines("gate", [c["check"]])[0]
+                                if sdlc_md.remediation_lines("gate", [c["check"]])
+                                else f"address the {c['check']} lane")}
+            blockers.append(entry)
 
     # A close that ships work while the installed copy still holds the previous version leaves
     # every other project on the machine loading the old code. The verdict has ONE owner
@@ -6469,7 +6619,20 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
               drift["remedy"])
 
     blockers.extend(_signoff_preflight(root, state))
-    return {"ready": not blockers, "blockers": blockers, "gate_ran": gate_ran}
+    # READY is decided by what HOLDS the close, not by what is reported. A row that declares
+    # itself non-blocking - an expired checklist window, a cadence lane - was still counted here,
+    # so "reported, not held" was true of the flag and false of the answer, which is the only
+    # place the distinction is read.
+    return {"ready": not held_blockers(blockers), "blockers": blockers, "gate_ran": gate_ran}
+
+
+def held_blockers(blockers: list) -> list:
+    """The rows that actually HOLD the close: everything except the explicitly non-blocking.
+
+    Default TRUE for a row carrying no flag, so a producer that forgets to say fails towards
+    holding the close rather than towards a silent pass.
+    """
+    return [b for b in blockers if b.get("blocking", True)]
 
 
 def _checklist_blockers(root: Path, retro_id: str, state: dict) -> list[dict]:
@@ -6615,15 +6778,26 @@ def _stage_label(stage: str) -> str:
     return f"{stage}, for --apply-signoff" if stage in _SIGNOFF_ONLY_STAGES else stage
 
 
+def _blocker_label(b: dict) -> str:
+    """The bracketed prefix for one row. A non-blocking row SAYS so on the page: an operator
+    reading a list of blockers has no other way to tell which of them stop the close."""
+    label = _stage_label(b["stage"])
+    return label if b.get("blocking", True) else f"{label}, reported not blocking"
+
+
 def _render_preflight(data: dict) -> None:
+    held = held_blockers(data["blockers"])
+    reported = [b for b in data["blockers"] if b not in held]
     if data["ready"]:
         print("preflight: ready - every close prerequisite is met")
+        for b in reported:
+            print(f"  [{_blocker_label(b)}] {b['detail']}")
+            print(f"      -> {b['remedy']}")
         return
-    n = len(data["blockers"])
-    print(f"preflight: {n} unmet prerequisite(s) - ALL of them, so the close is one more run "
-          f"once these are cleared:")
+    print(f"preflight: {len(held)} unmet prerequisite(s) - ALL of them, so the close is one more "
+          f"run once these are cleared:")
     for b in data["blockers"]:
-        print(f"  [{_stage_label(b['stage'])}] {b['detail']}")
+        print(f"  [{_blocker_label(b)}] {b['detail']}")
         print(f"      -> {b['remedy']}")
 
 
@@ -6832,25 +7006,28 @@ def cmd_preflight(args: argparse.Namespace) -> int:
 #: be the bypass this exit exists to prevent.
 _DEFERRABLE_CLOSE_STAGES = ("goal-verdict", "retro", "sign-off")
 
-#: What a blocker looks like when it is a CADENCE fact rather than a correctness one. A
-#: repo-wide periodic ceremony being overdue says nothing about whether this batch is sound -
-#: it is ceremony debt by definition, which is exactly what the bounded exit exists to file.
-#:
-#: Measured: a close with nine independently reviewed, signed-off units could not proceed by
-#: ANY route, because the plain close blocked on the stale ceremony and `--file-and-close`
-#: classed the same lane a hard correctness blocker and refused to file it. That is a close
-#: with no exit, which is worse than either behaviour alone.
-_CADENCE_MARKER = "CADENCE DEBT"
+def hard_blockers(blockers: list) -> list:
+    """The rows `--file-and-close` must REFUSE to file: correctness, never ceremony.
 
+    A row is filable when its STAGE is deferrable ceremony, or when the lane that produced it
+    DECLARED ITSELF NON-BLOCKING - a row that does not hold the close cannot be the reason a
+    filing is refused. Both facts are read from the row; neither is restated here as a list of
+    lane names, because a second list drifts from the first and a lane added tomorrow is
+    silently classed correctness.
 
-def _is_cadence_debt(blocker: dict) -> bool:
-    """Whether a blocker is a cadence fact the bounded exit may file.
+    A prose classifier used to sit beside the flag: any blocker whose detail contained the
+    string `CADENCE DEBT` was filable. It has been WITHDRAWN rather than repaired, because it
+    was a second reader of one fact and it could never fire - the only lane that emits the
+    string emits it on the branch where it also sets the flag, so the string test was reachable
+    only through a row the flag had already classified. It was measurably dead: deleting it left
+    701 tests green. One declaration, structured, and the join to it is driven through a close.
 
-    Read from the lane's OWN declaration rather than from a list of lane names here. A second
-    list would drift from the first, and a lane added tomorrow would be silently classed
-    correctness - the enumeration failure this project keeps meeting.
+    Named and module-level for that join: behind a closure the classification was reachable only
+    by driving a whole close, which is why nothing ever exercised it.
     """
-    return _CADENCE_MARKER in str(blocker.get("detail", ""))
+    return [b for b in blockers
+            if b["stage"] not in _DEFERRABLE_CLOSE_STAGES
+            and b.get("blocking", True)]
 
 
 #: The declared ceiling on review-repair rounds. Read from config so a project can set its own;
@@ -7023,8 +7200,7 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
               f"a re-run would duplicate them", file=sys.stderr)
         return 2
     blockers = pre["blockers"]
-    hard = [b for b in blockers
-            if b["stage"] not in _DEFERRABLE_CLOSE_STAGES and not _is_cadence_debt(b)]
+    hard = hard_blockers(blockers)
     if hard:
         print(f"file-and-close REFUSED: {len(hard)} hard blocker(s) - a correctness gate is "
               f"never filed away:", file=sys.stderr)
@@ -8337,6 +8513,9 @@ def _abandon_open_run(root, state) -> None:
 
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
+    #: Why the queue did not advance, or "" when it did. A run whose charter stayed Queued has
+    #: half-succeeded, and the exit code is the only part of the answer a caller reads.
+    charter_refused = ""
     # The standing policy is validated FIRST, before any selection, write or run-state
     # mutation: an incomplete policy must leave no trace at all, or a refused run would
     # still have half-recorded the rule it refused.
@@ -8696,6 +8875,22 @@ def cmd_plan(args: argparse.Namespace) -> int:
         if charter:
             spent = spend_charter(args.root, charter, state["run_id"])
             print(f"  {spent['detail']}")
+            # Transition's own words, INDENTED and attributed. Unindented they read as the
+            # plan's own output, which is how a refusal travelled out of here looking like
+            # progress.
+            for line in (spent.get("output") or "").splitlines():
+                if line.strip():
+                    print(f"    transition: {line.strip()}")
+            if not spent["ok"] and spent.get("attempted"):
+                # NON-ZERO, loudly, and ONLY for a write that was attempted and did not take:
+                # that is the state the bug describes - the run open, the charter still Queued,
+                # and the next `next` re-offering it at the head of the queue. The two
+                # pre-write refusals above (no such charter, not Queued) leave a queue that
+                # CANNOT re-offer this charter, are already reported in terms, and keep the
+                # shipped contract of not failing a run that opened correctly.
+                charter_refused = spent["detail"]
+                print(f"plan: the run is OPEN but the charter was NOT spent - {charter_refused}",
+                      file=sys.stderr)
         # BG0385: the PLAN end of the bookend goal review. `goal-review record` asks whether the
         # goal looks achievable; this asks the different question US0545 specifies - will THIS
         # content deliver it - and records the answer so the close can score its own judgement
@@ -8725,6 +8920,11 @@ def cmd_plan(args: argparse.Namespace) -> int:
         if lp["unplaceable"]:
             print("  not exported (declared no Affects, cannot be placed in a disjoint lane): "
                   + ", ".join(lp["unplaceable"]))
+    if charter_refused:
+        # 3, not 2: the plan itself was not refused - it ran and the run is open - so this must
+        # not read as "nothing happened". A caller that treats any non-zero as "re-plan" would
+        # otherwise open a second run over the first.
+        return 3
     return 0
 
 

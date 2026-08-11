@@ -3419,7 +3419,7 @@ class VelocityCarriesTheOverheadSplitTests(unittest.TestCase):
         """The columns are the contract between the writer and the planner that reads back."""
         keys = {key for _prefix, key in retro.VELOCITY_COLUMNS}
         self.assertIn("overhead_ratio", keys)
-        self.assertIn("unattributed_s", keys)
+        self.assertIn("overhead_bound", keys)
 
     def test_the_column_header_is_matched_by_the_reader(self) -> None:
         """Against the SHIPPED header, not a hand-written one. This test used to build its own
@@ -3433,7 +3433,87 @@ class VelocityCarriesTheOverheadSplitTests(unittest.TestCase):
         idx = retro._velocity_index(header)
         self.assertIsNotNone(idx, "the shipped header row is not recognised at all")
         self.assertIn("overhead_ratio", idx)
-        self.assertIn("unattributed_s", idx)
+        self.assertIn("overhead_bound", idx)
+        self.assertNotEqual(idx["overhead_ratio"], idx["overhead_bound"],
+                            "one cell was filed under both keys, and `overhead bound` starts "
+                            "with `overhead`")
+
+    def test_a_header_carrying_the_bound_and_no_ratio_does_not_file_it_as_the_ratio(self) -> None:
+        """The case the shipped assertion could not reach, found by an independent pass.
+
+        `overhead bound` starts with `overhead`, so a reader taking the first UNCLAIMED prefix
+        gives one cell to both keys whenever the narrower name has not already been claimed by
+        an earlier column - which is exactly a header carrying the bound alone. A comment above
+        `VELOCITY_COLUMNS` claimed declaration order was the protection against this. It was
+        not: reversing that list changed nothing, because the loop had no `break` and both
+        orders resolved identically while both columns were present, and BOTH were broken when
+        only one was. The fix is the longest unclaimed prefix, one key per cell.
+
+        Mutant: file every matching unclaimed prefix instead of only the longest.
+        """
+        idx = retro._velocity_index("| Retro | Date | Overhead bound | Note |")
+        self.assertEqual(2, idx.get("overhead_bound"))
+        self.assertNotIn("overhead_ratio", idx,
+                         "the bound cell was ALSO filed as the ratio, so a floor would be read "
+                         "and published as a measured overhead figure")
+
+    def test_the_two_overlapping_columns_resolve_where_the_orders_DIVERGE(self) -> None:
+        """The property, asserted where it can actually be observed failing.
+
+        The first attempt at this test was self-satisfying, and an independent pass proved it: it
+        swapped the declaration order itself and compared the two results on the SHIPPED header,
+        where both orders agree under every implementation tried - including the buggy one it was
+        written to catch. A first-unclaimed-wins reader WITH a `break`, which makes declaration
+        order genuinely load-bearing, survived it, and its `sanity` line compared a dict against a
+        shallow copy of itself.
+
+        That is the same defect as the comment it replaced, one level down: a claim of protection
+        that cannot observe its own absence. So this asserts the header where the orders DO
+        diverge - the bound BEFORE the ratio - and asserts the resolved positions rather than
+        comparing two runs with each other.
+
+        Mutants: first-unclaimed-wins without a break (one cell files both keys); and WITH a break
+        (declaration order becomes load-bearing and this header mis-resolves).
+        """
+        idx = retro._velocity_index("| Retro | Overhead bound | Overhead | Note |")
+        self.assertEqual(1, idx.get("overhead_bound"),
+                         f"the bound column did not resolve to its own cell: {idx}")
+        self.assertEqual(2, idx.get("overhead_ratio"),
+                         f"the ratio column did not resolve to its own cell: {idx}")
+        self.assertEqual(3, idx.get("note"), f"a later column was displaced: {idx}")
+
+    def test_the_resolution_holds_under_the_REVERSED_declaration_order(self) -> None:
+        """The half the previous two tests cannot reach, and the one the round-2 pass caught.
+
+        `_velocity_index` is meant to be insensitive to the order `VELOCITY_COLUMNS` declares the
+        two overlapping names in. That is inherently a claim about two orders, so it needs a
+        comparison - but a comparison of the two RESULTS with each other is satisfied whenever
+        they agree for the wrong reason, which is how the first version of this test passed under
+        a reader that made order load-bearing.
+
+        So: reverse the declaration order, and assert the ABSOLUTE positions on the header where
+        the orders would diverge. Under a first-unclaimed-wins reader WITH a break, the reversed
+        order gives the bound cell to `overhead_ratio` and stops, yielding `{ratio: 1}` with no
+        bound at all. Under the longest-prefix rule it is unchanged.
+
+        Mutant: first-unclaimed-wins with a `break`.
+        """
+        original = retro.VELOCITY_COLUMNS
+        swapped = tuple(
+            ("overhead", "overhead_ratio") if prefix == "overhead bound"
+            else ("overhead bound", "overhead_bound") if prefix == "overhead"
+            else (prefix, key)
+            for prefix, key in original)
+        try:
+            retro.VELOCITY_COLUMNS = swapped
+            idx = retro._velocity_index("| Retro | Overhead bound | Overhead | Note |")
+        finally:
+            retro.VELOCITY_COLUMNS = original
+        self.assertEqual(
+            1, idx.get("overhead_bound"),
+            f"under the reversed declaration order the bound cell was not filed as the bound - "
+            f"declaration order is load-bearing again: {idx}")
+        self.assertEqual(2, idx.get("overhead_ratio"), f"the ratio column moved: {idx}")
 
     def test_a_written_overhead_term_survives_a_read_back(self) -> None:
         """The round trip is the actual claim: a figure that survives to be compared across
@@ -3447,13 +3527,15 @@ class VelocityCarriesTheOverheadSplitTests(unittest.TestCase):
                 "n_forecast": 3,
                 "batch": {"delivered_points": 12, "oversized": [], "plan_estimate": 300,
                           "actual_tokens": 600, "ratio": None, "wall_time_s": 90,
-                          "overhead_ratio": 0.42, "unattributed_s": 17},
+                          "overhead_ratio": 0.42, "overhead_bound": "lower"},
             })
+            written = retro.velocity_path(root).read_text(encoding="utf-8")
             rows = retro.velocity_history(root)
+        self.assertIn("0.42", written, "the ratio never reached the file at all")
         self.assertEqual(1, len(rows))
         self.assertIn("0.42", str(rows[0].get("overhead_ratio")),
                       "the overhead ratio did not survive the write/read round trip")
-        self.assertIn("17", str(rows[0].get("unattributed_s")))
+        self.assertEqual("lower", rows[0].get("overhead_bound"))
 
     def test_an_unattributable_run_records_absence_not_zero(self) -> None:
         """The direction this must fail in. A 0 in this file reads as a sprint with no overhead
@@ -3469,6 +3551,155 @@ class VelocityCarriesTheOverheadSplitTests(unittest.TestCase):
         """A reporting term is not worth a refused close."""
         with mock.patch.object(retro.sdlc_md, "debug", lambda *a, **k: None):
             self.assertEqual({}, retro._overhead_terms("/nonexistent/path", ["US0001"]))
+
+
+OVERHEAD_RETRO = """# RETRO-9100: a sprint
+
+> **Batch:** US0001, US0002
+
+## Delivered
+- shipped
+
+## What went well
+- good
+
+## What was hard / what stalled
+- hard
+
+## Lessons
+- a real lesson worth keeping for next time
+
+## Actions raised
+| Finding | Disposition |
+| --- | --- |
+| something | BG0500 |
+"""
+
+
+class VelocityOverheadTermAgreesWithTheCloseTests(unittest.TestCase):
+    """BG0406, the half BG0372 left. The term written into the velocity record was computed by
+    calling the close report's own `_overhead_ratio` with two of its three components passed in
+    BLANK - so it summed the review time and dropped the gate and mutation time, and published a
+    smaller ratio than the report it was supposed to be copying. Two readings of one question,
+    which is the disagreement the shared computation exists to prevent.
+
+    Beside it sat an `unattributed` span defined as `total - overhead - delivery`, where
+    delivery is DEFINED as `total - overhead`. It was 0.0 on every row it ever reached and could
+    not have been anything else."""
+
+    #: A ten-hour run: 08:00-18:00 is 36,000s of measured wall-clock.
+    WINDOW = ("2026-07-28T08:00:00Z", "2026-07-28T18:00:00Z")
+    UNITS = ["US0001", "US0002"]
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO9100-t.md").write_text(
+            OVERHEAD_RETRO, encoding="utf-8")
+        for sid, pts in (("US0001", 3), ("US0002", 5)):
+            (self.root / "sdlc-studio" / "stories" / f"{sid}-s.md").write_text(
+                f"# {sid}: s\n\n> **Status:** Done\n> **Points:** {pts}\n", encoding="utf-8")
+
+    def _run(self) -> None:
+        """A run whose review rounds carry their own durations: 3,600s of review and repair,
+        measured rather than inferred from the gap between two stamps, so the component is EXACT
+        and the bound this fixture reports is decided by the other two."""
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-OVERHEAD", "batch": self.UNITS, "outcome": "running",
+            "started_at": self.WINDOW[0], "ended_at": self.WINDOW[1],
+            "review_rounds": [
+                {"round": 1, "verdict": "REJECT", "recorded_at": "2026-07-28T12:00:00Z",
+                 "seconds": 1800},
+                {"round": 2, "verdict": "APPROVE", "recorded_at": "2026-07-28T13:00:00Z",
+                 "seconds": 1800},
+            ]}), encoding="utf-8")
+
+    def _ledger(self) -> None:
+        """21,600s of test execution inside the window."""
+        (self.root / "sdlc-studio" / ".local" / "test-execution.json").write_text(
+            json.dumps({"runs": [{"at": "2026-07-28T10:00:00Z", "mode": "full",
+                                  "seconds": 21600, "verdict": "pass", "moment": "commit"}]}),
+            encoding="utf-8")
+
+    def _mutation(self, elapsed: float = 1800.0) -> None:
+        """1,800s of mutation, appended through the module that owns the series."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "mutation", Path(__file__).resolve().parents[1] / "mutation.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["mutation"] = mod
+        spec.loader.exec_module(mod)
+        mod.append_series(self.root, {
+            "run_id": mod._new_run_id(), "generated_at": "2026-07-28T09:00:00Z",
+            "git_rev": "abc1234", "test_cmd": "t", "targets": ["src/thing.py"],
+            "refused": False, "unchecked": [],
+            "summary": {"applied": 10, "killed": 7, "survived": 3,
+                        "errors": 0, "unviable": 0, "truncated": 0}}, elapsed)
+
+    def _measured_sprint(self) -> None:
+        """21,600 + 1,800 + 3,600 = 27,000s of overhead in a 36,000s run: 9,000s of delivery,
+        a ratio of 3.0. With the gate and mutation components blanked it is 0.1."""
+        self._run()
+        self._ledger()
+        self._mutation()
+
+    def _terms(self) -> dict:
+        with contextlib.redirect_stderr(io.StringIO()):
+            return retro._overhead_terms(self.root, self.UNITS)
+
+    def _report(self) -> dict:
+        import sprint_report
+        with contextlib.redirect_stderr(io.StringIO()):
+            return sprint_report.report(self.root, "RETRO9100")
+
+    def test_the_velocity_term_is_the_number_the_close_reports(self) -> None:
+        """The claim the docstring made and the code did not keep. Asserted against a fixture
+        where the blanked call gives a DIFFERENT answer - on a sprint whose gate and mutation
+        time were never recorded the two agree by accident, and a test that cannot tell them
+        apart is the one this bug already had."""
+        import sprint_report
+        self._measured_sprint()
+        rep = self._report()
+        self.assertEqual(3.0, rep["overhead"]["ratio"], "the fixture is not the one described")
+        with contextlib.redirect_stderr(io.StringIO()):
+            blanked = sprint_report._overhead_ratio(self.root, self.UNITS, {}, {})
+        self.assertNotEqual(rep["overhead"]["ratio"], blanked["ratio"],
+                            "the fixture cannot tell a blanked component from a supplied one, "
+                            "so it proves nothing about which was passed")
+        self.assertEqual(rep["overhead"]["ratio"], self._terms()["overhead_ratio"],
+                         "the velocity record and the close report disagree about the same run")
+
+    def test_the_row_records_whether_the_ratio_is_exact_or_a_floor(self) -> None:
+        """A floor measured from one component of three is not the same quantity as an exact
+        figure, and this file exists to be compared row against row."""
+        self._measured_sprint()
+        self.assertEqual("exact", self._terms()["overhead_bound"],
+                         "every component was measured, so the ratio is not a floor")
+        (self.root / "sdlc-studio" / ".local" / "mutation-series.jsonl").write_text(
+            "", encoding="utf-8")
+        self.assertEqual("lower", self._terms()["overhead_bound"],
+                         "a component nothing recorded makes the ratio a floor, and the row has "
+                         "to say so or the next sprint compares it with an exact one")
+
+    def test_no_term_is_a_residue_that_can_only_be_zero(self) -> None:
+        """`unattributed = total - overhead - delivery` where `delivery = total - overhead`. The
+        identity is asserted here on the report itself, so the reason the column is gone is
+        recorded as a measurement rather than as an opinion."""
+        self._measured_sprint()
+        ov = self._report()["overhead"]
+        self.assertEqual(0.0, round(ov["total_s"] - ov["overhead_s"] - ov["delivery_s"], 6),
+                         "delivery is derived by subtraction, so a residue of the three is zero "
+                         "by construction - if this ever fails, an unattributed span became a "
+                         "real measurement and belongs back in the row")
+        self.assertEqual({"overhead_ratio", "overhead_bound"}, set(self._terms()),
+                         "the velocity row carries the measured figures and nothing derived "
+                         "from them by an identity")
+        self.assertNotIn("unattributed", retro.VELOCITY_HEADER.lower(),
+                         "the header still advertises a column whose every value was 0.0")
 
 
 class ScaffoldPassesItsValidatorTests(unittest.TestCase):

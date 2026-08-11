@@ -140,6 +140,139 @@ class HelpLeverPrecedenceTests(unittest.TestCase):
                 self.assertIn(lever, listed, f"`{lever}` is not listed under `### Levers`")
 
 
+_IN_FLIGHT_HEADING = "## In-flight controls {#in-flight-controls}"
+
+#: The controls the reference's own in-flight section must carry, as invocations. `batch
+#: add-epic` and `appetite resize` are here because they are in-flight controls too, and a list
+#: that omitted them let the two newest ship undocumented in the reference.
+_IN_FLIGHT_CONTROLS = ("batch swap", "batch drop", "batch add", "batch add-epic",
+                       "appetite resize", "stop", "reopen", "goal-review")
+
+
+#: The two SURFACES the page documents a sprint invocation on, each anchored at the start of the
+#: line and matching only up to the end of its prefix - what follows is the argv a user passes.
+#: Anchored so a fenced line invoking a DIFFERENT script (`sprint_report.py`, `artifact.py`) is
+#: not read as a sprint invocation, and the `python3 <path>` head is optional on the script
+#: surface because the page has spelled the same command both ways.
+_INVOCATION_SURFACES = (
+    ("slash", re.compile(r"^/sdlc-studio\s+sprint\b")),
+    ("script", re.compile(r"^(?:python3\s+(?:\S*/)?)?sprint\.py\b")),
+)
+
+
+def _fenced_invocations(page: str) -> list[tuple[str, str]]:
+    """Every documented sprint invocation in a FENCED block, as `(surface, argv)` pairs.
+
+    BOTH surfaces, and the surface is carried out with the argv because the two are not the same
+    parser: the slash surface owns flags the script's does not, so a check that forgets which one
+    a line came from either refuses a real slash example or accepts a script line that no parser
+    would run. Filtering to `/sdlc-studio sprint` left every script-form line unchecked (BG0497).
+
+    Continuations are joined FIRST. A trailing `\\` line reaching `shlex.split` on its own raises
+    `ValueError: No escaped character`, and its flags - seven of them on this page - are on the
+    lines below, which arrive as invocations of nothing and are silently dropped.
+
+    Fenced only. A verb named in a sentence is prose, not an invocation, and scraping prose
+    pulls in flags and ordinary words - which would make this assert that the English around a
+    command parses.
+    """
+    fenced = "\n".join(re.findall(r"```[a-z]*\n(.*?)```", page, re.S))
+    joined: list[str] = []
+    for line in fenced.splitlines():
+        line = line.strip()
+        if joined and joined[-1].endswith("\\"):
+            joined[-1] = f"{joined[-1][:-1].rstrip()} {line}"
+        else:
+            joined.append(line)
+    out = []
+    for line in joined:
+        for surface, prefix in _INVOCATION_SURFACES:
+            match = prefix.match(line)
+            if match:
+                out.append((surface, line[match.end():].split("  #", 1)[0].strip()))
+                break
+    return out
+
+
+def _skill_only_flags(arguments_page: str) -> set[str]:
+    """The flags `help/arguments.md` DECLARES as belonging to the slash surface rather than to
+    `sprint.py`'s parser.
+
+    The slash surface is a superset of the script's, deliberately: `--autonomous` names a mode
+    the skill runs, and the page says so in terms. Read from the declaration rather than
+    hard-coded, so an undeclared flag on the page is still refused below - which is the whole
+    difference between modelling two surfaces and excusing whatever fails.
+    """
+    out = set()
+    for row in arguments_page.splitlines():
+        if not row.startswith("|") or "parser flag" not in row:
+            continue
+        # The row's FIRST cell only - its subject. The description cell names other flags in
+        # passing (the `--autonomous` row explains itself by pointing at `--goal`), and reading
+        # the whole row exempted a flag the parser does own.
+        subject = re.match(r"\|\s*`(--[a-z][a-z0-9-]*)`\s*\|", row)
+        if subject:
+            out.add(subject.group(1))
+    return out
+
+
+def _unparsable_invocations(invocations: list[tuple[str, str]]) -> list[str]:
+    """The documented invocations `sprint.build_parser()` refuses, as `(surface, argv)` pairs.
+
+    PARSED, never verb-matched. The check read the bare verb WORD and asked whether the parser
+    knew it, so every flag on every documented line went unlooked-at and `--nonexistent-flag
+    zzz` was documented as freely as a real one.
+
+    The slash-only exemption is SCOPED to the slash surface. Applied to both, a script-form
+    `--autonomous` - an invocation `sprint.py` genuinely refuses - reads as documented, which
+    turns the repair into the rubber stamp it exists to refuse (BG0497).
+    """
+    import argparse                                 # noqa: PLC0415
+    import contextlib                               # noqa: PLC0415
+    import io                                       # noqa: PLC0415
+    import shlex                                    # noqa: PLC0415
+    sprint = _load("sprint")
+    parser = sprint.build_parser()
+    verbs = {name for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+             for name in a.choices}
+    skill_only = _skill_only_flags(_ARGUMENTS.read_text(encoding="utf-8"))
+    bad = []
+    for surface, invocation in invocations:
+        argv = shlex.split(invocation)
+        # The flag-first front-door form is plan-shaped: `/sdlc-studio sprint --bugs Open` is
+        # `plan --bugs Open`, which is how the page's own Flags table describes it.
+        if not argv or argv[0] not in verbs:
+            argv = ["plan"] + argv
+        if surface == "slash":
+            argv = [a for a in argv if a not in skill_only]
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
+                parser.parse_args(argv)
+        except SystemExit:
+            bad.append(f"{surface}: {invocation}  ->  {buf.getvalue().strip().splitlines()[-1:]}")
+    return bad
+
+
+def _controls_missing_from_in_flight_section(ref: str) -> list[str] | None:
+    """The in-flight controls the reference's OWN section body does not carry, or None when
+    there is no such section.
+
+    Scoped to the section. The check looked for `{#in-flight-controls}` anywhere in the file -
+    which the generated reading-guide row at the top also contains, so deleting the heading left
+    it green - and then looked for each invocation file-wide, so moving the block out of the
+    section and emptying it passed as well.
+    """
+    if _IN_FLIGHT_HEADING not in ref:
+        return None
+    body = ref.split(_IN_FLIGHT_HEADING, 1)[1]
+    body = re.split(r"\n## ", body, maxsplit=1)[0]
+    # A WHOLE verb, not a substring: `sprint.py batch add` is a prefix of `batch add-epic`, so a
+    # plain `in` reported the shorter one documented by the longer one's line alone.
+    return [c for c in _IN_FLIGHT_CONTROLS
+            if not re.search(rf"sprint\.py {re.escape(c)}(?![\w-])", body)]
+
+
 class SprintInFlightControlDocsTests(unittest.TestCase):
     """Every sprint verb is documented as an INVOCATION somebody can run.
 
@@ -180,38 +313,124 @@ class SprintInFlightControlDocsTests(unittest.TestCase):
                          f"these verbs are not shown as a runnable invocation: {missing}")
 
     def test_every_extracted_invocation_parses_and_the_extraction_is_not_empty(self) -> None:
-        """MUTANT: extract nothing, or document a command the parser rejects.
+        """MUTANT: document `--nonexistent-flag zzz`, or extract nothing.
 
-        The EMPTINESS check is half the test: an extractor that matches nothing reports every
-        invocation valid, which is the vacuous-pass shape this project keeps meeting.
+        The EMPTINESS check is half the test, and it is emptiness PER SURFACE: a bare `found`
+        was satisfied by the page's nineteen slash lines while the filter matched not one of the
+        twenty-three script-form lines, which is exactly how that regression shipped green. An
+        extractor that matches nothing reports every invocation valid, which is the vacuous-pass
+        shape this project keeps meeting. The other half is that the line is PARSED, not scanned
+        for its verb word: this matched the bare verb and never looked at a flag, so a documented
+        flag no parser owns survived (BG0497).
         """
-        import re as _re
-        verbs, mod = self._parser_verbs()
         page = (self.SKILL / "help" / "sprint.md").read_text(encoding="utf-8")
-        # FENCED blocks only. A verb named in a sentence is prose, not an invocation, and
-        # scraping prose pulls in flags and ordinary words - which would make this assert that
-        # the English around a command parses.
-        fenced = "\n".join(_re.findall(r"```[a-z]*\n(.*?)```", page, _re.S))
-        self.assertTrue(fenced.strip(), "the page shows no fenced commands at all")
-        found = _re.findall(r"(?:sprint\.py|/sdlc-studio sprint)\s+([a-z][a-z-]*)", fenced)
+        found = _fenced_invocations(page)
         self.assertTrue(found, "the extraction matched no invocations at all")
-        unknown = sorted({v for v in found if v not in verbs})
-        self.assertEqual([], unknown,
-                         f"the page shows invocations the parser does not accept: {unknown}")
+        surfaces = {surface for surface, _ in found}
+        self.assertIn("slash", surfaces,
+                      "no `/sdlc-studio sprint` invocation was extracted, so the slash surface "
+                      "is reported clean by matching nothing")
+        self.assertIn("script", surfaces,
+                      "no `sprint.py` invocation was extracted, so the script surface is "
+                      "reported clean by matching nothing - the shape of BG0497 itself")
+        rejected = _unparsable_invocations(found)
+        self.assertEqual([], rejected,
+                         f"the page shows invocations the parser does not accept: {rejected}")
 
     def test_reference_sprint_carries_a_named_in_flight_control_section_with_the_invocations(self) -> None:
-        """MUTANT: document the controls in help only.
+        """MUTANT: move the in-flight fenced block out of its own section.
 
         A reader working through the reference should not have to leave it to learn how to
-        change a run that is already open.
+        change a run that is already open - and the lookup was file-wide, so emptying the
+        section while leaving the commands anywhere else in the file passed (BG0497).
         """
         ref = (self.SKILL / "reference-sprint.md").read_text(encoding="utf-8")
-        self.assertIn("{#in-flight-controls}", ref,
-                      "the reference has no named in-flight-control section to link to")
-        for verb in ("batch swap", "batch drop", "stop", "reopen", "goal-review"):
-            with self.subTest(verb=verb):
-                self.assertIn(f"sprint.py {verb}", ref,
-                              f"the reference section does not carry `{verb}`")
+        missing = _controls_missing_from_in_flight_section(ref)
+        self.assertIsNotNone(missing,
+                             "the reference has no in-flight-control SECTION - only the reading "
+                             "guide row that names one, which a deleted heading leaves standing")
+        self.assertEqual(missing, [],
+                         f"the in-flight-control section does not carry: {missing}")
+
+
+class SprintInvocationBinderTests(unittest.TestCase):
+    """The two binders the criteria above rest on, shown to DISCRIMINATE.
+
+    Both were satisfied by anything: the invocation check read the bare verb word and never
+    looked at a flag, and the reference check looked file-wide for a string the generated
+    reading guide already carried. Each mutant below is applied to a COPY of the shipped file,
+    so this is the criterion's own mutant executed rather than a shape asserted about it.
+    """
+
+    SKILL = Path(__file__).resolve().parents[1].parent
+
+    def test_a_documented_flag_no_surface_owns_is_refused(self) -> None:
+        """MUTANT: match the bare verb WORD instead of parsing the line.
+
+        Five cases, because the check has to separate things a verb match cannot: a flag nothing
+        owns (refused), a flag the parser owns (accepted), and a flag the slash surface declares
+        as its own - accepted on the slash surface, because `--autonomous` names a mode the skill
+        runs, and REFUSED on the script surface, because `sprint.py` does not run it. That last
+        pair is the whole reason the exemption is scoped: applied to both surfaces it would
+        document, as runnable, a script invocation that exits non-zero.
+        """
+        real = (self.SKILL / "help" / "sprint.md").read_text(encoding="utf-8")
+        self.assertEqual([], _unparsable_invocations(_fenced_invocations(real)),
+                         "the shipped page is already refused, so the controls below prove "
+                         "nothing about the binder")
+        skill_only = _skill_only_flags(_ARGUMENTS.read_text(encoding="utf-8"))
+        self.assertIn("--autonomous", skill_only,
+                      "help/arguments.md no longer declares the slash-only flag, so the binder "
+                      "is exempting nothing and the page's own examples should now be refused")
+
+        bad = ("slash", "--bugs Open --nonexistent-flag zzz")
+        self.assertTrue(_unparsable_invocations([bad]),
+                        "a documented flag owned by no parser and declared by no page was "
+                        "accepted - the binder is reading the verb and stopping")
+        self.assertTrue(_unparsable_invocations([("script", "review-batch --nope 1")]),
+                        "a script-form flag no parser owns was accepted, so the script surface "
+                        "is extracted but not parsed")
+        self.assertEqual([], _unparsable_invocations([("slash", "--bugs Open")]),
+                         "a real invocation was refused - the binder refuses everything")
+        self.assertEqual([], _unparsable_invocations([("script", "batch drop US0001")]),
+                         "a real script invocation was refused - the script surface is being "
+                         "parsed as though it were the slash one")
+        self.assertEqual([], _unparsable_invocations([("slash", "--bugs Open --autonomous")]),
+                         "the declared slash-only flag was refused, so the binder models one "
+                         "surface where there are two")
+        self.assertTrue(_unparsable_invocations([("script", "plan --bugs Open --autonomous")]),
+                        "the slash-only flag was excused on the SCRIPT surface, where the "
+                        "parser owns no such flag - the exemption is unscoped, and the page "
+                        "could document a script command that does not run")
+
+    def test_moving_the_controls_out_of_their_section_is_refused(self) -> None:
+        """MUTANT: look the invocations up file-wide, or match the anchor anywhere in the file.
+
+        Two states are separated here that the file-wide lookup could not: the section GONE
+        (only the generated reading-guide row still names it) and the section EMPTY with the
+        commands moved elsewhere. Both used to pass.
+        """
+        real = (self.SKILL / "reference-sprint.md").read_text(encoding="utf-8")
+        self.assertEqual([], _controls_missing_from_in_flight_section(real),
+                         "the shipped reference already fails, so the mutants below prove "
+                         "nothing")
+        self.assertIn("{#in-flight-controls}", real.split(_IN_FLIGHT_HEADING, 1)[0],
+                      "the reading-guide row that made the old anchor check vacuous is gone, "
+                      "so this mutant no longer reproduces the finding - restate it")
+
+        gone = real.replace(_IN_FLIGHT_HEADING, "## In-flight controls")
+        self.assertIsNone(_controls_missing_from_in_flight_section(gone),
+                          "the named section was deleted and the check still found one - it is "
+                          "matching the reading-guide row at the top of the file")
+
+        head, body = real.split(_IN_FLIGHT_HEADING, 1)
+        rest = re.split(r"\n## ", body, maxsplit=1)
+        emptied = f"{head}{_IN_FLIGHT_HEADING}\n\nnothing here.\n\n## {rest[1]}\n{rest[0]}"
+        self.assertEqual(
+            sorted(_controls_missing_from_in_flight_section(emptied)),
+            sorted(_IN_FLIGHT_CONTROLS),
+            "the controls were moved out of the section and the check still found them, so it "
+            "is looking file-wide rather than within the section body")
 
 
 _SPRINT_HELP = _REPO / ".claude" / "skills" / "sdlc-studio" / "help" / "sprint.md"
@@ -250,6 +469,51 @@ def _invocation_re(verb: str) -> re.Pattern:
 
 def _undocumented(text: str) -> list[str]:
     return [v for v in _sprint_verbs() if not _invocation_re(v).search(text)]
+
+
+#: The heading whose body must name every recorded ledger key. Scoped rather than file-wide:
+#: the criterion is about that SECTION, and a bare `\bat\b` matched the English around it.
+_BATCH_LEDGER_HEADING = "### What a batch change puts on the record"
+
+
+def _batch_change_keys() -> set[str]:
+    """Every key the `batch_changes` writers actually put on the ledger, read by RUNNING them.
+
+    EXECUTED, never scanned. This was `re.findall(r'"(action|id|reason|at|note)":', src)` over
+    the whole `run_state` module - an alternation that names the answer in advance, so a key
+    added to an entry was invisible to it and a key renamed away stayed in the set. Both mutants
+    survived. A drop, an add with a reason, and a second add of the SAME unit are run against a
+    throwaway run because between them they produce every branch of the two writers: the
+    duplicate add is the only path that records `note`.
+    """
+    sys.path.insert(0, str(_SCRIPTS))
+    from lib import run_state                       # noqa: PLC0415 - deferred sibling
+    import json                                     # noqa: PLC0415
+    import tempfile                                 # noqa: PLC0415
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps({"run_id": "RUN-T", "batch": ["US0001"], "outcome": "running"}),
+            encoding="utf-8")
+        run_state.drop_from_batch(root, "US0001", reason="recorded, not silent")
+        run_state.add_to_batch(root, "US0002", reason="joined late")
+        state = run_state.add_to_batch(root, "US0002")
+        entries = state.get("batch_changes") or []
+    return {k for entry in entries for k in entry}
+
+
+def _keys_unnamed_in_ledger_section(page: str, keys) -> list[str]:
+    """The recorded keys the batch-mutation section never names, as a code span.
+
+    A code span, not a bare word: `at` occurs in ordinary English all over the page, so a
+    `\\bat\\b` match reported the key documented wherever the prose happened to use the word.
+    """
+    if _BATCH_LEDGER_HEADING not in page:
+        return sorted(keys)          # no section at all names none of them
+    body = page.split(_BATCH_LEDGER_HEADING, 1)[1]
+    body = re.split(r"\n#{2,3} ", body, maxsplit=1)[0]
+    return sorted(k for k in keys if f"`{k}`" not in body)
 
 
 def _documents_flag(text: str, flag: str) -> bool:
@@ -306,22 +570,16 @@ class SprintSurfaceTests(unittest.TestCase):
     def test_batch_and_stop_sections_name_every_recorded_key_and_the_drop_versus_deferred_rule(self):
         """MUTANT: add a key to `batch_changes` and leave the page alone.
 
-        The keys are read from the module that writes them, so the page cannot drift from the
-        ledger without this reddening.
+        The keys are read by EXECUTING the writers, so the page cannot drift from the ledger
+        without this reddening. The previous version derived them from a hardcoded alternation
+        over the module source, which named the answer in advance: adding `origin` to the drop
+        entry survived, and renaming `note` to `remark` survived (BG0523).
         """
-        import inspect
-        run_state = _load("run_state") if (_SCRIPTS / "run_state.py").exists() else None
-        if run_state is None:                       # it lives under lib/
-            sys.path.insert(0, str(_SCRIPTS))
-            from lib import run_state               # noqa: PLC0415
-        src = inspect.getsource(run_state)
-        keys = set(re.findall(r'"(action|id|reason|at|note)":', src))
+        keys = _batch_change_keys()
         self.assertTrue(keys, "no batch_changes keys were derived from run_state")
         page = self._page()
-        for key in sorted(keys):
-            with self.subTest(key=key):
-                self.assertRegex(page, rf"`{key}`|\b{key}\b",
-                                 f"the batch-mutation section never names the recorded key {key!r}")
+        self.assertEqual(_keys_unnamed_in_ledger_section(page, keys), [],
+                         "the batch-mutation section never names these recorded ledger key(s)")
         self.assertIn("Deferred", page,
                       "the page does not state the drop-versus-Deferred distinction")
         self.assertRegex(page, r"drop.{0,400}?Deferred|Deferred.{0,400}?drop",
@@ -380,6 +638,25 @@ class SprintSurfaceTests(unittest.TestCase):
         self.assertRegex(page, r"regenerates the plan at each boundary|regenerate.{0,60}boundary",
                          "the rolling section does not say a rolling run re-plans at each "
                          "boundary rather than queueing plans")
+
+    def test_the_recorded_key_set_is_executed_and_an_unnamed_key_is_refused(self):
+        """MUTANT: rename `note` to `remark` in `run_state.add_to_batch`, or add `origin` to the
+        drop entry in `run_state.drop_from_batch`.
+
+        Both survived the alternation this replaces, which is the whole of BG0523's first
+        finding. Two halves, and each is needed: the derived set is asserted to be EXACTLY what
+        the two writers put on a real ledger, so a renamed or added key moves it; and the
+        section binder is asserted to refuse a key the section does not name, so the derivation
+        being right is worth something.
+        """
+        self.assertEqual(_batch_change_keys(), {"action", "id", "reason", "at", "note"},
+                         "the executed writers no longer record exactly these ledger keys - "
+                         "update the page's batch-mutation section and this set together")
+        self.assertEqual(
+            _keys_unnamed_in_ledger_section(self._page(), _batch_change_keys() | {"origin"}),
+            ["origin"],
+            "a ledger key the batch-mutation section never names was not refused, so the "
+            "binder passes whatever the writers record")
 
     def test_binder_fails_loud_when_the_page_or_section_is_missing(self):
         """MUTANT: return an empty list from `_undocumented` when the page cannot be read.

@@ -32,9 +32,13 @@
 
 - **Given** a workspace with unmet prerequisites
 - **When** the pre-flight runs
-- **Then** the tree is byte-identical afterwards - it never scaffolds a retro, regenerates a
-  summary or records a verdict, so it can be run to ask a question without committing to a close
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_preflight_writes_nothing
+- **Then** every path in the tree is byte-identical afterwards except the test-execution ledger,
+  which gains exactly one row recording the seconds the pre-flight's own gate cost - it never
+  scaffolds a retro, regenerates a summary or records a verdict, so it can be run to ask a
+  question without committing to a close. The one write is a measurement of work already done
+  rather than a step of the close, and stating it precisely is what stops the criterion being
+  relaxed to accommodate the next one
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_preflight_performs_no_step_of_the_close
 - **Verified:** yes (2026-07-20)
 
 ### AC3: a clean workspace reports ready

@@ -38,7 +38,7 @@
 
 - **Given** the bounded exit deciding what it may file
 - **When** the classifier is read
-- **Then** it reads the lane's own declaration rather than naming lanes here, because a second list drifts from the first and silently classes a new lane as correctness
+- **Then** it reads the lane's own declaration - the blocking flag the lane returns - rather than naming lanes here, because a second list drifts from the first and silently classes a new lane as correctness. The declaration was originally read as a marker string in the blocker's prose; that reader was withdrawn under BG0488 as a second reader of one fact which no input could reach, and the criterion is unchanged by the swap
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CadenceDebtFileAndCloseTests::test_the_classification_is_read_from_the_lane_not_a_second_list
 - **Verified:** yes (2026-08-02)
 

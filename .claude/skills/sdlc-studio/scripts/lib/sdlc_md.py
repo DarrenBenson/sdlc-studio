@@ -2517,6 +2517,31 @@ _PARENT_FIELD_RE = re.compile(r"(?m)^>?[^\S\n]*\*\*Parent:\*\*[^\S\n]*(.*)$")
 # The LEGACY upward link an epic carries before the two-backlog `Parent:` convention: the
 # `cr action` workflow stamps `> **Change Request:** [CR-0001](...)` on each epic it creates.
 _CHANGE_REQUEST_FIELD_RE = re.compile(r"(?m)^>?[^\S\n]*\*\*Change Request:\*\*[^\S\n]*(.*)$")
+# The originating RFC a request carries: `> **RFC:** RFC-0009`, the spelling this workspace and
+# the CR template have used since before `Parent:` existed. Read as an upward link for the same
+# reason the legacy CR one is - without it a decomposed RFC looks childless, and any census of
+# what a request produced reports its TRUE cells as drift.
+_RFC_FIELD_RE = re.compile(r"(?m)^>?[^\S\n]*\*\*RFC:\*\*[^\S\n]*(.*)$")
+
+
+def rfc_ref(source) -> str | None:
+    """The originating RFC a child declares as `> **RFC:** RFC-0009`, or None.
+
+    The RFC-to-CR link the templates have always written, and the artefacts carrying it carry no
+    `Parent:` line to be found by instead. A sentinel (`-`, `--`, empty) and a value naming no id
+    both yield None, so an unfilled field is an absence rather than a link to nothing."""
+    return _field_id(source, _RFC_FIELD_RE)
+
+
+def _field_id(source, pattern) -> str | None:
+    """The first artefact id inside a single-valued metadata field, or None. One reader, so a
+    field added here cannot parse its value differently from the fields beside it."""
+    text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
+    m = pattern.search(text)
+    if not m:
+        return None
+    mid = ID_SEARCH_RE.search(m.group(1))
+    return mid.group(0) if mid else None
 
 
 def change_request_ref(source) -> str | None:
@@ -2525,12 +2550,7 @@ def change_request_ref(source) -> str | None:
     falls back to it so a CR decomposed the OLD way is correctly seen as having children: without
     it, `children_of` reads only `Parent:`/`Epic:`, so `discovery_awaiting`, `migrate` and
     `undecomposed_drift` false-flag an already-decomposed old-flow CR as un-refined."""
-    text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
-    m = _CHANGE_REQUEST_FIELD_RE.search(text)
-    if not m:
-        return None
-    mid = ID_SEARCH_RE.search(m.group(1))
-    return mid.group(0) if mid else None
+    return _field_id(source, _CHANGE_REQUEST_FIELD_RE)
 
 
 def parent_ref(source) -> str | None:
@@ -2563,11 +2583,16 @@ def parent_refs(source) -> list[str]:
 
 def child_parent(source) -> str | None:
     """The parent id a child declares, most-specific-first: the two-backlog `Parent:` (generic),
-    else a story's `Epic:`, else the LEGACY `Change Request:` an old-flow epic carries, or
-    None. The one reader every consumer of the upward link shares, so a story-under-epic, an
-    epic-under-CR (new link), and an epic-under-CR (old `cr action` link) all resolve the same way -
-    which is what keeps `children_of` correct on a project that has NOT adopted the two-backlog
-    workflow (its CRs are decomposed via `Change Request:`, not `Parent:`)."""
+    else a story's `Epic:`, else the LEGACY `Change Request:` an old-flow epic carries, else the
+    `RFC:` a request names its originating RFC with, or None. The one reader every consumer of the
+    upward link shares, so a story-under-epic, an epic-under-CR (new link), an epic-under-CR (old
+    `cr action` link) and a CR-under-RFC all resolve the same way - which is what keeps
+    `children_of` correct on a project that has NOT adopted the two-backlog workflow (its CRs are
+    decomposed via `Change Request:` and `RFC:`, not `Parent:`).
+
+    Every spelling the corpus writes, not the subset the newest convention prefers: a link the
+    reader cannot see makes a decomposed request look childless, and a census of what a request
+    produced then reports its TRUE cells as drift and offers to blank them."""
     text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
     par = parent_ref(text)
     if par:
@@ -2576,7 +2601,7 @@ def child_parent(source) -> str | None:
     if epic:
         m = ID_SEARCH_RE.search(epic)
         return m.group(0) if m else None
-    return change_request_ref(text)
+    return change_request_ref(text) or rfc_ref(text)
 
 
 # -----------------------------------------------------------------------------

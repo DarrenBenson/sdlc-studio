@@ -201,6 +201,20 @@ class LinkPrimitiveTests(unittest.TestCase):
         both = epic + "> **Parent:** CR0009\n"
         self.assertEqual(sdlc_md.child_parent(both), "CR0009")
 
+    def test_child_parent_reads_the_rfc_link_a_request_carries(self) -> None:
+        # BG0406: a CR names its originating RFC with `> **RFC:** RFC-0009`, which is the
+        # spelling 20 artefacts in this workspace use and none of them pairs with `Parent:`.
+        # Unread, every RFC decomposed that way looks childless.
+        cr = "# CR-0039: X\n\n> **Status:** Complete\n> **RFC:** RFC-0002\n"
+        self.assertIsNone(sdlc_md.parent_ref(cr))
+        self.assertEqual(sdlc_md.rfc_ref(cr), "RFC-0002")
+        self.assertEqual(sdlc_md.child_parent(cr), "RFC-0002")
+        # a sentinel is an absence, not a link to nothing
+        self.assertIsNone(sdlc_md.rfc_ref("# CR-0040: X\n\n> **RFC:** --\n"))
+        self.assertIsNone(sdlc_md.child_parent("# CR-0040: X\n\n> **RFC:** --\n"))
+        # ...and a more specific link still wins
+        self.assertEqual(sdlc_md.child_parent(cr + "> **Parent:** CR0009\n"), "CR0009")
+
     def test_children_of_and_awaiting_see_a_legacy_decomposed_cr(self) -> None:
         # the false-positive BG0151 fixes end to end: a CR decomposed the OLD way (its epics carry
         # Change Request:, not Parent:) is NOT reported as awaiting refinement.

@@ -1,6 +1,6 @@
 # BG0457: Four spec-agreement guards pin prose to prose: a set comparison that cannot fail in the reverse direction, a whole-file substring satisfied by the Revision History row describing the change, a word-presence check an unrelated sentence already satisfies, and a source-substring wiring check a comment satisfies
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (nine mutants applied singly against the shipped guards - the two registries, the router table, both directions of the TRD enumeration, both stating passages, the fail-safe sentence and the close-side call - anchors asserted unique, `__pycache__` purged, each child run under `python3 -B`, sources restored byte-identical)
 > **Severity:** High
 > **Points:** 5

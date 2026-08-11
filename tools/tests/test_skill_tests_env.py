@@ -133,6 +133,11 @@ SCRUB_SITES: dict[str, str] = {
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_skill_tests_env.py":
         "this file: REPO_LOCATING is the list every other copy is held to",
+    "tools/repo_writes.py":
+        "pinned by test_the_repo_writes_guard_scrubs_the_same_variables. It runs `git status` "
+        "from inside BOTH commit hooks, which git hands a repo-locating environment, and the "
+        "two readings must describe the same repository the same way or the lane reports a "
+        "difference nobody made.",
     "tools/tests/test_commit_msg_hook.py":
         "PARTIAL: clears only GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE when building the hermetic "
         "fixture repo each hook run needs (BG0281). It is scrubbing its OWN child's environment "
@@ -236,6 +241,16 @@ class ScrubListsAgreeTests(unittest.TestCase):
             with self.subTest(module=path.name):
                 self.assertEqual(sorted(self._named_tuple_in(path, "_GIT_ENV_VARS")),
                                  sorted(REPO_LOCATING))
+
+    def test_the_repo_writes_guard_scrubs_the_same_variables(self) -> None:
+        """The repo-writes lane runs `git status` from inside both hooks, and git hands a hook
+        an environment that can point at a different repository, index or work tree. Its two
+        readings are taken from two different hooks, so a list that drifted here would make the
+        halves describe different trees - and the lane would report a difference nobody made,
+        or miss one somebody did."""
+        self.assertEqual(
+            sorted(self._named_tuple_in(REPO / "tools" / "repo_writes.py", "_GIT_ENV_VARS")),
+            sorted(REPO_LOCATING))
 
     def test_the_shipped_fixture_helper_scrubs_the_same_variables(self) -> None:
         """The skill suites' own git fixtures (BG0230). This copy is the one that matters most:

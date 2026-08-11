@@ -5567,6 +5567,74 @@ class ReviewCadenceTests(unittest.TestCase):
                       "the report does not say the repo-wide review remains owed")
 
 
+class ReviewCadenceLaneVerdictTests(unittest.TestCase):
+    """BG0488: the cadence feature was recorded delivered on evidence that could not fail.
+
+    Every criterion of the shipping unit called the private `_batch_is_independently_covered` or
+    grepped source text; none asserted the LANE's own blocking flag. Reverting the whole feature -
+    `"blocking": False` back to `True` - survived all 390 tests of this file. This drives
+    `_review_current` and reads the flag it returns, which is the one fact the feature is.
+    """
+
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "gate", Path(__file__).resolve().parent.parent / "gate.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["gate"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    def _root(self, d, *, covered: bool):
+        import json
+        import time
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        rv = root / "sdlc-studio" / "reviews"
+        rv.mkdir(parents=True)
+        (rv / "LATEST.md").write_text("# review\n\nthe anchor\n", encoding="utf-8")
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0101-x.md").write_text("# US0101: x\n\n> **Status:** Done\n", encoding="utf-8")
+        # The anchor predates the artefact, which is what "stale" means to this lane.
+        old = time.time() - 10_000
+        os.utime(rv / "LATEST.md", (old, old))
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps({"schema": 1, "run_id": "RUN-T", "batch": ["US0101"],
+                        "outcome": "running"}), encoding="utf-8")
+        import critic
+        self.addCleanup(setattr, critic, "sprint_covers_independently",
+                        critic.sprint_covers_independently)
+        self.addCleanup(setattr, critic, "verdict_for", critic.verdict_for)
+        critic.verdict_for = lambda r, u, phase="delivery": {"verdict": "APPROVE"}
+        critic.sprint_covers_independently = lambda r, u, v: covered
+        return root
+
+    def test_a_covered_batch_makes_the_lane_report_rather_than_block(self) -> None:
+        """MUTANT: `"blocking": False` back to `True` on the covered branch.
+
+        THE mutant the bug names. It survived every criterion the shipping unit wrote, because
+        all of them stopped at the helper and none read the lane's answer.
+        """
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            lane = mod._review_current(str(self._root(d, covered=True)))
+        self.assertIs(False, lane["blocking"], lane)
+        self.assertIn("CADENCE DEBT", lane["detail"])
+
+    def test_an_uncovered_batch_makes_the_same_lane_block(self) -> None:
+        """THE POSITIVE CONTROL, on the same fixture with one fact changed.
+
+        MUTANT: return non-blocking regardless of coverage. Without this the feature is a way to
+        close over a stale review with no coverage at all, which is worse than the defect.
+        """
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            lane = mod._review_current(str(self._root(d, covered=False)))
+        self.assertIs(True, lane["blocking"], lane)
+        self.assertNotIn("CADENCE DEBT", lane["detail"])
+
+
 class LoaderRouteTests(unittest.TestCase):
     """A test module is selected for the script it LOADS, not only the one it is named after.
 

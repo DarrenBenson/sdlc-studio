@@ -263,5 +263,51 @@ class DriftTests(unittest.TestCase):
                          "router, and a section added past the ceiling trades that away")
 
 
+class ReferenceSprintCeilingTests(unittest.TestCase):
+    """US0473 AC4: the prose and its ceiling landed together, not on borrowed headroom.
+
+    The criterion named this class and this method and neither existed, so its stamp was
+    evidence for a check nobody could run. What it asserts is a real property and worth
+    keeping: `reference-sprint.md` sat at 760 lines against a recorded 724, which passes
+    only because `CEILING_TOLERANCE` is 1.05 and 724 x 1.05 = 760.2. A file inside the
+    tolerance is a file one line from a red build, and the tolerance exists to report
+    drift rather than to hold a ceiling up.
+
+    Mutants this must fail on: lower the recorded ceiling back to 724; delete the
+    without-tolerance comparison and assert only that the guard passes.
+    """
+
+    FILE = "reference-sprint.md"
+    #: The ceiling in force when the prose was written, and the number AC4 says must be beaten.
+    SUPERSEDED_CEILING = 724
+
+    def setUp(self) -> None:
+        self.cb = _load(ROOT / "tools/check_budgets.py")
+
+    def test_the_recorded_ceiling_admits_the_shipped_file_without_tolerance(self) -> None:
+        ceiling = self.cb.ALLOWLIST.get(self.FILE)
+        self.assertIsNotNone(ceiling, f"{self.FILE} has no recorded ceiling")
+        self.assertGreater(
+            ceiling, self.SUPERSEDED_CEILING,
+            f"{self.FILE}'s ceiling is back at or below {self.SUPERSEDED_CEILING}, which the "
+            f"shipped prose only cleared on the 5% tolerance")
+        lines = len((ROOT / ".claude/skills/sdlc-studio" / self.FILE)
+                    .read_text(encoding="utf-8").splitlines())
+        self.assertLessEqual(
+            lines, ceiling,
+            f"{self.FILE} is {lines} lines against a ceiling of {ceiling} - it is inside the "
+            f"{self.cb.CEILING_TOLERANCE} tolerance rather than under its ceiling, so the "
+            f"prose is sitting on headroom the guard lends it rather than on a raised ceiling")
+
+    def test_the_tolerance_is_not_what_is_holding_the_file_up(self) -> None:
+        """The positive control, stated as the thing that must NOT be true. Without it, a
+        ceiling raised far above every file would pass the test above for the wrong reason."""
+        ceiling = self.cb.ALLOWLIST[self.FILE]
+        lines = len((ROOT / ".claude/skills/sdlc-studio" / self.FILE)
+                    .read_text(encoding="utf-8").splitlines())
+        self.assertLess(lines, ceiling * self.cb.CEILING_TOLERANCE)
+        self.assertLessEqual(lines, ceiling)
+
+
 if __name__ == "__main__":
     unittest.main()

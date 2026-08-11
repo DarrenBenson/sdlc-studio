@@ -10,6 +10,7 @@ import importlib.util
 import io
 import json
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -3757,6 +3758,102 @@ class SpawnedColumnStaysTrueTests(unittest.TestCase):
         just spent a sprint on."""
         _per_type, drift = reconcile.detect_all(self._repo("--"))
         self.assertIn("spawned-column", {d.get("kind") for d in drift})
+
+
+class SpawnedColumnPastTheSummaryTableTests(unittest.TestCase):
+    """BG0406, the half BG0359 left. The detector pinned its column from the FIRST table in the
+    file, and every discovery index opens with a `## Summary` status/count block that carries no
+    such column - so the position was None for the whole file and every data row below it was
+    skipped. Inert on every real index, while its own fixtures, which had no summary block,
+    passed. Two correct implementations of the same read already sat in this module.
+
+    Unblinded it was also WRONG: `children_of` had no reader for the `RFC:` field this corpus
+    uses for the RFC-to-CR link, so it called true cells drift and offered to blank them.
+    Measured over the full historical RFC index (57 rows), that was 16 rows reported of which 7
+    named links the census simply could not see."""
+
+    SUMMARY = ("## Summary\n\n| Status | Count |\n| --- | --- |\n| Accepted | 1 |\n"
+               "| **Total** | **1** |\n\n## All RFCs\n\n")
+
+    def _repo(self, cell: str, *, summary: bool = True, child: str = "epic-parent") -> Path:
+        """The real shape: a Summary table, THEN the data table. `child` selects the spelling of
+        the upward link the child file carries."""
+        d = Path(tempfile.mkdtemp(prefix="spawned_summary_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "rfcs").mkdir(parents=True)
+        (d / "sdlc-studio" / "epics").mkdir(parents=True)
+        (d / "sdlc-studio" / "change-requests").mkdir(parents=True)
+        (d / "sdlc-studio" / "rfcs" / "RFC0001-x.md").write_text(
+            "# RFC0001: x\n\n> **Status:** Accepted\n", encoding="utf-8")
+        if child == "epic-parent":
+            (d / "sdlc-studio" / "epics" / "EP0001-y.md").write_text(
+                "# EP0001: y\n\n> **Status:** Draft\n> **Parent:** RFC0001\n", encoding="utf-8")
+        elif child == "cr-rfc-field":
+            (d / "sdlc-studio" / "change-requests" / "CR0001-y.md").write_text(
+                "# CR0001: y\n\n> **Status:** Complete\n> **RFC:** RFC-0001\n", encoding="utf-8")
+        elif child == "cr-rfc-sentinel":
+            (d / "sdlc-studio" / "change-requests" / "CR0001-y.md").write_text(
+                "# CR0001: y\n\n> **Status:** Complete\n> **RFC:** --\n", encoding="utf-8")
+        (d / "sdlc-studio" / "rfcs" / "_index.md").write_text(
+            "# RFC Index\n\n" + (self.SUMMARY if summary else "")
+            + f"| ID | Title | Status | Spawned CRs |\n| --- | --- | --- | --- |\n"
+              f"| [RFC0001](RFC0001-x.md) | x | Accepted | {cell} |\n", encoding="utf-8")
+        return d
+
+    def test_the_column_is_found_past_a_summary_table(self) -> None:
+        """The mutant: pin the header once, at the first table. Every real index then reports
+        nothing, which is the state this bug was filed on."""
+        drift = reconcile.spawned_column_drift(self._repo("--"))
+        self.assertEqual(1, len(drift), "the stale cell below a Summary table went unseen")
+        self.assertIn("EP0001", drift[0]["detail"])
+
+    def test_the_summary_rows_are_not_read_as_data(self) -> None:
+        """The other way to pass the test above: stop looking for a header at all and read every
+        row. The summary block's rows carry no artefact id, and its `| **Total** | **1** |` row
+        must not be reported as a request whose spawned work went missing."""
+        self.assertEqual([], reconcile.spawned_column_drift(self._repo("EP0001")),
+                         "a true cell, plus a Summary table, produced drift from nowhere")
+
+    def test_a_child_linked_by_the_rfc_field_is_not_drift(self) -> None:
+        """The corpus spelling `children_of` could not see. The cell is TRUE and the detector
+        called it drift, with a remedy that offered to blank it."""
+        self.assertEqual([], reconcile.spawned_column_drift(
+            self._repo("CR0001", child="cr-rfc-field")),
+            "a CR linked to its RFC by the field this corpus writes was invisible to the census")
+
+    def test_an_unfilled_rfc_field_links_nothing(self) -> None:
+        """The discriminator on the other side: reading the field must not turn every request
+        that HAS one into a child. A sentinel value is an absence."""
+        drift = reconcile.spawned_column_drift(self._repo("CR0001", child="cr-rfc-sentinel"))
+        self.assertEqual(1, len(drift), "a `--` RFC field was read as a link to the RFC")
+
+    def test_an_over_claiming_cell_is_not_told_to_blank_itself(self) -> None:
+        """A cell naming work no file links back may be the only record that the link exists.
+        Told to 'correct it from the census', an operator deletes that record - which is how a
+        detector becomes worse than none."""
+        drift = reconcile.spawned_column_drift(self._repo("EP0001, EP9999"))
+        self.assertEqual(1, len(drift))
+        remedy = drift[0]["fix"]
+        self.assertIn("EP9999", remedy, "the remedy does not say which entry is unsupported")
+        self.assertIn("record the link", remedy)
+        self.assertIn("sole record", remedy)
+        # ...and the other direction still just brings the derived cell up to date
+        under = reconcile.spawned_column_drift(self._repo("--"))[0]["fix"]
+        self.assertIn("add EP0001", under)
+        self.assertNotIn("sole record", under)
+
+    def test_the_sweep_prints_the_item_rather_than_dying_on_it(self) -> None:
+        """Through the shipped command, because the library call cannot see this. Every drift
+        item carries a `fix` and the printer reads it; this one carried a `remedy`, so the first
+        index ever to produce an item killed `reconcile detect` with `error: 'fix'` - a crash
+        that was unreachable only while the detector was blind."""
+        proc = subprocess.run(
+            [sys.executable, "-B", str(SCRIPT_PATH), "detect", "--root", str(self._repo("--"))],
+            capture_output=True, text=True, check=False)
+        self.assertNotIn("error:", proc.stdout + proc.stderr,
+                         "the sweep died rendering its own drift item")
+        self.assertIn("spawned-column", proc.stdout)
+        self.assertEqual(1, proc.returncode, "drift was found and the exit code did not say so")
 
 
 class CorpusReadOnceTests(unittest.TestCase):

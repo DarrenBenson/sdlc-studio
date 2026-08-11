@@ -62,7 +62,7 @@ EXPECTED_LANES = (
     "script-tests", "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",
-    "skill-tests", "tool-tests",
+    "skill-tests", "tool-tests", "repo-writes",
 )
 
 #: The hooks' verdict lines: `  ok   <key>` / `  FAIL <key>` (no colour when captured).
@@ -145,14 +145,17 @@ class _GateFixture(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         self.root = self._build(Path(self._tmp.name))
-        self.lane_log = self.root / "lane-log"
+        # BESIDE the fixture repo, never inside it: the repo-writes lane now compares
+        # the tree before and after the suites, and a harness log written into the tree
+        # under test would be reported as exactly the stray it exists to catch.
+        self.lane_log = self.root.parent / "lane-log"
 
     def _build(self, tmp: Path) -> Path:
         root = tmp / "r"
         for rel in ("tools/tests", ".githooks", "node_modules/.bin",
                     "sdlc-studio/.local", "sdlc-studio/bugs", "sdlc-studio/stories"):
             (root / rel).mkdir(parents=True, exist_ok=True)
-        lane_log = root / "lane-log"
+        lane_log = tmp / "lane-log"        # outside `root` - see setUp
 
         for name in ("pre-commit", "commit-msg"):
             dest = root / ".githooks" / name
@@ -204,6 +207,13 @@ class _GateFixture(unittest.TestCase):
 
         (root / "tools" / "gate_timing.py").write_text(
             (REPO / "tools" / "gate_timing.py").read_text(encoding="utf-8"), encoding="utf-8")
+
+        # The repo-writes guard, REAL for the same reason `gate_timing.py` is: the derivation
+        # above stubs it to exit 0, and a stub that never writes a snapshot leaves the lane
+        # unable to run - so the lane inventory would pass while one lane silently never ran,
+        # which is the exact loss that inventory exists to refuse.
+        (root / "tools" / "repo_writes.py").write_text(
+            (REPO / "tools" / "repo_writes.py").read_text(encoding="utf-8"), encoding="utf-8")
 
         # The tool-tests lane: a real `unittest discover` over one stub module that records
         # its own execution at import time.
@@ -565,6 +575,26 @@ class WarningRatchetLaneTests(unittest.TestCase):
         _git(root, "config", "core.hooksPath", ".githooks")
         return root
 
+    @staticmethod
+    def _lane_block(text: str, key: str) -> str:
+        """The named lane's own refusal block: its `FAIL <key>` line and the enforces/details/fix
+        lines under it, stopping at the next lane's verdict.
+
+        Scoped because the hook prints every lane into one stream, so an assertion made over the
+        whole text is satisfied by any other lane that happens to name the same thing.
+        """
+        lines = text.splitlines()
+        start = next((i for i, ln in enumerate(lines)
+                      if ln.strip().startswith(f"FAIL {key}")), None)
+        if start is None:
+            return ""
+        out = [lines[start]]
+        for ln in lines[start + 1:]:
+            if re.match(r"^\s{0,4}(ok|FAIL|note)\s", ln):
+                break
+            out.append(ln)
+        return "\n".join(out)
+
     def _offending_story(self, root: Path) -> None:
         (root / "src").mkdir(parents=True, exist_ok=True)
         (root / "src" / "declared.py").write_text("x = 1\n", encoding="utf-8")
@@ -600,8 +630,40 @@ class WarningRatchetLaneTests(unittest.TestCase):
             text = out.stdout + out.stderr
         self.assertNotEqual(out.returncode, 0, f"the commit landed despite a new instance:\n{text}")
         self.assertEqual(before, after, "HEAD moved - the commit was not refused")
-        self.assertIn("warning-ratchet", text, f"the refusal names no lane:\n{text}")
+        # `FAIL warning-ratchet`, never the bare key. The hook prints `ok   warning-ratchet` on
+        # a PASS, so `assertIn("warning-ratchet", text)` was satisfied by the lane passing, and
+        # the returncode and HEAD assertions were carried by unrelated failing lanes in this
+        # fixture: neutering the ratchet to `return 0` left both lane tests green (BG0523).
+        self.assertIn("FAIL warning-ratchet", text,
+                      f"the ratchet lane did not refuse - this commit was blocked by something "
+                      f"else:\n{text}")
         self.assertIn("US0900", text, f"the refusal names no instance:\n{text}")
+
+    def test_the_refusal_names_the_instance_inside_the_ratchet_lane_own_block(self) -> None:
+        """MUTANT: make `validate.render_ratchet` print a bare count instead of the identities,
+        or neuter `cmd_warning_ratchet` to `return 0`.
+
+        The instance id was asserted over the WHOLE hook transcript, which any other lane naming
+        the staged story satisfies - the same shape as the bare lane-name assertion beside it.
+        Scoped to this lane's own block, the refusal has to be actionable on its own terms: the
+        rule, the artefact and the specific target it names.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(Path(d))
+            (root / "sdlc-studio" / ".validate-warning-baseline.json").write_text(
+                json.dumps({"stamped": "2026-01-01", "entries": []}, indent=2) + "\n",
+                encoding="utf-8")
+            self._offending_story(root)
+            _git(root, "add", "-A")
+            out = _git(root, "commit", "-m", "feat(US0900): a story")
+            text = out.stdout + out.stderr
+        block = self._lane_block(text, "warning-ratchet")
+        self.assertTrue(block, f"the warning-ratchet lane did not refuse at all:\n{text}")
+        for named in ("US0900", "affects-undeclared", "src/verified.py"):
+            with self.subTest(names=named):
+                self.assertIn(named, block,
+                              f"the ratchet lane's own refusal never names {named!r}, so an "
+                              f"author cannot act on it:\n{block}")
 
     def test_the_same_commit_lands_once_the_instance_is_recorded(self) -> None:
         """The control. MUTANT: make the lane refuse unconditionally.

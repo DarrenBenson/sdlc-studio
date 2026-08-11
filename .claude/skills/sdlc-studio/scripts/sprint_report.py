@@ -280,7 +280,7 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
     # different one three lines down.
     mut = _mutation_summary(Path(root), unit_ids)
     execution = _execution_actuals(Path(root), unit_ids)
-    overhead = _overhead_ratio(Path(root), unit_ids, execution, mut)
+    overhead = overhead_split(Path(root), unit_ids, execution=execution, mutation=mut)
     out = {
         "ok": True, "id": retro_id, "date": acc.get("date", ""),
         "sprint_goal": goal, "sprint_goal_verdict": goal_verdict,
@@ -714,6 +714,26 @@ def _overhead_ratio(root: Path, unit_ids: list[str], execution: dict, mutation: 
     delivery = round(total - overhead, 1)
     return {**base, "measured": True, "delivery_s": delivery, "bound": bound,
             "ratio": round(overhead / delivery, 1), "why": ""}
+
+
+def overhead_split(root: Path | str, unit_ids: list[str], *,
+                   execution: dict | None = None, mutation: dict | None = None) -> dict:
+    """The overhead-against-delivery split for these units, with EVERY component supplied.
+
+    The one way in for anything outside this module. `_overhead_ratio` takes the execution and
+    mutation summaries as arguments, and a caller that has neither to hand passed empty dicts -
+    which does not fail, it silently blanks two of the three components and returns a smaller
+    ratio computed from the third. The velocity record did exactly that, so the file the next
+    sprint plans from disagreed with the close report it was copied from, which is the one
+    disagreement the shared computation exists to prevent.
+
+    A caller that has already composed a summary passes it, so the close does not read the
+    ledger twice and cannot report one cost in two places."""
+    root = Path(root)
+    ids = list(unit_ids or [])
+    execution = _execution_actuals(root, ids) if execution is None else execution
+    mutation = _mutation_summary(root, ids) if mutation is None else mutation
+    return _overhead_ratio(root, ids, execution, mutation)
 
 
 def _overhead_component_lines(ov: dict) -> list[str]:

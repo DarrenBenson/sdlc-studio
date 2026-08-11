@@ -106,6 +106,7 @@ transition = _load("transition", "transition.py")
 audit = _load("readiness", "readiness.py")
 artifact = _load("artifact", "artifact.py")
 ledger = _load("ledger", "ledger.py")
+sprint = _load("sprint", "sprint.py")
 sdlc_md = transition.sdlc_md
 
 # (module, base argv that reaches the id verb, extra required flags)
@@ -113,6 +114,21 @@ ID_VERBS = [
     ("transition set", transition.build_parser, ["set"], ["--status", "Fixed"]),
     ("audit check", audit.build_parser, ["check"], []),
     ("artifact revision", artifact.build_parser, ["revision"], ["--note", "x"]),
+]
+
+#: The SECOND table, for verbs carrying more than one id list. `resolve_ids` hard-reads the
+#: `--id`/`--ids` pair, so a verb with two lists cannot be a row above without the sweep
+#: reading one of its lists as the other; the shared reader for those is `split_id_list`.
+#: Registered here rather than left uncovered: `batch swap` reinvented nothing, but the sweep
+#: is what stops the NEXT two-list verb doing so, and the row is the only thing that says
+#: which helper the verb is held to.
+#:
+#: (label, parser builder, argv reaching the verb, flag, dest, the rest of a valid call)
+LIST_ID_VERBS = [
+    ("sprint batch swap --out", sprint.build_parser, ["batch", "swap"], "--out", "out_units",
+     ["--in", "AA0003", "--reason", "r"]),
+    ("sprint batch swap --in", sprint.build_parser, ["batch", "swap"], "--in", "in_units",
+     ["--out", "AA0003", "--reason", "r"]),
 ]
 
 
@@ -125,6 +141,26 @@ class IdGrammarConformance(unittest.TestCase):
                 a_comma = parser.parse_args(verb + ["--ids", "AA0001,AA0002"] + extra)
                 self.assertEqual(sdlc_md.resolve_ids(a_repeat), ["AA0001", "AA0002"], label)
                 self.assertEqual(sdlc_md.resolve_ids(a_comma), ["AA0001", "AA0002"], label)
+
+    def test_every_list_id_verb_reads_both_house_forms_through_the_shared_helper(self) -> None:
+        """A verb carrying two id lists is held to the same grammar as one carrying a single
+        one: repeating the flag and passing a comma list are the SAME request, and both are
+        read back through `sdlc_md.split_id_list` rather than a splitter of the verb's own.
+
+        MUTANT: change `--out` from `action="append"` to a plain store - the repeated form then
+        keeps only the last id and the two forms stop agreeing. This table is the half of
+        US0470 AC5 that never landed, so `batch swap` sat outside the sweep entirely (BG0497).
+        """
+        self.assertTrue(LIST_ID_VERBS, "the list-id table is empty, so this sweep checks nothing")
+        for label, build, verb, flag, dest, extra in LIST_ID_VERBS:
+            with self.subTest(verb=label):
+                parser = build()
+                repeated = parser.parse_args(verb + [flag, "AA0001", flag, "AA0002"] + extra)
+                comma = parser.parse_args(verb + [flag, "AA0001,AA0002"] + extra)
+                self.assertEqual(sdlc_md.split_id_list(getattr(repeated, dest)),
+                                 ["AA0001", "AA0002"], f"{label}: the repeated form")
+                self.assertEqual(sdlc_md.split_id_list(getattr(comma, dest)),
+                                 ["AA0001", "AA0002"], f"{label}: the comma form")
 
     def test_resolve_ids_merges_and_dedupes_in_order(self) -> None:
         parser = transition.build_parser()

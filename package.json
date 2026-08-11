@@ -16,7 +16,7 @@
     "lint:action-pins": "bash tools/check_action_pins.sh",
     "lint:dead-flags": "python3 .claude/skills/sdlc-studio/scripts/command_audit.py --dead-flags --root .",
     "lint:corpus": "python3 tools/lint_corpus.py",
-    "lint:fix": "bash tools/lint-md.sh --fix",
+    "lint:fix": "npm run lint:style && bash tools/lint-md.sh --fix",
     "test": "npm run test:skill && npm run test:tools",
     "test:skill": "bash tools/skill-tests.sh",
     "test:tools": "python3 -m unittest discover -s tools/tests",

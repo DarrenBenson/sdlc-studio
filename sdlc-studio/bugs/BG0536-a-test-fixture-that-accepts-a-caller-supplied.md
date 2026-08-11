@@ -49,13 +49,19 @@ And `.local/` deserves a second look. A record the gate reads, that git cannot r
 ### AC1
 
 - **Given** `SurvivorGateTests._repo`, whose job is to build a fixture under a caller-supplied root
-- **When** it is called with the repository root rather than a temporary directory - the exact
-  placeholder call that destroyed 23 mutation registrations
-- **Then** it RAISES before writing anything, and the repository is unchanged.
+- **When** it is called with a root that is a checkout rather than a temporary directory - the
+  shape of the placeholder call that destroyed 23 mutation registrations
+- **Then** it RAISES before writing anything, and that checkout is unchanged.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k the_fixture_refuses_to_build_outside_a_temp_directory
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k the_fixture_refuses_a_root_that_is_a_checkout
 - **Verified:** yes (2026-08-11)
-- **Mutant:** in `test_transition.py`, remove the temp-root assertion from `_repo`.
+- **Mutant:** in `test_transition.py`, remove the working-tree assertion from `_repo`.
+
+> **BG0573 renamed this verifier.** The test the selector used to name handed the REAL
+> repository root to the fixture and depended on the guard refusing it, so when the guard turned
+> out to be inert for any checkout under `/tmp` that test became the instance it was written to
+> prevent. The claim above is unchanged; the destructive root is now a fake checkout under
+> `tempfile`.
 
 ### AC2
 
@@ -72,11 +78,12 @@ And `.local/` deserves a second look. A record the gate reads, that git cannot r
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in `test_transition.py`, remove the temp-root assertion from `_repo` | |
-| AC2 | in `test_transition.py`, change the temp-root guard to raise unconditionally | |
+| AC1 | in `test_transition.py`, remove the working-tree assertion from `_repo` | |
+| AC2 | in `test_transition.py`, change the working-tree guard to raise unconditionally | |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Filed |
+| 2026-08-11 | sdlc-studio | AC1's verifier renamed by BG0573; claim unchanged |

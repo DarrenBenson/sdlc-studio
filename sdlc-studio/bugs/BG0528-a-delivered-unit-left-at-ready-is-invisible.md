@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
+> **Verification depth:** functional
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py
 > **Evidence:** RUN-01KZ9315, 2026-08-06, at commits 9dc330f5 through f1762b8c. `sprint.py preflight` output showing twenty blockers with no status line; `critic.py signoff --panel --from-run` writing 4 of 12 units and skipping 8 with the status reason; the same command writing all 8 after `transition.py set --status Review`.
 > **Created:** 2026-08-06
@@ -32,15 +33,90 @@ The deeper fix is that nothing makes a commit and a status agree. A unit whose f
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: Eight of RUN-01KZ9315's twelve units had their code committed with a green full suite and were never transitioned out of `Ready`.
-- [ ] The proposed fix lands, pinned by a test: Add a status pre-condition to `close_preflight`, ahead of the review-coverage check, that names any batch unit still in a pre-delivery status whose declared...
+- [x] **AC1: the pre-flight names a delivered unit whose status never moved.**
+  - **Given** a batch unit at a pre-delivery status whose declared `Affects` carry commits inside
+    the run window
+  - **When** `sprint.py preflight` runs through the shipped verb
+  - **Then** it prints a `[status]` blocker naming the unit, its status and the transition that
+    moves it. The mutant is deleting the check's call from `close_preflight`: the library
+    function then still exists and answers correctly, which is exactly the shape of a feature no
+    invocation reaches.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveredUnitLeftAtReadyTests::test_a_ready_unit_whose_code_landed_is_named_by_the_preflight
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC2: the cause is reported before its consequences.**
+  - **Given** the same run, whose untransitioned units also fail review coverage, sign-off and
+    the Done gate
+  - **When** the blockers are composed
+  - **Then** the status blocker comes first, because twenty messages describing consequences of a
+    status that had not moved is what made the real fault unreadable. The mutant is appending the
+    status rows after the coverage rows instead.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveredUnitLeftAtReadyTests::test_the_cause_is_reported_before_its_consequences
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC3: a unit awaiting sign-off is not accused.**
+  - **Given** a batch unit at `Review` with commits behind it
+  - **When** the check runs
+  - **Then** nothing is reported, because `Review` means delivered and awaiting the reviewer of
+    record - the state a sign-off exists to resolve. The mutant is dropping the
+    awaiting-sign-off half and testing terminality alone, which fires on every correct run.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveredUnitLeftAtReadyTests::test_a_delivered_unit_at_its_review_status_is_not_accused
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC4: a pre-delivery unit with no commits behind it is not accused.**
+  - **Given** a batch unit at `Ready` whose declared `Affects` are untouched in the run window
+    and which no commit names
+  - **When** the check runs
+  - **Then** nothing is reported, because a unit that is simply not started yet is at `Ready` for
+    the honest reason. The mutant is accusing on status alone.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveredUnitLeftAtReadyTests::test_a_pre_delivery_unit_with_no_commits_behind_it_is_not_accused
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC5: a commit naming the unit counts even when `Affects` is untouched.**
+  - **Given** a commit in the run window whose message names the unit and which touches no
+    declared path
+  - **When** the check runs
+  - **Then** the unit is reported, and the detail says the evidence was the commit message.
+    `Affects` is a declaration and it goes stale; the subject naming the unit is the stronger
+    signal. The mutant is deleting the message pass and reading `Affects` alone.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveredUnitLeftAtReadyTests::test_a_commit_naming_the_unit_counts_even_when_affects_is_untouched
+  - **Verified:** yes (2026-08-11)
+
+- [x] **AC6: the pre-delivery set is derived from the vocabulary, not a name list.**
+  - **Given** a batch unit at a pre-delivery status that is neither `Ready` nor `In Progress`
+  - **When** the check runs
+  - **Then** it is still reported, because a name list exempts whatever status a project adds
+    next. The mutant is replacing the vocabulary test with that pair of literals.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveredUnitLeftAtReadyTests::test_the_pre_delivery_set_is_derived_from_the_vocabulary_not_a_name_list
+  - **Verified:** yes (2026-08-11)
 
 ## Impact
 
 Every run. The failure is silent, it costs the whole close, and the operator's visible symptom is a long list of blockers none of which is the problem.
+
+## Verification evidence
+
+Functional. Six mutants executed, `__pycache__` purged and each child run under `python3 -B`,
+each anchor asserted to occur exactly once, source restored byte-identical afterwards:
+
+| Mutant | Result |
+| --- | --- |
+| delete the check's call from `close_preflight` | killed |
+| report the cause after its consequences | killed |
+| drop the awaiting-sign-off half of the pre-delivery test | killed |
+| accuse on status alone, with no git evidence | killed |
+| delete the commit-message pass and read `Affects` alone | killed |
+| hard-code the pre-delivery names instead of asking the vocabulary | killed |
+
+Two discriminators, because one is not enough. A commit whose message names the unit is
+decisive; a commit merely touching the declared `Affects` is also made true by a SIBLING unit
+sharing the file, so it is reported in those words rather than as proof. The window is the run's
+own recorded base ref rather than a wall-clock date, so a neighbouring run's commits on a busy
+day are not swept in, and a run with no recorded base ref makes no claim at all.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-06 | sdlc-studio | Filed |
+| 2026-08-11 | sdlc-studio | Criteria groomed to name their mutants; fixed |
