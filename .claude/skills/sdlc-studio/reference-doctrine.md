@@ -247,10 +247,18 @@ rules, the agents/services) live in that project's agent-instructions file
       live with it. A gate that turns every survivor into an immediate stoppage is one that
       gets switched off wholesale, and then it holds nothing.
     + **`block`.** No evidence, stale evidence or a survivor refuses the transition. Set this
-      if your project wants what earlier versions described. It is not yet airtight: the
-      demand is derived from the unit's declared `Affects`, so a unit that declares a surface
-      it did not change is not held to one. That gap is recorded rather than left for you to
-      discover, and the exemption path beside it already derives from the diff instead.
+      if your project wants what earlier versions described. The demand is now derived from
+      the DIFF against the run's base ref, not from the unit's declared `Affects`: a
+      declaration can only ever SHRINK the derived surface, so a unit that declared a surface
+      it did not change used to escape the demand entirely. It no longer does.
+
+      **This mode requires an open run.** Deriving from the diff means there must be a base
+      ref to diff against, so under `block` a repair transitioned with no run open is refused,
+      naming that as the reason. The refusal is deliberate rather than incidental: a
+      derivation that cannot run yields no surface, and no surface is indistinguishable from
+      nothing to mutate - which would put the fail-open back within reach of anyone who simply
+      did not open a run. If your project transitions repairs outside a run, stay on `report`,
+      where the same condition is reported and the transition proceeds.
     + **`off`.** The lane stands down.
 
     Two things ignore the setting. A claimed exemption re-derived and found FALSE refuses in

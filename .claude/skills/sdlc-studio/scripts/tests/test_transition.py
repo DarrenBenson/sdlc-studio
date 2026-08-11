@@ -224,6 +224,17 @@ class SurvivorGateTests(unittest.TestCase):
         (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
             "# BG0001: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
             "> **Affects:** src/thing.py\n> **Points:** 3\n", encoding="utf-8")
+        # A real base ref and a real change after it: the repair gate now derives its surface
+        # from the DIFF, because deriving it from `Affects` let a mis-declared footprint shrink
+        # the surface to nothing and open the gate.
+        _git_repo(root)
+        base = _head(root)
+        src.write_text("def g(a, b):\n    if a == b:\n        return 1\n    return 3\n",
+                       encoding="utf-8")
+        _git_commit(root, "the repair")
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+            {"run_id": "RUN-TEST01", "outcome": "running", "batch": ["BG0001"],
+             "base_ref": base}), encoding="utf-8")
         (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(json.dumps(
             {"entries": [{"target": "src/thing.py",
                           "hash": hashlib.sha256(src.read_bytes()).hexdigest(),
@@ -307,7 +318,16 @@ class RepairMutationGateTests(unittest.TestCase):
 
     def _repo(self, d, *, record=None, body="def g(a, b):\n    if a == b:\n        return 1\n"):
         import json, hashlib
-        root = Path(d)
+        root = Path(d).resolve()
+        # The BG0536 guard, which this fixture needed the moment it started COMMITTING. Its
+        # sibling has carried it since a placeholder call passed "." and wrote into the real
+        # repository, destroying 23 mutation registrations; the blast radius here is now a git
+        # commit rather than stray files, and a fixture that can address the working tree will
+        # eventually be given it.
+        if not str(root).startswith(tempfile.gettempdir()):
+            raise AssertionError(
+                f"fixture root {root} is outside {tempfile.gettempdir()} - a test fixture must "
+                f"never be able to write into the working tree")
         (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
         (root / "src").mkdir(parents=True, exist_ok=True)
@@ -316,6 +336,18 @@ class RepairMutationGateTests(unittest.TestCase):
         (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
             "# BG0001: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
             "> **Affects:** src/thing.py\n> **Points:** 3\n", encoding="utf-8")
+        # The surface is derived from the DIFF, not from `Affects` - a declaration can only
+        # SHRINK it, which handed the author the fail-open one step over. So the fixture needs a
+        # real base ref and a real change after it, the same shape the exemption tests use. A
+        # `tmpdir` with no repository takes the cannot-be-established arm and refuses for a
+        # reason these criteria are not about.
+        _git_repo(root)
+        base = _head(root)
+        src.write_text(body + "    return 3\n", encoding="utf-8")
+        _git_commit(root, "the repair")
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+            {"run_id": "RUN-TEST01", "outcome": "running", "batch": ["BG0001"],
+             "base_ref": base}), encoding="utf-8")
         if record is not None:
             digest = (hashlib.sha256(src.read_bytes()).hexdigest() if record == "current"
                       else "0" * 64)
@@ -324,6 +356,65 @@ class RepairMutationGateTests(unittest.TestCase):
                               "mutants": [{"unit": "BG0001", "criterion": "AC1",
                                            "verdict": "killed"}]}]}), encoding="utf-8")
         return root, (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+
+    def test_a_misdeclared_affects_cannot_shrink_the_surface_to_nothing(self) -> None:
+        """BG0551: the surface is the DIFF, never the author's declaration.
+
+        `Affects` names only markdown while the diff changes a Python module. Deriving from the
+        declaration found nothing to mutate and OPENED the gate - measured: a fixture with a
+        Python diff, no ledger and no exemption exited 0 and wrote `Status: Fixed` under the
+        blocking mode. A declaration can only ever SHRINK the derived surface, so deriving from it
+        hands the author the fail-open one step over, which is exactly what `verify_no_surface_claim`
+        was repaired for beside this.
+
+        Mutant: derive `targets` from `sdlc_md.affects_files(text)` again.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, _text = self._repo(d)
+            # The declaration is markdown-only; the diff this fixture committed is Python.
+            art = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+            art.write_text(art.read_text(encoding="utf-8").replace(
+                "> **Affects:** src/thing.py", "> **Affects:** README.md"), encoding="utf-8")
+            misdeclared = art.read_text(encoding="utf-8")
+            self.assertNotIn("src/thing.py", misdeclared, "the fixture still declares the module")
+            r = tr.repair_mutation_gate(str(root), "BG0001", misdeclared)
+            self.assertIsNotNone(
+                r, "a mis-declared `Affects` shrank the surface to nothing and opened the gate")
+            self.assertIn("NO mutation evidence", r)
+
+    def test_the_gate_refuses_when_it_cannot_take_a_diff(self) -> None:
+        """The derivation must fail CLOSED. A surface that cannot be derived yields no targets,
+        and no targets is indistinguishable from nothing to mutate - which is the fail-open this
+        gate exists to close, reachable by simply not having a run open.
+
+        Mutant: return None when there is no base ref.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d)
+            (root / "sdlc-studio" / ".local" / "run-state.json").unlink()
+            r = tr.repair_mutation_gate(str(root), "BG0001", text)
+            self.assertIsNotNone(r, "no base ref opened the gate")
+            self.assertIn("no run is open", r)
+
+    def test_a_base_ref_that_does_not_resolve_refuses(self) -> None:
+        """The OTHER arm, and it was unpinned while its sibling in `verify_no_surface_claim` was
+        pinned. `changed_lines` swallows a failed `git diff` and returns an empty map, so an
+        unresolvable base - a SHA lost to an amend, a stale clone, a branch that has gone -
+        yields no surface, and a banked record then opens the gate. Deleting this branch left
+        the whole suite green.
+
+        Mutant: drop the rev-parse check and let an unresolvable base fall through.
+        """
+        import json
+        with tempfile.TemporaryDirectory() as d:
+            root, text = self._repo(d, record="current")
+            state_file = root / "sdlc-studio" / ".local" / "run-state.json"
+            state = json.loads(state_file.read_text(encoding="utf-8"))
+            state["base_ref"] = "deadbeef" * 5
+            state_file.write_text(json.dumps(state), encoding="utf-8")
+            r = tr.repair_mutation_gate(str(root), "BG0001", text)
+            self.assertIsNotNone(r, "an unresolvable base ref opened the gate on a banked record")
+            self.assertIn("does not resolve to a commit", r)
 
     def test_a_repair_without_mutation_evidence_is_refused(self) -> None:
         """Mutant: return None when no record exists - the demand is a comment."""

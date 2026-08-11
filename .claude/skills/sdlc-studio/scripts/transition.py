@@ -2165,10 +2165,37 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
     import hashlib  # noqa: PLC0415
     try:
         import mutation  # noqa: PLC0415
-        affects = [Path(root) / a for a in sdlc_md.affects_files(text)]
-        targets = [a for a in affects if a.is_file() and a.suffix == ".py"]
-        if not targets:
-            return None                      # no mutatable surface - US0566's exemption path
+        from lib import run_state  # noqa: PLC0415
+        # THE SCOPE IS THE DIFF, for the reason `verify_no_surface_claim` states beside this:
+        # a declaration can only ever SHRINK the derived surface, so deriving from `Affects`
+        # hands the author the fail-open one step over. Declare `Affects: README.md`, change a
+        # Python module, and the surface came back empty - which this gate read as "nothing to
+        # mutate" and opened. Measured: a fixture with a Python diff, no ledger and no exemption
+        # exited 0 and wrote `Status: Fixed` under the blocking mode. The exemption path beside
+        # this was repaired for exactly this; the gate path was not.
+        base = (base_ref or run_state.base_ref(root) or "").strip()
+        if not base:
+            return ("the repair-mutation gate cannot be established: no run is open, so there "
+                    "is no base ref to take this repair's diff against. Refused rather than "
+                    "opened - a derivation that cannot run yields no surface, and no surface "
+                    "is indistinguishable from nothing to mutate")
+        if subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{base}^{{commit}}"],
+                          cwd=str(root), capture_output=True).returncode != 0:
+            return (f"the repair-mutation gate cannot be established: the recorded base ref "
+                    f"{base[:12]} does not resolve to a commit in this tree, so the diff it "
+                    f"would be derived from cannot be taken")
+        # NO EARLY EXEMPTION HERE. An empty mutatable surface is a CLAIM, and the claim is granted
+        # by a recorded exemption that `mutation_evidence_lane` re-derives before this function is
+        # reached - never inferred from the derivation coming back empty. Returning None on an
+        # empty surface put the exemption back in the author's gift by a second route: a repair
+        # touching no Python file would pass unexempted, so the record decided nothing and the
+        # exemption was a box. The surface IS still derived and IS read: it decides which of the
+        # two refusals below the author gets, and names the files in the one that asks for a
+        # mutant - a message telling a docs-only repair to `register --target <file>` names a
+        # file that does not exist and cannot be truthfully satisfied.
+        changed = mutation.changed_lines(root, base)
+        targets = [p for p in (Path(f) for f in changed)
+                   if p.is_file() and p.suffix == ".py"]
         entries = mutation.ledger_entries(root)
     except Exception as exc:  # noqa: BLE001 - report it, never swallow it
         return (f"the repair-mutation gate could not be established ({type(exc).__name__}: "
@@ -2179,9 +2206,22 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
             and any(isinstance(m, dict) and m.get("unit") == uid
                     for m in (e.get("mutants") or []))]
     if not mine:
+        # The derived surface decides WHICH refusal this is. Sending a docs-only repair to
+        # `register --target <file>` names a file that does not exist, and the author has no
+        # truthful way to satisfy it - so the two cases are told apart by what the diff holds.
+        if not targets:
+            return (f"{uid} is repair work carrying NO mutation evidence, and its diff against "
+                    f"{base[:12]} changes no mutatable file - so there is nothing to register. "
+                    f"That is an EXEMPTION, and an exemption is granted by a record, never by "
+                    f"the derivation coming back empty: record the no-mutatable-surface claim "
+                    f"for {uid}, which is then re-derived against this diff rather than "
+                    f"believed. Nothing is inferred here, because a claim nobody checks is a "
+                    f"box somebody ticks")
+        named = ", ".join(str(t) for t in targets[:3])
         return (f"{uid} is repair work and carries NO mutation evidence over its changed lines. "
-                f"Apply a mutant to what it changed, watch its test fail, and record it: "
-                f"`mutation.py register --unit {uid} --criterion ACn --target <file> "
+                f"Its diff against {base[:12]} changes {len(targets)} mutatable file(s): "
+                f"{named}. Apply a mutant to what it changed, watch its test fail, and record "
+                f"it: `mutation.py register --unit {uid} --criterion ACn --target <file> "
                 f"--line <n> --mutant <the edit> --test <the command> --verdict killed`")
 
     stale = []
