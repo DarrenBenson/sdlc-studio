@@ -102,6 +102,36 @@ jobs:
       - name: Markdown corpus lint (strict rules, attributed)
         run: npm run lint:corpus
 
+  # Does the repository's own evidence still hold? Two questions the per-commit gate cannot
+  # afford: a criterion stamped `Verified: yes` whose selector now selects nothing (~30s), and a
+  # criterion that FAILS when actually executed (~28 minutes against a 600s budget). The second
+  # cost is why nothing ran it, and why 53 criteria went red across stories already at Done while
+  # README told readers acceptance criteria get run - true of the mechanism, false of the corpus.
+  #
+  # Both are compared against tools/verify-corpus-baseline.txt, which reddens in BOTH directions:
+  # a count above blocks as a new defect, a count below blocks as a baseline to lower in the same
+  # commit. A lane that only ever tolerates is one that never empties. D0137.
+  corpus-verify:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    # The release verify lane alone runs ~28 minutes; the default 360-minute job cap is generous
+    # but the step needs its own ceiling, because a lane killed by a timeout exits 124 and reads
+    # exactly like a failure if nobody checks the code.
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Python deps
+        run: python -m pip install --quiet pyyaml pytest
+
+      - name: Corpus verification (dead stamps + red criteria, against the baseline)
+        run: bash tools/verify-corpus.sh full
+
   windows-smoke:
     runs-on: windows-latest
     steps:

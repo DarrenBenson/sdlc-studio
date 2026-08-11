@@ -9,6 +9,37 @@
 > escalation stands: both rejected versions passed every automated check in this repository
 > while being wrong.
 
+## 2026-08-11: the release bar MOVED, and BG0535 is closed against the new one
+
+The operator re-scoped v5.0.0 on 2026-08-11. Read the four rulings before planning anything:
+**D0136** the tag needs zero open HIGH bugs, not zero open bugs - the 37 Medium and 1 Low ship
+disclosed against a v5.1 milestone, which also reverses D0133's no-KNOWN-ISSUES half. **D0137**
+BG0535 closes on the write-time guard plus a scheduled lane; the stale-selector repairs move to
+v5.1. **D0138** this authoring session is authorised to record sign-off, tag and push - the
+adversarial half is NOT stood down. **D0139** the release notes are hand-authored, with the
+composed log linked rather than shipped as the notes.
+
+**The red-criteria count was wrong again.** Re-measured on 1d6b51ea: **58 red of 1,899 across 669
+stories in 2,145s** - not the 53 recorded on 2026-08-09, and not the 106 recorded two days before
+that. It has been wrong every time it was carried forward instead of re-run, which is the whole
+argument for `tools/verify-corpus.sh`. Also re-measured: **48 uncomposed changelog fragments**, not
+the 34 SC0007 records.
+
+**BG0570 was found by finishing US0667 properly, and is the lesson to carry.** US0667's criterion
+said BOTH writers refuse a dead selector; it was stamped `Verified: yes`; `artifact.py new` never
+called the guard, because the two writers hold `verify` in different shapes and the selector reader
+saw only one. Wiring it in then exposed a bigger defect: `selector_resolves` answers False for four
+distinct facts and the guard refused all four, so a test file not yet written - ordinary ordering,
+and the ONLY ordering available in a greenfield project - was refused outright. Two independent
+review rounds, both REJECT. The plan review killed the first fix outright (discriminating on path
+existence would have refused every selector in a fresh clone whose dependencies are not installed).
+The code review found the near miss computed and discarded, a criterion that could not be observed,
+and a test weaker than its criterion. **No third round was run: the repairs are unreviewed.**
+
+Three gate refusals also caught real defects in this work - a selector shared with US0667 AC1
+(two criteria sharing a verifier cannot both discriminate), an internal id in consuming-facing
+prose, and a noise ratchet that correctly refused notes firing on the normal case.
+
 ## RUN-01KZQ03V (SC0003) is OPEN - 6 of 8 units delivered, 2 owed
 
 **Every gate that prints a refusal now performs one.** Delivered green, each with its mutants

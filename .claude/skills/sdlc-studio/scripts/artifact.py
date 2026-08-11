@@ -1027,6 +1027,20 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     # than a bug filed through the finding filer can. Refuses only when NO declared path resolves
     # (a not-yet-created file alongside an existing one is legitimate); names the closest basename.
     file_finding.check_affects_resolvable(root, f.get("affects"), type_)
+    # ... and a `Verify:` selector naming no test that exists, from that SAME seam. US0667's
+    # criterion says BOTH writers refuse; only the filer did, so a story minted through `new`
+    # could carry a verifier pointing at nothing while the identical bug filed through
+    # `file_finding` was refused. A guard on one of two creation paths is a guard with a documented
+    # side door.
+    for _expr, _why in file_finding.check_verify_selectors(root, f):
+        # Report only what is SPECIFIC to this selector. `new` is the bulk creation path - `batch`
+        # mints many artefacts in one go - and the generic "cannot judge a shell verifier" case is
+        # the normal shape for a story, so noting it here fires on the ordinary write and buries
+        # the case that matters. The filer keeps that report, which is where it was asked for; the
+        # refusal, which is what this writer owes, is unconditional and happens above.
+        if _why and not _why.startswith("unknown runner"):
+            print(f"note: `Verify:` selector not judged here ({_why}): {_expr}",
+                  file=sys.stderr)
     f["date"] = f.get("date") or date.today().isoformat()
     f["_root"] = str(root)   # so the renderer can read the project's enforcement
     # A bug or a CR created here is a unit `sprint plan` will be asked to plan, and this is a

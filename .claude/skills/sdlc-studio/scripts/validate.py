@@ -242,7 +242,8 @@ def _is_consumed_fragment(path: str) -> bool:
     return any(norm.startswith(d) for d in _CONSUMED_DIRS)
 
 
-def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list[dict]:
+def validate_file(path: Path, type_: str, repo_root: Path | None = None,
+                  sweep_selectors: bool = False) -> list[dict]:
     """Return a list of violation dicts for one artifact file. Pass repo_root so a
     project's `.config.yaml` status_vocab extensions count as valid."""
     out: list[dict] = []
@@ -441,6 +442,35 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 "the artefact's own `Verify:` lines target file(s) its `Affects` omits: "
                 f"{', '.join(mism['undeclared'])}",
                 targets=sorted(mism["undeclared"]))
+
+    # Sweep the EXISTING corpus for stamped criteria whose selector no longer
+    # selects anything. The write-time guard stops new ones; nothing was reading the ones already
+    # on disk, which is how 53 criteria went red across stories already at Done while `README.md`
+    # told readers acceptance criteria get run - true of the mechanism, false of the corpus.
+    #
+    # OPT-IN, because resolution costs a `pytest --collect-only` per distinct test file and the
+    # per-commit gate is already over its budget; a check whose cost is paid on every commit is one
+    # that gets switched off. The scheduled lane passes the flag, so the corpus is swept on a
+    # cadence rather than never - the recorded ruling on this bug.
+    #
+    # A WARNING on the ratchet, not an error: D0136/D0137 ship the 53 known reds against v5.1, and
+    # an error would put the release gate red on a set the operator has ruled deferred. The ratchet
+    # is what stops that being a licence - the tolerated set only ever shrinks.
+    #
+    # Only STAMPED criteria are examined (`unresolvable_stamps`): an unstamped AC makes no claim,
+    # so a dead selector there is the author's business at the next run, not a false green on disk.
+    if sweep_selectors and repo_root is not None and type_ in ("story", "bug"):
+        try:
+            import verify_ac  # noqa: PLC0415 - deferred: validate must run without the runner
+            dead_stamps = verify_ac.unresolvable_stamps(path, repo_root)
+        except Exception as exc:  # noqa: BLE001 - a validate run must never break on this
+            sdlc_md.debug("validate.unresolvable_stamps", exc)
+            dead_stamps = []
+        for row in dead_stamps:
+            add(SEVERITY_WARNING, "verify-unresolvable",
+                f"{row['ac']} is stamped verified but its `Verify:` selector selects nothing: "
+                f"{row['verifier']} - the stamp reads as evidence for a check that cannot run",
+                targets=[f"{row['ac']}:{row['verifier']}"])
 
     # Schema-v3 team-schema: a typed, resolvable `raised_by`. v2 artefacts are exempt, so the
     # rule cannot fail an existing sequential-id project until it opts into v3.
@@ -864,6 +894,11 @@ WARNING_RATCHET_FILE = "sdlc-studio/.validate-warning-baseline.json"
 
 #: The rules the ratchet judges. Each one names the specific paths or commands it is about, so
 #: an instance has an identity finer than "this artefact has a warning of this kind".
+#: `verify-unresolvable` is deliberately NOT here. The ratchet compares one run's instance set
+#: against a baseline, and this rule is only produced under the opt-in `--verify-selectors` sweep -
+#: so a per-commit run would report every baselined instance as stale-and-removable while a
+#: scheduled run reported them as present. A rule that enters the comparison from only one of two
+#: invocation paths makes the ratchet lie on both. It is reported by the scheduled lane instead.
 RATCHET_RULES = ("affects-undeclared", "affects-unresolvable", "pseudo-verify")
 
 
@@ -1059,7 +1094,8 @@ def cmd_check(args: argparse.Namespace) -> int:
         scope = changed_artifact_paths(repo_root, [args.type] if args.type else None)
     violations: list[dict] = []
     for path, type_ in targets:
-        found = validate_file(path, type_, repo_root)
+        found = validate_file(path, type_, repo_root,
+                              sweep_selectors=getattr(args, "verify_selectors", False))
         if scope is not None and path.resolve() not in scope:
             for v in found:
                 v["scoped_out"] = True  # the severity is the fact; only the counting moves
@@ -1797,6 +1833,11 @@ def build_parser() -> argparse.ArgumentParser:
                         "or untracked). Untouched errors are still printed, as advisory; the "
                         "whole-tree census and DoR/DoD sweeps still run and still fail. With no "
                         "git answer the whole workspace is judged")
+    c.add_argument("--verify-selectors", action="store_true", dest="verify_selectors",
+                   help="also sweep stamped acceptance criteria whose `Verify:` selector no "
+                        "longer selects anything (US0669). OFF by default: resolution costs a "
+                        "`pytest --collect-only` per distinct test file, which the per-commit "
+                        "gate cannot afford. The scheduled corpus lane passes it")
     c.add_argument("--emit-baseline", action="store_true", dest="emit_baseline",
                    help="Print the baseline record for the findings that support one (one id "
                         "per line, ready to redirect into sdlc-studio/.criteria-baseline.txt) "

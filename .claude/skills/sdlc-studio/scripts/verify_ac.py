@@ -726,6 +726,47 @@ def _collect_nodes(test_file: str, cwd=None) -> list[str] | None:
     return result
 
 
+def _selector_target(expr: str, cwd=None) -> tuple[str | None, str | None]:
+    """`(node address, test file)` for a selector, or `(None, None)`.
+
+    THE ONE TARGET PARSER. `selector_resolves`, `selector_near_miss` and the write-time guard all
+    need to know what a selector points at, and they answered it separately with predicates that
+    had already drifted - one arm tested `.endswith(".py")` and another did not, so the two
+    disagreed about a bare-file target. A fourth copy would make the divergence AC4 exists to
+    prevent more likely, not less.
+    """
+    try:
+        _kind, argv = _build_command(expr, cwd=cwd)
+    except Exception:  # noqa: BLE001 - never raise out of a classifier
+        return (None, None)
+    if not isinstance(argv, list):
+        return (None, None)   # a shell-backed verb: a string, not an argv list
+    target = next((a for a in argv[1:] if "::" in a or a.endswith(".py")), None)
+    if target is None:
+        return (None, None)
+    return (target, target.split("::", 1)[0])
+
+
+def selector_target_file(expr: str, cwd=None) -> str | None:
+    """The test FILE a selector points at, or None when it names none this way."""
+    return _selector_target(expr, cwd)[1]
+
+
+def selector_collected(expr: str, cwd=None) -> bool:
+    """Did the selector's target file yield a NODE LIST?
+
+    The discriminator the write-time guard needs, and the one `selector_resolves` collapses. That
+    predicate answers False for three different facts: a node absent from a file that listed its
+    nodes (a typo), a file that does not exist, and a file that exists but will not collect - a
+    missing import, a syntax error, a project whose dependencies are not installed. Only the first
+    is a mistake the author can fix by reading the file, and only the first may be refused at
+    write time; treating the third as a typo would refuse every selector in a fresh clone and tell
+    the author their test does not exist while it sits on disk.
+    """
+    _node, test_file = _selector_target(expr, cwd)
+    return test_file is not None and _collect_nodes(test_file, cwd) is not None
+
+
 def selector_resolves(expr: str, cwd=None) -> bool | None:
     """Does this verifier's selector still select anything? None when unanswerable.
 
@@ -750,11 +791,10 @@ def selector_resolves(expr: str, cwd=None) -> bool | None:
         return None
     if not isinstance(argv, list) or len(argv) < 2:
         return None
-    # argv is `pytest -q <target> [-k pat]`. Split the file target from the -k filter.
-    target = next((a for a in argv[1:] if "::" in a or a.endswith(".py")), None)
+    # argv is `pytest -q <target> [-k pat]`. The file target is read by the ONE target parser.
+    target, test_file = _selector_target(expr, cwd)
     if target is None:
         return None
-    test_file = target.split("::", 1)[0]
     nodes = _collect_nodes(test_file, cwd)
     if nodes is None:
         return False  # the file itself does not collect - the node/pattern cannot resolve
@@ -787,6 +827,48 @@ def _k_selects(pattern: str, nodes: list[str]) -> bool:
         except (SyntaxError, NameError):
             return True  # an expression we cannot evaluate: assume it selects, never false-dead
     return False
+
+
+def selector_near_miss(expr: str, cwd=None) -> str | None:
+    """For a selector that does NOT resolve, the closest node that DOES - or None.
+
+    A refusal saying only "this does not resolve" sends the author back to grep, which is the
+    step they skipped to get here. The overwhelmingly common cause is a real test named slightly
+    wrong - this repository's own scar is a class name typed as it OUGHT to have been rather than
+    read off the file, twice in one session - so naming the near miss closes the loop where it
+    actually broke.
+
+    Reuses `_build_command` and the `_collect_nodes` cache rather than parsing selectors a second
+    time: the divergent-reader defect is the one CR0508 exists to avoid, and a hint that disagreed
+    with the refusal about what a selector means would be worse than no hint.
+
+    Best-effort by construction. None whenever there is nothing confident to say, so a caller can
+    always render it as an optional clause.
+    """
+    target, test_file = _selector_target(expr, cwd)
+    if target is None or "::" not in target:
+        return None
+    node = target.partition("::")[2]
+    nodes = _collect_nodes(test_file, cwd)
+    if not nodes:
+        return None
+    parts = [p for p in node.split("::") if p]
+    if not parts:
+        return None
+    # The recurring shape: right file, right METHOD, wrong class. Answer it exactly - a node
+    # whose final segment matches names the class the author meant.
+    leaf = parts[-1]
+    same_leaf = [n for n in nodes if n.rsplit("::", 1)[-1] == leaf and n != target]
+    if same_leaf:
+        return f"did you mean {same_leaf[0]}"
+    # Otherwise the closest name among the segments actually collected at that depth.
+    import difflib  # noqa: PLC0415 - local: only reached on a refusal path
+    depth = len(parts) - 1
+    candidates = {seg[depth] for seg in (n.split("::")[1:] for n in nodes) if len(seg) > depth}
+    close = difflib.get_close_matches(parts[-1], sorted(candidates), n=1, cutoff=0.6)
+    if close:
+        return f"no `{parts[-1]}` in {test_file}; did you mean `{close[0]}`"
+    return None
 
 
 def unresolvable_stamps(path: Path, cwd=None) -> list[dict]:

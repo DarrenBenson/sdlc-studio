@@ -1,0 +1,28 @@
+# The corpus verification baseline - what the scheduled `corpus-verify` lane tolerates today.
+#
+# WHY A BASELINE AND NOT A GREEN BAR. `gate.py --release` reports red acceptance criteria across
+# stories already at Done. Measured 2026-08-11 on 1d6b51ea: 58 red of 1,899 across 669 stories in
+# 2,145s. The figure MOVES - it was 106 of 1,824 on 2026-08-07 and 53 of 1,876 on 2026-08-09 - and
+# it has been wrong in this repository's own records every time it was carried forward instead of
+# re-run. That is the argument for the lane, not a footnote to it: a number nobody re-measures is
+# a number that is wrong, and this one was out by half once and by five two days later.
+# They are stale SELECTORS, not broken features - renamed test methods, deleted test files - and
+# D0137 rules the repairs into v5.1 as their own sweep, because a repair that merely makes a
+# criterion pass is worse than the red it replaced: it converts a visible stale selector into an
+# invisible vacuous one. Each repair has to still discriminate for the criterion it was written
+# for, which is review work, not a bulk edit.
+#
+# So the lane does not demand zero. It demands NO WORSE, and it reddens in BOTH directions:
+#   - a count ABOVE the baseline blocks, because that is a new dead selector nobody guarded
+#   - a count BELOW the baseline blocks too, because a baseline that only ever tolerates is one
+#     that never empties. Lower it in the same commit that fixes the criteria.
+#
+# The write-time guard is what stops the number climbing: `file_finding.file` and `artifact.py new`
+# both refuse a `Verify:` selector naming a node absent from a test file that exists, and a
+# mistyped path whose basename exists elsewhere - so these 58 are a closed set being drained
+# rather than an open one being fed. What the guard deliberately does NOT refuse is a test file
+# not yet written, because that is ordinary test-after-story ordering and every greenfield project.
+#
+# metric|count|what it counts
+red-criteria|58|executable acceptance criteria that FAIL when run, across stories already at Done
+dead-stamps|5|criteria stamped `Verified: yes` whose selector now selects nothing

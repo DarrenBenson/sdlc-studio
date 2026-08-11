@@ -25,7 +25,9 @@
     "lint:verify-ratchet": "python3 .claude/skills/sdlc-studio/scripts/verify_ac.py lint --ratchet --bugs",
     "lint:warning-ratchet": "python3 .claude/skills/sdlc-studio/scripts/validate.py warning-ratchet",
     "lint:runbook": "python3 tools/runbook.py",
-    "lint:lens-signatures": "python3 .claude/skills/sdlc-studio/scripts/readiness.py profile --validate"
+    "lint:lens-signatures": "python3 .claude/skills/sdlc-studio/scripts/readiness.py profile --validate",
+    "verify:corpus": "bash tools/verify-corpus.sh full",
+    "verify:stamps": "bash tools/verify-corpus.sh stamps"
   },
   "devDependencies": {
     "markdownlint-cli": "^0.49.0"

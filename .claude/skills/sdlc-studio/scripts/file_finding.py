@@ -389,21 +389,96 @@ def affects_suggestions(repo_root: Path | str, unresolvable: list[str]) -> str:
 
 
 def _verify_selectors(fields: dict) -> list[str]:
-    """Every `Verify:` expression this artefact's criteria carry, from the fields a writer holds."""
+    """Every `Verify:` expression this artefact's criteria carry, from the fields a writer holds.
+
+    TWO SHAPES, because the two writers hold them differently and the guard must see both. The
+    finding filer carries criteria as PROSE with the `**Verify:**` marker inline; `artifact.py new`
+    carries `--verify` as a LIST of BARE selectors, positionally paired with `--ac`, and only
+    renders the marker later. Reading the marker alone is why the guard fired on one creation path
+    and not the other, while US0667's criterion claimed both - a reader that sees one writer's
+    shape is a guard with a side door.
+    """
     import re as _re  # noqa: PLC0415 - local: only the write path parses these
     out: list[str] = []
     for value in (fields.get("acs") or []):
         for m in _re.finditer(r"\*\*Verify:\*\*\s*(.+)", str(value)):
             out.append(m.group(1).strip())
     for key in ("verify", "acs_text", "body"):
-        for m in _re.finditer(r"\*\*Verify:\*\*\s*(.+)", str(fields.get(key) or "")):
+        val = fields.get(key)
+        # A list under `verify` is the bare-selector shape: each item IS the expression, with no
+        # marker to match. Anything else is prose that must carry the marker to count.
+        if isinstance(val, (list, tuple)):
+            out.extend(str(v).strip() for v in val)
+            continue
+        for m in _re.finditer(r"\*\*Verify:\*\*\s*(.+)", str(val or "")):
             out.append(m.group(1).strip())
     return [s for s in out if s]
 
 
-def check_verify_selectors(repo_root: Path | str, fields: dict) -> list[str]:
+def _classify_selector(verify_ac, root: Path, expr: str) -> tuple[bool, str]:
+    """`(is_a_typo, detail)` for a selector `selector_resolves` answered False for.
+
+    That predicate answers False for four distinct facts and the guard may only refuse the two
+    that are mistakes an author fixes by reading a file:
+
+      the file listed its nodes, this node is not among them  -> TYPO. Refuse. The recurring
+          shape: real file, real method, wrong class.
+      the file does not exist, but its basename exists elsewhere -> a mistyped PATH. Refuse, and
+          NAME THE PATH, which is the whole value of having looked. The same two-way split
+          `fictional_affects` draws for a declared path.
+      the file does not exist and no file of that name does    -> ORDERING. Accept. Writing the
+          story before the test, and every story in a greenfield project.
+      the file EXISTS but yields no node list                  -> ENVIRONMENT. Accept. A missing
+          import, a syntax error, dependencies not installed. Refusing this would tell an author
+          their test does not exist while it sits on disk, in every fresh clone.
+
+    `detail` is the near miss on a refusal and the reason on an acceptance; either may be empty.
+    """
+    import os  # noqa: PLC0415 - local: matches `basename_matches`, which is the only other
+    #                             reader here and imports it the same way. Taking it from module
+    #                             scope raised NameError, which the fail-closed `except` below
+    #                             swallowed into a silent refusal with no hint - the exact reason
+    #                             that handler now records what it caught instead of discarding it.
+    try:
+        target = verify_ac.selector_target_file(expr, cwd=root)
+        if target is None:
+            # Defensive, and unreachable through `selector_resolves` today: that function answers
+            # None - not False - when the same parser finds no target, so such a selector is
+            # already classed unjudged before it reaches here. Kept because the alternative is to
+            # let `(root / None)` raise and be caught below, which makes the verdict depend on an
+            # exception rather than on a decision.
+            return (True, "")
+        if verify_ac.selector_collected(expr, cwd=root):
+            return (True, "")                 # nodes were listed and this one is absent: TYPO
+        if (root / target).exists():
+            return (False, f"{target} exists but will not collect here")
+        matches = basename_matches(root, target)
+        if matches:
+            base = os.path.basename(str(target))
+            if len(matches) == 1:
+                return (True, f"no file at {target}; did you mean {matches[0]}")
+            return (True, f"no file at {target}; {base} exists at {', '.join(matches)} - "
+                          f"name the one you meant")
+        # SILENT. Writing the story before the test is the NORMAL ordering, and in a greenfield
+        # project it is the only ordering available - so a note here fires on every story anyone
+        # writes. A warning that fires on the normal case is one an author learns to scroll past,
+        # which costs the signal in the case that matters; the same reason `affects-unresolvable`
+        # is reported only at a terminal status. The environment case above is not normal and does
+        # keep its note.
+        return (False, "")
+    except Exception as exc:  # noqa: BLE001 - fail CLOSED: unclassifiable keeps the refusal
+        # RECORDED, never discarded. A blanket catch here silently converted a defect in this
+        # function into "refuse with no explanation", which reads to an author exactly like a
+        # correct refusal - and hid a NameError through a whole test run.
+        sdlc_md.debug("file_finding.classify_selector", exc)
+        return (True, "")
+
+
+def check_verify_selectors(repo_root: Path | str, fields: dict) -> list[tuple[str, str]]:
     """Refuse - BEFORE an id is allocated or a byte written - a `Verify:` selector naming a test
-    that does not exist. Returns the selectors it could not JUDGE, for the caller to report.
+    that does not exist. Returns `(selector, why)` for each one it could not JUDGE, so the caller
+    reports the reason that actually applies rather than a fixed list of three that may all be
+    false for the selector in hand.
 
     `verify_ac.selector_resolves` already answers this and `unresolvable_stamps` already reports
     it; no writer called either, so an AC could be authored, committed and read as evidence while
@@ -433,14 +508,30 @@ def check_verify_selectors(repo_root: Path | str, fields: dict) -> list[str]:
         except Exception:  # noqa: BLE001 - a resolver fault must not become a refusal
             verdict = None
         if verdict is False:
-            dead.append(expr)
+            # REFUSE A TYPO, NEVER AN ORDERING. `selector_resolves` answers False for four
+            # different facts and only two are mistakes the author can fix by reading a file.
+            is_typo, detail = _classify_selector(verify_ac, root, expr)
+            (dead if is_typo else unjudged).append((expr, detail))
         elif verdict is None:
-            unjudged.append(expr)
+            unjudged.append((expr, "unknown runner, shell verifier, or a runner not installed"))
     if dead:
+        # Name the NEAR MISS where there is one. A refusal saying only "this does not resolve"
+        # sends the author back to grep - the step they skipped to get here. The classifier has
+        # already found the near path where the FILE was mistyped; the node-level hint is asked
+        # for only when it has not, so the reader is never given two answers to one question.
+        lines = []
+        for e, detail in dead:
+            hint = detail
+            if not hint:
+                try:
+                    hint = verify_ac.selector_near_miss(e, cwd=root)
+                except Exception:  # noqa: BLE001 - a hint must never displace the refusal
+                    hint = None
+            lines.append(f"    {e}" + (f"\n      -> {hint}" if hint else ""))
         raise ValueError(
             "a `Verify:` selector names no test that exists - refused. Nothing was allocated, "
             "nothing was written.\n"
-            + "\n".join(f"    {e}" for e in dead)
+            + "\n".join(lines)
             + "\n  Why: the Verify line is the only mechanical part of an acceptance criterion, "
               "so a selector resolving to nothing turns a checkable claim into prose while "
               "keeping the appearance of a check - and the failure is silent and time-shifted, "
@@ -1729,9 +1820,10 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # ... and refuse a `Verify:` selector that names no test that exists, from the same seam and
     # for the same reason: writing a reference before establishing its referent is an ordering
     # mistake a machine can catch and a human reliably will not.
-    for _unjudged in check_verify_selectors(root, fields):
-        print(f"note: `Verify:` selector not judged here (unknown runner, shell verifier, or a "
-              f"runner not installed): {_unjudged}", file=sys.stderr)
+    for _expr, _why in check_verify_selectors(root, fields):
+        if _why:   # empty = the normal ordering; noting it would fire on every story
+            print(f"note: `Verify:` selector not judged here ({_why}): {_expr}",
+                  file=sys.stderr)
     # ... and COMPLETE an understated one: a source file declared without its existing test is a
     # footprint smaller than the change, and the tool holds the exact path at the moment it would
     # otherwise only complain about it. Written, then reported - never silently.

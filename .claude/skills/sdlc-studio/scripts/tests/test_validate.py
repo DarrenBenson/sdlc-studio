@@ -10,6 +10,7 @@ import importlib.util
 import io
 import json
 import re
+import shutil
 import sys
 import tempfile
 import pathlib
@@ -2191,9 +2192,9 @@ class ScopedCheckTests(unittest.TestCase):
             real = validate.validate_file
             read: list[str] = []
 
-            def counting(path, type_, repo_root=None):
+            def counting(path, type_, repo_root=None, **kw):
                 read.append(Path(path).name)
-                return real(path, type_, repo_root)
+                return real(path, type_, repo_root, **kw)
 
             validate.validate_file = counting
             try:
@@ -3018,6 +3019,76 @@ class WarningRatchetExitCodeTests(unittest.TestCase):
             r = self._run(root)
             self.assertEqual(0, r.returncode, r.stdout + r.stderr)
             self.assertIn("clean", r.stdout)
+
+
+class UnresolvableVerifySelectorSweepTests(unittest.TestCase):
+    """US0669 (CR0508): the EXISTING corpus is swept, not only new writes guarded.
+
+    The write-time guard stops new dead selectors; nothing read the ones already on disk, which is
+    how 53 criteria went red across stories already at Done while README told readers acceptance
+    criteria get run - true of the mechanism, false of the corpus.
+
+    Fixtures live in a temp dir while `repo_root` stays the real repository: the story can be
+    anywhere, but the selector must resolve against a tree that actually holds the test files.
+    """
+
+    _ROOT = Path(__file__).resolve().parents[5]
+    TESTFILE = ".claude/skills/sdlc-studio/scripts/tests/test_validate.py"
+
+    def _story(self, tmp: Path, verifier: str, stamped: str = "yes") -> Path:
+        d = tmp / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "US9002-swept.md"
+        f.write_text(
+            "# US9002: a stamped criterion\n\n> **Status:** Done\n\n"
+            "## Acceptance Criteria\n\n### AC1: it holds\n\n"
+            f"- **Verify:** {verifier}\n- **Verified:** {stamped} (2026-08-11)\n")
+        return f
+
+    def _rules(self, path: Path, **kw) -> list[str]:
+        return [v["rule"] for v in validate.validate_file(path, "story", self._ROOT, **kw)]
+
+    def test_validate_reports_an_unresolvable_verify_selector(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="validate_sweep_dead_"))
+        try:
+            f = self._story(tmp, f"pytest {self.TESTFILE}::NoSuchClassHere::test_nope")
+            self.assertIn("verify-unresolvable", self._rules(f, sweep_selectors=True))
+            # ... and stays SILENT by default: the per-commit gate cannot afford a
+            # `pytest --collect-only` per distinct test file, so the sweep is opt-in.
+            self.assertNotIn("verify-unresolvable", self._rules(f))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_the_sweep_reports_only_what_it_can_judge_and_finds_absent(self) -> None:
+        """The discrimination control. Without it, 'reports the dead ones' is equally satisfied
+        by reporting every selector it examines - the same defect with the sign flipped."""
+        live = f"pytest {self.TESTFILE}::UnresolvableVerifySelectorSweepTests"
+        for verifier, why in ((live, "a selector that resolves"),
+                              ("shell true", "a selector that cannot be JUDGED"),
+                              (f"pytest {self.TESTFILE}::NoSuchClassHere::test_nope",
+                               "the positive control, so the run proves it can report at all")):
+            with self.subTest(why=why):
+                tmp = Path(tempfile.mkdtemp(prefix="validate_sweep_ctl_"))
+                try:
+                    rules = self._rules(self._story(tmp, verifier), sweep_selectors=True)
+                    if verifier.endswith("test_nope"):
+                        self.assertIn("verify-unresolvable", rules, why)
+                    else:
+                        self.assertNotIn("verify-unresolvable", rules, why)
+                finally:
+                    shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_an_unstamped_dead_selector_is_not_reported(self) -> None:
+        """An unstamped AC makes no claim, so a dead selector there is the author's business at
+        the next run, not a false green on disk. Reporting it would fire on every piece of new
+        work, and a warning that fires on the normal case is one authors learn to scroll past."""
+        tmp = Path(tempfile.mkdtemp(prefix="validate_sweep_unstamped_"))
+        try:
+            f = self._story(tmp, f"pytest {self.TESTFILE}::NoSuchClassHere::test_nope",
+                            stamped="no")
+            self.assertNotIn("verify-unresolvable", self._rules(f, sweep_selectors=True))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 if __name__ == "__main__":

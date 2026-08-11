@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 50 |
+| Open | 51 |
 | In Progress | 0 |
 | Fixed | 432 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **569** |
+| **Total** | **570** |
 
 ## All Bugs
 
@@ -109,6 +109,7 @@
 | [BG0567](BG0567-the-upgrading-project-baseline-compares-against-this-tree.md) | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere sits on both sides and is invisible | Open | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0568](BG0568-an-epic-can-never-reach-done-the-test.md) | an epic can never reach Done - the test-plan gate holds a container whose completion is derived, and nothing else checks its breakdown | Fixed | High | 2026-08-10 | 2026-08-10 |
 | [BG0569](BG0569-nothing-stops-a-tool-or-fixture-writing-into.md) | nothing stops a tool or fixture writing into the working tree, and it happened three times in two days - each caught by a gate rather than by its author | Open | High | 2026-08-11 | 2026-08-11 |
+| [BG0570](BG0570-the-write-time-verify-guard-cannot-tell-a.md) | the write-time Verify guard cannot tell a typo from an ordering, so it refuses the first story of every greenfield project | Open | High | 2026-08-11 | 2026-08-11 |
 
 ## Archived Releases
 

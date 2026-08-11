@@ -2649,12 +2649,167 @@ class VerifySelectorWriteGuardTests(unittest.TestCase):
              "--fields-file", path, "--dry-run"],
             capture_output=True, text=True, timeout=900, check=False)
 
+    _ROOT = Path(__file__).resolve().parents[5]
+
+    def _new(self, verify, title="probe"):
+        """The OTHER writer. `artifact.py new` is a documented creation path, and US0667's
+        criterion says BOTH refuse - so the test must drive both or it asserts half its claim."""
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPTS / "artifact.py"), "--root", str(self._ROOT),
+             "new", "--type", "story", "--epic", "EP0215", "--title", title, "--points", "1",
+             "--dry-run", "--ac", "it works", "--verify", verify],
+            capture_output=True, text=True, timeout=900, check=False)
+
     def test_a_verify_selector_naming_no_test_is_refused_at_write(self) -> None:
         # A REAL file, a REAL method name, the WRONG class - the exact shape that recurred twice.
-        r = self._file("it works. **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/"
-                       "test_validate.py::NoSuchClassHere::test_nope")
+        # BOTH writers, because that is what the criterion claims. Asserting only the filer is how
+        # this shipped stamped `Verified: yes` while `artifact.py new` wrote the dead selector
+        # through: the two writers hold `verify` in different shapes, so a reader that saw one
+        # shape was a guard with a documented side door.
+        dead = ("pytest .claude/skills/sdlc-studio/scripts/tests/"
+                "test_validate.py::NoSuchClassHere::test_nope")
+        r = self._file(f"it works. **Verify:** {dead}")
         self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertIn("names no test that exists", r.stdout + r.stderr)
+
+        n = self._new(dead)
+        self.assertNotEqual(0, n.returncode,
+                            "artifact.py new accepted a selector the filer refused:\n"
+                            + n.stdout + n.stderr)
+        self.assertIn("names no test that exists", n.stdout + n.stderr)
+
+    def test_a_node_absent_from_an_existing_file_is_still_refused(self) -> None:
+        """BG0570 AC1: the narrowing must not DISARM the guard.
+
+        A distinct claim from US0667 AC1, which asserts both writers refuse. This one asserts the
+        one case that survived the narrowing: the file listed its nodes and this node is not among
+        them. Every other False verdict is now accepted, so a guard that had lost this case would
+        pass every other test in this class while refusing nothing at all.
+        """
+        target = ".claude/skills/sdlc-studio/scripts/tests/test_validate.py"
+        for writer, run in (("file_finding.file",
+                             lambda s: self._file(f"it works. **Verify:** {s}")),
+                            ("artifact.py new", self._new)):
+            with self.subTest(writer=writer):
+                r = run(f"pytest {target}::ThisClassIsNotInThatFile::test_x")
+                self.assertNotEqual(0, r.returncode,
+                                    f"{writer} accepted a node absent from a file that EXISTS "
+                                    f"and collects:\n{r.stdout}{r.stderr}")
+                self.assertIn("names no test that exists", r.stdout + r.stderr)
+
+    def test_a_selector_that_is_not_a_typo_is_accepted_and_reported(self) -> None:
+        """BG0570 AC2. `selector_resolves` answers False for four different facts and only two are
+        typos. Refusing the others told an author their test did not exist while it sat on disk,
+        and refused the first story of every greenfield project.
+
+        Asserted on the REPORT, not on the absence of a refusal: a silent accept satisfies
+        "not refused" too, and would pass this criterion while telling the author nothing.
+        """
+        import tempfile  # noqa: PLC0415
+        tmp = Path(tempfile.mkdtemp(prefix="ff_notatypo_"))
+        try:
+            # A file that EXISTS but will not collect - a missing import. The environment case.
+            broken = tmp / "test_will_not_collect.py"
+            broken.write_text("import a_module_that_does_not_exist_xyz\n")
+            cases = [
+                # (selector, the fragment the report must carry, or "" for REQUIRED SILENCE)
+                # A file that EXISTS but will not collect: abnormal, so it is named.
+                (f"pytest {broken}::AnyClass::test_x", "will not collect"),
+                # A file that does not exist and whose basename exists nowhere: the ORDINARY
+                # ordering. Accepted SILENTLY - a note here fires on every story in a greenfield
+                # project, and a warning on the normal case costs the signal in the case that
+                # matters.
+                ("pytest tests/test_nothing_of_this_name_anywhere_xyz.py::C::test_x", ""),
+            ]
+            for selector, fragment in cases:
+                # BOTH writers, because the Then clause says both. Driving only the filer is the
+                # exact half-assertion that let `artifact.py new` ship the guard's own hole.
+                for writer, run in (("file_finding.file",
+                                     lambda s: self._file(f"it works. **Verify:** {s}")),
+                                    ("artifact.py new", self._new)):
+                    with self.subTest(selector=selector, writer=writer):
+                        r = run(selector)
+                        self.assertEqual(0, r.returncode,
+                                         f"{writer} REFUSED a non-typo:\n{r.stdout}{r.stderr}")
+                        out = r.stdout + r.stderr
+                        if fragment:
+                            self.assertIn("not judged here", out,
+                                          f"{writer} accepted the abnormal case SILENTLY:\n{out}")
+                            self.assertIn(fragment, out,
+                                          f"{writer} gave the wrong reason:\n{out}")
+                        else:
+                            # The silence is a CLAIM, asserted, not an omission in the test.
+                            self.assertNotIn("not judged here", out,
+                                             f"{writer} noted the NORMAL ordering - that note "
+                                             f"fires on every greenfield story:\n{out}")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_a_misspelled_test_filename_is_still_refused(self) -> None:
+        """BG0570 AC3. Without this, AC2 launders every mistyped PATH into 'greenfield ordering' -
+        the hole the guard exists to close. Same two-way split `fictional_affects` draws for
+        declared paths: a basename that exists elsewhere is a typo, one that exists nowhere is a
+        file not yet written."""
+        # A real test file, reached by a path that is wrong - the directory prefix is mistyped.
+        r = self._file("it works. **Verify:** pytest wrong/dir/test_validate.py::C::test_x")
+        self.assertNotEqual(0, r.returncode,
+                            "a mistyped path was accepted as greenfield ordering:\n"
+                            + r.stdout + r.stderr)
+        # ... and it must NAME the path it found. Asserting only the refusal is weaker than the
+        # criterion: the guard already computed the near miss, and a refusal that discards it
+        # sends the author back to grep - the step the guard exists to remove.
+        out = r.stdout + r.stderr
+        self.assertIn("did you mean", out, f"the refusal named no near path:\n{out}")
+        self.assertIn("tests/test_validate.py", out,
+                      f"the near path did not name the real file:\n{out}")
+
+    def test_one_reader_answers_which_file_a_selector_targets(self) -> None:
+        """BG0570 AC4. Replacing the helper must move the WRITER's verdict. An inlined regex in
+        the guard would pass every other test here while re-creating the divergence: `verify_ac`
+        already parsed a selector's target in three places with two different predicates."""
+        sys.path.insert(0, str(self._SCRIPTS))
+        import file_finding as ff, verify_ac  # noqa: PLC0415
+        real_target, real_coll = verify_ac.selector_target_file, verify_ac.selector_collected
+        dead = "pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::Nope::test_x"
+        try:
+            # Force the helper to report a target that exists nowhere, with no basename match.
+            # Point the helper at a path that does NOT exist but whose BASENAME does. Following
+            # the helper means refusing (a mistyped path, near miss named); parsing the selector
+            # privately means reading its own real path, which EXISTS, and accepting it as
+            # uncollectable. Refuse versus accept - an inlined parser cannot reach the same
+            # verdict, which an earlier version of this test allowed by asserting only acceptance.
+            verify_ac.selector_target_file = lambda *a, **k: "no/such/dir/test_validate.py"  # noqa: ARG005
+            verify_ac.selector_collected = lambda *a, **k: False  # noqa: ARG005
+            with self.assertRaises(ValueError) as caught:
+                ff.check_verify_selectors(".", {"acs": [f"x. **Verify:** {dead}"]})
+            self.assertIn("no/such/dir/test_validate.py", str(caught.exception),
+                          "the guard parsed the target itself instead of asking the helper")
+            # ... and back: a helper reporting a collected file must restore the refusal.
+            verify_ac.selector_collected = lambda *a, **k: True  # noqa: ARG005
+            with self.assertRaises(ValueError):
+                ff.check_verify_selectors(".", {"acs": [f"x. **Verify:** {dead}"]})
+        finally:
+            verify_ac.selector_target_file, verify_ac.selector_collected = real_target, real_coll
+
+    def test_the_refusal_names_the_near_miss(self) -> None:
+        """CR0508: a refusal saying only 'this does not resolve' sends the author back to grep -
+        the step they skipped to get here. Right file, right METHOD, wrong class must name the
+        class they meant."""
+        import subprocess  # noqa: PLC0415
+        target = (".claude/skills/sdlc-studio/scripts/tests/test_validate.py")
+        collected = subprocess.run(
+            [sys.executable, "-m", "pytest", "--collect-only", "-q", target],
+            capture_output=True, text=True, timeout=900, check=False, cwd=str(self._ROOT))
+        node = next((ln.strip() for ln in collected.stdout.splitlines()
+                     if "::" in ln and not ln.startswith(" ")), None)
+        self.assertIsNotNone(node, "could not collect a real node to build the near miss from")
+        cls, meth = node.split("::")[1], node.split("::")[-1]
+        r = self._file(f"it works. **Verify:** pytest {target}::NotThe{cls}::{meth}")
+        self.assertNotEqual(0, r.returncode)
+        out = r.stdout + r.stderr
+        self.assertIn("did you mean", out, f"the refusal named no near miss:\n{out}")
+        self.assertIn(cls, out, f"the near miss did not name the real class {cls}:\n{out}")
 
     def test_one_reader_answers_whether_a_selector_resolves(self) -> None:
         """AC2: `verify_ac.selector_resolves` decides, never a second copy. Replacing it must move
