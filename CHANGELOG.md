@@ -7,14 +7,981 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [5.0.0] - 2026-08-06
+## [5.0.0] - 2026-08-12
 
+### Fixed
+
+- **A measured mutation run now records what it applied, so the repair gate is satisfiable by
+  measurement rather than only by self-report.** `append_ledger` reduced a run to a per-target
+  counter block and discarded its per-mutant records, while `register` - the hand-typed claim -
+  wrote the `mutants[]` list both the repair gate and the plan-execution join select on. The
+  strongest evidence in the system therefore read as NO evidence and the weakest read as proof,
+  which is the exact inverse of what the doctrine claimed about evidence an author could not
+  have manufactured.
+- **`mutation.ledger_entries` exists.** `repair_mutation_gate` called it behind
+  `hasattr(mutation, "ledger_entries")`, which was False for the whole of its life, so the
+  fallback branch was the only branch and any caller reaching for it inside a `try` silently
+  got nothing back.
+
+### Added
+
+- **A release now states the bar it was held to and discloses, by id, every finding it ships
+  open.** `docs/known-issues.md` lists each open Medium and Low finding with its severity and
+  its v5.1 target, and `docs/release-notes-v5.0.0.md` says in terms what the bar was, that it
+  moved, and what moving it cost. A release that reports only what it fixed is one a reader
+  cannot judge, and the residue was previously discoverable only by reading the bug corpus.
+- **The disclosure is GENERATED from the corpus and gated, not maintained by hand.** A
+  hand-maintained list of one's own defects decays in exactly one direction: a finding filed
+  after the page was written is simply absent and nothing notices. The guard compares the id
+  sets in BOTH directions, so an absent finding and a stale row each fail, and it recomputes
+  the totals the prose states from the page's own table rather than trusting them. The count
+  in this repository's records had been wrong every time it was carried forward instead of
+  re-measured, which is the argument for deriving it rather than a footnote to it.
+- **The existing corpus is swept for dead `Verify:` selectors, not only new writes guarded.**
+  `validate.py check --verify-selectors` reports a criterion stamped `Verified: yes` whose
+  selector no longer selects anything, by criterion and selector, so a stamp that reads as
+  evidence for a check that cannot run is named rather than believed. The sweep is OPT-IN: it
+  costs a `pytest --collect-only` per distinct test file, and a check whose cost is paid on every
+  commit is one that gets switched off. Only STAMPED criteria are examined, because an unstamped
+  criterion makes no claim - a dead selector there is the author's business at the next run, and
+  warning on it would fire on every piece of new work.
+- **A scheduled lane runs the two checks the per-commit gate cannot afford.**
+  `tools/verify-corpus.sh` compares the dead-stamp count and the red-criteria count against
+  `tools/verify-corpus-baseline.txt`, from a weekly `corpus-verify` job. The comparison reddens in
+  BOTH directions: a count above the baseline blocks as a new defect, and a count below it blocks
+  as a baseline to lower in the same commit, because a baseline that only ever tolerates is one
+  that never empties. This is the half of BG0535 that stops the rot accumulating unseen - the
+  release verify lane runs ~28 minutes against a 600s budget, which is precisely why nothing ran
+  it and 53 criteria went red across stories already at Done.
+- See the US0667 fragment - US0667 and US0668 are one guard split into two units (the refusal, and the boundary of what it may judge).
+- **A `Verify:` selector that names no test is refused where it is WRITTEN (US0667, US0668, CR0508).** `verify_ac.selector_resolves` already answered the question and no writer called it, so an acceptance criterion could be authored, committed and read as evidence while pointing at nothing. The error surfaced only when somebody later ran `verify_ac`, and only if they did. This repository's own scar: four units shipped with Verify lines verifying NOTHING, and it recurred twice in one session - the author typing the class name the test OUGHT to have had rather than reading the file, both times a single `awk` away. `file_finding.file` and every writer sharing its seam now refuse before an id is allocated or a byte written.
+- **One reader decides, never a second copy (US0667).** The check calls `verify_ac.selector_resolves` and is pinned by replacing that function and asserting the WRITER follows. A divergent reader is the defect this repository has now filed four times, and it would be especially pointless here where the first implementation is complete and tested.
+- **What cannot be JUDGED is accepted and reported, never refused (US0668).** An unknown runner, a `shell` verifier, a runner not installed on this machine - all are written, with a note naming the selector. Refusing what cannot be judged would make every writer unusable on any machine missing one runner, which is a worse failure than the one being fixed. A selector that CAN be judged and does not resolve is still refused, pinned as the control - without it "accept the unjudgeable" is satisfied by accepting everything.
+- See the US0664 fragment - US0664, US0665 and US0666 are one instrument split into three units (the greenfield half, the upgrade half, and the lane that runs them), and separating their entries would make a reader assemble one change from three places.
+- See the US0664 fragment - US0664, US0665 and US0666 are one instrument split into three units (the greenfield half, the upgrade half, and the lane that runs them), and separating their entries would make a reader assemble one change from three places.
+- **`tools/rehearse-release.sh` - the two paths every adopter arrives on, driven end to end through the shipped CLI (US0664, US0665, US0666).** Every other check in this repository runs against this repository. A project that has just been created, and one being upgraded from v4, are the two situations the suite cannot occupy - and walking them by hand once turned up three consumer-facing defects that a 6,000-test suite, twenty gate lanes and a 250-point backlog had all missed. `greenfield` builds a project with `init run`, writes an ordinary first story whose declared paths do not exist yet, and reaches a written sprint plan. `upgrade` builds a v4-era workspace, runs `migrate --apply`, then gates it.
+- **The rehearsal FAILS on the tree as it shipped, and that is pinned (US0664).** A rehearsal that is green on a tree known to be broken proves nothing, and this repository has filed that shape twice. The test breaks the greenfield repair on a COPY of the skill tree and asserts the harness reddens - and it asserts the line it breaks still exists, so a moved repair reports a broken test rather than passing for the wrong reason.
+- **Every fixture is built under a temporary root, asserted twice (US0664).** A `git status` comparison alone is satisfied by a harness that writes inside the repository and sweeps it away on exit - mutation found exactly that hole - so the work root is also asserted to be an `mktemp` directory never derived from the repository. That property is what BG0536 is about.
+- **The upgrade rehearsal does NOT claim the gate is green, because it is not (US0665).** Conformance, reconcile and index-derived all fail on a freshly migrated project, and the remedy is the grandfathering work in a later charter. The failing lanes are compared against `tools/release-rehearsal-baseline.txt` and the comparison reddens in BOTH directions: a lane failing that the baseline does not record blocks, and a baselined lane that starts passing blocks too - because a baseline that only ever tolerates is one that never empties. Each entry names the lane, the artefact that will clear it, and what the lane will say once cleared, so a reader can tell a known gap from an unexplained failure without leaving the file.
+- **The lane binds at the push and release boundaries only (US0666).** The gate is already over its budget on most commits and this lane builds two fixture projects; a guard whose cost is paid on every commit gets switched off, and then it guards nothing. Measured at 0.8s today, and its duration is recorded beside every other lane. A failing rehearsal names WHICH half broke - the two have entirely different owners, and "the rehearsal failed" sends a reader to run it themselves to find out.
+- **`AGENTS.md`'s lane roster names it, and a guard checks that it does (US0666).** The roster's existing sweep is derived from the pre-commit hook, so the one lane that deliberately does not run per commit is the one that sweep cannot see. It is pinned by name, with its boundary, because a guard nobody has written down is one nobody notices losing.
+- **The rehearsal writes no bytecode into the repository either (US0664).** It runs this repository's own scripts, and CPython writes `__pycache__` beside them - inside the tree the criterion says must be untouched. It was invisible until the round-3 repair taught the check to report ignored files, and then the criterion's verifier passed only because a sibling test ran the harness first and warmed the cache. The harness exports `PYTHONDONTWRITEBYTECODE=1`, the test purges the cache before it measures so it holds when run alone, and dropping the guard reddens it. A fifth reviewer found this - it is the relocation pattern the repository names, one repair opening the hole the previous one closed.
+- **The documented `PYTHON` override works (US0664).** `"$PY"` was quoted as a single word, so `PYTHON="python3 -B"` failed as command-not-found and surfaced as `init run did not complete` - an override the harness advertises and could not honour.
+- See the US0662 fragment - US0662 and US0663 are one behaviour split into two units (the softening, and its expiry plus the no-knob guarantee), and separating their entries would make a reader reconcile two halves of one change.
+- **A project that has never closed a sprint gets the plan-review requirement as a REPORT, and every project that has gets it as a refusal (US0662, US0663).** The gate is the strongest evidence-backed feature in the release, and it landed on a first-time user before they had seen anything the tool is for: their first story could not reach Done without a second party reviewing its acceptance criteria against a spec the project may not have had yet, and the only way through was an override marker nobody had introduced them to. The concession is bounded by a condition that expires on its own - a project acquires history by using the tool - so nothing has to be switched back on, and the report names the condition rather than leaving the reader to discover the refusal on their next run.
+- **The arming fact is read from the COMMITTED retros, never from `.local/` (US0662, D0134).** The obvious source is the run archive under `sdlc-studio/.local/run-archive`, and it is the wrong one: `.gitignore` documents that directory as state you can delete and lose nothing, so a fresh clone, a CI checkout or a cleaned working directory would report an established project as brand new and re-grant the concession every time, for ever. A retro is written per closed run and is committed, so a clone answers the question the same way the machine that did the work does. The plan review found this before any code existed, and it is the reason the criteria were rewritten rather than reworded.
+- **An UNREADABLE retro directory answers "this project has run before" (US0662).** That is the one case where failing towards history is right: something is there and cannot be inspected, and reading it as absence would soften the gate on every project the predicate cannot read. An ABSENT directory, and one holding no retro, both answer softened - and they are not the same case, though an earlier draft of this entry said they were. git cannot track an empty directory, so `sdlc-studio/retros/` is simply missing in a freshly cloned or freshly initialised project; arming on absence would mean the concession never applied to the population it exists for. Two independent seats caught the claim before it shipped.
+- **The armed case is pinned in the same unit as the softening (US0662).** Every criterion of the first plan passed on an implementation that deleted the gate outright, and the only test that the gate still refuses sat in the sibling story - so on this repository's trunk-based small-green-unit commits, this unit landing alone would have put the flagship gate off on `main` with nothing able to notice. A seat found that; the criterion exists because of it.
+- **No configuration key can hold the softening open (US0663).** Asserted as an ABSENCE over both `reference-config.md` and `templates/config-defaults.yaml`, with a positive control beside it. The criterion's first verifier asserted the PRESENCE of two strings while its own named mutant was an ADDITION - so adding the forbidden key made the test pass harder. A presence check can never detect an addition, and a seat proved it by execution rather than by reading.
+- **A dormant gate is untouched (US0662).** Schema v2 and `plan_review.enabled: false` both behave exactly as before, captured against the same fixture with the softening disabled rather than against a restatement of the new code. Reordering the branch past the dormancy check turned out to be an EQUIVALENT mutant - the dormant return carries no plan-review wording and sets `fired` False, so nothing observable moves - and that was found by applying it, not by reasoning about it. The mutant recorded is the one that does move: a dormancy check that lets a project without history reach the softening.
+- **Sixteen shipped fixtures were armed rather than the gate loosened (US0662).** Every plan-review fixture in the suite means "an established project" - they exist to test the REFUSAL - and none held a retro, so the softening applied to all of them. Each shared builder now writes one retro and says why; the first-run case builds its own retro-free fixture. The alternative, weakening the criteria until the old fixtures passed, would have shipped a gate whose tests no longer describe it.
+- **`mutation.py run --unit ID`** attributes a measured run's per-mutant rows to a unit.
+  Persisting the rows is only half the change: a row nobody can attribute answers no question
+  the gate asks, so a run that recorded the list without it would leave the gate shut for a
+  second reason nobody had measured.
+- **`mutation.py register --line N`**, and it is REQUIRED for a killed or survived verdict. No
+  shipped verb could record a line before, so the refusal that composes `target:line` printed a
+  question mark, and every test asserting otherwise passed on a fixture the tool itself could
+  not produce. An optional line would be worse than none: a registered `line: None` never joins
+  a measured `line: 2`, so the check that catches a ledger contradicting itself would silently
+  never fire while its own fixture, which always supplies a line, stayed green.
+- **A ledger that contradicts itself refuses in every mode, `off` included.** One mutant
+  recorded `killed` and measured `survived` at the same target, line and content hash is not a
+  quality bar being applied - it is the instrument reporting two different things about one
+  fact, and every figure derived from the false one is wrong with nothing downstream able to
+  tell. Two records that AGREE proceed, which is the control: a check refusing on any
+  co-located pair would pass the refusal test for the wrong reason.
+
+### Notes
+
+- A measured run supersedes only its own kind AND its own unit. Superseding on the target alone
+  meant two units declaring the same file - a sprint touching one module - erased each other's
+  evidence, silently, and the first unit's gate then read as carrying none.
+- The self-contradiction check keys on the mutant as well as the line. Two different mutants at
+  one line are two honest statements, and reading them as a contradiction converted the default
+  reporting mode into a block no configuration could stand down.
+- **Coverage is computed once, and two readings disagreeing is itself an outstanding item
+  (US0596).** One question - is this unit covered by an independent pass? - was being answered
+  by three separate computations, and a single close reported `9/9 covered`, `0 covered, 37
+  uncovered` and `71 recorded passes` about the same batch. The close chain's own
+  `review_coverage` is now the authority: it is the richest of the three and already what the
+  close refuses on, so the page and the gate cannot diverge. The closing-review row and the
+  attribution row both read it - the first for coverage beside its own terminal-verdict rule,
+  the second to tell a unit covered by a non-verdict lane from one covered by nothing, and the verdict fold is demoted to explaining WHY a unit is
+  uncovered - one computation decides, the other explains, never two deciding. A new row
+  compares that reading against the verdict ledger's and reports a disagreement with BOTH
+  figures named, because a report contradicting itself is a fact about the report and nothing
+  previously noticed it.
+- **Unifying the coverage reading had voided the guarantee it was meant to preserve.** Delegating
+  the whole decision to `review_coverage` meant a recorded rejection stopped being terminal: its
+  negative test reads only the per-unit verdict ledger, so an adversarial-evidence row, or a
+  stale APPROVE under a later sprint-level REJECT, cleared the closing review and printed
+  `N unit(s) approved` over a batch nobody had cleared. Two of the sibling unit's own mutants
+  went from killed to surviving in the commit that was supposed to unify the readings. The
+  shared reading is the authority on COVERAGE; a non-approving verdict is still terminal for the
+  unit, and both now apply. The attribution row's new branch is removed: it appended to `covered`
+  while the row's figures still came from a counter with no evidence lane, so the row printed
+  `2 unreviewed` beside `US0001 by adversarial evidence` and contradicted itself in one line.
+- **The tick check was inert for every story, and reported a pass over nothing.** It read only
+  `- [x]` checkboxes - the BUG convention - while a story's claim is a `- **Verified:** yes`
+  stamp under an `### ACn` heading. Measured over the corpus: 0 of 651 story files yielded a
+  criterion it could see, including the unit whose two false ticks are the rationale this row
+  cites. It reads both conventions now (625 of 651), and a run in which it examined NO ticks is
+  reported outstanding rather than supported - a pass over an empty set is not a pass, and it is
+  how the row read green across a whole batch while understanding one of the two conventions its
+  corpus is written in.
+- **The diff source behind the tick check is exercised against real git, and a ref cannot make
+  git write a file.** `_changed_paths` was mocked in every test that reached it, so four mutants
+  survived the whole suite - each turning "cannot look" into "nothing changed", which the row
+  reads as every tick contradicted. It is now driven against a real repository, and its failure
+  paths answer None rather than an empty set, which are opposite verdicts one layer up. The base
+  ref was interpolated into a single argv token: `--output=<path>` was parsed by git as an
+  OPTION, wrote that file, exited 0 and returned an empty diff. The ref is verified with
+  `rev-parse` first and the diff arguments are terminated with `--`.
+- **A checklist row's WINDOW is drift-checked like its command.** The resolvability assertion sat
+  behind a guard that was permanently empty, so a window naming a verb nothing exposes passed
+  every test. `cycle_drift` walks windows on the same terms as commands now.
+- **The closing-review checklist row reads verdicts instead of counting passes (US0593).** It
+  reported `ran` over four rounds of which three rejected, because a count cannot see a verdict.
+  It now takes the LAST verdict recorded against each unit - a REJECT is a verdict on a revision,
+  not a property of the work - across BOTH ledgers that hold them, and clears only when every
+  unit in the batch is covered AND no unit carries a later non-approval - a recorded
+  rejection stays terminal whatever a coverage lane says. A batch of twelve with one approval is not a
+  reviewed batch. When it is outstanding it says which of the two reasons applies: verdicts read
+  and not cleared, or nothing recorded at all - only the first means somebody should go and
+  re-review. Ordering is by recorded stamp with a stable tiebreak on append order, never by date
+  alone: verdicts are written with a date and no time, so two in one sitting tie and a date-keyed
+  `max()` would pick either.
+- **Omitting the Sprint Goal is no longer a free way past the goal-review gate (US0592).** The
+  refusal was guarded on a goal being PRESENT, so `sprint plan --write` with no `--sprint-goal`
+  returned 0, opened the run, recorded the goal as unreviewed - and the close then raised the
+  item at a point where the batch had already been delivered and a waiver was the only exit.
+  The plan now refuses, where the review can still be run, and the deliberate escape is
+  `--goal-review-waived "<who authorised it>"`, written to the decision log at plan time under
+  the subject the close actually reads. A project with no review seats configured is carved out
+  on the same terms the sibling refusal already uses: nobody there could have reviewed a goal,
+  so refusing would refuse something nobody can satisfy.
+- **A preview plan can no longer bank a permanent waiver.** `--goal-review-waived` recorded its
+  decision-log row whether or not `--write` was given, and a waiver is read by SUBJECT rather
+  than by run - so a preview silenced the compulsory `goal-seat-reviewed` item for a later,
+  unrelated close. It is refused without `--write` now, refused beside a stated goal (where the
+  gate is armed and the escape is not the answer, rather than being silently ignored), and not
+  banked under the no-seats carve-out where no refusal could ever have fired.
+- **An expired checklist row is reported by the CLOSE, not only by the rendered page.** The
+  close and its dry-run pre-flight both built their output from `outstanding` alone, so four
+  rows that were NAMED at the base ref were named nowhere afterwards - the close's own report
+  lost information to the change that was meant to improve it, which is the vanish-instead-of-
+  report failure the criterion forbids. Both surfaces now name them with the command that should
+  have enforced them, and the pre-flight marks them non-blocking so reported-not-held means the
+  same thing everywhere rather than only where it was first implemented.
+- **An uncommitted surface is reported as THAT reason, not as no evidence (US0573).** The mutation runner correctly refuses to mutate a file carrying uncommitted work - a mutant applied there cannot be told from that work when the file is restored - but the lane reported it identically to a surface nobody ever tested. Only the second is the author's omission, and an advisory saying the same about both teaches an author to ignore it. The reason now names the state and BOTH routes to a measured verdict: an isolated checkout, or a hand-applied mutant recorded with `register` - together with the discipline that makes a hand run trustworthy, since a cached module reports a false survival and a non-unique anchor patches the wrong function.
+
+### Notes (2)
+
+- Re-verified through `mutation.py run` rather than through `series_reason`, and that found the
+  claim FALSE at the shipped entry point: the refusal a person actually reads named only the
+  isolated-checkout route, while the string the library test asserted on named both. The
+  refusal now carries both, with the discipline that makes a hand run trustworthy.
+- **A `--dry-run` wrote into the repository it was asked only to describe.** Creating an artefact
+  takes an advisory lock so two agents in one wave cannot mint the same id, and the lock was taken
+  before the preview branch decided to write nothing - so the one verb whose entire contract is
+  that it changes nothing opened a file in the target tree every time it ran. A preview has
+  nothing to serialise: it allocates no id and appends no row, and two previews naming the same
+  candidate id is harmless because neither consumes it. The invariant is now asserted over the
+  whole tree rather than over the lock, so whatever a preview starts writing next fails too.
+- **It was found by a lane refusing a commit, and by measuring rather than believing the first
+  explanation.** The obvious reading was a concurrent session writing during the hook's window, a
+  known and separately filed limitation. Instrumenting the lock to name its caller instead showed
+  the suites genuinely writing the live repository's lock, through a test that drives the creation
+  verb at the checkout it is running inside with a preview flag as its only guard.
+- **The test written to prove a fixture cannot write into the working tree was the thing writing
+  into the working tree (BG0573).** The guard test in `FixtureRootGuardTests` -
+  `test_the_fixture_refuses_to_build_outside_a_temp_directory`, added for BG0536 - computed the
+  checkout root from `__file__` and handed it to
+  `SurvivorGateTests._repo`, relying entirely on the guard to refuse it. For any checkout under
+  `/tmp` - which is where this repository's own process tells reviewers to work - the guard did
+  not refuse, so the call BUILT its greenfield workspace over the checkout: `src/thing.py`, a
+  fake `BG0001-x.md`, an overwritten `sdlc-studio/.local/run-state.json` and
+  `mutation-runs.json`, an emptied `.gitignore`, then `git init` and `git add -A` over the whole
+  tree. The destructive root is now a fake checkout under `tempfile`, so a guard regression costs
+  a temp directory rather than somebody's work, and the claim about the real repository root is
+  asked of the predicate, which writes nothing.
+- **The fixture guard now asks what a root IS rather than where it lives.**
+  `str(root).startswith(tempfile.gettempdir())` answers "is this under /tmp", which was inert for
+  the entire population most likely to trip it: every rsync copy a reviewer works in satisfies it,
+  so the refusal could not fire and its negative case could not even be constructed. The guard
+  refuses a root holding `.git`, or one that is - or contains - the repository this test file
+  lives in. That discriminates whether the checkout sits under `/tmp`, under `$HOME`, or
+  anywhere else, and it is now shared by both fixtures in the module rather than pasted into each.
+- **An rsync copy with no `.git` is refused too.** Reviewers are told to copy the tree without
+  the repository, so a guard resting on `.git` alone would have been inert for exactly the same
+  population as the one it replaced.
+- **BG0536's AC1 selector follows the rename.** It named the test this change removed, which
+  would have left a criterion pinned by a verifier that resolves to nothing - the failure BG0523
+  was filed for. The claim is unchanged; only the verifier moved.
+- **The write-time `Verify:` guard could not tell a typo from an ordering, and refused the first
+  story of every greenfield project.** `selector_resolves` answers False for four different facts,
+  and the guard refused all of them. Only two are mistakes an author fixes by reading a file. A
+  test file that does not exist is ordinary test-after-story ordering - and in a new project no
+  test file exists yet, so writing any story with a `Verify:` line was refused outright. A file
+  that EXISTS but yields no node list is an environment problem - a missing import, a syntax
+  error, dependencies not installed - and refusing it told the author their test did not exist
+  while it sat on disk, in every fresh clone. Both are now ACCEPTED and reported as unjudged, with
+  the reason that actually applies rather than a fixed list of three that may all be false.
+- **A mistyped test PATH is still refused, and now names the file it found.** The split is the one
+  already drawn for a declared `Affects` path: a basename that exists elsewhere in the tree is a
+  typo and is refused with "did you mean <path>", while a path whose basename exists nowhere is a
+  file not yet written and is accepted. Without that second half, every misspelled filename would
+  have been laundered into "greenfield ordering" - the hole the guard exists to close.
+- **`selector_resolves`, the near-miss hint and the write-time guard now read a selector's target
+  through one parser.** Three readers of the same question is how they drift; a differential run
+  over 2,548 real `Verify:` selectors and 28 edge shapes confirms the rewiring changes no verdict,
+  so `unresolvable_stamps` and the conformance lane are untouched.
+- **An epic can reach Done (BG0568).** Every epic `refine` minted was permanently un-closable. The test-plan gate fires on every artefact type, an epic ships no test plan of its own, `--force` did not clear it, and the `testplan derive` its refusal named could not run because `refine apply` writes epic criteria in a shape the deriver cannot read. `reconcile` then reported the epic as stale for ever, so the delivery backlog read larger than it is with no way to correct it. Found at the close of a sprint whose every story was Done and signed off.
+- **The epic is released from the test-plan gate, and ONLY the epic (BG0568).** Written as `type_ != "epic"` rather than an allow-list of code-carrying types: the latter would silently release `cr`, `plan`, `test-spec` and `workflow` as well - four types this bug's evidence says nothing about, and 370 of 543 CRs here carry an `Affects`. A criterion pins all four as still held, which is what makes the two candidate implementations distinguishable. Mutation found the first version of that criterion could not tell them apart.
+- **In its place, the gate an epic should always have had (BG0568).** `reconcile.epic_status_stale_drift` already documented the contract - it is detect-only "because closing an epic is a status transition and `transition.py set` is where an epic's own gates live" - and that counterpart did not exist. The test-plan gate had been accidentally standing in for it: a seat applied the scope fix alone and closed a fixture epic whose only child was still `Draft`, at exit 0.
+- **It is not entry-triggered, which its neighbour is (BG0568).** `In Progress` is in an epic's own status vocabulary, so a gate guarded by `from_canon not in _IMPL_TARGETS` is skipped on the ordinary `In Progress -> Done` route. A seat measured that closing at exit 0 under the first implementation; the criterion now requires refusal from both entries.
+- **It reads what the DETECTOR reads (BG0568).** `reconcile.declared_breakdown_ids`, never `sdlc_md.children_of` - one enumerates the Story Breakdown table and the other follows back-links, and they disagree on 10 of this repository's 214 epics. A gate reading one while the census reads the other would let a closed epic keep reporting stale, which is this bug's own class one level down.
+- **It mirrors the detector's silences, with one deliberate inversion (BG0568).** An empty breakdown and a `Deferred` child close; an unresolvable declared id refuses. The reason they differ is the point: `Deferred` is a recorded human decision about that child, while an unresolvable id is an absence nobody made - the detector calls it "unknown, not finished", and an epic must not close over a child nothing can confirm.
+- **And it is FORCEABLE, with the bypass recorded (BG0568).** That is load-bearing, not a concession: a gate with no override and no honest answer is precisely the defect being replaced, and reintroducing one here would be the same bug in a new place. It sits inside the `not force` ladder, so `_force_bypassed` re-runs the gates with force off and stamps a `Forced-override` naming what was waived. No criterion asserted this until a third review round pointed out that an implementation omitting the guard would pass every other one.
+
+### Changed
+
+- **The reference catalogue is generated from the filesystem.** `help/references.md` carried a
+  hand-maintained prose blob naming fifty-plus files; an index that long is wrong the first time
+  somebody adds a reference and forgets, and wrong in the direction nobody notices. It is a
+  walked table now, with each row's description read from the reference's own first descriptive
+  line - so a file that changes what it is about changes its own row. A reference with no
+  descriptive line gets its filename stem, stated rather than left for a caller to pick.
+- The description reader skips generated blocks, whole HTML comments and fenced examples, and
+  reads through a `**bold**` lead-in. Seven rows shipped a comment tail, a marker line or a
+  table fragment as their description because the first pass skipped only the line that OPENED
+  a comment - and the test that would have seen it ran on a two-file synthetic fixture. It runs
+  over the real tree now, which is where the corpus actually is.
+- `docgen.py references` and `surface` thread `--root` through to the CONTENT, not only to the
+  file they write. Both called their renderer with no argument, which defaults to the real
+  installed tree - a flag that looks wired and is not. Found by the first test to drive the
+  command through `main()`, which is the whole argument for the lane check.
+- Descriptions are read by PARAGRAPH. Markdown wraps, so a line-by-line scan reads a
+  continuation as the start of a thought: `reference-delivery.md` described itself as
+  "worktree, then merged", the tail of a bullet two lines up. Inline emphasis is stripped -
+  a table cell is a summary, not a rendering surface, and an asterisk pair carried into the
+  payload fails its own markdownlint emphasis rule.
+- **The seven bug-side duplicate Verify groups are split, and the baseline empties of
+  intra-record debt (US0636).** All seven were `unittest discover` runs over a whole file, the
+  shape `selector_resolves` cannot answer for at all - so they were invisible to the report that
+  names duplicates and a cosmetic split would have left them that way. Bugs are held to the same
+  discriminating-selector rule a story is, because a shared selector parked in a bug is one the
+  burn-down would never look at. What remains baselined is cross-record only.
+- **The thirteen story-side duplicate Verify groups are split into selectors that discriminate
+  (US0635).** Two criteria sharing one selector cannot both be evidence: a regression in either
+  fails both and neither says which, and nine of the thirteen were whole-file runs standing as
+  proof for criteria they never separately exercised. Each criterion now names one test that
+  RESOLVES - uniqueness alone is met by appending junk that collects nothing, which would have
+  emptied the groups, gone stale in the baseline and burned nothing down. Five criteria had no
+  distinct test to point at and got one written rather than a narrower `-k` expression. The
+  baseline shrank by twenty entries and gained none.
+- **`reference-doctrine.md` rule 21 describes what the tree does.** It named `transition.py` as
+  refusing a repair with no mutation evidence; that was false in both directions - the gate had
+  no caller, and the default now files rather than refuses. The passage states the three modes,
+  names the two cases that ignore the setting, and ENUMERATES its mechanisms so the guard beside
+  it can check each is reached from the gate ladder rather than merely defined.
+- **The passage carries an upgrade note.** A project that installed an earlier version and read
+  the rule as a refusal is told, in one sentence, that the default moved and that
+  `review.mutation_evidence: block` restores it. A documented refusal quietly becoming a
+  documented report lowers a bar on somebody else's project without their knowing.
+- The Definition-of-Done template's repair clause and the `repair.mutation-evidence` check
+  registry both say what the default DOES rather than promising enforcement it no longer
+  performs, and the carried lesson cites the gate's current behaviour rather than the old one.
+- **Terminality is judged against the child's own type (BG0568).** The breakdown resolver yields each child's type beside its status; deriving it from the id prefix would read a bug's `Fixed` against the story vocabulary and call a finished bug unfinished.
+- **A repair pass could unmake an artefact.** markdownlint's strong-emphasis rule enforces one
+  style per file and, left to itself, INFERS that style from the first occurrence. A filename
+  carrying a bare double underscore in a bug title was such an occurrence, so the whole document
+  was judged underscore-styled and the auto-fix the gate recommends by name rewrote every
+  `> **Status:**` metadata line into a spelling the schema reader cannot match. The reader then
+  reported a missing Status on a file the tool itself had just written, restoring the asterisks
+  made the linter fail again, and the two guards had no shared fixed point. The style is now
+  pinned to asterisk in the root config, which the shipped payload's config inherits, so nothing
+  is inferred and the metadata block cannot be flipped by any document's contents.
+- **Pinning alone moved the damage rather than removing it, so the token is refused too.** With
+  the style pinned, the auto-fix rewrites the other side of the same disagreement: the filename
+  in the heading becomes bold text and stops being a filename. The one spelling both guards leave
+  alone is a code span, so the style guard now refuses a bare double-underscore pair in markdown
+  prose and prints the backticking remedy, before anything can run the fix over it.
+- **The command the title names now runs the guard that protects it.** `npm run lint:fix` went
+  straight to the fixer with no precondition, so the refusal above was in force everywhere
+  except in the one command it was written for. The script chains the style lane ahead of the
+  fixer and stops on its non-zero exit. The precondition is repo-wide rather than scoped to the
+  files about to be rewritten, so an unrelated style finding elsewhere now blocks the fixer too:
+  the fixer is itself a whole-tree pass, and a scoped precondition would leave the file it is
+  about to rewrite unguarded whenever the scope missed it.
+- **The new refusal discriminates, measured against the corpus before it shipped.** A fenced
+  block, a code span, a lone run of underscores (the persona questionnaire's answer blanks) and
+  an intraword pair are all left alone - none of them is emphasis, and none is ever rewritten.
+  Over every tracked markdown file the check reports nothing, so it arrived green against the
+  tree it guards rather than with a suppression list.
+- **The page every existing user is sent to describes v5 (BG0560).** `docs/existing-users.md` was titled *SDLC Studio v4 for existing projects* and described v4's changes, while README routed three separate paragraphs to it and one of them called v5 a drop-in requiring no migration. It now leads with what v5 **refuses on day one**: `sprint.breakdown` defaults to `enforce`, so `sprint plan` refuses a backlog that predates the `Affects`/`Points` fields; and `conformance.adopt_after` defaults to unset, which judges every story a project has ever written, so `gate.py` fails on history written before the rule existed. Each has a one-line remedy beside it. The two dormant gates an operator can opt into are listed too, because they are the ones people ask about and silence reads as risk.
+- **The page is checked by EXECUTING what it says, not by grepping it (BG0560).** Its upgrade steps are parsed out of its own fenced block and run against a v4-era fixture. The plan review's sharpest finding was that a test hardcoding the sequence still passes after the page is reverted - it measures the fixture, not the document - so every executed step is also asserted to appear in the page. A page that stops saying something stops having it checked.
+- **The page's stated defaults are compared with the resolved ones (BG0560).** A row claiming a gate is dormant when it fires, or fires when it is dormant, reddens rather than reassuring a reader who is about to be refused. Asserting only that each key is *mentioned* let a row state the opposite value and still pass; mutation found that.
+- **The page is honest that the gate is red first (BG0560).** It says to expect `conformance`, `reconcile` and `index-derived` to fail after `migrate --apply`, names the two commands that clear them, and points at `tools/release-rehearsal-baseline.txt` where the same three lanes are recorded with the artefact that will close them. Claiming a green gate would have been the false claim this work exists to remove.
+- **`reference-upgrade.md` hands the reader off (BG0560).** It is the document a migration reads first and it covers schema v1-to-v3 identity only, so it now names the two v5 gate defaults and sends the reader to the consuming page before returning to the numbering question.
+
+### Changed (2)
+
+- **The release-notes half of this bug moved to SC0007 under D0135 (BG0560).** The two halves were mechanically contradictory rather than merely large: `changelog.py compose` folds only into `[Unreleased]`, is destructive and all-or-nothing, and writes unit ids into essentially every bullet - so clearing the 34 uncomposed fragments produces exactly the id-laden section the release-notes criterion required to be free of them. SC0007, the charter that cuts the release, already names both as preconditions.
+- **README.md became test-relevant, and the selection roster says so (BG0560).** A test now reads its three routes to the upgrade page, so a README edit can change a test outcome and must select the suites. It had been on the skip list, correctly, until the day a test started reading it - the shipped rule is that a doc a test asserts over selects, and the entry simply stopped matching the rule.
+- **The `doc-surface` gate lane no longer reports a permanent failure in every consuming project (BG0559).** It called a measurement defined over the SKILL's own hand-written documentation, which a consuming project does not have. The import raised, the lane's blanket `except` reported `NOT MEASURED - command_audit.verb_coverage raised ModuleNotFoundError: No module named 'surface'` with count 1, and it did so on every gate run, forever, naming an internal Python module the operator had no way to act on. It now reports `N/A (not the skill repo)`, exactly as the `doc-coverage` lane beside it already did on the same tree in the same run.
+- **The close report's row was the second reader, and is fixed with it (BG0559).** `sprint_report`'s doc-surface row calls the identical measurement and returned `unreadable` on the same projects, so repairing only the gate would have left the same advisory one surface over. Both now ask one predicate, `doc_coverage.is_skill_repo`, and a test proves all three readers move when it is replaced.
+- **The applicability test is asked at the LANE, deliberately not inside the measurement (BG0559).** `command_audit` resolves a BARE skill tree - one passed as the root itself rather than nested under `.claude/skills/` - and `command_audit.py --coverage` measures 257 verbs there. Pushing the test down into `verb_coverage` would have silently switched that off, and no fixture shaped like a consuming project could have seen it. The criterion pins a non-zero count on a bare tree; the weaker version of that assertion survived its own mutant, because `0 of 0 verbs` also contains the word.
+
+### Changed (3)
+
+- **This lane's own tests had never measured it (BG0559).** Every root in the shipped `DocSurfaceLaneTests` was `parents[4]`, which is `.claude`, not the repository - so each call raised `ModuleNotFoundError`, and `assertIn("verb", detail)` passed on the substring inside `verb_coverage` **in the error message**. A fourth, in the close report's own suite, carried the same wrong root and was hidden by a mock that bypassed the broken import. Four tests, green since the lane shipped, asserting against its failure text or around it. That is the same defect as the bug, one level up, and it is why a 6,361-test suite was green on a lane that was broken in every project that is not this one. The roots are corrected and the class now measures what it is named for.
+- **A greenfield project can plan its first sprint (BG0558).** `sprint plan` refused a unit whose every declared `Affects` path failed to resolve, calling it a fictional `Affects`. In a project that has just been created every path is legitimately unresolvable, because the story describes code nobody has written yet - so the shipped initialiser produced a project whose first sprint plan was refused, and the only remedy on offer was switching a grooming gate off on day one. Measured through the CLI on a fixture built by `init run`: exit 2 and no run written, now exit 0 and a run opened.
+- **The rule catches a TYPO, which is what it was written for, rather than an absent file (BG0558).** `file_finding.fictional_affects` is the one predicate behind every refusal: a basename that exists elsewhere in the tree is a wrong directory prefix on a file that really exists - the measured hazard BG0144 records, typed six times in one session - while a basename that exists nowhere is a file the unit will create. The decision and the "did you mean" message it prints come from ONE lookup, so the rule cannot drift from its own explanation.
+- **`refine apply` and `artifact new` mint a story that only creates files (BG0558).** The grooming gate was not the only caller: `file_finding.check_affects_resolvable` refuses at CREATION for every writer, so a purely creative unit could not be minted at all. Found because it refused CR0542's own rehearsal stories - the repair for this bug could not be planned until this bug was fixed. Pinned as its own criterion, with a mutant proving it is not satisfied as a side effect of the plan-time fix.
+- **A unit that declares an `Affects` is no longer told it lacks one (BG0558).** The refusal read `lacks: Affects (no declared path resolves: ...)` and then explained how to add a field the story already carried, sending the author to fix the wrong thing. It now reads `typo: Affects names a path that does not exist while its filename does: src/authh/signup.py (found at src/auth/signup.py)` - the verb is derived from whether anything is actually absent, not hardcoded in the renderer.
+
+### Changed (4)
+
+- **Four shipped fixtures moved, and the ruling is recorded rather than explained afterwards (BG0558).** `src/does-not-exist.py` and `nowhere/ghost.py` sat under a refusing expectation while carrying no basename anywhere in their trees - the creation case wearing a typo's label. They are replaced with genuine typos and each carries the creation case beside it as a positive control, so the pair now discriminates where one alone did not. `test_the_predicate_and_the_grooming_gate_never_disagree` HOLDS unchanged: both sides read the shared predicate and move together, which is what it exists to pin. Its helper did change - it inferred "refused for resolvability" from "is ungroomed AND every path is unresolvable", so a unit ungroomed for a different reason (these fixtures carry no acceptance criteria) counted as a resolvability refusal, and the invariant reported a disagreement that was the helper's own. It now reads the gate's recorded verdict instead of re-deriving it.
+- **The close's dry run prints every line of a refusal, not just the first (BG0557).** `_close_checklist` builds a multi-line block naming each outstanding item, and `dry_run_report` cut it at the first newline - throwing away exactly the part written to name the cause. A run reported "1 compulsory checklist item(s) unanswered" and never said which, so the reader had to run the command again to find out. That truncation alone explains the reported symptom.
+- **Blank continuation lines are still dropped (BG0557).** Pinned as a positive control on a blank-padded body: "print every line" is otherwise satisfied by a renderer that pads the report with empties, which is noisier than the truncation it replaces. A single-line fixture cannot tell the two apart, and mutation proved it.
+
+### Changed (5)
+
+- **The bug's first half could not be reproduced, and is recorded rather than built on (BG0557).** It reported `--dry-run` composing a different checklist from the real close. In this session the dry run reported unanswered known-issues rows, rulings were added, and the real close then passed - a state change between two runs, not a divergence between two composers. The bug's own note already recorded that calling `_close_checklist` and `sprint_report.checklist` directly both returned ok. A repair for a divergence nobody can reproduce is a repair aimed at nothing.
+- **A mis-declared `Affects` bypassed the repair-mutation gate entirely.** The gate took its
+  mutatable surface from the author's own declaration and opened when that yielded no Python
+  file, so a repair declaring `Affects: README.md` while changing a module reached a terminal
+  status carrying no mutation evidence at all - measured under the blocking mode, exiting 0 and
+  writing `Status: Fixed`. The surface is now taken from the DIFF against the run's base ref. A
+  declaration can only ever SHRINK the derived surface, so deriving from it handed the author the
+  fail-open one step over; this is the repair `verify_no_surface_claim` already carried, applied
+  to the gate beside it, which derived from the declaration for exactly the same reason.
+- **The gate now fails closed when it cannot take a diff.** No open run, or a base ref that does
+  not resolve, refuses rather than opens: a derivation that cannot run yields no targets, and no
+  targets was indistinguishable from nothing to mutate, so the fail-open was reachable by simply
+  not having a run open.
+- **An empty surface no longer grants its own exemption.** It is a claim, granted by a recorded
+  exemption that gets re-derived, never inferred from the derivation coming back empty - otherwise
+  a repair touching no Python file passes unexempted and the record decides nothing.
+- **The doctrine said the opposite of the gate, and now says what it does.** Rule 21's `block`
+  bullet described the demand as derived from the unit's declared `Affects` and called the mode
+  "not yet airtight" - true before this change, false after it, and the one place a consuming
+  project reads the gate's terms. It now states the diff-derived scope AND the consequence a team
+  has to decide on: `block` requires an open run, because deriving from a diff needs a base ref to
+  diff against. Projects that transition repairs outside a run are told to stay on `report`.
+- **The refusal tells the two cases apart.** A repair whose diff changes no mutatable file was
+  sent to `mutation.py register --target <file>` with no file to name - a demand its author could
+  not truthfully satisfy. It is now told that this is an EXEMPTION and that an exemption is
+  granted by a record which gets re-derived, while a repair that DOES change mutatable files is
+  told which ones.
+- **The warning ratchet's stale message no longer contradicts its own exit code (BG0543).** It read `Not`clean`while the baseline records what the tree no longer carries` and exited 0, which the whole `npm run lint` chain treats as clean. A message and an exit status that disagree is the same class as a refusal that does not refuse, pointing the other way. The message now states that it is REPORTING rather than refusing, and prints the exit code it actually returns - derived from the value returned rather than restated beside it, so the two cannot drift again.
+
+### Changed (6)
+
+- **BG0543's premise was verified first, and most of it was false (BG0543).** The bug said the ratchet "still exits 0 on a stale baseline" and its criteria demanded every state exit non-zero. Measured through the shipped CLI, one state per probe: not-baselined with live instances exits 1, corrupt exits 1, reasonless exits 1, and a baseline with nothing live and nothing recorded correctly reports clean. Four of five were already right. The fifth is a DELIBERATE decision the code documents - a repaired instance is good news, and refusing the commit that repaired it would teach an author to stop repairing - and this unit does not overturn it. The criteria were narrowed to the half that survived, and the false half is recorded on the artefact rather than built. This is the second time in two sprints that verifying a premise before building on it changed what was built.
+- **`sprint plan` under `sprint.affects_check: block` now refuses (BG0542).** It printed `REFUSED under sprint.affects_check: block`, exited 0, and wrote the offending unit into the batch. BG0521 had been filed because `plan` under `block` was byte-identical to `warn`; its repair made the MESSAGE say REFUSED and left the command unchanged, which is worse than the honest advisory it replaced. A gate announcing a refusal it does not perform teaches an operator to read every other refusal as decoration.
+- **The refusal happens where every other refusal happens (BG0542).** Before the run is opened and before the plan is written, with a non-zero exit - not in a renderer that runs afterwards and decides nothing. The criterion asserts the exit code and the absence of a written run; the wording is deliberately not asserted, because the wording is exactly what the previous repair changed.
+- **`warn` still plans (BG0542).** Pinned as a positive control, because "block refuses" is otherwise satisfied by a plan that refuses every contradiction whatever the mode - BG0521's defect inverted, with the config key again deciding nothing.
+- **The repair-mutation evidence rule the doctrine states is now the rule the command
+  performs.** `transition.py set` reaches a `mutation_evidence_lane` composing
+  `repair_mutation_gate` and `verify_no_surface_claim`; both had zero non-test callers, while
+  `reference-doctrine.md` told consuming projects the terminal status was refused without
+  evidence. The lane sits OUTSIDE the `review.test_plan_after` cutoff, which governs a
+  different gate: hung inside it, `review.mutation_evidence: block` would have been inert in
+  every project that never set an unrelated date.
+
+### Added (2)
+
+- **A surviving mutant becomes a severity-rated bug, and the transition proceeds.** Under the
+  default `review.mutation_evidence: report`, a repair closing with a survivor files a finding
+  naming the unit, the criterion, the mutant, the test that failed to kill it and how to
+  re-register once it is fixed. A team then decides in its next sprint whether to fix it or
+  live with it. Reporting rather than blocking is only an honest trade if the thing traded
+  away lands somewhere a person will see it: a survivor named in a terminal window that then
+  closes has been dropped, which is the outcome blocking was rejected to avoid.
+- **Severity is derived from structure, and says what it read.** High where the enclosing
+  function raises, or returns a value on one path and `None` on another - this codebase's
+  refusal idiom, so an unpinned line there is an unpinned decision about whether to refuse.
+  Medium for a reporting path, Low at module level or off a Python line. An unparseable file is
+  Medium and says the severity is UNDERIVED: never High, which would inflate triage on a file
+  nobody could read, never Low, which would bury it. Each finding names the signal, so triage
+  has something to disagree with rather than a bare verdict.
+- **The close counts the survivors the run let through, by severity**, derived by reading the
+  filed artefacts rather than from a tally kept beside them - a tally is right for exactly as
+  long as nothing else ever writes one.
+- **The close names which mode held the run**, and whether it was set or defaulted. An
+  unrecognised value is refused by name and the close does not proceed on a guess: a project
+  that wrote `blcok` asked for a hard bar, and handing it the reporting default would switch
+  that bar off with nothing said.
+
+### Notes (3)
+
+- The filing happens once per command, in `transition()` past the dry-run return.
+  `_pre_write_gates` runs up to three times per `set` - the dry-run preflight, the real
+  transition, and the force-bypass re-run - so a filing inside the gate would mint two or three
+  artefacts from one command and write during what is contractually a dry run.
+- Idempotence is keyed on a `Mutation-survivor` field stamped on the artefact, not on a cache:
+  a cache loss re-mints, and the finding is then in the backlog twice with nothing saying which
+  is which. The same field cuts the generational hazard - a unit carrying it never files
+  another, so a survivor bug cannot parent a survivor bug for ever.
+
+- The close's count is scoped to the run that filed the survivors, by a run id stamped on each
+  artefact. Without it the row counted every survivor ever filed while claiming to count this
+  run's, and the number only ever grew.
+- `--force` no longer skips the filing. A force taken for an unrelated reason would otherwise
+  drop the survivor silently, which is the outcome reporting exists to prevent.
+- **SKILL.md carries the sections its own checklist requires**: a `## See Also`, and `When to
+  Use` as trigger phrases rather than the single vague sentence the skill's own best-practices
+  file gives as its BAD example. It also names the four top-level documents - PRD, TRD, TSD and
+  story - which the Progressive Loading Guide had never mentioned.
+- **`disclosure.py` measures the progressive-disclosure depth**, breadth-first: 3 hops from
+  SKILL.md reaches the furthest of 99 files. Reported and never gated - the path is not fixable
+  without a rewrite this change is not doing, and a number somebody can act on beats a silence
+  that reads as absence.
+
+### Notes (4)
+
+- The depth is measured by SHORTEST path. A depth-first longest path measures how far a reader
+  could wander (37 hops here, and 53 on an earlier cut) which is a wrong answer wearing a
+  number: it describes link density, not disclosure.
+- `disclosure.py`'s new depth resolver is named `_depth_root` so it stops shadowing the
+  `_skill_dir` that `check()` relies on. The first version left a verbatim duplicate of four
+  helpers in the file and silently widened what `check()` considers an applicable tree - an
+  unnamed behaviour change in a script this same run had just wired into the lint aggregate.
+- `nesting_depth` is CALLED. It had zero non-test callers - a measurement nothing invokes
+  reports to nobody, the exact shape this project filed as BG0541 and spent a sprint repairing.
+  `disclosure.py` now prints the measured depth (3 hops from SKILL.md to `help/refactor.md`
+  over 99 reachable files) in both text and json, gated on nothing.
+- **Every reference at or over 400 lines carries a generated Reading Guide** - 26 of them, where
+  three had a hand-written one. Each entry carries a LINE SPAN, not just an anchor, so an agent
+  can `Read(offset, limit)` the section it needs instead of grepping a thousand-line file.
+- The generation ITERATES TO A FIXED POINT. The guide reports line spans and occupies lines, so
+  a single pass emits spans that were true before the guide existed and are wrong the moment it
+  does. A wrong span is worse than none: it sends a reader to the wrong place with confidence,
+  where an anchor at least fails visibly.
+
+### Notes (5)
+
+- No reference was split and no ceiling was raised to fit a guide. The ceilings were recorded
+  first (US0657), and `reference-consult.md` and `reference-prd.md` crossed the un-allowlisted
+  600 budget and were allowlisted deliberately at their measured size, with the reason.
+- The generated guide REPLACES a hand-written one rather than landing beside it. Three
+  references shipped with two guides that disagreed the moment either moved, and the generated
+  table listed its rival as a section row. The criterion's test asserted only that a guide was
+  present, and a file with two also has one, so the mutant was already live and green.
+- **`check_budgets.py --record`** rewrites ceiling INTEGERS to the measured sizes, preserving
+  every existing reason comment byte-identically and APPENDING the provenance beneath. Appending
+  is the point rather than a nicety: the reasons contain their own numbers (`Raised 705 -> 755`),
+  so a tool that preserved them while moving a ceiling would leave an argument that is false
+  about the ceiling it justifies.
+- **`--drift`** names every file inside the +5% tolerance and exits 0 - the SET, not the worst
+  offender, since a report naming one member hides the rest. It also reports the three unbudgeted
+  trees (`help/` 9,521, `best-practices/` 4,881, `templates/` 5,863 markdown lines) with NO
+  threshold: a hard budget set on day one over a tree nobody has pruned fails on day one and is
+  waived on day two, and a waived gate is worse than a reported number because it looks like one.
+- A ceiling justification that names a Reading Guide must have one in the file it justifies.
+  `reference-sprint.md` asserted one twice over a file that had none; the premise is fixed by
+  making it true rather than by deleting a sentence that is right about what the file needs.
+- `--record`'s rewrite is SCOPED to the `ALLOWLIST` literal, and its history is bounded to the
+  most recent five runs and sits beneath the block it describes. Run line-wise over the whole
+  source it rewrote a ceiling-shaped line inside a docstring - demonstrated, in a tool whose job
+  is rewriting its own source - and an unbounded trail above the literal pushes the allowlist
+  further down the file on every run, so a reader meets the audit before the thing audited. A
+  lost anchor is refused by name rather than raising a bare `StopIteration`.
+- **A non-blocking `doc-surface` lane in the gate**, worded as VERBS so it cannot be read as the
+  `doc-coverage` lane beside it - that one prints "N undocumented" and counts SCRIPTS with no
+  reference entry, a different granularity of the same word.
+- **The close report carries the number**, derived by calling the measurement rather than from a
+  figure somebody typed. Both readers call through the defining module, so patching it moves
+  them together: asserting two readers AGREE proves nothing when two correct readers over one
+  tree agree by construction.
+
+### Fixed (2)
+
+- **`npm run lint` now calls `lint:disclosure`.** The key had existed all along and the
+  aggregate omitted it, so a checker with 28 advisory findings ran nowhere.
+- A `doc-surface` lane that cannot measure reports a non-zero count naming what raised. Zero is
+  the lane's clean state, so a broken measurement reported as zero renders as perfect coverage
+  with only the word `unreadable` to distinguish it - and a reader scanning counts never reads
+  the word. The lane still never blocks.
+- **`command_audit.py --coverage`** reports how many enumerated verbs carry an invocable
+  `script.py verb` form in the skill's HAND-WRITTEN documentation. Measured today: 132 of 257
+  (51.4%), so 125 verbs a reader cannot find as something they could type.
+- The corpus excludes every generated target AND strips a generated block wherever it appears -
+  pasting the catalogue into a hand-written file walks in the back door with one extra step and
+  no prose. The rule has one definition in `docgen.py`, imported rather than copied: a copy
+  compares equal, so a test asserting the two agree cannot see them diverge.
+- Findings separate ABSENT from UNUSABLE: a verb appearing nowhere is high, one whose script is
+  mentioned in prose but which never appears as an invocable form is medium. One severity for
+  both gives triage nothing to sort on.
+- The lane always exits 0. A documentation guard that blocks is one that gets switched off, and
+  then it reports nothing at all.
+- The coverage token is anchored at the start of the script name, so `autosprint.py plan` no
+  longer satisfies `sprint.py plan`; the direction of that error is always to report a gap as
+  closed. `strip_generated_blocks` covers an unterminated `GUIDE_BEGIN` as well as `BEGIN`, and
+  `verb_coverage` restores `sys.path` rather than growing it on every call.
+- **`scripts/docgen.py`** generates the documentation the tooling can derive and refuses to
+  touch the rest. Three verbs - `surface`, `references`, `reading-guides` - each writing only
+  between `<!-- BEGIN GENERATED -->` markers. A target with no markers is REFUSED, and so is a
+  malformed pair: a `BEGIN` with no `END` read as end-of-file truncates the document, an `END`
+  before its `BEGIN` inverts the region, and two `BEGIN`s make the span ambiguous. Each of those
+  is how a generator eats a paragraph somebody wrote.
+- **`reference-scripts-surface.md`**, the verb catalogue: 257 invocations, generated from the
+  parsers rather than typed. Flags are deliberately absent - the page answers whether a verb
+  exists, and `--help` or `docgen.py surface --format json` answers what flags it takes.
+- `--check` on every verb regenerates in memory, prints a drift count and EXITS 0. A
+  documentation guard that blocks is one that gets switched off.
+- **`scripts/lib/surface.py`** enumerates the shipped command surface once, for every reader
+  that needs it. It walks subparser choices AND positional `choices` - the latter is how
+  `verify_ac.py testplan derive` exists, and a subparser-only walk misses it, which is a verb no
+  coverage number can count as missing.
+- **Every CLI script now exposes a module-level `build_parser()`.** Twelve built theirs inside
+  `main()`, so their verbs could not be enumerated without running the command. `carry_forward.py`
+  is the single exemption and earns it structurally - no `main`, no entrypoint, no
+  `ArgumentParser` - and the exemption is asserted BOTH ways, so a parser bolted onto a library
+  fails as loudly as a missing one.
+
+### Fixed (3)
+
+- **The command-grammar sweep covers the family its docstring always claimed.** `_all_parsers()`
+  swallowed every unimportable module and every script without `build_parser` with a bare
+  `continue`, so the count it reported was of whatever happened to load. It reads the shared
+  enumerator now, which NAMES what it cannot read.
+- Loading a module under its own name rather than a fabricated one, and keying the module cache
+  on the file's PATH rather than its stem, so two directories holding the same filename cannot
+  report each other's surface.
+
+### Notes (6)
+
+- Pointing the sweep at the full family surfaced fourteen conformance failures at once: twelve
+  scripts declare `--root` only per-subcommand. The defect is old; being able to SEE it is new.
+  It is recorded in `ROOT_GRAMMAR_DEBT`, named script by script, and filed as BG0555 with the
+  mechanical fix. The set may only shrink - which is the difference between recorded debt and
+  the `continue` it replaced.
+- The module cache keys on the RESOLVED path. A string compare treats `scripts/x.py` and
+  `/abs/scripts/x.py` as different files, so a relative scripts dir evicts and re-executes all
+  seventy-one modules on every call.
+- `ROOT_GRAMMAR_DEBT` exempts the three root-grammar tests and nothing else. It was also being
+  applied to the format and repeatable-flag families, where those twelve scripts already pass -
+  a debt set silencing checks that succeed is how an exemption outlives its reason.
+- **A waiver records whether it was chosen or forced, and the report counts the two apart
+  (US0595).** A waiver taken deliberately and one whose window had already closed when the item
+  fired are different events; recorded identically, a process failure is laundered as a
+  decision. `decisions waive --kind deliberate|expired` records which, as an in-cell marker
+  beside the existing authoriser rather than a seventh column - the log ships a fixed six-column
+  header and a parser that reads by position. `waiver_kind` answers None for a row written
+  before kinds existed, on the same discipline `waiver_authoriser` already documents: defaulting
+  those to `deliberate` on read would launder every historic failure at once, so they are
+  counted as a third bucket that is neither. The sprint report carries the split and prints it,
+  and an unreadable log says so rather than printing zeroes that read as nothing to report.
+- **A tick the tree contradicts is now outstanding at the close (US0594).** A `[x]` is the author
+  asserting a criterion is met; nothing compared that claim against the surfaces the unit itself
+  declared, and two units of one run were closed on ticks the diff contradicted with the
+  checklist passing them. A new compulsory row takes the run's base ref, diffs it, and reports
+  any unit whose criteria are ticked while every path in its own `Affects` is unchanged - naming
+  the unit and the criterion, because a row that says something is wrong without saying what
+  cannot be acted on. An UNRECORDED base ref refuses rather than falling back to HEAD: that
+  fallback treats everything as changed, passes every tick, and reproduces the defect the row
+  exists to catch while reporting itself green. An unreadable diff is reported unjudged, which
+  is not the same as supported.
+- **Every checklist item declares the last command that could still satisfy it, and one past its
+  window is reported rather than gated on (US0591).** Four plan-time items and the batch-boundary
+  review were being raised at a close where the only available exit was a waiver - and a gate
+  whose only exit at firing time is a waiver is a receipt, not a gate. Each row now carries the
+  command that enforces it; an unsatisfied row whose window shut before the close resolves
+  EXPIRED, is reported with that command, and does not hold the close. The fix a reader is
+  pointed at is to gate it where it can still be answered, not to waive it at the end. Items the
+  close genuinely owns still gate exactly as before.
+- **The mutation demand is scoped to REPAIRS, and the class is read from metadata (US0566).** Feature work is already held by a test written before anyone knew which way the implementation would go; only a repair's test is authored with the answer in hand, which is what the evidence indicts. A blanket demand on all work is the one that gets switched off wholesale. The class comes from the artefact's own `type`, `Parent` and `Delivers` fields - never from prose, because "fix", "repair" and "regression" appear in plenty of feature-story titles and a classifier reading words types them wrongly in the direction that costs most.
+- **A repair with nothing to mutate records WHY, and the record is re-derived (US0566).** An exemption nobody verifies is a box, and this one exempts a unit from the only evidence its author could not have manufactured. The paths a no-mutatable-surface record names are put back through the generator: if a mutant can be produced there, the claim is false and the transition is refused naming the file that refutes it.
+
+### Notes (7)
+
+- Re-verified through `transition.py set`, and the exemption's surface is now re-derived from
+  git's diff rather than from the paths the record itself declares. The fixture makes `Affects`,
+  the diff and the record name three different files: with one file in all three, the old
+  derivation and the new one produce identical output and the test pins nothing.
+- **A surviving mutant refuses the terminal transition, and the refusal names it (US0565).** The gate is the SURVIVOR count over the unit's changed lines, never the run's own exit status - a mutation run that completes is evidence a run happened and says nothing about what it found. Each survivor is named by file, line and applied mutation, because the finding is about the TEST: an assertion is missing for the behaviour each names, and reporting a bare count sends the author looking for it.
+- **`survivors == 0` over an EMPTY mutant set is not a pass (US0565).** It is the same shape as `ac=0 pass=0` reading as a clean pass, one instrument over. Three states are kept apart because their fixes differ: no record at all, a record that applied nothing, and a record whose mutants were all judged equivalent - the last being a run that applied things and judged none of them.
+
+### Notes (8)
+
+- Re-verified through `transition.py set`. The survivor listing's `line` is now a field the
+  shipped `register --line` can actually write: before, the assertion passed on a fixture the
+  tool itself could never have produced.
+- **A repair carries mutation evidence over its OWN CHANGED LINES (US0564).** `mutants_over_changed_lines` confines generation to what the unit actually changed since the base ref. The scope is the criterion rather than an optimisation: measured on this repo's `mutation.py`, 700 mutants over the whole file against 6 over the changed lines. A gate whose cost scales with the file rather than the change is one nobody can afford to run, which is how the release verify lane reached 106 red criteria unobserved. An unanswerable diff scopes to NOTHING rather than silently widening to everything.
+- **A record about bytes the file no longer has is STALE, not green (US0564).** Three states kept apart because their fixes differ and only one is the author's omission: no record at all, a record whose target content has moved since, and a record covering the current bytes. Without the middle one a passing run can be banked and spent against later edits - a gate you satisfy once and then edit freely behind. The evidence is re-read from the ledger and never accepted from the caller, because a gate that takes the claim it exists to check is a box.
+
+### Notes (9)
+
+- Every criterion whose When names a COMMAND is now verified through `transition.py set`
+  rather than through the library function it wraps. Each one named the command while its
+  verifier called the function, so none of them could see that the command never reached the
+  gate at all. AC2 is deliberately not among them: its When is "the mutation evidence is
+  derived", which is a derivation rather than an invocation, and pointing it at a CLI run would
+  be ceremony rather than coverage.
+- **CR0535 is decomposed: a refusing verb should be able to say what it demands before it
+  refuses (EP0210).** The diagnosis is not that the tooling is undocumented - `reference-scripts.md`
+  is a real catalogue and `help/` holds forty pages. It is that the documentation describes
+  CAPABILITY while the refusals encode CONTRACT, and the two are not connected, so a contract is
+  discoverable only by violating it. 39 scripts refuse on some condition; two can be asked what
+  they will demand. Six stories, 24 points: the shared reporter that derives its answer by
+  executing the guard rather than restating it, the gating vocabularies printing from the
+  constant that enforces them, the four verbs whose refusals cost most in the measured session,
+  the lane that counts coverage so 2-in-39 cannot accumulate silently again, the docs pointing
+  at the reporter instead of copying it, and the measurement that turns the claimed saving into
+  a figure. Grooming is owed on all six and is not priced by the 24 points.
+- **The commit gate now refuses a test run that wrote into the working tree.** Four times in two
+  days something took a root, or defaulted to one, and wrote where its author did not intend - a
+  fixture helper handed the repository as its root, a rehearsal harness whose work root was the
+  repository, a batch verb run without its dry-run flag, and a stray artefact left by a fixture.
+  Each was caught by an unrelated gate rather than by its author, and one destroyed machine-local
+  records that being gitignored made unrecoverable. The gate now records the working tree at the
+  moment it selects the unit suites and compares it once they have finished, naming every path
+  that was created, modified or deleted.
+- **It reads recursively, and it reads the gitignored runtime directory.** The guard written for
+  the previous instance compared top-level entries only, so it could not have seen the stray
+  artefact three directories down that prompted it. Both readings here go to the leaves, and the
+  gitignored runtime directory is walked by hand because no git command reports it - it is the
+  half that matters most, since nothing can restore what is lost there.
+- **The records the gate itself writes are exempt one by one, with a single named exception.**
+  Timing and verdict records land in the same directory as the state a stray write destroys, so
+  a blanket exemption on the runtime directory would reopen the hole this closes. The exception
+  is the harness's own log subdirectory, whose filenames carry each run's identity and so cannot
+  be listed in advance; it is exempted by prefix, on that one subdirectory rather than on the
+  runtime directory above it, and nothing a stray write can destroy lives under it.
+- **It costs no extra suite run.** The check wraps the run the commit was already paying for
+  rather than causing one, so a commit that runs no suite pays nothing and the lane never
+  appears. Its refusal names the three roots to look for rather than only the paths that moved.
+- **`review.mutation_evidence`**, with three modes. `report` (the default) names missing or
+  stale evidence as a warning and lets the transition through; `block` is the old hard bar,
+  opted into; `off` stands the lane down. Two things ignore the setting: a claimed exemption
+  re-derived and found FALSE refuses under `report` too, because that is a written claim shown
+  untrue rather than a bar being applied; and a ledger recording one mutant as both killed and
+  survived refuses in every mode including `off`, because `off` says evidence must not hold
+  your transitions, not that the instrument may lie. An unrecognised value is refused by name -
+  a typo must not silently switch a project's hard bar off - and an unparseable config resolves
+  to `block`, never to the default.
+- **A guard that can fail over every lane the doctrine names.** Rule 21 now enumerates its
+  mechanisms, and `tools/tests/test_check_spec_claims.py` walks `transition.py`'s AST to check
+  each is REACHED from the gate ladder rather than merely defined, removing each call in turn
+  from a doctored copy. Its lane set comes from the doctrine and the module's definitions, not
+  from its own reachability walk: a set the predicate computes narrows exactly when the
+  predicate narrows, so the mutant that pins it to one lane would have survived.
+
+### Changed (7)
+
+- **The no-mutatable-surface exemption is re-derived from git's diff against the run's base
+  ref**, not from the paths the record itself declares. Re-deriving over the author's own
+  declaration checks only that the author was consistent with themselves: a hand-written record
+  naming a markdown file exempted a repair whose changed surface was a mutatable module. An
+  empty base ref now REFUSES rather than granting - a derivation that cannot run produces no
+  mutant, and no mutant is indistinguishable from a claim that holds.
+- `Affects` is deliberately not intersected into that surface. A declaration can only shrink
+  it, and shrinking it hands the author back the same fail-open one step over.
+- The transition gate ladder ACCUMULATES its advisory warnings, as its docstring always said.
+  The depth-parity arm assigned outright, so whichever advisory fired first was silently
+  discarded and which survived depended on statement order.
+
+### Notes (10)
+
+- `review.mutation_evidence: off` is read correctly despite YAML 1.1 spelling `off` as a
+  boolean. A project writing the mode this doctrine documents would otherwise have been refused
+  for typing it correctly.
+
+- The exemption refuses an UNRESOLVABLE base ref as well as an absent one. `changed_lines`
+  swallows a failed `git diff` and returns an empty map, so a base ref lost to an amend or a
+  stale clone produced no mutant, and no mutant is indistinguishable from a claim that holds.
+- Under `off` the lane now returns before shelling out to git and running the generator, rather
+  than doing that work and discarding the answer.
+- **A release cut no longer punishes the units that shipped their changelog fragment (BG0538).**
+  `compose --apply` folds each `changelog.d/<ID>.md` into CHANGELOG.md and deletes it, so a
+  delivered unit that declared its own fragment under `Affects` named a path guaranteed to
+  vanish at the next cut. `validate`'s unresolvable rule then said the file "should exist by
+  now - a typo, or a claim about code that never landed" about a file the toolchain had removed
+  on purpose, and because the rule is ratcheted the new instances could not be tolerated: the
+  v5.0.0 cut minted nine at once and blocked every commit behind them. The `changelog.d/`
+  directory is exempt from that half of the rule, matched on the directory rather than on a
+  name shape, and a real missing path sitting beside a fragment is still reported.
+- **A markdown link inside backticks is an example in a root doc too (BG0537).** `check_links.py`
+  runs two file-existence passes: the artefact-body one blanks code spans and fences first - its
+  helper's docstring says why, that a document must be able to DOCUMENT a broken link - while the
+  root-docs pass over README, AGENTS, CHANGELOG and their siblings read raw lines. The same text
+  was therefore an example under `sdlc-studio/` and a broken reference at the repo root, and a
+  CHANGELOG entry could not quote the link form it was describing without failing the guard.
+  Both passes now share the one helper, which preserves line count so a reported number still
+  points at the line the reader will open. Four tests hold it, including the control that a live
+  broken link is still found - blanking the examples must not blank the thing the pass is for.
+- **The mutation-gate fixture's temp-root guard is now a guard rather than a comment (BG0536).** `SurvivorGateTests._repo` already refused a root outside `tempfile.gettempdir()`, but nothing failed if that refusal was removed. It is now pinned in both directions: called with the real repository root it raises before writing anything and leaves the tree unchanged, and called with a temporary directory it still builds. The second is a positive control - "refuses the wrong root" is otherwise satisfied by a helper that refuses every root.
+- **Why this one mattered (BG0536).** A placeholder call passed `.`, so every run wrote `src/thing.py`, a fake bug and `sdlc-studio/.local/mutation-runs.json` into the real repository - destroying 23 mutation registrations that `.local/` being gitignored made unrecoverable, and reaching history through a `git add -A`.
+
+### Changed (composed at the 5.0.0 cut)
+
+- **The bug's general claim is FILED rather than claimed fixed (BG0536, BG0569).** It says the defect is that a fixture can address the working tree at all, which is broader than one class - and it bit twice more within two days of this repair: a rehearsal harness wrote 41 files into the tree, and a `verify_ac run --batch` started without `--dry-run` back-annotated seven untouched stories. Each was caught by a gate rather than by its author. BG0569 asks for the check that would catch the class: a lane that snapshots the tree, runs the suite, and refuses on any difference. A fourth instance surfaced while writing this very repair - a stray fixture bug file sitting untracked in the tree, caught by the duplicate-id lane rather than by anything watching for writes, and invisible to the first version of this unit's own guard test because that assertion listed only top-level entries.
+- **53 acceptance criteria had gone red across stories already at Done, and nothing was looking.**
+  The lane that would have caught them costs ~28 minutes against a 600s budget, which is exactly
+  why it never ran: a guard whose cost is paid on the wrong boundary is a guard that gets skipped.
+  The rot is closed off at both ends rather than swept once. New writes are refused where they are
+  written, so the set cannot grow, and the existing set is counted on a schedule against a
+  baseline that reddens in both directions, so it is drained rather than tolerated. The repairs
+  themselves are deliberately NOT in this change: each stale selector must still discriminate for
+  the criterion it was written for, and a repair that merely makes a criterion pass converts a
+  visible stale selector into an invisible vacuous one. That is a sweep wanting its own review.
+- **The scheduled lane could not go green, and could not read its own number.** Two defects found
+  by executing it rather than reading it. It tested for a marker (`[ OK ] verify`) that occurs
+  nowhere in the tree, so at the baseline of zero the whole exercise exists to reach, the lane
+  could only ever have refused - and refused with a message saying the run did not complete, which
+  would have been false. And its count parse walked from the lane name under a rule that cannot
+  cross a colon, so on any run that also reported an unspecified criterion, the count came back
+  empty and the lane refused as incomplete with the real figure sitting in the output it had just
+  printed. Both paths now have tests; neither had one, because every test in the file exercised
+  the cheap half and none passed the argument that reaches the expensive one.
+- **The scheduled job installs the markdown linter it does not lint with.** Two test modules
+  refuse to collect without it, and a module that cannot be collected makes every selector
+  pointing into it resolve to nothing - which the stamp sweep counts as a dead stamp. Measured 5
+  in a full checkout and 11 in a bare one, so the lane would have blocked on its first scheduled
+  run with six findings nobody has, against the very baseline that exists to make a real rise
+  visible.
+- **The test holding BG0533's shared-counting criterion could not fail, and the ledger said it
+  had.** An independent delivery review executed the declared mutant in both directions - giving
+  the enumerator its own loop, and giving `mutated_text` its own - and found the whole class
+  green each time, while `mutation-runs.json` recorded that mutant as killed. A false KILLED on
+  the mutation instrument is the defect class this bug exists to prevent, produced by its own
+  repair. The criterion asks for a STRUCTURAL property (one routine, both readers resolving
+  through it) and the test asserted a behavioural one (the two agree) - which is what two
+  correct-today implementations produce by construction. It now patches `_occurrences` and
+  requires both readers to move with it: the enumerator must return a sentinel it could not have
+  computed, and `mutated_text` must REFUSE when fed a line the pattern does not sit on. Both
+  directions of the mutant now die. The second copy of the exclusion spans that made the
+  duplicate-loop edit a one-liner is gone, and the ledger record is re-taken.
+- **A delivered unit left at a pre-delivery status was invisible to every close gate.** Eight of
+  one run's twelve units had their code committed with a green suite and were never transitioned.
+  The close pre-flight then reported twenty unmet prerequisites - no review coverage, no verdict,
+  no reviewer sign-off, a blocked Done gate on each story - and not one of them named the cause.
+  Every message described a downstream consequence of a status that had not moved, and the run
+  was held open for more than a day while the fault was one command away.
+- **The pre-flight now asks the question upstream, and asks it first.** A batch unit whose status
+  is neither terminal nor awaiting sign-off, and whose code landed inside the run window, is
+  reported by name with its status and the transition that moves it - ahead of the review and
+  sign-off rows that are its consequences. The one command in the chain that read the status
+  directly was the sign-off step, which is the last thing a close reaches.
+- **Delivery is evidenced two ways, and the stronger one is preferred.** A commit in the run
+  window whose message names the unit is decisive; a commit merely touching the unit's declared
+  file list is weaker, because a sibling unit sharing a file makes it true too, so it is reported
+  in those words rather than as proof. A unit with neither behind it is not accused - a batch
+  unit that is simply not started yet is at its pre-delivery status for the honest reason.
+- **The window is the run's own recorded base ref, not a wall-clock date**, so a neighbouring
+  run's commits on a busy day are not swept in, and a run with no recorded base ref makes no
+  claim at all.
+- **The pre-delivery set is derived from the status vocabulary rather than named.** A list of
+  status names here would exempt whatever status a project adds next, which is the enumeration
+  failure this tool keeps meeting.
+- **A recorded ledger key could be added or renamed without any test noticing.** The keys the
+  sprint help page has to name were derived by matching a fixed alternation over the run-state
+  module's source, which names the answer in advance: a key added to a batch-change entry was
+  invisible to it, and a key renamed away stayed in the set. They are now read by RUNNING the
+  writers - a drop, an add with a reason, and a second add of the same unit, which between them
+  produce every branch - and the page is checked within the section that documents them, as a
+  code span rather than a bare word, because the shortest key is an ordinary English word that
+  matched anywhere on the page.
+- **The fixture for "one warning kind cannot mask another" carried only one kind.** Its second
+  story sat at a non-terminal status, and the rule it was meant to raise is reported only at a
+  terminal one, so the workspace had no elsewhere for a surplus to be paid down in and the
+  scenario reduced to its single-kind sibling. The fixture is terminal, and both kinds are now
+  asserted by identity before the comparison is made.
+- **A commit-blocking lane could be neutered without failing its own lane test.** The test
+  looked for the lane's NAME in the hook's transcript, which the passing line carries too, while
+  the exit code and the unmoved HEAD were supplied by unrelated failing lanes in the same
+  fixture. It now reads the refusal line, and reads the instance identity from that lane's own
+  block rather than from anywhere in the output.
+- **The exempt set of unanswerable duplicate groups was pinned only where a verb comparison
+  would have agreed.** Every fixture used a verb the resolver rejects outright, so "the resolver
+  answered nothing" and "the verb is not the collectable one" were the same sentence and the
+  claim that the set is derived was unheld. A group is now included whose verb IS the collectable
+  one and which the resolver still cannot answer, so the two genuinely disagree and the report
+  has to follow the resolver.
+- **The check that no late failure can follow the green suite verdict matched one spelling.**
+  It grepped for a single literal assignment, so an increment appended below the verdict write
+  walked past it - the fourth door, left open by the test that exists to pin the property.
+  It now matches every form the shell writes that variable in place - plain, appending, and the
+  arithmetic increment and compound forms - while still ignoring a read of it, and the
+  criterion's own mutant is executed against a copy of the shipped hook in each spelling rather
+  than asserted about. A write made through a command that names the variable, such as `read`,
+  is recorded beside the pattern as out of scope rather than claimed as covered.
+- **A charter carrying an unresolved Open Question left its run open and itself Queued.** Marking
+  a charter spent goes through the one status writer, and "spent" is a charter TERMINAL, so the
+  terminal Open-Questions gate refused it. Consuming a charter is not answering its questions -
+  the run is opened to answer them - so that gate alone is now stood down for that one write and
+  recorded on the artefact, while every other gate the transition runs still runs. Nothing else
+  changes for a charter with no open question.
+- **The refusal was swallowed, and the plan exited 0 over a queue that had not advanced.** That is
+  the exact symptom the charter-queue exit was built to remove: the next `next` re-offers a
+  charter whose run is already running. A write that was attempted and did not take now leaves
+  the plan non-zero with a distinct code, and says on stderr that the run is open and the charter
+  was not spent. The two refusals that happen BEFORE any write - no charter resolves to the id,
+  and a charter that is not queued - still exit 0, because neither leaves a queued charter for
+  the queue to re-offer, and both were already reported in terms.
+- **A `SystemExit` from the status writer escaped the guard around it.** The guard caught
+  `Exception`, which `SystemExit` is not, so a refusal on one of those paths became a process exit
+  through the middle of a plan whose run was already open.
+- **The status writer's own output leaked unindented into the plan's page**, where it read as the
+  plan's own words. It is now captured and re-emitted under the plan's indent, attributed.
+- **The test that was meant to prove the terminal has a writer could not fail.** It asserted the
+  writer's text was present, which is monotone in the number of writers: it passed harder as
+  writers were added, and a second writer left the whole suite green. It counts now, so it reddens
+  on a deleted writer and on an added one - the pair the one-writer rule is actually about.
+- **The help-page coverage check had no caller, so deleting a help page reddened nothing an
+  operator runs.** The enumerator that resolves every command in the Type Reference to its help
+  page shipped complete and unwired: the documentation-coverage lane the gate runs, and the
+  conformance stage that reads the same function, never asked it. A deleted page failed one unit
+  test and passed the gate. The lane now calls it, so the gap blocks where the criterion said it
+  would, and the fixture trees the check is tested against carry the pages a covered tree has.
+- **The swap verifier could not tell a working command from one that never ran.** It asserted on
+  the shared id-list helper while loading the command module into an unused variable, so a swap
+  dispatch returning an error code passed it even as five sibling tests failed. Both house forms
+  - the repeated flag and the comma list - are now run through the command line against a real
+  run and asserted to reach the same batch and record the same outgoing set.
+- **A verb carrying two id lists sat outside the CLI conformance sweep.** The shared reader for
+  one id list cannot serve a verb with two, so the sweep had no row for the swap and nothing held
+  it to the house grammar. It gains a second table for two-list verbs, which is what stops the
+  next such verb inventing a third spelling.
+- **Documented commands were checked by their verb word, so a flag nothing owns read as
+  documented.** Every flag on every documented invocation went unlooked-at. Each fenced
+  invocation is now parsed by the shipped parser, on BOTH the surfaces the page documents - the
+  slash command and the script - and the extraction carries which surface a line came from, so
+  the two are parsed as the two parsers they are. The flags the arguments page declares as
+  belonging to the slash surface are removed only from slash-surface lines: the two surfaces are
+  deliberately different, so modelling one where there are two would either condemn a real
+  documented mode or, applied the other way, accept a script command that does not run. Doing so
+  found a genuine page defect: a tranche file was shown as a bare positional the parser does not
+  accept - it was not accepted by the version of the parser that shipped alongside the line
+  either - while every other mention of one on the page and in the reference spells it as a
+  flag. The page is corrected.
+- **The extraction is now asserted non-empty PER SURFACE, and a continued line is joined before
+  it is parsed.** Filtering to the slash form alone left twenty-three script-form invocation
+  lines unchecked while the nineteen slash lines satisfied the emptiness check on their own,
+  which is how an extractor that saw none of them shipped green. The page's four
+  backslash-continued commands are joined first: a continued head reaching the tokeniser alone
+  raises rather than parses, and the seven flags carried on the lines below it were never
+  looked at. The page's two blocks that spelled the same command a third and fourth way are
+  normalised to the spelling the rest of it uses.
+- **The in-flight controls were looked for anywhere in the reference, not in their own section.**
+  The anchor the check matched also appears in the file's generated reading guide, so deleting
+  the heading left it green, and the invocations were searched file-wide, so moving the block out
+  of the section and emptying it passed. The lookup is scoped to the section body, tells a
+  missing section from an empty one, and now covers the two controls the list had omitted.
+- **The close pre-flight dropped every non-blocking failing gate lane, so "reported, not blocking"
+  meant invisible.** The unified-review lane declares itself ceremony debt and non-blocking when
+  the run's own units are all independently covered, and that declaration reached no surface at
+  all: not the pre-flight's page, and not the bounded exit whose whole job is to file ceremony
+  debt. A lane that says "reported" and is reported nowhere has been switched off, not relaxed.
+  Every failing lane now travels into the report carrying its own blocking flag.
+- **Readiness is decided by what HOLDS the close, not by what is reported.** A row declaring
+  itself non-blocking - a ceremony lane, an expired checklist window - was still counted, so the
+  distinction was true of the flag and false of the answer, which is the only place it is read.
+  A row carrying no declaration still holds, so a producer that forgets fails towards holding
+  rather than towards a silent pass.
+- **The page says which rows do not stop the close.** An operator reading a list of blockers had
+  no way to tell.
+- **A duplicate classifier is withdrawn rather than repaired.** The bounded exit decided what it
+  could file by looking for a marker string in a blocker's prose. That was a second reader of one
+  fact and it could never fire: the only lane emitting the string emits it on the branch that also
+  sets the flag, so the string test was reachable only through a row the flag had already
+  classified. Deleting it left the whole suite green even after the wiring above was repaired,
+  which is evidence of redundancy rather than of a missing test. The classification is now the
+  lane's own flag, in a named function driven through the pre-flight.
+- **The pair is now pinned end to end rather than each half in isolation.** Both halves were
+  individually correct and neither test suite could see the join between them: reverting the
+  lane's flag survived 390 tests of the gate suite, and deleting the exit's classifier survived
+  701 of the sprint suite. The lane's real verdict is now composed into a real pre-flight and
+  driven through the shipped verb, so either reversion reddens.
+- **The close-owed ledger demanded a close for work whose close had already run.** A finding filed
+  while a run is open becomes a tracked unit and is never added to that run's recorded batch, so
+  the retro accounts for fewer units than the run delivered and the detector reports the
+  difference as unaccounted. Twelve of fourteen reported units were this, and the operator's only
+  remedy was to hand-correct batch lines against commit timestamps.
+- **A unit raised and delivered inside a run whose close completed is now attributed to that
+  run.** It is named with the run id, so the report reads "that close already ran" instead of
+  "write another one", and it leaves the set the exit code and the headline are derived from.
+  Nothing is forgiven: the unit is still listed, exactly as a close-time repair is.
+- **Attribution derives from records the ledger already opens** - the archived run windows and the
+  close telemetry - rather than from a second writer into run state on the status-write path. The
+  alternative repair would have made a unit's run membership a written fact rather than a derived
+  one, and a written fact can drift from its source while a derived one cannot; it would also
+  have left the standing backlog needing the same hand-correction.
+- **Three conditions, each of which the report would be wrong without.** The unit must have been
+  RAISED inside the window, or the whole grandfathered backlog tail would be credited by falling
+  inside one. It must have reached terminal on or before the run ended, or a bug raised in one run
+  and fixed two runs later is credited to the run that only filed it. And the run's outcome must
+  say its close COMPLETED - a run stopped mid-flight filed no account, and crediting one would be
+  the silent "none owed" this ledger exists to prevent. An unknown terminal date does not satisfy
+  the second condition; an attribution made on absent evidence is the same failure by omission.
+- **Four spec-agreement guards compared a document against a projection of itself, and now compare it against the code.** Each read a passage of the technical requirements document and asserted something weaker than its own criterion claimed, so the document could agree with the guard while disagreeing with the shipped surface. The enumeration comparison intersected the passage with the registry before subtracting, which made the compared set a subset of the registry by construction: a lane the document invented was not merely unchecked, it was unrepresentable. It is now an equality against the passage's own enumeration, addressed as the list rather than as loose backticked words, and any other name in the passage outside a small declared prose set is refused as well. Removing a lane from the gate registry, removing a drift kind from the reconcile vocabulary, renaming a row in the router's type table, and inventing a lane either inside or outside the enumeration each redden it.
+- **The token-budget claim is read from the passages that state it, not from the whole file.** The guard searched a lowercased read of the entire document for two words, and each document also carries a revision-history row describing this very change, which contains both. Emptying the passages that actually state the premise left it green. Each stating passage is now addressed by its own heading, and the claim is matched as one sentence: the measured total is a lower bound because the delegated figure is supplied rather than observed. Half the claim no longer satisfies it, and a renamed heading fails naming itself rather than reading an empty block.
+- **The architecture decision record's fail-safe rule is pinned to the sentence that states it.** Three separate word searches over the whole record were satisfied before the sentence in question was consulted, because a nearby sentence about configuration carries two of the three words for an unrelated reason. The rule is now the conjunction in a single sentence, so deleting the fail-safe sentence outright reddens, and scattering its words across two sentences does not restore it.
+- **The close-side counterweight is observed as a call that happens, not as a name in the source.** A substring over the close's source text cannot tell a call from a comment naming one, so replacing the render with a comment survived. The check now runs the close's review-anchor step over a throwaway root with the report function spied at the global the call resolves through, asserts it was reached with the batch it was given on the design rung, and asserts it was not reached on a build rung.
+- **A sign-off no longer records approval of work that does not exist.** `critic signoff
+  --from-run` takes the run's APPROVED BATCH as its scope and wrote a row for every id in it
+  without consulting status. Closing the previous run wrote three such rows: two bugs that had
+  been reopened precisely because they delivered nothing, and a story reverted to Blocked. The
+  note attached to them was batch-scoped, so it stated no falsehood about those units
+  specifically - but the ROW reads as approval of work that does not exist, which is the same
+  defect as a status asserting a repair that did not happen: a record meaning less than it appears
+  to. A non-terminal unit is now SKIPPED and named on stderr, because a silent skip would be the
+  same defect pointing the other way. A unit whose status cannot be read reports cannot-say and
+  proceeds, since refusing a sign-off because a file could not be parsed would make the check more
+  important than the thing it guards.
+- **The velocity record's overhead ratio was a different number from the one the close report
+  printed for the same run.** The term was computed by calling the report's own routine with two
+  of its three components passed in blank, which does not fail: it drops the gate and mutation
+  time and returns a smaller ratio built from the review time alone. There is now one entry point
+  that composes every component, used by the close report and by the velocity record, so the file
+  the next sprint plans from cannot disagree with the report it was copied from. A component added
+  later reaches both callers on the day it is added.
+- **A column whose every value was `0.0` has been replaced by one that says something.** The
+  unattributed span was defined as the measured run minus the overhead minus the delivery, and
+  delivery is itself defined as the run minus the overhead - so it was zero by construction and
+  could never have been anything else. Delivery is never measured independently, so that span
+  cannot be measured at all: the row now records whether the overhead ratio is exact or a floor,
+  which is what makes two rows comparable. A ratio measured from one component of three is not the
+  same quantity as one measured from all three, and a history invites exactly that comparison.
+- **The detector meant to keep a request's spawned-work column true was inert on every real
+  index.** It pinned the column position from the first table in the file, and every discovery
+  index opens with a summary status/count block that carries no such column - so the position was
+  never found and every data row below was skipped. It re-pins at any header carrying an ID cell
+  now, which is what the two working implementations beside it already did, and re-pinning also
+  resets the column so a later table without one is exempt rather than reading this table's
+  positions.
+- **Unblinded, it would have reported true cells as drift and offered to blank them.** The census
+  of what a request produced had no reader for the field this project uses to link a change
+  request to the RFC it came from, so a request decomposed that way looked childless. Over the
+  full historical index that was 7 rows of pure false drift out of 16 reported. The link now
+  resolves alongside the other spellings, and a placeholder value still links nothing.
+- **The sweep died rendering its own drift item.** Every drift item carries the advice under a
+  `fix` key and the printer reads it; this one named it `remedy`, so the first index ever to
+  produce an item ended `reconcile detect` on `error: 'fix'`. Unreachable for exactly as long as
+  the detector was blind, and found by running the shipped command rather than the library.
+- **The remedy told an operator to correct a cell from a census that could not see the link.**
+  Advice now depends on which way the cell disagrees: one the census can see past is simply
+  brought up to date, while one naming work no file links back says so, asks for the link to be
+  recorded in the child where every reader can see it, and warns that the cell may be the only
+  surviving record of it.
+
+### The 2026-08-06 draft cut (same release)
+
+> Cut as `[5.0.0]` on 2026-08-06 and never tagged. The release was cut for real on 2026-08-12,
+> so this body is folded in beneath it rather than discarded, in its original order - the same
+> treatment the 2026-07-09 preparation cut already has below.
+>
 > The `## [5.0.0]` section below was cut on 2026-07-26 by `96597c63` and never tagged;
 > roughly 900 commits landed behind it. It is a DRAFT rather than a released section, so
 > its body is folded back into Unreleased here and one dated 5.0.0 is cut from the whole.
 > Nothing is discarded - the earlier body follows the newer one, in its original order.
 
-### Added
+### Added (2026-08-06 cut)
 
 - **`sprint_report.py operator-summary` - the decision-grade page an operator leads from (US0645).** What shipped and who signed it, what was rejected and in what repair state, what is carried and under which filed id, what it cost, and the one or two judgements most worth overturning. Human in the LEAD rather than in the loop: the seats judge at their speed, the operator reads and reverses at theirs.
 - **Every field is a READ of the ledgers, and no channel carries anybody's prose into it (US0645).** A seat writing its own summary is a seat marking its own homework, and the operator would be leading from an account with a stake in the answer. The test varies a verdict's free text and asserts the summary does not move.
@@ -156,7 +1123,7 @@ because it is the number the decision to let this lane BLOCK will rest on.
   means somebody should go and look. A close with no captured cost still prints a COST section
   saying so.
 
-### Changed
+### Changed (2026-08-06 cut)
 
 - **In-repo docs point at guided onboarding.** `help/hint.md` now records that a guided onboarding walk pre-empts the next-step ladder (matching what `status`/`hint` implement); the greenfield and brownfield runbooks open with `init guided` as the one-command path, keeping their manual step lists as under-the-hood detail; and the README documentation index points at the new sdlc-studio.com pages (the specification layer including the PVD, personas and the Three Amigos, and the greenfield/brownfield walkthroughs).
 - **A low-band unit gets a bounded brief: the claim-inventory pass runs at full tier only (US0642).** It reads every Resolution, docstring, comment and CHANGELOG line in scope and rules on each - a finding generator by construction, and the largest block in the prompt. On a low-band unit it costs more than the unit does.
@@ -549,11 +1516,11 @@ on this corpus today. What remained was the header.
   guard test fails if either creator re-hardcodes a divergent value. A pure refactor - no status
   added, removed or renamed.
 
-### Removed
+### Removed (2026-08-06 cut)
 
 - **`gate --verify-batch`, a flag that was parsed and read by nothing (US0479).** It was accepted, passed to `run_gate` as `verify_batch`, and consulted nowhere: `--release` implies batching and assigns the verify lane itself, so the option promised a behaviour no invocation of the gate has ever produced. An option that is accepted and ignored is worse than an absent one, because it is chosen. The flag, its dead parameter and every line of documentation naming it are gone, and a repo-only guard asserts no tracked skill file mentions it - alongside a control string that IS present, so a scan that silently matched nothing cannot read as a pass.
 
-### Fixed
+### Fixed (2026-08-06 cut)
 
 - **TSD help example matches the 90% coverage default.** `help/tsd.md`'s Quality Gates example showed unit coverage `>=80%`, contradicting the tool's own default (`config.coverage.unit` is 90, the template renders it, and `reference-tsd.md` sets and justifies 90% throughout). The example now reads `>=90%`, so a reader copying it lands on the recommended target rather than below it.
 - **A third independent review judged the repairs and rejected three of them; all three are now closed.** The reviewer named one shape across every rejection: a repair is behaviourally right on the path it was written for, and silently wrong on the path where its helper is absent, broken, or never ran. **BG0413**: the python half of the exit-code contract was well pinned and the SHELL half had no test at all - three hook mutants (read exit 2 again, drop the non-empty-note belt, stop setting `fail=1`) all survived the full 589-test tools suite, one of them committing green while printing `commit BLOCKED`. `tools/tests/test_precommit_scope_collapse_lane.py` now drives the real tracked hook in a hermetic repo and kills all three, and it also pins the promise that a missing or mis-invoked `gate_timing.py` never blocks. **BG0460**: the previous fix traded a guaranteed false negative for a false positive - `close_preflight` has early returns that never call `run_gate`, and "no gate blocker" could not tell that from a clean pass, so the preview stated `ok gate: run by the preflight against the real tree` about a gate that had not run. The preflight now reports `gate_ran`, an unreached or raised gate is `unevaluated`, and three mutants over that flag die. **BG0455**: the new sign-off block fell through to `return True` where every other uncertainty path returns False, so a critic that raised dropped the unit from the stop's refusal - the defect BG0455 was filed to end, reintroduced through its own repair, with the fail-closed mutant surviving the entire 5,669-test suite. It fails closed now, and the "shared" matcher (a third byte-identical copy behind a broad `except`) is replaced by `critic.is_awaiting_signoff`, promoted to a public name so a cross-module caller cannot silently diverge from it.
@@ -4005,7 +4972,7 @@ Measured, the hole is 8 destinations across 3 modules.
   not run" - the broken installer exited 0, so an exit-code assertion would have passed against
   the bug. Corollary: check the probe fails against the pre-fix code before trusting it.
 
-### Security
+### Security (2026-08-06 cut)
 
 - **Three high-severity advisories in the markdown lint chain are patched (BG0468).** `linkify-it`, `js-yaml` and `brace-expansion` all reached this tree transitively through `markdownlint-cli`, the repo's only devDependency, and were flagged the moment 208 commits were pushed and the dependency graph became visible again. Resolved by lockfile update alone: `package.json` is untouched, because `^0.49.0` already covered the 0.49.1 that carries the fixed transitives. Verified that the linter still LINTS rather than merely still running - a probe carrying trailing whitespace, consecutive blanks and a bare URL trips MD009, MD012 and MD034 and exits non-zero, which matters because `js-yaml` crossed a major version and a silently neutered lint would pass every gate.
 
