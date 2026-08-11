@@ -1,6 +1,6 @@
 # US0593: A run whose only review verdicts are REJECT reports the closing-review item outstanding, never ran
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

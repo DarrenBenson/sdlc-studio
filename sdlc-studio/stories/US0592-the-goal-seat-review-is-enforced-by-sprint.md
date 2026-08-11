@@ -1,6 +1,6 @@
 # US0592: The goal seat review is enforced by sprint plan --write, so skipping it is refused where it can still be run
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # CR-0513: The close checklist enforces items where they can still be satisfied, reads verdicts rather than counts, and checks how a review was briefed
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0197
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

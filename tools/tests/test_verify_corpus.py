@@ -96,6 +96,79 @@ class CorpusVerifyBaselineTests(unittest.TestCase):
         self.assertNotEqual(0, r.returncode)
         self.assertIn("no baseline row", r.stdout + r.stderr)
 
+    # --- the red-criteria half, which no test reached until an independent pass ran the lane ---
+
+    def _run_full(self, gate_out: str, baseline: str):
+        """Drive `verify-corpus.sh full`, discriminating the two runners the lane shells.
+
+        `full` calls `verify_ac.py stamps` and then `gate.py --release` through the same `$PYTHON`,
+        so a stub that ignores its arguments answers both with one string and the red half is
+        never really exercised. That is exactly how the red half shipped with two defects and a
+        green suite: every test here passed `stamps` and none passed `full`.
+        """
+        tmp = Path(tempfile.mkdtemp(prefix="verify_corpus_full_"))
+        stub = tmp / "stub.py"
+        stub.write_text(
+            "import sys\n"
+            "argv = ' '.join(sys.argv)\n"
+            "sys.stdout.write(%r if 'verify_ac' in argv else %r)\n" % (_STAMPS_OUT, gate_out))
+        runner = tmp / "runner.sh"
+        runner.write_text(f'#!/usr/bin/env bash\nexec {sys.executable} "{stub}" "$@"\n')
+        runner.chmod(0o755)
+        bfile = tmp / "baseline.txt"
+        bfile.write_text(baseline)
+        env = {**os.environ, "PYTHON": str(runner), "VERIFY_CORPUS_BASELINE": str(bfile)}
+        return subprocess.run(["bash", str(LANE), "full"], capture_output=True, text=True,
+                              env=env, cwd=str(REPO), check=False, timeout=300)
+
+    #: The shape `gate.py` actually renders when the corpus is clean. The lane read `[ OK ] verify`,
+    #: a string that occurs nowhere in the tree, so its green path was unreachable.
+    _GATE_PASS = "  [PASS] verify [2145.0s]: 0 red AC(s) [669 stories, 1899 executable AC(s)]\n"
+
+    #: A red run whose detail carries the unspecified clause FIRST. That clause contains colons of
+    #: its own (`no Verify: line`, `Verify: manual`), which is what defeated the anchored parse.
+    _GATE_RED_WITH_UNSPECIFIED = (
+        "  [FAIL] verify [2145.0s]: 3 story/stories with an unspecified AC (no Verify: line - an "
+        "omitted verifier is not a passed one; author one or mark it `Verify: manual`): US0001, "
+        "US0002, US0003; 58 red AC(s): US0063 AC2, US0273 AC2 [669 stories, 1899 executable "
+        "AC(s) in 2145s (batched)]\n")
+
+    _GATE_RED_PLAIN = "  [FAIL] verify [2145.0s]: 58 red AC(s): US0063 AC2 [669 stories]\n"
+
+    def test_a_clean_verify_lane_is_read_as_zero_rather_than_as_a_crash(self) -> None:
+        """The end state the baseline exists to force. Reading a marker the gate never prints made
+        the green path unreachable: at `red-criteria|0` the lane could only ever have refused."""
+        r = self._run_full(self._GATE_PASS, "dead-stamps|5|s\nred-criteria|0|r\n")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("red-criteria: 0 (baseline 0)", r.stdout)
+
+    def test_the_red_count_is_read_when_an_unspecified_clause_precedes_it(self) -> None:
+        """The live shape. An anchored walk from the lane name cannot cross the first clause's own
+        colons, so it returned empty and the lane refused as 'did not complete' with the real
+        count sitting in the output it had just printed."""
+        r = self._run_full(self._GATE_RED_WITH_UNSPECIFIED, "dead-stamps|5|s\nred-criteria|58|r\n")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("red-criteria: 58 (baseline 58)", r.stdout)
+
+    def test_the_red_count_is_read_from_a_plain_detail_too(self) -> None:
+        """The positive control. Without it, a parser that matched nothing at all would pass the
+        test above for the wrong reason."""
+        r = self._run_full(self._GATE_RED_PLAIN, "dead-stamps|5|s\nred-criteria|58|r\n")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("red-criteria: 58 (baseline 58)", r.stdout)
+
+    def test_a_rise_in_red_criteria_blocks(self) -> None:
+        r = self._run_full(self._GATE_RED_PLAIN, "dead-stamps|5|s\nred-criteria|57|r\n")
+        self.assertNotEqual(0, r.returncode)
+        self.assertIn("NEW one(s)", r.stdout + r.stderr)
+
+    def test_a_gate_that_died_before_reporting_is_refused_not_read_as_zero(self) -> None:
+        """A crash and a clean corpus must not collapse into the same number."""
+        r = self._run_full("Traceback (most recent call last):\n  RuntimeError\n",
+                           "dead-stamps|5|s\nred-criteria|58|r\n")
+        self.assertNotEqual(0, r.returncode)
+        self.assertIn("did not complete", r.stdout + r.stderr)
+
     def test_the_committed_baseline_names_both_metrics(self) -> None:
         """The shipped baseline must carry a row per metric the lane reads, or the scheduled run
         fails on its first invocation for a reason that looks like a defect in the corpus."""

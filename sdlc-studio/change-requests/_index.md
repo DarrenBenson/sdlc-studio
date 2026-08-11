@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 19 |
 | Approved | 0 |
-| In Progress | 9 |
-| Complete | 491 |
+| In Progress | 7 |
+| Complete | 493 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
@@ -41,7 +41,7 @@
 | [CR-0442](CR0442-the-run-lifecycle-beyond-plan-and-close-is.md) | The run lifecycle beyond plan and close is undocumented: batch mutation, appetite and the rolling policy have no help page | Complete | Medium | Improvement | 2026-07-27 | EP0170 |
 | [CR-0443](CR0443-the-affects-and-verify-warning-family-is-advisory.md) | The Affects and Verify warning family is advisory at 398 instances, so a new one is invisible | Complete | Medium | Improvement | 2026-07-27 | EP0173 |
 | [CR-0444](CR0444-sprint-plan-validates-the-batch-it-is-about.md) | sprint plan validates the batch it is about to plan, not only its index rows | Complete | High | Improvement | 2026-07-27 | EP0173 |
-| [CR-0445](CR0445-burn-down-the-19-duplicate-verify-selector-groups.md) | Burn down the 19 duplicate Verify selector groups the ratchet baselines | In Progress | Medium | Improvement | 2026-07-27 | EP0174 |
+| [CR-0445](CR0445-burn-down-the-19-duplicate-verify-selector-groups.md) | Burn down the 19 duplicate Verify selector groups the ratchet baselines | Complete | Medium | Improvement | 2026-07-27 | EP0174 |
 | [CR-0447](CR0447-reconcile-reports-a-supersession-only-one-side-records.md) | reconcile reports a supersession only one side records | Complete | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0448](CR0448-command-audit-reports-a-flag-whose-destination-is.md) | command_audit reports a flag whose destination is never read - and is proven on verify_batch | Complete | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0449](CR0449-the-progressive-loading-guide-s-path-cells-resolve.md) | The Progressive Loading Guide's path cells resolve | Complete | Medium | Improvement | 2026-07-27 | EP0175 |
@@ -65,7 +65,7 @@
 | [CR-0510](CR0510-ceremony-proportional-to-blast-radius-the-process-spends.md) | Ceremony proportional to blast radius: the process spends gate-grade rigour on prose-grade changes, and the machinery that would stop it is built and switched off | Complete | High | Improvement | 2026-07-31 | EP0208 |
 | [CR-0511](CR0511-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-07-31 | -- |
 | [CR-0512](CR0512-a-unit-review-is-scoped-to-that-unit.md) | A unit review is scoped to that unit's own diff and blocks only on a NEW defect; an already-logged finding is reported, never blocking | In Progress | High | Improvement | 2026-08-01 | EP0194 |
-| [CR-0513](CR0513-the-close-checklist-enforces-items-where-they-can.md) | The close checklist enforces items where they can still be satisfied, reads verdicts rather than counts, and checks how a review was briefed | In Progress | High | Improvement | 2026-08-01 | EP0197 |
+| [CR-0513](CR0513-the-close-checklist-enforces-items-where-they-can.md) | The close checklist enforces items where they can still be satisfied, reads verdicts rather than counts, and checks how a review was briefed | Complete | High | Improvement | 2026-08-01 | EP0197 |
 | [CR-0514](CR0514-the-amigo-panel-signs-off-a-sprint-to.md) | The amigo panel signs off a sprint to completion: a different seat from the one that reviewed it, gated on brief provenance and a converging review loop | Complete | High | Feature | 2026-08-01 | EP0198 |
 | [CR-0515](CR0515-an-agent-customises-content-never-tooling-hand-rolled.md) | An agent customises content, never tooling: hand-rolled work is detected from the run diff, reported at the close, and escapes only by filing the gap | In Progress | High | Feature | 2026-08-01 | EP0196 |
 | [CR-0516](CR0516-two-mechanical-tasks-have-no-tool-review-batch.md) | Two mechanical tasks have no tool: review-batch findings cannot survive the shell, and no command reports backlog points | Complete | Medium | Improvement | 2026-08-01 | EP0203 |

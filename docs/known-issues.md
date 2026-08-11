@@ -73,6 +73,7 @@ open, and a disclosure that pads its count is as misleading as one that trims it
 
 ## How this list is kept
 
-It is derived from the bug corpus, not maintained by hand. Any bug at `Open` whose
-severity is Medium or Low appears here; a bug that reaches a terminal status leaves. If
-this page and `sdlc-studio/bugs/` disagree, the corpus is right and this page is stale.
+It is derived from the bug corpus by `tools/known_issues.py`, not maintained by hand, and
+`tools/tests/test_known_issues.py` fails when the two disagree. Any bug at `Open` whose
+severity is Medium or Low appears here; a bug that reaches a terminal status leaves.
+Regenerate with `python3 tools/known_issues.py --write`.

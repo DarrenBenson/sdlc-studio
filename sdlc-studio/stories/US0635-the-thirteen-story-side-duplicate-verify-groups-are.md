@@ -1,6 +1,6 @@
 # US0635: The thirteen story-side duplicate Verify groups are split into discriminating selectors
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0445
 > **Supersedes:** US0482
 > **Created:** 2026-08-03

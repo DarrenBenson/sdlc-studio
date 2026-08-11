@@ -1,6 +1,6 @@
 # US0596: Coverage is computed once, and two rows disagreeing about it is itself an outstanding item
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

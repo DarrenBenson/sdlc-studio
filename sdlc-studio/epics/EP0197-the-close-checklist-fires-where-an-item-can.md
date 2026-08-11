@@ -1,6 +1,6 @@
 # EP0197: The close checklist fires where an item can still be satisfied, and reads verdicts rather than counts
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 24
 > **Parent:** CR0513
 > **Created:** 2026-08-01
@@ -14,12 +14,12 @@ Decomposed from CR0513. Delivers the work CR0513 requested.
 
 ## Story Breakdown
 
-- [ ] [US0591: Every checklist item declares its enforcing command, and the close reports rather than gates on an expired window](../stories/US0591-every-checklist-item-declares-its-enforcing-command-and.md)
-- [ ] [US0592: The goal seat review is enforced by sprint plan --write, so skipping it is refused where it can still be run](../stories/US0592-the-goal-seat-review-is-enforced-by-sprint.md)
-- [ ] [US0593: A run whose only review verdicts are REJECT reports the closing-review item outstanding, never ran](../stories/US0593-a-run-whose-only-review-verdicts-are-reject.md)
-- [ ] [US0594: A unit whose ticked criteria the tree contradicts is reported outstanding at the close](../stories/US0594-a-unit-whose-ticked-criteria-the-tree-contradicts.md)
-- [ ] [US0595: A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart](../stories/US0595-a-waiver-records-whether-it-was-deliberate-or.md)
-- [ ] [US0596: Coverage is computed once, and two rows disagreeing about it is itself an outstanding item](../stories/US0596-coverage-is-computed-once-and-two-rows-disagreeing.md)
+- [x] [US0591: Every checklist item declares its enforcing command, and the close reports rather than gates on an expired window](../stories/US0591-every-checklist-item-declares-its-enforcing-command-and.md)
+- [x] [US0592: The goal seat review is enforced by sprint plan --write, so skipping it is refused where it can still be run](../stories/US0592-the-goal-seat-review-is-enforced-by-sprint.md)
+- [x] [US0593: A run whose only review verdicts are REJECT reports the closing-review item outstanding, never ran](../stories/US0593-a-run-whose-only-review-verdicts-are-reject.md)
+- [x] [US0594: A unit whose ticked criteria the tree contradicts is reported outstanding at the close](../stories/US0594-a-unit-whose-ticked-criteria-the-tree-contradicts.md)
+- [x] [US0595: A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart](../stories/US0595-a-waiver-records-whether-it-was-deliberate-or.md)
+- [x] [US0596: Coverage is computed once, and two rows disagreeing about it is itself an outstanding item](../stories/US0596-coverage-is-computed-once-and-two-rows-disagreeing.md)
 
 ## Acceptance Criteria (Epic Level)
 

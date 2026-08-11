@@ -62,6 +62,37 @@ _RETRACTOR = re.compile(
 _RETRACTION_WINDOW = 60
 
 
+#: The SURVIVING limit as a claim, not as words that happen to be in the file: the measured
+#: total is a lower bound BECAUSE the delegated figure is supplied rather than observed. The
+#: whole conjunction, inside one sentence, because the two halves apart mean nothing.
+_LOWER_BOUND = re.compile(
+    r"lower\s+bound[^.]{0,200}\bsupplied\b[^.]{0,80}(?:rather\s+than|not)\s+observed",
+    re.IGNORECASE)
+
+#: Where the claim must be STATED, each block addressed by its own heading. A whole-file search
+#: cannot be used for this: both documents carry a Revision History row DESCRIBING this very
+#: change, and that row contains every word the claim contains - so gutting the passages that
+#: state the premise left the first version of this guard green, three times over.
+_STATING_PASSAGES = (
+    ("trd.md section 10 (performance)", "## 10. Performance Requirements", r"^## "),
+    ("trd.md Won't Have", "### Won't Have (This Version)", r"^---\s*$"),
+)
+
+
+def _passage(text: str, start: str, end_pattern: str, where: str) -> str:
+    """The block from `start` to the next `end_pattern`, or an ASSERTION if the heading is gone.
+
+    Never returns "" for a missing heading: an empty block satisfies every absence rule and
+    fails every presence rule for the wrong reason, and the guard must say which happened.
+    """
+    i = text.find(start)
+    assert i != -1, (f"{where}: could not locate {start!r} - the passage that must state the "
+                     f"lower-bound claim was renamed, and a guard must not read an empty block")
+    rest = text[i + len(start):]
+    m = re.search(end_pattern, rest, re.M)
+    return rest[:m.start()] if m else rest
+
+
 def _asserts_premise(text: str) -> list[str]:
     """Lines that ASSERT the premise, ignoring one RETRACTED immediately before the phrase.
 
@@ -130,25 +161,78 @@ class TokenPremiseMatchesTheCode(unittest.TestCase):
         """The SURVIVING limit, stated rather than vaguely gestured at: delegated spend is
         supplied, not observed, so the measured total is a lower bound.
 
-        SCOPE, plainly, because US0459 AC2 claims more than this asserts. The two `assertIn`
-        calls below search the WHOLE lowercased file, and each document also carries a Revision
-        History whose row describes this very change - which contains both words. So gutting
-        the passages that actually STATE the premise leaves this green: an independent seat
-        emptied `trd.md` at both stating passages, together and separately, and all three
-        mutants survived. This pins that the words appear SOMEWHERE in the file, which is not
-        the same as pinning the claim, and AC2's "rather than a vaguer restatement" is
-        precisely the distinction it fails to make. Repairing it is BG0457."""
+        ANCHORED to the passages that state it. The first version searched the WHOLE lowercased
+        file for "lower bound" and "supplied", and each document also carries a Revision History
+        row describing this very change - which contains both. An independent seat emptied
+        `trd.md` at both stating passages, together and separately, and all three mutants
+        survived a guard whose criterion says the claim is pinned. Each block below is addressed
+        by its own heading, and the claim is matched as a conjunction inside one sentence, so a
+        document that describes the change without making it fails."""
         rs = _load_run_state()
         state = {"delegated_tokens": [{"tokens": 5000, "agent": "a", "note": ""}]}
         self.assertEqual(5000, rs.delegated_total(state),
                          "delegated_total no longer reads a supplied figure")
-        for path in (TRD, DECISIONS):
-            text = path.read_text(encoding="utf-8").lower()
-            self.assertIn("lower bound", text,
-                          f"{path.name} does not state that the measured total is a lower bound")
-            self.assertIn("supplied", text,
-                          f"{path.name} does not say the delegated figure is SUPPLIED rather "
-                          f"than observed - the reason the bound is a bound")
+        trd = TRD.read_text(encoding="utf-8")
+        for where, start, end in _STATING_PASSAGES:
+            with self.subTest(passage=where):
+                self.assertRegex(
+                    _passage(trd, start, end, where), _LOWER_BOUND,
+                    f"{where} does not STATE that the measured total is a lower bound because "
+                    f"the delegated figure is supplied rather than observed. A Revision History "
+                    f"row describing the change does not stand in for the passage making it")
+        self.assertRegex(_d0020_row(), _LOWER_BOUND,
+                         "the D0020 row does not state the corrected reason it now stands on")
+
+
+class TheLowerBoundClaimIsAnchoredToItsPassage(unittest.TestCase):
+    """The discriminator, over a synthetic document, so the anchoring is pinned rather than
+    trusted. The real TRD states the claim in both passages, so a green run against it cannot
+    show what happens when one of them is gutted."""
+
+    #: A document whose stating passage has been emptied and whose Revision History still
+    #: describes the change. This is the exact state three surviving mutants left `trd.md` in.
+    GUTTED = (
+        "### Won't Have (This Version)\n\n"
+        "- A token budget that gates.\n\n"
+        "---\n\n"
+        "## Revision History\n\n"
+        "| 2026-07-29 | 5.0.0 | The premise is replaced by the measured one: transcript-measured "
+        "but a LOWER BOUND, because delegated spend is supplied rather than observed. |\n")
+
+    STATED = GUTTED.replace(
+        "- A token budget that gates.",
+        "- A token budget that gates. The session total IS transcript-measured, but it is a "
+        "LOWER BOUND because delegated and sidechain spend is supplied rather than observed.")
+
+    def test_a_revision_history_row_does_not_stand_in_for_the_stating_passage(self) -> None:
+        lowered = self.GUTTED.lower()
+        self.assertIn("lower bound", lowered)
+        self.assertIn("supplied", lowered)
+        self.assertRegex(self.GUTTED, _LOWER_BOUND,
+                         "the fixture does not reproduce the bypass it exists to refuse")
+        block = _passage(self.GUTTED, "### Won't Have (This Version)", r"^---\s*$", "fixture")
+        self.assertNotRegex(block, _LOWER_BOUND,
+                            "a gutted passage still satisfies the anchored read, so the guard "
+                            "is still pinned to prose about the claim rather than the claim")
+        stated = _passage(self.STATED, "### Won't Have (This Version)", r"^---\s*$", "fixture")
+        self.assertRegex(stated, _LOWER_BOUND,
+                         "the positive control fails: the anchored read refuses a passage that "
+                         "does state the claim, so every refusal above proves nothing")
+
+    def test_half_the_claim_is_not_the_claim(self) -> None:
+        """The conjunction is load-bearing. A passage saying only that the total is a lower
+        bound, with no reason, is the vaguer restatement the criterion forbids."""
+        for half in ("The measured total is a LOWER BOUND.",
+                     "The delegated figure is supplied rather than observed.",
+                     "The total is a lower bound. The delegated figure is supplied rather than "
+                     "observed."):
+            with self.subTest(text=half[:40]):
+                self.assertNotRegex(half, _LOWER_BOUND)
+
+    def test_a_renamed_stating_passage_fails_rather_than_reading_nothing(self) -> None:
+        with self.assertRaises(AssertionError) as ctx:
+            _passage(self.STATED, "### A Heading Nobody Wrote", r"^---\s*$", "fixture")
+        self.assertIn("could not locate", str(ctx.exception))
 
 
 class ThePremiseIsGoneFromEveryLiveFile(unittest.TestCase):

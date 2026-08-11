@@ -14,7 +14,9 @@ Run from the repo root:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import importlib.util
+import io
 import re
 import sys
 import tempfile
@@ -79,6 +81,65 @@ def _exempt_goals(sprint) -> set:
     return exempt
 
 
+#: The three unreadable-goal cases the gate refuses, and the words ADR-011 must use to state
+#: them TOGETHER. Three separate searches over the whole block passed on prose that was already
+#: there for another reason - "an absent config BLOCKS and an unknown mode falls back to
+#: enforce" carries two of these - so the whole D0062 fail-safe sentence could be deleted green.
+_FAIL_SAFE_TERMS = ("absent", "empty", "ladder", "block")
+
+
+def _sentences(block: str) -> list[str]:
+    return re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", block))
+
+
+def _fail_safe_sentence(block: str) -> str | None:
+    """The ONE sentence in which an absent, an empty and an off-ladder goal all block.
+
+    A sentence rather than a block, because the claim is a conjunction: each case alone is
+    stated elsewhere in the ADR about something else, and what a reader needs is the statement
+    that all three close the escape.
+    """
+    for sentence in _sentences(block):
+        low = sentence.lower()
+        if all(term in low for term in _FAIL_SAFE_TERMS):
+            return sentence
+    return None
+
+
+def _close_calls_grooming_report(case: unittest.TestCase, sprint, goal: str) -> list:
+    """Run the close's review-anchor step over a throwaway root and REPORT what it reached.
+
+    OBSERVED, not read off the source. `assertIn("grooming_report", inspect.getsource(...))` is
+    a substring over source text: replacing the call with a comment that merely names it
+    survives, which is the mutant US0457 AC3 says must redden. A spy on the module global -
+    which is how the call resolves - can only fire if the call happens.
+    """
+    calls: list = []
+    real = sprint.grooming_report
+
+    def spy(root, batch):
+        calls.append((str(root), list(batch)))
+        return real(root, batch)
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / "stories" / "US0001-groomed.md").write_text(
+            "# US0001: g\n\n> **Status:** Ready\n> **Affects:** a.py\n> **Points:** 3\n",
+            encoding="utf-8")
+        state = {"run_id": "RUN-FIXTURE", "outcome": "goal-reached",
+                 "batch": ["US0001"], "goal": goal}
+        sprint.grooming_report = spy
+        try:
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                ok, msg, _hint = sprint._close_review_anchor(root, None, state)
+        finally:
+            sprint.grooming_report = real
+    case.assertTrue(ok, f"the close's review-anchor step failed on the fixture: {msg}")
+    return calls
+
+
 class Adr011StatesTheFiringRule(unittest.TestCase):
 
     def test_the_exempt_goal_set_in_the_adr_is_derived_from_the_gate(self) -> None:
@@ -103,15 +164,17 @@ class Adr011StatesTheFiringRule(unittest.TestCase):
                      argparse.Namespace(goal="not-a-rung")):
             self.assertTrue(sprint._ungroomed_blocks_at(args),
                             f"the gate let an unreadable goal through: {vars(args)}")
-        # SCOPE: word-presence over the whole ADR block, which is weaker than US0457 AC2
-        # reads. `block` already carries "an absent config BLOCKS" for an unrelated reason, so
-        # two of these three words are satisfied before the D0062 fail-safe sentence is even
-        # consulted - deleting that sentence outright survives this file. It pins that the ADR
-        # discusses the case; it does not pin the sentence that decides it. BG0457.
-        block = _adr_block().lower()
-        for word in ("absent", "empty", "block"):
-            self.assertIn(word, block,
-                          f"ADR-011 does not say an {word} goal case is refused")
+        # ...and the ADR must state the same thing in ONE sentence. Word-presence over the whole
+        # block was satisfied before the D0062 fail-safe sentence was even consulted, because
+        # "an absent config BLOCKS and an unknown mode falls back to enforce" is in the Decision
+        # for an unrelated reason - so deleting the fail-safe sentence outright survived.
+        stated = _fail_safe_sentence(_adr_block())
+        self.assertIsNotNone(
+            stated,
+            "no single sentence in ADR-011 says that an ABSENT goal, an EMPTY goal and a goal "
+            "outside the ladder all BLOCK. The gate refuses all three, and a reader deciding "
+            "whether to groom must be able to read that from one sentence rather than assemble "
+            "it from words scattered through the ADR")
 
     def test_the_rendered_grooming_report_is_the_counterweight_the_adr_names(self) -> None:
         """The pure functions the close calls, over a fixture batch - and then the CALL from the
@@ -131,19 +194,67 @@ class Adr011StatesTheFiringRule(unittest.TestCase):
             text = sprint.render_grooming_report(report)
         self.assertTrue(text.strip(), "the rendered report is empty")
         self.assertRegex(text, r"\d", "the report states no count of what the rung groomed")
-        # The wiring: the close's review-anchor step must reach it on the design rung.
-        import inspect
-        # SCOPE: a SUBSTRING over source text, not a reached call. US0457 AC3 says "removing
-        # the call from the close reddens the guard"; replacing the call with a comment that
-        # merely names it survives, because both spell `grooming_report` in the source. It
-        # pins that the close's source MENTIONS the report. BG0457.
-        src = inspect.getsource(sprint._close_review_anchor)
-        self.assertIn("grooming_report", src,
-                      "the close does not render the grooming report, so the design "
-                      "exemption has no counterweight behind it")
+        # The wiring: the close's review-anchor step must REACH it on the design rung. Observed
+        # through a spy on the module global the call resolves through, because a substring over
+        # `inspect.getsource` cannot tell a call from a comment that names one.
+        self.assertTrue(_close_calls_grooming_report(self, sprint, "design"),
+                        "the close does not render the grooming report, so the design "
+                        "exemption has no counterweight behind it")
         self.assertIn("grooming_report", _adr_block(),
                       "ADR-011's Consequences do not name the close-side report as the "
                       "counterweight to the exemption")
+
+
+class TheAgreementChecksDiscriminate(unittest.TestCase):
+    """What each check refuses, pinned on its own. The real TRD and the real `sprint.py` agree
+    today, so a green run against them shows only that they agree - not that the check would
+    notice if they stopped."""
+
+    #: The Decision paragraph as it stands, minus the D0062 fail-safe sentence. Deleting that
+    #: sentence was a surviving mutant: two of the three words a word-presence check looked for
+    #: are carried by the config sentence, which is about something else entirely.
+    WITHOUT_THE_FAIL_SAFE = (
+        "**Decision:** With any ungroomed unit in the batch, `sprint plan` exits non-zero. "
+        "`sprint.breakdown: judgement` downgrades the lane to a report; an absent config BLOCKS "
+        "and an unknown mode falls back to enforce.\n\n"
+        "**Amended by D0062: the gate is GOAL-AWARE, and `design` is the only exemption.** "
+        "An ungroomed batch is accepted at `--goal design` and refused at every other rung.\n")
+
+    FAIL_SAFE = ("The exemption is deliberately narrow in the fail-safe direction: an ABSENT "
+                 "goal, an EMPTY goal and a goal outside the ladder all BLOCK, so the escape "
+                 "cannot open merely because the rung could not be read.")
+
+    def test_deleting_the_fail_safe_sentence_is_refused(self) -> None:
+        low = self.WITHOUT_THE_FAIL_SAFE.lower()
+        self.assertIn("absent", low, "the fixture does not reproduce the words that survived")
+        self.assertIn("block", low, "the fixture does not reproduce the words that survived")
+        self.assertIsNone(
+            _fail_safe_sentence(self.WITHOUT_THE_FAIL_SAFE),
+            "an ADR with the D0062 fail-safe sentence deleted still satisfies the check, so it "
+            "is pinned to words an unrelated sentence already carries")
+        restored = self.WITHOUT_THE_FAIL_SAFE + "\n" + self.FAIL_SAFE + "\n"
+        self.assertIsNotNone(_fail_safe_sentence(restored),
+                             "the positive control fails: the check refuses the sentence it "
+                             "exists to require, so the refusal above proves nothing")
+        # ...and the three cases must sit in ONE sentence, not be assembled across the block.
+        scattered = (self.WITHOUT_THE_FAIL_SAFE
+                     + "\nAn empty goal is a case the ladder does not name.\n")
+        self.assertIsNone(_fail_safe_sentence(scattered),
+                          "words spread over two sentences satisfied the check")
+
+    def test_the_close_calls_the_grooming_report_only_on_the_design_rung(self) -> None:
+        """The counterweight is a REACHED call. A comment naming `grooming_report` where the
+        call used to be leaves the exemption with nothing behind it while the source still spells
+        the name, which is what the source-substring check could not tell apart."""
+        sprint = _sprint()
+        called = _close_calls_grooming_report(self, sprint, "design")
+        self.assertTrue(called, "the design rung's close did not reach grooming_report")
+        self.assertEqual([["US0001"]], [batch for _root, batch in called],
+                         f"the close reached grooming_report with a batch it was not given: "
+                         f"{called}")
+        self.assertEqual([], _close_calls_grooming_report(self, sprint, "done"),
+                         "a `done` rung rendered the design rung's counterweight, so the "
+                         "observation is not about the rung the exemption applies to")
 
 
 class Adr011AmendmentIsMarked(unittest.TestCase):

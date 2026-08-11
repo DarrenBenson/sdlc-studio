@@ -1,6 +1,6 @@
 # US0591: Every checklist item declares its enforcing command, and the close reports rather than gates on an expired window
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

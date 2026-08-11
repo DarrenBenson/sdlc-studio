@@ -1,6 +1,6 @@
 # CR-0445: Burn down the 19 duplicate Verify selector groups the ratchet baselines
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0174
 > **Priority:** Medium
 > **Type:** Improvement

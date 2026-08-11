@@ -83,11 +83,21 @@ rehearse_red() {
   echo "red criteria: criteria that FAIL when executed (~28 minutes)"
   local out n
   out="$($PY "$SCRIPTS/gate.py" --root "$REPO" --release 2>&1)"
-  n="$(echo "$out" | sed -n 's/.*\[FAIL\] verify[^:]*: \([0-9]*\) red AC.*/\1/p' | head -1)"
+  # Read the count out of whichever clause carries it, never by position. The lane's detail is a
+  # `; `-joined list and the unspecified-AC clause comes FIRST and contains colons of its own, so
+  # an anchored `[^:]*` walk from the lane name cannot reach the red clause on a run that has both
+  # - it returned empty against the live shape and the lane then refused as "did not complete"
+  # while a real red count sat in the output it had just printed.
+  n="$(printf '%s\n' "$out" | grep -E '\[(FAIL|warn)\] verify' \
+       | grep -oE '[0-9]+ red AC' | head -1 | grep -oE '^[0-9]+')"
   if [ -z "$n" ]; then
     # The lane did not report a red count at all: either it passed outright, or it died before
     # reporting. Those are different facts and must not be collapsed into "0".
-    if echo "$out" | grep -q '\[ OK \] verify'; then n=0; else
+    # The PASS marker is `[PASS]`, the string gate.py actually renders. This read `[ OK ]`, which
+    # occurs nowhere in the tree, so the green path was unreachable: once the corpus is repaired
+    # and this baseline reaches 0 - the end state the lane exists to force - it could never have
+    # gone green, and it would have said something false about why.
+    if printf '%s\n' "$out" | grep -qE '\[PASS\] verify'; then n=0; else
       echo "$out" >&2
       fail "the verify lane reported no red count and did not pass - it did not complete"
     fi

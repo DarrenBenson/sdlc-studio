@@ -1,6 +1,6 @@
 # US0636: The seven bug-side duplicate Verify groups are split and the baseline empties of intra-record debt
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0445
 > **Supersedes:** US0482
 > **Created:** 2026-08-03

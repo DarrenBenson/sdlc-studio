@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 9 |
+| Draft | 7 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 207 |
+| Done | 209 |
 | **Total** | **216** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -31,7 +31,7 @@
 | [EP0171](EP0171-in-flight-sprint-controls-and-a-close-review.md) | In-flight sprint controls and a close review derived from one recorded entry | Draft | 7 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0172](EP0172-dead-surfaces-the-supersession-record-the-epic-index.md) | Dead surfaces: the supersession record, the epic-index columns and the flag that does nothing | Done | 4 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0173](EP0173-footprint-and-criterion-checks-bite-instead-of-accumulating.md) | Footprint and criterion checks bite instead of accumulating | Done | 2 | -- | 2026-07-27 | 2026-07-27 |
-| [EP0174](EP0174-pay-down-the-debt-the-v5-scope-caps.md) | Pay down the debt the v5 scope caps baselined | Draft | 5 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0174](EP0174-pay-down-the-debt-the-v5-scope-caps.md) | Pay down the debt the v5 scope caps baselined | Done | 5 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0175](EP0175-detectors-for-the-classes-the-audit-had-to.md) | Detectors for the classes the audit had to find by hand | Done | 3 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0176](EP0176-a-queue-of-planned-sprint-charters-plan-several.md) | A queue of planned sprint charters: plan several, run the next, and let the planner and the runner be different people | Done | 6 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0177](EP0177-make-the-discipline-cheaper-than-the-sloppiness-it.md) | Make the discipline cheaper than the sloppiness it replaces: run the tests the change can reach, at the boundaries that matter | Done | 15 | -- | 2026-07-28 | 2026-07-28 |
@@ -42,7 +42,7 @@
 | [EP0193](EP0193-the-mutation-lane-tells-an-uncommitted-surface-apart.md) | The mutation lane tells an uncommitted surface apart from an untested one | Done | 1 | -- | 2026-07-30 | 2026-07-30 |
 | [EP0194](EP0194-a-unit-review-is-bounded-briefed-by-the.md) | A unit review is bounded, briefed by the tool, and blocks only on what the unit broke | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0196](EP0196-hand-rolled-work-is-visible-the-close-names.md) | Hand-rolled work is visible: the close names what an agent did by hand instead of by tool | Draft | 5 | -- | 2026-08-01 | 2026-08-01 |
-| [EP0197](EP0197-the-close-checklist-fires-where-an-item-can.md) | The close checklist fires where an item can still be satisfied, and reads verdicts rather than counts | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0197](EP0197-the-close-checklist-fires-where-an-item-can.md) | The close checklist fires where an item can still be satisfied, and reads verdicts rather than counts | Done | 6 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0198](EP0198-a-sprint-closes-on-an-amigo-panel-s.md) | A sprint closes on an amigo panel's sign-off, so the operator is informed and never a step in the machine | Done | 7 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0199](EP0199-a-criterion-verified-only-through-the-library-is.md) | A criterion verified only through the library is visible, so a feature cannot pass its own gate while its lane is unwired | Done | 3 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0200](EP0200-a-sprint-close-gates-on-its-own-review.md) | A sprint close gates on its own review coverage, not on an unrelated periodic ceremony | Done | 2 | -- | 2026-08-01 | 2026-08-01 |

@@ -1,6 +1,6 @@
 # US0594: A unit whose ticked criteria the tree contradicts is reported outstanding at the close
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0513
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
