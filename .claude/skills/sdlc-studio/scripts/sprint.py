@@ -6778,10 +6778,18 @@ def dry_run_report(result: dict) -> str:
     icon = {"ok": "ok  ", "refuse": "STOP", "unevaluated": "??  "}
     lines = [f"close --dry-run: nothing was written. {len(_CLOSE_CHAIN)} chain step(s) previewed."]
     for step in result["steps"]:
-        lines.append(f"  {icon.get(step['status'], '?')} {step['step']}: "
-                     f"{(step['detail'] or step['status']).splitlines()[0][:160]}")
+        # The CONTINUATION lines, not just the first. `_close_checklist` builds a multi-line block
+        # naming every outstanding item, and truncating at the first newline threw exactly the
+        # part written to name the cause away - a refusal that says "1 item unanswered" and not
+        # WHICH one sends the reader back to run the command again to find out. Indented under
+        # their step so the shape still reads as one verdict per line.
+        body = (step["detail"] or step["status"]).splitlines() or [""]
+        lines.append(f"  {icon.get(step['status'], '?')} {step['step']}: {body[0][:160]}")
+        lines.extend(f"       {ln[:160]}" for ln in body[1:] if ln.strip())
         if step["remedy"]:
-            lines.append(f"       -> {step['remedy'].splitlines()[0][:160]}")
+            remedy = step["remedy"].splitlines()
+            lines.append(f"       -> {remedy[0][:160]}")
+            lines.extend(f"          {ln[:160]}" for ln in remedy[1:] if ln.strip())
     if result["clean"]:
         lines.append("dry run CLEAN - every step was evaluated and none refused.")
     else:

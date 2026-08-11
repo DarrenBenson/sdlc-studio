@@ -15226,5 +15226,45 @@ class AffectsCheckBlockRefusesTests(unittest.TestCase):
                             "the advisory mode refused the plan")
 
 
+class DryRunReportDetailTests(unittest.TestCase):
+    """BG0557: the close's dry run cut every refusal at its first newline.
+
+    `_close_checklist` builds a multi-line block naming each outstanding item, and the renderer
+    threw away exactly the part written to name the cause - so a run reported "1 item unanswered"
+    and never said which, which is the symptom the bug was filed on.
+    """
+
+    def _report(self, steps):
+        return _load().dry_run_report(
+            {"clean": False, "steps": steps, "blockers": steps, "unevaluated": [],
+             "scratch": None})
+
+    def test_the_dry_run_prints_every_line_of_a_multi_line_refusal(self) -> None:
+        out = self._report([{
+            "step": "checklist", "status": "refuse",
+            "detail": "2 compulsory checklist item(s) unanswered:\n"
+                      "  known-issues: Known issues carried - 3 unruled\n"
+                      "  closing-review: no independent pass covers 4 unit(s)",
+            "remedy": "answer each item by running the stage it names\n"
+                      "or record a waiver naming it and why"}])
+        self.assertIn("known-issues", out, "the first named item was truncated away")
+        self.assertIn("closing-review", out, "the second named item was truncated away")
+        self.assertIn("or record a waiver", out, "the remedy's continuation was truncated away")
+
+    def test_a_single_line_step_still_renders_as_one_line(self) -> None:
+        # The positive control: "print every line" is otherwise satisfied by a renderer that pads
+        # each step with blanks, which is noisier than the truncation it replaces.
+        # A detail whose block carries BLANK lines - the shape `_close_checklist` produces when a
+        # named item has no extra detail. The honest renderer drops them; a renderer that simply
+        # emits `body[1:]` pads the report with empties, which is noisier than the truncation it
+        # replaces. A single-line fixture cannot tell the two apart - mutation proved that.
+        out = self._report([{"step": "retro", "status": "refuse",
+                             "detail": "no retro named\n\n\n",
+                             "remedy": "pass --retro RETROxxxx"}])
+        body = [l for l in out.splitlines() if l.startswith(("  ", "       "))]
+        self.assertEqual(2, len(body),
+                         f"blank continuation lines were emitted: {body!r}")
+
+
 if __name__ == "__main__":
     unittest.main()

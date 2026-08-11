@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 51 |
+| Open | 50 |
 | In Progress | 0 |
-| Fixed | 430 |
+| Fixed | 431 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
@@ -96,7 +96,7 @@
 | [BG0554](BG0554-survivor-severity-under-rates-the-explicit-return-none.md) | survivor severity under-rates the explicit return-None idiom, which is the shape that matters most in this codebase | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0555](BG0555-twelve-scripts-declare-root-only-per-subcommand-a.md) | twelve scripts declare --root only per-subcommand, a grammar defect the conformance sweep could not see because it silently skipped them | Open | Medium | 2026-08-08 | 2026-08-08 |
 | [BG0556](BG0556-no-guard-catches-a-root-that-selects-the.md) | no guard catches a --root that selects the file written but not the content read | Open | Medium | 2026-08-08 | 2026-08-08 |
-| [BG0557](BG0557-sprint-close-dry-run-reports-a-checklist-stop.md) | sprint close --dry-run reports a checklist STOP the real close does not | Open | Medium | 2026-08-09 | 2026-08-09 |
+| [BG0557](BG0557-sprint-close-dry-run-reports-a-checklist-stop.md) | sprint close --dry-run reports a checklist STOP the real close does not | Fixed | Medium | 2026-08-09 | 2026-08-09 |
 | [BG0558](BG0558-a-greenfield-project-cannot-plan-its-first-sprint.md) | a greenfield project cannot plan its first sprint: every Affects path is unresolvable because the code does not exist yet, and the blocking grooming lane calls that a fictional Affects | Fixed | High | 2026-08-09 | 2026-08-09 |
 | [BG0559](BG0559-the-doc-surface-gate-lane-raises-modulenotfounderror-in.md) | the doc-surface gate lane raises ModuleNotFoundError in every consuming project, so a new v5 lane reports NOT MEASURED forever on every user's gate run | Fixed | High | 2026-08-09 | 2026-08-09 |
 | [BG0560](BG0560-the-page-readme-sends-every-existing-user-to.md) | the page README sends every existing user to is the v4 upgrade page, so v5's breaking gate changes reach an upgrading project with no document that names them | Fixed | High | 2026-08-09 | 2026-08-09 |
