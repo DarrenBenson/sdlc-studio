@@ -11,11 +11,12 @@
 > tests validate the spec against the implementation. Confidence markers and
 > status values are defined at the foot of this document.
 >
-> **Coverage:** v4.1.0 as released, plus the work sitting on `main` under
-> `CHANGELOG.md` `[Unreleased]` (the breakdown gate, sprint capacity, the sizing
-> and velocity loop, the retro learning loop, the two-backlog workflow, the refine
-> and migrate commands, the Issue and triage discovery track, and the un-skippable
-> sprint close-down). Anything not yet in a tagged release is marked
+> **Coverage:** v5.0.0 as released, plus the work sitting on `main` under
+> `CHANGELOG.md` `[Unreleased]`. The v5 line covers the refusal gates (the
+> breakdown gate, the two-role review, the executable-criteria gate on Done, the
+> verifier ratchet), the evidence lane (mutation evidence, vacuous-verifier
+> refusal), the cost work that made the gate cheap enough to leave on, and the
+> derived sprint close. Anything not yet in a tagged release is marked
 > **[Unreleased]** in the tables below. The document version tracks the product
 > version; it is not itself a release artefact.
 

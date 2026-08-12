@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-08-11
+**Last Updated:** 2026-08-12
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 21 |
+| Proposed | 22 |
 | Approved | 0 |
 | In Progress | 6 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **544** |
+| **Total** | **545** |
 
 ## All Changes
 
@@ -95,6 +95,7 @@
 | [CR-0542](CR0542-nothing-rehearses-the-two-paths-every-user-takes.md) | nothing rehearses the two paths every user takes first, so a defect on them is found by a user: drive greenfield-to-first-plan and v4-to-green-gate through the shipped CLI on every gate run | Complete | High | Feature | 2026-08-09 | EP0214 |
 | [CR-0543](CR0543-plan-review-has-no-adoption-cutoff-so-the.md) | plan_review has no adoption cutoff, so the one hard risk-proportional plan gate in the codebase cannot be turned on by any project with history - including this one | Proposed | High | enhancement | 2026-08-11 | -- |
 | [CR-0544](CR0544-nothing-reviews-a-repair-s-approach-or-a.md) | Nothing reviews a REPAIR's approach or a PROCEDURE's plan before it is executed, and that is where this session's most expensive findings were | Proposed | High | enhancement | 2026-08-11 | -- |
+| [CR-0545](CR0545-everything-after-the-tag-is-un-tooled-no.md) | Everything after the tag is un-tooled: no command publishes a release, so the runbook has no row for the step and the assets the install path verifies against have never been produced | Proposed | P1 | Improvement | 2026-08-12 | -- |
 
 ## Archived Releases
 

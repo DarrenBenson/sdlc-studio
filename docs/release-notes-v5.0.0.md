@@ -189,5 +189,5 @@ part a person deciding whether to upgrade can read.
 
 - [README](../README.md) - installation and quick start
 - [docs/existing-users.md](existing-users.md) - the upgrade path in full
-- [docs/known-issues.md](known-issues.md) - the 38 disclosed findings
+- [docs/known-issues.md](known-issues.md) - the 40 disclosed findings
 - [docs/INSTALL.md](INSTALL.md) - step-by-step installation

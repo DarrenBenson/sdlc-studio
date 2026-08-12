@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-11
+**Last Updated:** 2026-08-12
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 40 |
+| Open | 41 |
 | In Progress | 0 |
 | Fixed | 447 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **574** |
+| **Total** | **575** |
 
 ## All Bugs
 
@@ -114,6 +114,7 @@
 | [BG0572](BG0572-the-repo-writes-guard-attributes-any-concurrent-edit.md) | The repo-writes guard attributes any concurrent edit to the test run, so editing during a 15-minute background commit refuses it and names the author's own files as fixture damage | Open | Medium | 2026-08-11 | 2026-08-11 |
 | [BG0573](BG0573-running-the-suite-from-inside-scripts-empties-the.md) | Running the suite from inside scripts/ empties the checkout and replaces it with a greenfield tree, and the temp-root guard is disarmed for any clone under /tmp | Fixed | High | 2026-08-11 | 2026-08-11 |
 | [BG0574](BG0574-a-dry-run-takes-the-allocation-lock-on.md) | A --dry-run takes the allocation lock on the target repository, so a preview writes into the tree it was asked only to describe | Fixed | Medium | 2026-08-11 | 2026-08-11 |
+| [BG0575](BG0575-the-documented-sensitive-environment-install-refuses-to-install.md) | The documented sensitive-environment install refuses to install, at every version, because the sidecar it verifies against cannot exist at the URL install.sh reads | Open | High | 2026-08-12 | 2026-08-12 |
 
 ## Archived Releases
 

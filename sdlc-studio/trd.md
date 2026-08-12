@@ -34,9 +34,9 @@ shared library, the data architecture (markdown artifacts plus JSON state, and t
 two id eras), the gate architecture, soft runtime dependencies, tool-neutral
 portability, and the architectural decisions (ADRs).
 
-Coverage: v4.1.0 as released, plus the `[Unreleased]` work on `main` (the breakdown
-gate, sprint capacity, the sizing loop, the retro learning loop). The document
-version tracks the product version; it is not itself a release artefact.
+Coverage: v5.0.0 as released, plus the `[Unreleased]` work on `main` (the release
+workflow and the verified install path). The document version tracks the product
+version; it is not itself a release artefact.
 
 Not covered: the per-command process flows (these live in the `reference-*.md`
 files and are the artifact behaviours, not the technical design); the content of

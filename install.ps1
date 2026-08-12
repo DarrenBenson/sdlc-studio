@@ -199,15 +199,44 @@ Native alternatives (sdlc-studio is a standard skill):
     try {
         if (-not $DryRun) {
             New-Item -ItemType Directory -Path $TmpDir -Force | Out-Null
-            $Url = if ($Version -eq 'main') {
-                "https://github.com/$Repo/archive/refs/heads/$Version.zip"
-            } else {
-                "https://github.com/$Repo/archive/refs/tags/$Version.zip"
+            # A tagged version prefers the RELEASE ASSET over GitHub's generated source archive,
+            # because the asset and its '.sha256' are published together by this project's release
+            # workflow - so the digest belongs to bytes we produced and the pair cannot drift.
+            # GitHub serves no sidecar beside a generated archive at any version, which is why the
+            # documented REQUIRE_CHECKSUM path could never complete before BG0575.
+            #
+            # A 404 on the asset means the tag predates the workflow, and we fall back. Any OTHER
+            # failure must NOT fall back: reading a network fault as "no asset published" silently
+            # downgrades the user from bytes we published to bytes we did not.
+            $Url = "https://github.com/$Repo/archive/refs/heads/$Version.zip"
+            $AssetUrl = $null
+            if ($Version -ne 'main') {
+                $Url = "https://github.com/$Repo/archive/refs/tags/$Version.zip"
+                $AssetUrl = "https://github.com/$Repo/releases/download/$Version/sdlc-studio-$Version.zip"
             }
             Write-Info "Downloading SDLC Studio ($Version)..."
             $ZipPath = Join-Path $TmpDir 'archive.zip'
-            try { Invoke-WebRequest -Uri $Url -OutFile $ZipPath -UseBasicParsing }
-            catch { throw "Failed to download from $Url`n$($_.Exception.Message)" }
+            $Fetched = $false
+            if ($AssetUrl) {
+                try {
+                    Invoke-WebRequest -Uri $AssetUrl -OutFile $ZipPath -UseBasicParsing
+                    $Url = $AssetUrl
+                    $Fetched = $true
+                } catch {
+                    $code = $null
+                    if ($_.Exception.Response) { $code = [int]$_.Exception.Response.StatusCode }
+                    if ($code -ne 404) {
+                        throw ("Failed to reach $AssetUrl - a transport error, not a missing " +
+                               "asset. Refusing to fall back to an unverified download.`n" +
+                               $_.Exception.Message)
+                    }
+                    Write-Info "No release asset for $Version - falling back to the source archive"
+                }
+            }
+            if (-not $Fetched) {
+                try { Invoke-WebRequest -Uri $Url -OutFile $ZipPath -UseBasicParsing }
+                catch { throw "Failed to download from $Url`n$($_.Exception.Message)" }
+            }
             # Verify the artefact against a published sha256 BEFORE extraction, so a swapped
             # zip cannot inject code. Expected digest: SDLC_STUDIO_SHA256 (an explicit pin),
             # else a best-effort sidecar '<url>.sha256'. With none we warn and proceed unless

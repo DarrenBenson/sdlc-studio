@@ -200,3 +200,101 @@ jobs:
           }
           Write-Host 'NoSweep opt-out OK'
           Pop-Location
+
+      - name: install.ps1 - the verified install path, green and red (BG0575)
+        shell: pwsh
+        run: |
+          # The Windows half of BG0575. install.ps1 must prefer the release ASSET for a tagged
+          # version, because GitHub serves no .sha256 beside a generated source archive - so the
+          # documented SDLC_STUDIO_REQUIRE_CHECKSUM=1 install could never complete.
+          #
+          # Invoke-WebRequest cannot be shadowed on PATH the way `curl` can, so it is shadowed as
+          # a FUNCTION in the invoking scope - the same technique test_install_atomic.py uses for
+          # `cp`. The real install.ps1 runs; only its downloader is answered locally.
+          $ErrorActionPreference = 'Stop'
+          $work = Join-Path $env:RUNNER_TEMP 'verified'
+          New-Item -ItemType Directory -Force $work | Out-Null
+
+          # Build a payload shaped like the real asset: one sdlc-studio-<ver>/ at the top,
+          # holding the skill tree, which is what install.ps1's Get-ChildItem -Filter reads.
+          $stage = Join-Path $work 'sdlc-studio-9.9.9'
+          $skill = Join-Path $stage '.claude/skills/sdlc-studio'
+          New-Item -ItemType Directory -Force $skill | Out-Null
+          Set-Content -Path (Join-Path $skill 'SKILL.md') -Value "---`nname: sdlc-studio`n---`n"
+          Set-Content -Path (Join-Path $stage 'CHANGELOG.md') -Value "# Changelog`n"
+          $zip = Join-Path $work 'asset.zip'
+          Compress-Archive -Path $stage -DestinationPath $zip -Force
+          # LOWERCASE, because that is what `sha256sum` publishes and therefore what a real
+          # sidecar contains. Get-FileHash returns uppercase, so serving its output unchanged
+          # would compare uppercase against uppercase - and the mutant `-ine` -> `-cne` would
+          # survive this whole job while breaking every real verified install on Windows.
+          $digest = (Get-FileHash -Path $zip -Algorithm SHA256).Hash.ToLower()
+
+          $script:ServedDigest = $digest
+          $script:AssetZip = $zip
+
+          function Invoke-WebRequest {
+            param([string]$Uri, [string]$OutFile, [switch]$UseBasicParsing)
+            if ($Uri -like '*/releases/download/*sdlc-studio-v9.9.9.zip.sha256') {
+              return [pscustomobject]@{ Content = "$script:ServedDigest  sdlc-studio-v9.9.9.zip" }
+            }
+            if ($Uri -like '*/releases/download/*sdlc-studio-v9.9.9.zip') {
+              Copy-Item $script:AssetZip $OutFile -Force; return
+            }
+            # Anything else is "not there". install.ps1 reads the status off
+            # $_.Exception.Response.StatusCode, so the thrown exception must actually CARRY one -
+            # a bare WebException has a null Response, which install.ps1 correctly treats as a
+            # transport error, and the 404 branch would then be exercised by nothing at all.
+            $msg = [System.Net.Http.HttpResponseMessage]::new([System.Net.HttpStatusCode]::NotFound)
+            throw [Microsoft.PowerShell.Commands.HttpResponseException]::new('404 Not Found', $msg)
+          }
+
+          $env:SDLC_STUDIO_REQUIRE_CHECKSUM = '1'
+          $proj = Join-Path $work 'proj'
+          New-Item -ItemType Directory -Force $proj | Out-Null
+          Push-Location $proj
+          & "$env:GITHUB_WORKSPACE/install.ps1" -Target claude -Local -NoSweep -Version v9.9.9
+          if (-not (Test-Path '.claude/skills/sdlc-studio/SKILL.md')) {
+            throw 'BG0575 green control: the verified install did not place SKILL.md'
+          }
+          Write-Host 'BG0575 green control OK - verified install completed from the asset'
+          Pop-Location
+
+          # RED control: corrupt the sidecar. The install must abort before extraction.
+          $script:ServedDigest = 'deadbeef'
+          $proj2 = Join-Path $work 'proj2'
+          New-Item -ItemType Directory -Force $proj2 | Out-Null
+          Push-Location $proj2
+          $failed = $false
+          try { & "$env:GITHUB_WORKSPACE/install.ps1" -Target claude -Local -NoSweep -Version v9.9.9 }
+          catch { $failed = $true }
+          if (-not $failed) { throw 'BG0575 red control: a mismatched digest did not abort' }
+          if (Test-Path '.claude/skills/sdlc-studio/SKILL.md') {
+            throw 'BG0575 red control: extraction happened despite a digest mismatch'
+          }
+          Write-Host 'BG0575 red control OK - mismatched digest aborted before extraction'
+          Pop-Location
+
+          # THIRD control: no asset published for the tag. This is the only one that reaches the
+          # 404 branch, so without it the fallback install.ps1 gained for BG0575 is exercised by
+          # nothing. The tag must fall back to the source archive, find no digest there, and
+          # refuse under REQUIRE_CHECKSUM rather than invent verification.
+          $script:NoAsset = $true
+          function Invoke-WebRequest {
+            param([string]$Uri, [string]$OutFile, [switch]$UseBasicParsing)
+            $m = [System.Net.Http.HttpResponseMessage]::new([System.Net.HttpStatusCode]::NotFound)
+            throw [Microsoft.PowerShell.Commands.HttpResponseException]::new('404 Not Found', $m)
+          }
+          $proj3 = Join-Path $work 'proj3'
+          New-Item -ItemType Directory -Force $proj3 | Out-Null
+          Push-Location $proj3
+          $refused = $false
+          $err = ''
+          try { & "$env:GITHUB_WORKSPACE/install.ps1" -Target claude -Local -NoSweep -Version v9.9.9 }
+          catch { $refused = $true; $err = $_.Exception.Message }
+          if (-not $refused) { throw 'BG0575 404 control: a tag with no asset did not refuse' }
+          if ($err -match 'transport error') {
+            throw "BG0575 404 control: a 404 was read as a transport error - the status is not being extracted from the exception. Got: $err"
+          }
+          Write-Host "BG0575 404 control OK - fell back, found no digest, refused: $err"
+          Pop-Location

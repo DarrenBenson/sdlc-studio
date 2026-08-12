@@ -239,11 +239,52 @@ sha256_of() {
     else echo ""; fi
 }
 
+# Download $1 to $2. Returns 0, or 22 when the server said 404 - the artefact is NOT THERE - or
+# 1 for anything else.
+#
+# The three-way answer is the point (BG0575). A caller falls back to the unverified source
+# archive on 22 and only on 22, so "no asset was published for this tag" is distinguished from
+# "we could not reach the one that was". Reading a fault as an absence silently downgrades a user
+# from bytes we published to bytes we did not, and reports it as a missing digest rather than as
+# the failure it is.
+#
+# THE STATUS HAS TO BE READ, not inferred from the exit code. `curl -f` exits 22 for EVERY status
+# at or above 400, so a 403, a rate-limiting 429 or a CDN 503 is indistinguishable from a 404 by
+# exit code alone - and each of those is a fault, not an absence. `-w '%{http_code}'` without
+# `-f` reports the status itself. wget collapses the same range onto exit 8, so its `-S` trace is
+# read for the status line.
+#
+# Both branches delete a partial file on failure: `curl` without `-f` writes the error body to
+# the output path, and `wget -O` leaves a zero-length file behind, either of which a later `tar`
+# would read as a corrupt archive rather than as the absence it is.
+download_to() {
+    local url="$1" dest="$2" rc=0 code="" err=""
+    if command -v curl >/dev/null 2>&1; then
+        code=$(curl -sSL -o "$dest" -w '%{http_code}' "$url") || rc=$?
+        if [[ "$rc" -ne 0 ]]; then rm -f "$dest"; return 1; fi
+        case "$code" in
+            2??) return 0 ;;
+            404) rm -f "$dest"; return 22 ;;
+            *)   rm -f "$dest"; return 1 ;;
+        esac
+    fi
+    err=$(wget -q -S "$url" -O "$dest" 2>&1) || rc=$?
+    if [[ "$rc" -eq 0 ]]; then return 0; fi
+    rm -f "$dest"
+    printf '%s' "$err" | grep -qE 'HTTP/[0-9.]+ 404' && return 22
+    return 1
+}
+
 # Verify the downloaded tarball against a published sha256 BEFORE extraction, so a
 # swapped artefact cannot inject code. The expected digest comes from (in order):
 # SDLC_STUDIO_SHA256 (an explicit pin), else a best-effort sidecar `<url>.sha256`.
 # With no published digest we warn and proceed for a rolling install, unless
 # SDLC_STUDIO_REQUIRE_CHECKSUM=1 makes a missing digest fatal.
+#
+# The sidecar is fetched beside whatever was ACTUALLY downloaded, which is why the caller
+# passes the resolved url rather than the one it first tried. GitHub serves no sidecar next to
+# a generated source archive and never will, so before BG0575 this fallback could only ever
+# resolve empty and REQUIRE_CHECKSUM=1 could only ever refuse.
 verify_download() {
     local file="$1" url="$2" expected actual
     expected="${SDLC_STUDIO_SHA256:-}"
@@ -275,7 +316,7 @@ verify_download() {
 # skip the download entirely and install the given LOCAL tree - the dev-testing
 # path (unreleased work cannot be downloaded; the published release may be older).
 prepare_source() {
-    local url extracted
+    local url extracted asset_url rc
     if [[ -n "$LOCAL_SRC" ]]; then
         if [[ ! -d "$LOCAL_SRC" ]] || ! is_skill_copy "$LOCAL_SRC"; then
             error "--from: $LOCAL_SRC is not an sdlc-studio skill directory (no matching SKILL.md)"
@@ -286,14 +327,39 @@ prepare_source() {
         info "Installing from local source: $SRC ($VERSION)"
         return
     fi
+    # A tagged version prefers the RELEASE ASSET over GitHub's generated source archive, because
+    # the asset and its `.sha256` are published together by this project's release workflow. That
+    # is what makes the verified install possible at all: the digest belongs to bytes we produced,
+    # so the pair cannot drift. GitHub's generated archives carry no digest we control and are not
+    # guaranteed byte-stable, so verifying against one would turn a routine regeneration into a
+    # `Checksum mismatch`, which reads exactly like an attack.
+    #
+    # Tags cut before the workflow existed have no assets, so the fallback stays - and with it,
+    # honestly, a `REQUIRE_CHECKSUM=1` install of those tags still refuses. They genuinely have no
+    # published digest; the fix is forward-only and must not pretend otherwise.
     url="https://github.com/$REPO/archive/refs/heads/$VERSION.tar.gz"
-    [[ "$VERSION" != "main" ]] && url="https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz"
+    asset_url=""
+    if [[ "$VERSION" != "main" ]]; then
+        url="https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz"
+        asset_url="https://github.com/$REPO/releases/download/$VERSION/sdlc-studio-$VERSION.tar.gz"
+    fi
     TMP_DIR=$(mktemp -d)
     info "Downloading SDLC Studio ($VERSION)..."
-    if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "$url" -o "$TMP_DIR/archive.tar.gz" || { error "Failed to download from $url"; exit 1; }
+    if [[ -n "$asset_url" ]]; then
+        rc=0
+        download_to "$asset_url" "$TMP_DIR/archive.tar.gz" || rc=$?
+        case "$rc" in
+            0)  url="$asset_url" ;;
+            22) info "No release asset for $VERSION - falling back to the source archive"
+                download_to "$url" "$TMP_DIR/archive.tar.gz" \
+                    || { error "Failed to download from $url"; exit 1; } ;;
+            *)  error "Failed to reach $asset_url - a transport error, not a missing asset."
+                error "Refusing to fall back to an unverified download on a network fault."
+                exit 1 ;;
+        esac
     else
-        wget -q "$url" -O "$TMP_DIR/archive.tar.gz" || { error "Failed to download from $url"; exit 1; }
+        download_to "$url" "$TMP_DIR/archive.tar.gz" \
+            || { error "Failed to download from $url"; exit 1; }
     fi
     verify_download "$TMP_DIR/archive.tar.gz" "$url"
     info "Extracting..."

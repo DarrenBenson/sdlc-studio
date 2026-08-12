@@ -57,8 +57,10 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 **Installing in a sensitive environment?** The default install tracks `main`, which publishes no `.sha256` sidecar, so the installer warns and proceeds unverified. Pin a tagged release and make the checksum mandatory instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v4.1.0
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v5.0.1
 ```
+
+What that verifies: an archive this project built from the tag and published as a release asset, against a `.sha256` published beside it in the same step. Both halves are ours, so they cannot drift apart. Tags before v5.0.1 have no published assets and this command will refuse them rather than pretend - see [Verifying the download](docs/INSTALL.md#verifying-the-download).
 
 </details>
 

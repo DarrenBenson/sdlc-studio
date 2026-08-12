@@ -1,0 +1,102 @@
+# Publish the release assets the verified install path depends on (BG0575, CR0545).
+#
+# WHY THIS IS A WORKFLOW AND NOT A COMMAND SOMEBODY RUNS. The installers verify a download
+# against a `.sha256` sidecar published beside it. GitHub serves no sidecar next to a generated
+# source archive, so before this file existed the sidecar could never resolve and the documented
+# `SDLC_STUDIO_REQUIRE_CHECKSUM=1` install refused at every version. The repair is to publish our
+# own archives and their digests - which only works if they are published EVERY time. The v4.1.0
+# Release carries zero assets and v5.0.0 was tagged with no Release at all, both by a person
+# meaning to and not doing it. A repair that is correct and depends on somebody remembering is
+# the same defect one version later, so it binds to the tag rather than to a runbook line.
+#
+# Determinism: `git archive` output is a function of the tree AND the compressor invocation, so
+# the commands here are pinned to the byte. `--format=tar.gz` uses git's internal gzip rather
+# than whatever `gzip` is on the runner, and the digest recorded is taken from the file actually
+# uploaded - never recomputed elsewhere, so the pair cannot disagree.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  # The manual leg exists for a tag pushed before this workflow did - v5.0.0 is one - and as the
+  # recovery path when a publish fails halfway. It is deliberately the exception: a step anybody
+  # can forget is the step this file exists to stop being forgettable.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to publish assets for (e.g. v5.0.0)'
+        required: true
+
+permissions:
+  contents: write        # required to create a Release and upload its assets
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the tag being published
+        id: tag
+        # The dispatch input reaches the shell through `env:` rather than by interpolation.
+        # `${{ }}` substitutes BEFORE the shell parses, so a crafted tag would be script rather
+        # than data - only write-access holders can dispatch this, but the house style does not
+        # make that the thing standing between an input and `set -euo pipefail`.
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          tag="${INPUT_TAG:-$REF_NAME}"
+          git rev-parse -q --verify "refs/tags/$tag" >/dev/null \
+            || { echo "no such tag: $tag" >&2; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build the release assets from the tag
+        id: build
+        run: |
+          set -euo pipefail
+          tag="${{ steps.tag.outputs.tag }}"
+          prefix="sdlc-studio-${tag#v}/"
+          mkdir -p dist
+          git archive --format=tar.gz --prefix="$prefix" -o "dist/sdlc-studio-$tag.tar.gz" "$tag"
+          git archive --format=zip    --prefix="$prefix" -o "dist/sdlc-studio-$tag.zip"    "$tag"
+          # The digest is taken from the uploaded file itself. Deriving it any other way is how
+          # bytes and sidecar drift, which presents to a user as `Checksum mismatch` - a message
+          # indistinguishable from an attack.
+          for f in "dist/sdlc-studio-$tag.tar.gz" "dist/sdlc-studio-$tag.zip"; do
+            sha256sum "$f" | awk -v n="$(basename "$f")" '{print $1 "  " n}' > "$f.sha256"
+          done
+          ls -l dist/
+
+      - name: Verify the sidecars before anything is published
+        run: |
+          set -euo pipefail
+          cd dist
+          # Refuse to publish a pair that does not already verify. A sidecar that does not match
+          # its own asset would reach users as an aborted install, and this is the last moment
+          # the failure costs nothing.
+          for f in *.sha256; do
+            sha256sum -c "$f"
+          done
+
+      - name: Publish the Release with its assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.tag.outputs.tag }}"
+          notes="docs/release-notes-${tag}.md"
+          # A Release may already exist if the tag was pushed before this workflow shipped; upload
+          # into it rather than failing, so an existing Release can be completed rather than
+          # duplicated. --clobber keeps a re-run idempotent.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/* --clobber
+          elif [ -f "$notes" ]; then
+            gh release create "$tag" dist/* --title "$tag" --notes-file "$notes"
+          else
+            gh release create "$tag" dist/* --title "$tag" --generate-notes
+          fi

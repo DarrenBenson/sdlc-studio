@@ -612,7 +612,12 @@ class AuthoringPlanTests(unittest.TestCase):
             root = Path(d)
             prd = root / "prd.md"
             prd.write_text("# PRD\n", encoding="utf-8")
-            rc = _load().main(["plan", "--prd", str(prd), "--root", str(root)])
+            # stdout captured, as the sibling test below already does: this call prints the whole
+            # plan digest - the lessons ranking and the toolchain runbook's step list - so the
+            # suite's leaked-line count moved every time either GREW. A green suite must print
+            # nothing, or a real error hides in the noise.
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = _load().main(["plan", "--prd", str(prd), "--root", str(root)])
             self.assertEqual(rc, 0)
 
     def test_plan_write_persists_artifact(self) -> None:  # CR0091

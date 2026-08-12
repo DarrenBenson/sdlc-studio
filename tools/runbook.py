@@ -26,7 +26,7 @@ SKILL_REL = ".claude/skills/sdlc-studio/scripts"
 
 #: The steps a sprint actually has. Named here so a runbook that quietly drops one fails,
 #: rather than passing because everything it happens to mention still resolves.
-REQUIRED_STEPS = ("Orient", "Groom and plan", "Deliver a unit", "Review a unit", "Close")
+REQUIRED_STEPS = ("Orient", "Groom and plan", "Deliver a unit", "Review a unit", "Close", "Release")
 
 #: A command cell: `script.py verb ...` or `tools/thing.sh ...`, inside backticks.
 #:

@@ -71,6 +71,24 @@ Read this at plan time. `sprint plan` prints it.
 | Take the backlog census | `status.py points` | counting artefacts by hand |
 | Mirror to the installed copy | `bash tools/forward-port.sh --yes` | `install.sh`, which clobbers the tree |
 
+## 6. Release
+
+| Do | Command | Instead of |
+| --- | --- | --- |
+| Compose the changelog section | `release_cut.py changelog-cut --version <v>` | hand-merging fragments |
+| Stamp the commit the gate passed on | `release_cut.py record-green --commit <sha> --gate <which>` | a green claim naming no gate |
+| Refuse a tag the gate never covered | `release_cut.py tag-check --version <v>` | tagging on memory |
+| Publish the release and its artefacts | your project's release automation, triggered by the tag | a hand-uploaded artefact, which is the step that gets skipped |
+
+Make the publish step something the tag triggers, not a line somebody runs. Where a project offers
+a verified install, the checksum a user verifies against is published by that step, so a release
+that skips it leaves the documented verification broken while everything else looks fine. Two
+releases shipped that way here before it was automated - one with no artefacts attached, one with
+no release entry at all - and both were somebody meaning to and not doing it. The second case is
+the quieter one: `skill-update` asks the forge for the LATEST RELEASE, so until the release entry
+exists, every installed copy still reports the previous version and prompts nobody to upgrade. A
+tag without a release is, to the update mechanism, unreleased.
+
 ## In-flight: changing a run that is already open
 
 | Do | Command | Instead of |
