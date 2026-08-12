@@ -1,7 +1,7 @@
 # Technical Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 5.0.0
+**Version:** 5.0.1
 **Status:** Draft
 **Last Updated:** 2026-07-14
 **PRD Reference:** [PRD](./prd.md)
@@ -34,7 +34,7 @@ shared library, the data architecture (markdown artifacts plus JSON state, and t
 two id eras), the gate architecture, soft runtime dependencies, tool-neutral
 portability, and the architectural decisions (ADRs).
 
-Coverage: v5.0.0 as released, plus the `[Unreleased]` work on `main` (the release
+Coverage: v5.0.1 as released, plus the `[Unreleased]` work on `main` (the release
 workflow and the verified install path). The document version tracks the product
 version; it is not itself a release artefact.
 

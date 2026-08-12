@@ -489,13 +489,24 @@ class LoadingGuideTests(unittest.TestCase):
     def test_the_guard_reddens_on_a_mutated_cell(self) -> None:
         """AC4: the guard can GO RED against the live guide, not merely be true when written.
 
-        A live cell is temporarily repointed at a path that does not exist and the real SKILL.md is
-        restored byte-for-byte afterwards. Without this, every other assertion here could hold
-        because the tree happens to be clean rather than because the check works - and this is the
-        story whose whole subject is a check that was blind to five broken cells.
+        A cell carrying the LIVE guide's content is repointed at a path that does not exist, and
+        the guard must report it. Without this, every other assertion here could hold because the
+        tree happens to be clean rather than because the check works - and this is the story whose
+        whole subject is a check that was blind to five broken cells.
+
+        THE MUTATION LANDS ON A COPY, NEVER ON THE LIVE FILE. This test used to write the real
+        `SKILL.md` and restore it byte-for-byte in a `finally`, which reads as safe and is not:
+        `tools/repo_writes.py` reports a restored path precisely BECAUSE a run that edits a tracked
+        file and puts it back has raced every concurrent reader of it, and silence about that is
+        what made three of four earlier incidents invisible. It also left the skill's own entry
+        point one interrupted run away from being the thing a fixture destroyed. The guard caught
+        it at a release boundary, which is the whole reason that lane exists.
+
+        The skill tree is 22M, so it is not copied: every child is symlinked and only `SKILL.md` is
+        a real file. Path resolution behaves exactly as it does live, and the guide being checked
+        holds the live bytes.
         """
-        skill_md = SKILL / "SKILL.md"
-        original = skill_md.read_text(encoding="utf-8")
+        original = (SKILL / "SKILL.md").read_text(encoding="utf-8")
         live = [c for c in check_links.loading_guide_cells(SKILL) if c["path"]]
         self.assertTrue(live, "no path-bearing cell in the live guide to mutate")
         # A path whose string occurs EXACTLY ONCE in the file. Taking `live[0]` blindly mutated the
@@ -504,20 +515,32 @@ class LoadingGuideTests(unittest.TestCase):
         target = next((c["path"] for c in live if original.count(c["path"]) == 1), None)
         self.assertIsNotNone(target, "no guide path appears exactly once, so none can be mutated "
                                      "without also changing an unrelated mention")
-        try:
-            skill_md.write_text(original.replace(target, f"no-such-dir/{target}", 1),
-                                encoding="utf-8")
-            errors = check_links.check_loading_guide(SKILL)
+
+        with tempfile.TemporaryDirectory() as d:
+            fake = Path(d) / "sdlc-studio"
+            fake.mkdir()
+            for child in SKILL.iterdir():
+                if child.name == "SKILL.md":
+                    continue
+                (fake / child.name).symlink_to(child)
+
+            (fake / "SKILL.md").write_text(original.replace(target, f"no-such-dir/{target}", 1),
+                                           encoding="utf-8")
+            errors = check_links.check_loading_guide(fake)
             self.assertTrue(errors, "a cell repointed at a missing path was not reported - the "
                                     "guard cannot go red, so it proves nothing when it is green")
             self.assertTrue(any("no-such-dir" in e for e in errors),
                             f"reported something else instead: {errors[:2]}")
-        finally:
-            skill_md.write_text(original, encoding="utf-8")
-        self.assertEqual(original, skill_md.read_text(encoding="utf-8"),
-                         "the live SKILL.md was not restored byte-for-byte")
-        self.assertEqual([], check_links.check_loading_guide(SKILL),
-                         "the guide does not resolve after the mutation was reverted")
+
+            # The positive control, on the same symlinked root: the UNmutated guide resolves. Without
+            # it, the assertion above would also pass for a root where every path is unresolvable.
+            (fake / "SKILL.md").write_text(original, encoding="utf-8")
+            self.assertEqual([], check_links.check_loading_guide(fake),
+                             "the live guide does not resolve through the symlinked root, so the "
+                             "red above proves nothing about the mutation")
+
+        self.assertEqual(original, (SKILL / "SKILL.md").read_text(encoding="utf-8"),
+                         "the live SKILL.md was written by a test that must never touch it")
 
     def test_templated_and_invocation_cells_are_classified_OUT_explicitly(self) -> None:
         """An exemption is a decision on the page, not a pattern that quietly matched nothing."""

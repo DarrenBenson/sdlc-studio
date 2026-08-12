@@ -76,7 +76,7 @@ Read this at plan time. `sprint plan` prints it.
 | Do | Command | Instead of |
 | --- | --- | --- |
 | Compose the changelog section | `release_cut.py changelog-cut --version <v>` | hand-merging fragments |
-| Stamp the commit the gate passed on | `release_cut.py record-green --commit <sha> --gate <which>` | a green claim naming no gate |
+| Stamp the commit the gate passed on | `release_cut.py record-green --commit <sha>` | tagging on a green nobody recorded |
 | Refuse a tag the gate never covered | `release_cut.py tag-check --version <v>` | tagging on memory |
 | Publish the release and its artefacts | your project's release automation, triggered by the tag | a hand-uploaded artefact, which is the step that gets skipped |
 

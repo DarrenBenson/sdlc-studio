@@ -1,7 +1,7 @@
 # Product Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 5.0.0
+**Version:** 5.0.1
 **Last Updated:** 2026-07-14
 **Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 
@@ -11,7 +11,7 @@
 > tests validate the spec against the implementation. Confidence markers and
 > status values are defined at the foot of this document.
 >
-> **Coverage:** v5.0.0 as released, plus the work sitting on `main` under
+> **Coverage:** v5.0.1 as released, plus the work sitting on `main` under
 > `CHANGELOG.md` `[Unreleased]`. The v5 line covers the refusal gates (the
 > breakdown gate, the two-role review, the executable-criteria gate on Done, the
 > verifier ratchet), the evidence lane (mutation evidence, vacuous-verifier

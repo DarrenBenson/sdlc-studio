@@ -78,6 +78,19 @@ listed by id in [docs/known-issues.md](known-issues.md) and triaged to v5.1. The
 generated from the bug corpus and guarded in both directions, so a finding filed after it was
 written cannot silently be missing from it.
 
+**The stale-criteria count, re-measured.** v5.0.0's notes reported 50 executable acceptance
+criteria failing when run, of 1,918 across 673 stories at Done. Re-run for this release the
+figure is **52 of 1,906 across 670**. No story file changed between the two tags, so the
+denominators disagreeing means the two runs were not measuring the same set - and the gap
+between their red counts therefore says nothing about anything getting worse. The earlier
+reading could not be reproduced and is not carried forward.
+
+That is the fourth time this number has moved in this project's own records (106, 53, 58, 50,
+now 52), which is the argument for putting it on a schedule rather than a footnote to it. The
+repairs remain a v5.1 sweep with their own review: a repair that merely makes a criterion pass
+converts a visible stale selector into an invisible vacuous one, which is worse than the red it
+replaced.
+
 - [README](../README.md) - installation and quick start
 - [v5.0.0 release notes](release-notes-v5.0.0.md) - what the v5 line actually is
 - [CHANGELOG.md](../CHANGELOG.md) - the per-unit record

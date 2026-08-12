@@ -1,7 +1,7 @@
 # Test Strategy Document
 
 > **Project:** SDLC Studio
-> **Version:** 5.0.0
+> **Version:** 5.0.1
 > **Last Updated:** 2026-07-17
 > **Status:** Generated (brownfield - awaiting validation)
 >
@@ -14,7 +14,7 @@
 > Consistent with PRD section 5 (Non-Functional Requirements) and section 10
 > (Quality Assessment), and with the TRD component and script inventory.
 >
-> **Coverage:** v5.0.0 as released, plus the `[Unreleased]` work on `main`. The
+> **Coverage:** v5.0.1 as released, plus the `[Unreleased]` work on `main`. The
 > document version tracks the product version; it is not itself a release artefact.
 
 ---
