@@ -42,6 +42,15 @@ Test for the marker before stripping it: match `**then**` on the line with only 
 - [ ] **AC3** A criterion whose Then cannot be found is reported as unparseable rather than measured against its own block, and the test asserts the refusal names the parse failure rather than accusing the author of restatement
 - [ ] **AC4** The overlap ratio for a given mutant is unchanged by whether the criterion carries a `- **Mutant:**` bullet, pinning that the measurement no longer reads a superset of itself
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | {{name the production change this test must fail on}} | A criterion whose Given/When/Then are plain bold paragraph lines yields its Then sentence, asserted through `verify_ac.py testplan derive` on a fixture whose mutant shares almost no vocabulary with that sentence and which is currently refused |
+| AC2 | {{name the production change this test must fail on}} | The bulleted shape still yields the same Then sentence it does today, proving the repair did not trade one shape for the other (positive control, same fixture family) |
+| AC3 | {{name the production change this test must fail on}} | A criterion whose Then cannot be found is reported as unparseable rather than measured against its own block, and the test asserts the refusal names the parse failure rather than accusing the author of restatement |
+| AC4 | {{name the production change this test must fail on}} | The overlap ratio for a given mutant is unchanged by whether the criterion carries a `- **Mutant:**` bullet, pinning that the measurement no longer reads a superset of itself |
+
 ## Revision History
 
 | Date | Author | Change |

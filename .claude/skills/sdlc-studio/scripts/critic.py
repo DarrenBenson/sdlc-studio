@@ -1638,6 +1638,22 @@ def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
     kept as a named shim because tests and any consuming project may still reach for it.
     """
     verdicts = [str(v).upper() for v in (rounds or [])]
+    # CONVERGENCE ENDS THE ESCALATION, and it is checked before anything else.
+    #
+    # Both escalations below read the WHOLE history, so once two REJECTs existed they fired on
+    # every later record for that unit - including the APPROVE that resolved them. The ordinary
+    # reject-fix-approve loop, which is the process working, reported "the repair is not
+    # converging" at the moment it demonstrably had. Eight units did this in one run: every one
+    # had a round-1 REJECT with substantive findings, a revision, and a round-2 approval.
+    #
+    # It also explains the sibling defect: a second ROUND is a different context reviewing a
+    # revised unit, not a panel SPLIT within one round. Reading the latest verdict tells the two
+    # apart without having to reconstruct round boundaries from free-text reviewer names.
+    #
+    # A notice that fires after it has been answered is one readers learn to scroll past, and
+    # then it is not there for the unit that genuinely stalled.
+    if verdicts and verdicts[-1] == APPROVE:
+        return (False, "")
     rejects = sum(1 for v in verdicts if v == REJECT)
     if rejects >= PANEL_REJECT_LIMIT:
         return (True, f"the panel rejected this unit twice ({rejects} REJECTs) - the repair is "
@@ -3467,7 +3483,14 @@ def cmd_record(args: argparse.Namespace) -> int:
         except OSError as exc:
             print(f"record refused: {exc}", file=sys.stderr)
             return 2
-    if unclassified := unclassified_findings(args.issues):
+    # The origin axis asks what THIS UNIT'S DIFF did - regression, new, or already true of the
+    # tree. A PLAN review happens before any diff exists, so there is nothing to classify
+    # against and the question is unanswerable rather than merely unanswered. Demanding a tag
+    # there trains the reviewer to pick one at random to get past the refusal, which is worse
+    # than no axis at all: an invented `[new]` on a plan finding is a false statement about a
+    # diff nobody has written. Applied to delivery reviews only, where the base ref exists.
+    phase = (getattr(args, "phase", None) or "delivery").strip().lower()
+    if phase != "plan-review" and (unclassified := unclassified_findings(args.issues)):
         listed = "; ".join(f"  - {f[:90]}" for f in unclassified)
         print("record refused: these findings carry no origin, and an unsorted finding is the "
               "one a close cannot price against the batch that caused it:\n"

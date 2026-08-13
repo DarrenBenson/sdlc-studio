@@ -2322,10 +2322,32 @@ TESTPLAN_OVERLAP_CEILING = 0.60
 
 #: Verbs that denote a change to code. A mutant must carry one: "the feature does not work" is a
 #: prediction about behaviour, not an edit somebody can make.
-_EDIT_VERBS = ("delete", "remove", "drop", "return", "replace", "swap", "invert", "negate",
-               "hard-code", "hardcode", "stub", "skip", "comment out", "reorder", "rename",
-               "widen", "narrow", "loosen", "weaken", "disable", "bypass", "short-circuit",
-               "change", "set", "make it", "flip", "revert", "omit", "truncate", "collapse")
+#: Verbs that name a production EDIT. An enumeration is a lower bound, never a boundary (LL0043),
+#: and this one was both too narrow and skewed: it listed only SUBTRACTIVE edits, so a mutant that
+#: ADDS or MOVES something could not be stated at all. Authoring the first real
+#: test plans hit it five times on legitimate mutants - `move the affects check below the batch
+#: write`, `print the bare message` - and again during the v5.0.1 release, where the mutant was
+#: reworded to satisfy the list rather than the list corrected. A check that trains authors to
+#: write for the checker rather than for the reader is worse than no check.
+#:
+#: Additive, positional and substitutive verbs are now all first-class. Kept as a list rather
+#: than replaced by a part-of-speech test because the point is to refuse a mutant phrased as an
+#: OUTCOME ("the suite goes red") rather than as an edit, and any verb at all distinguishes those.
+_EDIT_VERBS = (
+    # subtractive
+    "delete", "remove", "drop", "omit", "truncate", "collapse", "strip", "clear", "unset",
+    # substitutive
+    "replace", "swap", "invert", "negate", "hard-code", "hardcode", "stub", "change", "set",
+    "make it", "flip", "revert", "rename", "return", "reassign", "overwrite", "shadow",
+    # additive - none of these existed, which is the defect
+    "add", "insert", "append", "prepend", "introduce", "duplicate", "extend", "wrap", "emit",
+    "print", "raise", "throw", "call", "register",
+    # positional / ordering - a mutant that MOVES code changes behaviour without adding a token
+    "move", "reorder", "hoist", "lower", "inline", "extract", "split", "merge", "reverse",
+    # weakening
+    "widen", "narrow", "loosen", "weaken", "disable", "bypass", "short-circuit", "skip",
+    "comment out", "suppress", "ignore", "relax",
+)
 
 _TESTPLAN_HEADING = "## Test Plan"
 _TESTPLAN_PLACEHOLDER = "{{name the production change this test must fail on}}"
@@ -2357,7 +2379,13 @@ def _then_clause(lines: list, start: int, end: int) -> str:
     a criterion about guards that do not guard.
     """
     for line in lines[start:end]:
-        stripped = line.strip().lstrip("-*").strip()
+        # Strip ONE leading bullet marker, not every leading `-`/`*` character.
+        # `lstrip("-*")` ate the bold markers off a NON-bulleted `**Then** ...` line, leaving
+        # `Then** ...`, which matched nothing - so the clause fell through to the whole-block
+        # fallback below. That block carries the criterion's own `- **Mutant:**` bullet, so the
+        # mutant was measured for overlap against text CONTAINING the mutant, every honest plan
+        # row read as a restatement of itself, and `testplan derive` refused it.
+        stripped = re.sub(r"^\s*[-*]\s+", "", line).strip()
         if stripped.lower().startswith("**then**"):
             return stripped[len("**then**"):].strip()
     return " ".join(lines[start:end])
@@ -2607,12 +2635,20 @@ def cmd_lane_check(args: argparse.Namespace) -> int:
     rather than on assertion.
     """
     root = Path(args.root)
-    stories = sorted((root / "sdlc-studio" / "stories").glob("US*.md"))
+    # BUGS ARE IN SCOPE. The sweep globbed `stories/US*.md` only, so every bug was outside the
+    # count a blocking decision would rest on - and `--ids BG0487` printed "0 unit(s)" rather
+    # than saying the type was out of scope, which reads as a clean bill of health for a unit
+    # nothing looked at. Bugs carry executable criteria and reach a terminal status through the
+    # same gate, so a lane that judges one and silently omits the other is measuring half the
+    # corpus while reporting a whole-corpus number.
+    units = sorted((root / "sdlc-studio" / "stories").glob("US*.md"))
+    units += sorted((root / "sdlc-studio" / "bugs").glob("BG*.md"))
+    units = [u for u in units if not u.name.startswith("_")]
     if getattr(args, "ids", None):
         wanted = {i.strip().upper() for i in args.ids.split(",") if i.strip()}
-        stories = [s for s in stories
-                   if (sdlc_md.extract_record_id(s.stem) or "").upper() in wanted]
-    findings = lane_check(root, stories)
+        units = [s for s in units
+                 if (sdlc_md.extract_record_id(s.stem) or "").upper() in wanted]
+    findings = lane_check(root, units)
     for f in findings:
         print(f"LANE-CHECK: {f['unit']} {f['ac']} -> {f['why']}", file=sys.stderr)
     try:
@@ -2630,7 +2666,7 @@ def cmd_lane_check(args: argparse.Namespace) -> int:
     except OSError:
         pass
     if not findings:
-        print(f"lane-check: {len(stories)} unit(s), no library-only verifiers")
+        print(f"lane-check: {len(units)} unit(s), no library-only verifiers")
     return 0  # ADVISORY - the exit code is never the finding
 
 

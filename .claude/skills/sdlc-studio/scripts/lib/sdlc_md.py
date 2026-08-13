@@ -45,12 +45,18 @@ ID_RE = re.compile(
 # `[US0001](US0001-login.md)`). RFC before CR so `RFC-0001` is not read as `CR`.
 ID_SEARCH_RE = re.compile(
     r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|SC|RFC|CR|IS)(?:" + _V3_SUFFIX + r"|-?\d{4,})", re.IGNORECASE)
-# Acceptance-criterion heading: `### AC1: Title`.
-AC_HEADING_RE = re.compile(r"^###\s+(AC\d+)(?::\s*(.*))?$")
+# Acceptance-criterion heading: `### AC1: Title`, `### AC2a: Title`.
+#
+# The LETTER SUFFIX is not decoration. An author inserting a criterion between AC2 and
+# AC3 numbers it AC2a rather than renumbering every criterion below it and invalidating their
+# stamps. `AC\d+` matched none of those, and the parser does not report what it declines - the
+# criterion was simply absent from the block list, so `verify_ac run` reported `ac=5` over six
+# criteria and the sixth was verified by nothing. Silent, and in the direction that flatters.
+AC_HEADING_RE = re.compile(r"^###\s+(AC\d+[a-z]?)(?::\s*(.*))?$")
 # Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` / a
 # checkbox form `- [ ] **AC1** text` (house template) — the compact inline style
-# many stories use instead of a heading per criterion.
-AC_BULLET_RE = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?\*\*(AC\d+)[^*]*\*\*[:\s]*(.*)$")
+# many stories use instead of a heading per criterion. Same letter suffix, same reason.
+AC_BULLET_RE = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?\*\*(AC\d+[a-z]?)[^*]*\*\*[:\s]*(.*)$")
 # AC verifier bullets. The leading dash is optional — some repos use a standalone
 # `**Verify:**` line rather than a `- **Verify:**` bullet.
 VERIFY_RE = re.compile(r"^(\s*)-?\s*\*\*Verify:\*\*\s*(.+?)\s*$")
@@ -2423,7 +2429,11 @@ def alias_map(repo_root) -> dict[str, str]:
             canonical = extract_record_id(p.stem)
             if not canonical:
                 continue
-            text = p.read_text(encoding="utf-8")
+            # `read_text_safe`, not a bare read. This walks EVERY artefact in the project to
+            # build one alias map, so a single unreadable or non-UTF-8 file - a permission bit,
+            # a half-written artefact, a stray binary - raised out of here and took down every
+            # caller that resolves an id. One bad file should cost its own aliases, not the map.
+            text = read_text_safe(p)
             raw = extract_field(text, "Aliases")
             for a in re.split(r"[,\s]+", (raw or "").strip()):
                 if a:

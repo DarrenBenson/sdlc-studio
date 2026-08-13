@@ -1909,7 +1909,7 @@ def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> 
 def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: str,
                     reason: str | None = None, run: str | None = None,
                     unit: str | None = None, criterion: str | None = None,
-                    line: int | None = None) -> dict:
+                    line: int | None = None, anchor: str | None = None) -> dict:
     """Record a mutant that was ALREADY applied by hand, against the target's content NOW.
 
     The practice this exists for: a builder writes a test, applies a mutant to the code it
@@ -1990,6 +1990,22 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
                          "nobody recorded discounts nothing and can never be checked")
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     rel = _ledger_target(root, path)
+    # THE ANCHOR CHECK. A hand-applied mutant is located by a substring, and a substring that
+    # matches twice patches the site the author did not mean - the test then stays green for a
+    # reason nobody looked at, and the run reports SURVIVED against code that was never mutated.
+    # This repository has recorded that exact false verdict twice. The mutant is reverted by the
+    # time it is registered, so the ORIGINAL text must be present exactly once, and that is a
+    # fact this command can check rather than a discipline it has to hope for.
+    if anchor is not None:
+        occurrences = path.read_text(encoding="utf-8", errors="replace").count(anchor)
+        if occurrences != 1:
+            why = ("No occurrence means the mutant was never reverted, or this is not the text "
+                   "that was replaced" if occurrences == 0 else
+                   "More than one means the patch could have landed at the wrong site, and a "
+                   "green test there says nothing about the site you meant")
+            raise ValueError(
+                f"the anchor occurs {occurrences} time(s) in {rel}, not exactly once. {why}. "
+                f"Quote more surrounding context until the anchor is unique.")
     lpath = ledger_path(root)
     state, reset = _load_ledger(lpath)
     entries = [e for e in state["entries"] if isinstance(e, dict)]
@@ -2005,12 +2021,20 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     entry = next((e for e in entries if e.get("target") == rel
                   and entry_provenance(e) == PROVENANCE_REGISTERED
                   and e.get("hash") == digest), None)
-    # any registered entry for this target on OTHER content is stale evidence: drop it rather
-    # than carry counts about bytes this file no longer has
-    entries = [e for e in entries
-               if not (e.get("target") == rel
-                       and entry_provenance(e) == PROVENANCE_REGISTERED
-                       and e is not entry)]
+    # Any registered entry for this target on OTHER content is stale evidence: drop it rather
+    # than carry counts about bytes this file no longer has. That part is right.
+    #
+    # What was wrong is that it happened SILENTLY. A builder who registers five mutants, edits
+    # the file, then registers a sixth loses the first five and is told nothing - the ledger
+    # simply reads 1 and looks like a builder who did the work once. The count going DOWN is
+    # invisible, which is the direction that flatters. The dropped rows are counted here and
+    # returned so the caller can say so out loud.
+    stale = [e for e in entries
+             if e.get("target") == rel
+             and entry_provenance(e) == PROVENANCE_REGISTERED
+             and e is not entry]
+    dropped_mutants = sum(len(e.get("mutants") or []) for e in stale)
+    entries = [e for e in entries if e not in stale]
     if entry is None:
         entry = {"target": rel, "hash": digest, "provenance": PROVENANCE_REGISTERED,
                  "git_rev": _git_rev(root), "generated_at": record["at"], "test_cmd": None,
@@ -2043,7 +2067,11 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     written = _store_ledger(lpath, state, entries, reset)
     return {**written, "target": rel, "verdict": verdict,
             "registered": entry["summary"]["applied"],
-            "retained": len(entry["mutants"])}
+            "retained": len(entry["mutants"]),
+            # How many earlier registrations this call discarded because the target's bytes
+            # changed. Zero on the ordinary path; non-zero means evidence just disappeared and
+            # the caller must say so rather than print a reassuring count.
+            "dropped_stale": dropped_mutants}
 
 
 def select_files(repo_root: Path | str, files=None, since: str | None = None,
@@ -2587,7 +2615,8 @@ def cmd_register(args: argparse.Namespace) -> int:
                               run=getattr(args, "run", None),
                               unit=getattr(args, "unit", None),
                               line=getattr(args, "line", None),
-                              criterion=getattr(args, "criterion", None))
+                              criterion=getattr(args, "criterion", None),
+                              anchor=getattr(args, "anchor", None))
     except (ValueError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -2601,6 +2630,15 @@ def cmd_register(args: argparse.Namespace) -> int:
     print(f"mutation: registered a SELF-REPORTED mutant on {res['target']} "
           f"({res['verdict']}) - {res['registered']} registered mutant(s) on this content. "
           f"Nothing was re-run here, so the ledger holds this as a claim, not a measurement")
+    if res.get("dropped_stale"):
+        # Said OUT LOUD, because the count going down is the direction nobody checks. The rows
+        # were about bytes this file no longer has, so dropping them is right - but a builder
+        # who registers, edits, then registers again would otherwise see a reassuring "1
+        # registered" and never learn that four earlier claims had just gone.
+        print(f"  DROPPED {res['dropped_stale']} earlier registration(s) for this target: the "
+              f"file's bytes changed since they were recorded, so they were evidence about code "
+              f"that no longer exists. If those mutants still matter, re-apply and re-register "
+              f"them against the current content - register AFTER the last edit, not before")
     if res["verdict"] == "survived":
         print(f"  FINDING: the mutant SURVIVED, so {args.test} does not pin the behaviour it "
               f"was applied to. The gate's coverage lane counts this - fix the test or file it")
@@ -2752,6 +2790,12 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--target", required=True, help="the file the mutant was applied to")
     g.add_argument("--mutant", required=True,
                    help="what was mutated, in words a reviewer can check against the diff")
+    g.add_argument("--anchor", metavar="TEXT",
+                   help="the ORIGINAL text the mutant replaced, which must occur EXACTLY ONCE "
+                        "in the target now that the edit is reverted. Checked, not stored on "
+                        "trust: a substring matching twice patches the wrong site, and the run "
+                        "then reports a survivor for a mutant that was never applied where the "
+                        "author thought it was")
     g.add_argument("--test", help="the test that returned the verdict (required for "
                                   "killed/survived; an equivalent mutant has none)")
     g.add_argument("--verdict", required=True, choices=REGISTRABLE_VERDICTS,

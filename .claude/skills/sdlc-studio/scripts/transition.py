@@ -1515,8 +1515,19 @@ def _has_none_path(fn) -> bool:
     `If` terminates when both arms do, and a `Try` when its body and every handler do.
     """
     import ast  # noqa: PLC0415
-    if any(isinstance(n, ast.Return) and n.value is None for n in _own_scope(fn)):
-        return True
+    # BOTH spellings of a None return. `n.value is None` is the BARE `return`; an explicit
+    # `return None` parses as a `Return` whose value is a `Constant` of None, and that is the
+    # form this codebase actually writes at a refusal - `_survivor_severity` derived Medium for
+    # exactly the shape it cites as the reason to derive High. Under-rating the commonest
+    # refusal idiom is the wrong direction for a severity: it makes an unpinned decision about
+    # whether to refuse look like an unpinned report.
+    for n in _own_scope(fn):
+        if not isinstance(n, ast.Return):
+            continue
+        if n.value is None:
+            return True
+        if isinstance(n.value, ast.Constant) and n.value.value is None:
+            return True
     return not _terminates(fn.body)
 
 

@@ -6246,9 +6246,15 @@ def _tell_the_operator(root, deferred: list | None = None) -> None:
     # raised NameError for any non-empty batch, and the advisory `except` swallowed it. The
     # report therefore printed only when the batch was empty, which no real close has: the
     # feature was dead on arrival at the one input it exists to serve.
-    import critic  # noqa: PLC0415 - deferred, like the chain's sibling imports
-    import sprint_report  # noqa: PLC0415 - deferred, like the chain's sibling imports
     try:
+        # INSIDE the advisory `try`, not above it. Both imports sat outside, so an ImportError -
+        # a consuming project without `critic.py`, a partial install, a syntax error introduced
+        # in a sibling - escaped this function AFTER the close had already completed every
+        # step. The whole principle here is that the close outranks its own report: a missing
+        # report must never lose a completed ceremony, and an import that throws from outside
+        # the guard does exactly that. The guard covered the body and left the door open.
+        import critic  # noqa: PLC0415 - deferred, like the chain's sibling imports
+        import sprint_report  # noqa: PLC0415 - deferred, like the chain's sibling imports
         state = run_state.read(root) or {}
         batch = [sdlc_md.norm_id(u) for u in (state.get("batch") or [])]
         shipped, carried = [], []

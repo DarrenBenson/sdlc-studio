@@ -244,8 +244,12 @@ def has_run_history(root) -> bool:
     try:
         if not d.is_dir():
             return False
+        # RECURSIVE. `iterdir()` sees only the top level, so a project that archives its closed
+        # runs into `retros/archive/` or `retros/v5.0.0/` - which this repository's own archive
+        # verb does - reads as never having closed a sprint. It would then be handed the
+        # new-project concession for ever, on the strength of tidying up.
         return any(f.suffix == ".md" and f.stem.upper().startswith("RETRO")
-                   for f in d.iterdir())
+                   for f in d.rglob("*.md"))
     except OSError:
         return True  # unreadable is not the same as absent, and only one of them is safe
 

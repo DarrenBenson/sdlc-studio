@@ -27,6 +27,13 @@ Report every `### AC...` heading the parser declines to accept, naming the headi
 - [ ] **AC1** The behaviour described is corrected: A story carrying six criteria headed AC1, AC2, AC2a, AC3, AC4 and AC5 is reported by `verify_ac.py run` as `ac=5`.
 - [ ] **AC2** The proposed fix lands, pinned by a test: Report every `### AC...` heading the parser declines to accept, naming the heading and the pattern it failed.
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | {{name the production change this test must fail on}} | The behaviour described is corrected: A story carrying six criteria headed AC1, AC2, AC2a, AC3, AC4 and AC5 is reported by `verify_ac.py run` as `ac=5`. |
+| AC2 | {{name the production change this test must fail on}} | The proposed fix lands, pinned by a test: Report every `### AC...` heading the parser declines to accept, naming the heading and the pattern it failed. |
+
 ## Revision History
 
 | Date | Author | Change |
