@@ -230,16 +230,16 @@ jobs:
           # survive this whole job while breaking every real verified install on Windows.
           $digest = (Get-FileHash -Path $zip -Algorithm SHA256).Hash.ToLower()
 
-          $script:ServedDigest = $digest
-          $script:AssetZip = $zip
+          $global:ServedDigest = $digest
+          $global:AssetZip = $zip
 
           function Invoke-WebRequest {
             param([string]$Uri, [string]$OutFile, [switch]$UseBasicParsing)
             if ($Uri -like '*/releases/download/*sdlc-studio-v9.9.9.zip.sha256') {
-              return [pscustomobject]@{ Content = "$script:ServedDigest  sdlc-studio-v9.9.9.zip" }
+              return [pscustomobject]@{ Content = "$global:ServedDigest  sdlc-studio-v9.9.9.zip" }
             }
             if ($Uri -like '*/releases/download/*sdlc-studio-v9.9.9.zip') {
-              Copy-Item $script:AssetZip $OutFile -Force; return
+              Copy-Item $global:AssetZip $OutFile -Force; return
             }
             # Anything else is "not there". install.ps1 reads the status off
             # $_.Exception.Response.StatusCode, so the thrown exception must actually CARRY one -
@@ -261,7 +261,7 @@ jobs:
           Pop-Location
 
           # RED control: corrupt the sidecar. The install must abort before extraction.
-          $script:ServedDigest = 'deadbeef'
+          $global:ServedDigest = 'deadbeef'
           $proj2 = Join-Path $work 'proj2'
           New-Item -ItemType Directory -Force $proj2 | Out-Null
           Push-Location $proj2
@@ -279,8 +279,7 @@ jobs:
           # 404 branch, so without it the fallback install.ps1 gained for BG0575 is exercised by
           # nothing. The tag must fall back to the source archive, find no digest there, and
           # refuse under REQUIRE_CHECKSUM rather than invent verification.
-          $script:NoAsset = $true
-          function Invoke-WebRequest {
+                    function Invoke-WebRequest {
             param([string]$Uri, [string]$OutFile, [switch]$UseBasicParsing)
             $m = [System.Net.Http.HttpResponseMessage]::new([System.Net.HttpStatusCode]::NotFound)
             throw [Microsoft.PowerShell.Commands.HttpResponseException]::new('404 Not Found', $m)
