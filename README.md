@@ -446,6 +446,7 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths
 - [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - the operating doctrine for running any project with this skill
 - [docs/release-notes-v5.0.0.md](docs/release-notes-v5.0.0.md) - what v5 is, what it refuses, and what changed, for a reader deciding whether to upgrade
+- [docs/release-notes-v5.0.1.md](docs/release-notes-v5.0.1.md) - the current release: one defect, the verified install path that had never worked
 - [docs/known-issues.md](docs/known-issues.md) - the defects this release ships with, by id, and the bar it was held to
 - [CHANGELOG.md](CHANGELOG.md) - release history | [SECURITY.md](SECURITY.md) | [SUPPORT.md](SUPPORT.md)
 
