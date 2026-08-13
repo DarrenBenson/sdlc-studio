@@ -502,9 +502,15 @@ class LoadingGuideTests(unittest.TestCase):
         point one interrupted run away from being the thing a fixture destroyed. The guard caught
         it at a release boundary, which is the whole reason that lane exists.
 
-        The skill tree is 22M, so it is not copied: every child is symlinked and only `SKILL.md` is
-        a real file. Path resolution behaves exactly as it does live, and the guide being checked
-        holds the live bytes.
+        The skill tree is 22M, so it is not copied: only the top-level entries the guide actually
+        names are symlinked, and only `SKILL.md` is a real file. Path resolution behaves exactly as
+        it does live, and the guide being checked holds the live bytes.
+
+        The symlinks are derived from the CELLS rather than from `SKILL.iterdir()`. That is not
+        tidiness: `gate.py --test-relevant` measures the paths each suite module reads, and an
+        `iterdir()` over the skill root declares the WHOLE 22M tree as test-relevant - so every
+        commit touching any help or reference document would run both unit suites. It did, for one
+        commit, until `test_precommit_selection` caught it.
         """
         original = (SKILL / "SKILL.md").read_text(encoding="utf-8")
         live = [c for c in check_links.loading_guide_cells(SKILL) if c["path"]]
@@ -519,10 +525,10 @@ class LoadingGuideTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             fake = Path(d) / "sdlc-studio"
             fake.mkdir()
-            for child in SKILL.iterdir():
-                if child.name == "SKILL.md":
-                    continue
-                (fake / child.name).symlink_to(child)
+            for top in sorted({c["path"].split("/")[0] for c in live}):
+                source = SKILL.joinpath(top)
+                if source.exists():
+                    fake.joinpath(top).symlink_to(source)
 
             (fake / "SKILL.md").write_text(original.replace(target, f"no-such-dir/{target}", 1),
                                            encoding="utf-8")
