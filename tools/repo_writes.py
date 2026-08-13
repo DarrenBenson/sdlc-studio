@@ -221,9 +221,22 @@ def report(found: list[tuple[str, str]]) -> str:
         note = "   (gitignored - nothing can restore it)" if rel.startswith(LOCAL_REL) else ""
         lines.append(f"  {verdict:<9} {rel}{note}")
     lines.append("")
-    lines.append("A fixture that writes into the repository is writing over real work. Find the "
-                 "root it took: a helper that accepts a root and was handed `.`, a harness whose "
-                 "work root is not under tempfile, or a batch verb run without --dry-run.")
+    lines.append("TWO causes produce this, and the guard cannot tell them apart - its window is "
+                 "the whole suite run, so anything that touched the tree in those minutes lands "
+                 "here. Check the second one FIRST, because it is the likelier and the cheaper:")
+    lines.append("")
+    lines.append("  1. A fixture wrote into the repository, which is writing over real work. "
+                 "Find the root it took: a helper that accepts a root and was handed `.`, a "
+                 "harness whose work root is not under tempfile, or a batch verb run without "
+                 "--dry-run.")
+    lines.append("  2. YOU edited a tracked file while the gate was running. The suites take "
+                 "minutes and the snapshot is taken before them, so an edit made meanwhile is "
+                 "indistinguishable from a fixture write. If the paths above are ones you were "
+                 "working on, this is that - re-run the commit without touching the tree.")
+    lines.append("")
+    lines.append("Telling them apart: `git diff` the named paths. Changes you recognise as your "
+                 "own are cause 2; fixture debris - a `src/thing.py`, a fake artefact id, a "
+                 "rewritten `.local/` record - is cause 1 and must be traced to its writer.")
     return "\n".join(lines)
 
 

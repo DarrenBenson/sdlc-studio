@@ -1,6 +1,7 @@
 # BG0562: _then_clause strips the bold markers off a non-bulleted Then line before testing for them, so the criterion falls back to its whole block and the overlap check reports the author's own mutant as a 100% restatement
 
 > **Status:** Open
+> **Verification depth:** functional (executed: _then_clause over a non-bulleted '**Then** x' returned the whole block before and the clause after, with the bulleted form unchanged as the control)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py

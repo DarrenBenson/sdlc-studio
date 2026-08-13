@@ -8786,12 +8786,20 @@ class ApplySignoffBatchCoverageTests(unittest.TestCase):
                 "BG0002": ("bugs", "Fixed"),       # terminal -> must NOT be named
                 "US0001": ("stories", "Review"),   # story -> the fan-out reaches it
             })
-            out = sprint._batch_unfanned_units(root, ["BG0001", "BG0002", "US0001"])
+            batch = ["BG0001", "BG0002", "US0001"]
+            out = sprint._batch_unfanned_units(root, batch)
+            fanned = sprint._batch_story_units(root, batch)
         ids = [u[0] for u in out]
-        self.assertIn("BG0001", ids, "an Open bug in the batch must be named, not skipped")
-        self.assertNotIn("BG0002", ids, "a terminal bug is not outstanding")
-        self.assertNotIn("US0001", ids, "a story is reached by the fan-out itself")
-        self.assertEqual(out[0][2], "Open", "the status must be the one it actually holds")
+        # An Open bug must still be NAMED rather than skipped - but the mechanism moved. It used
+        # to be named here, as outstanding, because the fan-out could not reach it; the fan-out
+        # now carries it to `Fixed` and refuses loudly on its own gate if it is not ready. Being
+        # listed in BOTH would break the caller's invariant that every batch unit is either
+        # fanned into or reported outstanding, never both.
+        self.assertIn("BG0001", fanned, "an Open bug must be reached by the fan-out, not skipped")
+        self.assertIn("BG0002", fanned, "a terminal bug is still reached - the fan-out skips it "
+                                        "as already complete rather than never looking")
+        self.assertIn("US0001", fanned, "a story is reached by the fan-out itself")
+        self.assertEqual(ids, [], "nothing the fan-out reaches may also be reported outstanding")
 
     def test_outcome_and_handoff_agree_on_the_delivered_count(self) -> None:
         """AC2. The count the close reports and the count outstanding must be derivable from
@@ -8831,7 +8839,18 @@ class ApplySignoffBatchCoverageTests(unittest.TestCase):
         printed = err.getvalue() + out.getvalue()
         self.assertIn("BG0001", printed,
                       "an Open bug in the batch must be NAMED, not silently skipped")
-        self.assertIn("NOT reached", printed)
+        # The fan-out now REACHES bugs. It used to skip every one and report it as "NOT reached",
+        # which meant a bug-heavy run had no route to a close at all: `sprint close` refuses on
+        # units no independent pass covers, and the only mechanism for covering them was
+        # story-scoped. This assertion previously pinned that defect.
+        #
+        # What must hold instead is that the bug is carried to its OWN terminal (`Fixed`, not
+        # `Done`) and refused there on its own terms - the verification-depth floor and the
+        # criteria oracle - rather than waved through or quietly dropped.
+        self.assertIn("BG0001 -> Fixed", printed,
+                      "a bug in the batch must be carried to its own terminal status")
+        self.assertIn("Verification depth", printed,
+                      "the refusal must be the bug's own gate, not a story-shaped one")
 
     def test_an_unknown_id_is_not_silently_counted_as_delivered(self) -> None:
         """A batch id with no artefact behind it must not read as terminal by default."""

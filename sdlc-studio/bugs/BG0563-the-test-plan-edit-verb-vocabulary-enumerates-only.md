@@ -1,6 +1,7 @@
 # BG0563: the test-plan edit-verb vocabulary enumerates only subtractive verbs, so a mutant that ADDS something cannot be stated and gets reworded until it parses
 
 > **Status:** Open
+> **Verification depth:** functional (executed: four previously-refused mutants - move/print/add/insert - are accepted, and an OUTCOME-phrased string is still refused, so the check did not widen to nothing)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py

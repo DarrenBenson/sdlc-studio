@@ -1,6 +1,7 @@
 # BG0548: the acceptance-criteria parser silently drops a criterion whose heading is not AC<digits>, so a whole criterion and its Verify line vanish without a word
 
 > **Status:** Open
+> **Verification depth:** functional (executed: parse_story over a story carrying AC1 and AC2a returned ['AC1'] before and ['AC1','AC2a'] after; test_verify_ac + test_sdlc_md 419 pass)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py

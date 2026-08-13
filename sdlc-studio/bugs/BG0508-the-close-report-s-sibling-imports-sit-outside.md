@@ -1,6 +1,7 @@
 # BG0508: the close report's sibling imports sit outside its advisory try, so an ImportError escapes after the run is already stamped closed
 
 > **Status:** Open
+> **Verification depth:** functional (executed: critic made unimportable via a meta-path blocker - _tell_the_operator raised before and returns having printed its report after)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

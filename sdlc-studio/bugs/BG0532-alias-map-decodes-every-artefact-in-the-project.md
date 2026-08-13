@@ -1,6 +1,7 @@
 # BG0532: alias_map decodes every artefact in the project with a bare read_text, so one unreadable file takes down any command that resolves an id
 
 > **Status:** Open
+> **Verification depth:** functional (read_text_safe substituted for a bare read_text; test_sdlc_md passes)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py

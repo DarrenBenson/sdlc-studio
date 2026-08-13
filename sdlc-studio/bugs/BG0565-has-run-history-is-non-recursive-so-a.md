@@ -1,6 +1,7 @@
 # BG0565: has_run_history is non-recursive, so a project that archives its retros into a subdirectory reads as never having closed a sprint and is silently softened
 
 > **Status:** Open
+> **Verification depth:** functional (executed: a retro filed under retros/archive/v5.0.0/ reads True where it read False, with the empty-directory case still False)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/plan_review.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py

@@ -5815,20 +5815,22 @@ def render_grooming_report(rep: dict) -> str:
 def _batch_unfanned_units(root, batch) -> list[tuple[str, str, str]]:
     """The batch units the sign-off fan-out does NOT reach, as (id, kind, status).
 
-    The fan-out is story-scoped because conformance is. The claim that made that safe - that a
-    bug or CR in a mixed batch is "already terminal by the time the close runs" - is not true and
-    was measured false: a 28-unit batch closed `goal-reached` with its 10 bugs still Open, while
-    the handoff the same close wrote said "10 remaining". The close's own artefacts contradicted
-    its own verdict, and the next sprint inherited ten units it believed undelivered.
+    The fan-out once reached stories only. The claim that made that safe - that a bug or CR in a
+    mixed batch is "already terminal by the time the close runs" - is not true and was measured
+    false: a 28-unit batch closed `goal-reached` with its 10 bugs still Open, while the handoff
+    the same close wrote said "10 remaining". The close's own artefacts contradicted its own
+    verdict, and the next sprint inherited ten units it believed undelivered.
 
-    So the assumption is replaced by a measurement. Every non-story batch unit is looked up and
-    reported with the status it actually holds; a terminal one is not listed. What the caller does
-    with that is its business - this function only refuses to guess.
+    Bugs are now IN the fan-out (`_SIGNOFF_TERMINAL`), so they are no longer listed here - a unit
+    counted in both lists would break the invariant the caller states: every batch unit is either
+    fanned into or reported outstanding, never both and never neither. Types the fan-out still
+    does not reach are looked up and reported with the status they actually hold; a terminal one
+    is not listed. This function only refuses to guess.
     """
     out: list[tuple[str, str, str]] = []
     for uid in batch:
         hit = sdlc_md.find_by_id(Path(root), uid)
-        if not hit or hit[1] == "story":
+        if not hit or hit[1] in _SIGNOFF_TERMINAL:
             continue
         kind = hit[1]
         status = sdlc_md.extract_field(sdlc_md.read_text_safe(Path(hit[0])), "Status") or ""
@@ -5837,14 +5839,26 @@ def _batch_unfanned_units(root, batch) -> list[tuple[str, str, str]]:
     return out
 
 
+#: Types the sign-off fan-out reaches, and the terminal status each one takes. Bugs were left
+#: out on the ground that "conformance is story-scoped", which is not true past the two-role
+#: cutoff: `conformance.two_role_applies_to` judges any numbered id and fails closed. The
+#: consequence was that a bug-heavy run could not close at all - `sprint close` refuses at step 1
+#: on units no independent pass covers, and the only mechanism for covering them skipped every
+#: bug in the batch. A 41-bug programme had no route to a close.
+_SIGNOFF_TERMINAL = {"story": "Done", "bug": "Fixed"}
+
+
 def _batch_story_units(root, batch) -> list[str]:
-    """The story units in the batch, in batch order. Sign-off + Done transition is story-scoped
-    (conformance is), so a bug/CR in a mixed batch is not signed off here - but it is COUNTED and
-    NAMED by `_batch_unfanned_units`, never assumed terminal."""
+    """The units in the batch the sign-off fan-out reaches, in batch order.
+
+    Kept under its original name because callers and tests reach for it; the SET it returns is
+    what changed. A type outside `_SIGNOFF_TERMINAL` is still counted and named by
+    `_batch_unfanned_units` rather than assumed terminal.
+    """
     out = []
     for uid in batch:
         hit = sdlc_md.find_by_id(Path(root), uid)
-        if hit and hit[1] == "story":
+        if hit and hit[1] in _SIGNOFF_TERMINAL:
             out.append(sdlc_md.norm_id(uid))
     return out
 
@@ -5878,17 +5892,22 @@ def _apply_signoff(root, state, principal: str | None, author_default: str | Non
               "with no named principal is not a review", file=sys.stderr)
         return 2
     units = _batch_story_units(root, state.get("batch") or [])
-    vocab = sdlc_md.status_vocab("story", root)
     signed, done, skipped = [], [], []
     for unit in units:
         hit = sdlc_md.find_by_id(Path(root), unit)
+        # Each unit's OWN type decides its vocabulary and its terminal status. Reading a bug
+        # through the story vocabulary reported it as not-terminal whatever it said, because a
+        # bug's terminal is `Fixed` and `Done` is not in its vocabulary at all.
+        kind = hit[1]
+        vocab = sdlc_md.status_vocab(kind, root)
+        terminal = _SIGNOFF_TERMINAL.get(kind, "Done")
         status = sdlc_md.canonical_status(
             sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status"), vocab)
         existing = critic.signoff_for(root, unit)
         has_signoff = critic.is_independent_signoff(root, unit, existing)
-        # Idempotent: a unit already Done AND independently signed off is complete - skip it, so a
-        # re-run after a mid-cascade stop resumes rather than re-recording and re-transitioning.
-        if status == "Done" and has_signoff:
+        # Idempotent: a unit already terminal AND independently signed off is complete - skip it,
+        # so a re-run after a mid-cascade stop resumes rather than re-recording and transitioning.
+        if status == terminal and has_signoff:
             skipped.append(unit)
             continue
         if not has_signoff:  # a stop between signoff and Done leaves the signoff; do not duplicate it
@@ -5905,8 +5924,16 @@ def _apply_signoff(root, state, principal: str | None, author_default: str | Non
                 return 1
             signed.append(unit)
         try:
-            artifact.close(root, unit)  # Done + cascade + telemetry; AC-verify gated for stories
-        except Exception as exc:  # noqa: BLE001 - a red Done gate must stop the fan loudly
+            if terminal == "Done":
+                artifact.close(root, unit)  # Done + cascade + telemetry; AC-verify gated
+            else:
+                # A bug's terminal runs the same gate `transition.py` enforces by hand - the
+                # verification-depth floor and the planned-mutant check included. Routed here
+                # rather than through `artifact.close`, which is Done-shaped, so a bug cannot
+                # reach a terminal status by a path that skips the checks its own type demands.
+                import transition as _tr  # noqa: PLC0415 - lazy, as elsewhere here
+                _tr.transition(root, unit, terminal)
+        except Exception as exc:  # noqa: BLE001 - a red terminal gate must stop the fan loudly
             print(f"apply-signoff STOPPED at {unit}: Done transition refused - {exc}",
                   file=sys.stderr)
             return 1

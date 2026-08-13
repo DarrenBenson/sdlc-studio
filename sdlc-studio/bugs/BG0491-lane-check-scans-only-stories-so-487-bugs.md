@@ -1,6 +1,7 @@
 # BG0491: lane-check scans only stories, so 487 bugs are outside the number a blocking decision would rest on
 
 > **Status:** Open
+> **Verification depth:** functional (executed: lane-check --ids BG0529 printed '0 unit(s)' before and '1 unit(s)' after; the corpus figure moves 181 -> 280)
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood

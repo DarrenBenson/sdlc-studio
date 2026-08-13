@@ -1,6 +1,7 @@
 # BG0554: survivor severity under-rates the explicit return-None idiom, which is the shape that matters most in this codebase
 
 > **Status:** Open
+> **Verification depth:** functional (executed over four shapes: bare return, explicit return None, both-arms-valued control, and fall-off-the-end; test_transition 261 pass)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py

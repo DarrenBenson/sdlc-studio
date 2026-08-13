@@ -1,6 +1,7 @@
 # BG0539: critic record cannot tell a review ROUND from a panel SEAT, so the ordinary reject-fix-approve loop escalates as an unresolved split
 
 > **Status:** Open
+> **Verification depth:** functional (same convergence check as BG0549, same six executed cases)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py

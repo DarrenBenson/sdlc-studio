@@ -1,6 +1,7 @@
 # BG0531: a hand-applied mutant is registered with no assertion that its anchor was unique, so a mutation run can report a false SURVIVED for a function it never edited
 
 > **Status:** Open
+> **Verification depth:** functional (executed through the CLI: an anchor occurring twice refuses, one occurring zero times refuses with a different message, one occurring once is accepted, and omitting it still works)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py

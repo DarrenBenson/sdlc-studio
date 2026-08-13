@@ -1,6 +1,7 @@
 # BG0550: register drops a file's earlier registered mutants without saying so, so an edit after registering silently empties a unit's evidence
 
 > **Status:** Open
+> **Verification depth:** functional (executed through the CLI on a throwaway fixture: register twice, edit the file, register again - the run now prints DROPPED 2 earlier registration(s) where it printed nothing)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py

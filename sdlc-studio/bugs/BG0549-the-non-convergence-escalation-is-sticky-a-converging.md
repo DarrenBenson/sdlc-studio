@@ -1,6 +1,7 @@
 # BG0549: the non-convergence escalation is sticky: a converging APPROVE still reports that the panel is not converging, because the notice counts historical REJECTs and never re-reads the latest verdict
 
 > **Status:** Open
+> **Verification depth:** functional (executed over six cases: reject+reject escalates, reject+reject+APPROVE does not, a split within a round escalates, a split then APPROVE does not)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py

@@ -1,6 +1,7 @@
 # BG0546: critic.py record refuses a plan-review finding for carrying no diff origin, when a plan review has no diff to attribute one to
 
 > **Status:** Open
+> **Verification depth:** functional (executed: a plan-review finding with no origin tag is accepted; a delivery finding with no tag is still refused; test_critic 294 pass)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py

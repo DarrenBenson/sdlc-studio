@@ -320,7 +320,38 @@ def unresolvable_affects(repo_root: Path | str, declared: list[str]) -> list[str
     gate (`sprint.breakdown`) bottom out HERE, so 'resolvable' has exactly one definition. A path
     resolves against the repo root OR the installed skill dir (`sdlc_md.resolve_affects`)."""
     root = Path(repo_root)
-    return [p for p in declared if sdlc_md.resolve_affects(root, p) is None]
+    return [p for p in declared
+            if not _is_transient_path(p) and sdlc_md.resolve_affects(root, p) is None]
+
+
+#: Directories whose contents are CONSUMED by a normal workflow step, so a path under one is
+#: expected to stop existing. `changelog.d/` is the case: the repo asks every behaviour change to
+#: ship a `changelog.d/<UNIT-ID>.md` fragment and units that comply declare it under `Affects` -
+#: then `changelog compose` unlinks the fragment at the release cut. Every complying unit
+#: therefore minted an unresolvable-affects warning at exactly the moment it was most correct,
+#: and the warning was loudest for the units that followed the rule.
+#:
+#: Keyed on the DIRECTORY, not on an `<ID>.md` name shape: what makes a fragment transient is
+#: where it sits, not what it is called, and a name-shaped rule would exempt a real source file
+#: that happened to be named after a unit.
+_TRANSIENT_AFFECTS_DIRS = ("changelog.d/",)
+
+
+def _is_transient_path(path: str) -> bool:
+    """True for a declared path whose absence is the workflow working, not a fictional file."""
+    p = str(path or "").lstrip("./")
+    return any(p.startswith(d) for d in _TRANSIENT_AFFECTS_DIRS)
+
+
+#: Basenames so common that finding one elsewhere says nothing about whether a declared path is
+#: a typo. Every Python package has `__init__.py`; every directory of tests has `conftest.py`.
+#: The typo inference needs a DISTINCTIVE name to work at all, so these opt out of it rather
+#: than produce a refusal whose suggestion list is dozens of unrelated files.
+_AMBIGUOUS_BASENAMES = frozenset({
+    "__init__.py", "conftest.py", "setup.py", "__main__.py",
+    "README.md", "index.md", "_index.md", "CHANGELOG.md", "AGENTS.md", "CLAUDE.md",
+    "package.json", "tsconfig.json", "Makefile", "Dockerfile", ".gitignore",
+})
 
 
 def basename_matches(repo_root: Path | str, path: str) -> list[str]:
@@ -333,6 +364,16 @@ def basename_matches(repo_root: Path | str, path: str) -> list[str]:
     root = Path(repo_root)
     base = os.path.basename(str(path).rstrip("/"))
     if not base:
+        return []
+    # A COMMON basename carries no information about whether this is a typo. The whole
+    # inference is "the basename exists elsewhere, so the file is there and the directory is
+    # wrong" - which holds for a distinctive name and collapses for `__init__.py`, `README.md`
+    # or `conftest.py`, where a match says only that Python projects have those everywhere. A
+    # unit genuinely CREATING one was refused as a typo, and the suggested paths were dozens of
+    # unrelated files. Returning no suggestion lets the creation through, which is the correct
+    # side to fail on: the cost of a wrong refusal is a blocked author, and the cost of a missed
+    # suggestion is one the resolvable-affects check catches anyway.
+    if base in _AMBIGUOUS_BASENAMES:
         return []
     out: list[str] = []
     for dirpath, dirnames, filenames in os.walk(root):
