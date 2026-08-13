@@ -35,7 +35,11 @@ DISCLOSED = ("Medium", "Low")
 BARRED = ("Critical", "High")
 
 #: The page that states the bar in prose, for a reader outside this repository.
-NOTES_REL = "docs/release-notes-v5.0.0.md"
+#: The CURRENT release's notes - the ones whose finding count must match the corpus today.
+#: Pointed at v5.0.0 until v5.0.1 shipped, which made the guard demand that a HISTORICAL record
+#: be rewritten every time a bug closed. A released version's notes state what THAT version
+#: shipped with and must not move; only the current one tracks the corpus.
+NOTES_REL = "docs/release-notes-v5.0.1.md"
 
 #: Titles are the finding's own H1. Long ones are elided rather than wrapped, because a table
 #: cell that wraps to five lines is a table nobody reads to the bottom of.

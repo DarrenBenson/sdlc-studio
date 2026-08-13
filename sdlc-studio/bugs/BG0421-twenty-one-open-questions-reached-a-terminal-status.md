@@ -1,6 +1,7 @@
 # BG0421: Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** Premise expired, measured 2026-08-13: sweeping sdlc_md.unresolved_questions over every markdown file under sdlc-studio/ returns 0, against the 21 this bug asserts. The mechanism it asked for is live - a question citing an id that resolves to no artefact is reported, one citing a real id is not. Recorded under BG0577, which is the standing finding that nothing re-checks a bug's premise.
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** sdlc-studio/stories, sdlc-studio/change-requests, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py

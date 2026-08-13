@@ -4486,6 +4486,52 @@ class UnanswerableGroupTests(unittest.TestCase):
         self.assertNotIn("US0004", splittable,
                          "an unanswerable group was also told to split into discriminating halves")
 
+class LaneCheckScopeTests(unittest.TestCase):
+    """BG0491: the corpus sweep judged stories and silently omitted bugs."""
+
+    def test_the_lane_check_sweep_covers_bugs_not_only_stories(self) -> None:
+        """MUTANT: drop the `bugs/BG*.md` glob from `cmd_lane_check`, leaving stories only.
+
+        `--ids BG0487` then prints `0 unit(s)`, which is indistinguishable from a clean result
+        for a unit nothing looked at - and 487 bugs sit outside a figure CR0539 proposes making
+        blocking. Asserted on the SOURCE of the sweep rather than on a corpus count, because a
+        count moves with the corpus and would make this test a monitor rather than a check.
+        """
+        import inspect
+        src = inspect.getsource(verify_ac.cmd_lane_check)
+        self.assertIn('"bugs"', src,
+                      "the lane-check sweep must glob the bugs directory, not stories alone")
+        self.assertIn('BG*.md', src, "bugs are selected by their own id prefix")
+        # The control: stories are still swept. A fix that swapped one for the other would
+        # satisfy the assertions above while losing the half that already worked.
+        self.assertIn('US*.md', src, "stories must remain in scope")
+
+
+class EditVerbVocabularyTests(unittest.TestCase):
+    """BG0563/BG0534: the vocabulary enumerated only subtractive edits."""
+
+    def test_an_additive_or_positional_edit_verb_is_accepted(self) -> None:
+        """MUTANT: remove the additive and positional groups from `_EDIT_VERBS`.
+
+        A mutant that ADDS or MOVES something could not be stated at all, so `testplan derive`
+        refused legitimate rows and trained authors to reword for the checker rather than for
+        the reader.
+        """
+        for phrase in ("add a second call to the writer",
+                       "insert a guard before the loop",
+                       "move the affects check below the batch write",
+                       "print the bare message"):
+            with self.subTest(phrase=phrase):
+                self.assertTrue(any(v in phrase for v in verify_ac._EDIT_VERBS),
+                                f"{phrase!r} names a real production edit and must be accepted")
+
+    def test_an_outcome_phrased_mutant_is_still_refused(self) -> None:
+        """The control. Widening the vocabulary must not widen it to nothing - a mutant stating
+        what STOPS WORKING rather than what is CHANGED still names no edit."""
+        for phrase in ("the suite goes red", "it fails", "the guard no longer holds"):
+            with self.subTest(phrase=phrase):
+                self.assertFalse(any(v in phrase for v in verify_ac._EDIT_VERBS),
+                                 f"{phrase!r} is an outcome, not an edit")
 
 
 if __name__ == "__main__":

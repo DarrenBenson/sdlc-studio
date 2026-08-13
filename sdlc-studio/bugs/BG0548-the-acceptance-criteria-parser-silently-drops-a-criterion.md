@@ -1,6 +1,6 @@
 # BG0548: the acceptance-criteria parser silently drops a criterion whose heading is not AC<digits>, so a whole criterion and its Verify line vanish without a word
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (executed: parse_story over a story carrying AC1 and AC2a returned ['AC1'] before and ['AC1','AC2a'] after; test_verify_ac + test_sdlc_md 419 pass)
 > **Severity:** Medium
 > **Points:** 2
@@ -25,15 +25,17 @@ Report every `### AC...` heading the parser declines to accept, naming the headi
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: A story carrying six criteria headed AC1, AC2, AC2a, AC3, AC4 and AC5 is reported by `verify_ac.py run` as `ac=5`.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Report every `### AC...` heading the parser declines to accept, naming the heading and the pattern it failed.
+- [x] **AC1** Given a story whose criteria are headed `AC1` and `AC2a`, when `verify_ac.parse_story` reads it, then BOTH are returned as blocks - a letter-suffixed criterion is not dropped, and the count a reader sees matches the count the author wrote.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py -k ac_heading
+- [x] **AC2** Given the same suffixed heading in the compact bullet form (`- **AC2a** ...`), when the shared bullet pattern reads it, then it is recognised too - the two writers a criterion may use must not disagree about which criteria exist.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k parse_story
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | {{name the production change this test must fail on}} | The behaviour described is corrected: A story carrying six criteria headed AC1, AC2, AC2a, AC3, AC4 and AC5 is reported by `verify_ac.py run` as `ac=5`. |
-| AC2 | {{name the production change this test must fail on}} | The proposed fix lands, pinned by a test: Report every `### AC...` heading the parser declines to accept, naming the heading and the pattern it failed. |
+| AC1 | in lib/sdlc_md.py, narrow AC_HEADING_RE back to `(AC\\d+)` so a letter suffix matches nothing | Given a story whose criteria are headed `AC1` and `AC2a`, when `verify_ac.parse_story` reads it, then BOTH are returned as blocks - a letter-suffixed criterion is not dropped, and the count a reader sees matches the count the author wrote. |
+| AC2 | in lib/sdlc_md.py, narrow AC_BULLET_RE back to `(AC\\d+)` so the bullet form drops a suffixed criterion | Given the same suffixed heading in the compact bullet form (`- **AC2a** ...`), when the shared bullet pattern reads it, then it is recognised too - the two writers a criterion may use must not disagree about which criteria exist. |
 
 ## Revision History
 

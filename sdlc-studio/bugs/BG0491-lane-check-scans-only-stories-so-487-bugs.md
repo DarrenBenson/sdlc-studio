@@ -1,6 +1,6 @@
 # BG0491: lane-check scans only stories, so 487 bugs are outside the number a blocking decision would rest on
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (executed: lane-check --ids BG0529 printed '0 unit(s)' before and '1 unit(s)' after; the corpus figure moves 181 -> 280)
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -22,6 +22,11 @@ Separately, `_LANE_MARKERS` (`verify_ac.py`:817) matches a bare `"main("` substr
 2. Read the glob at `verify_ac.py`:2106 - `US*.md`.
 3. Put `# this deliberately does NOT call main()` in a library-only test's node and re-run - reported clean.
 
+## Acceptance Criteria
+
+- [x] **AC1** Given a bug id passed to `lane-check --ids`, when the sweep runs, then that bug is scanned and counted - a type outside the sweep must not report `0 unit(s)`, which reads identically to a clean result for a unit nothing examined.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k lane_check
+
 ## Proposed Fix
 
 Widen the sweep to bug units and restate the yield over the combined corpus. Match the lane markers on a call, not a substring - the AST approach used for the BG0401 seam check in 307ce91d is the shape. Then re-measure and restate the recorded figure once.
@@ -29,6 +34,12 @@ Widen the sweep to bug units and restate the yield over the combined corpus. Mat
 ## Impact
 
 CR0520 makes the decision to let this lane BLOCK rest on its measured yield. That number currently excludes 487 units and includes a small false-negative rate. Both push in the direction of understating the lane's value, so the decision would be taken on the wrong figure.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in verify_ac.py `cmd_lane_check`, delete the `bugs/BG*.md` glob so the sweep covers stories only | Given a bug id passed to `lane-check --ids`, when the sweep runs, then that bug is scanned and counted - a type outside the sweep must not report `0 unit(s)`, which reads identically to a clean result for a unit nothing examined. |
 
 ## Revision History
 

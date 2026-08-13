@@ -1,6 +1,7 @@
 # BG0537: check_root_docs reads raw lines while check_body_links blanks code spans, so a link inside backticks is an example in one directory and a broken reference in another
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** Already repaired, measured 2026-08-13. The fix landed in the interim and the bug was never closed - see the BG0577 finding, which is that nothing detects this state. Verified by reading the code this bug describes.
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/check_links.py, tools/tests/test_check_links.py

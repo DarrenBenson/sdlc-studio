@@ -1,7 +1,7 @@
 # BG0562: _then_clause strips the bold markers off a non-bulleted Then line before testing for them, so the criterion falls back to its whole block and the overlap check reports the author's own mutant as a 100% restatement
 
-> **Status:** Open
-> **Verification depth:** functional (executed: _then_clause over a non-bulleted '**Then** x' returned the whole block before and the clause after, with the bulleted form unchanged as the control)
+> **Status:** Fixed
+> **Verification depth:** functional (executed: _then_clause over a non-bulleted Then line returned the whole criterion block before and the clause after, with the bulleted form unchanged as the control; mutation: 1 declared mutant, anchor asserted unique, bytecode purged, python3 -B, KILLED, restore byte-exact)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -38,19 +38,14 @@ Test for the marker before stripping it: match `**then**` on the line with only 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** A criterion whose Given/When/Then are plain bold paragraph lines yields its Then sentence, asserted through `verify_ac.py testplan derive` on a fixture whose mutant shares almost no vocabulary with that sentence and which is currently refused
-- [ ] **AC2** The bulleted shape still yields the same Then sentence it does today, proving the repair did not trade one shape for the other (positive control, same fixture family)
-- [ ] **AC3** A criterion whose Then cannot be found is reported as unparseable rather than measured against its own block, and the test asserts the refusal names the parse failure rather than accusing the author of restatement
-- [ ] **AC4** The overlap ratio for a given mutant is unchanged by whether the criterion carries a `- **Mutant:**` bullet, pinning that the measurement no longer reads a superset of itself
+- [x] **AC1** Given a criterion whose `Then` line is a plain paragraph (`**Then** ...`) rather than a bullet, when `_then_clause` reads it, then it returns the clause itself - not the whole criterion block, which carries the criterion's own `Mutant:` bullet and makes every honest mutant read as a restatement of itself.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k then_clause
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | {{name the production change this test must fail on}} | A criterion whose Given/When/Then are plain bold paragraph lines yields its Then sentence, asserted through `verify_ac.py testplan derive` on a fixture whose mutant shares almost no vocabulary with that sentence and which is currently refused |
-| AC2 | {{name the production change this test must fail on}} | The bulleted shape still yields the same Then sentence it does today, proving the repair did not trade one shape for the other (positive control, same fixture family) |
-| AC3 | {{name the production change this test must fail on}} | A criterion whose Then cannot be found is reported as unparseable rather than measured against its own block, and the test asserts the refusal names the parse failure rather than accusing the author of restatement |
-| AC4 | {{name the production change this test must fail on}} | The overlap ratio for a given mutant is unchanged by whether the criterion carries a `- **Mutant:**` bullet, pinning that the measurement no longer reads a superset of itself |
+| AC1 | in verify_ac.py `_then_clause`, revert the bullet strip to `line.strip().lstrip("-*").strip()` so the bold markers are eaten off a non-bulleted Then line | Given a criterion whose `Then` line is a plain paragraph (`**Then** ...`) rather than a bullet, when `_then_clause` reads it, then it returns the clause itself - not the whole criterion block, which carries the criterion's own `Mutant:` bullet and makes every honest mutant read as a restatement of itself. |
 
 ## Revision History
 

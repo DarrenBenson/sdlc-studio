@@ -73,10 +73,16 @@ documented command now works, pinned to `v5.0.1` or later.
 
 ## Known issues
 
-Unchanged from v5.0.0: **40 open defects, 39 Medium and 1 Low, zero Critical and zero High**,
-listed by id in [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is
-generated from the bug corpus and guarded in both directions, so a finding filed after it was
-written cannot silently be missing from it.
+**v5.0.1 ships with 29 open defects: 29 Medium, 0 Low. Zero Critical, zero High.** Listed by id in
+[docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
+corpus and guarded in both directions, so a finding filed after it was written cannot silently be
+missing from it.
+
+Down from the 40 v5.0.0 disclosed. Eleven closed while clearing the bug backlog - and five of
+those were never defects at all: two had already been repaired with their bugs left open, two
+carried premises that had expired (one asserting 21 unresolved Open Questions where the corpus
+now holds 0), and one was a duplicate. That is BG0577, filed because nothing detects any of those
+states and every plan sized from the backlog inherits the error.
 
 **The stale-criteria count, re-measured.** v5.0.0's notes reported 50 executable acceptance
 criteria failing when run, of 1,918 across 673 stories at Done. Re-run for this release the

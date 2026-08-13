@@ -1,6 +1,6 @@
 # BG0531: a hand-applied mutant is registered with no assertion that its anchor was unique, so a mutation run can report a false SURVIVED for a function it never edited
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (executed through the CLI: an anchor occurring twice refuses, one occurring zero times refuses with a different message, one occurring once is accepted, and omitting it still works)
 > **Severity:** Medium
 > **Points:** 3
@@ -29,8 +29,14 @@ The same entry should record whether bytecode was purged, on the same reasoning:
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `mutation.py register` records a mutant applied by hand.
-- [ ] The proposed fix lands, pinned by a test: Give `register` an optional `--anchor` and, when supplied, refuse unless the target contains it exactly once - and record the count in the ledger entry either...
+- [x] **AC1** Given `--anchor` naming the original text a hand-applied mutant replaced, when it occurs anywhere other than exactly once in the target, then registration REFUSES - a substring matching twice patches the site the author did not mean, and the run then records a verdict about code that was never mutated.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k anchor_must_be_unique
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in mutation.py `register_mutant`, delete the anchor occurrence check so any count is accepted | Given `--anchor` naming the original text a hand-applied mutant replaced, when it occurs anywhere other than exactly once in the target, then registration REFUSES - a substring matching twice patches the site the author did not mean, and the run then records a verdict about code that was never mutated. |
 
 ## Revision History
 

@@ -195,7 +195,10 @@ class ReleaseNotesClaimTests(unittest.TestCase):
         found = ki.corpus()
         mediums = sum(1 for s, _t in found.values() if s == "Medium")
         lows = sum(1 for s, _t in found.values() if s == "Low")
-        expected = (f"**v5.0.0 ships with {len(found)} open defects: {mediums} Medium, "
+        # Version read from the file the guard points at, not hardcoded - the assertion must
+        # follow NOTES_REL when it moves to the next release rather than pinning a dead one.
+        version = ki.NOTES_REL.rsplit("release-notes-", 1)[1].removesuffix(".md")
+        expected = (f"**{version} ships with {len(found)} open defects: {mediums} Medium, "
                     f"{lows} Low. Zero Critical, zero High.**")
         self.assertIn(
             expected, notes,

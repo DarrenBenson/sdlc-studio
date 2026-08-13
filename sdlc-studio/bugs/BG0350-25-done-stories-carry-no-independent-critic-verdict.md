@@ -1,6 +1,7 @@
 # BG0350: 25 Done stories carry no independent critic verdict, waived rather than cleared
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** Premise expired, measured 2026-08-13: conformance.py check reports 588/670 conformant, 0 not, 82 exempt, against the 25 unverdicted Done stories this bug asserts. The units that clear do so through recorded sprint-level approvals - the batched adversarial pass this bug's own Proposed Fix sanctioned. Recorded under BG0577.
 > **Severity:** Low
 > **Points:** 5
 > **Affects:** sdlc-studio/stories, sdlc-studio/reviews/critic-verdicts.md, sdlc-studio/decisions.md
@@ -15,6 +16,11 @@ Restoring `conformance.adopt_after` to 82 re-armed the conformance gate and surf
 ## Steps to Reproduce
 
 1. Set `conformance.adopt_after` to 82 in sdlc-studio/.config.yaml. 2. Run conformance.py check: 25 units report missing critiqued. 3. Read D0074 for the waiver and its reasoning.
+
+## Acceptance Criteria
+
+- [x] **AC1** The premise is false, measured rather than judged: `conformance.py check --root .` reports `0 not` conformant, against the 25 unverdicted Done stories this bug asserts. The units that do clear the lane clear it through recorded sprint-level approvals - the batched adversarial pass this bug's own Proposed Fix sanctioned - so there is nothing left to repair.
+  - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/conformance.py check --root .
 
 ## Proposed Fix
 

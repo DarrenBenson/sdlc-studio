@@ -1,6 +1,7 @@
 # BG0534: testplan derive's edit-verb check is an enumeration, so it refuses honest mutants written with a verb nobody listed
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** Superseded by BG0563 - the same defect (_EDIT_VERBS being an enumeration in verify_ac.py) filed from the opposite end, with byte-identical Affects. One change closed both; BG0563 carried the real criteria.
 > **Verification depth:** functional (duplicate of BG0563, closed by the same change and the same execution)
 > **Severity:** Medium
 > **Points:** 2

@@ -1,6 +1,7 @@
 # BG0547: one advisory silently replaces another: the transition gate ladder assigns its warning variable where its own docstring says the warnings accumulate
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** Already repaired, measured 2026-08-13. The fix landed in the interim and the bug was never closed - see the BG0577 finding, which is that nothing detects this state. Verified by reading the code this bug describes.
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py

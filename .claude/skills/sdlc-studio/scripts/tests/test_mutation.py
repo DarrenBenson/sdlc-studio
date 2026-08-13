@@ -4340,5 +4340,56 @@ class RunUnitAttributionCLITests(unittest.TestCase):
                              m.register_mutant(root, "src/thing.py", "m", "pytest x",
                                                "survived", line=1, unit="BG0001")["verdict"])
 
+class RegisterEvidenceIntegrityTests(unittest.TestCase):
+    """BG0550/BG0531: what `register` silently lost, and what it never checked."""
+
+    def _repo(self, d):
+        from pathlib import Path as _P
+        root = _P(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "t.py").write_text("def a():\n    return 1\n\ndef b():\n    return 1\n")
+        return root
+
+    def test_dropped_stale_registrations_are_reported(self) -> None:
+        """MUTANT: drop `dropped_stale` from register_mutant's return dict.
+
+        Registrations are keyed on the target's content hash and rows for other content are
+        discarded - correctly, they describe bytes the file no longer has. Doing it SILENTLY
+        left a builder reading `1 registered` where five claims had just gone, which is
+        indistinguishable from a builder who did the work once.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            for m in ("first", "second"):
+                _load().register_mutant(root, "t.py", m, "pytest x", "killed", line=1)
+            (root / "t.py").write_text("def a():\n    return 2\n")
+            res = _load().register_mutant(root, "t.py", "third", "pytest x", "killed", line=1)
+        self.assertEqual(res.get("dropped_stale"), 2,
+                         "both earlier registrations were discarded and must be counted")
+
+    def test_anchor_must_be_unique(self) -> None:
+        """MUTANT: accept any anchor occurrence count instead of exactly one.
+
+        A hand-applied mutant is located by a substring. One matching twice patches the site
+        the author did not mean, the test stays green for a reason nobody looked at, and the
+        ledger records a verdict about code that was never mutated.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            with self.assertRaises(ValueError) as twice:
+                _load().register_mutant(root, "t.py", "m", "pytest x", "killed", line=2,
+                                         anchor="    return 1")
+            self.assertIn("2 time(s)", str(twice.exception))
+            with self.assertRaises(ValueError) as absent:
+                _load().register_mutant(root, "t.py", "m", "pytest x", "killed", line=1,
+                                         anchor="def zzz():")
+            self.assertIn("0 time(s)", str(absent.exception))
+            # The control: a unique anchor is accepted, so the check refuses ambiguity rather
+            # than refusing anchors.
+            ok = _load().register_mutant(root, "t.py", "m", "pytest x", "killed", line=1,
+                                          anchor="def a():")
+            self.assertEqual(ok["verdict"], "killed")
+
+
 if __name__ == "__main__":
     unittest.main()

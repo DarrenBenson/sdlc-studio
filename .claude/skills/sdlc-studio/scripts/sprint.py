@@ -7532,6 +7532,30 @@ def _cmd_batch_add_epic(args: argparse.Namespace, root: Path) -> int:
         return 2
     already = [u for u in units if u in {sdlc_md.norm_id(b) for b in (state.get("batch") or [])}]
     fresh = [u for u in units if u not in already]
+    # THE SAME CENSUS `plan --write` REFUSES ON. `sprint plan` will not open a run holding an
+    # ungroomed unit, because a plan over unsized units is false authority - but the in-flight
+    # batch verbs added straight to the batch without asking, so a unit the plan gate would have
+    # refused could walk in through `batch add-epic` and be delivered from a run that never
+    # judged it. The gate was on the door and not on the window.
+    if fresh:
+        # Batch items carry the resolved PATH as well as the id - `breakdown` reads the file to
+        # judge grooming, and an item with only an id raised KeyError rather than judging
+        # anything. Built the same way the planner builds them, so the two cannot drift.
+        items = []
+        for u in fresh:
+            found = sdlc_md.find_by_id(root, u)
+            if found:
+                items.append({"id": u, "path": str(found[0]), "type": found[1]})
+        bd = breakdown(root, items)
+        if bd["ungroomed"]:
+            # The same census, said in this verb's own name. Reusing `plan`'s refusal verbatim
+            # printed "sprint plan REFUSED" for a `batch add-epic` call, which sends the reader
+            # to the wrong command.
+            print(f"sprint batch add-epic REFUSED: {len(bd['ungroomed'])} of {len(fresh)} "
+                  f"unit(s) are ungroomed. NOTHING was added to the batch.\n", file=sys.stderr)
+            print("\n".join(_breakdown_detail(bd)), file=sys.stderr)
+            print(_breakdown_fix(bd, f"--epic {epic}"), file=sys.stderr)
+            return 2
     for uid in fresh:
         state = run_state.add_to_batch(root, uid)
     points = _swap_points(root, fresh)
@@ -8861,6 +8885,21 @@ def cmd_plan(args: argparse.Namespace) -> int:
         appetite = run_state.appetite_record(
             accepted_units=resolved["units"], accepted_minutes=resolved["minutes"],
             standing_units=std["units"], standing_minutes=std["minutes"])
+        # AN EXPLICIT RESIZE OUTRANKS A RE-RESOLUTION. `appetite resize` exists so a ceiling can
+        # be moved ON THE RECORD, with a compulsory reason, rather than overrun silently. A
+        # re-plan over an ALREADY OPEN run re-resolved from the standing capacity and wrote the
+        # result straight over that decision - leaving the resize entry sitting in
+        # `appetite_changes` describing a ceiling no longer in force, which is worse than losing
+        # it outright: the record says the operator raised the ceiling and the number says they
+        # did not. The resolution order already prefers the more specific statement at every
+        # other level (flag > appetite.* > capacity.*), and a recorded resize is the most
+        # specific statement there is.
+        prior = (run_state.read(args.root) or {})
+        if prior.get("appetite_changes") and prior.get("appetite"):
+            appetite = prior["appetite"]
+            print("sprint plan: keeping the appetite set by `appetite resize` "
+                  f"({appetite.get('minutes'):g}min/{appetite.get('units')}units) - a recorded "
+                  "resize outranks a re-resolution from the standing capacity")
         extra: dict = {"appetite": appetite}
         # Never erase a recorded goal on a mid-run re-cut: like open_run's rung goal,
         # an absent value preserves, only a stated one writes (run_state never-discard).

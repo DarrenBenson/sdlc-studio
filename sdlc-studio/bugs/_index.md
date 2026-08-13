@@ -6,23 +6,23 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 42 |
+| Open | 31 |
 | In Progress | 0 |
-| Fixed | 448 |
+| Fixed | 454 |
 | Verified | 0 |
 | Closed | 83 |
-| Won't Fix | 3 |
-| Superseded | 1 |
+| Won't Fix | 7 |
+| Superseded | 2 |
 | **Total** | **577** |
 
 ## All Bugs
 
 | ID | Title | Status | Severity | Created | Updated |
 | --- | --- | --- | --- | --- | --- |
-| [BG0350](BG0350-25-done-stories-carry-no-independent-critic-verdict.md) | 25 Done stories carry no independent critic verdict, waived rather than cleared | Open | Low | 2026-07-28 | 2026-07-28 |
+| [BG0350](BG0350-25-done-stories-carry-no-independent-critic-verdict.md) | 25 Done stories carry no independent critic verdict, waived rather than cleared | Won't Fix | Low | 2026-07-28 | 2026-07-28 |
 | [BG0406](BG0406-three-units-delivered-nothing-bg0372-writes-no-velocity.md) | Three units delivered nothing: BG0372 writes no velocity column, BG0359's detector is inert and would be wrong, and BG0357's consumer key was wrong | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Fixed | High | 2026-07-29 | 2026-07-29 |
-| [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Won't Fix | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0457](BG0457-four-spec-agreement-guards-pin-prose-to-prose.md) | Four spec-agreement guards pin prose to prose: a set comparison that cannot fail in the reverse direction, a whole-file substring satisfied by the Revision History row describing the change, a word-presence check an unrelated sentence already satisfies, and a source-substring wiring check a comment satisfies | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Open | Medium | 2026-07-31 | 2026-07-31 |
 | [BG0469](BG0469-close-owed-reports-a-close-that-already-happened.md) | close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch | Fixed | High | 2026-07-31 | 2026-07-31 |
@@ -32,7 +32,7 @@
 | [BG0488](BG0488-us0608-and-us0609-ship-a-feature-no-cli.md) | US0608 and US0609 ship a feature no CLI invocation can reach, and their tests survive its deletion | Fixed | High | 2026-08-02 | 2026-08-02 |
 | [BG0489](BG0489-the-commit-msg-suite-verdict-is-written-before.md) | the commit-msg suite verdict is written before the tool-tests lane runs, so a green verdict survives its failure | Closed | High | 2026-08-02 | 2026-08-02 |
 | [BG0490](BG0490-four-bug-repairs-are-fixed-with-half-their.md) | four bug repairs are Fixed with half their title undelivered and no recorded narrowing | Open | Medium | 2026-08-02 | 2026-08-02 |
-| [BG0491](BG0491-lane-check-scans-only-stories-so-487-bugs.md) | lane-check scans only stories, so 487 bugs are outside the number a blocking decision would rest on | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0491](BG0491-lane-check-scans-only-stories-so-487-bugs.md) | lane-check scans only stories, so 487 bugs are outside the number a blocking decision would rest on | Fixed | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0492](BG0492-the-suite-verdict-binds-to-head-rather-than.md) | the suite verdict binds to HEAD rather than the tree, and --check ignores which suite ran | Closed | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0493](BG0493-four-more-verifiers-pass-on-a-delivery-that.md) | four more verifiers pass on a delivery that has been made inert | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0494](BG0494-resolve-affects-tries-the-prefix-stripped-candidate-against.md) | resolve_affects tries the prefix-stripped candidate against the repo root first, so a consuming project's own file wins | Fixed | Medium | 2026-08-02 | 2026-08-02 |
@@ -70,13 +70,13 @@
 | [BG0528](BG0528-a-delivered-unit-left-at-ready-is-invisible.md) | a delivered unit left at Ready is invisible to every close gate: twenty blockers were reported and not one of them said the units had never been transitioned | Fixed | High | 2026-08-06 | 2026-08-06 |
 | [BG0529](BG0529-four-run-01kz9315-units-carry-no-verifier-that.md) | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing | Open | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0530](BG0530-verify-ac-reports-a-unit-whose-criteria-it.md) | verify_ac reports a unit whose criteria it could not parse as a clean pass: ac=0 pass=0 fail=0, exit 0 - and every bug delivered in the last two sprints is in that state | Fixed | High | 2026-08-06 | 2026-08-06 |
-| [BG0531](BG0531-a-hand-applied-mutant-is-registered-with-no.md) | a hand-applied mutant is registered with no assertion that its anchor was unique, so a mutation run can report a false SURVIVED for a function it never edited | Open | Medium | 2026-08-06 | 2026-08-06 |
+| [BG0531](BG0531-a-hand-applied-mutant-is-registered-with-no.md) | a hand-applied mutant is registered with no assertion that its anchor was unique, so a mutation run can report a false SURVIVED for a function it never edited | Fixed | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0532](BG0532-alias-map-decodes-every-artefact-in-the-project.md) | alias_map decodes every artefact in the project with a bare read_text, so one unreadable file takes down any command that resolves an id | Open | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0533](BG0533-the-mutation-engine-enumerates-a-mutant-at-one.md) | the mutation engine enumerates a mutant at one line and applies it at another, because only the enumerator excludes multiline-string spans when counting occurrences | Fixed | High | 2026-08-06 | 2026-08-06 |
-| [BG0534](BG0534-testplan-derive-s-edit-verb-check-is-an.md) | testplan derive's edit-verb check is an enumeration, so it refuses honest mutants written with a verb nobody listed | Open | Medium | 2026-08-06 | 2026-08-06 |
+| [BG0534](BG0534-testplan-derive-s-edit-verb-check-is-an.md) | testplan derive's edit-verb check is an enumeration, so it refuses honest mutants written with a verb nobody listed | Superseded | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0535](BG0535-106-of-1824-executable-acceptance-criteria-are-red.md) | 106 of 1824 executable acceptance criteria are RED across stories already marked Done, and the lane that would have said so has never run to completion | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0536](BG0536-a-test-fixture-that-accepts-a-caller-supplied.md) | a test fixture that accepts a caller-supplied root can write into the working tree, and one did - destroying 23 recorded mutation registrations | Fixed | High | 2026-08-07 | 2026-08-07 |
-| [BG0537](BG0537-check-root-docs-reads-raw-lines-while-check.md) | check_root_docs reads raw lines while check_body_links blanks code spans, so a link inside backticks is an example in one directory and a broken reference in another | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0537](BG0537-check-root-docs-reads-raw-lines-while-check.md) | check_root_docs reads raw lines while check_body_links blanks code spans, so a link inside backticks is an example in one directory and a broken reference in another | Won't Fix | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0538](BG0538-a-release-cut-mints-an-affects-unresolvable-warning.md) | a release cut mints an affects-unresolvable warning for every unit that declared its own changelog fragment, because compose deletes the file the unit named | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0539](BG0539-critic-record-cannot-tell-a-review-round-from.md) | critic record cannot tell a review ROUND from a panel SEAT, so the ordinary reject-fix-approve loop escalates as an unresolved split | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0540](BG0540-a-retro-that-was-never-written-reports-ran.md) | a retro that was never written reports `ran` on the close checklist, because a missing file is graded as a structural error rather than an absence | Open | Medium | 2026-08-07 | 2026-08-07 |
@@ -86,10 +86,10 @@
 | [BG0544](BG0544-ck-closing-review-reports-ran-for-a-unit.md) | _ck_closing_review reports `ran` for a unit the shared coverage reading calls uncovered, when its latest sprint-level verdict is APPROVE | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0545](BG0545-testplan-derive-and-the-bug-criteria-floor-each.md) | testplan derive and the bug criteria floor each mis-slice a checkbox-shaped Acceptance Criteria section, so one refuses a sound plan and the other reports Verify lines that are there as absent | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0546](BG0546-critic-py-record-refuses-a-plan-review-finding.md) | critic.py record refuses a plan-review finding for carrying no diff origin, when a plan review has no diff to attribute one to | Open | Medium | 2026-08-07 | 2026-08-07 |
-| [BG0547](BG0547-gate-warn-in-pre-write-gates-is-assigned.md) | one advisory silently replaces another: the transition gate ladder assigns its warning variable where its own docstring says the warnings accumulate | Open | Medium | 2026-08-07 | 2026-08-07 |
-| [BG0548](BG0548-the-acceptance-criteria-parser-silently-drops-a-criterion.md) | the acceptance-criteria parser silently drops a criterion whose heading is not AC<digits>, so a whole criterion and its Verify line vanish without a word | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0547](BG0547-gate-warn-in-pre-write-gates-is-assigned.md) | one advisory silently replaces another: the transition gate ladder assigns its warning variable where its own docstring says the warnings accumulate | Won't Fix | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0548](BG0548-the-acceptance-criteria-parser-silently-drops-a-criterion.md) | the acceptance-criteria parser silently drops a criterion whose heading is not AC<digits>, so a whole criterion and its Verify line vanish without a word | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0549](BG0549-the-non-convergence-escalation-is-sticky-a-converging.md) | the non-convergence escalation is sticky: a converging APPROVE still reports that the panel is not converging, because the notice counts historical REJECTs and never re-reads the latest verdict | Open | Medium | 2026-08-07 | 2026-08-07 |
-| [BG0550](BG0550-register-drops-a-file-s-earlier-registered-mutants.md) | register drops a file's earlier registered mutants without saying so, so an edit after registering silently empties a unit's evidence | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0550](BG0550-register-drops-a-file-s-earlier-registered-mutants.md) | register drops a file's earlier registered mutants without saying so, so an edit after registering silently empties a unit's evidence | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0551](BG0551-repair-mutation-gate-derives-its-surface-from-the.md) | repair_mutation_gate derives its surface from the artefact's own Affects, so a mis-declared Affects bypasses the evidence demand entirely | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0552](BG0552-a-registered-mutant-cannot-be-joined-to-a.md) | a registered mutant cannot be joined to a measured one, so a cross-provenance contradiction in the mutation ledger is undetectable | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0553](BG0553-a-mistyped-mutation-verdict-cannot-be-corrected-and.md) | a mistyped mutation verdict cannot be corrected, and the contradiction check now turns that from a wrong number into a refusal in every mode | Open | Medium | 2026-08-07 | 2026-08-07 |
@@ -101,8 +101,8 @@
 | [BG0559](BG0559-the-doc-surface-gate-lane-raises-modulenotfounderror-in.md) | the doc-surface gate lane raises ModuleNotFoundError in every consuming project, so a new v5 lane reports NOT MEASURED forever on every user's gate run | Fixed | High | 2026-08-09 | 2026-08-09 |
 | [BG0560](BG0560-the-page-readme-sends-every-existing-user-to.md) | the page README sends every existing user to is the v4 upgrade page, so v5's breaking gate changes reach an upgrading project with no document that names them | Fixed | High | 2026-08-09 | 2026-08-09 |
 | [BG0561](BG0561-a-re-plan-over-an-open-run-resets.md) | a re-plan over an open run resets the appetite to the standing capacity while leaving the resize record standing, so the ledger and the breaker disagree about the ceiling | Open | Medium | 2026-08-09 | 2026-08-09 |
-| [BG0562](BG0562-then-clause-strips-the-bold-markers-off-a.md) | _then_clause strips the bold markers off a non-bulleted Then line before testing for them, so the criterion falls back to its whole block and the overlap check reports the author's own mutant as a 100% restatement | Open | Medium | 2026-08-09 | 2026-08-09 |
-| [BG0563](BG0563-the-test-plan-edit-verb-vocabulary-enumerates-only.md) | the test-plan edit-verb vocabulary enumerates only subtractive verbs, so a mutant that ADDS something cannot be stated and gets reworded until it parses | Open | Medium | 2026-08-10 | 2026-08-10 |
+| [BG0562](BG0562-then-clause-strips-the-bold-markers-off-a.md) | _then_clause strips the bold markers off a non-bulleted Then line before testing for them, so the criterion falls back to its whole block and the overlap check reports the author's own mutant as a 100% restatement | Fixed | Medium | 2026-08-09 | 2026-08-09 |
+| [BG0563](BG0563-the-test-plan-edit-verb-vocabulary-enumerates-only.md) | the test-plan edit-verb vocabulary enumerates only subtractive verbs, so a mutant that ADDS something cannot be stated and gets reworded until it parses | Fixed | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0564](BG0564-a-creation-whose-basename-is-a-common-one.md) | a creation whose basename is a common one - `__init__.py`, `README.md` - is still refused as a typo, so the greenfield repair is incomplete for exactly the files new packages create | Open | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0565](BG0565-has-run-history-is-non-recursive-so-a.md) | has_run_history is non-recursive, so a project that archives its retros into a subdirectory reads as never having closed a sprint and is silently softened | Open | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0566](BG0566-npm-run-lint-fix-destroys-an-artefact-whose.md) | npm run lint:fix destroys an artefact whose title contains a dunder: markdownlint infers underscore emphasis and rewrites every metadata line, and the schema validator then cannot find a Status | Fixed | High | 2026-08-10 | 2026-08-10 |

@@ -48,7 +48,7 @@ class SwapTests(unittest.TestCase):
         for uid, pts in (("US0001", 5), ("US0002", 3), ("US0003", 5), ("US0004", 2)):
             (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
                 f"# {uid}: a unit\n\n> **Status:** Ready\n> **Points:** {pts}\n"
-                f"> **Affects:** src/a.py\n", encoding="utf-8")
+                f"> **Affects:** src/a.py\n\n\n## Acceptance Criteria\n\n- [ ] **AC1** it behaves\n  - **Verify:** shell true\n", encoding="utf-8")
         (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
             json.dumps({"run_id": "RUN-T", "batch": ["US0001", "US0002"],
                         "outcome": "running"}), encoding="utf-8")
@@ -172,7 +172,7 @@ class AddEpicTests(unittest.TestCase):
     def _story(self, root, uid, epic, status, pts):
         (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
             f"# {uid}: a unit\n\n> **Status:** {status}\n> **Epic:** {epic}\n"
-            f"> **Points:** {pts}\n> **Affects:** src/a.py\n", encoding="utf-8")
+            f"> **Points:** {pts}\n> **Affects:** src/a.py\n\n\n## Acceptance Criteria\n\n- [ ] **AC1** it behaves\n  - **Verify:** shell true\n", encoding="utf-8")
 
     def _root(self, d, batch=("US0001",)):
         root = Path(d)
@@ -208,7 +208,7 @@ class AddEpicTests(unittest.TestCase):
             (root / "sdlc-studio" / "stories" / "US0007-linked.md").write_text(
                 "# US0007: a linked unit\n\n> **Status:** Ready\n"
                 "> **Epic:** [EP0010: A Title](../epics/EP0010-a-title.md)\n"
-                "> **Points:** 8\n> **Affects:** src/a.py\n", encoding="utf-8")
+                "> **Points:** 8\n> **Affects:** src/a.py\n\n\n## Acceptance Criteria\n\n- [ ] **AC1** it behaves\n  - **Verify:** shell true\n", encoding="utf-8")
             rc, out = self._run(root, "add-epic", "--epic", "EP0010", "--status", "Ready",
                                 "--format", "json")
             rec = json.loads(out)
@@ -230,7 +230,7 @@ class AddEpicTests(unittest.TestCase):
             (root / "sdlc-studio" / "stories" / "US0007-linked.md").write_text(
                 "# US0007: a linked unit\n\n> **Status:** Ready\n"
                 "> **Epic:** [EP0010: A Title](../epics/EP0010-a-title.md)\n"
-                "> **Points:** 8\n> **Affects:** src/a.py\n", encoding="utf-8")
+                "> **Points:** 8\n> **Affects:** src/a.py\n\n\n## Acceptance Criteria\n\n- [ ] **AC1** it behaves\n  - **Verify:** shell true\n", encoding="utf-8")
             mine = sprint._epic_units(root, "EP0010", "Ready")
             canon = [sdlc_md_norm(u["id"]) for u in
                      sprint.select_batch(root, "story", "Ready", epics={"EP0010"})]
@@ -339,7 +339,9 @@ class StoryPointsSpellingTests(unittest.TestCase):
                               ("US0003", "**Story Points:** 8")):
             (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
                 f"# {uid}: a unit\n\n> **Status:** Ready\n> **Epic:** EP0010\n"
-                f"{pts_line}\n> **Affects:** src/a.py\n", encoding="utf-8")
+                f"{pts_line}\n> **Affects:** src/a.py\n"
+                "\n## Acceptance Criteria\n\n- [ ] **AC1** it behaves\n"
+                "  - **Verify:** shell true\n", encoding="utf-8")
         (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
             json.dumps({"run_id": "RUN-T", "batch": [], "outcome": "running"}), encoding="utf-8")
         return root
@@ -363,7 +365,9 @@ class StoryPointsSpellingTests(unittest.TestCase):
             (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
             (root / "sdlc-studio" / "stories" / "US0009-x.md").write_text(
                 "# US0009: a unit\n\n> **Status:** Ready\n> **Epic:** EP0020\n"
-                "**Story Points:** 5\n> **Affects:** src/a.py\n", encoding="utf-8")
+                "**Story Points:** 5\n> **Affects:** src/a.py\n"
+                "\n## Acceptance Criteria\n\n- [ ] **AC1** it behaves\n"
+                "  - **Verify:** shell true\n", encoding="utf-8")
             (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
                 json.dumps({"run_id": "RUN-T", "batch": [], "outcome": "running"}),
                 encoding="utf-8")

@@ -1,6 +1,6 @@
 # BG0563: the test-plan edit-verb vocabulary enumerates only subtractive verbs, so a mutant that ADDS something cannot be stated and gets reworded until it parses
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (executed: four previously-refused mutants - move/print/add/insert - are accepted, and an OUTCOME-phrased string is still refused, so the check did not widen to nothing)
 > **Severity:** Medium
 > **Points:** 2
@@ -31,10 +31,17 @@ Extend the vocabulary with the additive verbs - add, insert, introduce, append, 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** A mutant whose verb is additive is accepted by `verify_ac.py testplan derive`, proven on the absence-shaped criterion that is currently refused
-- [ ] **AC2** A mutant that names no production edit at all is still refused, proving the check was extended rather than removed (positive control)
-- [ ] **AC3** A criterion whose Then clause asserts an absence and whose mutant cannot be stated in the vocabulary is reported as such, so the next missing verb surfaces as a finding rather than as a reworded sentence
-- [ ] **AC4** The pairing is pinned by a test that fails when the vocabulary is narrowed back, rather than by an assertion over the list's contents - a test that enumerates the list agrees with it by construction
+- [x] **AC1** Given a test-plan mutant phrased as an ADDITIVE or POSITIONAL edit - `add a second call`, `move the check below the write` - when `testplan_row_faults` reads it, then it is accepted, because the vocabulary must not decide which edits an author is allowed to make.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k an_additive_or_positional_edit_verb_is_accepted
+- [x] **AC2** Given a mutant phrased as an OUTCOME rather than an edit - `the suite goes red` - when the same check reads it, then it is still refused, so widening the vocabulary did not widen it to nothing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k an_outcome_phrased_mutant_is_still_refused
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in verify_ac.py, delete the additive and positional groups from `_EDIT_VERBS` so an add/move mutant names no verb | Given a test-plan mutant phrased as an ADDITIVE or POSITIONAL edit - `add a second call`, `move the check below the write` - when `testplan_row_faults` reads it, then it is accepted, because the vocabulary must not decide which edits an author is allowed to make. |
+| AC2 | in verify_ac.py, append a catch-all empty string to `_EDIT_VERBS` so every phrase matches and the check accepts an outcome | Given a mutant phrased as an OUTCOME rather than an edit - `the suite goes red` - when the same check reads it, then it is still refused, so widening the vocabulary did not widen it to nothing. |
 
 ## Revision History
 

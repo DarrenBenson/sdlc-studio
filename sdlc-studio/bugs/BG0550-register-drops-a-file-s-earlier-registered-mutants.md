@@ -1,6 +1,6 @@
 # BG0550: register drops a file's earlier registered mutants without saying so, so an edit after registering silently empties a unit's evidence
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (executed through the CLI on a throwaway fixture: register twice, edit the file, register again - the run now prints DROPPED 2 earlier registration(s) where it printed nothing)
 > **Severity:** Medium
 > **Points:** 2
@@ -25,8 +25,14 @@ Print the count and the criteria dropped, in the shape the truncation note alrea
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `register_mutant` drops every registered entry for a target whose content hash differs from the one being written - correct, since evidence about bytes the...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Print the count and the criteria dropped, in the shape the truncation note already uses: `note: N registered mutant(s) on earlier content of m.py were dropped...
+- [x] **AC1** Given registrations already recorded for a target, when the file's bytes change and a new mutant is registered, then the discarded rows are COUNTED and reported - the ledger must not read `1 registered` where five claims just vanished.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k dropped_stale_registrations_are_reported
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in mutation.py `register_mutant`, drop `dropped_stale` from the returned dict so the discarded count is never reported | Given registrations already recorded for a target, when the file's bytes change and a new mutant is registered, then the discarded rows are COUNTED and reported - the ledger must not read `1 registered` where five claims just vanished. |
 
 ## Revision History
 
