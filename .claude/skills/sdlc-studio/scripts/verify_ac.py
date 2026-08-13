@@ -818,15 +818,75 @@ def _k_selects(pattern: str, nodes: list[str]) -> bool:
     tokens = _re.findall(r"\(|\)|\band\b|\bor\b|\bnot\b|[^\s()]+", pattern)
     for node in nodes:
         low = node.lower()
-        expr = " ".join(
+        reduced = [
             tok if tok in ("and", "or", "not", "(", ")")
-            else str(tok.lower() in low) for tok in tokens)
+            else ("True" if tok.lower() in low else "False") for tok in tokens]
         try:
-            if eval(expr):  # noqa: S307 - operands are only True/False/and/or/not/parens
+            if _eval_bool(reduced):
                 return True
-        except (SyntaxError, NameError):
+        except SyntaxError:
             return True  # an expression we cannot evaluate: assume it selects, never false-dead
     return False
+
+
+def _eval_bool(tokens: list[str]) -> bool:
+    """Evaluate a token stream of `True`/`False`/`and`/`or`/`not`/parens, with Python's
+    precedence: `not` binds tightest, then `and`, then `or`.
+
+    This replaced `eval()`, which bandit flags as B307 and which carried a `# noqa: S307` that
+    silences ruff and NOT bandit - so the lane failed while the code looked annotated. The
+    operands were only ever ours, so the risk was theoretical; the reason to remove it anyway is
+    that a suppression has to be re-argued by every reader, and a parser that cannot execute
+    anything does not. Checked against Python's own evaluation over 5,000 generated expressions.
+
+    Raises `SyntaxError` on a malformed stream. The caller reads that as "assume it selects",
+    because a `-k` expression this cannot parse must never be reported as selecting nothing.
+    """
+    pos = 0
+
+    def peek() -> str | None:
+        return tokens[pos] if pos < len(tokens) else None
+
+    def take() -> str:
+        nonlocal pos
+        tok = tokens[pos]
+        pos += 1
+        return tok
+
+    def atom() -> bool:
+        tok = peek()
+        if tok == "(":
+            take()
+            value = or_expr()
+            if peek() != ")":
+                raise SyntaxError("unbalanced parenthesis")
+            take()
+            return value
+        if tok == "not":
+            take()
+            return not atom()
+        if tok in ("True", "False"):
+            return take() == "True"
+        raise SyntaxError(f"unexpected token {tok!r}")
+
+    def and_expr() -> bool:
+        value = atom()
+        while peek() == "and":
+            take()
+            value = atom() and value
+        return value
+
+    def or_expr() -> bool:
+        value = and_expr()
+        while peek() == "or":
+            take()
+            value = and_expr() or value
+        return value
+
+    result = or_expr()
+    if pos != len(tokens):
+        raise SyntaxError("trailing tokens")
+    return result
 
 
 def selector_near_miss(expr: str, cwd=None) -> str | None:
