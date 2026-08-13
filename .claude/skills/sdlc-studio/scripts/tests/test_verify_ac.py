@@ -2850,6 +2850,19 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
         self.assertIsNotNone(verify_ac.lint_markdown_evidence(
             "file .claude/skills/sdlc-studio/help/", root))
 
+    # BOTH tests below assert the rg-PRESENT behaviour and only that. `_runner_candidates`
+    # has two paths: with `rg` the candidate set is `rg --files`, which SKIPS hidden and
+    # ignored files; without it the runner is `grep -rqE`, which genuinely DOES read them, so
+    # a hidden `.py` licenses the directory and it is right to. Neither test said so, so both
+    # failed on a runner with no ripgrep - green here, red in CI, for two releases.
+    #
+    # Skipped rather than rewritten to pass either way: "a hidden decoy does not license" is
+    # not a claim about `grep`, and making it pass under grep would mean asserting something
+    # weaker than the criterion. CI installs ripgrep so the skip does not silently take the
+    # coverage away - a skip nobody notices is the same hole with a friendlier colour.
+    @unittest.skipUnless(shutil.which("rg"),
+                         "this claim is about the rg candidate set; without rg the runner is "
+                         "`grep -rqE`, which reads hidden files, so the decoy licenses correctly")
     def test_a_hidden_symlinked_or_unreadable_decoy_does_not_license_a_prose_directory(self) -> None:
         # Round 3 and round 4's escapes together. rg skips hidden files, follows no symlink
         # found in a walk, and cannot open a file it lacks permission for - so none of these
@@ -2879,6 +2892,9 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
         finally:
             shutil.rmtree(outer, ignore_errors=True)
 
+    @unittest.skipUnless(shutil.which("rg"),
+                         "this claim is about the rg candidate set; without rg the runner is "
+                         "`grep -rqE`, which reads hidden files, so the decoy licenses correctly")
     def test_an_unreadable_subdirectory_refuses_rather_than_falling_back_to_a_plain_walk(self) -> None:
         # Round 4 MAJOR-1. `rg --files` exits 2 when any part of the tree errors. Falling
         # back to rglob then re-listed the hidden files rg refuses to read, reinstating the

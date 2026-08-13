@@ -38,6 +38,14 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install ripgrep
+        # A SOFT dependency of the skill that is a HARD one for two guards here. The markdown
+        # evidence lint builds its candidate set from `rg --files`, which skips hidden and
+        # ignored files; without rg the runner is `grep -rqE`, which reads them, and the two
+        # tests asserting the rg behaviour fail. They were green on every developer machine and
+        # red on this runner for two releases, and both v5 tags were cut over that red.
+        run: sudo apt-get install -y --no-install-recommends ripgrep
+
       - name: Install Python deps (before any Python run)
         # CR0207: `npm test` runs the config-driven tests, which fail (not skip) without PyYAML.
         # Install it on the pinned interpreter BEFORE the first Python invocation, so the suite
