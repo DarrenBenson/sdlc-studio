@@ -1,6 +1,6 @@
 # BG0546: critic.py record refuses a plan-review finding for carrying no diff origin, when a plan review has no diff to attribute one to
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (executed: a plan-review finding with no origin tag is accepted; a delivery finding with no tag is still refused; test_critic 294 pass)
 > **Severity:** Medium
 > **Points:** 2
@@ -25,8 +25,17 @@ Scope the origin guard to `--phase delivery`, or give plan-review its own vocabu
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `critic.py record --phase plan-review` applies the origin-tag guard built for delivery reviews.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Scope the origin guard to `--phase delivery`, or give plan-review its own vocabulary - a plan finding is about the plan's own soundness, and the axis that...
+- [x] **AC1** Given `critic record --phase plan-review` and findings carrying no origin tag, when the record is written, then it is accepted - a plan review happens before any diff exists, so the origin question is unanswerable rather than merely unanswered.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k a_plan_review_finding_needs_no_origin
+- [x] **AC2** Given the same untagged findings on a DELIVERY review, when the record is written, then it is still refused - the guard was scoped, not removed.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k a_delivery_finding_still_needs_an_origin
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in critic.py `cmd_record`, drop the `phase != 'plan-review'` guard so a plan finding is refused for carrying no diff origin | Given `critic record --phase plan-review` and findings carrying no origin tag, when the record is written, then it is accepted - a plan review happens before any diff exists, so the origin question is unanswerable rather than merely unanswered. |
+| AC2 | in critic.py `unclassified_findings`, return [] always so a delivery finding with no origin is accepted | Given the same untagged findings on a DELIVERY review, when the record is written, then it is still refused - the guard was scoped, not removed. |
 
 ## Revision History
 

@@ -1,11 +1,12 @@
 # BG0572: The repo-writes guard attributes any concurrent edit to the test run, so editing during a 15-minute background commit refuses it and names the author's own files as fixture damage
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (executed: the refusal text now names both causes and the git diff remedy; mutation: 2 declared mutants, both KILLED, restore byte-exact)
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/repo_writes.py, .githooks/pre-commit, .githooks/commit-msg
+> **Affects:** tools/repo_writes.py, .githooks/pre-commit, .githooks/commit-msg, tools/tests/test_repo_writes.py
 > **Severity:** Medium
 > **Points:** 3
 
@@ -38,6 +39,13 @@ reading the dry-run's promise and generalising it to the pre-flight is not unrea
 
 1. Start a commit in the background; the pre-commit hook snapshots the tree. 2. While the suites run, edit any tracked file - or run any command that writes to `sdlc-studio/.local/`, such as `verify_ac.py run`. 3. The commit is refused by `repo-writes`, naming those files as changed by the test run, with a remedy that does not apply.
 
+## Acceptance Criteria
+
+- [x] **AC1** Given the repo-writes guard reports a changed path, when it explains why, then it names BOTH causes - a fixture writing into the repository AND an author editing during the gate's own window - because its window is the whole suite run and it cannot tell them apart.
+  - **Verify:** pytest tools/tests/test_repo_writes.py -k the_refusal_names_both_causes
+- [x] **AC2** Given the same report, when a reader looks for what to do next, then it says how to distinguish them - `git diff` the named paths - rather than asserting the cause it cannot know.
+  - **Verify:** pytest tools/tests/test_repo_writes.py -k the_refusal_says_how_to_tell_them_apart
+
 ## Proposed Fix
 
 Narrow the attribution to what the suite can actually be blamed for. Options, in rough order of preference: record a digest per path at snapshot time and compare against the process's own start, so a file the AUTHOR touched after the snapshot is distinguishable from one a test wrote during it; or bound the window to the suite subprocess rather than the whole hook, snapshotting immediately before it starts and comparing immediately after it exits, which is a much smaller target; or, cheapest and weakest, keep the check but soften the message to state that it cannot tell a concurrent edit from a fixture write, and name the concurrent-edit case first because it is the more common one.
@@ -47,6 +55,13 @@ Whatever is chosen, the `.local/` wording needs care: `nothing can restore it` i
 ## Impact
 
 A guard that names innocent files and prescribes a remedy that does not apply is a guard people learn to bypass, and the bypass here is `--no-verify`, which switches off every other lane too. Medium rather than High because the check itself is sound, the refusal is safe rather than destructive, and the workaround (do not edit while a commit runs) is available once understood - but it is not discoverable from the message, which is the part that makes it a defect rather than a footnote.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in tools/repo_writes.py `report`, revert to the single 'A fixture that writes' sentence so only one cause is named | Given the repo-writes guard reports a changed path, when it explains why, then it names BOTH causes - a fixture writing into the repository AND an author editing during the gate's own window - because its window is the whole suite run and it cannot tell them apart. |
+| AC2 | in tools/repo_writes.py `report`, delete the `git diff` line so the reader cannot tell the two causes apart | Given the same report, when a reader looks for what to do next, then it says how to distinguish them - `git diff` the named paths - rather than asserting the cause it cannot know. |
 
 ## Revision History
 

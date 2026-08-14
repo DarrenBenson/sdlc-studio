@@ -377,5 +377,59 @@ class StoryPointsSpellingTests(unittest.TestCase):
             self.assertNotIn(" 0 point", out, f"an epic of one 5-point story priced at 0: {out}")
 
 
+class AddEpicCensusTests(unittest.TestCase):
+    """BG0512: the in-flight verb added straight to the batch without the grooming census."""
+
+    def test_an_ungroomed_unit_is_refused_and_nothing_is_added(self) -> None:
+        """MUTANT: delete the `breakdown` census call from `_cmd_batch_add_epic`.
+
+        `sprint plan` refuses a batch holding an ungroomed unit. The in-flight verb did not,
+        so the same unit the gate had just rejected could enter through the side door and be
+        delivered from a run that never judged it.
+        """
+        import argparse, json, tempfile
+        from pathlib import Path as _P
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _P(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            # UNGROOMED on purpose: no Affects, no Points, no criteria.
+            (root / "sdlc-studio" / "stories" / "US0050-x.md").write_text(
+                "# US0050: a unit\n\n> **Status:** Ready\n> **Epic:** EP0050\n",
+                encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps({"run_id": "RUN-T", "batch": [], "outcome": "running"}),
+                encoding="utf-8")
+            err, out = io.StringIO(), io.StringIO()
+            args = argparse.Namespace(root=str(root), epic="EP0050", status="Ready",
+                                      reason="census check", format="text")
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+                rc = sprint._cmd_batch_add_epic(args, root)
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+        self.assertEqual(2, rc, "an ungroomed unit must refuse")
+        self.assertEqual([], state.get("batch") or [],
+                         "NOTHING may be added when the census refuses")
+
+
+class AddEpicRefusalNamingTests(unittest.TestCase):
+    """BG0512: the in-flight verb reused `plan`'s refusal verbatim."""
+
+    def test_the_refusal_names_its_own_verb(self) -> None:
+        """MUTANT: restore `_refuse_ungroomed(...)` in `_cmd_batch_add_epic`.
+
+        Reusing `plan`'s message printed "sprint plan REFUSED" for a `batch add-epic` call,
+        sending the reader to a command they had not run.
+        """
+        import inspect
+        sprint = _load()
+        src = inspect.getsource(sprint._cmd_batch_add_epic)
+        self.assertIn("sprint batch add-epic REFUSED", src,
+                      "the refusal must name the verb the operator actually ran")
+        self.assertNotIn("_refuse_ungroomed", src,
+                         "reusing plan's refusal is what named the wrong command")
+
+
 if __name__ == "__main__":
     unittest.main()

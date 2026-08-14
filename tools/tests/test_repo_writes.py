@@ -351,5 +351,27 @@ class RosterTests(unittest.TestCase):
                       "pre-commit does not take the snapshot the lane compares against")
 
 
+class RefusalAttributionTests(unittest.TestCase):
+    """BG0572: the refusal asserted a cause the guard cannot know."""
+
+    def test_the_refusal_names_both_causes(self) -> None:
+        """MUTANT: revert the report to the single 'A fixture that writes...' sentence.
+
+        The window is the whole suite run, so an author editing a tracked file while the gate
+        runs produces identical evidence to a fixture writing into the repository - and is the
+        likelier case, because the gate takes minutes. Naming one as fact sends people looking
+        in the wrong place; it cost two gate cycles in the programme that found this.
+        """
+        text = repo_writes.report([("modified", "scripts/x.py")])
+        self.assertIn("fixture", text.lower(), "the fixture cause must still be named")
+        self.assertIn("you edited", text.lower(),
+                      "the author-edit cause must be named too, and it is the likelier one")
+
+    def test_the_refusal_says_how_to_tell_them_apart(self) -> None:
+        """A report naming two causes and no way to choose between them is not an improvement."""
+        text = repo_writes.report([("modified", "scripts/x.py")])
+        self.assertIn("git diff", text, "the reader needs a way to distinguish the two")
+
+
 if __name__ == "__main__":
     unittest.main()

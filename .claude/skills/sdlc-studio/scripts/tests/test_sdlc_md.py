@@ -1233,5 +1233,30 @@ class StoryPointsSpellingTests(unittest.TestCase):
         self.assertIsNone(sdlc_md.read_points("we discussed **Story Points:** in the retro"))
 
 
+class AliasMapResilienceTests(unittest.TestCase):
+    """BG0532: one unreadable artefact took down every id lookup in the project."""
+
+    def test_alias_map_survives_an_unreadable_artefact(self) -> None:
+        """MUTANT: restore the bare `p.read_text(encoding="utf-8")` in `alias_map`.
+
+        The map walks EVERY artefact, so a single permission bit, half-written file or stray
+        non-UTF-8 byte raised out of it and broke every caller resolving an id. One bad file
+        must cost its own aliases, not the map.
+        """
+        import tempfile
+        from pathlib import Path as _P
+        with tempfile.TemporaryDirectory() as d:
+            root = _P(d)
+            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+            (root / "sdlc-studio" / "bugs" / "BG0001-good.md").write_text(
+                "# BG0001: a unit\n\n> **Status:** Open\n> **Aliases:** BG-1\n",
+                encoding="utf-8")
+            # Undecodable bytes - the shape a half-written or binary file takes.
+            (root / "sdlc-studio" / "bugs" / "BG0002-bad.md").write_bytes(b"\xff\xfe\x00rubbish")
+            out = sdlc_md.alias_map(root)
+        self.assertIn("BG1", {k.replace("-", "") for k in out},
+                      "the readable artefact's alias must survive its unreadable neighbour")
+
+
 if __name__ == "__main__":
     unittest.main()

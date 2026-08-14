@@ -577,5 +577,31 @@ class RunHistoryArmsTheGateTests(unittest.TestCase):
                 f"the absence check cannot detect the key documented in prose in {rel}")
 
 
+class ArchivedRetroHistoryTests(unittest.TestCase):
+    """BG0565: archiving your retros made an established project read as brand new."""
+
+    def test_an_archived_retro_still_counts_as_run_history(self) -> None:
+        """MUTANT: revert `d.rglob("*.md")` to `d.iterdir()`.
+
+        A project that files closed runs into `retros/archive/<version>/` - which this
+        repository's own archive verb does - would otherwise report no history at all and take
+        the new-project concession for ever, on the strength of tidying up.
+        """
+        import tempfile
+        from pathlib import Path as _P
+        with tempfile.TemporaryDirectory() as d:
+            root = _P(d)
+            nested = root / "sdlc-studio" / "retros" / "archive" / "v5.0.0"
+            nested.mkdir(parents=True)
+            (nested / "RETRO0001-a-closed-run.md").write_text("# RETRO0001\n", encoding="utf-8")
+            self.assertTrue(pr.has_run_history(root),
+                            "an archived retro is still a closed run")
+        with tempfile.TemporaryDirectory() as d:
+            root = _P(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            self.assertFalse(pr.has_run_history(root),
+                             "the control: an empty retros directory is still no history")
+
+
 if __name__ == "__main__":
     unittest.main()

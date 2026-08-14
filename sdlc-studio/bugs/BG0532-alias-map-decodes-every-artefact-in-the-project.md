@@ -1,6 +1,6 @@
 # BG0532: alias_map decodes every artefact in the project with a bare read_text, so one unreadable file takes down any command that resolves an id
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (read_text_safe substituted for a bare read_text; test_sdlc_md passes)
 > **Severity:** Medium
 > **Points:** 2
@@ -23,16 +23,22 @@ That is exactly how it was found. A grooming-census change on RUN-01KZBBZ0 calle
 
 1. Put a file containing invalid UTF-8 bytes in `sdlc-studio/bugs/`. 2. Call any code path that reaches `sdlc_md.find_by_id` for an id whose filename does not match directly. 3. `alias_map` raises `UnicodeDecodeError` at `sdlc_md.py`:2394, out of a call that was asking about a different artefact entirely.
 
+## Acceptance Criteria
+
+- [x] **AC1** Given one unreadable or non-UTF-8 artefact anywhere in the project, when `alias_map` builds, then it still returns a map - a single bad file must cost its own aliases, not every id lookup in the project.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py -k alias_map_survives_an_unreadable_artefact
+
 ## Proposed Fix
 
 Use `read_text_safe` in `alias_map`, as the rest of the module does - an unreadable artefact contributes no aliases rather than aborting the lookup. A file nobody can decode should be reported by the guard whose job that is, not by whichever command happened to resolve an id first.
 
 Pin it with a test that puts a non-UTF-8 file beside a real one and asserts `find_by_id` still resolves the real one, so the next caller to add a lookup does not rediscover this.
 
-## Acceptance Criteria
+## Test Plan
 
-- [ ] The behaviour described is corrected: `sdlc_md.alias_map` reads every artefact in the project with `p.read_text(encoding="utf-8")` and no error handling, and `find_by_id` calls it whenever a plain...
-- [ ] The proposed fix lands, pinned by a test: Use `read_text_safe` in `alias_map`, as the rest of the module does - an unreadable artefact contributes no aliases rather than aborting the lookup.
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in lib/sdlc_md.py `alias_map`, restore the bare p.read_text(encoding='utf-8') so one unreadable file raises | Given one unreadable or non-UTF-8 artefact anywhere in the project, when `alias_map` builds, then it still returns a map - a single bad file must cost its own aliases, not every id lookup in the project. |
 
 ## Revision History
 

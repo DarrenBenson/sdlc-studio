@@ -2851,5 +2851,41 @@ class VerifySelectorWriteGuardTests(unittest.TestCase):
         self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
 
 
+class AffectsInferenceScopeTests(unittest.TestCase):
+    """BG0564/BG0538: two ways the affects checks punished correct behaviour."""
+
+    REPO = SCRIPT.parents[3]
+
+    def test_a_common_basename_is_not_treated_as_a_typo(self) -> None:
+        """MUTANT: drop the `_AMBIGUOUS_BASENAMES` early return from `basename_matches`.
+
+        The typo inference asks whether the basename exists elsewhere. That is sound for a
+        distinctive name and worthless for `__init__.py`, where a match says only that Python
+        projects have those everywhere - so a unit CREATING one was refused with a suggestion
+        list of dozens of unrelated files.
+        """
+        self.assertEqual([], ff.basename_matches(self.REPO, "newpkg/__init__.py"))
+        self.assertEqual([], ff.basename_matches(self.REPO, "docs/newthing/README.md"))
+
+    def test_a_distinctive_basename_is_still_reported(self) -> None:
+        """The control - the inference was narrowed, not removed."""
+        hits = ff.basename_matches(self.REPO, "wrong/dir/verify_ac.py")
+        self.assertTrue(hits, "a distinctive basename in the wrong directory is a typo")
+
+    def test_a_consumed_changelog_fragment_is_not_fictional(self) -> None:
+        """MUTANT: drop the `_is_transient_path` guard from `unresolvable_affects`.
+
+        The repo asks every behaviour change to declare its `changelog.d/<ID>.md` fragment, and
+        `changelog compose` unlinks it at the release cut - so every COMPLYING unit reported a
+        fictional file, and the warning was loudest for those that followed the rule.
+        """
+        self.assertEqual([], ff.unresolvable_affects(self.REPO, ["changelog.d/BG9999.md"]))
+
+    def test_a_missing_path_elsewhere_is_still_reported(self) -> None:
+        """The control - the exemption is one directory, not a hole."""
+        self.assertEqual(["scripts/definitely_not_here.py"],
+                         ff.unresolvable_affects(self.REPO, ["scripts/definitely_not_here.py"]))
+
+
 if __name__ == "__main__":
     unittest.main()

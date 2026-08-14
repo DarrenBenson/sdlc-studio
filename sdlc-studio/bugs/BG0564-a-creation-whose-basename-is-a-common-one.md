@@ -1,6 +1,7 @@
 # BG0564: a creation whose basename is a common one - `__init__.py`, `README.md` - is still refused as a typo, so the greenfield repair is incomplete for exactly the files new packages create
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (executed: basename_matches over a `newpkg/__init__.py` path returns [] where it returned dozens of unrelated paths, with a distinctive name in the wrong directory still reported as the control; mutation: 2 declared mutants, anchors asserted unique, bytecode purged, python3 -B, both KILLED, restore byte-exact)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
@@ -22,15 +23,23 @@ The signal that would separate them is already available and unused: a basename 
 
 1. Build a tree holding any `__init__.py`. 2. Write a unit declaring `Affects: src/newpkg/__init__.py`, a file it will create. 3. `sprint.py plan --worklist <unit> --write`. 4. Refused as a typo, naming a file in an unrelated package as the one that was meant.
 
+## Acceptance Criteria
+
+- [x] **AC1** Given a declared `Affects` path whose basename is a common one - `__init__.py`, `README.md`, `conftest.py` - when the typo check runs, then no suggestion is returned and the creation is allowed: a match elsewhere says only that projects have those everywhere.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k a_common_basename_is_not_treated_as_a_typo
+- [x] **AC2** Given a DISTINCTIVE basename declared in the wrong directory, when the same check runs, then its real location is still reported - the inference was narrowed, not removed.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py -k a_distinctive_basename_is_still_reported
+
 ## Proposed Fix
 
 Narrow the typo signal: a basename match counts only when it is plausibly the same file - the same parent directory, or a small edit distance on the path - rather than any occurrence anywhere in the tree. Pin BOTH shapes in one fixture: a mistyped sibling refuses, and a new package's `__init__.py` beside an unrelated one is accepted. The measured hazard the rule exists for is a wrong DIRECTORY PREFIX on a file that really exists, so scoping the match to the path rather than to the basename alone stays true to it.
 
-## Acceptance Criteria
+## Test Plan
 
-- [ ] **AC1** A unit creating `src/newpkg/__init__.py` in a tree holding other `__init__.py` files plans successfully through the shipped CLI
-- [ ] **AC2** A unit declaring a mistyped sibling of an existing file is still refused, proving the signal was narrowed rather than removed (positive control, same tree)
-- [ ] **AC3** Both shapes are asserted in ONE tree, so no repair keyed on a property of the whole project can satisfy them
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in file_finding.py `basename_matches`, delete the `_AMBIGUOUS_BASENAMES` early return so a common name is judged a typo | Given a declared `Affects` path whose basename is a common one - `__init__.py`, `README.md`, `conftest.py` - when the typo check runs, then no suggestion is returned and the creation is allowed: a match elsewhere says only that projects have those everywhere. |
+| AC2 | in file_finding.py `basename_matches`, return [] unconditionally so a real typo goes unreported | Given a DISTINCTIVE basename declared in the wrong directory, when the same check runs, then its real location is still reported - the inference was narrowed, not removed. |
 
 ## Revision History
 

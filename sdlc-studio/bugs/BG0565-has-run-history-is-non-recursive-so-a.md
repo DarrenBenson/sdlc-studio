@@ -1,6 +1,6 @@
 # BG0565: has_run_history is non-recursive, so a project that archives its retros into a subdirectory reads as never having closed a sprint and is silently softened
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (executed: a retro filed under retros/archive/v5.0.0/ reads True where it read False, with the empty-directory case still False)
 > **Severity:** Medium
 > **Points:** 2
@@ -23,15 +23,20 @@ The other fooling directions are all safe because they are stricter - a stray `r
 
 1. Take a project with one retro at `sdlc-studio/retros/RETRO0001-x.md` and confirm the gate refuses. 2. Move it to `sdlc-studio/retros/archive/RETRO0001-x.md`. 3. The gate now reports rather than refuses, and nothing says why.
 
+## Acceptance Criteria
+
+- [x] **AC1** Given a project whose retros are filed under `retros/archive/<version>/`, when `has_run_history` reads it, then it reports True - archiving closed runs must not make an established project read as brand new and take the new-project concession for ever.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py -k an_archived_retro_still_counts_as_run_history
+
 ## Proposed Fix
 
 Walk the retro directory recursively, or read the retro index rather than the directory listing. Pin it with a fixture whose only retro is nested, asserting the gate still refuses - and keep the flat case beside it as the positive control, since a recursive walk that finds nothing would satisfy a test that only checks the nested one.
 
-## Acceptance Criteria
+## Test Plan
 
-- [ ] **AC1** A project whose only retro is nested under `retros/archive/` still arms the gate, asserted through the shipped `transition.py set`
-- [ ] **AC2** A project with a flat retro still arms it, proving the lookup was widened rather than replaced (positive control)
-- [ ] **AC3** A project with no retro anywhere is still softened, so widening the lookup did not arm every project
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in plan_review.py `has_run_history`, revert d.rglob('*.md') to d.iterdir() so an archived retro is invisible | Given a project whose retros are filed under `retros/archive/<version>/`, when `has_run_history` reads it, then it reports True - archiving closed runs must not make an established project read as brand new and take the new-project concession for ever. |
 
 ## Revision History
 

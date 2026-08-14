@@ -5151,6 +5151,42 @@ class FiledDispositionTests(unittest.TestCase):
 
 
 
+class PanelConvergenceTests(unittest.TestCase):
+    """BG0549/BG0539: the escalation read the whole history and never asked whether the panel
+    had since converged, so the ordinary reject-fix-approve loop announced non-convergence at
+    the moment it demonstrably had."""
+
+    def test_a_converged_panel_does_not_escalate(self) -> None:
+        """MUTANT: delete the `verdicts[-1] == APPROVE` early return."""
+        mod = _load()
+        escalate, _why = mod.panel_escalation(["REJECT", "REJECT", "APPROVE"], {})
+        self.assertFalse(escalate, "an APPROVE after two REJECTs is the loop working")
+
+    def test_a_stalled_panel_still_escalates(self) -> None:
+        """The control. Convergence must END the notice without disarming it."""
+        mod = _load()
+        escalate, why = mod.panel_escalation(["REJECT", "REJECT"], {})
+        self.assertTrue(escalate, "two REJECTs with no approval after them is a stall")
+        self.assertIn("not converging", why)
+
+
+class PlanReviewOriginTests(unittest.TestCase):
+    """BG0546: the origin axis asks what a DIFF did, and a plan review has no diff."""
+
+    def test_a_plan_review_finding_needs_no_origin(self) -> None:
+        """MUTANT: drop the `phase != "plan-review"` guard from cmd_record."""
+        import inspect
+        src = inspect.getsource(_load().cmd_record)
+        self.assertIn('phase != "plan-review"', src,
+                      "the origin guard must be scoped to delivery reviews")
+
+    def test_a_delivery_finding_still_needs_an_origin(self) -> None:
+        """The control - the guard was scoped, not removed."""
+        mod = _load()
+        self.assertEqual(["a finding"], mod.unclassified_findings("a finding"))
+        self.assertEqual([], mod.unclassified_findings("[new] a finding"))
+
+
 if __name__ == "__main__":
     unittest.main()
 

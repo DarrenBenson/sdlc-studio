@@ -1,6 +1,6 @@
 # BG0549: the non-convergence escalation is sticky: a converging APPROVE still reports that the panel is not converging, because the notice counts historical REJECTs and never re-reads the latest verdict
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (executed over six cases: reject+reject escalates, reject+reject+APPROVE does not, a split within a round escalates, a split then APPROVE does not)
 > **Severity:** Medium
 > **Points:** 3
@@ -25,8 +25,17 @@ Resolve the escalation on a later APPROVE, and say so - 'converged at round 3 af
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `critic.py record` escalates a unit to the operator once two REJECTs are on its log.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Resolve the escalation on a later APPROVE, and say so - 'converged at round 3 after 2 REJECT(s)' carries the useful part of the history without the false...
+- [x] **AC1** Given a unit whose review log is REJECT, REJECT, APPROVE, when the escalation is computed, then it does NOT escalate - the panel converged, and a notice that fires after it has been answered is one readers learn to scroll past.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k a_converged_panel_does_not_escalate
+- [x] **AC2** Given a unit whose log is REJECT, REJECT with no approval after them, when the escalation is computed, then it DOES escalate - convergence must end the notice without disarming it.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k a_stalled_panel_still_escalates
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in critic.py `panel_escalation`, delete the `verdicts[-1] == APPROVE` early return so a converged panel escalates again | Given a unit whose review log is REJECT, REJECT, APPROVE, when the escalation is computed, then it does NOT escalate - the panel converged, and a notice that fires after it has been answered is one readers learn to scroll past. |
+| AC2 | in critic.py `panel_escalation`, return (False, '') unconditionally so a genuinely stalled panel escalates nothing | Given a unit whose log is REJECT, REJECT with no approval after them, when the escalation is computed, then it DOES escalate - convergence must end the notice without disarming it. |
 
 ## Revision History
 

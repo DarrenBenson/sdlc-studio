@@ -15763,5 +15763,48 @@ class DryRunReportDetailTests(unittest.TestCase):
                          f"blank continuation lines were emitted: {body!r}")
 
 
+class CloseReportResilienceTests(unittest.TestCase):
+    """BG0508: the advisory guard covered the body and left the imports outside it."""
+
+    def test_the_close_report_survives_an_unimportable_sibling(self) -> None:
+        """MUTANT: move the deferred imports back above the `try` in `_tell_the_operator`.
+
+        `_tell_the_operator` guards its body on the stated principle that the close outranks its
+        own report. Both imports sat OUTSIDE that guard, so an ImportError escaped AFTER every
+        close step had run - turning a successful close into a traceback for a consuming project
+        without `critic.py`, a partial install, or a syntax error in a sibling.
+
+        DRIVEN IN A FRESH PROCESS, and that is not a style choice. Two in-process versions of
+        this test passed against the mutant: a `sys.meta_path` finder is never consulted for a
+        module already in `sys.modules`, and evicting it does not help either, because the
+        suite's loader hands back a cached module rather than re-reading the mutated file. Both
+        looked like evidence and were worth nothing. Only a subprocess reads the file as it
+        stands on disk.
+        """
+        import subprocess, sys as _sys, tempfile, textwrap
+        from pathlib import Path as _P
+        scripts = str(_P(__file__).resolve().parents[1])
+        with tempfile.TemporaryDirectory() as d:
+            driver = textwrap.dedent(f"""
+                import sys
+                sys.path.insert(0, {scripts!r})
+                # `find_spec`, NOT `find_module` - the latter was removed in Python 3.12, so a
+                # finder defining it is never consulted and the blocker silently does nothing.
+                class Block:
+                    def find_spec(self, name, path=None, target=None):
+                        if name == "critic":
+                            raise ImportError("critic unavailable in this install")
+                        return None
+                sys.meta_path.insert(0, Block())
+                import sprint
+                sprint._tell_the_operator({d!r})
+                print("RETURNED")
+            """)
+            proc = subprocess.run([_sys.executable, "-c", driver],
+                                  capture_output=True, text=True)
+        self.assertIn("RETURNED", proc.stdout,
+                      f"the report raised instead of degrading:\n{proc.stderr[-600:]}")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -58,3 +58,28 @@ Filed High because it defeats the estimator rather than degrading it, and becaus
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-13 | sdlc-studio | Created via `new` (deterministic) |
+
+## Measured after filing: the first proposed check cannot work as written
+
+The proposed fix above opens with "a repaired-but-open detector: for each open bug, run the
+criteria it already carries". Measured against the corpus on 2026-08-14, immediately after
+filing: **0 of 31 open bugs carry an executable `Verify:` line.**
+
+They carry criteria - most of them the tool-derived scaffold - but a verifier is authored at the
+moment somebody transitions the unit, which is precisely the step a repaired-but-open bug never
+reached. The check needs the artefact of the thing that did not happen.
+
+So the detector has to work from something an OPEN bug does have. Three candidates, none free:
+
+  1. The bug's `Affects` paths plus `git log -S` over the phrases in its Summary - did a commit
+     touch this surface and mention this defect after the bug was filed? Noisy, and it is a
+     search rather than a test, but it needs nothing the artefact lacks.
+  2. The COUNT re-check, which is the half that already works. Four of the five fiction units
+     stated a number - twenty-one questions, twenty-five stories, twenty findings, four units -
+     and every one of those was re-derivable. That is the cheapest real signal available.
+  3. Ask at grooming rather than continuously: when a bug is about to enter a batch, re-read it.
+     That is where the cost of carrying a dead bug is about to be paid, and where a human is
+     already reading it.
+
+Recorded here rather than left in the proposal, because a fix specified against data that does
+not exist is the same defect this bug is about, one level up - a claim nobody exercised.

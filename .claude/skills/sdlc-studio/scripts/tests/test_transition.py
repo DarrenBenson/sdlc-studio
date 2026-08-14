@@ -4940,5 +4940,23 @@ class FixtureRootGuardTests(unittest.TestCase):
             self.assertTrue(Path(root if isinstance(root, (str, Path)) else d).exists())
 
 
+class NonePathRecognitionTests(unittest.TestCase):
+    """BG0554: survivor severity under-rated the codebase's commonest refusal idiom."""
+
+    def _fn(self, src):
+        import ast, textwrap
+        return ast.parse(textwrap.dedent(src)).body[0]
+
+    def test_an_explicit_return_none_is_a_none_path(self) -> None:
+        """MUTANT: drop the `ast.Constant` arm, leaving only the bare `return`."""
+        self.assertTrue(tr._has_none_path(
+            self._fn("def f(x):\n    if x: return 1\n    return None\n")))
+
+    def test_both_arms_valued_is_not_a_none_path(self) -> None:
+        """The control. Widening the recognition must not INVENT a None path."""
+        self.assertFalse(tr._has_none_path(
+            self._fn("def f(x):\n    if x:\n        return 1\n    else:\n        return 2\n")))
+
+
 if __name__ == "__main__":
     unittest.main()
