@@ -226,5 +226,144 @@ class TagRefusesAnOwedCloseTests(unittest.TestCase):
         self.assertIn("not the commit being tagged", reason)
 
 
+class ForgeCiTests(unittest.TestCase):
+    """BG0576. Both v5 tags were cut over a CI that had been red for two days, because the tag
+    guard read a locally recorded green and never asked the runner. These pin that a tag now
+    turns on what the FORGE says, and that every way of not getting an answer refuses."""
+
+    def setUp(self) -> None:
+        self.mod = _load()
+
+    def _forge(self, *, remote=True, gh=True, rc=0, stdout="[]", stderr="", boom=None):
+        """Drive `forge_ci_state` against a scripted forge, with no network and no gh."""
+        mod = self.mod
+
+        class _P:
+            def __init__(self, returncode, stdout, stderr):
+                self.returncode, self.stdout, self.stderr = returncode, stdout, stderr
+
+        def fake_run(cmd, *a, **k):
+            if cmd[:2] == ["git", "remote"]:
+                return _P(0, "origin\n" if remote else "", "")
+            if boom is not None:
+                raise boom
+            return _P(rc, stdout, stderr)
+
+        self.mod_patches = [
+            (mod, "subprocess", type("S", (), {
+                "run": staticmethod(fake_run),
+                "SubprocessError": mod.subprocess.SubprocessError})),
+            (mod.shutil, "which", (lambda n: "/usr/bin/gh" if gh else None)),
+        ]
+        for obj, name, val in self.mod_patches:
+            self.addCleanup(setattr, obj, name, getattr(obj, name))
+            setattr(obj, name, val)
+        return mod
+
+    @staticmethod
+    def _runs(*pairs) -> str:
+        import json as _j
+        return _j.dumps([{"workflowName": w, "status": "completed", "conclusion": c}
+                         for w, c in pairs])
+
+    def test_a_failed_ci_conclusion_refuses_the_tag(self) -> None:
+        """AC1. The exact state main was in when both v5 tags were cut: a run finished, and it
+        finished red. MUTANT: report `failure` as `success` - this must then pass."""
+        mod = self._forge(stdout=self._runs(("ci", "failure")))
+        state, detail = mod.forge_ci_state(Path("."), "deadbee")
+        self.assertEqual("failed", state)
+        self.assertIn("ci: failure", detail)
+
+    def test_a_commit_the_forge_has_never_run_refuses(self) -> None:
+        """AC2. No run at all is not a green. MUTANT: return `success` for an empty run list."""
+        mod = self._forge(stdout="[]")
+        state, detail = mod.forge_ci_state(Path("."), "deadbee")
+        self.assertEqual("none", state)
+        self.assertIn("no CI run", detail)
+
+    def test_a_forge_that_cannot_be_asked_refuses(self) -> None:
+        """AC3. `gh` missing, unauthenticated or unparseable must not borrow the no-forge pass -
+        "I could not look" is not "there is nothing wrong". MUTANT: return `no-forge` here."""
+        for label, kwargs in (("no gh", {"gh": False}),
+                              ("gh failed", {"rc": 1, "stderr": "not authenticated"}),
+                              ("not json", {"stdout": "<html>"}),
+                              ("gh raised", {"boom": OSError("boom")})):
+            with self.subTest(label):
+                mod = self._forge(**kwargs)
+                state, _ = mod.forge_ci_state(Path("."), "deadbee")
+                self.assertEqual("unknown", state, f"{label} was not refused")
+
+    def test_an_unfinished_run_refuses_the_tag(self) -> None:
+        """A tag cut while CI is still running asserts an outcome that has not happened."""
+        mod = self._forge(stdout='[{"workflowName":"ci","status":"in_progress",'
+                                 '"conclusion":null}]')
+        state, detail = mod.forge_ci_state(Path("."), "deadbee")
+        self.assertEqual("pending", state)
+        self.assertIn("has not finished", detail)
+
+    def test_a_green_forge_passes_and_a_skipped_run_does_not_block_it(self) -> None:
+        """The positive control. A guard that always refuses is not a guard, and a path-filtered
+        workflow reporting `skipped` beside a real success must stay taggable."""
+        mod = self._forge(stdout=self._runs(("ci", "success"), ("release", "skipped")))
+        state, _ = mod.forge_ci_state(Path("."), "deadbee")
+        self.assertEqual("success", state)
+
+    def test_all_skipped_is_not_a_green(self) -> None:
+        """Nothing judged the tree, so there is nothing to assert."""
+        mod = self._forge(stdout=self._runs(("ci", "skipped")))
+        self.assertEqual("none", mod.forge_ci_state(Path("."), "deadbee")[0])
+
+    def test_no_remote_is_the_one_honest_pass(self) -> None:
+        """AC4 / the control that keeps `unknown` honest: there is genuinely no CI to ask about,
+        which is why a missing `gh` had to be told apart from it. MUTANT: return `unknown`."""
+        mod = self._forge(remote=False, gh=False)
+        state, detail = mod.forge_ci_state(Path("."), "deadbee")
+        self.assertEqual("no-forge", state)
+        self.assertIn("no git remote", detail)
+
+    def test_an_abbreviated_sha_is_resolved_before_the_forge_is_asked(self) -> None:
+        """Found by the positive control, not by reasoning: `gh run list --commit` matches the
+        FULL sha and answers nothing for an abbreviated one, so a green commit named short would
+        have been refused as "never run". MUTANT: pass `commit` through unresolved."""
+        mod = self.mod
+        seen: list[str] = []
+
+        class _P:
+            def __init__(self, rc, out):
+                self.returncode, self.stdout, self.stderr = rc, out, ""
+
+        def fake_run(cmd, *a, **k):
+            if cmd[:2] == ["git", "remote"]:
+                return _P(0, "origin\n")
+            if cmd[:2] == ["git", "rev-parse"]:
+                return _P(0, "f" * 40 + "\n")
+            seen.append(cmd[cmd.index("--commit") + 1])
+            return _P(0, self._runs(("ci", "success")))
+
+        self.addCleanup(setattr, mod, "subprocess", mod.subprocess)
+        mod.subprocess = type("S", (), {"run": staticmethod(fake_run),
+                                        "SubprocessError": mod.subprocess.SubprocessError})
+        self.addCleanup(setattr, mod.shutil, "which", mod.shutil.which)
+        mod.shutil.which = lambda n: "/usr/bin/gh"
+        mod.forge_ci_state(Path("."), "f" * 8)
+        self.assertEqual(["f" * 40], seen, "the forge was asked about an abbreviated sha")
+
+    def test_tag_check_refuses_on_a_red_forge_and_says_why(self) -> None:
+        """The wiring, not the helper: a locally green tree with a red runner must not tag."""
+        mod = self.mod
+        d = Path(tempfile.mkdtemp(prefix="forgetag_"))
+        self.addCleanup(lambda: __import__("shutil").rmtree(d, ignore_errors=True))
+        mod.record_green(d, "abc123")
+        self.addCleanup(setattr, mod, "forge_ci_state", mod.forge_ci_state)
+        mod.forge_ci_state = lambda root, commit: ("failed", "CI on abc123 did not pass (ci: failure)")
+        allowed, reason = mod.tag_check(d, "abc123")
+        self.assertFalse(allowed, "a tag was allowed over a red forge CI")
+        self.assertIn("did not pass", reason)
+        mod.forge_ci_state = lambda root, commit: ("success", "CI passed")
+        allowed, reason = mod.tag_check(d, "abc123")
+        self.assertTrue(allowed, reason)
+        self.assertIn("CI green on the forge", reason)
+
+
 if __name__ == "__main__":
     unittest.main()

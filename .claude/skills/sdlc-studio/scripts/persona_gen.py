@@ -167,6 +167,10 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--file")
     a.add_argument("--root", default=".")
     a.set_defaults(func=cmd_accept)
+    # Uniform family grammar: `--root` valid before OR after the verb, with the
+    # per-subcommand copies re-pointed to SUPPRESS so a value given first is not
+    # clobbered by a subparser default. Must run AFTER every subparser exists.
+    sdlc_md.add_global_root(p)
     return p
 
 

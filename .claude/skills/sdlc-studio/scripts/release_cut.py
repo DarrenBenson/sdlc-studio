@@ -18,6 +18,8 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -79,6 +81,102 @@ def green_commit(root: Path | str) -> str | None:
         return None
 
 
+#: Conclusions that are not a failure. `skipped` and `neutral` are how a workflow says "this run
+#: did not apply", which is not the same as "this run went wrong" - refusing them would make a
+#: path-filtered workflow un-taggable. Anything else, including an empty conclusion, blocks.
+CI_OK_CONCLUSIONS = frozenset({"success", "skipped", "neutral"})
+
+#: A hung `gh` (proxy, auth prompt) must fail rather than block the release forever.
+GH_TIMEOUT = 120
+
+
+def _has_forge_remote(root: Path | str) -> bool:
+    """Whether this clone has any git remote at all - the one honest reason there is no forge
+    answer to ask for."""
+    try:
+        proc = subprocess.run(["git", "remote"], capture_output=True, text=True,
+                              cwd=str(root), timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return proc.returncode == 0 and bool(proc.stdout.strip())
+
+
+def _full_sha(root: Path | str, commit: str) -> str:
+    """`gh run list --commit` matches on the FULL sha and silently returns nothing for an
+    abbreviated one - which this guard would read as "the forge has never run this commit" and
+    refuse. A false refusal on a green tree trains the bypass just as surely as a false pass
+    trains the tag, so resolve first and only then ask. An unresolvable ref is passed through
+    unchanged: that is the forge's question to answer, not this helper's."""
+    try:
+        proc = subprocess.run(["git", "rev-parse", f"{commit}^{{commit}}"],
+                              capture_output=True, text=True, cwd=str(root), timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return commit
+    out = (proc.stdout or "").strip()
+    return out if proc.returncode == 0 and out else commit
+
+
+def forge_ci_state(root: Path | str, commit: str) -> tuple[str, str]:
+    """`(state, detail)` - what the FORGE says about CI on `commit`, never what a local file says.
+
+    States: `success`, `failed`, `pending`, `none`, `no-forge`, `unknown`. Only `success` and
+    `no-forge` may pass a tag.
+
+    The distinctions are the whole point, because collapsing any two of them is how both v5 tags
+    were cut over a red CI:
+
+    * `none` - the forge has no run for this commit. Either it was never pushed, or the workflow
+      never fired. "Nobody has judged this tree" is not a green, and reading it as one is the
+      original defect one step removed.
+    * `pending` - a run exists and has not finished. A tag cut now asserts an outcome that has
+      not happened yet.
+    * `unknown` - `gh` is absent, unauthenticated, timed out, or answered something unparseable.
+      "I could not look" must never be reported as "there is nothing wrong"; that is exactly the
+      rule `release_assets.published` states for the same question about the same forge.
+    * `no-forge` - there is no remote, so there is no CI to ask about and the rule was never
+      adopted in this clone. The single honest pass, and distinguished from `unknown` precisely
+      so that a missing `gh` cannot borrow it.
+    """
+    commit = (commit or "").strip()
+    if not _has_forge_remote(root):
+        return "no-forge", ("no git remote is configured, so there is no forge CI to ask about - "
+                            "the tag is judged on the local gate alone")
+    if shutil.which("gh") is None:
+        return "unknown", ("gh is not on PATH, so whether CI passed on the pushed commit is "
+                           "UNKNOWN - install https://cli.github.com/ and authenticate")
+    commit = _full_sha(root, commit)
+    try:
+        proc = subprocess.run(
+            ["gh", "run", "list", "--commit", commit, "--limit", "50",
+             "--json", "conclusion,status,workflowName"],
+            capture_output=True, text=True, cwd=str(root), timeout=GH_TIMEOUT)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return "unknown", f"the forge could not be asked about {commit} ({exc!r})"
+    if proc.returncode != 0:
+        return "unknown", (f"gh could not report CI for {commit}: "
+                           f"{(proc.stderr or '').strip() or f'exit {proc.returncode}'}")
+    try:
+        runs = json.loads(proc.stdout or "[]")
+    except ValueError:
+        return "unknown", f"gh answered something that is not JSON when asked about {commit}"
+    if not isinstance(runs, list) or not runs:
+        return "none", (f"the forge has no CI run for {commit} - either it has not been pushed, "
+                        f"or no workflow fired on it")
+    unfinished = [r for r in runs if (r.get("status") or "") != "completed"]
+    if unfinished:
+        names = ", ".join(sorted({str(r.get("workflowName") or "?") for r in unfinished})[:5])
+        return "pending", f"CI on {commit} has not finished ({names})"
+    bad = [r for r in runs if (r.get("conclusion") or "") not in CI_OK_CONCLUSIONS]
+    if bad:
+        names = ", ".join(sorted({f"{r.get('workflowName') or '?'}: "
+                                  f"{r.get('conclusion') or 'no conclusion'}" for r in bad})[:5])
+        return "failed", f"CI on {commit} did not pass ({names})"
+    if not any((r.get("conclusion") or "") == "success" for r in runs):
+        return "none", (f"every CI run on {commit} was skipped or neutral, so nothing actually "
+                        f"judged this tree")
+    return "success", f"CI passed on {commit} on the forge"
+
+
 def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
     """(allowed, reason). A tag of `commit` is allowed ONLY when the recorded gate-green commit is
     the same commit - so a tag can never assert a green measured on a different tree."""
@@ -106,7 +204,19 @@ def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
                        f"{', +more' if len(owed) > 8 else ''}) - a release that ships work no "
                        f"sprint closed asserts a record that was never written. Close the "
                        f"sprint, or record the deferral deliberately")
-    return True, f"gate green on {commit} matches the tagged commit, and no close is owed"
+    # Everything above this line is a claim about the LOCAL tree, answered from a local file. That
+    # was the whole guard until BG0576, and it is why v5.0.0 and v5.0.1 were both tagged over a CI
+    # that had been red for two days: the gate ran green on a developer machine, the runner
+    # disagreed, and nothing in the release chain ever asked it. Whether CI passed on the pushed
+    # commit is a claim about the remote, and only the remote can answer it.
+    state, detail = forge_ci_state(root, commit)
+    if state not in ("success", "no-forge"):
+        return False, (f"refusing the tag: {detail}. A tag asserts that this tree passed, and "
+                       f"the only place that can be answered for a pushed commit is the forge - "
+                       f"a local green says nothing about the runner")
+    forge_note = "no forge to ask" if state == "no-forge" else "CI green on the forge"
+    return True, (f"gate green on {commit} matches the tagged commit, no close is owed, "
+                  f"and {forge_note}")
 
 
 def _close_owed_units(root: Path | str) -> "tuple[list[str], str | None]":

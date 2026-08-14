@@ -264,7 +264,6 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog="changelog", description="Per-unit CHANGELOG fragments: write one per unit "
         "under changelog.d/, compose them deterministically into [Unreleased].")
-    sdlc_md.add_global_root(ap)
     sub = ap.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("compose", help="RELEASE cut: fold all fragments into CHANGELOG.md and "
                        "consume them. Dry-run by default (reports what it would fold, touches "
@@ -277,6 +276,10 @@ def build_parser() -> argparse.ArgumentParser:
                        "unrepeated and non-empty; exit 1 on a fault")
     for p in (c, k, s):
         p.add_argument("--root", default=".", help="Repo root (default: .)")
+    # Uniform family grammar: `--root` valid before OR after the verb, with the
+    # per-subcommand copies re-pointed to SUPPRESS so a value given first is not
+    # clobbered by a subparser default. Must run AFTER every subparser exists.
+    sdlc_md.add_global_root(ap)
     return ap
 
 

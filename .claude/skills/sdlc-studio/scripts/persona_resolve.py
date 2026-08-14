@@ -475,6 +475,10 @@ def build_parser() -> argparse.ArgumentParser:
     pn.add_argument("--skip-personas", action="store_true", help="force the generic path (no framing)")
     sdlc_md.add_format_arg(pn)
     pn.set_defaults(func=cmd_panel)
+    # Uniform family grammar: `--root` valid before OR after the verb, with the
+    # per-subcommand copies re-pointed to SUPPRESS so a value given first is not
+    # clobbered by a subparser default. Must run AFTER every subparser exists.
+    sdlc_md.add_global_root(parser)
     return parser
 
 

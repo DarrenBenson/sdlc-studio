@@ -253,7 +253,17 @@ class RealRepoTests(unittest.TestCase):
     #: watching: 179 files, 144 placed. One more cross-cutting guard tipped it, and the guard
     #: gave no warning that it was one file from firing. A threshold nobody can see approaching
     #: is a threshold that fails as a surprise.
-    UNATTRIBUTED_BASELINE = 36
+    #: Raised 36 -> 37 in BG0556, which is the one direction this number is not supposed to
+    #: move, so the reason is recorded rather than asserted. `test_cli_grammar.py` attributed to
+    #: `transition.py` by REFERENCE COUNT - it happened to name that module more often than any
+    #: other. BG0556 added an inventory of 21 script names to it, `sprint.py` among them, and the
+    #: count tied. Nothing about the file's subject changed: it is the family-wide CLI grammar
+    #: sweep and has no owner module, which is what the census now says. The previous attribution
+    #: was an artefact of counting, and the honest verdict is the one it gives today.
+    #:
+    #: Filed as BG0578: an owner decided by name frequency changes when a test mentions one more
+    #: module, so attribution is stable only for files that reference exactly one.
+    UNATTRIBUTED_BASELINE = 37
 
     def test_this_repos_test_files_are_mostly_attributed(self) -> None:
         """A convention that placed a handful of files would be a report of nothing.

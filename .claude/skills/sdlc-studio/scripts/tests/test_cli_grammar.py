@@ -18,7 +18,10 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import pathlib
+import re
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -36,27 +39,22 @@ def _load(name: str, rel: str):
     return mod
 
 
-#: HAND-MAINTAINED ON PURPOSE. This is a declared inventory of recorded debt, not a copy
-#: of the shipped script list: it names the twelve scripts whose `--root` grammar the
-#: sweep could not see, and it exists to be EMPTIED. Deriving it would defeat the point -
-#: a derived set would silently absorb the next offender instead of failing on it.
+#: HAND-MAINTAINED ON PURPOSE, and EMPTY - which is the state it is meant to stay in.
+#: A declared inventory of recorded debt, never a copy of the shipped script list: deriving
+#: it would defeat the point, because a derived set absorbs the next offender silently
+#: instead of failing on it.
 #:
-#: Scripts whose `--root` grammar predates the sweep being able to SEE them. `_all_parsers()`
-#: swallowed every script without a module-level `build_parser`, so these twelve were never
-#: checked; US0652 made them enumerable and the conformance failures surfaced all at once.
+#: It held twelve names - scripts whose `--root` grammar the sweep could not see, because
+#: `_all_parsers()` swallowed every script without a module-level `build_parser`. US0652 made
+#: them enumerable and the failures surfaced at once. BG0555 then emptied it, and found that
+#: only FOUR of the twelve were still real: the other eight had been repaired and nobody
+#: re-measured. That is what a debt list does when it is written once and read as current,
+#: and it is the reason the emptiness is now asserted by a test rather than left to habit.
 #:
-#: NAMED, not skipped - which is the whole difference from the bare `continue` this replaced.
-#: The set may only SHRINK: a script added tomorrow gets no entry here, and a repair removes
-#: one. The debt is recorded in BG0555 with the mechanical fix it needs.
-#:
-#: It exempts the THREE root-grammar tests below and NOTHING else. These twelve already
-#: satisfy the format and repeatable-flag families, so exempting them there would be a
-#: debt set silencing checks that pass - which is how an exemption outlives its reason.
-ROOT_GRAMMAR_DEBT = frozenset({
-    "backfill_audit_runs.py", "backfill_authorship.py", "changelog.py", "digest.py",
-    "doc_freshness.py", "flow.py", "migrate_v3.py", "persona_gen.py", "persona_resolve.py",
-    "schema_check.py", "triage_noise.py", "triage_sampling.py",
-})
+#: The set may only SHRINK. A script added tomorrow gets no entry here; an entry is a promise
+#: to remove it. It exempts the root-placement tests below and NOTHING else - a debt set that
+#: silences checks the offender already passes is how an exemption outlives its reason.
+ROOT_GRAMMAR_DEBT: frozenset[str] = frozenset()
 
 
 def _all_parsers() -> list[tuple[str, argparse.ArgumentParser]]:
@@ -285,6 +283,135 @@ class RepeatableFlagConformance(unittest.TestCase):
                             merges,
                             f"{name} {sub} {action.option_strings[0]}: help says 'combinable' "
                             f"but the action overwrites on repeat - use action='append'")
+
+
+#: Verbs PROVEN to answer differently depending on `--root`, and therefore the only ones a
+#: fixture sweep can speak for. Measured, not guessed: all 128 `--root`-taking verbs the sweep can
+#: invoke without extra required arguments were run against the real tree and against an empty
+#: fixture, and these are the 23 whose output visibly differs. For the other 105 the sweep asserts
+#: NOTHING - they print nothing that names a tree - and saying so is the point. A sweep reporting
+#: "128 verbs checked" when only 23 of them could ever fail is the vacuous-verifier trap this
+#: repository keeps paying for (LL0053).
+#:
+#: The set may only GROW. THREE verbs discriminate and are absent on purpose, because they WRITE
+#: and the control below runs against the real tree: `repo_map build`, `project_upgrade`, and
+#: `verify_ac lane-check`, which drops a `sdlc-studio/.local/lane-check-yield.json` sidecar. The
+#: last was found by the `repo-writes` gate lane refusing the commit that introduced this sweep -
+#: a guard measuring the tree must not be one of the things changing it.
+ROOT_EFFECT_VERBS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("ac_scope.py", ("check",)), ("autosprint.py", ("next",)), ("changelog.py", ("check",)),
+    ("config.py", ("show",)), ("constitution.py", ("check",)), ("critic.py", ("show",)),
+    ("decisions.py", ("list",)), ("doc_freshness.py", ()), ("integrity.py", ("check",)),
+    ("lessons.py", ("list",)), ("lessons.py", ("revalidate",)), ("lessons.py", ("summary",)),
+    ("persona_gen.py", ("classify",)), ("reconcile.py", ("detect",)), ("repo_map.py", ("stats",)),
+    ("retro.py", ("estimator",)), ("sprint.py", ("next",)), ("status.py", ("backlog",)),
+    ("validate.py", ("check",)), ("verify_ac.py", ("report",)),
+)
+
+#: What a real-tree answer looks like: this repository's own artefact ids and run ids, plus its
+#: absolute path. An empty fixture cannot produce any of them.
+_REAL_TREE_MARKER = re.compile(r"\b(?:BG05\d\d|US06\d\d|RUN-01K\w+)")
+
+
+class RootIsReadNotJustParsed(unittest.TestCase):
+    """BG0555 / BG0556. Grammar conformance above proves a `--root` PARSES in both positions. It
+    proves nothing about whether the value is ever READ, and that gap is not theoretical twice
+    over: `docgen references --root TMP` wrote TMP's file with the real tree's 56 references, and
+    `changelog.py --root <empty fixture> check` exited 0 reporting this repository's nineteen
+    fragments. Neither rejected anything. Both answered confidently about somewhere else, which is
+    worse than a refusal, because a refusal is visible.
+    """
+
+    #: The repository this test module lives in - the tree a decorative `--root` falls back to.
+    REPO = DIR.parent.parent.parent.parent
+
+    def _run(self, script: str, argv, root) -> str:
+        proc = subprocess.run(
+            [sys.executable, "-B", str(DIR / script), "--root", str(root), *argv],
+            capture_output=True, text=True, cwd=str(self.REPO), timeout=120)
+        return (proc.stdout or "") + (proc.stderr or "")
+
+    def test_the_root_grammar_debt_set_is_empty(self) -> None:
+        """The ratchet. An exemption is a promise to remove it, and this is where the promise is
+        kept - twelve names sat here, eight of them already fixed and never re-measured."""
+        self.assertEqual(frozenset(), ROOT_GRAMMAR_DEBT,
+                         "the root-grammar debt set only shrinks; it reached empty in BG0555")
+
+    def test_a_root_given_before_the_verb_selects_the_tree_that_is_read(self) -> None:
+        """The effect, not the grammar. An empty fixture must answer about the fixture, in BOTH
+        placements - and must not quietly answer about the repository it was launched from."""
+        with tempfile.TemporaryDirectory() as d:
+            fixture = Path(d)
+            (fixture / "changelog.d").mkdir()
+            (fixture / "CHANGELOG.md").write_text("# Changelog\n\n## [Unreleased]\n",
+                                                  encoding="utf-8")
+            for argv in (["--root", str(fixture), "check"], ["check", "--root", str(fixture)]):
+                with self.subTest(argv=" ".join(argv)):
+                    proc = subprocess.run(
+                        [sys.executable, "-B", str(DIR / "changelog.py"), *argv],
+                        capture_output=True, text=True, cwd=str(self.REPO), timeout=120)
+                    self.assertEqual(0, proc.returncode,
+                                     f"{argv}: {proc.stderr.strip() or proc.stdout.strip()}")
+                    self.assertIn("no stray fragments", proc.stdout,
+                                  f"{argv}: answered about a tree other than the fixture")
+
+    def test_no_verb_answers_about_the_real_tree_when_pointed_at_a_fixture(self) -> None:
+        """THE guard. Run each proven-discriminating verb against an empty fixture from inside
+        this repository; none may name one of this repository's artefacts."""
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            for script, verb in ROOT_EFFECT_VERBS:
+                with self.subTest(verb=f"{script} {' '.join(verb)}".strip()):
+                    out = self._run(script, verb, d)
+                    leaked = sorted(set(_REAL_TREE_MARKER.findall(out)))
+                    self.assertFalse(
+                        leaked or str(self.REPO) in out,
+                        f"{script} {' '.join(verb)}: --root pointed at an empty fixture and the "
+                        f"answer names this repository ({leaked or self.REPO}) - the flag is "
+                        f"decorative")
+
+    def test_the_inventory_is_a_measured_subset_and_never_the_whole_surface(self) -> None:
+        """The inventory must stay SMALLER than the surface it is drawn from. The tempting repair,
+        when someone notices the guard covers 23 verbs of 128, is to paste in the other 105 - and
+        every one of them would pass forever, because they print nothing that names a tree either
+        way. Coverage would read as complete and assert less than it does now. Membership is
+        earned by measurement, and this is what stops it being assumed."""
+        invocable = set()
+        for name, parser in _all_parsers():
+            if not any("--root" in a.option_strings for a in parser._actions):
+                continue
+            subs = [a for a in parser._actions if isinstance(a, argparse._SubParsersAction)]
+            if not subs:
+                invocable.add((name, ()))
+                continue
+            for verb, sp in subs[0].choices.items():
+                required = [a for a in sp._actions if getattr(a, "required", False)]
+                positional = [a for a in sp._actions
+                              if not a.option_strings and a.nargs not in ("?", "*")]
+                if not required and not positional:
+                    invocable.add((name, (verb,)))
+        listed = set(ROOT_EFFECT_VERBS)
+        self.assertTrue(listed, "the effect inventory is empty, so the guard sweeps nothing")
+        unknown = listed - invocable
+        self.assertEqual(set(), unknown,
+                         f"the inventory names verbs the sweep cannot invoke: {sorted(unknown)}")
+        self.assertLess(len(listed), len(invocable),
+                        "the inventory has grown to the whole invocable surface - it is only "
+                        "meaningful as the MEASURED discriminating subset, and a verb that "
+                        "prints nothing either way passes this sweep forever")
+
+    def test_every_listed_verb_can_actually_fail_the_guard(self) -> None:
+        """The control, and the reason the inventory above is a fixed list rather than a sweep of
+        everything. Pointed at the REAL tree the same verbs must each name a real artefact - so a
+        clean run above means the flag was obeyed, not that the verb prints nothing either way.
+        Without this, an entry that stopped discriminating would sit here passing forever."""
+        for script, verb in ROOT_EFFECT_VERBS:
+            with self.subTest(verb=f"{script} {' '.join(verb)}".strip()):
+                out = self._run(script, verb, self.REPO)
+                self.assertTrue(
+                    _REAL_TREE_MARKER.search(out) or str(self.REPO) in out,
+                    f"{script} {' '.join(verb)}: pointed at the real tree it named nothing from "
+                    f"it, so its row in the guard above asserts nothing - re-measure or remove it")
 
 
 if __name__ == "__main__":

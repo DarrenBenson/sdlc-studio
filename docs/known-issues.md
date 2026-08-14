@@ -35,12 +35,11 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0545` | Medium | testplan derive and the bug criteria floor each mis-slice a checkbox-shaped Acceptance Criteria section, so one refuses a sound plan and the other... |
 | `BG0552` | Medium | a registered mutant cannot be joined to a measured one, so a cross-provenance contradiction in the mutation ledger is undetectable |
 | `BG0553` | Medium | a mistyped mutation verdict cannot be corrected, and the contradiction check now turns that from a wrong number into a refusal in every mode |
-| `BG0555` | Medium | twelve scripts declare --root only per-subcommand, a grammar defect the conformance sweep could not see because it silently skipped them |
-| `BG0556` | Medium | no guard catches a --root that selects the file written but not the content read |
 | `BG0567` | Medium | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere... |
 | `BG0571` | Medium | The repaired spec-agreement guards pin word patterns rather than claims, so a passage stating the OPPOSITE rule passes |
+| `BG0578` | Medium | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner |
 
-15 findings: 15 Medium, 0 Low.
+14 findings: 14 Medium, 0 Low.
 
 ## Not carried
 

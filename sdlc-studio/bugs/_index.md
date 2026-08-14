@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-13
+**Last Updated:** 2026-08-14
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 17 |
+| Open | 15 |
 | In Progress | 0 |
-| Fixed | 468 |
+| Fixed | 471 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 7 |
 | Superseded | 2 |
-| **Total** | **577** |
+| **Total** | **578** |
 
 ## All Bugs
 
@@ -94,8 +94,8 @@
 | [BG0552](BG0552-a-registered-mutant-cannot-be-joined-to-a.md) | a registered mutant cannot be joined to a measured one, so a cross-provenance contradiction in the mutation ledger is undetectable | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0553](BG0553-a-mistyped-mutation-verdict-cannot-be-corrected-and.md) | a mistyped mutation verdict cannot be corrected, and the contradiction check now turns that from a wrong number into a refusal in every mode | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0554](BG0554-survivor-severity-under-rates-the-explicit-return-none.md) | survivor severity under-rates the explicit return-None idiom, which is the shape that matters most in this codebase | Fixed | Medium | 2026-08-07 | 2026-08-07 |
-| [BG0555](BG0555-twelve-scripts-declare-root-only-per-subcommand-a.md) | twelve scripts declare --root only per-subcommand, a grammar defect the conformance sweep could not see because it silently skipped them | Open | Medium | 2026-08-08 | 2026-08-08 |
-| [BG0556](BG0556-no-guard-catches-a-root-that-selects-the.md) | no guard catches a --root that selects the file written but not the content read | Open | Medium | 2026-08-08 | 2026-08-08 |
+| [BG0555](BG0555-twelve-scripts-declare-root-only-per-subcommand-a.md) | twelve scripts declare --root only per-subcommand, a grammar defect the conformance sweep could not see because it silently skipped them | Fixed | Medium | 2026-08-08 | 2026-08-08 |
+| [BG0556](BG0556-no-guard-catches-a-root-that-selects-the.md) | no guard catches a --root that selects the file written but not the content read | Fixed | Medium | 2026-08-08 | 2026-08-08 |
 | [BG0557](BG0557-sprint-close-dry-run-reports-a-checklist-stop.md) | sprint close --dry-run reports a checklist STOP the real close does not | Fixed | Medium | 2026-08-09 | 2026-08-09 |
 | [BG0558](BG0558-a-greenfield-project-cannot-plan-its-first-sprint.md) | a greenfield project cannot plan its first sprint: every Affects path is unresolvable because the code does not exist yet, and the blocking grooming lane calls that a fictional Affects | Fixed | High | 2026-08-09 | 2026-08-09 |
 | [BG0559](BG0559-the-doc-surface-gate-lane-raises-modulenotfounderror-in.md) | the doc-surface gate lane raises ModuleNotFoundError in every consuming project, so a new v5 lane reports NOT MEASURED forever on every user's gate run | Fixed | High | 2026-08-09 | 2026-08-09 |
@@ -115,8 +115,9 @@
 | [BG0573](BG0573-running-the-suite-from-inside-scripts-empties-the.md) | Running the suite from inside scripts/ empties the checkout and replaces it with a greenfield tree, and the temp-root guard is disarmed for any clone under /tmp | Fixed | High | 2026-08-11 | 2026-08-11 |
 | [BG0574](BG0574-a-dry-run-takes-the-allocation-lock-on.md) | A --dry-run takes the allocation lock on the target repository, so a preview writes into the tree it was asked only to describe | Fixed | Medium | 2026-08-11 | 2026-08-11 |
 | [BG0575](BG0575-the-documented-sensitive-environment-install-refuses-to-install.md) | The documented sensitive-environment install refuses to install, at every version, because the sidecar it verifies against cannot exist at the URL install.sh reads | Fixed | High | 2026-08-12 | 2026-08-12 |
-| [BG0576](BG0576-ci-on-main-has-been-red-since-before.md) | CI on main has been red since before v5.0.0 and both v5 tags were cut over it, because tag-check reads a locally recorded green and never asks the remote | Open | High | 2026-08-13 | 2026-08-13 |
+| [BG0576](BG0576-ci-on-main-has-been-red-since-before.md) | CI on main has been red since before v5.0.0 and both v5 tags were cut over it, because tag-check reads a locally recorded green and never asks the remote | Fixed | High | 2026-08-13 | 2026-08-13 |
 | [BG0577](BG0577-a-fix-that-lands-without-closing-its-bug.md) | A fix that lands without closing its bug leaves a backlog item that reads real and is not, and nothing detects it - 12% of the open bug backlog was fiction | Open | High | 2026-08-13 | 2026-08-13 |
+| [BG0578](BG0578-test-file-attribution-is-decided-by-name-frequency.md) | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner | Open | Medium | 2026-08-14 | 2026-08-14 |
 
 ## Archived Releases
 

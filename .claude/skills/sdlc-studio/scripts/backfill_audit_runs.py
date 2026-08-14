@@ -217,6 +217,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--format", choices=("text", "json"), default="text")
         if name == "apply":
             p.add_argument("--dry-run", action="store_true")
+    # Uniform family grammar: `--root` valid before OR after the verb, with the
+    # per-subcommand copies re-pointed to SUPPRESS so a value given first is not
+    # clobbered by a subparser default. Must run AFTER every subparser exists.
+    sdlc_md.add_global_root(parser)
     return parser
 
 
