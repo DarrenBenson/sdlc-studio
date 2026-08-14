@@ -263,7 +263,13 @@ class RealRepoTests(unittest.TestCase):
     #:
     #: Filed as BG0578: an owner decided by name frequency changes when a test mentions one more
     #: module, so attribution is stable only for files that reference exactly one.
-    UNATTRIBUTED_BASELINE = 37
+    #: 37 -> 38 in BG0579 for `tools/tests/test_boundary_marker.py`, whose subject is two SHELL
+    #: SCRIPTS - `tools/run-suite.sh` and the CI workflow - and a marker convention. The
+    #: name-or-reference rule places Python modules; it cannot place a guard over a hook, and
+    #: that is the category this baseline exists to hold rather than a case of it failing.
+    #: Distinguished from the 36 -> 37 raise beside it, which was a real defect: there,
+    #: attribution moved because a file MENTIONED one more module, and is filed as BG0578.
+    UNATTRIBUTED_BASELINE = 38
 
     def test_this_repos_test_files_are_mostly_attributed(self) -> None:
         """A convention that placed a handful of files would be a report of nothing.

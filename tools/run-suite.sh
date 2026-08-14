@@ -184,6 +184,13 @@ if [[ "${1:-}" == "--check" ]]; then
     exit 0
 fi
 
+# THE BOUNDARY MARKER. This script IS the boundary runner - it is what push, release, close and
+# CI invoke - so the tests deferred out of the per-commit gate run here, in full, every time.
+# Exported unconditionally rather than per-suite: a marked test that ran under `all` and not
+# under `scripts` would make the coverage depend on which word the caller typed.
+# See scripts/tests/boundary.py for what may be marked and why (BG0579).
+export SDLC_STUDIO_BOUNDARY_SUITE=1
+
 SUITE="${1:-}"
 case "$SUITE" in
     scripts) CMD='python3 -B -m pytest .claude/skills/sdlc-studio/scripts/tests -q' ;;

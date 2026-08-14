@@ -1,9 +1,10 @@
 # BG0579: the per-commit gate has outgrown the tool timeouts that run it, so a commit is KILLED rather than refused - and a kill reads as a hang, which invites --no-verify
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (profiled rather than guessed: 4 tests were 452s of 934s, and the largest was a boundary-only lane's test paid on every commit; measured 934s -> 569s in per-commit shape, with the deferred tests executing in full under the marker; mutation: 4 declared mutants, all KILLED - three SURVIVED on the first pass, including one where the check matched a commented-out line, and all three were re-chosen or the check strengthened; restore byte-exact)
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .githooks/pre-commit, .githooks/commit-msg, tools/run-suite.sh, tools/gate_timing.py, tools/tests/test_gate_timing.py
+> **Affects:** tools/run-suite.sh, .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/tests/boundary.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py, tools/tests/test_boundary_marker.py, tools/tests/test_test_census.py
 > **Evidence:** RUN-01KZQ03V, 2026-08-14. A commit carrying BG0553 and BG0552 was killed at 600s by the harness running it; re-running it detached succeeded in the same shape. Timings read from sdlc-studio/.local/gate-timings.json.
 > **Created:** 2026-08-14
 > **Created-by:** sdlc-studio file
@@ -24,12 +25,45 @@ The selection is not the defect - it is correct, and a change to a hub module ge
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The selected gate now costs 590-617s against a declared 380s budget, and the hook itself reports OVER on every commit.
-- [ ] **AC2** The proposed fix lands, pinned by a test: The selection is not the defect - it is correct, and a change to a hub module genuinely reaches most of the suite.
+- [x] **AC1** Given the boundary runner `tools/run-suite.sh`, when it is read, then it sets the boundary marker - the deferred tests must run somewhere, and this is the somewhere.
+  - **Verify:** pytest tools/tests/test_boundary_marker.py -k boundary_runner_sets_the_marker
+  - **Verified:** yes (2026-08-14)
+- [x] **AC2** Given every command in CI that runs the suites, when the workflow is read, then each carries the marker - CI is the independent boundary, and a runner without it drops whatever is deferred in its tree.
+  - **Verify:** pytest tools/tests/test_boundary_marker.py -k ci_sets_the_marker
+  - **Verified:** yes (2026-08-14)
+- [x] **AC3** Given any test deferred to the boundary, when the marker is read, then it carries a stated reason - what a reader of a per-commit run sees in place of the test, and what a reviewer judges the trade against.
+  - **Verify:** pytest tools/tests/test_boundary_marker.py -k every_marked_test_carries_a_reason
+  - **Verified:** yes (2026-08-14)
+- [x] **AC4** Given the set of deferred tests, when it is counted, then it is non-empty and small - an unused marker is a mechanism that looks like coverage, and a growing one is a per-commit gate quietly becoming a subset nobody chose.
+  - **Verify:** pytest tools/tests/test_boundary_marker.py -k marked_set_stays_small_and_named
+  - **Verified:** yes (2026-08-14)
 
 ## Impact
 
 Every commit touching shared surface. The gate is this repository's primary control and its own doctrine says a guard whose cost is paid on every commit gets switched off - this is that sentence coming true, measured. The immediate harm is not a wrong verdict but a MISSING one: a killed run records nothing, so nothing downstream can tell a commit that was never gated from one that passed.
+
+## Resolution
+
+Profiled rather than guessed, and the profile changed the fix. Parallelism was the obvious answer and the wrong one: four tests were **452s of a 934s run**, and the largest was `ReleaseRehearsalLaneTests` at **228s - 24% of the whole suite** - whose own docstring reads *"the rehearsal binds at the push and release boundaries and nowhere else"*.
+
+**The lane was boundary-only and its test was not.** AGENTS.md says the rehearsal is off the per-commit path because the gate is already over its budget there; the test that exercises it was paying that cost on every commit, to measure something no commit can reach. That is this repository's recurring shape - a rule stated in one place and not applied to the thing that exercises it - and it means the repair is the existing boundary rule applied consistently, not a new mechanism.
+
+Two tests are deferred: the rehearsal lane, and this run's own 15-verb `--root` control at 83s. Measured: the skill suite in per-commit shape falls from **934s to 569s, a 39% cut**, and nothing is removed - `run-suite.sh` and every CI command set the marker, so push, release, close and CI all execute them in full.
+
+The blindfold is what gets guarded. `tools/tests/test_boundary_marker.py` asserts that the runner sets the marker, that every CI command does, that each deferral carries a reason, and that the marked set stays small - because a marker nobody honours is an exclusion with better manners, and this repository has twice shipped a lane believing it was enforced when it was not.
+
+Writing that guard produced two false positives of its own, both worth recording: it first refused on a COMMENT mentioning `coverage run`, then on a YAML step NAME mentioning `skill-tests.sh`. A guard that cries wolf on prose is one whose real refusal gets waved through.
+
+**Not fixed here:** the underlying arithmetic. ~5,300 tests still run single-process on a 16-core machine, and the remaining two heavy tests (74s and 67s) are ordinary integration tests with no boundary argument behind them. Parallelism would need `pytest-xdist`, which is a dependency change this repository's pure-stdlib policy puts to the operator.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in tools/run-suite.sh, comment out the boundary export so every deferred test runs nowhere | Given the boundary runner `tools/run-suite.sh`, when it is read, then it sets the boundary marker - the deferred tests must run somewhere, and this is the somewhere. |
+| AC2 | in .github/workflows/lint.yml, drop the marker from a CI runner | Given every command in CI that runs the suites, when the workflow is read, then each carries the marker - CI is the independent boundary, and a runner without it drops whatever is deferred in its tree. |
+| AC3 | in tests/boundary.py, remove the reason floor so an unexplained deferral is accepted | Given any test deferred to the boundary, when the marker is read, then it carries a stated reason - what a reader of a per-commit run sees in place of the test, and what a reviewer judges the trade against. |
+| AC4 | in tests/test_gate.py, remove every boundary marker so the mechanism guards nothing | Given the set of deferred tests, when it is counted, then it is non-empty and small - an unused marker is a mechanism that looks like coverage, and a growing one is a per-commit gate quietly becoming a subset nobody chose. |
 
 ## Revision History
 

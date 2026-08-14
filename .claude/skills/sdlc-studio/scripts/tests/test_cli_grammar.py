@@ -29,6 +29,8 @@ DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(DIR))
 sys.path.insert(0, str(DIR / "lib"))
 import surface  # noqa: E402 - the shared enumerator this module used to duplicate
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from boundary import boundary_only  # noqa: E402 - the per-commit / boundary split
 
 
 def _load(name: str, rel: str):
@@ -413,6 +415,10 @@ class RootIsReadNotJustParsed(unittest.TestCase):
                         "meaningful as the MEASURED discriminating subset, and a verb that "
                         "prints nothing either way passes this sweep forever")
 
+    @boundary_only("it runs all 15 listed verbs against the REAL tree at 83s. The guard it "
+                   "controls - the fixture sweep - still runs on every commit; what defers is "
+                   "the proof that each row CAN fail, which changes only when the inventory "
+                   "does, and an inventory edit reaches push before it reaches anyone else")
     def test_every_listed_verb_can_actually_fail_the_guard(self) -> None:
         """The control, and the reason the inventory above is a fixed list rather than a sweep of
         everything. Pointed at the REAL tree the same verbs must each name a real artefact - so a

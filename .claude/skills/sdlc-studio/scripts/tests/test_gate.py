@@ -45,6 +45,8 @@ def _fake(count: int, blocking: bool = True):
 import pathlib
 import unittest
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from boundary import boundary_only  # noqa: E402 - the per-commit / boundary split
 
 class GateLogicTests(unittest.TestCase):
     def test_all_pass(self) -> None:
@@ -6005,6 +6007,10 @@ class DocSurfaceApplicabilityTests(unittest.TestCase):
         return __import__(name)
 
 
+@boundary_only("it DRIVES the rehearsal - a greenfield init and a v4 upgrade, end to end - to "
+               "check a lane whose own rule is that it binds at the push and release boundaries "
+               "and nowhere else. At 228s it was 24% of the whole suite, paid on every commit, "
+               "to measure something no commit can reach")
 class ReleaseRehearsalLaneTests(unittest.TestCase):
     """US0666: the rehearsal binds at the push and release boundaries and nowhere else."""
 

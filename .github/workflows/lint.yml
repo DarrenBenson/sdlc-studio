@@ -59,8 +59,8 @@ jobs:
 
       - name: Run script unit tests (tools/skill-tests.sh adds the green-run noise gate)
         run: |
-          bash tools/skill-tests.sh
-          python3 -m unittest discover -s tools/tests
+          SDLC_STUDIO_BOUNDARY_SUITE=1 bash tools/skill-tests.sh
+          SDLC_STUDIO_BOUNDARY_SUITE=1 python3 -m unittest discover -s tools/tests
 
       - name: Portable artefact gate (same gate the pre-commit hook runs)
         run: |
@@ -74,7 +74,8 @@ jobs:
           # skip) without it, which makes `coverage run` exit non-zero and fails this step before
           # the threshold is ever checked. Coverage itself is healthy (~82%). See US0047.
           python -m pip install --quiet coverage pyyaml
-          coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
+          SDLC_STUDIO_BOUNDARY_SUITE=1 \
+            coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
           coverage report --omit='*/tests/*' --fail-under=80
 
       - name: Python security scan (bandit)
