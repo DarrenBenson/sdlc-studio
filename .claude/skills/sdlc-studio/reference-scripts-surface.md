@@ -141,6 +141,7 @@ flags it takes, run the script's own help, or `docgen.py surface --format json`.
 | `mutation.py run` |
 | `mutation.py register` |
 | `mutation.py retract` |
+| `mutation.py retractions` |
 | `mutation.py yield` |
 | `mutation.py window` |
 | `mutation.py window open` |

@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 13 |
 | In Progress | 0 |
-| Fixed | 473 |
+| Fixed | 474 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 7 |
 | Superseded | 2 |
-| **Total** | **578** |
+| **Total** | **579** |
 
 ## All Bugs
 
@@ -84,7 +84,7 @@
 | [BG0542](BG0542-sprint-plan-under-affects-check-block-prints-refused.md) | sprint plan under affects_check: block prints REFUSED, exits 0, and writes the unit into the batch - worse than the honest advisory it replaced | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0543](BG0543-the-warning-ratchet-still-exits-0-on-a.md) | the warning ratchet still exits 0 on a stale baseline, and its replacement headline contradicts the line below it | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0544](BG0544-ck-closing-review-reports-ran-for-a-unit.md) | _ck_closing_review reports `ran` for a unit the shared coverage reading calls uncovered, when its latest sprint-level verdict is APPROVE | Fixed | Medium | 2026-08-07 | 2026-08-07 |
-| [BG0545](BG0545-testplan-derive-and-the-bug-criteria-floor-each.md) | testplan derive and the bug criteria floor each mis-slice a checkbox-shaped Acceptance Criteria section, so one refuses a sound plan and the other reports Verify lines that are there as absent | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0545](BG0545-testplan-derive-and-the-bug-criteria-floor-each.md) | testplan derive and the bug criteria floor each mis-slice a checkbox-shaped Acceptance Criteria section, so one refuses a sound plan and the other reports Verify lines that are there as absent | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0546](BG0546-critic-py-record-refuses-a-plan-review-finding.md) | critic.py record refuses a plan-review finding for carrying no diff origin, when a plan review has no diff to attribute one to | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0547](BG0547-gate-warn-in-pre-write-gates-is-assigned.md) | one advisory silently replaces another: the transition gate ladder assigns its warning variable where its own docstring says the warnings accumulate | Won't Fix | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0548](BG0548-the-acceptance-criteria-parser-silently-drops-a-criterion.md) | the acceptance-criteria parser silently drops a criterion whose heading is not AC<digits>, so a whole criterion and its Verify line vanish without a word | Fixed | Medium | 2026-08-07 | 2026-08-07 |
@@ -118,6 +118,7 @@
 | [BG0576](BG0576-ci-on-main-has-been-red-since-before.md) | CI on main has been red since before v5.0.0 and both v5 tags were cut over it, because tag-check reads a locally recorded green and never asks the remote | Fixed | High | 2026-08-13 | 2026-08-13 |
 | [BG0577](BG0577-a-fix-that-lands-without-closing-its-bug.md) | A fix that lands without closing its bug leaves a backlog item that reads real and is not, and nothing detects it - 12% of the open bug backlog was fiction | Open | High | 2026-08-13 | 2026-08-13 |
 | [BG0578](BG0578-test-file-attribution-is-decided-by-name-frequency.md) | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner | Open | Medium | 2026-08-14 | 2026-08-14 |
+| [BG0579](BG0579-the-per-commit-gate-has-outgrown-the-tool.md) | the per-commit gate has outgrown the tool timeouts that run it, so a commit is KILLED rather than refused - and a kill reads as a hang, which invites --no-verify | Open | High | 2026-08-14 | 2026-08-14 |
 
 ## Archived Releases
 

@@ -90,15 +90,76 @@ CI_OK_CONCLUSIONS = frozenset({"success", "skipped", "neutral"})
 GH_TIMEOUT = 120
 
 
-def _has_forge_remote(root: Path | str) -> bool:
-    """Whether this clone has any git remote at all - the one honest reason there is no forge
-    answer to ask for."""
+#: What `gh` says when it can reach neither github.com nor a configured Enterprise host for this
+#: clone's remotes. It is the authority on what it can address - a URL test of our own would have
+#: to enumerate every Enterprise domain, and would call a reachable GHE remote unsupported.
+_GH_NOT_GITHUB = "known github host"
+
+#: git's own words for "there is no repository here", which is a DEFINITE answer about
+#: whether a forge exists - unlike every other way git can fail, which leaves it open.
+_GIT_NOT_A_REPO = "not a git repository"
+
+
+def _git_dir_exists(root: Path | str) -> bool:
+    """Whether a `.git` sits at `root` or above it, checked WITHOUT asking git.
+
+    The corroborating half of the "not a git repository" reading. git prints those words both
+    for a directory that genuinely holds no repository and for a repository it cannot read, and
+    only the first may pass a tag - so the message is believed only when the filesystem agrees
+    with it. Deliberately does not shell out: the thing being corroborated is git's own answer.
+    """
+    try:
+        here = Path(root).resolve()
+    except OSError:
+        return False
+    for d in [here, *here.parents]:
+        try:
+            if (d / ".git").exists():
+                return True
+        except OSError:
+            return True          # cannot tell: assume a repository, so the caller refuses
+    return False
+
+
+def _forge_remote(root: Path | str) -> tuple[str, str]:
+    """`(state, detail)` where state is `has`, `none` or `unknown`.
+
+    THREE states, not two, and the third is the one that matters. This returned a bare bool, and
+    every way `git remote` can fail - a non-zero exit, git absent from PATH, a dubious-ownership
+    refusal, a timeout - collapsed into `False`, which the caller read as "no forge to ask" and
+    the tag guard read as a PASS. That is the exact defect this whole unit exists to remove,
+    re-created inside its own fix: a question that could not be asked, answered in the
+    reassuring direction. An independent review found it by running the guard in a clone git
+    refused to read for dubious ownership - the commonest git failure in a container - where it
+    reported "no git remote is configured" about a clone that has one.
+
+    "There is no remote" and "I could not find out" are different facts and only the first may
+    pass a tag."""
     try:
         proc = subprocess.run(["git", "remote"], capture_output=True, text=True,
                               cwd=str(root), timeout=30)
-    except (OSError, subprocess.SubprocessError):
-        return False
-    return proc.returncode == 0 and bool(proc.stdout.strip())
+    except (OSError, subprocess.SubprocessError) as exc:
+        return "unknown", (f"git could not be run to list this clone's remotes ({exc!r}), so "
+                           f"whether there is a forge to ask is UNKNOWN")
+    if proc.returncode != 0:
+        stderr = (proc.stderr or "").strip()
+        if _GIT_NOT_A_REPO in stderr.lower() and not _git_dir_exists(root):
+            # "not a git repository" is a definite answer ONLY when there is no `.git` to be
+            # found. git prints the same words for a repository it cannot READ - `chmod 000
+            # .git` produces it verbatim - so trusting the message alone re-opened the finding
+            # this function was rewritten to close, one branch along. The corroborating check
+            # is what makes it an answer rather than a guess.
+            return "none", ""
+        if _GIT_NOT_A_REPO in stderr.lower():
+            return "unknown", (f"a `.git` exists here but git will not read it ({stderr}), so "
+                               f"whether there is a forge to ask is UNKNOWN - an unreadable "
+                               f"repository is not a repository without a remote")
+        return "unknown", (f"git refused to list this clone's remotes: "
+                           f"{stderr or f'exit {proc.returncode}'} - so whether there is a forge "
+                           f"to ask is UNKNOWN, and an unanswered question may not pass a tag")
+    if not proc.stdout.strip():
+        return "none", ""
+    return "has", ""
 
 
 def _full_sha(root: Path | str, commit: str) -> str:
@@ -108,7 +169,13 @@ def _full_sha(root: Path | str, commit: str) -> str:
     trains the tag, so resolve first and only then ask. An unresolvable ref is passed through
     unchanged: that is the forge's question to answer, not this helper's."""
     try:
-        proc = subprocess.run(["git", "rev-parse", f"{commit}^{{commit}}"],
+        # `--end-of-options` stops a flag-shaped ref being read as a flag, and `--verify`
+        # requires exactly one revision. Without them `git rev-parse` echoes an argument-shaped
+        # value back with rc 0, so the "resolve to a full sha" contract was unenforced -
+        # `--output=/tmp/x` came back unchanged. It failed safe only because the bogus token
+        # then reached `gh` as a flag and errored into `unknown`, which is safety by accident.
+        proc = subprocess.run(
+            ["git", "rev-parse", "--verify", "--end-of-options", f"{commit}^{{commit}}"],
                               capture_output=True, text=True, cwd=str(root), timeout=30)
     except (OSError, subprocess.SubprocessError):
         return commit
@@ -119,8 +186,8 @@ def _full_sha(root: Path | str, commit: str) -> str:
 def forge_ci_state(root: Path | str, commit: str) -> tuple[str, str]:
     """`(state, detail)` - what the FORGE says about CI on `commit`, never what a local file says.
 
-    States: `success`, `failed`, `pending`, `none`, `no-forge`, `unknown`. Only `success` and
-    `no-forge` may pass a tag.
+    States: `success`, `failed`, `pending`, `none`, `no-forge`, `unsupported`, `unknown`. Only
+    `success`, `no-forge` and `unsupported` may pass a tag.
 
     The distinctions are the whole point, because collapsing any two of them is how both v5 tags
     were cut over a red CI:
@@ -134,11 +201,27 @@ def forge_ci_state(root: Path | str, commit: str) -> tuple[str, str]:
       "I could not look" must never be reported as "there is nothing wrong"; that is exactly the
       rule `release_assets.published` states for the same question about the same forge.
     * `no-forge` - there is no remote, so there is no CI to ask about and the rule was never
-      adopted in this clone. The single honest pass, and distinguished from `unknown` precisely
-      so that a missing `gh` cannot borrow it.
+      adopted in this clone. Distinguished from `unknown` precisely so that a missing `gh`
+      cannot borrow it - and, since an independent review, so that a missing or refusing GIT
+      cannot borrow it either, which is how this function first shipped.
+    * `unsupported` - there IS a forge and `gh` cannot address it: GitLab, Bitbucket, a
+      self-hosted git. Not the same as a forge that would not answer. This script is shipped,
+      and the gate documentation states that nothing in it is GitHub-specific, so refusing here
+      would have a bug fix invent a hard GitHub requirement the tool never had. It passes for
+      the same reason `no-forge` does - the rule was never adopted for that forge - and says so
+      rather than implying an answer was obtained.
     """
     commit = (commit or "").strip()
-    if not _has_forge_remote(root):
+    if not commit:
+        # `gh run list --commit ""` IGNORES the filter and returns whatever ran most recently,
+        # so an empty commit would report success on another tree's evidence. Unreachable
+        # through `tag_check`, which compares the stamp first - but this is a public function
+        # and a guard that is safe only because of its caller is safe by luck.
+        return "unknown", "no commit was named, so there is nothing to ask the forge about"
+    remote_state, remote_detail = _forge_remote(root)
+    if remote_state == "unknown":
+        return "unknown", remote_detail
+    if remote_state == "none":
         return "no-forge", ("no git remote is configured, so there is no forge CI to ask about - "
                             "the tag is judged on the local gate alone")
     if shutil.which("gh") is None:
@@ -153,8 +236,20 @@ def forge_ci_state(root: Path | str, commit: str) -> tuple[str, str]:
     except (OSError, subprocess.SubprocessError) as exc:
         return "unknown", f"the forge could not be asked about {commit} ({exc!r})"
     if proc.returncode != 0:
+        stderr = (proc.stderr or "").strip()
+        if _GH_NOT_GITHUB in stderr.lower():
+            # A forge this code does not know HOW to ask, which is not the same as a forge that
+            # would not answer. `release_cut.py` is SHIPPED, and consuming projects run on
+            # GitLab, Bitbucket and self-hosted git; refusing them would make a bug fix invent a
+            # hard GitHub requirement the tool never had, and the shipped gate documentation
+            # states in terms that nothing here is GitHub-specific. So this passes for the same
+            # reason a remoteless clone does: the rule was never adopted for that forge, and
+            # saying so out loud is different from pretending an answer was obtained.
+            return "unsupported", (f"this clone's remotes are not on a forge `gh` can query, so "
+                                   f"its CI cannot be read from here - the tag is judged on the "
+                                   f"local gate alone ({stderr})")
         return "unknown", (f"gh could not report CI for {commit}: "
-                           f"{(proc.stderr or '').strip() or f'exit {proc.returncode}'}")
+                           f"{stderr or f'exit {proc.returncode}'}")
     try:
         runs = json.loads(proc.stdout or "[]")
     except ValueError:
@@ -210,11 +305,14 @@ def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
     # disagreed, and nothing in the release chain ever asked it. Whether CI passed on the pushed
     # commit is a claim about the remote, and only the remote can answer it.
     state, detail = forge_ci_state(root, commit)
-    if state not in ("success", "no-forge"):
+    if state not in ("success", "no-forge", "unsupported"):
         return False, (f"refusing the tag: {detail}. A tag asserts that this tree passed, and "
                        f"the only place that can be answered for a pushed commit is the forge - "
                        f"a local green says nothing about the runner")
-    forge_note = "no forge to ask" if state == "no-forge" else "CI green on the forge"
+    forge_note = {"no-forge": "no forge to ask",
+                  "unsupported": "this clone's forge cannot be queried from here, so its CI was "
+                                 "NOT consulted",
+                  "success": "CI green on the forge"}[state]
     return True, (f"gate green on {commit} matches the tagged commit, no close is owed, "
                   f"and {forge_note}")
 

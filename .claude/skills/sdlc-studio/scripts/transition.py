@@ -2039,10 +2039,21 @@ def mutation_evidence_lane(root, unit: str, text: str, type_: str) -> dict:
         out["blocks"].append(str(exc))
         return out
 
-    # The contradiction check runs FIRST and ignores the mode entirely - see the docstring.
-    contradiction = _ledger_contradiction(root, uid)
-    if contradiction:
-        out["blocks"].append(contradiction)
+    # The SAME-PROVENANCE contradiction runs FIRST and ignores the mode entirely - see the
+    # docstring. The cross-provenance one does not, and that asymmetry is the point: its join is
+    # the fault CLASS, which is coarser than a mutant, so it can be wrong about two honest
+    # statements. A check that can be wrong must be one a project can stand down; a check that
+    # cannot be wrong need not be. An independent review built the false positive - two different
+    # `invert-guard` edits at one line, one measured and one hand-registered - and the refusal
+    # told the author to withdraw TRUE evidence, in a mode no config could reach.
+    hard, soft = _ledger_contradiction(root, uid)
+    if hard:
+        out["blocks"].append(hard)
+    if soft:
+        if mode == "block":
+            out["blocks"].append(soft)
+        else:
+            out.setdefault("warnings", []).append(soft)
     if mode == "off":
         # STOOD DOWN, as the doctrine says, rather than run and discarded. Everything below
         # shells out to git and runs the mutant generator; doing that work only to throw the
@@ -2105,9 +2116,13 @@ def _mutant_identity(mu: dict) -> str:
     return " ".join(str(mu.get("mutant") or "").lower().split())
 
 
-def _ledger_contradiction(root, uid: str) -> str | None:
-    """ONE instrument recording one mutant twice, at the same target, line and content hash,
-    with opposite verdicts.
+def _ledger_contradiction(root, uid: str) -> "tuple[str | None, str | None]":
+    """`(hard, soft)` - two findings with different standing, because they have different odds
+    of being wrong.
+
+    `hard` is ONE instrument recording one mutant twice, at the same target, line and content
+    hash, with opposite verdicts. `soft` is the two instruments disagreeing about one fault
+    class at one line.
 
     Not a quality bar - the instrument reporting two different things about one fact. It refuses
     under `off` as well, which no other row here does, because `off` is a decision about whether
@@ -2135,8 +2150,14 @@ def _ledger_contradiction(root, uid: str) -> str | None:
         # `off` included - silently pass exactly when the ledger could not be read.
         return (f"{uid}: the mutation ledger could not be read to check it against itself "
                 f"({type(exc).__name__}: {exc}) - an instrument nobody can read is not one "
-                f"that has been shown honest")
+                f"that has been shown honest"), None
+    soft: str | None = None
     seen: dict = {}
+    #: (target, hash, line, class) -> {provenance: verdict}. A DICT per key, not the first row
+    #: seen: it was first-wins, so once a same-provenance row occupied a key, a later row of the
+    #: other provenance was compared against that first verdict and the cross-provenance case it
+    #: exists for went undetected. Register `killed`, then `survived`, then measure `killed`, and
+    #: the ledger holds exactly the disagreement this check is for while reporting none.
     seen_class: dict = {}
     for e in entries:
         if not isinstance(e, dict):
@@ -2169,7 +2190,7 @@ def _ledger_contradiction(root, uid: str) -> str | None:
                         f"{prov}, under the same content hash. This "
                         f"refuses in every mode, `off` included: the instrument is reporting "
                         f"two different things about one fact, and every figure derived from "
-                        f"the false one is wrong with nothing downstream able to tell")
+                        f"the false one is wrong with nothing downstream able to tell"), None
             seen[key] = (verdict, prov)
             # THE CROSS-PROVENANCE JOIN, and the more valuable half: it is where a hand-typed
             # claim is caught disagreeing with a MEASUREMENT, which is the asymmetry the whole
@@ -2187,18 +2208,26 @@ def _ledger_contradiction(root, uid: str) -> str | None:
             if not cls:
                 continue
             ckey = (*key_base, line, cls)
-            cprior = seen_class.get(ckey)
-            if cprior and cprior[0] != verdict and cprior[1] != prov:
-                return (f"{uid}: the mutation ledger CONTRADICTS itself at "
-                        f"{e.get('target')}:{line} ACROSS instruments - the {cprior[1]} record "
-                        f"says {cprior[0]!r} and the {prov} record says {verdict!r} for the same "
-                        f"`{cls}` mutant, under the same content hash. A hand-typed claim "
-                        f"disagreeing with a measurement is the one the evidence rule turns on, "
-                        f"so this refuses in every mode, `off` included: re-measure it, or "
-                        f"withdraw the claim with `mutation.py retract`")
-            if cprior is None:
-                seen_class[ckey] = (verdict, prov)
-    return None
+            by_prov = seen_class.setdefault(ckey, {})
+            # A SET per provenance, not one verdict. Keeping the first still hid the case this
+            # exists for: register `killed`, register a different `survived`, then measure
+            # `killed`, and the registered slot held only `killed`, which AGREES with the
+            # measurement - so the `survived` sitting beside it was never compared to anything.
+            other = {p: sorted(vs - {verdict}) for p, vs in by_prov.items()
+                     if p != prov and (vs - {verdict})}
+            if other and soft is None:
+                p_other, v_other = sorted((p, vs[0]) for p, vs in other.items())[0]
+                soft = (f"{uid}: the mutation ledger DISAGREES ACROSS instruments at "
+                        f"{e.get('target')}:{line} - the {p_other} record says {v_other!r} and "
+                        f"the {prov} record says {verdict!r} for the same `{cls}` mutant, under "
+                        f"the same content hash. A hand-typed claim disagreeing with a "
+                        f"measurement is the asymmetry the evidence rule turns on, so it is worth "
+                        f"reading - but the join is the fault CLASS, which is coarser than a "
+                        f"mutant, so two genuinely different edits of one class at one line look "
+                        f"identical to it. Re-measure it, or withdraw the claim with "
+                        f"`mutation.py retract`. Reported under `report`, refused under `block`")
+            by_prov.setdefault(prov, set()).add(verdict)
+    return None, soft
 
 
 def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None) -> str | None:

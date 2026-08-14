@@ -4030,6 +4030,59 @@ class TestPlanDeriveTests(unittest.TestCase):
 
     # --- AC2 -------------------------------------------------------------------------------
 
+    def test_the_last_criterion_does_not_read_the_plan_that_follows_it(self) -> None:
+        """BG0545. The last criterion's `Then` range ran to the END OF THE FILE, so it swallowed
+        everything after the criteria section - including the `## Test Plan` table, which holds
+        every mutant's own text. The final row's mutant was then measured for overlap against a
+        passage CONTAINING that mutant, scored 100%, and was refused as a restatement of itself.
+
+        Deterministic, and invisible to every fixture here: it struck only the LAST row, and only
+        once a plan already existed, so the first derive of a unit passed and every re-derive of
+        it failed. No fixture in this class had a plan when it derived. Measured on four real
+        units - BG0553 AC7, BG0556 AC3, BG0576 AC5, BG0555 AC3 - all at exactly 100%.
+
+        MUTANT: bound the last criterion at `len(lines)` again.
+        """
+        body = ("## Acceptance Criteria\n\n"
+                "- [x] **AC1** Given a plan exists, when it is re-derived, then the row is kept.\n"
+                "  - **Verify:** manual a human checks it\n\n"
+                "## Test Plan\n\n"
+                "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                "| AC1 | in verify_ac.py, delete the len(rows) == len(criteria) equality |  |\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, body)
+            res = self._derive(root, write=False)
+            self.assertTrue(
+                res["ok"],
+                f"re-deriving a unit that already has a plan was refused: {res.get('errors')}")
+            self.assertFalse([e for e in res.get("errors") or [] if "restates" in e],
+                             "the last row was measured against the plan table containing it")
+
+    def test_a_mutant_with_no_substance_is_not_called_a_restatement(self) -> None:
+        """BG0545, second half. `_overlap_ratio` returned 1.0 over an EMPTY set, so a mutant made
+        only of path tokens was refused for `restating its own criterion` against a `Then` clause
+        it shares not one word with. The refusal was right and its reason was false - which is
+        worse than a wrong verdict, because an author fixing the named restatement is fixing
+        something that is not there. The true fault has its own limb and must be the one reported.
+
+        MUTANT: return 1.0 for the empty set again.
+        """
+        affects = ["scripts/verify_ac.py"]
+        faults = verify_ac.testplan_row_faults("verify_ac.py", self.THEN, affects)
+        self.assertTrue(faults, "a mutant naming only a path was accepted")
+        self.assertFalse([f for f in faults if "restates" in f],
+                         f"refused as a restatement of a clause it shares nothing with: {faults}")
+        self.assertTrue(any("edit verb" in f for f in faults),
+                        f"the true fault was not the one reported: {faults}")
+        self.assertEqual(0.0, verify_ac._overlap_ratio("verify_ac.py", self.THEN, affects))
+        # ...and a real restatement is still caught, so this did not buy headroom.
+        restatement = ("in verify_ac.py, make it so the plan does not have exactly one row "
+                       "per criterion")
+        self.assertTrue(
+            [f for f in verify_ac.testplan_row_faults(restatement, self.THEN, affects)
+             if "restates" in f], "the restatement limb stopped firing")
+
     def test_a_restated_criterion_is_not_a_mutant(self) -> None:
         """THE DISCRIMINATING PAIR, taken from the criterion rather than invented here. Both name
         `verify_ac.py` and both carry an edit verb, so they differ in ONE property and the

@@ -2601,8 +2601,12 @@ def plan_execution(root: Path | str, unit: str) -> dict:
                      "test": (hit or {}).get("test")})
     outstanding = [r for r in rows
                    if r["verdict"] in (NOT_RUN, "survived")]
+    # Surfaced, not merely skipped. A withdrawn verdict changes what this join reports, so the
+    # join has to say that it was withdrawn - otherwise the correction is invisible exactly where
+    # its effect is felt.
+    withdrawn = retractions(root, uid)
     return {"ok": not outstanding and bool(rows), "unit": uid, "rows": rows,
-            "outstanding": outstanding, "planned": len(rows),
+            "outstanding": outstanding, "planned": len(rows), "retracted": withdrawn,
             "errors": ([] if rows else
                        [f"{uid}: no `## Test Plan` rows - derive one first: "
                         f"`verify_ac.py testplan derive --unit {uid}`"])}
@@ -2619,6 +2623,9 @@ def cmd_from_plan(args: argparse.Namespace) -> int:
         print(f"  {r['ac']}: {r['verdict']}"
               + (f" [{r.get('target')}]" if r.get("target") else "")
               + f" - {r['mutant'][:90]}")
+    for r in res.get("retracted") or []:
+        print(f"  RETRACTED {r['criterion'] or '?'} on {r['target']}:{r['line']} - a "
+              f"{r['verdict']!r} verdict was withdrawn: {r['reason']}", file=sys.stderr)
     if res["ok"]:
         print(f"from-plan: {res['planned']} planned mutant(s), every one executed and killed")
         return 0
@@ -2729,6 +2736,55 @@ def retract_mutant(root: Path | str, target, unit: str, criterion: str, line: in
     written = _store_ledger(lpath, state, entries, reset)
     return {**written, "target": rel, "retracted": len(hits),
             "verdict": hits[0][1].get("withdrawn", {}).get("verdict"), "reason": reason}
+
+
+def retractions(root: Path | str, unit: str | None = None) -> list:
+    """Every WITHDRAWN verdict, newest first - the reader that makes a retraction visible.
+
+    `retract` marked rows withdrawn and nothing ever read the field back. Both existing readers
+    skip withdrawn rows with a bare `continue`, no verb printed the ledger, nothing consumed the
+    `retracted` tally, and the ledger itself lives in gitignored `.local/`. So after a retraction
+    the observable state was indistinguishable from the row never having been registered - which
+    is precisely the objection that got the SUPERSEDE design rejected. An independent review made
+    the point by grepping: two readers, both `continue`.
+
+    Three shipped sentences claimed otherwise, so this exists to make them true rather than to be
+    deleted along with them. The correction has to reach the person the cost was imposed on.
+    """
+    uid = sdlc_md.norm_id(unit) if unit else None
+    out = []
+    for e in ledger_entries(root):
+        if not isinstance(e, dict):
+            continue
+        for mu in (e.get("mutants") or []):
+            if not isinstance(mu, dict) or not mu.get("withdrawn"):
+                continue
+            if uid and mu.get("unit") != uid:
+                continue
+            w = mu["withdrawn"]
+            out.append({"unit": mu.get("unit"), "criterion": mu.get("criterion"),
+                        "target": e.get("target"), "line": mu.get("line"),
+                        "mutant": mu.get("mutant"), "verdict": w.get("verdict"),
+                        "reason": w.get("reason"), "at": w.get("at"),
+                        "provenance": entry_provenance(e)})
+    return sorted(out, key=lambda r: str(r.get("at") or ""), reverse=True)
+
+
+def cmd_retractions(args: argparse.Namespace) -> int:
+    rows = retractions(args.root, getattr(args, "unit", None))
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(rows, indent=2))
+        return 0
+    if not rows:
+        print("no withdrawn verdicts recorded")
+        return 0
+    print(f"{len(rows)} withdrawn verdict(s) - each was recorded, then retracted with a reason:")
+    for r in rows:
+        print(f"  {r['unit'] or '?'} {r['criterion'] or '?'} {r['target']}:{r['line']} "
+              f"withdrew {r['verdict']!r} ({r['at']})")
+        print(f"      mutant: {str(r['mutant'])[:100]}")
+        print(f"      reason: {r['reason']}")
+    return 0
 
 
 def cmd_retract(args: argparse.Namespace) -> int:
@@ -2971,6 +3027,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "is the escape hatch the worst-verdict rule exists to close")
     rt.add_argument("--root", default=".")
     rt.set_defaults(func=cmd_retract)
+    rs = sub.add_parser("retractions",
+                        help="Every WITHDRAWN verdict, with the reason given for each.")
+    rs.add_argument("--unit", help="only this unit's withdrawn verdicts")
+    rs.add_argument("--format", choices=("text", "json"), default="text")
+    rs.add_argument("--root", default=".")
+    rs.set_defaults(func=cmd_retractions)
     y = sub.add_parser("yield", help="What one run COST and what was FILED from it.")
     y.add_argument("--run", required=True, metavar="MRUNxxx")
     y.add_argument("--root", default=".")

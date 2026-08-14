@@ -32,6 +32,18 @@ The test failures themselves are a second, smaller defect. `_runner_candidates` 
 - [x] **AC5** Given an abbreviated commit sha, when the forge is asked about it, then it is resolved to the full sha first - `gh` matches only on the full sha and answers nothing for a short one, which AC2 would otherwise read as a refusal on a green tree.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py -k abbreviated_sha_is_resolved
   - **Verified:** yes (2026-08-14)
+- [x] **AC6** Given a git that cannot answer - absent from PATH, refusing the repository, timing out - when the forge state is read, then it is `unknown` and the tag is refused; a question that could not be asked is not an answer in the reassuring direction.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py -k git_that_cannot_answer
+  - **Verified:** yes (2026-08-14)
+- [x] **AC7** Given a repository git will not READ, which reports `not a git repository` verbatim, when the forge state is read, then it is `unknown` - the message is believed only when the filesystem agrees there is no `.git`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py -k unreadable_repository
+  - **Verified:** yes (2026-08-14)
+- [x] **AC8** Given a forge `gh` cannot address - GitLab, Bitbucket, self-hosted - when a tag is checked, then it is ALLOWED and the reason says CI was not consulted; a bug fix may not invent a hard GitHub requirement this shipped tool never had.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py -k forge_gh_cannot_query
+  - **Verified:** yes (2026-08-14)
+- [x] **AC9** Given an empty commit or a flag-shaped ref, when the forge is asked, then the empty commit is refused and the flag-shaped ref is passed through unresolved rather than executed as an option.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py -k "empty_commit_is_never_asked or flag_shaped_ref"
+  - **Verified:** yes (2026-08-14)
 
 ## Steps to Reproduce
 
@@ -66,6 +78,16 @@ A release can be cut over a red CI with every shipped guard reporting green, whi
 | AC3 | in release_cut.py `forge_ci_state`, let a missing gh borrow the no-forge pass | Given a forge that cannot be asked (no `gh`, an unauthenticated or failing `gh`, or |
 | AC4 | in release_cut.py `forge_ci_state`, report a remoteless clone as unknown so the guard refuses everything | Given a clone with no git remote, when `tag-check` runs on a locally green commit, |
 | AC5 | in release_cut.py `forge_ci_state`, ask the forge about the unresolved (abbreviated) sha | Given an abbreviated commit sha, when the forge is asked about it, then it is |
+
+## Round two
+
+An independent review REJECTED the first repair and was right twice.
+
+**The fix re-created the defect it removes.** `_has_forge_remote` returned a bare bool, so every way git can fail - absent, refusing the repository for dubious ownership, timing out - collapsed into `False`, read as "no forge to ask", and PASSED the tag. A question that could not be asked, answered in the reassuring direction: the exact shape of the original bug. No test could fail on it, because the fixture scripted only success-with-empty-output. The probe is now tri-state.
+
+The first repair of that was itself insufficient, which is worth recording: git prints `not a git repository` VERBATIM for a repository it cannot read - `chmod 000 .git` produces it - so believing the message re-opened the hole one branch along. It is now believed only when the filesystem agrees there is no `.git`.
+
+**The fix made every non-GitHub consumer permanently un-taggable.** `release_cut.py` is SHIPPED, and a GitLab-hosted project could not tag at all, with no config, flag or env override - while the shipped gate documentation states that nothing in it is GitHub-specific and carries a GitLab CI section. A forge this code does not know HOW to ask is not a forge that would not answer, so `unsupported` is now its own state: it passes, for the same reason a remoteless clone does, and the tag says out loud that CI was not consulted.
 
 ## Revision History
 

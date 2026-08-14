@@ -348,6 +348,110 @@ class ForgeCiTests(unittest.TestCase):
         mod.forge_ci_state(Path("."), "f" * 8)
         self.assertEqual(["f" * 40], seen, "the forge was asked about an abbreviated sha")
 
+    def test_a_git_that_cannot_answer_does_not_borrow_the_no_forge_pass(self) -> None:
+        """BG0576 round 2, and the finding an independent review had to make because no test
+        here could. `_has_forge_remote` returned a bare bool, so EVERY way git can fail - absent
+        from PATH, a dubious-ownership refusal, a timeout, an unreadable `.git` - collapsed into
+        `False`, which read as "no forge to ask" and PASSED the tag. That is the exact defect
+        this unit exists to remove, re-created inside its own fix: a question that could not be
+        asked, answered in the reassuring direction. The old test scripted only success-with-
+        empty-output, so the failure path was untested in both directions.
+
+        MUTANT: return `no-forge` for any git failure.
+        """
+        mod = self.mod
+
+        class _P:
+            def __init__(self, rc, out, err):
+                self.returncode, self.stdout, self.stderr = rc, out, err
+
+        for label, outcome in (
+                ("git refuses for dubious ownership",
+                 _P(128, "", "fatal: detected dubious ownership in repository")),
+                ("git exits non-zero with no message", _P(128, "", "")),
+                ("git is absent", OSError("No such file or directory: 'git'")),
+                ("git times out", mod.subprocess.SubprocessError("timed out")),
+        ):
+            with self.subTest(label):
+                def fake_run(cmd, *a, _o=outcome, **k):
+                    if isinstance(_o, Exception):
+                        raise _o
+                    return _o
+                self.addCleanup(setattr, mod, "subprocess", mod.subprocess)
+                mod.subprocess = type("S", (), {
+                    "run": staticmethod(fake_run),
+                    "SubprocessError": mod.subprocess.SubprocessError})
+                state, _ = mod.forge_ci_state(Path("."), "deadbee")
+                self.assertEqual("unknown", state,
+                                 f"{label}: an unanswered question passed the tag")
+
+    def test_an_unreadable_repository_is_not_a_repository_without_a_remote(self) -> None:
+        """The sharp edge of the same finding, and the reason the first repair was not enough:
+        git prints `not a git repository` VERBATIM for a repository it cannot read. `chmod 000
+        .git` produces it. Believing the message alone re-opened the defect one branch along, so
+        it is now believed only when the filesystem agrees there is no `.git`.
+
+        MUTANT: drop the `_git_dir_exists` corroboration.
+        """
+        d = Path(tempfile.mkdtemp(prefix="unreadable_"))
+        self.addCleanup(lambda: __import__("shutil").rmtree(d, ignore_errors=True))
+        (d / ".git").mkdir()
+        (d / ".git" / "config").write_text("[remote \"origin\"]\n", encoding="utf-8")
+        (d / ".git").chmod(0o000)
+        self.addCleanup(lambda: (d / ".git").chmod(0o755))
+        state, detail = self.mod.forge_ci_state(d, "deadbee")
+        self.assertEqual("unknown", state,
+                         f"an unreadable repository passed as having no forge: {detail}")
+        # The positive control: a directory that genuinely holds no repository still passes.
+        plain = Path(tempfile.mkdtemp(prefix="norepo_"))
+        self.addCleanup(lambda: __import__("shutil").rmtree(plain, ignore_errors=True))
+        self.assertEqual("no-forge", self.mod.forge_ci_state(plain, "deadbee")[0])
+
+    def test_a_forge_gh_cannot_query_is_not_refused(self) -> None:
+        """BG0576 round 2, second blocking finding. `release_cut.py` is SHIPPED, and the fix made
+        every non-GitHub consumer permanently un-taggable with no override - while the shipped
+        gate documentation states that nothing in it is GitHub-specific and carries a GitLab CI
+        section. A bug fix may not invent a hard GitHub requirement the tool never had.
+
+        `unsupported` is not `unknown`: a forge this code does not know HOW to ask is not a forge
+        that would not answer, and the tag says out loud that CI was not consulted.
+
+        MUTANT: fold `unsupported` back into `unknown`, or drop it from the allowed states.
+        """
+        mod = self._forge(rc=1, stderr="failed to determine base repo: none of the git remotes "
+                                       "configured for this repository point to a known GitHub "
+                                       "host. Try selecting a repository with --repo")
+        state, detail = mod.forge_ci_state(Path("."), "deadbee")
+        self.assertEqual("unsupported", state)
+        self.assertIn("cannot be read from here", detail)
+        d = Path(tempfile.mkdtemp(prefix="gitlab_"))
+        self.addCleanup(lambda: __import__("shutil").rmtree(d, ignore_errors=True))
+        mod.record_green(d, "abc123")
+        self.addCleanup(setattr, mod, "forge_ci_state", mod.forge_ci_state)
+        mod.forge_ci_state = lambda root, commit: ("unsupported", detail)
+        allowed, reason = mod.tag_check(d, "abc123")
+        self.assertTrue(allowed, f"a GitLab-hosted project could not tag at all: {reason}")
+        self.assertIn("NOT consulted", reason,
+                      "the tag passed without saying that CI was never read")
+
+    def test_an_empty_commit_is_never_asked_about(self) -> None:
+        """`gh run list --commit ""` IGNORES the filter and returns whatever ran most recently,
+        so an empty commit would report success on another tree's evidence. Unreachable through
+        `tag_check` today - the green stamp is compared first - but a guard that is safe only
+        because of its caller is safe by luck. MUTANT: drop the empty-commit guard."""
+        self.assertEqual("unknown", self.mod.forge_ci_state(Path("."), "")[0])
+        self.assertEqual("unknown", self.mod.forge_ci_state(Path("."), "   ")[0])
+
+    def test_a_flag_shaped_ref_is_not_resolved_as_a_flag(self) -> None:
+        """`git rev-parse` echoes an argument-shaped value back with rc 0, so the resolve-to-a-
+        full-sha contract was unenforced: `--output=/tmp/x` came back unchanged. It failed safe
+        only because the bogus token then reached `gh` as a flag, which is safety by accident.
+        MUTANT: drop `--verify --end-of-options`."""
+        for bogus in ("--output=/tmp/pwn", "--since=2020-01-01", "-n1"):
+            with self.subTest(bogus):
+                self.assertEqual(bogus, self.mod._full_sha(Path("."), bogus),
+                                 "a flag-shaped ref was resolved rather than passed through")
+
     def test_tag_check_refuses_on_a_red_forge_and_says_why(self) -> None:
         """The wiring, not the helper: a locally green tree with a red runner must not tag."""
         mod = self.mod

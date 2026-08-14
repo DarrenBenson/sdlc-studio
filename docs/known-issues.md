@@ -32,12 +32,11 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0519` | Medium | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed |
 | `BG0526` | Medium | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers |
 | `BG0529` | Medium | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing |
-| `BG0545` | Medium | testplan derive and the bug criteria floor each mis-slice a checkbox-shaped Acceptance Criteria section, so one refuses a sound plan and the other... |
 | `BG0567` | Medium | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere... |
 | `BG0571` | Medium | The repaired spec-agreement guards pin word patterns rather than claims, so a passage stating the OPPOSITE rule passes |
 | `BG0578` | Medium | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner |
 
-12 findings: 12 Medium, 0 Low.
+11 findings: 11 Medium, 0 Low.
 
 ## Not carried
 

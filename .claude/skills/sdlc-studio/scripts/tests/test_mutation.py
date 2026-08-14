@@ -4472,7 +4472,7 @@ class CrossProvenanceContradictionTests(unittest.TestCase):
 
     def _blocks(self) -> list[str]:
         return [u for u in self.tr.requirements(str(self.d), "BG9002", "Fixed")
-                if "CONTRADICTS" in u]
+                if "CONTRADICTS" in u or "DISAGREES ACROSS" in u]
 
     def test_a_measured_row_records_its_fault_class_in_its_own_field(self) -> None:
         """AC1. The class lived only in the prose slot a registered row fills with words, so
@@ -4486,21 +4486,71 @@ class CrossProvenanceContradictionTests(unittest.TestCase):
 
     def test_a_hand_typed_claim_contradicting_a_measurement_is_caught(self) -> None:
         """AC2. THE bug: a measured `killed` and a registered `survived` for one mutant at one
-        line, exit 0. MUTANT: skip the cross-provenance branch."""
+        line, exit 0 and nothing said. MUTANT: skip the cross-provenance branch."""
         self._measure()
         self._register("survived", "invert-guard")
-        blocks = self._blocks()
-        self.assertTrue(blocks, "a claim contradicting a measurement was not detected")
-        self.assertIn("ACROSS instruments", blocks[0])
-        self.assertIn("invert-guard", blocks[0])
+        hard, soft = self.tr._ledger_contradiction(str(self.d), "BG9002")
+        self.assertIsNone(hard, "a cross-provenance disagreement was raised as a same-provenance "
+                                "contradiction, which no config can stand down")
+        self.assertTrue(soft, "a claim contradicting a measurement was not detected at all")
+        self.assertIn("DISAGREES ACROSS", soft)
+        self.assertIn("invert-guard", soft)
+
+    def test_the_cross_provenance_finding_can_be_stood_down_but_the_same_provenance_one_cannot(
+            self) -> None:
+        """BG0552 round 2. The cross join keys on the fault CLASS, which is coarser than a
+        mutant: an independent review built two genuinely different `invert-guard` edits at one
+        line, one measured and one hand-registered, and the guard called the instruments liars
+        and told the author to withdraw TRUE evidence - in a branch that ignored the configured
+        mode, so `off` could not reach it.
+
+        A check that can be wrong must be one a project can stand down. A check that cannot be
+        wrong need not be, and the same-provenance one is keyed on the mutant's own prose.
+
+        MUTANT: append the cross-provenance finding to `blocks` unconditionally again.
+        """
+        self._measure()
+        self._register("survived", "invert-guard")
+        for mode, expect_block in (("report", False), ("off", False), ("block", True)):
+            with self.subTest(mode=mode):
+                (self.d / "sdlc-studio" / ".config.yaml").write_text(
+                    f"review:\n  mutation_evidence: {mode}\n", encoding="utf-8")
+                unmet = self.tr.requirements(str(self.d), "BG9002", "Fixed")
+                got = [u for u in unmet if "DISAGREES ACROSS" in u]
+                self.assertEqual(expect_block, bool(got),
+                                 f"mode={mode}: blocks={got}")
+
+    def test_a_same_provenance_row_does_not_hide_the_cross_provenance_one(self) -> None:
+        """BG0552 round 2, second finding. `seen_class` was FIRST-WINS, so once a
+        same-provenance row occupied a key, a later row of the other provenance was compared
+        only against that first verdict - and AC2's own case went undetected. Register `killed`,
+        then `survived`, then measure `killed`, and the ledger holds a measured `killed` beside a
+        registered `survived` for one class at one line while reporting nothing.
+
+        AC2's test registers a single row, so it could not see this.
+
+        MUTANT: keep only the first verdict per key.
+        """
+        # DIFFERENT prose, so these two are not a same-provenance contradiction - that check
+        # returns early and would mask the very thing under test here.
+        self.mut.register_mutant(self.d, "src/thing.py", "inverted the a == b guard",
+                                 "pytest t.py", "killed", unit="BG9002", criterion="AC1",
+                                 line=2, fault_class="invert-guard")
+        self.mut.register_mutant(self.d, "src/thing.py", "inverted a different guard entirely",
+                                 "pytest t.py", "survived", unit="BG9002", criterion="AC1",
+                                 line=2, fault_class="invert-guard")
+        self._measure()
+        _hard, soft = self.tr._ledger_contradiction(str(self.d), "BG9002")
+        self.assertTrue(soft, "a same-provenance row hid the cross-provenance disagreement")
+        self.assertIn("DISAGREES ACROSS", soft)
 
     def test_an_agreeing_claim_is_not_a_contradiction(self) -> None:
         """AC3, the positive control. A check that fires on agreement is not a check.
         MUTANT: drop the `cprior[0] != verdict` test so any second row contradicts."""
         self._measure()
         self._register("killed", "invert-guard")
-        self.assertEqual([], self._blocks(),
-                         "an agreeing hand-registered claim was read as a contradiction")
+        self.assertEqual((None, None), self.tr._ledger_contradiction(str(self.d), "BG9002"),
+                         "an agreeing hand-registered claim was read as a disagreement")
 
     def test_without_a_class_the_rows_cannot_be_compared_and_nothing_is_claimed(self) -> None:
         """AC4. The honest state, and the reason the field is optional: an author who does not
@@ -4508,7 +4558,7 @@ class CrossProvenanceContradictionTests(unittest.TestCase):
         pre-fix behaviour, kept deliberately and pinned so it is a decision, not a gap."""
         self._measure()
         self._register("survived", None)
-        self.assertEqual([], self._blocks(),
+        self.assertEqual((None, None), self.tr._ledger_contradiction(str(self.d), "BG9002"),
                          "rows with no shared class were joined anyway, which is a guess")
 
     def test_a_class_the_generator_never_emits_is_refused(self) -> None:
@@ -4530,10 +4580,9 @@ class CrossProvenanceContradictionTests(unittest.TestCase):
         self.mut.register_mutant(self.d, "src/thing.py", "inverted a different guard entirely",
                                  "pytest t.py", "survived", unit="BG9002", criterion="AC1",
                                  line=2, fault_class="invert-guard")
-        blocks = self._blocks()
-        self.assertFalse([b for b in blocks if "ACROSS instruments" in b],
-                         "two registered mutants of one class were read as instruments "
-                         "disagreeing, which no config can stand down")
+        _hard, soft = self.tr._ledger_contradiction(str(self.d), "BG9002")
+        self.assertIsNone(soft, "two registered mutants of one class were read as the two "
+                                "instruments disagreeing")
 
 
 class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):
@@ -4603,6 +4652,43 @@ class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):
         self.assertEqual(1, entry["summary"]["retracted"])
         self.assertFalse(entry["summary"].get("survived"),
                          "the coverage lane still counts a withdrawn survivor")
+
+    def test_a_withdrawal_is_visible_to_a_reader_who_is_not_the_author(self) -> None:
+        """BG0553 round 2, and the finding that mattered most. `retract` marked rows withdrawn and
+        NOTHING read the field back: both readers skipped withdrawn rows with a bare `continue`,
+        no verb printed the ledger, nothing consumed the `retracted` tally, and the ledger lives
+        in gitignored `.local/`. After a retraction the observable state was indistinguishable
+        from the row never having been registered - which is exactly the objection that got the
+        SUPERSEDE design rejected. Three shipped sentences claimed the opposite.
+
+        AC2 was literally satisfied by a dict key, so its test passed while the rationale the
+        whole unit rests on did not hold. The criterion was weaker than the reason for the work.
+
+        MUTANT: make `retractions` return [] - every reader below goes quiet at once.
+        """
+        self._register("survived")
+        self._retract()
+        rows = self.mut.retractions(self.d, "BG9001")
+        self.assertEqual(1, len(rows), "the withdrawal is not readable at all")
+        self.assertEqual("survived", rows[0]["verdict"])
+        self.assertEqual(self.REASON, rows[0]["reason"])
+        # ...and it reaches the join the author sees...
+        self.assertTrue(self.mut.plan_execution(self.d, "BG9001").get("retracted"),
+                        "the plan join does not surface the withdrawal that changed it")
+        # ...and the seat brief, which is the artefact a REVIEWER reads.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "critic_vis", Path(__file__).resolve().parents[1] / "critic.py")
+        critic = importlib.util.module_from_spec(spec)
+        sys.modules["critic_vis"] = critic
+        spec.loader.exec_module(critic)
+        seats = self.d / "sdlc-studio" / "personas" / "seats"
+        seats.mkdir(parents=True, exist_ok=True)
+        (seats / "qa.md").write_text("# QA seat\n", encoding="utf-8")
+        text = critic.brief(self.d, "BG9001", "qa")
+        self.assertIn("WITHDRAWN mutation verdicts", text,
+                      "a reviewer's brief says nothing about a withdrawn verdict")
+        self.assertIn(self.REASON, text, "the brief does not carry the reason to be judged")
 
     def test_the_verdict_is_part_of_the_join(self) -> None:
         """AC3. Found by running the verb, not reading it. Without the verdict in the join a

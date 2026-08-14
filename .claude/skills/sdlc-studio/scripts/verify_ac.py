@@ -2391,6 +2391,31 @@ def _then_clause(lines: list, start: int, end: int) -> str:
     return " ".join(lines[start:end])
 
 
+def _criteria_section_end(lines: list, blocks: list) -> int:
+    """Where the LAST criterion stops - the next top-level heading, never the end of the file.
+
+    The bound was `len(lines)`, so the final criterion's `Then` clause ran to the bottom of the
+    artefact and swallowed everything after it: the Resolution prose, the Revision History, and -
+    fatally - the `## Test Plan` table itself, which holds every mutant's own text. Its mutant was
+    therefore measured for overlap against a passage CONTAINING that mutant, scored 1.0, and
+    `testplan derive` refused the row as a restatement of itself. Deterministic and invisible: it
+    struck only the last row, only once a plan already existed, so the first derive of a unit
+    passed and every re-derive of it failed.
+
+    That is the second time this exact shape has been paid for here - `_then_clause`'s own
+    docstring records the first, where a mis-stripped bullet marker fell through to a block that
+    carried the mutant. Both are one fault: a range wide enough to include the answer.
+
+    Falls back to the end of the file when no heading follows, which is the honest reading of an
+    artefact whose criteria genuinely run to the bottom.
+    """
+    start = blocks[-1].heading_line if blocks else 0
+    for i in range(start + 1, len(lines)):
+        if lines[i].startswith("## "):
+            return i
+    return len(lines)
+
+
 def _overlap_ratio(mutant: str, then_clause: str, affects: list | None = None) -> float:
     """Fraction of the mutant's substance tokens that its criterion's `Then` clause already
     carries. 1.0 is a verbatim restatement; a legitimate mutant names an edit the criterion does
@@ -2406,7 +2431,14 @@ def _overlap_ratio(mutant: str, then_clause: str, affects: list | None = None) -
     """
     m = _substance_tokens(mutant) - _path_tokens(affects or [])
     if not m:
-        return 1.0
+        # A ratio over NOTHING is not a restatement. This returned 1.0, so a mutant made only of
+        # path tokens - `verify_ac.py` and nothing else - was reported as restating a `Then`
+        # clause it shares not one word with. The refusal was right and its stated reason was
+        # false, which is worse than a wrong verdict: an author fixing the restatement it names
+        # is fixing something that is not there. The real fault, that it carries no edit verb, is
+        # reported by its own limb, and a guard that refuses for the wrong reason passes a
+        # bare-refusal assertion - the constraint this module's own tests are written under.
+        return 0.0
     return len(m & _substance_tokens(then_clause)) / len(m)
 
 
@@ -2555,7 +2587,7 @@ def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
                                f"shape by hand, or delete the section deliberately if it is "
                                f"stale. A plan the tool cannot parse is still a plan."]}
     lines = text.splitlines()
-    bounds = [b.heading_line for b in blocks] + [len(lines)]
+    bounds = [b.heading_line for b in blocks] + [_criteria_section_end(lines, blocks)]
     faults, rows = [], []
     for n, b in enumerate(blocks):
         mutant = existing.get(b.ac_id) or _TESTPLAN_PLACEHOLDER

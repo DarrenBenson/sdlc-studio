@@ -136,6 +136,11 @@ is committed.
   judge the reason. All six fields join, the verdict included - without it a retraction withdraws
   every row for that mutant, taking the correct one with the mistake. A `measured` row cannot be
   retracted; the way to correct a measurement is to measure again.
+- **`mutation.py retractions --unit <id>`** prints every withdrawn verdict with the reason given
+  for it, and the same rows reach `run --from-plan` and the seat brief a reviewer is handed. A
+  correction that no reader can see is the escape hatch the worst-verdict rule exists to close,
+  so the withdrawal travels to the person the cost was imposed on. An unconvincing reason is a
+  finding.
 
 ### The per-file verdict
 

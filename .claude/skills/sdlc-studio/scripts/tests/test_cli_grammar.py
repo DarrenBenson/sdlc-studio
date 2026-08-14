@@ -286,26 +286,39 @@ class RepeatableFlagConformance(unittest.TestCase):
 
 
 #: Verbs PROVEN to answer differently depending on `--root`, and therefore the only ones a
-#: fixture sweep can speak for. Measured, not guessed: all 128 `--root`-taking verbs the sweep can
-#: invoke without extra required arguments were run against the real tree and against an empty
-#: fixture, and these are the 23 whose output visibly differs. For the other 105 the sweep asserts
-#: NOTHING - they print nothing that names a tree - and saying so is the point. A sweep reporting
-#: "128 verbs checked" when only 23 of them could ever fail is the vacuous-verifier trap this
-#: repository keeps paying for (LL0053).
+#: fixture sweep can speak for. Measured, not guessed - and RE-measured after an independent
+#: review showed the first measurement was taken in the wrong tree.
 #:
-#: The set may only GROW. THREE verbs discriminate and are absent on purpose, because they WRITE
-#: and the control below runs against the real tree: `repo_map build`, `project_upgrade`, and
-#: `verify_ac lane-check`, which drops a `sdlc-studio/.local/lane-check-yield.json` sidecar. The
-#: last was found by the `repo-writes` gate lane refusing the commit that introduced this sweep -
-#: a guard measuring the tree must not be one of the things changing it.
+#: All 128 `--root`-taking verbs the sweep can invoke were run against a clean worktree of HEAD
+#: and against an empty fixture. Sixteen name one of this repository's artefacts in the first and
+#: none in the second. **One hundred name no artefact either way**, so no fixture sweep can speak
+#: for them, and the inventory records that rather than counting them: a guard reporting "128
+#: verbs checked" when 16 can fail is the vacuous-verifier shape this repository keeps paying for.
+#:
+#: The first cut of this list held 23, measured in the author's own tree where gitignored
+#: `.local/` state made several verbs answer richly. In the tree CI actually sees, six of those
+#: 23 emit only an error naming the root - `repo_map stats`, `verify_ac report`, `lessons list`
+#: and `revalidate` among them - and `config show` CRASHES with an unhandled TypeError whose
+#: traceback happens to contain the repo path. They passed the control because it accepted the
+#: ROOT PATH as evidence, which any message interpolating its own argument satisfies. It now
+#: requires a real artefact id, so the control cannot be satisfied by a crash.
+#:
+#: FIVE verbs discriminate and are excluded because they WRITE, and the control runs against the
+#: real tree: `lessons summary` (rewrites the TRACKED LESSONS-SUMMARY.md), `close_owed baseline`,
+#: `docgen surface`, `telemetry record`, and `verify_ac lane-check` (a gitignored `.local`
+#: sidecar). Only the last was found by its author, and only because the `repo-writes` gate lane
+#: refused the commit. `lessons summary` was invisible on the author's machine - a gitignored
+#: `.local/lessons.md` made its regeneration byte-identical there - and would have dirtied every
+#: fresh clone and every CI run. A guard measuring the tree must not be one of the things
+#: changing it, and a guard that only looks clean where it was written has not been measured.
+#:
+#: The set may only GROW, and an entry earns its place by measurement in a CLEAN tree.
 ROOT_EFFECT_VERBS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ac_scope.py", ("check",)), ("autosprint.py", ("next",)), ("changelog.py", ("check",)),
-    ("config.py", ("show",)), ("constitution.py", ("check",)), ("critic.py", ("show",)),
-    ("decisions.py", ("list",)), ("doc_freshness.py", ()), ("integrity.py", ("check",)),
-    ("lessons.py", ("list",)), ("lessons.py", ("revalidate",)), ("lessons.py", ("summary",)),
-    ("persona_gen.py", ("classify",)), ("reconcile.py", ("detect",)), ("repo_map.py", ("stats",)),
-    ("retro.py", ("estimator",)), ("sprint.py", ("next",)), ("status.py", ("backlog",)),
-    ("validate.py", ("check",)), ("verify_ac.py", ("report",)),
+    ("close_owed.py", ("detect",)), ("constitution.py", ("check",)), ("critic.py", ("show",)),
+    ("decisions.py", ("list",)), ("doc_freshness.py", ()), ("flow.py", ("compute",)),
+    ("integrity.py", ("check",)), ("reconcile.py", ("detect",)), ("retro.py", ("estimator",)),
+    ("sprint.py", ("next",)), ("status.py", ("backlog",)), ("validate.py", ("check",)),
 )
 
 #: What a real-tree answer looks like: this repository's own artefact ids and run ids, plus its
@@ -408,10 +421,15 @@ class RootIsReadNotJustParsed(unittest.TestCase):
         for script, verb in ROOT_EFFECT_VERBS:
             with self.subTest(verb=f"{script} {' '.join(verb)}".strip()):
                 out = self._run(script, verb, self.REPO)
+                # The ROOT PATH is NOT evidence. Accepting it let six verbs that emit only an
+                # error naming their own argument pass this control, and one that CRASHES - a
+                # traceback contains file paths too. Only a real artefact id proves the tree was
+                # read, which is what the guard above needs to mean anything.
                 self.assertTrue(
-                    _REAL_TREE_MARKER.search(out) or str(self.REPO) in out,
-                    f"{script} {' '.join(verb)}: pointed at the real tree it named nothing from "
-                    f"it, so its row in the guard above asserts nothing - re-measure or remove it")
+                    _REAL_TREE_MARKER.search(out),
+                    f"{script} {' '.join(verb)}: pointed at the real tree it named no artefact "
+                    f"of it, so its row in the guard above asserts nothing - re-measure it in a "
+                    f"CLEAN worktree, or remove it")
 
 
 if __name__ == "__main__":

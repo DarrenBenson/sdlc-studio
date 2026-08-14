@@ -50,6 +50,9 @@ Add `mutation.py retract --unit X --criterion ACn --target F --line N --mutant M
 - [x] **AC7** Given a ledger corrected by retraction, when the shipped transition verb runs, then it no longer reports the ledger as contradicting itself and no longer holds the transition.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawn_row_stops_contradicting
   - **Verified:** yes (2026-08-14)
+- [x] **AC8** Given a withdrawn verdict, when a reader who is not the author looks - the retractions verb, the plan join, or the seat brief a reviewer is handed - then each shows that a verdict was withdrawn and the reason given, so the correction reaches the person it was made for.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawal_is_visible_to_a_reader
+  - **Verified:** yes (2026-08-14)
 
 ## Resolution
 
@@ -70,6 +73,16 @@ A measured row cannot be retracted at all. Withdrawing a measurement is editing 
 | AC5 | in mutation.py `retract_mutant`, return a zero-count success instead of refusing | Given join fields that match no live row, when a retraction is attempted, then it refuses rather than reporting a success that did nothing. |
 | AC6 | in mutation.py `retract_mutant`, drop the provenance filter so a measured row can be withdrawn | Given a MEASURED row, when a retraction is attempted, then it is refused - withdrawing an observation is not correcting it, and the refusal says to measure again. |
 | AC7 | in transition.py `_ledger_contradiction`, stop skipping withdrawn rows | Given a ledger corrected by retraction, when the shipped transition verb runs, then it no longer reports the ledger as contradicting itself and no longer holds the transition. |
+
+## Round two
+
+An independent review REJECTED the first repair, and the finding was the sharpest of the run: **the retraction was invisible, so the design's own distinction from the rejected supersede did not hold.**
+
+Two readers touched the `withdrawn` field and both were a bare `continue`. Nothing consumed the `retracted` tally. No verb printed the ledger, and the ledger lives in gitignored `.local/`, in a directory this repository's own gitignore describes as state you can delete and lose nothing. After a retraction the observable state was indistinguishable from the row never having been registered - which is precisely why the supersede was rejected.
+
+Three shipped sentences claimed the opposite, including a consumer-facing changelog line. AC2 was literally satisfied by a dict key, so its test passed while the rationale the whole unit rests on did not: the criterion was weaker than the reason for the work.
+
+The claims are now true rather than deleted. `mutation.py retractions` prints every withdrawal with its reason; `run --from-plan` names the withdrawal that changed its own answer; and the seat brief carries it to the reviewer, who is asked to judge the reason - because an unconvincing retraction is a finding.
 
 ## Revision History
 
