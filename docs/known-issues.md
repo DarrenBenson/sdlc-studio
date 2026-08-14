@@ -32,7 +32,6 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0519` | Medium | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed |
 | `BG0526` | Medium | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers |
 | `BG0529` | Medium | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing |
-| `BG0539` | Medium | critic record cannot tell a review ROUND from a panel SEAT, so the ordinary reject-fix-approve loop escalates as an unresolved split |
 | `BG0540` | Medium | a retro that was never written reports `ran` on the close checklist, because a missing file is graded as a structural error rather than an absence |
 | `BG0544` | Medium | _ck_closing_review reports `ran` for a unit the shared coverage reading calls uncovered, when its latest sprint-level verdict is APPROVE |
 | `BG0545` | Medium | testplan derive and the bug criteria floor each mis-slice a checkbox-shaped Acceptance Criteria section, so one refuses a sound plan and the other... |
@@ -40,11 +39,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0553` | Medium | a mistyped mutation verdict cannot be corrected, and the contradiction check now turns that from a wrong number into a refusal in every mode |
 | `BG0555` | Medium | twelve scripts declare --root only per-subcommand, a grammar defect the conformance sweep could not see because it silently skipped them |
 | `BG0556` | Medium | no guard catches a --root that selects the file written but not the content read |
-| `BG0561` | Medium | a re-plan over an open run resets the appetite to the standing capacity while leaving the resize record standing, so the ledger and the breaker dis... |
 | `BG0567` | Medium | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere... |
 | `BG0571` | Medium | The repaired spec-agreement guards pin word patterns rather than claims, so a passage stating the OPPOSITE rule passes |
 
-19 findings: 19 Medium, 0 Low.
+17 findings: 17 Medium, 0 Low.
 
 ## Not carried
 

@@ -5170,6 +5170,24 @@ class PanelConvergenceTests(unittest.TestCase):
         self.assertIn("not converging", why)
 
 
+class RoundVersusSplitTests(unittest.TestCase):
+    """BG0539: a second ROUND was mistaken for a panel SPLIT."""
+
+    def test_a_second_round_is_not_a_panel_split(self) -> None:
+        """MUTANT: delete the convergence check, so seat verdicts from different ROUNDS are
+        compared as though they came from one.
+
+        A panel split is disagreement INSIDE a round. A second round is a different context
+        reviewing a revised unit - the reject-fix-approve loop working. Six of eight units in
+        one run escalated as splits for having done exactly that.
+        """
+        mod = _load()
+        escalate, _why = mod.panel_escalation(
+            ["REJECT", "APPROVE"], {"engineering": "REJECT", "qa": "APPROVE"})
+        self.assertFalse(escalate,
+                         "a REJECT in round 1 and an APPROVE in round 2 is convergence")
+
+
 class PlanReviewOriginTests(unittest.TestCase):
     """BG0546: the origin axis asks what a DIFF did, and a plan review has no diff."""
 

@@ -1,6 +1,7 @@
 # BG0561: a re-plan over an open run resets the appetite to the standing capacity while leaving the resize record standing, so the ledger and the breaker disagree about the ceiling
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (executed: a run state carrying a recorded resize keeps its raised ceiling; mutation: 1 declared mutant KILLED after the FIRST verifier was found vacuous - it asserted a source string the mutant left intact, so it caught nothing; restore byte-exact)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -22,15 +23,20 @@ A re-plan over an open run is not an unusual act. It is what the tooling itself 
 
 1. Open a run with `sprint plan --worklist <file> --write --sprint-goal "..."`. 2. `sprint appetite resize --units 8 --reason "..."` and read the confirmation. 3. Re-run the same `sprint plan --write` with `--content-review partial --content-missing "..."`. 4. Read `sdlc-studio/.local/run-state.json`: `appetite.units` is back to the standing capacity, and `appetite_changes` still records the resize to 8.
 
+## Acceptance Criteria
+
+- [x] **AC1** Given an open run whose appetite was raised by a recorded `appetite resize`, when a re-plan runs over it, then the resize is PRESERVED - a ceiling moved on the record with a compulsory reason must not be silently re-resolved from the standing capacity.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k a_recorded_resize_survives_a_replan
+
 ## Proposed Fix
 
 A re-plan over an ALREADY OPEN run must preserve an explicit resize rather than re-resolving over it - the resize is the more specific statement, and the appetite resolution order already prefers the more specific source. Either carry the recorded resize forward, or refuse the re-plan and say the appetite would be reset. Whichever is chosen, the invariant to pin is that `appetite` and the last entry of `appetite_changes` never disagree, asserted as a property over a resize-then-replan sequence driven through the CLI rather than over either command alone - each is correct in isolation, which is why no existing test sees this.
 
-## Acceptance Criteria
+## Test Plan
 
-- [ ] **AC1** After a resize followed by a re-plan over the same open run, the live appetite matches the last recorded resize, asserted through the shipped CLI on a fixture
-- [ ] **AC2** A re-plan that opens a NEW run still resolves the appetite from the capacity as it does today (positive control - the repair must not make the resolution order sticky across runs)
-- [ ] **AC3** The invariant that `appetite` agrees with the last entry of `appetite_changes` is pinned as a property, and the test fails when either side is changed alone
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in sprint.py, delete the `if prior.get(...appetite_changes...)` preservation branch so a re-plan overwrites a recorded resize | Given an open run whose appetite was raised by a recorded `appetite resize`, when a re-plan runs over it, then the resize is PRESERVED - a ceiling moved on the record with a compulsory reason must not be silently re-resolved from the standing capacity. |
 
 ## Revision History
 

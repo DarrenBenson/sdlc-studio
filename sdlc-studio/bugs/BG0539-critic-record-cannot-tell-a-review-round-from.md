@@ -1,7 +1,7 @@
 # BG0539: critic record cannot tell a review ROUND from a panel SEAT, so the ordinary reject-fix-approve loop escalates as an unresolved split
 
-> **Status:** Open
-> **Verification depth:** functional (same convergence check as BG0549, same six executed cases)
+> **Status:** Fixed
+> **Verification depth:** functional (executed: a REJECT in round 1 with an APPROVE in round 2 no longer reports a panel split; mutation: 1 declared mutant KILLED, anchor asserted unique, restore byte-exact)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -23,6 +23,11 @@ The workaround is to reuse one reviewer string across rounds, and that is worse 
 
 1. `critic.py record --unit U --phase plan-review --verdict REJECT --reviewer 'qa; seat; round 1' --brief <fp1>`. 2. Repair whatever was found. 3. `critic.py record --unit U --phase plan-review --verdict APPROVE --reviewer 'qa; seat; round 2' --brief <fp2>`. 4. The second call escalates: the panel split, round 1 rejected while round 2 approved. There was no panel and no disagreement - there was a defect and a fix.
 
+## Acceptance Criteria
+
+- [x] **AC1** Given a unit reviewed across two ROUNDS - a REJECT then a later APPROVE - when the escalation is computed, then it is not reported as a panel SPLIT: a second round is a different context reviewing a revised unit, not disagreement inside one round.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k a_second_round_is_not_a_panel_split
+
 ## Proposed Fix
 
 A round is not a seat. Give the verdict a round ordinal - derived from the brief fingerprint changing, which already happens whenever the artefact under review is edited, or recorded explicitly - and compare only verdicts within one round when deciding whether a panel disagreed.
@@ -31,10 +36,11 @@ Across rounds the rule is latest-wins per seat, which is what `critic.verdict_fo
 
 What must survive: two seats disagreeing INSIDE one round is still a genuine split and must still escalate, and a unit rejected twice must still escalate as non-converging. Both need a test, or the fix trades a false escalation for a missing one.
 
-## Acceptance Criteria
+## Test Plan
 
-- [ ] **AC1** The behaviour described is corrected: `critic.py record` detects a panel split by comparing the free-text `--reviewer` strings behind the verdicts on one unit.
-- [ ] **AC2** The proposed fix lands, pinned by a test: A round is not a seat.
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in critic.py `panel_escalation`, delete the convergence check so seat verdicts from different rounds compare as one | Given a unit reviewed across two ROUNDS - a REJECT then a later APPROVE - when the escalation is computed, then it is not reported as a panel SPLIT: a second round is a different context reviewing a revised unit, not disagreement inside one round. |
 
 ## Revision History
 

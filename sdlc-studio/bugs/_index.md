@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
+| Open | 19 |
 | In Progress | 0 |
-| Fixed | 464 |
+| Fixed | 466 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 7 |
@@ -78,7 +78,7 @@
 | [BG0536](BG0536-a-test-fixture-that-accepts-a-caller-supplied.md) | a test fixture that accepts a caller-supplied root can write into the working tree, and one did - destroying 23 recorded mutation registrations | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0537](BG0537-check-root-docs-reads-raw-lines-while-check.md) | check_root_docs reads raw lines while check_body_links blanks code spans, so a link inside backticks is an example in one directory and a broken reference in another | Won't Fix | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0538](BG0538-a-release-cut-mints-an-affects-unresolvable-warning.md) | a release cut mints an affects-unresolvable warning for every unit that declared its own changelog fragment, because compose deletes the file the unit named | Fixed | Medium | 2026-08-07 | 2026-08-07 |
-| [BG0539](BG0539-critic-record-cannot-tell-a-review-round-from.md) | critic record cannot tell a review ROUND from a panel SEAT, so the ordinary reject-fix-approve loop escalates as an unresolved split | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0539](BG0539-critic-record-cannot-tell-a-review-round-from.md) | critic record cannot tell a review ROUND from a panel SEAT, so the ordinary reject-fix-approve loop escalates as an unresolved split | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0540](BG0540-a-retro-that-was-never-written-reports-ran.md) | a retro that was never written reports `ran` on the close checklist, because a missing file is graded as a structural error rather than an absence | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0541](BG0541-the-repair-mutation-gate-is-dead-code-transition.md) | the repair-mutation gate is dead code: transition.py set does not call it, while the shipped doctrine tells consuming projects that it refuses | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0542](BG0542-sprint-plan-under-affects-check-block-prints-refused.md) | sprint plan under affects_check: block prints REFUSED, exits 0, and writes the unit into the batch - worse than the honest advisory it replaced | Fixed | High | 2026-08-07 | 2026-08-07 |
@@ -100,7 +100,7 @@
 | [BG0558](BG0558-a-greenfield-project-cannot-plan-its-first-sprint.md) | a greenfield project cannot plan its first sprint: every Affects path is unresolvable because the code does not exist yet, and the blocking grooming lane calls that a fictional Affects | Fixed | High | 2026-08-09 | 2026-08-09 |
 | [BG0559](BG0559-the-doc-surface-gate-lane-raises-modulenotfounderror-in.md) | the doc-surface gate lane raises ModuleNotFoundError in every consuming project, so a new v5 lane reports NOT MEASURED forever on every user's gate run | Fixed | High | 2026-08-09 | 2026-08-09 |
 | [BG0560](BG0560-the-page-readme-sends-every-existing-user-to.md) | the page README sends every existing user to is the v4 upgrade page, so v5's breaking gate changes reach an upgrading project with no document that names them | Fixed | High | 2026-08-09 | 2026-08-09 |
-| [BG0561](BG0561-a-re-plan-over-an-open-run-resets.md) | a re-plan over an open run resets the appetite to the standing capacity while leaving the resize record standing, so the ledger and the breaker disagree about the ceiling | Open | Medium | 2026-08-09 | 2026-08-09 |
+| [BG0561](BG0561-a-re-plan-over-an-open-run-resets.md) | a re-plan over an open run resets the appetite to the standing capacity while leaving the resize record standing, so the ledger and the breaker disagree about the ceiling | Fixed | Medium | 2026-08-09 | 2026-08-09 |
 | [BG0562](BG0562-then-clause-strips-the-bold-markers-off-a.md) | _then_clause strips the bold markers off a non-bulleted Then line before testing for them, so the criterion falls back to its whole block and the overlap check reports the author's own mutant as a 100% restatement | Fixed | Medium | 2026-08-09 | 2026-08-09 |
 | [BG0563](BG0563-the-test-plan-edit-verb-vocabulary-enumerates-only.md) | the test-plan edit-verb vocabulary enumerates only subtractive verbs, so a mutant that ADDS something cannot be stated and gets reworded until it parses | Fixed | Medium | 2026-08-10 | 2026-08-10 |
 | [BG0564](BG0564-a-creation-whose-basename-is-a-common-one.md) | a creation whose basename is a common one - `__init__.py`, `README.md` - is still refused as a typo, so the greenfield repair is incomplete for exactly the files new packages create | Fixed | Medium | 2026-08-10 | 2026-08-10 |

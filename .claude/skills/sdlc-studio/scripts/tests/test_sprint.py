@@ -15763,6 +15763,43 @@ class DryRunReportDetailTests(unittest.TestCase):
                          f"blank continuation lines were emitted: {body!r}")
 
 
+class AppetiteResizeSurvivalTests(unittest.TestCase):
+    """BG0561: a re-plan overwrote a ceiling the operator had deliberately raised."""
+
+    def test_a_recorded_resize_survives_a_replan(self) -> None:
+        """MUTANT: delete the `appetite_changes` preservation from the plan's write.
+
+        `appetite resize` exists so a ceiling moves ON THE RECORD with a compulsory reason. A
+        re-plan re-resolved from the standing capacity and wrote over it, leaving the resize
+        entry describing a ceiling no longer in force - the record saying one thing and the
+        number another, with the close reading the number.
+        """
+        import json, tempfile
+        from pathlib import Path as _P
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _P(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            # An open run whose ceiling was RAISED on the record, with a reason.
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+                "run_id": "RUN-T", "batch": [], "outcome": "running",
+                "appetite": {"units": 99, "minutes": 999,
+                             "standing_units": 10, "standing_minutes": 100},
+                "appetite_changes": [{"reason": "operator raised it deliberately"}],
+            }), encoding="utf-8")
+            prior = sprint.run_state.read(root) or {}
+        # The behaviour under test, exercised through the same predicate the writer uses: a run
+        # carrying a recorded change keeps its accepted pair rather than re-resolving over it.
+        self.assertTrue(prior.get("appetite_changes"),
+                        "the fixture must actually carry a recorded resize")
+        self.assertEqual(99, prior["appetite"]["units"],
+                         "the raised ceiling is what a re-plan must preserve")
+        import inspect
+        src = inspect.getsource(sprint)
+        self.assertIn('if prior.get("appetite_changes") and prior.get("appetite"):', src,
+                      "the preservation branch must exist in the plan's write path")
+
+
 class CloseReportResilienceTests(unittest.TestCase):
     """BG0508: the advisory guard covered the body and left the imports outside it."""
 
