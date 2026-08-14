@@ -3509,6 +3509,39 @@ class FromPlanTests(unittest.TestCase):
             self.assertTrue(any("AC1" in u and "SURVIVED" in u for u in unmet),
                             f"the transition does not name the criterion: {unmet}")
 
+    def test_a_withdrawn_row_stops_contradicting_the_one_beside_it(self) -> None:
+        """BG0553, through the shipped transition verb. The self-contradiction check refuses in
+        EVERY mode including `off`, so before `retract` existed an author who mistyped a verdict
+        and registered the correction was hard-blocked with no escape but `--force` - worse off
+        than one who left the wrong verdict standing.
+
+        Mutant: drop the `withdrawn` skip in `_ledger_contradiction`; the corrected ledger is
+        read as the instrument lying about itself and the transition is refused again.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            m = self._unit(root, [("AC1", "in thing.py, delete the guard")])
+            self._register(m, root, "AC1", "survived")
+            self._register(m, root, "AC1", "killed")
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "transition_mod", Path(__file__).resolve().parents[1] / "transition.py")
+            tr = importlib.util.module_from_spec(spec)
+            sys.modules["transition_mod"] = tr
+            spec.loader.exec_module(tr)
+            unmet = tr.requirements(str(root), "BG0001", "Fixed")
+            self.assertTrue(any("CONTRADICTS itself" in u for u in unmet),
+                            f"the contradiction is not detected at all: {unmet}")
+
+            m.retract_mutant(root, "src/thing.py", "BG0001", "AC1", 2, "mutant for AC1",
+                             "survived",
+                             "the verdict was mistyped as survived; the test did go red")
+            unmet = tr.requirements(str(root), "BG0001", "Fixed")
+            self.assertFalse(any("CONTRADICTS itself" in u for u in unmet),
+                             f"a withdrawn row still contradicts the live one: {unmet}")
+            self.assertFalse(any("SURVIVED" in u for u in unmet),
+                             f"the withdrawn survivor still holds the transition: {unmet}")
+
     def test_a_malformed_unnameable_does_not_exempt_a_row(self) -> None:
         """US0633 makes `unnameable` cost something at grooming, and exempting a bare one HERE
         refunds that cost one lane later - the marker becomes a free pass at the gate it matters
@@ -4389,6 +4422,237 @@ class RegisterEvidenceIntegrityTests(unittest.TestCase):
             ok = _load().register_mutant(root, "t.py", "m", "pytest x", "killed", line=1,
                                           anchor="def a():")
             self.assertEqual(ok["verdict"], "killed")
+
+
+class CrossProvenanceContradictionTests(unittest.TestCase):
+    """BG0552. A measured row names the generator's fault class; a registered row names the
+    author's prose. The two shared no joinable value, so the check that catches the ledger
+    contradicting itself could only ever see WITHIN one provenance - and the cross-provenance
+    case is the valuable one, because it is where a hand-typed claim is caught disagreeing with
+    a MEASUREMENT. Establishing it needed a field, not a heuristic.
+    """
+
+    def setUp(self) -> None:
+        self.mut = _load()
+        self.d = Path(tempfile.mkdtemp(prefix="xprov_"))
+        self.addCleanup(__import__("shutil").rmtree, self.d, ignore_errors=True)
+        (self.d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (self.d / "src").mkdir()
+        (self.d / "src" / "thing.py").write_text(
+            "def f(a, b):\n    if a == b:\n        return 1\n    return 0\n", encoding="utf-8")
+        (self.d / "sdlc-studio" / "bugs" / "BG9002-x.md").write_text(
+            "# BG9002: a fixture bug\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Points:** 2\n> **Verification depth:** functional\n"
+            "> **Affects:** src/thing.py\n\n## Acceptance Criteria\n\n"
+            "- [x] **AC1** Given a thing, when it happens, then it works.\n"
+            "  - **Verify:** manual a human checks it\n\n## Test Plan\n\n"
+            "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+            "| AC1 | invert-guard | Given a thing, when it happens, then it works. |\n",
+            encoding="utf-8")
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "transition_xprov", Path(__file__).resolve().parents[1] / "transition.py")
+        self.tr = importlib.util.module_from_spec(spec)
+        sys.modules["transition_xprov"] = self.tr
+        spec.loader.exec_module(self.tr)
+
+    def _measure(self) -> None:
+        """A real run: the covering test passes on the original and fails on an inverted guard,
+        so `invert-guard` at line 2 is measured KILLED."""
+        self.mut.run_gate(
+            self.d, [self.d / "src" / "thing.py"],
+            "python3 -c \"import sys;sys.path.insert(0,'src');import thing;"
+            "assert thing.f(1,1)==1\"",
+            unit="BG9002")
+
+    def _register(self, verdict: str, fault_class: str | None) -> None:
+        self.mut.register_mutant(self.d, "src/thing.py", "inverted the a == b guard",
+                                 "pytest t.py", verdict, unit="BG9002", criterion="AC1",
+                                 line=2, fault_class=fault_class)
+
+    def _blocks(self) -> list[str]:
+        return [u for u in self.tr.requirements(str(self.d), "BG9002", "Fixed")
+                if "CONTRADICTS" in u]
+
+    def test_a_measured_row_records_its_fault_class_in_its_own_field(self) -> None:
+        """AC1. The class lived only in the prose slot a registered row fills with words, so
+        there was nothing to join on. MUTANT: write None into the field."""
+        self._measure()
+        rows = [m for e in self.mut.ledger_entries(self.d) for m in (e.get("mutants") or [])
+                if self.mut.entry_provenance(e) == self.mut.PROVENANCE_MEASURED]
+        self.assertTrue(rows, "the run recorded no measured rows at all")
+        self.assertTrue(all(m.get("class") for m in rows),
+                        "a measured row carries no fault class, so it can join nothing")
+
+    def test_a_hand_typed_claim_contradicting_a_measurement_is_caught(self) -> None:
+        """AC2. THE bug: a measured `killed` and a registered `survived` for one mutant at one
+        line, exit 0. MUTANT: skip the cross-provenance branch."""
+        self._measure()
+        self._register("survived", "invert-guard")
+        blocks = self._blocks()
+        self.assertTrue(blocks, "a claim contradicting a measurement was not detected")
+        self.assertIn("ACROSS instruments", blocks[0])
+        self.assertIn("invert-guard", blocks[0])
+
+    def test_an_agreeing_claim_is_not_a_contradiction(self) -> None:
+        """AC3, the positive control. A check that fires on agreement is not a check.
+        MUTANT: drop the `cprior[0] != verdict` test so any second row contradicts."""
+        self._measure()
+        self._register("killed", "invert-guard")
+        self.assertEqual([], self._blocks(),
+                         "an agreeing hand-registered claim was read as a contradiction")
+
+    def test_without_a_class_the_rows_cannot_be_compared_and_nothing_is_claimed(self) -> None:
+        """AC4. The honest state, and the reason the field is optional: an author who does not
+        name a class gets no cross-provenance join rather than a guessed one. This is the
+        pre-fix behaviour, kept deliberately and pinned so it is a decision, not a gap."""
+        self._measure()
+        self._register("survived", None)
+        self.assertEqual([], self._blocks(),
+                         "rows with no shared class were joined anyway, which is a guess")
+
+    def test_a_class_the_generator_never_emits_is_refused(self) -> None:
+        """AC5. Free text would join nothing, so it would record a promise it cannot keep.
+        MUTANT: drop the vocabulary check and accept any string."""
+        with self.assertRaises(ValueError) as ctx:
+            self._register("survived", "invert-the-guard")
+        self.assertIn("joins no measured row", str(ctx.exception))
+
+    def test_two_registered_rows_of_one_class_are_not_a_cross_contradiction(self) -> None:
+        """AC6. The class is coarser than the prose, so two DIFFERENT hand-applied mutants of
+        one class at one line would look identical to the cross join. They are two honest
+        statements, and the same-provenance branch can still tell them apart by prose. This
+        branch ignores the configured mode, so a false positive here is not survivable.
+        MUTANT: drop the `cprior[1] != prov` test so same-provenance rows join on class."""
+        self.mut.register_mutant(self.d, "src/thing.py", "inverted the a == b guard",
+                                 "pytest t.py", "killed", unit="BG9002", criterion="AC1",
+                                 line=2, fault_class="invert-guard")
+        self.mut.register_mutant(self.d, "src/thing.py", "inverted a different guard entirely",
+                                 "pytest t.py", "survived", unit="BG9002", criterion="AC1",
+                                 line=2, fault_class="invert-guard")
+        blocks = self._blocks()
+        self.assertFalse([b for b in blocks if "ACROSS instruments" in b],
+                         "two registered mutants of one class were read as instruments "
+                         "disagreeing, which no config can stand down")
+
+
+class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):
+    """BG0553. `plan_execution` holds the WORST verdict per criterion, so a mutant registered
+    `survived` by mistake could not be corrected by registering it `killed` - and the
+    self-contradiction check then refused the transition in EVERY mode, `off` included, with no
+    escape but `--force`. An author who mistyped was left worse off than one who left it wrong.
+
+    A review round proposed superseding the earlier row; that was implemented and reverted,
+    because a supersede is invisible and reopens the escape the worst-verdict rule closes. So the
+    correction is made VISIBLE instead: withdrawn, never deleted, with a reason on the record.
+    """
+
+    REASON = "the verdict was mistyped as survived; the test did go red when the mutant ran"
+
+    def setUp(self) -> None:
+        self.mut = _load()
+        self.d = Path(tempfile.mkdtemp(prefix="retract_"))
+        self.addCleanup(__import__("shutil").rmtree, self.d, ignore_errors=True)
+        (self.d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (self.d / "f.py").write_text("def f(a, b):\n    if a == b:\n        return 1\n    return 0\n",
+                                     encoding="utf-8")
+        (self.d / "sdlc-studio" / "bugs" / "BG9001-a-fixture-bug.md").write_text(
+            "# BG9001: a fixture bug\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Points:** 2\n> **Affects:** f.py\n\n## Acceptance Criteria\n\n"
+            "- [x] **AC1** Given a thing, when it happens, then it works.\n"
+            "  - **Verify:** manual a human checks it\n\n## Test Plan\n\n"
+            "| Criterion | Mutant - the production change this test must fail on | Title |\n"
+            "| --- | --- | --- |\n"
+            "| AC1 | invert the a == b guard | Given a thing, when it happens, then it works. |\n",
+            encoding="utf-8")
+
+    def _register(self, verdict: str) -> None:
+        self.mut.register_mutant(self.d, "f.py", "inverted the a == b guard", "pytest t.py",
+                                 verdict, unit="BG9001", criterion="AC1", line=2)
+
+    def _retract(self, **over):
+        kw = dict(target="f.py", unit="BG9001", criterion="AC1", line=2,
+                  mutant="inverted the a == b guard", verdict="survived", reason=self.REASON)
+        kw.update(over)
+        return self.mut.retract_mutant(self.d, **kw)
+
+    def test_a_withdrawn_verdict_stops_holding_the_plan(self) -> None:
+        """AC1. The whole point: the mistyped survivor no longer stands, so the correction
+        works. MUTANT: drop the `withdrawn` skip in `plan_execution`."""
+        self._register("survived")
+        self._register("killed")
+        self.assertEqual("survived",
+                         self.mut.plan_execution(self.d, "BG9001")["rows"][0]["verdict"])
+        self._retract()
+        res = self.mut.plan_execution(self.d, "BG9001")
+        self.assertEqual("killed", res["rows"][0]["verdict"])
+        self.assertTrue(res["ok"], res.get("outstanding"))
+
+    def test_the_withdrawal_is_recorded_and_not_deleted(self) -> None:
+        """AC2. A correction nobody can see IS the escape hatch. The row stays, carrying the
+        reason and the verdict it withdrew, and the summary counts the retraction."""
+        self._register("survived")
+        self._retract()
+        entry = [e for e in self.mut.ledger_entries(self.d)
+                 if e.get("target") == "f.py"
+                 and self.mut.entry_provenance(e) == self.mut.PROVENANCE_REGISTERED][0]
+        rows = entry["mutants"]
+        self.assertEqual(1, len(rows), "the row was removed rather than withdrawn")
+        self.assertEqual("survived", rows[0]["verdict"], "the original verdict was overwritten")
+        self.assertEqual(self.REASON, rows[0]["withdrawn"]["reason"])
+        self.assertEqual(1, entry["summary"]["retracted"])
+        self.assertFalse(entry["summary"].get("survived"),
+                         "the coverage lane still counts a withdrawn survivor")
+
+    def test_the_verdict_is_part_of_the_join(self) -> None:
+        """AC3. Found by running the verb, not reading it. Without the verdict in the join a
+        retraction matches EVERY row for one mutant and withdraws them all, so correcting a
+        mistyped `survived` silently took the `killed` beside it and left no evidence at all -
+        the refusals were all correct and the success case did the wrong thing.
+        MUTANT: drop `mu.get("verdict") == verdict` from the match."""
+        self._register("survived")
+        self._register("killed")
+        self.assertEqual(1, self._retract()["retracted"])
+        entry = [e for e in self.mut.ledger_entries(self.d) if e.get("target") == "f.py"][0]
+        live = [m for m in entry["mutants"] if not m.get("withdrawn")]
+        self.assertEqual(["killed"], [m["verdict"] for m in live],
+                         "the correct verdict was withdrawn alongside the mistake")
+
+    def test_a_reason_too_thin_to_audit_is_refused(self) -> None:
+        """AC4. An unexplained retraction is the escape hatch. MUTANT: set the floor to 0."""
+        self._register("survived")
+        for reason in ("", "typo", "   wrong   "):
+            with self.subTest(reason=reason):
+                with self.assertRaises(ValueError) as ctx:
+                    self._retract(reason=reason)
+                self.assertIn("audit trail", str(ctx.exception))
+
+    def test_a_retraction_that_matches_nothing_refuses(self) -> None:
+        """AC5. Silently doing nothing is the failure this verb exists to end, so a join that
+        finds no row must say so. MUTANT: return a zero-count success instead of raising."""
+        self._register("survived")
+        for label, over in (("wrong line", {"line": 99}),
+                            ("wrong criterion", {"criterion": "AC7"}),
+                            ("wrong prose", {"mutant": "something else entirely"}),
+                            ("already withdrawn", {})):
+            if label == "already withdrawn":
+                self._retract()          # the first one succeeds; a second must not
+            with self.subTest(label):
+                with self.assertRaises(ValueError) as ctx:
+                    self._retract(**over)
+                self.assertIn("has done nothing", str(ctx.exception))
+
+    def test_a_measured_verdict_cannot_be_retracted(self) -> None:
+        """AC6. Withdrawing a measurement is editing an observation - the way to correct one is
+        to measure again. MUTANT: drop the provenance filter from the match."""
+        self._register("survived")
+        entry = [e for e in self.mut.ledger_entries(self.d) if e.get("target") == "f.py"][0]
+        entry["provenance"] = "measured"
+        state, reset = self.mut._load_ledger(self.mut.ledger_path(self.d))
+        self.mut._store_ledger(self.mut.ledger_path(self.d), state, [entry], reset)
+        with self.assertRaises(ValueError) as ctx:
+            self._retract()
+        self.assertIn("re-measure it instead", str(ctx.exception))
 
 
 if __name__ == "__main__":

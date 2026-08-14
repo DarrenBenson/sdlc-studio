@@ -119,6 +119,23 @@ is committed.
 - Registrations accumulate into one entry per (target, content). That entry's `mutants` list is
   bounded at 100 with a `dropped_mutants` count, while its `summary` tallies are never
   truncated - what is dropped is the description, never the count.
+- **`--class` is what lets a hand-registered verdict be checked against a measured one.** A
+  measured row names the generator's fault class; a registered row names your prose. They share
+  no value, so without a class the two instruments cannot be compared at all and a claim
+  contradicting a measurement goes undetected. Pass `--class invert-guard|stub-return-null|
+  unset-delivered-field|no-op-mapper` when the mutant you applied by hand IS one of those. It is
+  optional on purpose: picking the nearest label to satisfy the flag would make the join lie, and
+  no comparison is better than a guessed one.
+- **A mistyped verdict is corrected by `retract`, never by re-registering.** `plan_execution`
+  holds the WORST verdict per criterion, so registering `killed` over a mistaken `survived`
+  leaves the survivor standing - deliberately, because a genuine correction and an author
+  registering their way out of a survivor look identical to the tool. Use
+  `mutation.py retract --unit <id> --criterion ACn --target F --line N --mutant "..."
+  --verdict survived --reason "<what was wrong>"`. The row is marked **withdrawn, not deleted**:
+  the correction takes effect, and every reader still sees that a verdict was withdrawn and can
+  judge the reason. All six fields join, the verdict included - without it a retraction withdraws
+  every row for that mutant, taking the correct one with the mistake. A `measured` row cannot be
+  retracted; the way to correct a measurement is to measure again.
 
 ### The per-file verdict
 

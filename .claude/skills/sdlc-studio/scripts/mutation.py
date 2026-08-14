@@ -1753,6 +1753,12 @@ def _measured_mutant_rows(records: list[dict], fp, unit: str | None) -> list[dic
         out.append({"unit": sdlc_md.norm_id(unit) if unit else None,
                     "criterion": r.get("criterion"),
                     "line": r.get("line"), "mutant": r.get("class"),
+                    # The class in a field of its OWN, not only in the prose slot. A registered
+                    # row's `mutant` is the author's words, so the two provenances share no
+                    # joinable value and a contradiction across them was undetectable - the
+                    # check had nothing but the line, and joining on that alone reads two
+                    # honest different mutants as the instrument lying.
+                    "class": r.get("class"),
                     "test": r.get("test"), "verdict": verdict,
                     "provenance": PROVENANCE_MEASURED})
     return out
@@ -1909,7 +1915,8 @@ def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> 
 def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: str,
                     reason: str | None = None, run: str | None = None,
                     unit: str | None = None, criterion: str | None = None,
-                    line: int | None = None, anchor: str | None = None) -> dict:
+                    line: int | None = None, anchor: str | None = None,
+                    fault_class: str | None = None) -> dict:
     """Record a mutant that was ALREADY applied by hand, against the target's content NOW.
 
     The practice this exists for: a builder writes a test, applies a mutant to the code it
@@ -1957,6 +1964,15 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     if verdict not in REGISTRABLE_VERDICTS:
         raise ValueError(f"verdict must be one of {', '.join(REGISTRABLE_VERDICTS)}, "
                          f"not {verdict!r}")
+    fault_class = (fault_class or "").strip() or None
+    if fault_class is not None and fault_class not in FAULT_CLASSES:
+        # Drawn from the generator's OWN vocabulary or not at all. A free-text class would join
+        # nothing, which is the state this field exists to leave: the point is an EXACT join to
+        # a measured row, and a value the generator never emits can never match one.
+        raise ValueError(
+            f"--class must be one of the generator's fault classes "
+            f"({', '.join(FAULT_CLASSES)}), not {fault_class!r} - a class the generator never "
+            f"emits joins no measured row, so it would record a promise it cannot keep")
     mutant, test = str(mutant or "").strip(), str(test or "").strip()
     reason = str(reason or "").strip()
     if verdict == EQUIVALENT_VERDICT:
@@ -2017,6 +2033,12 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
               # execution to another's row.
               "unit": sdlc_md.norm_id(unit) if unit else None,
               "criterion": (criterion or "").strip().upper() or None,
+              # THE CROSS-PROVENANCE JOIN KEY. Optional, because a hand-applied mutant does not
+              # always belong to a class the generator can produce, and demanding one would make
+              # authors pick the nearest label - a join that is convenient is a join that lies.
+              # Absent, the row simply cannot be compared across provenances, and that is the
+              # honest state rather than a guessed one.
+              "class": fault_class,
               "at": sdlc_md.now_iso8601()}
     entry = next((e for e in entries if e.get("target") == rel
                   and entry_provenance(e) == PROVENANCE_REGISTERED
@@ -2554,6 +2576,11 @@ def plan_execution(root: Path | str, unit: str) -> dict:
         for m in entry.get("mutants", []) or []:
             if not isinstance(m, dict) or m.get("unit") != uid or not m.get("criterion"):
                 continue
+            # A WITHDRAWN row is skipped, not counted: `retract` marks a registered verdict as
+            # corrected and leaves it visible in the ledger, so the correction has to reach the
+            # reader that made it costly. Removal would have been the escape hatch.
+            if m.get("withdrawn"):
+                continue
             # The WORST verdict wins per criterion: a survivor is not cancelled by a later kill
             # of some other mutant on the same row. Silence about a survivor is the failure this
             # gate exists to catch.
@@ -2608,6 +2635,116 @@ def cmd_from_plan(args: argparse.Namespace) -> int:
     return 2
 
 
+#: The shortest reason that can be audited. A retraction withdraws recorded evidence, so "typo"
+#: or "wrong" names nothing a reader can check; the length is a floor on effort, not on honesty,
+#: and it is deliberately low because the real control is that the withdrawal is PUBLISHED.
+_RETRACT_REASON_MIN = 20
+
+
+def retract_mutant(root: Path | str, target, unit: str, criterion: str, line: int,
+                   mutant: str, verdict: str, reason: str) -> dict:
+    """Withdraw a REGISTERED verdict, leaving the withdrawal on the record.
+
+    The problem this solves, and the trap it must not become. `plan_execution` holds the WORST
+    verdict per criterion, so a mutant registered `survived` by mistake cannot be corrected by
+    registering it `killed` - the survivor stands. That rule is right: to the tool, a genuine
+    correction and an author registering their way out of a survivor are byte-identical. Then the
+    self-contradiction check made the cost sharper still, refusing the transition in every mode
+    including `off`, so an author who mistyped was left worse off than one who left it wrong.
+
+    A review round proposed SUPERSEDING the earlier row. That was implemented and reverted: it
+    reopens exactly the escape the worst-verdict rule closes, because a supersede is invisible.
+
+    So the answer is not to make correction cheap - it is to make it VISIBLE. The row is marked
+    withdrawn rather than removed, carrying who withdrew it, when, and why. `plan_execution` and
+    the contradiction check skip withdrawn rows, so the correction works; every reader still sees
+    that a verdict was withdrawn and can judge the reason. An author retracting their way out of
+    a survivor now leaves a trail that says so, in the artefact a reviewer already reads.
+
+    Only REGISTERED rows can be retracted. A measured row is the output of a run that actually
+    applied the mutant and watched the suite answer; withdrawing that would be editing an
+    observation, and the way to correct a measurement is to measure again.
+
+    The VERDICT is part of the join, and that is not decoration. Without it a retraction names
+    every row for one mutant and withdraws them all - so an author correcting a mistyped
+    `survived` silently withdrew the `killed` beside it too and was left with no evidence at all
+    rather than the right evidence. Found by running the verb, not by reading it: the refusals
+    were all correct and the success case quietly did the wrong thing.
+
+    Raises ValueError when the reason is missing or too short to audit, when the verdict is not
+    one that can be registered, or when no matching un-withdrawn registered row exists - a retraction that matches nothing has silently done
+    nothing, which is the failure mode this whole verb exists to end.
+    """
+    root = Path(root)
+    reason = " ".join(str(reason or "").split())
+    if len(reason) < _RETRACT_REASON_MIN:
+        raise ValueError(
+            f"a retraction needs a reason of at least {_RETRACT_REASON_MIN} characters saying "
+            f"what was wrong with the withdrawn verdict. An unexplained retraction is the escape "
+            f"hatch the worst-verdict rule exists to close; a recorded one is an audit trail")
+    if verdict not in REGISTRABLE_VERDICTS:
+        raise ValueError(f"the verdict being withdrawn must be one of "
+                         f"{', '.join(REGISTRABLE_VERDICTS)}, not {verdict!r}")
+    path = Path(target)
+    if not path.is_absolute():
+        path = root / path
+    rel = _ledger_target(root, path)
+    uid = sdlc_md.norm_id(unit) if unit else None
+    crit = (criterion or "").strip().upper() or None
+    ident = " ".join(str(mutant or "").lower().split())
+    lpath = ledger_path(root)
+    state, reset = _load_ledger(lpath)
+    entries = [e for e in state["entries"] if isinstance(e, dict)]
+    hits = []
+    for e in entries:
+        if e.get("target") != rel or entry_provenance(e) != PROVENANCE_REGISTERED:
+            continue
+        for mu in (e.get("mutants") or []):
+            if not isinstance(mu, dict) or mu.get("withdrawn"):
+                continue
+            if (mu.get("unit") == uid and (mu.get("criterion") or None) == crit
+                    and mu.get("line") == line and mu.get("verdict") == verdict
+                    and " ".join(str(mu.get("mutant") or "").lower().split()) == ident):
+                hits.append((e, mu))
+    if not hits:
+        raise ValueError(
+            f"no un-withdrawn REGISTERED {verdict!r} mutant matches {rel}:{line} for {uid} "
+            f"{crit} with that description. A retraction matching nothing has done nothing, so it refuses rather "
+            f"than reporting success. Check the four join fields against `mutation.py show`, and "
+            f"note that a MEASURED row cannot be retracted - re-measure it instead")
+    at = sdlc_md.now_iso8601()
+    for e, mu in hits:
+        mu["withdrawn"] = {"reason": reason, "at": at, "verdict": mu.get("verdict")}
+        # The summary is what the coverage lane reads, so a withdrawn survivor has to leave it
+        # too - otherwise the correction works for the transition and not for the count, and the
+        # two disagree. `retracted` is added rather than the row simply vanishing: the tally of
+        # what was withdrawn is the visible part.
+        summary = e.setdefault("summary", {})
+        v = mu.get("verdict")
+        if v and summary.get(v):
+            summary[v] = summary[v] - 1
+        summary["retracted"] = int(summary.get("retracted") or 0) + 1
+        if summary.get("applied"):
+            summary["applied"] = summary["applied"] - 1
+    written = _store_ledger(lpath, state, entries, reset)
+    return {**written, "target": rel, "retracted": len(hits),
+            "verdict": hits[0][1].get("withdrawn", {}).get("verdict"), "reason": reason}
+
+
+def cmd_retract(args: argparse.Namespace) -> int:
+    try:
+        res = retract_mutant(args.root, args.target, args.unit, args.criterion,
+                             args.line, args.mutant, args.verdict, args.reason)
+    except (ValueError, OSError) as exc:
+        print(f"retract refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"mutation: WITHDREW {res['retracted']} registered {res['verdict']!r} verdict(s) on "
+          f"{res['target']}:{args.line} for {args.unit} {args.criterion}. The row is marked "
+          f"withdrawn, NOT deleted - the ledger shows that a verdict was retracted and why, so "
+          f"a reviewer can judge the correction rather than take it on trust")
+    return 0
+
+
 def cmd_register(args: argparse.Namespace) -> int:
     try:
         res = register_mutant(args.root, args.target, args.mutant, args.test, args.verdict,
@@ -2616,7 +2753,8 @@ def cmd_register(args: argparse.Namespace) -> int:
                               unit=getattr(args, "unit", None),
                               line=getattr(args, "line", None),
                               criterion=getattr(args, "criterion", None),
-                              anchor=getattr(args, "anchor", None))
+                              anchor=getattr(args, "anchor", None),
+                              fault_class=getattr(args, "fault_class", None))
     except (ValueError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -2805,10 +2943,34 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--reason", help="why an equivalent mutant could not be killed - mandatory "
                                     "for --verdict equivalent, since an unjustified exclusion "
                                     "is a silent decrement")
+    g.add_argument("--class", dest="fault_class", choices=FAULT_CLASSES, metavar="CLASS",
+                   help="the generator's fault class this hand-applied mutant belongs to "
+                        f"({', '.join(FAULT_CLASSES)}). Optional, and the ONLY thing that lets "
+                        "a registered verdict be compared against a measured one at the same "
+                        "line: the prose and the class share no value, so without it a "
+                        "hand-typed claim contradicting a measurement is undetectable")
     g.add_argument("--run", metavar="MRUNxxx",
                    help="the mutation run this verdict belongs to (must be in the series)")
     g.add_argument("--root", default=".")
     g.set_defaults(func=cmd_register)
+    rt = sub.add_parser("retract",
+                        help="Withdraw a REGISTERED verdict, on the record, with a reason.")
+    rt.add_argument("--unit", required=True, help="the unit whose row is being withdrawn")
+    rt.add_argument("--criterion", required=True, metavar="ACn")
+    rt.add_argument("--target", required=True, help="the file the mutant was applied to")
+    rt.add_argument("--line", required=True, type=int, metavar="N")
+    rt.add_argument("--mutant", required=True,
+                    help="the description recorded at registration - one of the four join "
+                         "fields, so a retraction cannot withdraw a row it did not name")
+    rt.add_argument("--verdict", required=True, choices=REGISTRABLE_VERDICTS,
+                    help="the verdict being WITHDRAWN. Part of the join: without it a "
+                         "retraction withdraws every row for the mutant, including the correct "
+                         "one beside the mistake, leaving no evidence rather than right evidence")
+    rt.add_argument("--reason", required=True,
+                    help="what was wrong with the withdrawn verdict. An unexplained retraction "
+                         "is the escape hatch the worst-verdict rule exists to close")
+    rt.add_argument("--root", default=".")
+    rt.set_defaults(func=cmd_retract)
     y = sub.add_parser("yield", help="What one run COST and what was FILED from it.")
     y.add_argument("--run", required=True, metavar="MRUNxxx")
     y.add_argument("--root", default=".")

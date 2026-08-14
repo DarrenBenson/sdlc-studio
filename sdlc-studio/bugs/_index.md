@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 15 |
+| Open | 13 |
 | In Progress | 0 |
-| Fixed | 471 |
+| Fixed | 473 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 7 |
@@ -91,8 +91,8 @@
 | [BG0549](BG0549-the-non-convergence-escalation-is-sticky-a-converging.md) | the non-convergence escalation is sticky: a converging APPROVE still reports that the panel is not converging, because the notice counts historical REJECTs and never re-reads the latest verdict | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0550](BG0550-register-drops-a-file-s-earlier-registered-mutants.md) | register drops a file's earlier registered mutants without saying so, so an edit after registering silently empties a unit's evidence | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0551](BG0551-repair-mutation-gate-derives-its-surface-from-the.md) | repair_mutation_gate derives its surface from the artefact's own Affects, so a mis-declared Affects bypasses the evidence demand entirely | Fixed | High | 2026-08-07 | 2026-08-07 |
-| [BG0552](BG0552-a-registered-mutant-cannot-be-joined-to-a.md) | a registered mutant cannot be joined to a measured one, so a cross-provenance contradiction in the mutation ledger is undetectable | Open | Medium | 2026-08-07 | 2026-08-07 |
-| [BG0553](BG0553-a-mistyped-mutation-verdict-cannot-be-corrected-and.md) | a mistyped mutation verdict cannot be corrected, and the contradiction check now turns that from a wrong number into a refusal in every mode | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0552](BG0552-a-registered-mutant-cannot-be-joined-to-a.md) | a registered mutant cannot be joined to a measured one, so a cross-provenance contradiction in the mutation ledger is undetectable | Fixed | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0553](BG0553-a-mistyped-mutation-verdict-cannot-be-corrected-and.md) | a mistyped mutation verdict cannot be corrected, and the contradiction check now turns that from a wrong number into a refusal in every mode | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0554](BG0554-survivor-severity-under-rates-the-explicit-return-none.md) | survivor severity under-rates the explicit return-None idiom, which is the shape that matters most in this codebase | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0555](BG0555-twelve-scripts-declare-root-only-per-subcommand-a.md) | twelve scripts declare --root only per-subcommand, a grammar defect the conformance sweep could not see because it silently skipped them | Fixed | Medium | 2026-08-08 | 2026-08-08 |
 | [BG0556](BG0556-no-guard-catches-a-root-that-selects-the.md) | no guard catches a --root that selects the file written but not the content read | Fixed | Medium | 2026-08-08 | 2026-08-08 |

@@ -2113,11 +2113,18 @@ def _ledger_contradiction(root, uid: str) -> str | None:
     under `off` as well, which no other row here does, because `off` is a decision about whether
     mutation evidence holds a transition, not permission for the ledger to be false.
 
-    SAME PROVENANCE ONLY, because that is what the ledger can decide: a measured row names a
-    fault class and a registered one names the author's prose, so across the two the join has
-    nothing but the line - and joining on the line alone reads two honest different mutants as
-    a contradiction. The cross-provenance case is the more valuable one and it is filed rather
-    than guessed at; it needs `register` to record a fault class.
+    TWO JOINS, because the two provenances share no single value. Within one provenance the key
+    is the mutant's prose: two different mutants at one line are two honest statements, not the
+    instrument contradicting itself. ACROSS provenances the key is the FAULT CLASS, which a
+    measured row has always carried and a registered row now records through `register --class`.
+    That second join is the more valuable one - it is where a hand-typed claim is caught
+    disagreeing with a measurement, the asymmetry the whole repair-evidence rule turns on - and
+    it was impossible while the join had nothing but the line to work with.
+
+    The cross join fires only between DIFFERENT provenances. The class is coarser than the prose,
+    so two registered mutants of one class at one line would look identical to it; those are left
+    to the same-provenance branch, which can still tell them apart. This function ignores the
+    configured mode by design, so a false positive here is not survivable.
     """
     try:
         import mutation  # noqa: PLC0415
@@ -2130,6 +2137,7 @@ def _ledger_contradiction(root, uid: str) -> str | None:
                 f"({type(exc).__name__}: {exc}) - an instrument nobody can read is not one "
                 f"that has been shown honest")
     seen: dict = {}
+    seen_class: dict = {}
     for e in entries:
         if not isinstance(e, dict):
             continue
@@ -2140,22 +2148,56 @@ def _ledger_contradiction(root, uid: str) -> str | None:
             verdict, line = mu.get("verdict"), mu.get("line")
             if verdict not in ("killed", "survived") or line is None:
                 continue
+            # A row WITHDRAWN by `mutation.py retract` is not a live claim, so it cannot
+            # contradict one. Before the retract verb existed, a mistyped verdict could only be
+            # corrected by registering the opposite - which this check then read as the
+            # instrument lying, and refused in every mode with no escape but --force.
+            if mu.get("withdrawn"):
+                continue
             # THE MUTANT is part of the key, not just the line. Two different mutants at one
             # line are two honest statements, and reading them as a contradiction turned the
             # default `report` mode into a block no config could stand down - this branch
             # ignores the mode by design, so a false positive here is not survivable. The
             # instrument lying about ITSELF means one mutant, two verdicts.
-            key = (*key_base, line, _mutant_identity(mu), mutation.entry_provenance(e))
+            prov = mutation.entry_provenance(e)
+            key = (*key_base, line, _mutant_identity(mu), prov)
             prior = seen.get(key)
             if prior and prior[0] != verdict:
                 return (f"{uid}: the mutation ledger CONTRADICTS itself at "
                         f"{e.get('target')}:{line} - recorded {prior[0]!r} by "
                         f"{prior[1]} and {verdict!r} by "
-                        f"{mutation.entry_provenance(e)}, under the same content hash. This "
+                        f"{prov}, under the same content hash. This "
                         f"refuses in every mode, `off` included: the instrument is reporting "
                         f"two different things about one fact, and every figure derived from "
                         f"the false one is wrong with nothing downstream able to tell")
-            seen[key] = (verdict, mutation.entry_provenance(e))
+            seen[key] = (verdict, prov)
+            # THE CROSS-PROVENANCE JOIN, and the more valuable half: it is where a hand-typed
+            # claim is caught disagreeing with a MEASUREMENT, which is the asymmetry the whole
+            # repair-evidence rule turns on. It needs an exact key, and the fault class is the
+            # only value the two provenances share - a measured row names the generator's class
+            # and a registered one names the author's prose, so before the class was recorded
+            # this comparison had nothing but the line and could not be made at all.
+            #
+            # Deliberately narrow: it joins rows of DIFFERENT provenance only. Two registered
+            # mutants of one class at one line are two honest statements, and the same-provenance
+            # branch above already tells them apart by prose - which the class cannot do, being
+            # coarser. This branch ignores the mode by design, so a false positive is not
+            # survivable and the join stays exact or stays silent.
+            cls = mu.get("class")
+            if not cls:
+                continue
+            ckey = (*key_base, line, cls)
+            cprior = seen_class.get(ckey)
+            if cprior and cprior[0] != verdict and cprior[1] != prov:
+                return (f"{uid}: the mutation ledger CONTRADICTS itself at "
+                        f"{e.get('target')}:{line} ACROSS instruments - the {cprior[1]} record "
+                        f"says {cprior[0]!r} and the {prov} record says {verdict!r} for the same "
+                        f"`{cls}` mutant, under the same content hash. A hand-typed claim "
+                        f"disagreeing with a measurement is the one the evidence rule turns on, "
+                        f"so this refuses in every mode, `off` included: re-measure it, or "
+                        f"withdraw the claim with `mutation.py retract`")
+            if cprior is None:
+                seen_class[ckey] = (verdict, prov)
     return None
 
 

@@ -140,6 +140,7 @@ flags it takes, run the script's own help, or `docgen.py surface --format json`.
 | `migrate_v3.py sizing` |
 | `mutation.py run` |
 | `mutation.py register` |
+| `mutation.py retract` |
 | `mutation.py yield` |
 | `mutation.py window` |
 | `mutation.py window open` |

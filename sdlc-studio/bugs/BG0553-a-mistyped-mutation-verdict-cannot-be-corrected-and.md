@@ -1,6 +1,7 @@
 # BG0553: a mistyped mutation verdict cannot be corrected, and the contradiction check now turns that from a wrong number into a refusal in every mode
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (executed through the shipped CLI in a throwaway fixture: the filed reproduction reproduced, all three refusals confirmed with the positive control beside them, and the transition seen to stop blocking after the retraction; mutation: 7 declared mutants, all KILLED, restore byte-exact)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
@@ -28,8 +29,47 @@ Add `mutation.py retract --unit X --criterion ACn --target F --line N --mutant M
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Registrations accumulate, and `plan_execution` holds the worst verdict per criterion, so a mutant registered `survived` by mistake cannot be corrected by...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add `mutation.py retract --unit X --criterion ACn --target F --line N --mutant M --reason '<why>'`, which marks the earlier row withdrawn rather than deleting...
+- [x] **AC1** Given a mutant registered `survived` by mistake and the correct `killed` beside it, when the mistake is retracted, then the plan reads the surviving evidence and the criterion is satisfied.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawn_verdict_stops_holding
+  - **Verified:** yes (2026-08-14)
+- [x] **AC2** Given a retraction, when the ledger is read, then the row is still there marked withdrawn - carrying the reason and the verdict it withdrew - and the summary counts the retraction rather than losing it.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawal_is_recorded_and_not_deleted
+  - **Verified:** yes (2026-08-14)
+- [x] **AC3** Given two rows for one mutant with opposite verdicts, when one verdict is retracted, then only that row is withdrawn - the verdict is part of the join, so a correction cannot take the correct row with the mistake.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k verdict_is_part_of_the_join
+  - **Verified:** yes (2026-08-14)
+- [x] **AC4** Given a reason too thin to audit, when a retraction is attempted, then it is refused - an unexplained retraction is the escape hatch the worst-verdict rule exists to close.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k reason_too_thin_to_audit
+  - **Verified:** yes (2026-08-14)
+- [x] **AC5** Given join fields that match no live row, when a retraction is attempted, then it refuses rather than reporting a success that did nothing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k matches_nothing_refuses
+  - **Verified:** yes (2026-08-14)
+- [x] **AC6** Given a MEASURED row, when a retraction is attempted, then it is refused - withdrawing an observation is not correcting it, and the refusal says to measure again.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k measured_verdict_cannot_be_retracted
+  - **Verified:** yes (2026-08-14)
+- [x] **AC7** Given a ledger corrected by retraction, when the shipped transition verb runs, then it no longer reports the ledger as contradicting itself and no longer holds the transition.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawn_row_stops_contradicting
+  - **Verified:** yes (2026-08-14)
+
+## Resolution
+
+`mutation.py retract` withdraws a registered verdict and leaves the withdrawal on the record: the row stays, carrying who withdrew it, when, and why, and the summary gains a `retracted` tally. Correction works; it is never quiet.
+
+Running the verb found a defect reading it had not. The join was originally the four fields the bug names - unit, criterion, line, prose - and every refusal was correct while the success case did the wrong thing: it matched BOTH rows for one mutant and withdrew them together, so an author correcting a mistyped `survived` silently lost the `killed` beside it and ended with no evidence rather than the right evidence. The verdict is now part of the join.
+
+A measured row cannot be retracted at all. Withdrawing a measurement is editing an observation; the way to correct one is to measure again.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in mutation.py `plan_execution`, stop skipping withdrawn rows so a retraction has no effect | Given a mutant registered `survived` by mistake and the correct `killed` beside it, when the mistake is retracted, then the plan reads the surviving evidence and the criterion is satisfied. |
+| AC2 | in mutation.py `retract_mutant`, delete the row instead of marking it withdrawn | Given a retraction, when the ledger is read, then the row is still there marked withdrawn - carrying the reason and the verdict it withdrew - and the summary counts the retraction rather than losing it. |
+| AC3 | in mutation.py `retract_mutant`, drop the verdict from the join so both rows are withdrawn | Given two rows for one mutant with opposite verdicts, when one verdict is retracted, then only that row is withdrawn - the verdict is part of the join, so a correction cannot take the correct row with the mistake. |
+| AC4 | in mutation.py, set `_RETRACT_REASON_MIN` to 0 so an unexplained retraction is accepted | Given a reason too thin to audit, when a retraction is attempted, then it is refused - an unexplained retraction is the escape hatch the worst-verdict rule exists to close. |
+| AC5 | in mutation.py `retract_mutant`, return a zero-count success instead of refusing | Given join fields that match no live row, when a retraction is attempted, then it refuses rather than reporting a success that did nothing. |
+| AC6 | in mutation.py `retract_mutant`, drop the provenance filter so a measured row can be withdrawn | Given a MEASURED row, when a retraction is attempted, then it is refused - withdrawing an observation is not correcting it, and the refusal says to measure again. |
+| AC7 | in transition.py `_ledger_contradiction`, stop skipping withdrawn rows | Given a ledger corrected by retraction, when the shipped transition verb runs, then it no longer reports the ledger as contradicting itself and no longer holds the transition. |
 
 ## Revision History
 
