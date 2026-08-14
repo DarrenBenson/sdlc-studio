@@ -1,6 +1,7 @@
 # BG0540: a retro that was never written reports `ran` on the close checklist, because a missing file is graded as a structural error rather than an absence
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (executed: a missing retro now reports not-run where it reported ran, with a malformed retro still reporting ran as the control; mutation: 2 declared mutants, both KILLED, restore byte-exact)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -22,16 +23,25 @@ An absence and a fault are different facts. `_ck_reconciled`, `_ck_closing_revie
 
 1. Build a close fixture with no file under `sdlc-studio/retros/`. 2. Resolve the checklist. 3. The `retro` row reads `state: ran`, `value: 1 structural error(s)`, `detail: no retro file for RETRO9100 ...`. 4. It is absent from `outstanding`, so the close is not held by a missing retro.
 
+## Acceptance Criteria
+
+- [x] **AC1** Given the retro named for a close was never written, when the checklist renders, then the row reports `not-run` - a ceremony must not certify itself performed on the strength of a file that does not exist.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py -k a_retro_that_was_never_written
+- [x] **AC2** Given a retro that EXISTS and is structurally wrong, when the same row renders, then it still reports `ran` - it did run, badly, and that is a different fact.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py -k a_malformed_retro_still_reports_ran
+
 ## Proposed Fix
 
 Return `NOT_RUN` when the retro file cannot be found at all, keeping RAN-with-errors for a retro that exists and is malformed - the distinction the other rows in the table already draw. `retro.validate` already reports the two cases differently in its error text; the row needs to read that rather than counting errors.
 
 Both directions need a test. A missing retro must hold the close, and a written, structurally complete retro must still resolve RAN - otherwise the repair trades a false pass for a gate that refuses every close.
 
-## Acceptance Criteria
+## Test Plan
 
-- [ ] **AC1** The behaviour described is corrected: The `retro` checklist row returns `NOT_RUN` only when `retro.validate` answers an empty dict.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Return `NOT_RUN` when the retro file cannot be found at all, keeping RAN-with-errors for a retro that exists and is malformed - the distinction the other rows...
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in sprint_report.py `_ck_retro`, delete the `val.get(...path...) is None` arm so a missing retro reports ran | Given the retro named for a close was never written, when the checklist renders, then the row reports `not-run` - a ceremony must not certify itself performed on the strength of a file that does not exist. |
+| AC2 | in sprint_report.py `_ck_retro`, return NOT_RUN for any error so a malformed retro stops reporting ran | Given a retro that EXISTS and is structurally wrong, when the same row renders, then it still reports `ran` - it did run, badly, and that is a different fact. |
 
 ## Revision History
 

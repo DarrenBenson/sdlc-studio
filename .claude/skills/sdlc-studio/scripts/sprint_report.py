@@ -1295,7 +1295,14 @@ def _ck_closing_review(ctx: dict) -> tuple:
                   if not (cov.get(u) or {}).get("covered")
                   or (latest.get(u) and latest[u] != _APPROVE)]
     rejected = [u for u in open_units if latest.get(u) and latest[u] != _APPROVE]
-    unreviewed = [u for u in open_units if not latest.get(u)]
+    # EVERY open unit lands in one of the two buckets. The residue - uncovered, verdict present,
+    # verdict is an APPROVE - matched neither test, so it fell through both and the row reported
+    # `ran` over a unit the shared coverage reading calls uncovered. That is the row certifying a
+    # review the coverage reading says did not happen, which is the one thing it exists to refuse.
+    # An APPROVE recorded against a unit no independent pass covers is not coverage; it is a
+    # verdict with nothing behind it.
+    rejected_set = set(rejected)
+    unreviewed = [u for u in open_units if u not in rejected_set]
     rounds = len(ctx.get("review_rounds") or [])
     if rejected or unreviewed:
         # The VALUE has to say which of the two outstanding states this is. Outstanding because
@@ -1458,6 +1465,13 @@ def _ck_retro(ctx: dict) -> tuple:
     val = ctx.get("retro_validate") or {}
     if not val:
         return (NOT_RUN, "no retro", "no retro was resolved for this close")
+    # A retro that was never WRITTEN is not a retro that ran badly. `retro.validate` reports a
+    # missing file as an error like any other, so the row read RAN - the ceremony reporting
+    # itself as performed on the strength of a file that does not exist. `path` is None only in
+    # that case, which is the distinction every other row in this table already draws.
+    if val.get("path") is None:
+        return (NOT_RUN, "no retro file",
+                "; ".join(val.get("errors") or ["the retro named for this close was never written"]))
     if val.get("errors"):
         return (RAN, f"{len(val['errors'])} structural error(s)", "; ".join(val["errors"][:3]))
     return (RAN, "complete", "")

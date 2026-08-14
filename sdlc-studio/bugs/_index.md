@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 17 |
 | In Progress | 0 |
-| Fixed | 466 |
+| Fixed | 468 |
 | Verified | 0 |
 | Closed | 83 |
 | Won't Fix | 7 |
@@ -79,11 +79,11 @@
 | [BG0537](BG0537-check-root-docs-reads-raw-lines-while-check.md) | check_root_docs reads raw lines while check_body_links blanks code spans, so a link inside backticks is an example in one directory and a broken reference in another | Won't Fix | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0538](BG0538-a-release-cut-mints-an-affects-unresolvable-warning.md) | a release cut mints an affects-unresolvable warning for every unit that declared its own changelog fragment, because compose deletes the file the unit named | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0539](BG0539-critic-record-cannot-tell-a-review-round-from.md) | critic record cannot tell a review ROUND from a panel SEAT, so the ordinary reject-fix-approve loop escalates as an unresolved split | Fixed | Medium | 2026-08-07 | 2026-08-07 |
-| [BG0540](BG0540-a-retro-that-was-never-written-reports-ran.md) | a retro that was never written reports `ran` on the close checklist, because a missing file is graded as a structural error rather than an absence | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0540](BG0540-a-retro-that-was-never-written-reports-ran.md) | a retro that was never written reports `ran` on the close checklist, because a missing file is graded as a structural error rather than an absence | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0541](BG0541-the-repair-mutation-gate-is-dead-code-transition.md) | the repair-mutation gate is dead code: transition.py set does not call it, while the shipped doctrine tells consuming projects that it refuses | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0542](BG0542-sprint-plan-under-affects-check-block-prints-refused.md) | sprint plan under affects_check: block prints REFUSED, exits 0, and writes the unit into the batch - worse than the honest advisory it replaced | Fixed | High | 2026-08-07 | 2026-08-07 |
 | [BG0543](BG0543-the-warning-ratchet-still-exits-0-on-a.md) | the warning ratchet still exits 0 on a stale baseline, and its replacement headline contradicts the line below it | Fixed | High | 2026-08-07 | 2026-08-07 |
-| [BG0544](BG0544-ck-closing-review-reports-ran-for-a-unit.md) | _ck_closing_review reports `ran` for a unit the shared coverage reading calls uncovered, when its latest sprint-level verdict is APPROVE | Open | Medium | 2026-08-07 | 2026-08-07 |
+| [BG0544](BG0544-ck-closing-review-reports-ran-for-a-unit.md) | _ck_closing_review reports `ran` for a unit the shared coverage reading calls uncovered, when its latest sprint-level verdict is APPROVE | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0545](BG0545-testplan-derive-and-the-bug-criteria-floor-each.md) | testplan derive and the bug criteria floor each mis-slice a checkbox-shaped Acceptance Criteria section, so one refuses a sound plan and the other reports Verify lines that are there as absent | Open | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0546](BG0546-critic-py-record-refuses-a-plan-review-finding.md) | critic.py record refuses a plan-review finding for carrying no diff origin, when a plan review has no diff to attribute one to | Fixed | Medium | 2026-08-07 | 2026-08-07 |
 | [BG0547](BG0547-gate-warn-in-pre-write-gates-is-assigned.md) | one advisory silently replaces another: the transition gate ladder assigns its warning variable where its own docstring says the warnings accumulate | Won't Fix | Medium | 2026-08-07 | 2026-08-07 |

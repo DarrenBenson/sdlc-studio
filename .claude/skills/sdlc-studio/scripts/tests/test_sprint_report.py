@@ -2960,5 +2960,52 @@ class DocSurfaceReportRowTests(unittest.TestCase):
             self.assertNotIn("unreadable", value)
 
 
+class ChecklistHonestyTests(unittest.TestCase):
+    """BG0540/BG0544: two rows reported `ran` for a ceremony that had not happened."""
+
+    def test_a_retro_that_was_never_written_reports_not_run(self) -> None:
+        """MUTANT: drop the `val.get("path") is None` arm from `_ck_retro`.
+
+        `retro.validate` reports a MISSING file as an error like any other, so the row read
+        `ran` - the ceremony reporting itself performed on the strength of a file that does not
+        exist. `path` is None only when nothing was found.
+        """
+        state, value, _d = sr._ck_retro({"retro_validate": {
+            "ok": False, "path": None, "errors": ["no retro file for RETRO9999"]}})
+        self.assertEqual("not-run", state)
+        self.assertIn("no retro file", value)
+
+    def test_a_malformed_retro_still_reports_ran(self) -> None:
+        """The control - a retro that exists and is wrong DID run, badly."""
+        state, _v, _d = sr._ck_retro({"retro_validate": {
+            "ok": False, "path": "x.md", "errors": ["bad heading"]}})
+        self.assertEqual("ran", state)
+
+    def test_an_uncovered_unit_with_an_approve_is_not_reported_as_reviewed(self) -> None:
+        """MUTANT: restore `unreviewed = [u for u in open_units if not latest.get(u)]`.
+
+        The residue - uncovered, verdict present, verdict is an APPROVE - matched neither
+        bucket, fell through both, and the row reported `ran` over a unit the shared coverage
+        reading calls uncovered. An APPROVE against a unit no independent pass covers is a
+        verdict with nothing behind it.
+        """
+        import unittest.mock as _m
+        ctx = {"units": ["US0001"], "review_rounds": [{"r": 1}]}
+        with _m.patch.object(sr, "_verdict_entries", lambda c: [("k", sr._APPROVE, ["US0001"])]), \
+                _m.patch.object(sr, "_coverage", lambda c: {"US0001": {"covered": False}}):
+            state, value, _d = sr._ck_closing_review(ctx)
+        self.assertEqual("not-run", state)
+        self.assertIn("unreviewed", value)
+
+    def test_a_covered_unit_with_an_approve_still_reports_ran(self) -> None:
+        """The control - the fold must not swallow a genuinely reviewed unit."""
+        import unittest.mock as _m
+        ctx = {"units": ["US0001"], "review_rounds": [{"r": 1}]}
+        with _m.patch.object(sr, "_verdict_entries", lambda c: [("k", sr._APPROVE, ["US0001"])]), \
+                _m.patch.object(sr, "_coverage", lambda c: {"US0001": {"covered": True}}):
+            state, _v, _d = sr._ck_closing_review(ctx)
+        self.assertEqual("ran", state)
+
+
 if __name__ == "__main__":
     unittest.main()
