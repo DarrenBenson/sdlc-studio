@@ -69,6 +69,18 @@ _LOWER_BOUND = re.compile(
     r"lower\s+bound[^.]{0,200}\bsupplied\b[^.]{0,80}(?:rather\s+than|not)\s+observed",
     re.IGNORECASE)
 
+#: The NEGATED form, which the pattern above ALSO matches: "it is NOT a lower bound, because
+#: delegated and sidechain spend is supplied, not observed, yet both are fully counted" satisfies
+#: every part of it, in a full run and in isolation. A guard the opposite statement satisfies is
+#: inverted, so this is tested first and refuses (BG0571).
+_LOWER_BOUND_NEGATED = re.compile(
+    r"(?:not|never|no\s+longer|isn't|is\s+not)\s+a\s+lower\s+bound", re.IGNORECASE)
+
+
+def _states_lower_bound(text: str) -> bool:
+    """Whether `text` states the lower-bound claim, in the direction the claim is made."""
+    return bool(_LOWER_BOUND.search(text or "")) and not _LOWER_BOUND_NEGATED.search(text or "")
+
 #: Where the claim must be STATED, each block addressed by its own heading. A whole-file search
 #: cannot be used for this: both documents carry a Revision History row DESCRIBING this very
 #: change, and that row contains every word the claim contains - so gutting the passages that
@@ -175,13 +187,17 @@ class TokenPremiseMatchesTheCode(unittest.TestCase):
         trd = TRD.read_text(encoding="utf-8")
         for where, start, end in _STATING_PASSAGES:
             with self.subTest(passage=where):
-                self.assertRegex(
-                    _passage(trd, start, end, where), _LOWER_BOUND,
+                # `_states_lower_bound`, not the bare pattern: the NEGATED claim matches the
+                # pattern too, so a passage saying it is NOT a lower bound satisfied the guard
+                # that exists to confirm it IS one (BG0571).
+                self.assertTrue(
+                    _states_lower_bound(_passage(trd, start, end, where)),
                     f"{where} does not STATE that the measured total is a lower bound because "
                     f"the delegated figure is supplied rather than observed. A Revision History "
-                    f"row describing the change does not stand in for the passage making it")
-        self.assertRegex(_d0020_row(), _LOWER_BOUND,
-                         "the D0020 row does not state the corrected reason it now stands on")
+                    f"row describing the change does not stand in for the passage making it, "
+                    f"and a passage DENYING the claim does not state it")
+        self.assertTrue(_states_lower_bound(_d0020_row()),
+                        "the D0020 row does not state the corrected reason it now stands on")
 
 
 class TheLowerBoundClaimIsAnchoredToItsPassage(unittest.TestCase):
@@ -314,6 +330,22 @@ class ThePremiseIsGoneFromEveryLiveFile(unittest.TestCase):
                               "the failure does not name the row it could not find")
             finally:
                 globals()["DECISIONS"] = real
+
+class TheLowerBoundClaimIsReadWithItsDirection(unittest.TestCase):
+    """BG0571. The pattern matched the NEGATED claim as readily as the claim."""
+
+    def test_a_passage_denying_the_claim_does_not_state_it(self) -> None:
+        """MUTANT: use the bare `_LOWER_BOUND` pattern again."""
+        real = ("The measured total is a lower bound, because the delegated figure is supplied "
+                "rather than observed.")
+        inverted = ("It is NOT a lower bound, because delegated and sidechain spend is supplied, "
+                    "not observed, yet both are fully counted.")
+        self.assertTrue(_states_lower_bound(real), "the real claim stopped being recognised")
+        self.assertFalse(_states_lower_bound(inverted),
+                         "a passage DENYING the lower-bound claim was read as stating it")
+        # The bare pattern accepted it, which is what made the guard inverted rather than weak.
+        self.assertRegex(inverted, _LOWER_BOUND,
+                         "the fixture no longer reproduces the defect it was built for")
 
 
 if __name__ == "__main__":

@@ -1147,5 +1147,84 @@ class RunAttributedTests(CloseOwedBase):
         self.assertIn("close already ran", page)
 
 
+class SameDayIsNotAfterTests(unittest.TestCase):
+    """BG0509. Both halves of a residual finding the EP0204 review left behind.
+
+    `close_time_repairs` compared DAYS with `>=`, so a unit that went terminal at 09:00 and a
+    retro written at 14:00 on the same date were indistinguishable from the reverse - and the
+    ambiguity was resolved in the EXCUSING direction, releasing the unit from the exit code on an
+    inference, against the definition of "after" in the function's own docstring. Neither side
+    carries a time: the retro has `> **Date:** YYYY-MM-DD` and the terminal date comes from an
+    actuals FILENAME, so no finer comparison is available and none is invented here.
+
+    And `close_repair_overrides` scanned every retro ever written into one flat map, so an
+    override recorded for one close forgave that unit permanently in every later run.
+    """
+
+    def _ws(self, *, terminal_day: str, retro_day: str, override: bool) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="sameday_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (d / "sdlc-studio" / "retros" / "evidence").mkdir(parents=True)
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "bugs" / "BG0005-x.md").write_text(
+            "# BG0005: x\n\n> **Status:** Fixed\n> **Severity:** Medium\n> **Points:** 2\n",
+            encoding="utf-8")
+        body = f"# RETRO0001: x\n\n> **Date:** {retro_day}\n> **Batch:** BG0001\n> **Run:** RUN-A\n"
+        if override:
+            body += ("\n**Close-repair-override:** BG0005 - found and fixed during this "
+                     "ceremony, after the account was written\n")
+        (d / "sdlc-studio" / "retros" / "RETRO0001-x.md").write_text(body, encoding="utf-8")
+        (d / "sdlc-studio" / "retros" / "evidence" / f"actuals-{terminal_day}.jsonl").write_text(
+            '{"id": "BG0005", "status": "Fixed"}\n', encoding="utf-8")
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            '{"schema": 1, "run_id": "RUN-A", "started_at": "2026-02-01T00:00:00Z", '
+            '"ended_at": "2026-02-01T10:00:00Z", "outcome": "goal-reached", "goal": "x", '
+            '"batch": ["BG0001"], "plan": {}}', encoding="utf-8")
+        return d
+
+    def test_a_same_day_terminal_is_not_excused_on_an_inference(self) -> None:
+        """THE defect. MUTANT: restore `when >= latest`, and the unit is excused again."""
+        root = self._ws(terminal_day="2026-02-01", retro_day="2026-02-01", override=False)
+        repairs, unaccounted = close_owed.close_time_repairs(root, [("BG0005", "bug")])
+        self.assertEqual([], repairs, "a same-day terminal was excused with nothing saying so")
+        self.assertEqual([("BG0005", "bug")], unaccounted)
+
+    def test_a_same_day_terminal_IS_excused_when_the_retro_says_so(self) -> None:
+        """The control, and the reason the repair is not simply `>`. A genuine close-time repair
+        is usually found on the day of the ceremony, so that case must survive - it moves from
+        something INFERRED to something STATED, through the override the ceremony already has.
+        MUTANT: ignore the override and require a strictly later day."""
+        root = self._ws(terminal_day="2026-02-01", retro_day="2026-02-01", override=True)
+        repairs, unaccounted = close_owed.close_time_repairs(root, [("BG0005", "bug")])
+        self.assertEqual([("BG0005", "bug")], repairs,
+                         "a stated close-time repair was not honoured")
+        self.assertEqual([], unaccounted)
+
+    def test_a_later_terminal_is_still_a_close_time_repair(self) -> None:
+        """The other control: the ordinary case must be untouched by all of this."""
+        root = self._ws(terminal_day="2026-02-02", retro_day="2026-02-01", override=False)
+        repairs, _ = close_owed.close_time_repairs(root, [("BG0005", "bug")])
+        self.assertEqual([("BG0005", "bug")], repairs)
+
+    def test_an_override_does_not_forgive_a_unit_in_every_later_close(self) -> None:
+        """The second half. The map was global, so one recorded override became a standing
+        exemption - a decision about one close quietly applying for ever.
+        MUTANT: drop the `on_or_after` filter."""
+        root = self._ws(terminal_day="2026-02-01", retro_day="2026-02-01", override=True)
+        self.assertIn("BG0005", close_owed.close_repair_overrides(root, on_or_after="2026-02-01"),
+                      "the override is not readable for the close that recorded it")
+        self.assertEqual({}, close_owed.close_repair_overrides(root, on_or_after="2026-03-01"),
+                         "an override recorded in one close still forgave a later one")
+
+    def test_an_override_with_no_reason_is_still_dropped(self) -> None:
+        """Unchanged by the scoping, and worth holding: a bare dodge dressed as a reason."""
+        root = self._ws(terminal_day="2026-02-01", retro_day="2026-02-01", override=False)
+        p = root / "sdlc-studio" / "retros" / "RETRO0001-x.md"
+        p.write_text(p.read_text(encoding="utf-8") + "\n**Close-repair-override:** BG0005\n",
+                     encoding="utf-8")
+        self.assertEqual({}, close_owed.close_repair_overrides(root, on_or_after="2026-02-01"))
+
+
 if __name__ == "__main__":
     unittest.main()

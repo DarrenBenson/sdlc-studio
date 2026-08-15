@@ -9,6 +9,7 @@ import importlib.util
 import json
 import os
 import shutil
+import subprocess
 import sys
 import contextlib
 import re
@@ -18,6 +19,9 @@ import unittest
 from pathlib import Path
 
 DIR = Path(__file__).resolve().parent.parent
+
+
+SCRIPT = DIR / "transition.py"
 
 
 def _load(name, rel):
@@ -4956,6 +4960,94 @@ class NonePathRecognitionTests(unittest.TestCase):
         """The control. Widening the recognition must not INVENT a None path."""
         self.assertFalse(tr._has_none_path(
             self._fn("def f(x):\n    if x:\n        return 1\n    else:\n        return 2\n")))
+
+
+class TheAppetiteBreakerIsPulledOnTheShippedPath(unittest.TestCase):
+    """BG0526. `loop_guard budget` was fully wired to its data and had NO caller: every reference
+    anywhere was a reference doc telling an agent to run it between units. So the ceiling an
+    operator set at plan time held only while the driving agent remembered to pull it - which
+    makes a recorded decision a suggestion, and is LL0027 exactly: a gate belongs in the command
+    people actually run, not in the step they are told to run.
+
+    A unit reaching a terminal status IS the boundary the breaker was designed for.
+    """
+
+    def _ws(self, units: int = 0, minutes: float = 0.0, appetite: bool = True) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="appetite_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        for uid in ("BG9101", "BG9102"):
+            (d / "sdlc-studio" / "bugs" / f"{uid}-x.md").write_text(
+                f"# {uid}: a fixture bug\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                f"> **Points:** 2\n> **Verification depth:** functional\n> **Affects:** f.py\n\n"
+                f"## Acceptance Criteria\n\n"
+                f"- [x] **AC1** Given a thing, when it happens, then it works.\n"
+                f"  - **Verify:** manual a human checks it\n", encoding="utf-8")
+        state = {"schema": 1, "run_id": "RUN-TEST", "started_at": "2026-08-14T00:00:00Z",
+                 "ended_at": None, "outcome": None, "goal": "x",
+                 "batch": ["BG9101", "BG9102"], "plan": {},
+                 "appetite": ({"units": units, "minutes": minutes, "standing_units": 64,
+                               "standing_minutes": 960.0, "over_appetite": False}
+                              if appetite else {})}
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps(state), encoding="utf-8")
+        return d
+
+    def _set(self, root: Path, uid: str) -> str:
+        proc = subprocess.run(
+            [sys.executable, "-B", str(SCRIPT), "set", "--root", str(root),
+             "--id", uid, "--status", "Fixed"],
+            capture_output=True, text=True, timeout=120)
+        return (proc.stdout or "") + (proc.stderr or "")
+
+    def test_a_spent_appetite_is_reported_at_the_unit_boundary(self) -> None:
+        """The whole bug: nothing pulled the breaker. MUTANT: delete the `_report_appetite`
+        call from `cmd_set` - the ceiling goes back to depending on recall."""
+        root = self._ws(units=1)
+        self._set(root, "BG9101")
+        out = self._set(root, "BG9102")
+        self.assertIn("APPETITE SPENT", out, "the breaker was never pulled")
+        self.assertIn("units", out)
+        self.assertIn("NEXT one", out, "the report does not say what the ceiling actually stops")
+
+    def test_it_reports_and_does_not_refuse(self) -> None:
+        """The unit just finished. Blocking its own transition would punish the wrong action and
+        leave the record wrong as well - what a boundary check stops is the next unit.
+        MUTANT: return non-zero when the appetite is spent."""
+        root = self._ws(units=1)
+        self._set(root, "BG9101")
+        proc = subprocess.run(
+            [sys.executable, "-B", str(SCRIPT), "set", "--root", str(root),
+             "--id", "BG9102", "--status", "Fixed"], capture_output=True, text=True, timeout=120)
+        self.assertEqual(0, proc.returncode,
+                         "a spent appetite refused the transition of a unit already delivered")
+        text = (root / "sdlc-studio" / "bugs" / "BG9102-x.md").read_text(encoding="utf-8")
+        self.assertIn("**Status:** Fixed", text, "the record was not written")
+
+    def test_it_is_silent_when_there_is_nothing_to_say(self) -> None:
+        """THE CONTROL, and the reason this is safe to put on a path run hundreds of times: a
+        line printed after every transition is one nobody reads on the day it matters.
+        MUTANT: report unconditionally instead of only when exhausted."""
+        for label, kw in (("budget remaining", {"units": 8}),
+                          ("no appetite declared", {"appetite": False})):
+            with self.subTest(label):
+                out = self._set(self._ws(**kw), "BG9101")
+                self.assertNotIn("APPETITE", out, f"{label}: the breaker spoke with nothing to say")
+
+    def test_an_unreadable_run_never_breaks_a_completed_transition(self) -> None:
+        """This is a REPORT beside a transition that already succeeded, so a breaker that cannot
+        be evaluated must not turn a good transition into a traceback. Deliberately the opposite
+        of the fail-closed rule elsewhere: nothing here gates anything.
+        MUTANT: let the exception escape."""
+        root = self._ws(units=1)
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text("{ not json",
+                                                                       encoding="utf-8")
+        proc = subprocess.run(
+            [sys.executable, "-B", str(SCRIPT), "set", "--root", str(root),
+             "--id", "BG9101", "--status", "Fixed"], capture_output=True, text=True, timeout=120)
+        self.assertEqual(0, proc.returncode, proc.stderr[-400:])
+        self.assertNotIn("Traceback", proc.stderr)
 
 
 if __name__ == "__main__":

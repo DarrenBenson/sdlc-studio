@@ -3570,7 +3570,10 @@ class DuplicateBurndownTests(unittest.TestCase):
                          f"the control run is already not-ok: {control.get('state')}")
         self.assertEqual("ok", verdict.get("state"))
         self.assertFalse(verdict["ok"], "the planted duplicate was not refused")
-        self.assertIn(shared, verdict["new"], "the refusal did not name the planted selector")
+        # The ratchet keys on the RESOLVED command (BG0486), so the planted selector
+        # is named in the form it runs as - `-q` supplied by the runner.
+        self.assertIn(verify_ac.dup_group_key(shared), verdict["new"],
+                      "the refusal did not name the planted selector")
 
     def test_no_intra_record_group_remains_in_bugs(self) -> None:
         """Mutant: point one split criterion under sdlc-studio/bugs at a node id collecting
@@ -3603,7 +3606,7 @@ class DuplicateBurndownTests(unittest.TestCase):
         self.assertEqual("ok", control.get("state"))
         self.assertEqual("ok", verdict.get("state"))
         self.assertFalse(verdict["ok"], "the planted bug-side duplicate was not refused")
-        self.assertIn(shared, verdict["new"])
+        self.assertIn(verify_ac.dup_group_key(shared), verdict["new"])
 
     def test_the_baseline_holds_no_intra_record_group_in_either_directory(self) -> None:
         """Mutant: return one intra-record entry to the baseline after both halves have landed.
@@ -4585,6 +4588,48 @@ class EditVerbVocabularyTests(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertFalse(any(v in phrase for v in verify_ac._EDIT_VERBS),
                                  f"{phrase!r} is an outcome, not an edit")
+
+class ResolvedDuplicateKeyTests(unittest.TestCase):
+    """BG0486. The ratchet grouped on the written string, so two criteria naming the identical
+    run in different words formed a group of one under each spelling and were reported as no
+    duplicate at all - while two ACs sharing a selector cannot both discriminate, whichever way
+    each was typed."""
+
+    def test_dup_group_key_resolves_the_command_rather_than_the_spelling(self) -> None:
+        """AC1, the merges. MUTANT: return the written form again."""
+        for a, b in [("pytest x.py::T::t", "pytest -q x.py::T::t"),
+                     ("pytest -q -x a.py", "pytest -x -q a.py")]:
+            with self.subTest(f"{a} == {b}"):
+                self.assertEqual(verify_ac.dup_group_key(a), verify_ac.dup_group_key(b),
+                                 "one command written two ways did not group")
+
+    def test_two_different_selectors_are_not_merged(self) -> None:
+        """AC3, and the reason AC1 is not the whole story: a key that merged EVERYTHING would
+        satisfy the merges and destroy the guard. MUTANT: key on the runner alone."""
+        for a, b in [("pytest a.py", "pytest b.py"), ("pytest -k one a.py", "pytest -k two a.py")]:
+            with self.subTest(f"{a} != {b}"):
+                self.assertNotEqual(verify_ac.dup_group_key(a), verify_ac.dup_group_key(b),
+                                    "two genuinely different selectors were merged")
+
+    def test_dup_group_reports_the_written_form_not_the_resolved_key(self) -> None:
+        """AC2. Quoting a resolved argv back at an author names a line in nobody's file.
+        MUTANT: report the group key instead of the spelling."""
+        d = Path(tempfile.mkdtemp(prefix="dupwritten_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        f = d / "US9001-x.md"
+        f.write_text("# US9001: x\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+                     "### AC1: a\n\n- **Verify:** pytest tests/t.py::T::t\n\n"
+                     "### AC2: b\n\n- **Verify:** pytest -q tests/t.py::T::t\n", encoding="utf-8")
+        groups = verify_ac.duplicate_verifiers([f])
+        self.assertEqual(1, len(groups), f"the two spellings did not group: {groups}")
+        # The LOWEST spelling, so the identity is deterministic - and whichever it is, it is a
+        # line that appears in the corpus, which the resolved key is not.
+        written = {"pytest tests/t.py::T::t", "pytest -q tests/t.py::T::t"}
+        self.assertIn(groups[0]["verifier"], written,
+                      "the group is reported as an internal key rather than a written line")
+        self.assertEqual(sorted(written),
+                         sorted([groups[0]["verifier"], *groups[0]["also_written"]]),
+                         "the other spelling in the group is not shown beside it")
 
 
 if __name__ == "__main__":

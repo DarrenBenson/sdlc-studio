@@ -87,6 +87,12 @@ def _exempt_goals(sprint) -> set:
 #: enforce" carries two of these - so the whole D0062 fail-safe sentence could be deleted green.
 _FAIL_SAFE_TERMS = ("absent", "empty", "ladder", "block")
 
+#: Words that INVERT that claim. Direction is the load-bearing half of this rule, so a
+#: sentence carrying any of these is not the claim however many of the terms it holds.
+_FAIL_SAFE_NEGATIONS = ("never block", "does not block", "do not block", "never blocks",
+                        "opens", "is opened", "allowed through", "passes through",
+                        "no longer blocks", "without blocking")
+
 
 def _sentences(block: str) -> list[str]:
     return re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", block))
@@ -101,8 +107,16 @@ def _fail_safe_sentence(block: str) -> str | None:
     """
     for sentence in _sentences(block):
         low = sentence.lower()
-        if all(term in low for term in _FAIL_SAFE_TERMS):
-            return sentence
+        if not all(term in low for term in _FAIL_SAFE_TERMS):
+            continue
+        # POLARITY, not only vocabulary. Rewriting the rule to say the opposite - a goal outside
+        # the ladder never blocks, and the escape OPENS when the rung could not be read - carries
+        # every term above, so this returned it and the suite stayed green over a specification
+        # stating the reverse of what the code does. A guard a paraphrase can defeat is weak; one
+        # the opposite statement satisfies is inverted, and that is the half worth fixing first.
+        if any(neg in low for neg in _FAIL_SAFE_NEGATIONS):
+            continue
+        return sentence
     return None
 
 
@@ -301,6 +315,25 @@ class Adr011AmendmentIsMarked(unittest.TestCase):
                 self.assertIn("ADR-011", str(ctx.exception))
             finally:
                 globals()["TRD"] = real
+
+class PolarityIsReadNotOnlyVocabulary(unittest.TestCase):
+    """BG0571. A guard a paraphrase can defeat is weak; one the OPPOSITE statement satisfies is
+    inverted, and these two were inverted. Both would have reported agreement while the
+    specification stated the reverse of what the code does."""
+
+    def test_the_inverted_fail_safe_rule_is_not_read_as_the_rule(self) -> None:
+        """MUTANT: drop the negation check - the rewritten rule carries all four terms and is
+        returned as the claim, exactly as it was before this repair."""
+        real = "An absent or empty rung, or a goal outside the ladder, blocks the batch."
+        inverted = ("An absent or empty rung, or a goal outside the ladder, never blocks - "
+                    "the escape opens.")
+        self.assertTrue(_fail_safe_sentence(real), "the real rule stopped being recognised")
+        self.assertIsNone(_fail_safe_sentence(inverted),
+                          "a sentence stating the OPPOSITE of the fail-safe rule was accepted "
+                          "as that rule")
+        # ...and the old form really did accept it, so this is not a hypothetical.
+        self.assertTrue(all(term in inverted.lower() for term in _FAIL_SAFE_TERMS),
+                        "the fixture no longer reproduces the defect it was built for")
 
 
 if __name__ == "__main__":

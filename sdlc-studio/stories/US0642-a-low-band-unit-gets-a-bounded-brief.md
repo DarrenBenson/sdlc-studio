@@ -5,7 +5,7 @@
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_critic.py
 > **Epic:** EP0208
 > **Points:** 5
 > **Persona:** Maya Okafor
@@ -53,6 +53,15 @@
 - **Mutant:** drop the criteria from the light brief - a light review judges against a paraphrase, which is the failure the shipped brief exists to prevent
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BoundedBriefTests::test_a_light_brief_keeps_the_four_load_bearing_parts
 - **Verified:** yes (2026-08-05)
+
+### AC5: the tier gates the brief the COMMAND prints
+
+- **Given** the shipped `critic.py brief` verb
+- **When** it is run at full and at light tier
+- **Then** the printed brief carries the claim-inventory pass at full and not at light - the block being a module constant says nothing about which brief it reaches
+- **Mutant:** derive the inventory from something other than the tier - the two printed briefs become identical and the tier means nothing at the command
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_critic.py::US0642TheClaimInventoryPassIsTierGated
+- **Verified:** yes (2026-08-15)
 
 ## Revision History
 

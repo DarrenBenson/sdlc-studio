@@ -48,11 +48,22 @@ def _router_types() -> set:
 
 
 def _backticked(text: str) -> set:
-    return set(re.findall(r"`([a-z][a-z0-9-]*)`", text))
+    """Every artefact name the passage NAMES, however it is marked up.
+
+    Backticked lowercase only, once - so a name written in **bold** or capitalised inside
+    backticks slipped past the stray-name check entirely, and the enumerations this guard
+    compares could gain or lose a type without anything noticing (BG0571). Markup is a matter
+    of house style; the NAME is the claim, so both forms are read and the case is folded.
+    """
+    names = set(re.findall(r"`([A-Za-z][A-Za-z0-9-]*)`", text))
+    names |= set(re.findall(r"\*\*([A-Za-z][A-Za-z0-9-]*)\*\*", text))
+    return {n.lower() for n in names}
 
 
 #: A comma-or-and separated run of backticked names, the shape every enumeration in the TRD uses.
-_NAME = r"`[a-z][a-z0-9-]*`"
+#: Backticked OR bold, any case - see `_backticked`. A run written with one bold
+#: member stopped being an enumeration at all under the lowercase-backtick-only form.
+_NAME = r"(?:`[A-Za-z][A-Za-z0-9-]*`|\*\*[A-Za-z][A-Za-z0-9-]*\*\*)"
 _RUN = re.compile(_NAME + r"(?:(?:,\s*(?:and\s+)?|\s+and\s+)" + _NAME + r")+")
 
 
@@ -140,8 +151,12 @@ class ShippedSurfaceIsDerived(unittest.TestCase):
         gate = _mod("gate")
         lanes = set(gate.DEFAULT_CHECKS)
         self.assertGreater(len(lanes), 10, "DEFAULT_CHECKS parsed to almost nothing")
+        # `lanes` is the passage's own word for the things it is enumerating, written in bold.
+        # It surfaced the moment the stray-name check learned to read bold and mixed case
+        # (BG0571) - under the lowercase-backtick-only form the passage could have gained or
+        # lost a member in bold and nothing would have noticed. Declared, so it is a decision.
         _assert_passage_matches(self, _block("#### The gate tier", r"^---\s*$"), lanes,
-                                set(), "the TRD's default-sweep list")
+                                {"lanes"}, "the TRD's default-sweep list")
 
     def test_both_drift_kind_passages_equal_reconcile_drift_kinds(self) -> None:
         """Both, so the document cannot answer one question two ways - which is exactly what it
@@ -241,6 +256,22 @@ class ClosedWorkIsNotDescribedAsOutstanding(unittest.TestCase):
         import sdlc_md
         with tempfile.TemporaryDirectory() as d:
             self.assertIsNone(sdlc_md.find_by_id(Path(d), "CR9999"))
+
+class NamesAreReadInEveryMarkupTheDocumentUses(unittest.TestCase):
+    """BG0571. The stray-name check read backticked lowercase only, so a name in bold or
+    capitalised inside backticks bypassed it entirely."""
+
+    def test_bold_and_mixed_case_names_are_read(self) -> None:
+        """MUTANT: restore the lowercase-backtick-only form - the bold and capitalised names
+        vanish and a passage can gain or lose a member unnoticed."""
+        text = "The lanes are `alpha`, **beta** and `Gamma`."
+        self.assertEqual({"alpha", "beta", "gamma"}, _backticked(text),
+                         "a name in bold or mixed case is invisible to the stray-name check")
+
+    def test_a_run_survives_a_bold_member(self) -> None:
+        """An enumeration written with one bold member stopped being an enumeration at all."""
+        self.assertTrue(_RUN.search("`alpha`, **beta** and `gamma`"),
+                        "a run with a bold member is not recognised as an enumeration")
 
 
 if __name__ == "__main__":

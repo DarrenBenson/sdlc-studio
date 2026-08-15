@@ -93,25 +93,36 @@ CLOSE_REPAIR_OVERRIDE_RE = re.compile(
     r"(?mi)^>?\s*\*\*Close-repair-override:\*\*[ \t]*(.*)$")
 
 
-def close_repair_overrides(root: Path) -> dict:
-    """`{unit_id: reason}` for every reasoned close-repair override across the retros.
+def close_repair_overrides(root: Path, on_or_after: str = "") -> dict:
+    """`{unit_id: (reason, retro_date)}` for every reasoned close-repair override in the retros.
 
     A line naming no unit, or naming one with no reason after it, contributes nothing - it is
     the bare dodge dressed as a reason, and it is dropped rather than honoured.
+
+    SCOPED, not global. This scanned every retro into one flat map, so an override recorded once
+    forgave that unit in every later run for ever: a decision taken about one close silently
+    became a permanent exemption, which is the shape of exemption this repository keeps finding
+    outliving its reason. `on_or_after` keeps only overrides recorded by a retro on or after that
+    date, so the caller asks about the close it is actually judging.
     """
     out: dict = {}
     retros_dir = Path(root) / "sdlc-studio" / "retros"
     if not retros_dir.is_dir():
         return out
     for p in sorted(retros_dir.glob("RETRO*.md")):
-        for m in CLOSE_REPAIR_OVERRIDE_RE.finditer(sdlc_md.read_text_safe(p)):
+        text = sdlc_md.read_text_safe(p)
+        m_date = retro.DATE_RE.search(text)
+        when = (m_date.group(1).strip() if m_date else "")
+        if on_or_after and (not when or when < on_or_after):
+            continue
+        for m in CLOSE_REPAIR_OVERRIDE_RE.finditer(text):
             raw = " ".join(retro.PLACEHOLDER_RE.sub("", m.group(1)).split())
             hit = sdlc_md.ID_SEARCH_RE.search(raw)
             if not hit:
                 continue
             reason = raw[hit.end():].lstrip(" -:\u2013").strip()
             if reason:
-                out[sdlc_md.norm_id(hit.group(0))] = reason
+                out[sdlc_md.norm_id(hit.group(0))] = (reason, when)
     return out
 
 
@@ -274,9 +285,24 @@ def close_time_repairs(root: Path, uncovered: list) -> tuple[list, list]:
     latest = _latest_retro_date(root)
     closed = _last_run_is_closed(root)
     dates = terminal_dates(root) if (latest and closed) else {}
+    # SAME DAY IS NOT AFTER, and it is not knowable either. Both sides of this comparison are
+    # DAYS - the retro carries `> **Date:** YYYY-MM-DD` and the terminal date comes from an
+    # actuals FILENAME - so a unit that went terminal at 09:00 and a retro written at 14:00 are
+    # indistinguishable from the reverse. `>=` resolved that ambiguity in the excusing direction,
+    # releasing a unit from the exit code on an inference, and contradicting the definition of
+    # "after" in the docstring above.
+    #
+    # It resolves the other way now: strictly later, unless the retro SAYS otherwise. A genuine
+    # close-time repair is usually found on the day of the ceremony, so that case is not lost -
+    # it is moved from something inferred to something stated, through the override the ceremony
+    # already has. An unanswered question does not get to excuse anything.
+    same_day_stated = set(close_repair_overrides(root, on_or_after=latest) if latest else {})
     for cid, t in uncovered:
-        when = dates.get(sdlc_md.norm_id(cid), "")
-        (repairs if (when and latest and when >= latest) else unaccounted).append((cid, t))
+        uid = sdlc_md.norm_id(cid)
+        when = dates.get(uid, "")
+        is_repair = bool(when and latest and (when > latest
+                                              or (when == latest and uid in same_day_stated)))
+        (repairs if is_repair else unaccounted).append((cid, t))
     return sorted(repairs), sorted(unaccounted)
 
 
@@ -592,7 +618,10 @@ def owed(root: Path) -> dict:
     # An override is per unit and reasoned. Recorded ones are split out so the exception is
     # COUNTABLE rather than routine - CR0527 asks for visible, not for forgiven, and an
     # exception nobody can count is indistinguishable from the inline repair the rule forbids.
-    overrides = close_repair_overrides(root)
+    # SCOPED to the close being judged, not every retro ever written. Unscoped, one recorded
+    # override forgave its unit permanently in all later runs - a decision about one close
+    # quietly becoming a standing exemption.
+    overrides = close_repair_overrides(root, on_or_after=_latest_retro_date(root))
     overridden = [(cid, t) for cid, t in repairs if sdlc_md.norm_id(cid) in overrides]
     repairs = [(cid, t) for cid, t in repairs if sdlc_md.norm_id(cid) not in overrides]
     vel = velocity_owed(root, str(baseline.get("stamped") or ""))
@@ -602,7 +631,7 @@ def owed(root: Path) -> dict:
             # close already ran" rather than "write another one".
             "run_attributed": attributed,
             "close_repair_overrides": sorted(
-                (cid, t, overrides[sdlc_md.norm_id(cid)]) for cid, t in overridden),
+                (cid, t, overrides[sdlc_md.norm_id(cid)][0]) for cid, t in overridden),
             "grandfathered": len(uncovered) - len(owed_units),
             "covered": len(covered), "terminal": len(terminal),
             "dead_breakdown_ids": dead_ids, "unreadable": degraded,

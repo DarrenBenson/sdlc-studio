@@ -1,10 +1,11 @@
 # BG0577: A fix that lands without closing its bug leaves a backlog item that reads real and is not, and nothing detects it - 12% of the open bug backlog was fiction
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (the detector driven against a fixture reproducing the real BG0534/BG0563 pair this bug cites - reported at 67% overlap - with three controls confirming a shared file alone, the same words in a different module, and units declaring nothing are all left alone; NARROWED deliberately to one of the three checks, with the reason for each omission written on the bug; mutation: 4 declared mutants, all KILLED, restore byte-exact)
 > **Created:** 2026-08-13
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/gate.py, tools/tests/test_backlog_integrity.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Severity:** High
 > **Points:** 5
 
@@ -17,6 +18,23 @@ None of these is detectable today. `status.py points` counts open artefacts, `co
 The cost is not the wasted points, which are recoverable. It is that the figure is load-bearing. The delivery plan approved on 2026-08-13 was sized at 117 points with a 9.3M-41M token forecast and a three-run shape derived from that total - all of it computed over a backlog now known to be 12% fiction. A capacity ceiling, a velocity rate and a run count were each chosen against a number nobody could check, and the only reason the error surfaced was that somebody read all forty-one bugs one at a time.
 
 This is the same class the repository files hardest against - a claim nothing exercises - pointed at its own backlog rather than at its code.
+
+## Acceptance Criteria
+
+- [x] **AC1** Given two open bugs declaring the SAME files and describing the same subject, when `sprint breakdown` runs, then the pair is reported at plan time - where the cost of carrying both is about to be paid.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k one_file_set_and_one_subject_are_paired
+  - **Verified:** yes (2026-08-15)
+- [x] **AC2** Given two bugs sharing a file set but about different things, when the check runs, then they are NOT paired - a shared file is a cluster, already reported beside this, and a report nobody can read is one nobody reads.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k shared_file_alone_is_not_a_duplicate
+  - **Verified:** yes (2026-08-15)
+- [x] **AC3** Given two bugs with the same words about different modules, when the check runs, then they are not paired - the same defect in two places is two bugs.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k different_file_set_is_never_paired
+  - **Verified:** yes (2026-08-15)
+- [x] **AC4** Given units that declare no `Affects`, when the check runs, then they are skipped rather than paired on their shared emptiness.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k no_declared_affects_is_skipped
+  - **Verified:** yes (2026-08-15)
+- [x] **AC5** Given any pair it finds, when it reports, then nothing is closed or altered - a backlog that silently closed its own items would be this failure with the sign reversed.
+  - **Verify:** manual read `probable_duplicates` - it returns rows and writes nothing
 
 ## Steps to Reproduce
 
@@ -52,6 +70,40 @@ Do NOT auto-close anything. The failure this bug describes is a backlog trusted 
 Every plan, forecast and capacity decision computed from the backlog is wrong by an unknown margin, and the margin only grows: a bug filed today is checked at filing and never again. The measured instance is 12%, found by hand on one backlog on one day, so it is a lower bound rather than a rate.
 
 Filed High because it defeats the estimator rather than degrading it, and because the evidence is two artefacts - an approved plan and a released version - rather than an argument. It is also the cheapest class of waste to remove: a repaired-but-open bug costs a full grooming, test-plan, review and sign-off cycle to discover, and one command to detect.
+
+## Delivered here, and what is NOT
+
+**Delivered: the duplicate detector**, in `sprint breakdown`, beside the shared-file clusters it
+strengthens. It is the cheapest of the three checks this bug asks for and the only one that needs
+no judgement: an identical file set PLUS an overlapping subject is a stronger signal than a
+cluster, and it is reported at plan time because that is where the cost of carrying both is about
+to be paid. It reports and does nothing else.
+
+**Not delivered: the repaired-but-open detector.** It rests on running an open bug's own criteria,
+and the premise check for it falsified its own design - measured on 2026-08-13, **0 of 31 open
+bugs carried an executable `Verify:` line**, so there is nothing to run. It needs criteria on open
+bugs first, which is a grooming programme rather than a check.
+
+**Not delivered: the premise re-check on stated counts.** Deriving a count from a bug's prose is
+a parser over free text, and a wrong re-derivation would report drift that is not there - the
+same false-positive class this run spent the day removing from other guards.
+
+Both remain worth building and neither is started. The narrowing is stated rather than implied,
+because a bug closed as though it were whole is the shape this bug is about.
+
+This session is itself the evidence for all three: of the bugs triaged today, BG0490 was half
+stale, BG0519 was entirely stale, and BG0493 was entirely live. Nothing but reading each one
+could tell them apart.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in sprint.py `probable_duplicates`, raise the title-overlap threshold so a real pair is missed | Given two open bugs declaring the SAME files and describing the same subject, when `sprint breakdown` runs, then the pair is reported at plan time - where the cost of carrying both is about to be paid. |
+| AC2 | in sprint.py `probable_duplicates`, compare only the Affects so every cluster is a duplicate | Given two bugs sharing a file set but about different things, when the check runs, then they are NOT paired - a shared file is a cluster, already reported beside this, and a report nobody can read is one nobody reads. |
+| AC3 | in sprint.py `probable_duplicates`, drop the Affects equality and compare titles alone | Given two bugs with the same words about different modules, when the check runs, then they are not paired - the same defect in two places is two bugs. |
+| AC4 | in sprint.py `probable_duplicates`, stop skipping units that declare no Affects | Given units that declare no `Affects`, when the check runs, then they are skipped rather than paired on their shared emptiness. |
+| AC5 | unnameable: the claim is that the function WRITES nothing, and no edit makes a pure reader write | Given any pair it finds, when it reports, then nothing is closed or altered - a backlog that silently closed its own items would be this failure with the sign reversed. |
 
 ## Revision History
 

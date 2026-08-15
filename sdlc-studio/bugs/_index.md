@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 12 |
+| Open | 5 |
 | In Progress | 0 |
-| Fixed | 475 |
+| Fixed | 481 |
 | Verified | 0 |
-| Closed | 83 |
+| Closed | 84 |
 | Won't Fix | 7 |
 | Superseded | 2 |
 | **Total** | **579** |
@@ -28,7 +28,7 @@
 | [BG0469](BG0469-close-owed-reports-a-close-that-already-happened.md) | close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0477](BG0477-refine-mints-stories-nothing-can-plan-placeholder-acceptance.md) | refine mints stories nothing can plan: placeholder acceptance criteria, unfilled user-story fields, and a persona that is no seat | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0485](BG0485-the-goal-review-panel-maps-a-seat-s.md) | the goal-review panel maps a seat's no to partial, and fans a whole-goal answer across every clause | Fixed | Medium | 2026-08-02 | 2026-08-02 |
-| [BG0486](BG0486-duplicate-verifiers-are-grouped-on-a-normalised-string.md) | duplicate verifiers are grouped on a normalised string, so two ACs running the same command can read as distinct | Open | Medium | 2026-08-02 | 2026-08-02 |
+| [BG0486](BG0486-duplicate-verifiers-are-grouped-on-a-normalised-string.md) | duplicate verifiers are grouped on a normalised string, so two ACs running the same command can read as distinct | Fixed | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0488](BG0488-us0608-and-us0609-ship-a-feature-no-cli.md) | US0608 and US0609 ship a feature no CLI invocation can reach, and their tests survive its deletion | Fixed | High | 2026-08-02 | 2026-08-02 |
 | [BG0489](BG0489-the-commit-msg-suite-verdict-is-written-before.md) | the commit-msg suite verdict is written before the tool-tests lane runs, so a green verdict survives its failure | Closed | High | 2026-08-02 | 2026-08-02 |
 | [BG0490](BG0490-four-bug-repairs-are-fixed-with-half-their.md) | four bug repairs are Fixed with half their title undelivered and no recorded narrowing | Open | Medium | 2026-08-02 | 2026-08-02 |
@@ -48,7 +48,7 @@
 | [BG0506](BG0506-a-repeated-single-valued-metadata-field-is-accepted.md) | a repeated single-valued metadata field is accepted, read first-wins, and corrected first-only - so a gate can read one of two contradictory claims | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0507](BG0507-the-suite-collapse-lane-sets-fail-1-after.md) | the suite-collapse lane sets fail=1 after the green verdict is already written, so a collapsed suite is reusable | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0508](BG0508-the-close-report-s-sibling-imports-sit-outside.md) | the close report's sibling imports sit outside its advisory try, so an ImportError escapes after the run is already stamped closed | Fixed | Medium | 2026-08-03 | 2026-08-03 |
-| [BG0509](BG0509-the-close-time-repair-split-uses-day-granularity.md) | the close-time-repair split uses day granularity and a global override map, so a same-day terminal is excused and an override never expires | Open | Medium | 2026-08-03 | 2026-08-03 |
+| [BG0509](BG0509-the-close-time-repair-split-uses-day-granularity.md) | the close-time-repair split uses day granularity and a global override map, so a same-day terminal is excused and an override never expires | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0510](BG0510-the-plan-review-ledger-has-no-kind-column.md) | the plan-review ledger has no kind column, so a second pre-code gate would be cleared by the first gate's approval | Fixed | Medium | 2026-08-03 | 2026-08-03 |
 | [BG0511](BG0511-the-plan-gate-reports-a-batch-of-bugs.md) | the plan gate reports a batch of bugs groomed when the transition gate refuses them outright | Fixed | High | 2026-08-03 | 2026-08-03 |
 | [BG0512](BG0512-batch-add-epic-and-batch-swap-mutate-a.md) | batch add-epic and batch swap mutate a live batch without the ungroomed census, so a unit the plan gate would refuse can enter a run | Fixed | Medium | 2026-08-04 | 2026-08-04 |
@@ -58,17 +58,17 @@
 | [BG0516](BG0516-the-close-reports-a-gate-refusal-it-could.md) | the close reports a gate refusal it could not attribute, where the gate named its failing lane plainly | Fixed | High | 2026-08-04 | 2026-08-04 |
 | [BG0517](BG0517-the-close-loop-cap-stops-a-loop-that.md) | the close-loop cap stops a loop that has already converged - it counts attempts before it looks at the outstanding set | Fixed | High | 2026-08-04 | 2026-08-04 |
 | [BG0518](BG0518-close-owed-detect-prints-a-sprint-close-is.md) | close_owed detect prints "a sprint close is owed" on the run where it exits 0, so its headline contradicts its own verdict | Fixed | Medium | 2026-08-04 | 2026-08-04 |
-| [BG0519](BG0519-the-tools-leg-s-remaining-slowdown-inside-the.md) | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed | Open | Medium | 2026-08-04 | 2026-08-04 |
+| [BG0519](BG0519-the-tools-leg-s-remaining-slowdown-inside-the.md) | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed | Closed | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0520](BG0520-the-triage-session-cap-is-a-lifetime-cap.md) | the triage session cap is a LIFETIME cap: the session key defaults to a constant, so the counter never resets and filing eventually refuses for good | Fixed | Medium | 2026-08-04 | 2026-08-04 |
 | [BG0521](BG0521-us0481-ships-a-config-key-that-does-nothing.md) | US0481 ships a config key that does nothing at plan time, and batch add writes the unit before it refuses it | Fixed | High | 2026-08-05 | 2026-08-05 |
 | [BG0522](BG0522-bg0515-s-fix-reproduces-bg0515-a-charter-with.md) | BG0515's fix reproduces BG0515: a charter with an unresolved Open Question leaves the run open and the charter Queued | Fixed | High | 2026-08-05 | 2026-08-05 |
 | [BG0523](BG0523-five-acceptance-criteria-are-pinned-by-verifiers-that.md) | Five acceptance criteria are pinned by verifiers that cannot fail on what they claim | Fixed | High | 2026-08-05 | 2026-08-05 |
 | [BG0524](BG0524-warning-ratchet-reports-a-stale-baseline-as-clean.md) | warning-ratchet reports a stale baseline as clean and exits 0, contradicting US0480 AC4 and its own docstring | Fixed | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0525](BG0525-us0629-ac2-asks-derive-to-detect-a-polarity.md) | US0629 AC2 asks derive to detect a polarity-flipped restatement, which is not mechanically decidable as written | Fixed | Medium | 2026-08-05 | 2026-08-05 |
-| [BG0526](BG0526-loop-guard-budget-has-no-programmatic-caller-the.md) | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers | Open | Medium | 2026-08-05 | 2026-08-05 |
+| [BG0526](BG0526-loop-guard-budget-has-no-programmatic-caller-the.md) | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers | Fixed | Medium | 2026-08-05 | 2026-08-05 |
 | [BG0527](BG0527-the-one-run-slot-gate-reads-a-run.md) | the one-run-slot gate reads a run as history the moment its goal verdict is recorded, so the next plan can open over a run whose close has 20 unmet prerequisites | Fixed | High | 2026-08-06 | 2026-08-06 |
 | [BG0528](BG0528-a-delivered-unit-left-at-ready-is-invisible.md) | a delivered unit left at Ready is invisible to every close gate: twenty blockers were reported and not one of them said the units had never been transitioned | Fixed | High | 2026-08-06 | 2026-08-06 |
-| [BG0529](BG0529-four-run-01kz9315-units-carry-no-verifier-that.md) | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing | Open | Medium | 2026-08-06 | 2026-08-06 |
+| [BG0529](BG0529-four-run-01kz9315-units-carry-no-verifier-that.md) | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing | Fixed | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0530](BG0530-verify-ac-reports-a-unit-whose-criteria-it.md) | verify_ac reports a unit whose criteria it could not parse as a clean pass: ac=0 pass=0 fail=0, exit 0 - and every bug delivered in the last two sprints is in that state | Fixed | High | 2026-08-06 | 2026-08-06 |
 | [BG0531](BG0531-a-hand-applied-mutant-is-registered-with-no.md) | a hand-applied mutant is registered with no assertion that its anchor was unique, so a mutation run can report a false SURVIVED for a function it never edited | Fixed | Medium | 2026-08-06 | 2026-08-06 |
 | [BG0532](BG0532-alias-map-decodes-every-artefact-in-the-project.md) | alias_map decodes every artefact in the project with a bare read_text, so one unreadable file takes down any command that resolves an id | Fixed | Medium | 2026-08-06 | 2026-08-06 |
@@ -110,13 +110,13 @@
 | [BG0568](BG0568-an-epic-can-never-reach-done-the-test.md) | an epic can never reach Done - the test-plan gate holds a container whose completion is derived, and nothing else checks its breakdown | Fixed | High | 2026-08-10 | 2026-08-10 |
 | [BG0569](BG0569-nothing-stops-a-tool-or-fixture-writing-into.md) | nothing stops a tool or fixture writing into the working tree, and it happened three times in two days - each caught by a gate rather than by its author | Fixed | High | 2026-08-11 | 2026-08-11 |
 | [BG0570](BG0570-the-write-time-verify-guard-cannot-tell-a.md) | the write-time Verify guard cannot tell a typo from an ordering, so it refuses the first story of every greenfield project | Fixed | High | 2026-08-11 | 2026-08-11 |
-| [BG0571](BG0571-the-repaired-spec-agreement-guards-pin-word-patterns.md) | The repaired spec-agreement guards pin word patterns rather than claims, so a passage stating the OPPOSITE rule passes | Open | Medium | 2026-08-11 | 2026-08-11 |
+| [BG0571](BG0571-the-repaired-spec-agreement-guards-pin-word-patterns.md) | The repaired spec-agreement guards pin word patterns rather than claims, so a passage stating the OPPOSITE rule passes | Fixed | Medium | 2026-08-11 | 2026-08-11 |
 | [BG0572](BG0572-the-repo-writes-guard-attributes-any-concurrent-edit.md) | The repo-writes guard attributes any concurrent edit to the test run, so editing during a 15-minute background commit refuses it and names the author's own files as fixture damage | Fixed | Medium | 2026-08-11 | 2026-08-11 |
 | [BG0573](BG0573-running-the-suite-from-inside-scripts-empties-the.md) | Running the suite from inside scripts/ empties the checkout and replaces it with a greenfield tree, and the temp-root guard is disarmed for any clone under /tmp | Fixed | High | 2026-08-11 | 2026-08-11 |
 | [BG0574](BG0574-a-dry-run-takes-the-allocation-lock-on.md) | A --dry-run takes the allocation lock on the target repository, so a preview writes into the tree it was asked only to describe | Fixed | Medium | 2026-08-11 | 2026-08-11 |
 | [BG0575](BG0575-the-documented-sensitive-environment-install-refuses-to-install.md) | The documented sensitive-environment install refuses to install, at every version, because the sidecar it verifies against cannot exist at the URL install.sh reads | Fixed | High | 2026-08-12 | 2026-08-12 |
 | [BG0576](BG0576-ci-on-main-has-been-red-since-before.md) | CI on main has been red since before v5.0.0 and both v5 tags were cut over it, because tag-check reads a locally recorded green and never asks the remote | Fixed | High | 2026-08-13 | 2026-08-13 |
-| [BG0577](BG0577-a-fix-that-lands-without-closing-its-bug.md) | A fix that lands without closing its bug leaves a backlog item that reads real and is not, and nothing detects it - 12% of the open bug backlog was fiction | Open | High | 2026-08-13 | 2026-08-13 |
+| [BG0577](BG0577-a-fix-that-lands-without-closing-its-bug.md) | A fix that lands without closing its bug leaves a backlog item that reads real and is not, and nothing detects it - 12% of the open bug backlog was fiction | Fixed | High | 2026-08-13 | 2026-08-13 |
 | [BG0578](BG0578-test-file-attribution-is-decided-by-name-frequency.md) | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner | Open | Medium | 2026-08-14 | 2026-08-14 |
 | [BG0579](BG0579-the-per-commit-gate-has-outgrown-the-tool.md) | the per-commit gate has outgrown the tool timeouts that run it, so a commit is KILLED rather than refused - and a kill reads as a hang, which invites --no-verify | Fixed | High | 2026-08-14 | 2026-08-14 |
 

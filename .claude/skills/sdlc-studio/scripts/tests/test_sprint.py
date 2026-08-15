@@ -15842,6 +15842,70 @@ class CloseReportResilienceTests(unittest.TestCase):
         self.assertIn("RETURNED", proc.stdout,
                       f"the report raised instead of degrading:\n{proc.stderr[-600:]}")
 
+class ProbableDuplicatesAreReportedAtPlanTime(unittest.TestCase):
+    """BG0577. Working the backlog found that 12% of it was not work at all - two bugs already
+    repaired, two with premises whose counts had gone to zero, one a straight duplicate - and
+    none of it was detectable: `status.py points` counts open artefacts and `conformance` judges
+    terminal ones, so nothing asks whether an OPEN bug is still true. A plan sized against that
+    number inherits the error in silence, which is exactly what happened.
+
+    This is the cheapest of the three checks that bug asks for and the only one needing no
+    judgement. It REPORTS; a backlog that closed its own items would be the same failure with
+    the sign reversed."""
+
+    def _ws(self, units) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="dupes_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        for uid, title, affects in units:
+            (d / "sdlc-studio" / "bugs" / f"{uid}-x.md").write_text(
+                f"# {uid}: {title}\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                f"> **Points:** 2\n> **Affects:** {affects}\n", encoding="utf-8")
+        return d
+
+    def test_two_bugs_with_one_file_set_and_one_subject_are_paired(self) -> None:
+        """The real pair BG0577 cites, in its own words. MUTANT: compare only the Affects - every
+        shared-file cluster becomes a duplicate and the report is noise nobody reads."""
+        root = self._ws([
+            ("BG9301", "testplan derive's edit-verb check is an enumeration of subtractive verbs",
+             "scripts/verify_ac.py"),
+            ("BG9302", "the edit-verb vocabulary enumerates only subtractive verbs in testplan "
+                       "derive", "scripts/verify_ac.py"),
+        ])
+        dupes = sprint.probable_duplicates(root, [{"id": "BG9301"}, {"id": "BG9302"}])
+        self.assertEqual(1, len(dupes), f"the duplicate pair was not reported: {dupes}")
+        self.assertEqual(["BG9301", "BG9302"], dupes[0]["pair"])
+        self.assertGreaterEqual(dupes[0]["overlap"], 0.6)
+
+    def test_a_shared_file_alone_is_not_a_duplicate(self) -> None:
+        """THE control, and what keeps this quiet enough to read. A shared file set is a CLUSTER,
+        already reported beside this; only the same SUBJECT makes it a probable duplicate."""
+        root = self._ws([
+            ("BG9301", "the edit-verb check is an enumeration", "scripts/verify_ac.py"),
+            ("BG9303", "a duplicate group names the resolved key rather than the written line",
+             "scripts/verify_ac.py"),
+        ])
+        self.assertEqual([], sprint.probable_duplicates(root, [{"id": "BG9301"},
+                                                               {"id": "BG9303"}]))
+
+    def test_a_different_file_set_is_never_paired(self) -> None:
+        """Same words, different surface: two bugs about "the edit-verb check" in different
+        modules are two bugs. MUTANT: drop the Affects equality and compare titles alone."""
+        root = self._ws([
+            ("BG9301", "the edit-verb check is an enumeration", "scripts/verify_ac.py"),
+            ("BG9304", "the edit-verb check is an enumeration", "scripts/critic.py"),
+        ])
+        self.assertEqual([], sprint.probable_duplicates(root, [{"id": "BG9301"},
+                                                               {"id": "BG9304"}]))
+
+    def test_a_unit_with_no_declared_affects_is_skipped(self) -> None:
+        """Two units declaring nothing share an empty file set, which would pair every such pair
+        with similar titles. A missing Affects is a different finding, reported elsewhere."""
+        root = self._ws([("BG9305", "the edit-verb check is an enumeration", ""),
+                         ("BG9306", "the edit-verb check is an enumeration", "")])
+        self.assertEqual([], sprint.probable_duplicates(root, [{"id": "BG9305"},
+                                                               {"id": "BG9306"}]))
+
 
 if __name__ == "__main__":
     unittest.main()

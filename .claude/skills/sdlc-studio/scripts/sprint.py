@@ -2158,11 +2158,68 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             "affects_advisories": affects_advisories,
             "decompose": decompose,
             "triage": _batch_triage(root, [it["id"] for it in batch]),
+            "probable_duplicates": probable_duplicates(root, batch),
             "ok": not ungroomed and not oversized}
 
 
 PARALLEL = "parallel"
 SEQUENTIAL = "sequential"
+
+
+#: How much of two titles must be shared before a pair with identical `Affects` is reported as a
+#: probable duplicate. Tuned to be quiet: a shared file set alone is a CLUSTER and already
+#: reported, so this only speaks when the two units also describe the same thing.
+_DUPLICATE_TITLE_OVERLAP = 0.6
+
+#: Words that carry no subject and would make any two bug titles look alike.
+_TITLE_STOPWORDS = frozenset(
+    "a an and are as at be but by for from has have in is it its no not of on or so that the "
+    "then there this to was were when which while with without".split())
+
+
+def _title_tokens(title: str) -> set:
+    words = re.findall(r"[a-z0-9_]+", (title or "").lower())
+    return {w for w in words if w not in _TITLE_STOPWORDS and len(w) > 2}
+
+
+def probable_duplicates(root: Path | str, batch: list) -> list:
+    """Pairs in `batch` with IDENTICAL declared `Affects` and heavily overlapping titles.
+
+    Reported, never acted on. BG0577 found that 12% of a forty-one bug backlog was not work at
+    all - two already repaired, two with expired premises, one a straight duplicate - and none of
+    it was detectable: `status.py points` counts open artefacts and `conformance` judges terminal
+    ones, so nothing asks whether an OPEN bug is still true. A plan sized against that number
+    inherits the error silently, which is what happened on 2026-08-13.
+
+    This is the cheapest of the three checks that bug asks for, and the only one that needs no
+    judgement: an identical file set plus the same words is a stronger signal than the shared-file
+    cluster already printed beside it, and a duplicate costs most at PLAN time, which is here.
+
+    Deliberately NOT auto-closed. A backlog that silently closed its own items would be the same
+    failure with the sign reversed - the point is to put the pair in front of somebody.
+    """
+    root = Path(root)
+    rows = []
+    for it in batch:
+        found = sdlc_md.find_by_id(root, it["id"])
+        if not found:
+            continue
+        text = sdlc_md.read_text_safe(found[0])
+        affects = tuple(sorted(sdlc_md.affects_files(text)))
+        if not affects:
+            continue          # no declared surface is a different finding, reported elsewhere
+        rows.append((it["id"], affects, _title_tokens(sdlc_md.extract_h1_title(text) or "")))
+    out = []
+    for i, (aid, a_files, a_words) in enumerate(rows):
+        for bid, b_files, b_words in rows[i + 1:]:
+            if a_files != b_files or not (a_words and b_words):
+                continue
+            overlap = len(a_words & b_words) / min(len(a_words), len(b_words))
+            if overlap >= _DUPLICATE_TITLE_OVERLAP:
+                out.append({"pair": [aid, bid], "overlap": round(overlap, 2),
+                            "affects": list(a_files),
+                            "shared": sorted(a_words & b_words)})
+    return sorted(out, key=lambda r: (-r["overlap"], r["pair"]))
 
 
 def _unit_files(root: Path, text: str) -> list[str]:
@@ -3602,6 +3659,19 @@ def _render_lane_partition(data: dict) -> None:
               + ", ".join(unplaceable))
 
 
+def _render_duplicates(bd: dict) -> None:
+    """Probable duplicates, printed where the cost of carrying both is about to be paid."""
+    dupes = bd.get("probable_duplicates") or []
+    if not dupes:
+        return
+    print(f"  probable duplicate(s) - {len(dupes)} pair(s) declare the SAME files and describe "
+          f"the same thing. Not closed for you: whether two bugs are one is a judgement, and a "
+          f"backlog that closed its own items would be the failure this reports, reversed:")
+    for d in dupes:
+        print(f"    {d['pair'][0]} / {d['pair'][1]} - {d['overlap']:.0%} title overlap "
+              f"({', '.join(d['shared'][:6])}) over {', '.join(d['affects'][:3])}")
+
+
 def _render_clusters(data: dict) -> None:
     """Shared-file clusters, and the waves they falsify.
 
@@ -4437,6 +4507,7 @@ def cmd_breakdown(args: argparse.Namespace) -> int:
               f"{bd['ceiling']} points or fewer:")
         print("\n".join(_oversized_detail(bd)))
         print(SPLIT_FIX.format(ceiling=bd["ceiling"]))
+    _render_duplicates(bd)
     _render_clusters({"breakdown": bd})
     _render_affects_advisories({"breakdown": bd}, args.root)
     _render_decompose({"breakdown": bd})

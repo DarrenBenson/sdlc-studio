@@ -5,7 +5,7 @@
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_sprint_report.py
 > **Epic:** EP0209
 > **Points:** 2
 > **Persona:** Maya Okafor
@@ -53,6 +53,15 @@
 - **Mutant:** generate it only on the panel path - the human close and the seat close diverge
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OperatorSummaryTests::test_the_summary_is_generated_for_a_human_signoff_too
 - **Verified:** yes (2026-08-05)
+
+### AC5: an absent record is NAMED absent in what is printed
+
+- **Given** a retro with no cost, goal or verdict recorded
+- **When** `sprint_report.py operator-summary` renders it
+- **Then** the page says `none recorded`, `unjudged` and `UNMEASURED` rather than printing a confident zero - a dict-level test never asks what was printed
+- **Mutant:** default a missing record to 0 - the page renders a zero it never read and the dict-level test stays green
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_sprint_report.py::US0645EveryFigureIsReadBackFromARecord
+- **Verified:** yes (2026-08-15)
 
 ## Revision History
 

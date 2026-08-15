@@ -5,7 +5,7 @@
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_critic.py
 > **Epic:** EP0209
 > **Points:** 2
 > **Persona:** Maya Okafor
@@ -57,6 +57,15 @@
 - **Mutant:** append the column without widening the declared column tuple - the parser mis-aligns every field after it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffCapacityTests::test_the_existing_columns_still_parse_and_the_gate_still_reads_them
 - **Verified:** yes (2026-08-05)
+
+### AC5: the parsed field reaches the RECORD, not just the return value
+
+- **Given** a sign-off recorded through the shipped verb
+- **When** the written record is read back
+- **Then** it carries the unit, the principal and the author - a figure held only in a return value is one the next reader cannot see
+- **Mutant:** keep the parsed field in memory and never write it - the in-process assertion passes and the file the next command opens has nothing in it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_critic.py::US0644TheCapacityReachesTheWrittenRecord
+- **Verified:** yes (2026-08-15)
 
 ## Revision History
 

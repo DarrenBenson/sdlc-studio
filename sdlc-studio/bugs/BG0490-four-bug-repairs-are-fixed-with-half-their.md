@@ -21,6 +21,25 @@ BG0462 - names three defects, ships one. `.githooks/pre-commit`'s `run()` still 
 
 BG0437 - the prose claim is corrected in 307ce91d; listed here only so the set is complete.
 
+## Triage 2026-08-15
+
+Re-measured claim by claim before any code was written, on the operator's ruling that the audit
+residue is triaged rather than built. **Two of the four instances have lapsed and two stand.**
+
+| Instance | Claim | Measured now |
+| --- | --- | --- |
+| BG0434 | `templates/audit-profiles/code.md:17` still ends in a full stop | **LAPSED** - it does not |
+| BG0435 | nine of twelve broken-path shapes escape the classifier | **STANDS** - `scripts/rg-wrapper-DOES-NOT-EXIST.py` is still skipped as an invocation, and `notes/X.txt` and `tools/X.toml` are still skipped as prose, reproduced against the shipped patterns |
+| BG0462 | `.githooks/pre-commit`'s `run()` discards `$out` on a zero exit | **LAPSED** - `$out` is stashed on both paths, fixed under BG0239 |
+| BG0462 | `check_versions.py:5` claims the version is read "never by repo-wide grep" | **STANDS** - the module falls back to `root.rglob("*.md")` when git cannot enumerate, so the docstring overstates |
+
+Narrowed to those two. The lapsed pair is recorded rather than deleted, because "this was true and
+is not" is the fact a later reader needs - a bug re-opened on a stale premise costs more than the
+line it took to say so.
+
+Not built here: the surviving half of BG0435 is a change to the link classifier's patterns, with
+blast radius across every loading-guide cell, and that is engineering rather than triage.
+
 ## Steps to Reproduce
 
 1. `grep -n 'ends in a full stop' templates/audit-profiles/code.md` - line 17 still does.

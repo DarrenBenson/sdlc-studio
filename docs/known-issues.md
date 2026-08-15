@@ -25,18 +25,12 @@ evidence, the reproduction and the proposed fix in full.
 | Id | Severity | Finding |
 | --- | --- | --- |
 | `BG0463` | Medium | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings an... |
-| `BG0486` | Medium | duplicate verifiers are grouped on a normalised string, so two ACs running the same command can read as distinct |
 | `BG0490` | Medium | four bug repairs are Fixed with half their title undelivered and no recorded narrowing |
 | `BG0493` | Medium | four more verifiers pass on a delivery that has been made inert |
-| `BG0509` | Medium | the close-time-repair split uses day granularity and a global override map, so a same-day terminal is excused and an override never expires |
-| `BG0519` | Medium | the tools leg's remaining slowdown inside the full runner is unattributed, and the assertion that fails when it is slow is still unnamed |
-| `BG0526` | Medium | loop_guard budget has no programmatic caller: the appetite breaker is fully fed and pulled only if the driving agent remembers |
-| `BG0529` | Medium | four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing |
 | `BG0567` | Medium | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere... |
-| `BG0571` | Medium | The repaired spec-agreement guards pin word patterns rather than claims, so a passage stating the OPPOSITE rule passes |
 | `BG0578` | Medium | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner |
 
-11 findings: 11 Medium, 0 Low.
+5 findings: 5 Medium, 0 Low.
 
 ## Not carried
 

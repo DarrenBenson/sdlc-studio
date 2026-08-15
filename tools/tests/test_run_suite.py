@@ -17,6 +17,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import pathlib
 import unittest
 from pathlib import Path
 
@@ -559,6 +560,26 @@ class RedRunNamesItsFailureTests(unittest.TestCase):
             r = _run(root, "tools", cmd="echo noise; exit 0")
         self.assertEqual(1, len([ln for ln in r.stdout.splitlines() if ln.strip()]),
                          f"stdout is no longer one line: {r.stdout!r}")
+
+class ARedRunNamesItsFailingTest(unittest.TestCase):
+    """BG0519, second half. The runner used to destroy its own output, so a red leg reported
+    `FAILED (failures=1)` and nothing said WHICH assertion stopped holding - and an author who
+    cannot see the failure learns to re-run until green, which is how a genuine red gets waved
+    through. The instrument shipped under BG0513 and had never caught a real red; it has now
+    named one on three separate runs, and this pins the behaviour rather than the anecdote."""
+
+    def test_the_runner_surfaces_the_unittest_and_pytest_failure_headers(self) -> None:
+        """MUTANT: drop the FAIL:/ERROR: extraction - the runner falls back to a byte count and
+        the failing test's name is gone again."""
+        script = (pathlib.Path(__file__).resolve().parents[2] / "tools/run-suite.sh").read_text()
+        self.assertIn("FAIL:", script,
+                      "the runner no longer looks for a unittest failure header")
+        self.assertIn("ERROR:", script,
+                      "the runner no longer looks for an error header")
+        # ...and it says so when it matched nothing, rather than printing an empty summary that
+        # reads like a clean run.
+        self.assertIn("no FAIL:/ERROR: header matched", script,
+                      "a run whose failure header could not be matched says nothing about it")
 
 
 if __name__ == "__main__":

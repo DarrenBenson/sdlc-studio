@@ -21,6 +21,22 @@ US0607 - `best_practice_rules.py` returns 0 when the practice file is ABSENT, so
 
 BG0423 - `Verification depth: functional`, but both verifiers are source-text greps over .githooks/commit-msg and nothing executes the hook.
 
+## Triage 2026-08-15
+
+Re-measured before any code was written. **All three instances stand**, so this bug is carried
+unnarrowed - the opposite finding to BG0490 beside it, and the reason each was measured rather
+than assumed from its age.
+
+| Instance | Measured now |
+| --- | --- |
+| BG0476 | **STANDS** - `sys.path.insert` appears twice in `tools/tests/conftest.py`, at line 8 in the DOCSTRING and line 15 as the real call, so AC1's `assertIn` is satisfied with the call deleted |
+| US0606 | **STANDS** - the `lane-check` slice still opens inside a comment block, and the `\|\| true` its assertion finds belongs to an unrelated pipeline |
+| US0607 | **STANDS** - `best_practice_rules.py` is referenced by nothing in `.githooks/` or `package.json`, so it is wired into no gate |
+
+Not built here: each repair is a test-strengthening change to a guard, which is engineering
+rather than triage. What triage establishes is that the premise is still real - the three
+verifiers named here would still pass over a delivery that had been made inert.
+
 ## Steps to Reproduce
 
 For each, apply the named mutant with `__pycache__` purged and python3 -B, and observe the declared verifiers stay green.

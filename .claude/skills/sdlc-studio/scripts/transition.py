@@ -1632,6 +1632,42 @@ def _static_depth_refusal(root, aid: str, depth_value: str, status: str) -> str 
     return _bug_depth_gate(sim, canon)
 
 
+def _report_appetite(args) -> None:
+    """Print the run's appetite verdict at a unit boundary, or nothing at all.
+
+    Silent in every uninteresting case - no run, no appetite, budget remaining - because a line
+    printed after every transition is one nobody reads on the day it matters. Silent on failure
+    too, and that is deliberate here: this is a REPORT beside a transition that already
+    succeeded, so a breaker that could not be evaluated must not turn a good transition into a
+    traceback. `loop_guard budget` remains the verb that answers the question with an exit code.
+    """
+    try:
+        import loop_guard  # noqa: PLC0415 - deferred; only terminal transitions pay for it
+        root = sdlc_md.resolve_root(args)
+        state = loop_guard.run_state.read(root)
+        appetite = (state.get("appetite") or {}) if isinstance(state, dict) else {}
+        minutes = float(appetite.get("minutes") or 0)
+        units = int(appetite.get("units") or 0)
+        if not (minutes or units):
+            return
+        verdict = loop_guard.budget_verdict(
+            minutes, units,
+            loop_guard.elapsed_minutes(state.get("started_at")),
+            loop_guard.units_consumed(root, state.get("batch") or []))
+    except Exception:  # noqa: BLE001 - see the docstring: never break a completed transition
+        return
+    if not verdict["exhausted"]:
+        return
+    print(f"\n  APPETITE SPENT ({verdict['reason']}) on {state.get('run_id')}: "
+          f"{verdict['elapsed_minutes']} min elapsed"
+          f"{f' of {minutes:g}' if minutes else ''}, {verdict['units_done']} unit(s) done"
+          f"{f' of {units}' if units else ''}.\n"
+          f"  This unit is finished and recorded; what the ceiling stops is the NEXT one. Stop "
+          f"cleanly and close, or move the ceiling ON THE RECORD with "
+          f"`sprint.py appetite resize --reason ...` - the appetite is a decision, and a breaker "
+          f"nobody pulls turns it into a suggestion.", file=sys.stderr)
+
+
 def cmd_set(args: argparse.Namespace) -> int:
     # Natural positional form `set <ID> <STATUS>` maps onto --id/--status, so the obvious first
     # attempt works. The flags still work; giving the SAME value both ways is refused rather than
@@ -1741,6 +1777,18 @@ def cmd_set(args: argparse.Namespace) -> int:
     if len(ids) > 1:
         out = sys.stderr if args.format == "json" else sys.stdout
         print(f"batch: {len(ids) - refused}/{len(ids)} transitioned, {refused} blocked", file=out)
+    # THE APPETITE BREAKER, on the shipped path. `loop_guard budget` was fully wired to its data
+    # and had no caller: the only references anywhere were reference docs TELLING an agent to run
+    # it between units. So the ceiling the operator set at plan time held only if the driving
+    # agent remembered to pull it, which makes a recorded decision a suggestion. LL0027 - a gate
+    # belongs in the command people actually run.
+    #
+    # A unit reaching a terminal status IS the unit boundary the breaker was designed for, and
+    # this is the command that puts it there. Reported, never refused: the unit just finished, so
+    # blocking its own transition would punish the wrong action and leave the record wrong too.
+    # What it stops is the NEXT unit starting, which is the whole point of a boundary check.
+    if not refused:
+        _report_appetite(args)
     return 1 if refused else 0
 
 

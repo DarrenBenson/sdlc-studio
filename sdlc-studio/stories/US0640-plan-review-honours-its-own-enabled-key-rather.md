@@ -5,7 +5,7 @@
 > **Created:** 2026-08-05
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/plan_review.py,.claude/skills/sdlc-studio/scripts/config.py,.claude/skills/sdlc-studio/scripts/triage_noise.py,.claude/skills/sdlc-studio/scripts/tests/test_plan_review.py,.claude/skills/sdlc-studio/scripts/tests/test_config.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/plan_review.py,.claude/skills/sdlc-studio/scripts/config.py,.claude/skills/sdlc-studio/scripts/triage_noise.py,.claude/skills/sdlc-studio/scripts/tests/test_plan_review.py,.claude/skills/sdlc-studio/scripts/tests/test_config.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_plan_review.py
 > **Epic:** EP0208
 > **Points:** 2
 > **Persona:** Maya Okafor
@@ -53,6 +53,15 @@
 - **Mutant:** give `plan_review` its own copy of the resolution - the single-definition assertion reddens
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::EnablementKeyTests::test_one_shared_enablement_predicate_serves_both_adopters
 - **Verified:** yes (2026-08-05)
+
+### AC5: the knob is consulted by the COMMAND, not only by the resolver
+
+- **Given** a project stating `plan_review.enabled: false` under schema v2
+- **When** `plan_review.py check` runs against it
+- **Then** the command answers differently from the same project with the knob on - the resolver returning the right value proves nothing about whether the command reads it
+- **Mutant:** make `active()` ignore the stated knob - every in-process test of the resolver still passes and the command stops honouring the decision
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_plan_review.py::US0640ThePlanGateKnobIsConsultedByTheCommand
+- **Verified:** yes (2026-08-15)
 
 ## Revision History
 

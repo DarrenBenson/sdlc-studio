@@ -1118,6 +1118,7 @@ def duplicate_verifiers(paths) -> list[dict]:
     than refusing them.
     """
     seen: dict[str, list[str]] = {}
+    written: dict[str, set[str]] = {}
     for p in paths:
         if not p.exists():
             continue
@@ -1129,12 +1130,26 @@ def duplicate_verifiers(paths) -> list[dict]:
             expr = dup_group_key(block.verifier)
             if _is_manual(expr):
                 continue
-            # Grouped on the NORMALISED key, so a case-only twin of an existing selector joins
-            # the group it actually shares a command with instead of forming a group of one
-            # under each spelling and being reported as no duplicate at all.
+            # Grouped on the RESOLVED command, so two criteria that name one run in different
+            # words join the group they actually share instead of forming a group of one under
+            # each spelling and being reported as no duplicate at all.
             seen.setdefault(expr, []).append(f"{rec} {block.ac_id}")
-    return [{"verifier": expr, "acs": acs}
-            for expr, acs in sorted(seen.items()) if len(acs) > 1]
+            written.setdefault(expr, set()).add(" ".join(block.verifier.split()))
+    out = []
+    for expr, acs in sorted(seen.items()):
+        if len(acs) < 2:
+            continue
+        # REPORTED as the author wrote it, never as the internal key. The key is a resolved argv
+        # - `-q` the runner supplies, flags in sorted order - and quoting that back at an author
+        # names a line that appears nowhere in their file. The lowest spelling is taken so the
+        # identity is deterministic, and every other spelling in the group is listed beside it,
+        # since "these two lines are the same run" is the whole finding when they differ.
+        spellings = sorted(written.get(expr) or [expr])
+        row = {"verifier": spellings[0], "acs": acs}
+        if len(spellings) > 1:
+            row["also_written"] = spellings[1:]
+        out.append(row)
+    return out
 
 
 # The runners a Verify verb shells out to, for the advisory availability check.
@@ -2862,7 +2877,28 @@ def dup_group_key(verifier: str) -> str:
     if not parts or not parts[0]:
         return ""
     head = parts[0].lower()
-    return head if len(parts) == 1 else f"{head} {parts[1]}"
+    written = head if len(parts) == 1 else f"{head} {parts[1]}"
+    # Grouped on the command that RUNS, not the one that was typed. Two criteria can name the
+    # identical run in different words - a flag written in a different order, a `-q` the runner
+    # supplies anyway - and on the written string they formed a group of one under each spelling
+    # and were reported as no duplicate at all. Two criteria sharing a selector cannot both
+    # discriminate, whichever way each was spelled.
+    #
+    # Falls back to the written form whenever the expression does not resolve: an unrecognised
+    # head is an invalid verifier reported elsewhere, and inventing a key for it here would
+    # group two unrelated broken lines together.
+    try:
+        kind, cmd = _build_command(written)
+    except (ValueError, OSError):
+        return written
+    if not isinstance(cmd, list) or not cmd:
+        return written
+    # Flags sorted and de-duplicated; positionals kept in order, because their order is what
+    # distinguishes one selector from another. Deliberately conservative: this decides only what
+    # counts as the SAME command, and over-merging would hide a real pair of distinct criteria.
+    flags = sorted({a for a in cmd[1:] if a.startswith("-")})
+    positional = [a for a in cmd[1:] if not a.startswith("-")]
+    return " ".join([kind, *flags, *positional])
 
 
 def read_dup_baseline(repo_root) -> dict:
