@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0342: A recorded list is a claim like any other and rots the same way.**
+- **L-0341: A guard a paraphrase can defeat is weak; one the OPPOSITE statement satisfies is inverted.**
+- **L-0340: Verification run where the author is standing is not verification.**
+- **L-0339: A mutant that cannot reach the code it names proves as little as a test that cannot fail.**
 - **L-0338: Reviewing the PLAN catches what code review cannot: a wrong discriminator, an exemption inherited unscoped, and a missing step that makes...**
 - **L-0337: A number nobody re-measures is wrong.**
 - **L-0336: A guard narrowed to the RIGHT question can be less safe than the wrong one it replaced.**

@@ -1,6 +1,6 @@
 # Bug Index
 
-**Last Updated:** 2026-08-14
+**Last Updated:** 2026-08-15
 
 ## Summary
 
@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 5 |
 | In Progress | 0 |
-| Fixed | 481 |
+| Fixed | 482 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 7 |
 | Superseded | 2 |
-| **Total** | **579** |
+| **Total** | **580** |
 
 ## All Bugs
 
@@ -119,6 +119,7 @@
 | [BG0577](BG0577-a-fix-that-lands-without-closing-its-bug.md) | A fix that lands without closing its bug leaves a backlog item that reads real and is not, and nothing detects it - 12% of the open bug backlog was fiction | Fixed | High | 2026-08-13 | 2026-08-13 |
 | [BG0578](BG0578-test-file-attribution-is-decided-by-name-frequency.md) | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner | Open | Medium | 2026-08-14 | 2026-08-14 |
 | [BG0579](BG0579-the-per-commit-gate-has-outgrown-the-tool.md) | the per-commit gate has outgrown the tool timeouts that run it, so a commit is KILLED rather than refused - and a kill reads as a hang, which invites --no-verify | Fixed | High | 2026-08-14 | 2026-08-14 |
+| [BG0580](BG0580-ten-units-reached-a-terminal-status-and-were.md) | ten units reached a terminal status and were signed off with test plans whose mutants were never executed, and five of those plans are still scaffold placeholders | Fixed | High | 2026-08-15 | 2026-08-15 |
 
 ## Archived Releases
 

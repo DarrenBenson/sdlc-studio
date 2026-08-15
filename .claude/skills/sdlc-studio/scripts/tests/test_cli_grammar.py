@@ -315,10 +315,17 @@ class RepeatableFlagConformance(unittest.TestCase):
 #: changing it, and a guard that only looks clean where it was written has not been measured.
 #:
 #: The set may only GROW, and an entry earns its place by measurement in a CLEAN tree.
+#:
+#: `doc_freshness` was removed after the control caught it drifting - which is the control
+#: doing its job rather than a fault in it. It named artefacts only while it had a STALE
+#: claim to report; once `reviews/LATEST.md` was brought current it answered `state documents
+#: are fresh` and named nothing, so its row asserted nothing. An entry whose discrimination
+#: depends on the tree being in a particular state is not a measurement, and leaving it here
+#: would have been a row that passes forever.
 ROOT_EFFECT_VERBS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ac_scope.py", ("check",)), ("autosprint.py", ("next",)), ("changelog.py", ("check",)),
     ("close_owed.py", ("detect",)), ("constitution.py", ("check",)), ("critic.py", ("show",)),
-    ("decisions.py", ("list",)), ("doc_freshness.py", ()), ("flow.py", ("compute",)),
+    ("decisions.py", ("list",)), ("flow.py", ("compute",)),
     ("integrity.py", ("check",)), ("reconcile.py", ("detect",)), ("retro.py", ("estimator",)),
     ("sprint.py", ("next",)), ("status.py", ("backlog",)), ("validate.py", ("check",)),
 )

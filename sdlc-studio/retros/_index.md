@@ -111,3 +111,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0099](RETRO0099-part-b-the-skill-documents-what-the-tooling.md) | Part B: the skill documents what the tooling ships | 2026-08-08 | -- | -- |
 | [RETRO-0100](RETRO0100-run-01kzm49y-a-new-project-can-plan-its.md) | RUN-01KZM49Y: a new project can plan its first sprint, and five review rounds all found the same thing | 2026-08-10 | -- | -- |
 | [RETRO-0101](RETRO0101-run-01kzq03v-every-gate-that-prints-a-refusal.md) | RUN-01KZQ03V: every gate that prints a refusal performs one, and fourteen High findings close on evidence | 2026-08-11 | -- | -- |
+| [RETRO-0102](RETRO0102-clearing-the-bug-backlog-before-user-feedback-41.md) | Clearing the bug backlog before user feedback: 41 open bugs to 2, and what measurement overturned | 2026-08-15 | -- | -- |
