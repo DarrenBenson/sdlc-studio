@@ -17,6 +17,7 @@ import sys
 import shutil
 import subprocess
 import tempfile
+import pytest
 import unittest
 from pathlib import Path
 
@@ -101,6 +102,7 @@ class GreenfieldRehearsalTests(unittest.TestCase):
                                 "exists to catch, so its green means nothing")
             self.assertIn("refused a first sprint", r.stdout + r.stderr)
 
+    @pytest.mark.serial_only
     def test_the_rehearsal_writes_nothing_into_the_working_tree(self) -> None:
         # COLD. This criterion passed for a whole review round only because two sibling tests
         # defined above it ran the harness first and warmed the bytecode cache, so the

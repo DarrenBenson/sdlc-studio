@@ -191,11 +191,30 @@ fi
 # See scripts/tests/boundary.py for what may be marked and why (BG0579).
 export SDLC_STUDIO_BOUNDARY_SUITE=1
 
+# TWO PHASES, because one test in this suite asks a question that has no answer while other
+# tests are running. `serial_only` marks a test whose assertion is about GLOBAL state - the
+# working tree, the whole repository - so a concurrent worker doing legitimate work makes it
+# wrong. It is neither flaky nor slow; it is global.
+#
+# Phase 1 runs everything else across all cores. Phase 2 runs the marked tests alone. Nothing is
+# skipped in either phase: `-m "not serial_only"` and `-m serial_only` partition the suite, so a
+# test that loses its marker still runs, and one that gains it still runs.
+#
+# Measured on 16 cores: 597s serial, 166s parallel - and three `-n auto` runs each failed exactly
+# the same one test, which passes alone in both modes (BG0579). Falls back to a single serial
+# pass when xdist is absent, so the suite never depends on it being installed.
+if python3 -c "import xdist" >/dev/null 2>&1; then
+  SKILL_SUITE='python3 -B -m pytest .claude/skills/sdlc-studio/scripts/tests -q -n auto -m "not serial_only" \
+    && python3 -B -m pytest .claude/skills/sdlc-studio/scripts/tests -q -m serial_only'
+else
+  SKILL_SUITE='python3 -B -m pytest .claude/skills/sdlc-studio/scripts/tests -q'
+fi
+
 SUITE="${1:-}"
 case "$SUITE" in
-    scripts) CMD='python3 -B -m pytest .claude/skills/sdlc-studio/scripts/tests -q' ;;
+    scripts) CMD="$SKILL_SUITE" ;;
     tools)   CMD='PYTHONPATH=tools/tests python3 -B -m unittest discover -s tools/tests' ;;
-    all)     CMD='python3 -B -m pytest .claude/skills/sdlc-studio/scripts/tests -q && PYTHONPATH=tools/tests python3 -B -m unittest discover -s tools/tests' ;;
+    all)     CMD="$SKILL_SUITE && PYTHONPATH=tools/tests python3 -B -m unittest discover -s tools/tests" ;;
     *)
         # REFUSED, never defaulted. Running a different suite and reporting it under the
         # requested name is a false green of exactly the kind this script exists to remove,
@@ -254,7 +273,11 @@ DURATION=$(( $(date +%s) - START ))
 
 # Counts are best-effort across two runners with different report lines; an unparseable count
 # is recorded as null rather than 0, because "not stated" and "none" are different facts.
-PASSED="$(grep -oE '([0-9]+) passed' "$OUT" | tail -1 | grep -oE '[0-9]+' || true)"
+# SUMMED, not the last one. The skill suite now runs in two phases (parallel, then the
+# serial_only partition), so `tail -1` read only the second phase and recorded "1 passed" for a
+# run of 6,556 - a verdict that understates is as false as one that overstates, and the
+# suite-claim lane reads this number. Every `N passed` line in the output is counted.
+PASSED="$(grep -oE '([0-9]+) passed' "$OUT" | grep -oE '^[0-9]+' | paste -sd+ - | bc 2>/dev/null || true)"
 FAILED="$(grep -oE '([0-9]+) failed' "$OUT" | tail -1 | grep -oE '[0-9]+' || true)"
 if [[ -z "$PASSED" ]]; then
     PASSED="$(grep -oE '^Ran ([0-9]+) tests' "$OUT" | tail -1 | grep -oE '[0-9]+' || true)"

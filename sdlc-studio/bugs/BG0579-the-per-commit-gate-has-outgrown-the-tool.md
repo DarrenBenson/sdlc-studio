@@ -1,10 +1,10 @@
 # BG0579: the per-commit gate has outgrown the tool timeouts that run it, so a commit is KILLED rather than refused - and a kill reads as a hang, which invites --no-verify
 
 > **Status:** Fixed
-> **Verification depth:** functional (profiled rather than guessed: 4 tests were 452s of 934s, and the largest was a boundary-only lane's test paid on every commit; measured 934s -> 569s in per-commit shape, with the deferred tests executing in full under the marker; mutation: 4 declared mutants, all KILLED - three SURVIVED on the first pass, including one where the check matched a commented-out line, and all three were re-chosen or the check strengthened; restore byte-exact)
+> **Verification depth:** functional (measured across six full runs: serial 597s / parallel 166s for the skill suite, and the two-phase full run twice at 460s with an identical 6560 passed; three -n auto runs each failed exactly one test - the whole-tree snapshot - which passes alone in both modes, so the unsafe set is bounded and named rather than assumed; the split's first verdict recorded 1 passed for 6556 and that regression is now pinned by its own test; mutation: 7 declared mutants, all KILLED, restore byte-exact)
 > **Severity:** High
 > **Points:** 5
-> **Affects:** tools/run-suite.sh, .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/tests/boundary.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py, tools/tests/test_boundary_marker.py, tools/tests/test_test_census.py
+> **Affects:** tools/run-suite.sh, .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/tests/boundary.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py, tools/tests/test_boundary_marker.py, tools/tests/test_test_census.py, tools/tests/test_run_suite.py, pytest.ini, .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py
 > **Evidence:** RUN-01KZQ03V, 2026-08-14. A commit carrying BG0553 and BG0552 was killed at 600s by the harness running it; re-running it detached succeeded in the same shape. Timings read from sdlc-studio/.local/gate-timings.json.
 > **Created:** 2026-08-14
 > **Created-by:** sdlc-studio file
@@ -32,11 +32,20 @@ The selection is not the defect - it is correct, and a change to a hub module ge
   - **Verify:** pytest tools/tests/test_boundary_marker.py -k ci_sets_the_marker
   - **Verified:** yes (2026-08-14)
 - [x] **AC3** Given any test deferred to the boundary, when the marker is read, then it carries a stated reason - what a reader of a per-commit run sees in place of the test, and what a reviewer judges the trade against.
-  - **Verify:** pytest tools/tests/test_boundary_marker.py -k every_marked_test_carries_a_reason
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** pytest tools/tests/test_boundary_marker.py -k deferral_with_no_stated_reason
+  - **Verified:** yes (2026-08-16)
 - [x] **AC4** Given the set of deferred tests, when it is counted, then it is non-empty and small - an unused marker is a mechanism that looks like coverage, and a growing one is a per-commit gate quietly becoming a subset nobody chose.
   - **Verify:** pytest tools/tests/test_boundary_marker.py -k marked_set_stays_small_and_named
   - **Verified:** yes (2026-08-14)
+- [x] **AC5** Given the skill suite, when it runs, then the parallel phase and the serial phase together cover every test - either phase alone leaves a silent hole.
+  - **Verify:** pytest tools/tests/test_run_suite.py -k two_phases_partition
+  - **Verified:** yes (2026-08-16)
+- [x] **AC6** Given a run split across phases, when the verdict is written, then the pass count is SUMMED - a verdict that understates is as false as one that overstates, and the suite-claim lane reads that number.
+  - **Verify:** pytest tools/tests/test_run_suite.py -k pass_count_is_summed
+  - **Verified:** yes (2026-08-16)
+- [x] **AC7** Given a machine without `pytest-xdist`, when the suite runs, then it still runs in full serially - parallelism is an optimisation, never a dependency.
+  - **Verify:** pytest tools/tests/test_run_suite.py -k runs_without_xdist
+  - **Verified:** yes (2026-08-16)
 
 ## Impact
 
@@ -54,7 +63,13 @@ The blindfold is what gets guarded. `tools/tests/test_boundary_marker.py` assert
 
 Writing that guard produced two false positives of its own, both worth recording: it first refused on a COMMENT mentioning `coverage run`, then on a YAML step NAME mentioning `skill-tests.sh`. A guard that cries wolf on prose is one whose real refusal gets waved through.
 
-**Not fixed here:** the underlying arithmetic. ~5,300 tests still run single-process on a 16-core machine, and the remaining two heavy tests (74s and 67s) are ordinary integration tests with no boundary argument behind them. Parallelism would need `pytest-xdist`, which is a dependency change this repository's pure-stdlib policy puts to the operator.
+**The arithmetic is now fixed too, on the operator's decision to add `pytest-xdist`.** The skill suite runs in two phases: everything across all cores, then the `serial_only` partition alone. Measured on 16 cores - the skill suite 597s to 220s, the full run 951s to 460s, twice, at an identical 6,560 passed.
+
+Exactly ONE test cannot run in parallel, and it is neither flaky nor slow: it snapshots `git status` across the whole repository, so any concurrent worker doing legitimate work makes it wrong. Three `-n auto` runs each failed that same test and nothing else, and it passes alone in both modes. It is marked rather than deselected, so the two phases partition the suite and a test that gains or loses the marker still runs.
+
+The first verdict this split wrote said **`GREEN (1 passed)`** for a run of 6,556: the runner took the LAST `N passed` line, which after the split was the serial phase alone. That number feeds the suite-claim lane, so it would have read as a green over a claim that was false in the understating direction. The count is summed now, and a test mutates it back.
+
+`xdist` is an optimisation and never a dependency - the runner falls back to one serial pass when it is absent, so CI and a fresh clone are unaffected.
 
 ## Test Plan
 

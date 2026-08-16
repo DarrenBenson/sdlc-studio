@@ -581,6 +581,46 @@ class ARedRunNamesItsFailingTest(unittest.TestCase):
         self.assertIn("no FAIL:/ERROR: header matched", script,
                       "a run whose failure header could not be matched says nothing about it")
 
+class TheTwoPhaseSkillSuiteIsHonest(unittest.TestCase):
+    """BG0579 second half. The skill suite runs in two phases - everything in parallel, then the
+    `serial_only` partition alone - because one test asserts on GLOBAL tree state and any
+    concurrent worker doing legitimate work makes it wrong. Measured: 597s serial, 166s parallel,
+    and three `-n auto` runs each failed exactly the same one test, which passes alone in both
+    modes.
+
+    Two properties matter more than the speed, and both were nearly lost when this landed."""
+
+    def _script(self) -> str:
+        return (pathlib.Path(__file__).resolve().parents[2] / "tools/run-suite.sh").read_text()
+
+    def test_the_two_phases_partition_the_suite_and_skip_nothing(self) -> None:
+        """`-m "not serial_only"` and `-m serial_only` must BOTH appear. Either alone is a
+        suite with a silent hole: the first drops every marked test, the second runs only them.
+        MUTANT: delete either phase."""
+        s = self._script()
+        self.assertIn('-m "not serial_only"', s,
+                      "the parallel phase does not exclude the serial partition")
+        self.assertIn("-m serial_only", s,
+                      "nothing runs the serial partition, so a marked test runs nowhere")
+
+    def test_the_pass_count_is_summed_across_phases(self) -> None:
+        """THE defect this nearly shipped with. `tail -1` read only the LAST phase, so a run of
+        6,556 tests recorded `1 passed` - and the suite-claim lane reads that number. A verdict
+        that understates is as false as one that overstates.
+        MUTANT: take the last count instead of the sum."""
+        s = self._script()
+        self.assertNotIn("passed' \"$OUT\" | tail -1", s,
+                         "the pass count reads one phase only")
+        self.assertIn("paste -sd+", s, "the pass count is not summed across phases")
+
+    def test_the_suite_still_runs_without_xdist(self) -> None:
+        """Parallelism is an optimisation, never a dependency: a machine without xdist must still
+        run the whole suite. MUTANT: drop the fallback branch."""
+        s = self._script()
+        self.assertIn('import xdist', s, "the runner does not check whether xdist is present")
+        self.assertIn("else", s.split("import xdist")[1][:400],
+                      "there is no serial fallback when xdist is absent")
+
 
 if __name__ == "__main__":
     unittest.main()
