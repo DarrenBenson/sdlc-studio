@@ -15193,6 +15193,42 @@ class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
                 self.assertEqual([], [r for r in rows if "did not produce its own output"
                                       in r.get("cause", "")],
                                  f"a `{rung}` rung was judged against the design rung's product")
+                # AND the delivery check they had at the base ref is STILL THERE. Asserting only
+                # the absence of the grooming row was too weak: a review mutant that returned []
+                # outright for plan/triage - silently dropping the check - passed it. The bar is
+                # "unchanged from base", not "not judged as a design rung".
+                self.assertEqual(1, len(rows), f"a `{rung}` rung lost its delivery check: {rows}")
+                self.assertIn("'Ready'", rows[0]["detail"])
+
+    def test_plan_and_triage_keep_the_signoff_and_done_gate_preview(self) -> None:
+        """MUTANT: scope `_signoff_preflight`'s early return `rung != "done"` instead of
+        `rung == "design"`.
+
+        Found by a round-2 review of this very repair. The first cut fixed the scope in
+        `undelivered_blockers` and left the identical `!= "done"` in its sibling, so `plan` and
+        `triage` skipped `_done_gate_preflight` too - a HARD blocker at the base ref - with no
+        substitute bar, because `_rung_product_blockers` is design-only. The defect was not
+        removed, it was relocated one function over, and no test in this file called
+        `_signoff_preflight` with either rung.
+        """
+        mod = _load()
+        for rung in ("plan", "triage"):
+            with self.subTest(rung=rung), tempfile.TemporaryDirectory() as d:
+                root = self._repo(d, goal=rung, status="Review")
+                rows = mod._signoff_preflight(root, self._state(root))
+                # NOT `hard_blockers`: `sign-off` is itself a deferrable stage, so that probe
+                # answers [] for a correct result and the first cut of this test failed on it.
+                # What distinguishes the rungs is whether the delivery preview RAN at all.
+                self.assertTrue([r for r in rows if r.get("blocking", True)],
+                                f"a `{rung}` rung lost its whole delivery preview: {rows}")
+                self.assertEqual([], [r for r in rows if not r.get("blocking", True)],
+                                 f"a `{rung}` rung took the design rung's skip row: {rows}")
+                # And the same fixture at `design` DOES take the skip row - the discriminator,
+                # without which both assertions above would pass on a function that never
+                # returns a skip row at all.
+                mod_state = dict(self._state(root), goal="design")
+                design_rows = mod._signoff_preflight(root, mod_state)
+                self.assertEqual([False], [r.get("blocking", True) for r in design_rows])
 
     def test_a_done_rung_is_exactly_as_strict_as_before(self) -> None:
         """THE REGRESSION CONTROL. MUTANT: apply the rung branch unconditionally.
@@ -15261,6 +15297,55 @@ class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
             self.assertTrue([r for r in rows if r["stage"] == "sign-off"
                              and r.get("blocking", True)],
                             f"a build rung lost its blocking sign-off preview: {rows}")
+
+
+class TheReadyCloseStillSaysWhatItSkippedTests(unittest.TestCase):
+    """BG0582: a non-blocking pre-flight row must reach the reader, on the ready path too.
+
+    Both halves of this were REPAIRED AND UNPINNED until a round-2 review mutated them: deleting
+    the ready-path branch survived all 898 tests, and reverting `_blocker_label` to
+    `_stage_label` survived all 898 tests. An unpinned repair is the one a later edit quietly
+    reverts with the suite still green - and the thing being repaired here is the difference
+    between a gate that passed and a gate that was never asked.
+
+    `close_preflight` is substituted rather than driven, deliberately. It runs the whole gate and
+    writes a cost-ledger row; the claim under test is about the RENDERER, and a test that has to
+    build a closable repo to check a print statement is one nobody keeps working.
+    """
+
+    def _render(self, ready: bool):
+        mod = _load()
+        rows = [{"stage": "sign-off", "blocking": False,
+                 "detail": "SKIPPED-ROW-DETAIL", "remedy": "nothing"},
+                {"stage": "installed-copy", "detail": "HARD-ROW-DETAIL", "remedy": "forward-port"}]
+        if ready:
+            rows = rows[:1]
+        self.addCleanup(setattr, mod, "close_preflight", mod.close_preflight)
+        mod.close_preflight = lambda *a, **k: {"ready": ready, "blockers": rows}
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            mod._report_preflight(Path("."), None)
+        return err.getvalue()
+
+    def test_a_ready_close_still_prints_what_it_did_not_check(self) -> None:
+        """MUTANT: delete the ready-path branch from `_report_preflight`.
+
+        Without it a clean design close prints the row nowhere at all, which is precisely the
+        "a skipped gate reads exactly like a satisfied one" outcome the row exists to prevent.
+        """
+        page = self._render(ready=True)
+        self.assertIn("SKIPPED-ROW-DETAIL", page,
+                      "a ready close printed nothing about the gates it did not run")
+
+    def test_a_non_blocking_row_is_labelled_as_one(self) -> None:
+        """MUTANT: revert `_blocker_label(b)` to `_stage_label(b['stage'])`.
+
+        `_stage_label` cannot say "reported not blocking", so eight rows render identically and
+        an operator counts eight refusals where three refuse.
+        """
+        page = self._render(ready=False)
+        self.assertIn("reported not blocking", page)
+        self.assertIn("HARD-ROW-DETAIL", page)
 
 
 class BatchValidationTests(unittest.TestCase):

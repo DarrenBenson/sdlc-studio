@@ -6588,8 +6588,10 @@ def undelivered_blockers(root, state) -> list:
     stops. Judging them against the design rung's output told a plan run it "did not produce its
     own output ... authored acceptance criteria", which is false, and because `status` is not a
     deferrable stage it also made such a run refuse `--file-and-close`. That is the filed defect
-    MOVED one rung over rather than closed. Those rungs keep the behaviour they already had:
-    their units carry no delivery evidence in the run window, so nothing accuses them.
+    MOVED one rung over rather than closed. Those rungs keep the behaviour they already had -
+    EXACTLY it, which is the bar: a plan-rung unit whose code landed in the window is accused
+    here, as it was before this function knew about rungs at all. Whether that question is the
+    right one to ask a plan rung is a separate argument this repair deliberately does not make.
     """
     rung = run_rung(state)
     if rung == "design":
@@ -6900,12 +6902,20 @@ def _signoff_preflight(root: Path, state: dict) -> list[dict]:
     # blockers only on the NOT-ready path and via `_stage_label`, so on a clean design close this
     # row appeared nowhere at all - the exact outcome the paragraph above says it prevents. Both
     # were fixed there rather than softened here.
+    # SCOPED TO `design`, for the same reason its sibling is, and the first cut of this repair
+    # got it right in one function and wrong in the other. `rung != "done"` here made `plan` and
+    # `triage` skip `_done_gate_preflight` as well - a HARD blocker at the base ref - with NO
+    # substitute bar behind them, since `_rung_product_blockers` is design-only. That is the
+    # "skips the delivery gates and checks nothing" outcome this file elsewhere calls a far
+    # worse defect than the one being repaired, reintroduced one function over.
     rung = run_rung(state)
-    if rung != "done":
+    if rung == "design":
         return [{"stage": "sign-off", "blocking": False,
                  "detail": (f"this run's rung is `{rung}`, not a build - its units end at their "
-                            f"own terminal, so no Done transition and no reviewer-of-record "
-                            f"sign-off ON a Done is owed, and neither was checked"),
+                            f"own terminal, so no Done transition, no reviewer-of-record "
+                            f"sign-off ON a Done and no adversarial-pass evidence for one was "
+                            f"checked. Independent review coverage is unaffected and still "
+                            f"reported, by the `review-coverage` lane"),
                  "remedy": ("nothing - this row is the record that the delivery gates did not "
                             "apply. The bar this rung IS held to is that every batch unit is "
                             "groomed, reported above as a blocking `status` row when it is not")}]
