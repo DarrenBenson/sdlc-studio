@@ -29,8 +29,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0493` | Medium | four more verifiers pass on a delivery that has been made inert |
 | `BG0567` | Medium | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere... |
 | `BG0578` | Medium | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner |
+| `BG0581` | Medium | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready |
 
-5 findings: 5 Medium, 0 Low.
+6 findings: 6 Medium, 0 Low.
 
 ## Not carried
 

@@ -5,7 +5,7 @@
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/bugs, tools/check_links.py, .claude/skills/sdlc-studio/templates/audit-profiles/code.md, tools/check_versions.py, .githooks/pre-commit
+> **Affects:** sdlc-studio/bugs, tools/check_links.py, .claude/skills/sdlc-studio/templates/audit-profiles/code.md, tools/check_versions.py, .githooks/pre-commit, tools/tests/test_check_links.py, tools/tests/test_check_versions.py
 > **Severity:** Medium
 > **Points:** 5
 
@@ -39,6 +39,15 @@ line it took to say so.
 
 Not built here: the surviving half of BG0435 is a change to the link classifier's patterns, with
 blast radius across every loading-guide cell, and that is engineering rather than triage.
+
+## Acceptance Criteria
+
+- [ ] **AC1** Given `templates/audit-profiles/code.md`, when its one real row is read, then the path resolves - the BG0434 half this bug carried, re-measured 2026-08-15 as ALREADY LAPSED and pinned so it cannot regress unnoticed.
+  - **Verify:** pytest tools/tests/test_check_links.py::AuditProfilePathsTests::test_the_one_real_row_resolves
+- [ ] **AC2** Given a broken path shaped like an invocation (`scripts/rg-wrapper-DOES-NOT-EXIST.py`) or carrying an unlisted extension (`notes/X.txt`, `tools/X.toml`), when the link classifier reads it, then it is REPORTED rather than skipped - the BG0435 half, which still reproduces.
+  - **Verify:** pytest tools/tests/test_check_links.py::AuditProfilePathsTests::test_invocation_and_prose_shapes_are_not_skipped
+- [ ] **AC3** Given `check_versions.py`'s docstring claim that the version is read 'never by repo-wide grep', when the module is read, then the claim matches the code - it falls back to `root.rglob('*.md')`, so today the docstring overstates.
+  - **Verify:** pytest tools/tests/test_check_versions.py::DocstringMatchesTheCodeTests::test_the_never_by_grep_claim_is_true
 
 ## Steps to Reproduce
 

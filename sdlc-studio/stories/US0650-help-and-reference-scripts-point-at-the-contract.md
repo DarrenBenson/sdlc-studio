@@ -1,6 +1,6 @@
 # US0650: help and reference-scripts point at the contract reporter instead of restating any contract
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0535
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
@@ -18,7 +18,29 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: no help page restates a contract the reporter derives
+
+- **Given** the shipped help/ and reference-scripts.md
+- **When** they are swept for restated contracts - required flags, accepted vocabularies, field shapes
+- **Then** none restates one; each points at the reporter instead. A doc that repeats a guard is a second source of truth that nothing reddens when it drifts
+- **Mutant:** leave one page restating its verb's flags - it is correct today and silently wrong after the next guard change
+- **Verify:** pytest tools/tests/test_check_spec_claims.py::ContractsAreNotRestatedTests::test_no_help_page_restates_a_derived_contract
+
+### AC2: the pointer resolves to a runnable command
+
+- **Given** a help page pointing at the reporter
+- **When** the pointer is followed
+- **Then** it names a command that runs and answers - a pointer to something a reader cannot invoke is a restatement with extra steps
+- **Mutant:** point at a prose section instead - the reader is redirected rather than answered
+- **Verify:** pytest tools/tests/test_check_spec_claims.py::ContractsAreNotRestatedTests::test_the_pointer_names_a_runnable_command
+
+### AC3: a page that must restate says why
+
+- **Given** a page where restating is genuinely right
+- **When** the sweep runs
+- **Then** it carries a recorded reason and is exempted BY NAME - an exemption nobody can count is indistinguishable from an omission
+- **Mutant:** exempt by pattern - the exempt set grows silently and the sweep stops meaning anything
+- **Verify:** pytest tools/tests/test_check_spec_claims.py::ContractsAreNotRestatedTests::test_an_exemption_is_named_and_reasoned
 
 ## Revision History
 

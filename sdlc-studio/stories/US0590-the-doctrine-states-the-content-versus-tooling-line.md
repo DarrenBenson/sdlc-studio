@@ -1,11 +1,11 @@
 # US0590: The doctrine states the content-versus-tooling line and names reference-scripts.md as the pre-task catalogue
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0515
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/reference-scripts.md
+> **Affects:** .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/reference-scripts.md, tools/tests/test_doctrine_tooling.py
 > **Epic:** EP0196
 > **Points:** 2
 

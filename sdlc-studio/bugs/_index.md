@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-15
+**Last Updated:** 2026-08-16
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 6 |
 | In Progress | 0 |
 | Fixed | 482 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 7 |
 | Superseded | 2 |
-| **Total** | **580** |
+| **Total** | **581** |
 
 ## All Bugs
 
@@ -120,6 +120,7 @@
 | [BG0578](BG0578-test-file-attribution-is-decided-by-name-frequency.md) | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner | Open | Medium | 2026-08-14 | 2026-08-14 |
 | [BG0579](BG0579-the-per-commit-gate-has-outgrown-the-tool.md) | the per-commit gate has outgrown the tool timeouts that run it, so a commit is KILLED rather than refused - and a kill reads as a hang, which invites --no-verify | Fixed | High | 2026-08-14 | 2026-08-14 |
 | [BG0580](BG0580-ten-units-reached-a-terminal-status-and-were.md) | ten units reached a terminal status and were signed off with test plans whose mutants were never executed, and five of those plans are still scaffold placeholders | Fixed | High | 2026-08-15 | 2026-08-15 |
+| [BG0581](BG0581-the-goal-review-brief-states-a-reachable-end.md) | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready | Open | Medium | 2026-08-16 | 2026-08-16 |
 
 ## Archived Releases
 

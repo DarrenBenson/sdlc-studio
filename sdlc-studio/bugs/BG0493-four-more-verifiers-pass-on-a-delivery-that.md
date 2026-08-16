@@ -5,7 +5,7 @@
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/tests/conftest.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/best_practice_rules.py
+> **Affects:** tools/tests/conftest.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/best_practice_rules.py, tools/tests/test_best_practice_rules.py, tools/tests/test_conftest_guard.py, tools/tests/test_precommit_lane_order.py
 > **Severity:** Medium
 > **Points:** 3
 
@@ -36,6 +36,17 @@ than assumed from its age.
 Not built here: each repair is a test-strengthening change to a guard, which is engineering
 rather than triage. What triage establishes is that the premise is still real - the three
 verifiers named here would still pass over a delivery that had been made inert.
+
+## Acceptance Criteria
+
+- [ ] **AC1** Given `tools/tests/conftest.py` with its `sys.path.insert` call DELETED, when BG0476's AC1 verifier runs, then it FAILS - today the file's own docstring mentions `sys.path.insert` at line 8, so the assertion is satisfied with the call gone.
+  - **Verify:** pytest tools/tests/test_conftest_guard.py::TheGuardSeesTheCallNotTheDocstringTests::test_deleting_the_call_reddens_ac1
+- [ ] **AC2** Given US0606's `lane-check` slice, when its `|| true` assertion runs, then it reads the LANE's own pipeline rather than an unrelated one - today the slice lands inside a comment block.
+  - **Verify:** pytest tools/tests/test_precommit_lane_order.py::TheSliceReadsTheLaneTests::test_the_slice_is_not_a_comment_block
+- [ ] **AC3** Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it refuses rather than returning 0 - an exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent.
+  - **Verify:** pytest tools/tests/test_best_practice_rules.py::AnAbsentPracticeFileRefusesTests::test_a_missing_file_is_not_an_exemption
+- [ ] **AC4** Given the shipped gate, when its lanes are enumerated, then `best_practice_rules.py` is wired into one - it is referenced by nothing in `.githooks/` or `package.json`, so it guards nothing today.
+  - **Verify:** pytest tools/tests/test_best_practice_rules.py::AnAbsentPracticeFileRefusesTests::test_the_checker_is_wired_into_a_lane
 
 ## Steps to Reproduce
 

@@ -73,12 +73,12 @@ documented command now works, pinned to `v5.0.1` or later.
 
 ## Known issues
 
-**v5.0.1 ships with 5 open defects: 5 Medium, 0 Low. Zero Critical, zero High.** Listed by id in
+**v5.0.1 ships with 6 open defects: 6 Medium, 0 Low. Zero Critical, zero High.** Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be
 missing from it.
 
-Down from the 40 v5.0.0 disclosed. 35 closed while clearing the bug backlog - and five of
+Down from the 40 v5.0.0 disclosed. 34 closed while clearing the bug backlog - and five of
 those were never defects at all: two had already been repaired with their bugs left open, two
 carried premises that had expired (one asserting 21 unresolved Open Questions where the corpus
 now holds 0), and one was a duplicate. That is BG0577, filed because nothing detects any of those

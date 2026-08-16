@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 16 |
-| Ready | 3 |
+| Draft | 0 |
+| Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -43,12 +43,12 @@
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Done | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Done | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0573](US0573-an-uncommitted-changed-surface-is-reported-as-that.md) | an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence | Done | EP0193 | 2026-07-30 | 2026-07-30 |
-| [US0581](US0581-a-finding-matching-an-open-bug-or-cr.md) | A finding matching an open Bug or CR is annotated with that id automatically and never blocks | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0586](US0586-every-skill-script-records-the-artefact-it-touched.md) | Every skill script records the artefact it touched and the action it performed, per run | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
-| [US0587](US0587-an-artefact-changed-in-the-run-diff-with.md) | An artefact changed in the run diff with no tool provenance is reported by name at the close | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
-| [US0588](US0588-a-hand-rolled-action-carrying-a-filed-gap.md) | A hand-rolled action carrying a filed gap id is reported and does not block; one without is outstanding | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
-| [US0589](US0589-a-run-that-uses-the-tools-throughout-reports.md) | A run that uses the tools throughout reports zero manual actions, so the detector cannot be one that never fires | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
-| [US0590](US0590-the-doctrine-states-the-content-versus-tooling-line.md) | The doctrine states the content-versus-tooling line and names reference-scripts.md as the pre-task catalogue | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0581](US0581-a-finding-matching-an-open-bug-or-cr.md) | A finding matching an open Bug or CR is annotated with that id automatically and never blocks | Ready | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0586](US0586-every-skill-script-records-the-artefact-it-touched.md) | Every skill script records the artefact it touched and the action it performed, per run | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0587](US0587-an-artefact-changed-in-the-run-diff-with.md) | An artefact changed in the run diff with no tool provenance is reported by name at the close | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0588](US0588-a-hand-rolled-action-carrying-a-filed-gap.md) | A hand-rolled action carrying a filed gap id is reported and does not block; one without is outstanding | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0589](US0589-a-run-that-uses-the-tools-throughout-reports.md) | A run that uses the tools throughout reports zero manual actions, so the detector cannot be one that never fires | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0590](US0590-the-doctrine-states-the-content-versus-tooling-line.md) | The doctrine states the content-versus-tooling line and names reference-scripts.md as the pre-task catalogue | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0591](US0591-every-checklist-item-declares-its-enforcing-command-and.md) | Every checklist item declares its enforcing command, and the close reports rather than gates on an expired window | Done | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0592](US0592-the-goal-seat-review-is-enforced-by-sprint.md) | The goal seat review is enforced by sprint plan --write, so skipping it is refused where it can still be run | Done | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0593](US0593-a-run-whose-only-review-verdicts-are-reject.md) | A run whose only review verdicts are REJECT reports the closing-review item outstanding, never ran | Done | EP0197 | 2026-08-01 | 2026-08-01 |
@@ -64,10 +64,10 @@
 | [US0622](US0622-a-repair-closing-fewer-findings-than-the-reject.md) | a repair closing fewer findings than the REJECT raised is reported PARTIAL and names the outstanding ones | Done | EP0205 | 2026-08-02 | 2026-08-02 |
 | [US0623](US0623-a-finding-closed-by-filing-is-recorded-distinctly.md) | a finding closed by FILING is recorded distinctly from one closed by fixing | Done | EP0205 | 2026-08-02 | 2026-08-02 |
 | [US0624](US0624-the-close-preflight-states-the-three-coverage-counts.md) | the close preflight states the three coverage counts separately | Done | EP0205 | 2026-08-02 | 2026-08-02 |
-| [US0625](US0625-the-doctrine-states-the-rule-and-the-stop.md) | the doctrine states the rule and the stop-ship judgement is recorded per finding at review time | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
-| [US0626](US0626-sprint-close-and-sprint-stop-refuse-while-any.md) | sprint close and sprint stop refuse while any batch unit is non-terminal, naming each and where its findings went | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
-| [US0627](US0627-closing-a-story-over-a-recorded-reject-requires.md) | closing a story over a recorded REJECT requires a filed artefact id or an explicit stop-ship ruling | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
-| [US0628](US0628-a-story-closed-this-way-names-the-bug.md) | a story closed this way names the bug in its own record | Draft | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0625](US0625-the-doctrine-states-the-rule-and-the-stop.md) | the doctrine states the rule and the stop-ship judgement is recorded per finding at review time | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0626](US0626-sprint-close-and-sprint-stop-refuse-while-any.md) | sprint close and sprint stop refuse while any batch unit is non-terminal, naming each and where its findings went | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0627](US0627-closing-a-story-over-a-recorded-reject-requires.md) | closing a story over a recorded REJECT requires a filed artefact id or an explicit stop-ship ruling | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0628](US0628-a-story-closed-this-way-names-the-bug.md) | a story closed this way names the bug in its own record | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0629](US0629-a-test-plan-is-derived-from-the-unit.md) | a test plan is DERIVED from the unit's criteria by the tooling, naming per criterion the production change the test must fail on | Done | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0630](US0630-a-unit-reaching-delivery-without-a-reviewed-test.md) | a unit reaching delivery without a reviewed test plan is REFUSED by the command that starts the work | Done | EP0207 | 2026-08-02 | 2026-08-02 |
 | [US0631](US0631-the-test-plan-is-reviewed-by-an-independent.md) | the test plan is reviewed by an independent seat before the code, and that review is recorded like a code review | Done | EP0207 | 2026-08-02 | 2026-08-02 |
@@ -85,12 +85,12 @@
 | [US0643](US0643-a-seat-may-sign-only-work-it-neither.md) | A seat may sign only work it neither authored nor adversarially reviewed - three distinct contexts, enforced | Done | EP0209 | 2026-08-05 | 2026-08-05 |
 | [US0644](US0644-the-sign-off-record-states-that-a-seat.md) | The sign-off record states that a seat signed and names it, so no reader mistakes it for a human | Done | EP0209 | 2026-08-05 | 2026-08-05 |
 | [US0645](US0645-the-operator-summary-is-derived-from-the-record.md) | The operator summary is derived from the record, never composed by the signing seat | Done | EP0209 | 2026-08-05 | 2026-08-05 |
-| [US0646](US0646-a-shared-contract-reporter-derives-a-verb-s.md) | A shared contract reporter derives a verb's demands by executing its own guard, never by restating them | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
-| [US0647](US0647-the-vocabularies-that-gate-a-caller-print-from.md) | The vocabularies that gate a caller print from the constant that enforces them | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
-| [US0648](US0648-the-four-verbs-whose-refusals-cost-most-in.md) | The four verbs whose refusals cost most in the measured session answer the contract reporter | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
-| [US0649](US0649-a-lint-lane-counts-contract-reporter-coverage-and.md) | A lint lane counts contract-reporter coverage and names every refusing verb it cannot reach | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
-| [US0650](US0650-help-and-reference-scripts-point-at-the-contract.md) | help and reference-scripts point at the contract reporter instead of restating any contract | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
-| [US0651](US0651-the-refusals-a-run-hits-are-counted-so.md) | The refusals a run hits are counted, so the round-trip saving is a figure in the retro | Draft | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0646](US0646-a-shared-contract-reporter-derives-a-verb-s.md) | A shared contract reporter derives a verb's demands by executing its own guard, never by restating them | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0647](US0647-the-vocabularies-that-gate-a-caller-print-from.md) | The vocabularies that gate a caller print from the constant that enforces them | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0648](US0648-the-four-verbs-whose-refusals-cost-most-in.md) | The four verbs whose refusals cost most in the measured session answer the contract reporter | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0649](US0649-a-lint-lane-counts-contract-reporter-coverage-and.md) | A lint lane counts contract-reporter coverage and names every refusing verb it cannot reach | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0650](US0650-help-and-reference-scripts-point-at-the-contract.md) | help and reference-scripts point at the contract reporter instead of restating any contract | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
+| [US0651](US0651-the-refusals-a-run-hits-are-counted-so.md) | The refusals a run hits are counted, so the round-trip saving is a figure in the retro | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
 | [US0652](US0652-every-script-exposes-build-parser-and-one-library.md) | Every script exposes build_parser, and one library enumerates the surface | Done | EP0211 | 2026-08-07 | 2026-08-07 |
 | [US0653](US0653-the-verb-catalogue-is-generated-from-the-parsers.md) | The verb catalogue is generated from the parsers, never typed | Done | EP0211 | 2026-08-07 | 2026-08-07 |
 | [US0654](US0654-the-coverage-gap-is-measured-against-hand-written.md) | The coverage gap is measured against hand-written docs only, never against the generator's own output | Done | EP0211 | 2026-08-07 | 2026-08-07 |

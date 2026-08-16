@@ -1,6 +1,6 @@
 # US0589: A run that uses the tools throughout reports zero manual actions, so the detector cannot be one that never fires
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0515
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

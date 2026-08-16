@@ -1,11 +1,12 @@
 # US0587: An artefact changed in the run diff with no tool provenance is reported by name at the close
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0515
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Depends on:** US0586
 > **Epic:** EP0196
 > **Points:** 5
 

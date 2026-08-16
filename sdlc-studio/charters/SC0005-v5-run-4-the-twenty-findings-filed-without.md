@@ -6,7 +6,22 @@
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Appetite:** 240min/8units
-> **Scope query:** --bugs Open
+> **Scope query:** --worklist (the ungroomed set, both types - see Scope rule)
+
+## Premise re-measured 2026-08-16
+
+The title says **twenty**. The shipped reader says **ten**, and names them: US0625, US0626,
+US0627, US0628, US0646, US0647, US0648, US0649, US0650, US0651 - every one a Draft story, so the
+whole set sits inside one batch rather than spread across the backlog.
+
+`sprint breakdown --stories Draft --stories Ready` over 19 units reports 10 ungroomed. The other
+ten the title counted have been groomed or closed since it was written, and nothing updated it.
+
+Recorded rather than corrected in the title, because a charter is a decision with a date on it
+and the drift is the fact worth keeping: this is the fourth recorded count this run that measured
+differently from its artefact - the debt list that held eight already-fixed names, the backlog
+that was 12% fiction, the 4.5x that measured 0.98x. D0136 priced this charter at twenty units
+when it set the v5 bar; at ten, the run it describes is half the size that ruling assumed.
 
 ## Sprint Goal
 
@@ -14,9 +29,22 @@ No open delivery unit is unplannable: every one carries acceptance criteria that
 
 ## Scope rule
 
-The 20 units `sprint breakdown` names as ungroomed: BG0350, BG0469, BG0486, BG0488, BG0490,
-BG0491, BG0493, BG0497, BG0508, BG0509, BG0512, BG0519, BG0522, BG0523, BG0526, BG0528, BG0529,
-BG0531, BG0532, BG0534.
+**Amended 2026-08-16, before the run opened, on an adversarial goal review.** The 20 bug ids
+below are all terminal now - BG0350 Won't Fix, BG0534 Superseded, the rest Fixed - so the scope
+they declared authorises nothing, and the `--bugs Open` query authorised no story at all. A
+charter whose scope has emptied does not become a licence for whatever batch is convenient; it
+gets amended, on the record, before it is planned against.
+
+The scope is now the ungroomed set as the shipped reader measures it, of EITHER type - 12 units,
+45 points: US0625, US0626, US0627, US0628, US0646, US0647, US0648, US0649, US0650, US0651,
+BG0490, BG0493.
+
+The two bugs are in scope because they are ungroomed, which is what this charter is about; the
+operator's ruling that they are triaged rather than built is untouched by giving them criteria.
+
+Superseded scope, kept because a reader needs to see what emptied: BG0350, BG0469, BG0486,
+BG0488, BG0490, BG0491, BG0493, BG0497, BG0508, BG0509, BG0512, BG0519, BG0522, BG0523, BG0526,
+BG0528, BG0529, BG0531, BG0532, BG0534.
 
 This is a grooming run, not a delivery run, and it exists as its own charter because the
 operator's decision of 2026-08-09 - zero open bugs at tag - cannot be planned without it. Nine

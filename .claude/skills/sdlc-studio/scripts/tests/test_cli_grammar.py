@@ -316,6 +316,19 @@ class RepeatableFlagConformance(unittest.TestCase):
 #:
 #: The set may only GROW, and an entry earns its place by measurement in a CLEAN tree.
 #:
+#: AND its discrimination must not depend on the tree being in a particular STATE. That rule was
+#: learned by removing four entries in two days, each caught by the control below rather than by
+#: anyone reading the list: `doc_freshness` named artefacts only while it had a stale claim to
+#: report, and `sprint next`, `autosprint next` and `constitution check` only while no run was
+#: open and a charter was queued. Every one passed its measurement honestly on the day it was
+#: admitted. None was wrong to admit; the ADMISSION RULE was, because "names an artefact when
+#: pointed at the real tree" is a question whose answer moves with the tree.
+#:
+#: So the bar is now unconditional: a verb belongs here only if it names an artefact of this
+#: repository whatever state the repository is in. The control is what enforces it - an entry
+#: that quietly stops discriminating fails rather than passing forever - and the churn it has
+#: produced is the mechanism working, not a fault in it.
+#:
 #: `doc_freshness` was removed after the control caught it drifting - which is the control
 #: doing its job rather than a fault in it. It named artefacts only while it had a STALE
 #: claim to report; once `reviews/LATEST.md` was brought current it answered `state documents
@@ -323,11 +336,11 @@ class RepeatableFlagConformance(unittest.TestCase):
 #: depends on the tree being in a particular state is not a measurement, and leaving it here
 #: would have been a row that passes forever.
 ROOT_EFFECT_VERBS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("ac_scope.py", ("check",)), ("autosprint.py", ("next",)), ("changelog.py", ("check",)),
-    ("close_owed.py", ("detect",)), ("constitution.py", ("check",)), ("critic.py", ("show",)),
+    ("ac_scope.py", ("check",)), ("changelog.py", ("check",)),
+    ("close_owed.py", ("detect",)), ("critic.py", ("show",)),
     ("decisions.py", ("list",)), ("flow.py", ("compute",)),
     ("integrity.py", ("check",)), ("reconcile.py", ("detect",)), ("retro.py", ("estimator",)),
-    ("sprint.py", ("next",)), ("status.py", ("backlog",)), ("validate.py", ("check",)),
+    ("status.py", ("backlog",)), ("validate.py", ("check",)),
 )
 
 #: What a real-tree answer looks like: this repository's own artefact ids and run ids, plus its

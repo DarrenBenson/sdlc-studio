@@ -1,6 +1,6 @@
 # US0586: Every skill script records the artefact it touched and the action it performed, per run
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0515
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

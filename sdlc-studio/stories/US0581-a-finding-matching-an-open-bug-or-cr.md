@@ -1,6 +1,6 @@
 # US0581: A finding matching an open Bug or CR is annotated with that id automatically and never blocks
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

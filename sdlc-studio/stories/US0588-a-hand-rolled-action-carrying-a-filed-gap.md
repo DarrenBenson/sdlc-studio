@@ -1,11 +1,12 @@
 # US0588: A hand-rolled action carrying a filed gap id is reported and does not block; one without is outstanding
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0515
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Depends on:** US0587
 > **Epic:** EP0196
 > **Points:** 3
 
