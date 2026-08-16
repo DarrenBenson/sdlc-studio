@@ -5559,12 +5559,12 @@ def _close_review_anchor(root, retro, state):
     units = len(st.get("batch") or [])
     try:
         verb = refresh_review_anchor(root, run_id, outcome, units,
-                                     _signoff_owed(root, st), st.get("goal") or "done")
+                                     _signoff_owed(root, st), run_rung(st))
     except OSError as exc:
         return False, f"the review anchor could not be written: {exc}", \
                "check sdlc-studio/reviews/LATEST.md is writable, then re-run close"
     _disclose_delegated_signoffs(root)
-    if str(st.get("goal") or "").lower() == "design":
+    if run_rung(st) == "design":
         print(render_grooming_report(grooming_report(root, st.get("batch") or [])),
               file=sys.stderr)
     return True, f"review anchor {verb}: {run_id} closed {outcome}", ""
@@ -6238,7 +6238,7 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     try:
         refresh_review_anchor(root, st.get("run_id") or "(unknown run)",
                               st.get("outcome") or "closed", len(st.get("batch") or []),
-                              _signoff_owed(root, st), st.get("goal") or "done")
+                              _signoff_owed(root, st), run_rung(st))
     except OSError as exc:
         print(f"apply-signoff: the review anchor could not be re-stamped ({exc}) - it still "
               f"says sign-off is owed", file=sys.stderr)
@@ -6498,6 +6498,68 @@ def _delivery_evidence(root, unit: str) -> str:
     return ""
 
 
+def run_rung(state) -> str:
+    """The rung this run was opened at, lowercased; `done` (the build rung) when unset.
+
+    THE reader for the close chain - `refresh_review_anchor`, the grooming report, the
+    apply-signoff re-stamp, `undelivered_blockers` and `_signoff_preflight` all come here, and
+    the three that derived it inline were converted rather than left beside this one. A review
+    of the first cut of this function caught it claiming to be the single reader while adding a
+    fifth spelling and consolidating none, which is the claim-versus-code gap the `claim-drift`
+    lane exists to report.
+
+    It matters because a second derivation is exactly how BG0582 happened: `anchor_status_block`
+    knew the rung and stated that a design rung's "done-gate refusals are the gate working",
+    while every lane that could actually refuse read no rung at all. A fact with two owners is a
+    fact with one wrong owner. The `plan`/`triage` half of that same gap was still live in the
+    inline `str(st.get("goal") or "").lower() == "design"` this replaced.
+
+    The planner's own goal-review readers are deliberately NOT folded in: they normalise a
+    Sprint Goal string, a different fact that happens to share the key name.
+    """
+    return str((state or {}).get("goal") or "done").strip().lower() or "done"
+
+
+def _rung_product_blockers(root, state, rung: str) -> list:
+    """What a NON-`done` rung owes at its close: its own product, not a delivery terminal.
+
+    THE HALF THAT MAKES THIS A FIX RATHER THAN A BYPASS. Skipping the delivery gates for a
+    design rung is correct - its units end at Ready with red criteria by design - but skipping
+    them and checking NOTHING would close any run that declared a rung, which is a far worse
+    defect than the one being repaired. A rung is exempt from the OTHER rung's bar, never from
+    a bar.
+
+    So the delivery question ("did the status move?") is replaced by the grooming question
+    ("did this rung produce what it exists to produce?"), asked of `conformance.unit_is_ungroomed`
+    - the one definition, the same one `sprint plan` and `transition` consult, never a second.
+    """
+    import conformance  # noqa: PLC0415 - deferred; one definition of "ungroomed", never a second
+    out: list[dict] = []
+    for unit in [u for u in (sdlc_md.norm_id(x) for x in (state.get("batch") or [])) if u]:
+        try:
+            found = sdlc_md.find_by_id(Path(root), unit)
+            if not found:
+                continue
+            path, type_ = found
+            ungroomed, why = conformance.unit_is_ungroomed(
+                type_, sdlc_md.read_text_safe(path))
+        except Exception as exc:  # noqa: BLE001 - a read-only report never fails the preflight
+            sdlc_md.debug("sprint._rung_product_blockers", exc)
+            continue
+        if not ungroomed:
+            continue
+        out.append({"stage": "status",
+                    "cause": f"a `{rung}` rung did not produce its own output",
+                    "detail": (f"{unit}: this run's rung is `{rung}`, whose product is authored "
+                               f"acceptance criteria rather than a delivery - and this unit is "
+                               f"still ungroomed ({why}). The rung is exempt from the build "
+                               f"rung's bar, not from its own"),
+                    "remedy": (f"groom {unit} - author criteria whose `Verify:` line executes - "
+                               f"or drop it from the batch with `sprint.py batch drop --id "
+                               f"{unit} --reason '<why>'`")})
+    return out
+
+
 def undelivered_blockers(root, state) -> list:
     """Batch units whose code landed and whose STATUS never moved, as preflight blockers.
 
@@ -6514,7 +6576,24 @@ def undelivered_blockers(root, state) -> list:
 
     Read-only, and silent when git cannot answer: a unit whose delivery cannot be evidenced is
     not accused of anything.
+
+    RUNG-AWARE. "Its status never moved" presumes the build rung's terminal. On a
+    `design` rung the units correctly END at Ready with red criteria, and the commits this
+    function reads as "code landed" are the GROOMING itself - so the inference is wrong at the
+    root, not merely strict. Such a run is judged against its own product instead.
+
+    SCOPED TO `design`, NOT TO "not `done`", and the distinction is the whole of a review
+    finding against the first cut of this repair. `plan` and `triage` are also non-build rungs
+    and their product is NOT grooming - `--goal plan` selects, sequences and estimates, then
+    stops. Judging them against the design rung's output told a plan run it "did not produce its
+    own output ... authored acceptance criteria", which is false, and because `status` is not a
+    deferrable stage it also made such a run refuse `--file-and-close`. That is the filed defect
+    MOVED one rung over rather than closed. Those rungs keep the behaviour they already had:
+    their units carry no delivery evidence in the run window, so nothing accuses them.
     """
+    rung = run_rung(state)
+    if rung == "design":
+        return _rung_product_blockers(root, state, rung)
     out: list[dict] = []
     for unit in [u for u in (sdlc_md.norm_id(x) for x in (state.get("batch") or [])) if u]:
         try:
@@ -6807,6 +6886,29 @@ def _signoff_preflight(root: Path, state: dict) -> list[dict]:
     import artifact  # noqa: PLC0415 - lazy, as elsewhere in the close path
     import critic    # noqa: PLC0415
     out: list[dict] = []
+    # RUNG-AWARE. Both gates below ask a question only the build rung owes: Done, and a
+    # reviewer-of-record sign-off ON that Done. `anchor_status_block` has always said so in
+    # words - "no Done sign-off is owed" - while these two demanded it anyway, and `critic
+    # signoff` REFUSED to write the very row they demanded, so the pair was unclearable by any
+    # means including by hand.
+    #
+    # REPORTED, NEVER SILENT. Returning an empty list would make the close's account of itself
+    # depend on knowing what it chose not to run - every suppression is also a blindfold. So the
+    # skip states itself as a non-blocking row, which `_blocker_label` renders "reported not
+    # blocking", and the grooming bar this rung IS held to is named in the same breath.
+    # A review found that claim half true when it was first written: `_report_preflight` printed
+    # blockers only on the NOT-ready path and via `_stage_label`, so on a clean design close this
+    # row appeared nowhere at all - the exact outcome the paragraph above says it prevents. Both
+    # were fixed there rather than softened here.
+    rung = run_rung(state)
+    if rung != "done":
+        return [{"stage": "sign-off", "blocking": False,
+                 "detail": (f"this run's rung is `{rung}`, not a build - its units end at their "
+                            f"own terminal, so no Done transition and no reviewer-of-record "
+                            f"sign-off ON a Done is owed, and neither was checked"),
+                 "remedy": ("nothing - this row is the record that the delivery gates did not "
+                            "apply. The bar this rung IS held to is that every batch unit is "
+                            "groomed, reported above as a blocking `status` row when it is not")}]
     # Read the SAME way conformance reads it, so the pre-flight and the gate agree on which
     # units the two-role rule reaches. A `hasattr` guard here would silently skip the whole
     # check if the accessor were ever renamed, which is the failure mode this pre-flight exists
@@ -7088,8 +7190,20 @@ def _report_preflight(root, retro_id: str | None) -> dict:
         print(f"close pre-flight: {len(pre['blockers'])} unmet prerequisite(s) - this is ALL "
               f"of them, not the first:", file=sys.stderr)
         for b in pre["blockers"]:
-            print(f"  [{_stage_label(b['stage'])}] {b['detail']}\n      -> {b['remedy']}",
+            # `_blocker_label`, not `_stage_label`: the first says "reported not blocking" and
+            # the second cannot. A page that renders an advisory row identically to a refusal
+            # makes an operator count eight blockers where three block.
+            print(f"  [{_blocker_label(b)}] {b['detail']}\n      -> {b['remedy']}",
                   file=sys.stderr)
+    elif [b for b in pre["blockers"] if not b.get("blocking", True)]:
+        # A READY close still has something to say. A non-blocking row records a check that did
+        # NOT run - the rung-skipped delivery gates are the case in hand - and suppressing it
+        # here is what makes a skipped gate read exactly like a satisfied one. Printed on the
+        # ready path too, or "reported, never silent" is true only of the failing path.
+        print("close pre-flight: ready. Recorded, not checked:", file=sys.stderr)
+        for b in pre["blockers"]:
+            if not b.get("blocking", True):
+                print(f"  [{_blocker_label(b)}] {b['detail']}", file=sys.stderr)
     return pre
 
 

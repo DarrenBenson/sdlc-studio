@@ -30,8 +30,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0567` | Medium | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere... |
 | `BG0578` | Medium | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner |
 | `BG0581` | Medium | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready |
+| `BG0584` | Medium | the tick-verification checklist row is rung-blind, so a grooming run cannot answer it |
+| `BG0587` | Medium | two answers to the grooming question inside one close |
 
-6 findings: 6 Medium, 0 Low.
+8 findings: 8 Medium, 0 Low.
 
 ## Not carried
 

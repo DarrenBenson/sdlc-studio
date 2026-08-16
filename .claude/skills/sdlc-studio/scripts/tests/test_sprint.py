@@ -15045,6 +15045,224 @@ class DeliveredUnitLeftAtReadyTests(unittest.TestCase):
             self.assertIn("'Blocked'", rows[0]["detail"])
 
 
+class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
+    """BG0582: the close chain must read the rung the run recorded, as the planner does.
+
+    A design rung grooms units and they correctly END at Ready with red criteria - `sprint.py`'s
+    own `anchor_status_block` says so in terms, and says its "done-gate refusals are the gate
+    working". Three lanes read no rung at all and demanded the build rung's terminal anyway, and
+    the third (`critic signoff`) REFUSED to write the row the other two demanded, so a run that
+    did exactly what it was asked could not be closed by any means, including by hand.
+
+    The danger in repairing this is over-correction: a rung that skips the delivery gates and
+    checks NOTHING would close any run that declared a rung. So the two controls below carry the
+    weight - an UNGROOMED unit must still block a design rung, and a `done` rung must be exactly
+    as strict as before.
+    """
+
+    def _repo(self, d, *, goal="design", status="Ready", criteria="- [ ] it behaves",
+              unit="US0101"):
+        """A real git repo whose run window carries a commit for the unit, at a chosen rung.
+
+        `unit` selects the TYPE as well as the id, because a batch is routinely mixed - this
+        repair's own run carried two bugs among twelve units - and a story-only fixture let a
+        `if type_ != "story": continue` mutant survive the entire file.
+        """
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "src").mkdir()
+        _run(root, "init", "-q")
+        _run(root, "checkout", "-q", "-b", "main")
+        _run(root, "config", "user.email", "t@t")
+        _run(root, "config", "user.name", "t")
+        is_bug = unit.startswith("BG")
+        d_ = root / "sdlc-studio" / ("bugs" if is_bug else "stories")
+        d_.mkdir(parents=True)
+        head = (f"> **Status:** {'Open' if is_bug else status}\n> **Severity:** Medium\n"
+                if is_bug else f"> **Status:** {status}\n")
+        (d_ / f"{unit}-x.md").write_text(
+            f"# {unit}: x\n\n{head}> **Points:** 2\n"
+            f"> **Affects:** src/a.py\n\n## Acceptance Criteria\n\n{criteria}\n",
+            encoding="utf-8")
+        (root / "src" / "a.py").write_text("base\n", encoding="utf-8")
+        _run(root, "add", "-A")
+        _run(root, "commit", "-qm", "base")
+        base = _run(root, "rev-parse", "HEAD").stdout.strip()
+        (root / "src" / "a.py").write_text("changed\n", encoding="utf-8")
+        _run(root, "add", "-A")
+        _run(root, "commit", "-qm", f"groom {unit}")
+        _close_state(root, batch=[unit], base_ref=base, goal=goal)
+        return root
+
+    def _state(self, root):
+        return json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                          .read_text(encoding="utf-8"))
+
+    def test_a_groomed_unit_at_ready_does_not_block_a_design_rung(self) -> None:
+        """MUTANT: delete the `if rung != "done"` branch from `undelivered_blockers`.
+
+        Ready IS this rung's terminal. Without the branch this run raises a status stop for
+        every unit that did exactly what the rung asked - the defect as filed.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            self.assertEqual([], _load().undelivered_blockers(root, self._state(root)))
+
+    def test_an_ungroomed_unit_still_blocks_a_design_rung(self) -> None:
+        """THE CONTROL THAT STOPS THIS BEING A BYPASS. MUTANT: make the rung branch `return []`.
+
+        A design rung is exempt from the BUILD rung's bar, never from a bar. Its own product is
+        authored criteria, so a unit it did not groom must hold the close - otherwise the repair
+        closes any run whose state carries a `goal` key, which is a worse defect than BG0582.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, criteria="- [ ] **AC1** {{what the user can do}}")
+            mod = _load()
+            rows = mod.undelivered_blockers(root, self._state(root))
+            self.assertEqual(1, len(rows), rows)
+            self.assertIn("US0101", rows[0]["detail"])
+            self.assertIn("ungroomed", rows[0]["detail"])
+            # Asked of `hard_blockers`, the function that DECIDES whether `--file-and-close` may
+            # file a row, rather than of the `blocking` key. The key is unset here, so testing it
+            # passed on argparse-style defaulting and killed only an explicit `"blocking": False`
+            # - it asserted the absence of a line nobody had written.
+            self.assertEqual(rows, mod.hard_blockers(rows),
+                             "an ungroomed unit must HOLD a design-rung close - a row the "
+                             "bounded exit could file away is not a bar")
+
+    def test_an_ungroomed_BUG_blocks_a_design_rung_too(self) -> None:
+        """MUTANT: `if type_ != "story": continue` inside `_rung_product_blockers`.
+
+        That mutant SURVIVED all 895 tests in this file when the class fixture was story-only,
+        and it is not a hypothetical shape: `grooming_report` three hundred lines away does
+        exactly that skip. A design batch is routinely mixed - this repair's own run carried
+        BG0490 and BG0493 among twelve units - so a story-only bar exempts real work.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, unit="BG0490",
+                              criteria="- [ ] **AC1** {{what the user can do}}")
+            rows = _load().undelivered_blockers(root, self._state(root))
+            self.assertEqual(1, len(rows), rows)
+            self.assertIn("BG0490", rows[0]["detail"])
+
+    def test_every_ungroomed_SHAPE_blocks_not_just_the_placeholder(self) -> None:
+        """MUTANT: call `conformance.story_is_ungroomed` instead of `unit_is_ungroomed`.
+
+        That mutant also SURVIVED all 895 tests, because the only fixture was the `{{...}}`
+        placeholder - the one shape both predicates agree on. `unit_is_ungroomed` reports three,
+        and the two that were unpinned are the dangerous ones: `no-criteria` is a unit with
+        nothing to verify at all, and `derived-only` is, in conformance.py's own words, "the
+        shape that reads like content and is not" - precisely what a grooming run could emit and
+        close on.
+        """
+        mod = _load()
+        for shape, criteria in (
+                ("no-criteria", ""),
+                ("placeholder", "- [ ] **AC1** {{what the user can do}}"),
+                # UNNUMBERED on purpose. The `**ACn**` form of the very same text is reported
+                # GROOMED, because `is_derived_criterion` strips the bullet, the checkbox and
+                # the emphasis but not the AC number - filed as BG0585 while writing this test.
+                # Asserting the numbered form here would fail for a reason that is not this
+                # unit's, so it is pinned in BG0585 and this row uses the form that works.
+                ("derived-only",
+                 "- [ ] The behaviour described is corrected: the thing is fixed.\n"
+                 "- [ ] The proposed fix lands, pinned by a test: the fix lands.")):
+            with self.subTest(shape=shape), tempfile.TemporaryDirectory() as d:
+                root = self._repo(d, criteria=criteria)
+                rows = mod.undelivered_blockers(root, self._state(root))
+                self.assertEqual(1, len(rows), f"{shape} did not block: {rows}")
+                self.assertIn("US0101", rows[0]["detail"])
+
+    def test_a_plan_rung_is_not_judged_against_the_design_rungs_product(self) -> None:
+        """THE DISCRIMINATOR. MUTANT: scope the branch `rung != "done"` instead of
+        `rung == "design"`.
+
+        `plan` and `triage` are non-build rungs whose product is NOT grooming - `--goal plan`
+        selects, sequences and estimates, then stops. Under the wider scoping a plan run was
+        told it "did not produce its own output ... authored acceptance criteria", which is
+        false, and since `status` is not a deferrable stage that run could not use
+        `--file-and-close` either. The repair had MOVED the filed defect one rung over instead
+        of closing it, and no test saw it.
+        """
+        mod = _load()
+        for rung in ("plan", "triage"):
+            with self.subTest(rung=rung), tempfile.TemporaryDirectory() as d:
+                root = self._repo(d, goal=rung,
+                                  criteria="- [ ] **AC1** {{what the user can do}}")
+                rows = mod.undelivered_blockers(root, self._state(root))
+                self.assertEqual([], [r for r in rows if "did not produce its own output"
+                                      in r.get("cause", "")],
+                                 f"a `{rung}` rung was judged against the design rung's product")
+
+    def test_a_done_rung_is_exactly_as_strict_as_before(self) -> None:
+        """THE REGRESSION CONTROL. MUTANT: apply the rung branch unconditionally.
+
+        Everything above is scoped by `rung != "done"`. If that scoping is wrong in the other
+        direction, every BUILD run silently stops reporting units delivered and left at Ready -
+        which is the exact defect `undelivered_blockers` was written to catch, reintroduced by
+        its own repair.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, goal="done")
+            rows = _load().undelivered_blockers(root, self._state(root))
+            self.assertEqual(1, len(rows), rows)
+            self.assertIn("'Ready'", rows[0]["detail"])
+
+    def test_an_absent_goal_is_treated_as_the_build_rung(self) -> None:
+        """MUTANT: default `run_rung` to `design`, or to `""`.
+
+        Most run states predate the rung entirely. Defaulting anywhere but `done` would silently
+        relax the delivery gates for every historical run - a repair that loosens the gate for
+        runs nobody asked about is indistinguishable from switching it off.
+        """
+        mod = _load()
+        for absent in ({}, {"goal": None}, {"goal": ""}, {"goal": "   "}):
+            with self.subTest(state=absent):
+                self.assertEqual("done", mod.run_rung(absent))
+        self.assertEqual("design", mod.run_rung({"goal": "Design"}))
+
+    def test_the_skipped_delivery_gates_are_reported_not_silent(self) -> None:
+        """MUTANT: return a bare `[]` from `_signoff_preflight` for a non-done rung.
+
+        Every suppression is also a blindfold. A close that quietly stops asking for a sign-off
+        reads identically to one that asked and was satisfied, so the skip must state itself -
+        as a NON-BLOCKING row, which is the only shape that says "not checked" without holding
+        the close.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            rows = _load()._signoff_preflight(root, self._state(root))
+            self.assertEqual(1, len(rows), rows)
+            self.assertEqual("sign-off", rows[0]["stage"])
+            self.assertFalse(rows[0]["blocking"],
+                             "the row records what was skipped; it must not hold the close")
+            self.assertIn("design", rows[0]["detail"])
+            # `hard_blockers` is the decider, so ask IT: a row the bounded exit can file is a row
+            # that does not hold the close. Testing the `blocking` key alone would pass on a row
+            # nobody classified.
+            self.assertEqual([], _load().hard_blockers(rows))
+
+    def test_a_done_rung_still_gets_its_blocking_signoff_row(self) -> None:
+        """THE OTHER REGRESSION CONTROL. MUTANT: drop the `rung != "done"` guard on the early
+        return in `_signoff_preflight`.
+
+        If the early return fires for a build run, the two-role gate stops being previewed at
+        all and a close reports READY for units carrying no sign-off whatever.
+
+        NAMED for what it checks. It was called `..._signoff_and_done_gate_rows`, and a review
+        found it asserts nothing whatever about done-gate rows - this fixture produces none,
+        because `artifact.close` refuses earlier. The done-gate lane IS defended, by tests
+        elsewhere in this file, but a name promising cover this test does not provide is how a
+        gap survives a reading of the suite.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, goal="done")
+            rows = _load()._signoff_preflight(root, self._state(root))
+            self.assertTrue([r for r in rows if r["stage"] == "sign-off"
+                             and r.get("blocking", True)],
+                            f"a build rung lost its blocking sign-off preview: {rows}")
+
+
 class BatchValidationTests(unittest.TestCase):
     """US0481: the plan validates the UNITS in its batch, not only their index rows.
 

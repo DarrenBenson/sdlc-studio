@@ -91,6 +91,15 @@ read the same.
 Ruling is one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`. A `stop-ship`
 ruling HOLDS the close, which is the point of being able to make one.
 
+BG0583 is ruled `not-stop-ship` on evidence rather than on comfort: it lets `verify_ac run`
+report success for a unit it never read, which is exactly the failure that would undermine this
+run's red-now ledger - so the ledger was re-taken per unit and per PATH, and all twelve returned
+a real `ac=/pass=/fail=` line. The evidence this run rests on was measured through the path that
+works, not the one that lies.
+
+BG0582 was ruled `not-stop-ship` when this table was written and was FIXED before the close, on
+the operator's instruction. Its row stays as the record of the ruling that was made at the time.
+
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
 | BG0463 | deferred | authoring session (recorded for the operator) | 2026-08-16 |
@@ -108,7 +117,7 @@ ruling HOLDS the close, which is the point of being able to make one.
 | CR0535 | deferred | authoring session (recorded for the operator) | 2026-08-16 |
 | CR0536 | deferred | authoring session (recorded for the operator) | 2026-08-16 |
 | CR0539 | deferred | authoring session (recorded for the operator) | 2026-08-16 |
-| BG0581 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-16 |
+| BG0583 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-16 |
 | BG0490 | deferred | operator (triage ruling, now groomed) | 2026-08-16 |
 | BG0493 | deferred | operator (triage ruling, now groomed) | 2026-08-16 |
 
