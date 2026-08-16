@@ -32,8 +32,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0581` | Medium | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready |
 | `BG0584` | Medium | the tick-verification checklist row is rung-blind, so a grooming run cannot answer it |
 | `BG0587` | Medium | two answers to the grooming question inside one close |
+| `BG0589` | Medium | the close pre-flight counts advisory rows as unmet prerequisites |
 
-8 findings: 8 Medium, 0 Low.
+9 findings: 9 Medium, 0 Low.
 
 ## Not carried
 

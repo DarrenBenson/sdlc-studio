@@ -198,12 +198,39 @@ class ReleaseNotesClaimTests(unittest.TestCase):
         # Version read from the file the guard points at, not hardcoded - the assertion must
         # follow NOTES_REL when it moves to the next release rather than pinning a dead one.
         version = ki.NOTES_REL.rsplit("release-notes-", 1)[1].removesuffix(".md")
-        expected = (f"**{version} ships with {len(found)} open defects: {mediums} Medium, "
-                    f"{lows} Low. Zero Critical, zero High.**")
+        expected = (f"**{version} discloses {len(found)} open defects: {mediums} Medium, "
+                    f"{lows} Low.**")
         self.assertIn(
             expected, notes,
             "the release notes state a finding count the bug corpus contradicts. It should "
             f"read:\n  {expected}")
+
+    def test_the_notes_do_not_claim_zero_high_while_the_corpus_holds_one(self):
+        """The half of the claim that was NOT derived, and therefore drifted.
+
+        This guard's docstring says "prose drifts; this is what stops it", and it then pinned
+        the Medium and Low counts against the corpus while hardcoding `Zero Critical, zero High`
+        as a literal - so the one clause nothing measured was the one that went false. Four High
+        findings were raised against v5.0.1 after its tag and the assertion stayed green,
+        because the string it demanded was the string it supplied.
+
+        A barred finding must be NAMED in the notes, not merely counted: `--bar` prints ids, and
+        an operator reconciling the two reads ids.
+        """
+        notes = (ki.REPO / ki.NOTES_REL).read_text(encoding="utf-8")
+        barred = ki.barred_open()
+        if not barred:
+            self.assertIn("Zero Critical, zero High.", notes,
+                          "the corpus holds no barred finding, so the notes should say so")
+            return
+        self.assertNotIn(
+            "Zero Critical, zero High.**", notes,
+            f"the notes claim zero barred findings while the corpus holds {len(barred)}: "
+            f"{', '.join(sorted(barred))}")
+        for uid in sorted(barred):
+            self.assertIn(uid, notes,
+                          f"{uid} is open at a barred severity and the release notes do not "
+                          f"name it - `--bar` names ids, so the prose must too")
 
 
 if __name__ == "__main__":

@@ -15173,6 +15173,30 @@ class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
                 self.assertEqual(1, len(rows), f"{shape} did not block: {rows}")
                 self.assertIn("US0101", rows[0]["detail"])
 
+    def test_every_ungroomed_unit_in_the_batch_is_named_not_just_the_first(self) -> None:
+        """MUTANT: slice `_rung_product_blockers`'s batch loop to `[:1]`.
+
+        Found by a round-3 review. It SURVIVED all 901 tests, because every fixture in this class
+        uses a single-unit batch - so nothing pinned the loop at all. The production code was
+        correct; the cover was not. Under that mutant the run this repair exists to close, which
+        carried twelve units, would have reported one ungroomed unit and closed silently over the
+        other eleven.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, criteria="- [ ] **AC1** {{what the user can do}}")
+            sd = root / "sdlc-studio" / "stories"
+            for uid in ("US0102", "US0103"):
+                (sd / f"{uid}-x.md").write_text(
+                    f"# {uid}: x\n\n> **Status:** Ready\n> **Points:** 2\n"
+                    f"> **Affects:** src/a.py\n\n## Acceptance Criteria\n\n"
+                    f"- [ ] **AC1** {{{{what the user can do}}}}\n", encoding="utf-8")
+            state = dict(self._state(root), batch=["US0101", "US0102", "US0103"])
+            rows = _load().undelivered_blockers(root, state)
+            self.assertEqual({"US0101", "US0102", "US0103"},
+                             {u for u in ("US0101", "US0102", "US0103")
+                              if any(u in r["detail"] for r in rows)},
+                             f"only some of the batch was judged: {rows}")
+
     def test_a_plan_rung_is_not_judged_against_the_design_rungs_product(self) -> None:
         """THE DISCRIMINATOR. MUTANT: scope the branch `rung != "done"` instead of
         `rung == "design"`.

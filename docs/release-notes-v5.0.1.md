@@ -73,7 +73,14 @@ documented command now works, pinned to `v5.0.1` or later.
 
 ## Known issues
 
-**v5.0.1 ships with 8 open defects: 8 Medium, 0 Low. Zero Critical, zero High.** Listed by id in
+**v5.0.1 was TAGGED with zero Critical and zero High open against it.** That was true at the tag
+and is not a standing claim: four High findings have since been raised against this code -
+BG0583, BG0585, BG0586 and BG0588, all found by adversarial review after the tag - and they are
+open now. `tools/known_issues.py --bar` reads the live corpus rather than this sentence, so it
+reports them; that disagreement is the guard working, not drift to be edited away. They are
+carried to v5.1.
+
+**v5.0.1 discloses 9 open defects: 9 Medium, 0 Low.** Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be
 missing from it.

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-16
+**Last Updated:** 2026-08-17
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 12 |
+| Open | 13 |
 | In Progress | 0 |
-| Fixed | 482 |
+| Fixed | 483 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 7 |
 | Superseded | 2 |
-| **Total** | **587** |
+| **Total** | **589** |
 
 ## All Bugs
 
@@ -121,12 +121,14 @@
 | [BG0579](BG0579-the-per-commit-gate-has-outgrown-the-tool.md) | the per-commit gate has outgrown the tool timeouts that run it, so a commit is KILLED rather than refused - and a kill reads as a hang, which invites --no-verify | Fixed | High | 2026-08-14 | 2026-08-14 |
 | [BG0580](BG0580-ten-units-reached-a-terminal-status-and-were.md) | ten units reached a terminal status and were signed off with test plans whose mutants were never executed, and five of those plans are still scaffold placeholders | Fixed | High | 2026-08-15 | 2026-08-15 |
 | [BG0581](BG0581-the-goal-review-brief-states-a-reachable-end.md) | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready | Open | Medium | 2026-08-16 | 2026-08-16 |
-| [BG0582](BG0582-the-design-rung-can-be-planned-and-groomed.md) | the design rung can be planned and groomed but not closed: sprint plan reads the rung and the close chain does not, so it demands Done for units the rung says correctly end at Ready | Open | High | 2026-08-16 | 2026-08-16 |
+| [BG0582](BG0582-the-design-rung-can-be-planned-and-groomed.md) | the design rung can be planned and groomed but not closed: sprint plan reads the rung and the close chain does not, so it demands Done for units the rung says correctly end at Ready | Fixed | High | 2026-08-16 | 2026-08-16 |
 | [BG0583](BG0583-verify-ac-run-reports-success-for-a-unit.md) | verify_ac run reports success for a unit it never read | Open | High | 2026-08-16 | 2026-08-16 |
 | [BG0584](BG0584-the-tick-verification-checklist-row-is-rung-blind.md) | the tick-verification checklist row is rung-blind, so a grooming run cannot answer it | Open | Medium | 2026-08-16 | 2026-08-16 |
 | [BG0585](BG0585-the-derived-only-grooming-detector-is-defeated-by.md) | the derived-only grooming detector is defeated by the AC-number prefix it ships with | Open | High | 2026-08-16 | 2026-08-16 |
 | [BG0586](BG0586-a-design-rung-that-groomed-nothing-closes-exactly.md) | a design rung that groomed nothing closes exactly like one that groomed everything | Open | High | 2026-08-16 | 2026-08-16 |
 | [BG0587](BG0587-two-answers-to-the-grooming-question-inside-one.md) | two answers to the grooming question inside one close | Open | Medium | 2026-08-16 | 2026-08-16 |
+| [BG0588](BG0588-the-design-rung-has-no-terminal-check-so.md) | the design rung has no terminal check, so a unit left at Draft or Blocked closes it clean | Open | High | 2026-08-17 | 2026-08-17 |
+| [BG0589](BG0589-the-close-pre-flight-counts-advisory-rows-as.md) | the close pre-flight counts advisory rows as unmet prerequisites | Open | Medium | 2026-08-17 | 2026-08-17 |
 
 ## Archived Releases
 
