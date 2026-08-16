@@ -23,7 +23,7 @@
 - **Given** a verb refusing a value outside its vocabulary
 - **When** the refusal is read
 - **Then** the accepted set is rendered from the same constant the check uses - a copy in the message is a second source of truth for one fact
-- **Mutant:** hard-code the list in the message - it is right until the constant grows, and nothing reddens when it does
+- **Mutant:** render a SUBSET of the enforcing constant - the message and the check disagree now rather than after the next edit, which is the disagreement this criterion forbids
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::VocabularyFromTheConstantTests::test_the_refusal_renders_the_enforcing_constant
 
 ### AC2: adding a value changes the message with no edit

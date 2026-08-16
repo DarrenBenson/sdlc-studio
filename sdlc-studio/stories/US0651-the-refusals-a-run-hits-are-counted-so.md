@@ -5,7 +5,7 @@
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
 > **Epic:** EP0210
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -41,6 +41,14 @@
 - **Then** it states zero - an absent figure and a measured zero are different facts, and blank reads as unmeasured
 - **Mutant:** omit the line when the count is zero - the best case is indistinguishable from the unmeasured one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::RefusalsAreCountedTests::test_zero_is_stated_rather_than_omitted
+
+### AC4: a refusing verb RECORDS the refusal
+
+- **Given** a verb that refuses a caller
+- **When** the refusal is raised
+- **Then** it is recorded on the run, because nothing writes a refusal event today - `run_state.py`'s only `refusal` is `disjoint_refusal`, which RAISES one rather than counting it, so without this the other three criteria count something with no producer
+- **Mutant:** record the invocation rather than the refusal - the count moves with activity instead of with friction, which is the figure this story exists to separate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RefusalsAreRecordedTests::test_a_refusing_verb_records_the_refusal
 
 ## Revision History
 

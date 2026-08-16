@@ -2,62 +2,47 @@
 > **RUN-01KZQ03V closed goal-reached.** 19 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **Run of record:** RUN-01KZQ03V - the backlog-clearing run that followed the v5.0.0 release.
-> The open bug backlog went from **41 units / 117 points to 2 / 19**. Two adversarial passes
-> REJECTED four of seven reviewed units with seven blocking findings; every one is repaired and
-> re-mutated.
+> **Run of record:** RUN-01M05A5M - a DESIGN rung. 12 ungroomed units groomed to red acceptance
+> criteria; `sprint breakdown` reports 0 ungroomed, down from 12. The ten stories reached Ready,
+> which is this rung's terminal; the two bugs stay Open with criteria, because their vocabulary
+> has no Ready and the rung's product for them is criteria rather than a fix.
 
-## THE STATE OF THE BAR
+## THE EXIT CONDITION, AND WHY IT IS NOT A MARKER
 
-`python3 tools/known_issues.py --bar` is the command, not this sentence. It exits 0 only when no
-finding sits open at Critical or High. **It does not exit 0 today**: BG0580 is open at High, and
-it is the finding this close raised about itself.
+**38 criteria: 0 pass, 38 fail, 0 manual, 0 unspecified.**
 
-**5 Medium findings ship OPEN**, listed by id in `docs/known-issues.md`, which is GENERATED from
-the bug corpus and compared byte for byte. Down from the 40 v5.0.0 disclosed.
+Zero passing is the column that matters. A criterion that passes before its behaviour exists is
+the vacuous verifier this rung exists to catch, and RETRO0071 found three of those in a
+comparable run. The mechanic was measured before a single criterion was written: a `Verify:` line
+naming a test that does not yet exist reports FAIL rather than `refused`.
 
-## WHAT THIS RUN FOUND ABOUT ITS OWN RELEASE
+The ledger exists because `story_is_ungroomed` returns false the moment the placeholder token is
+deleted - an exit condition a `touch` satisfies is not one. QA rejected the goal on exactly that
+ground before the run opened.
 
-Three findings were release-blocking and none was in any plan:
+## WHAT THE GOAL REVIEW CHANGED, BEFORE ANYTHING WAS PLANNED
 
-* **BG0575** - the verified-install path documented in the README had never worked. v5.0.1 was
-  cut for it, and the reproduction was re-run against the real published assets before closing.
-* **BG0576** - `tag-check` read a locally recorded green and never asked the forge, so BOTH v5
-  tags were cut over a CI that had been red for two days with every shipped guard reporting
-  green. The failure class this repository exists to prevent, twice in two days.
-* **BG0579** - the per-commit gate had outgrown the tool timeouts that run it, so a commit was
-  KILLED rather than refused. A kill records nothing and reads as a hang, whose documented escape
-  is `--no-verify`.
+Two NARROW verdicts and one REJECT, all five findings answered:
 
-## WHAT THE CLOSE FOUND ABOUT THE LEDGER
+* `sprint plan` REFUSES this batch at the default rung. Only `--goal design` accepts it.
+* **SC0005 authorised none of it** - scope query `--bugs Open`, and its 20 named bug ids are all
+  terminal now. The charter was amended on the record rather than planned around.
+* Six of the original 16 needed nothing: 20 of 57 points already groomed. Transitioned as
+  pre-work, with the US0586-0588 dependency edges declared and US0590's `Affects` omission fixed.
+* Nothing gated the goal. Hence the ledger.
+* Two shared-file clusters: the batch is sequential, not parallel.
 
-**BG0580, High and open.** Ten units of this run's batch are `Fixed` AND signed off with planned
-mutants that were never executed, and five of them still carry `{{name the production change...}}`
-placeholders - 26 rows in total. `transition -> Fixed` already refuses exactly this, and it fired
-at the CLOSE rather than at any of the ten transitions. Either the gate does not bind when it
-should, or it was bypassed ten times; which of those is true decides whether this is ten author
-errors or one inert gate, and it is not yet established.
+## THE FINDING THIS RUN RAISED ABOUT THE TOOL
 
-## THE RECURRING FAILURE, MEASURED
-
-Not weak code. **Verification that could not see what it claimed.**
-
-* Six mutants had to be re-chosen because they did not reach the code they named - one patched a
-  message rather than the resolver, one a field map rather than the writer, one a `manual`
-  verifier that satisfied the lane exactly as the real one did.
-* **Two verdicts were registered without being executed**, and both were retracted on the record
-  with the `mutation.py retract` verb built earlier in the same run.
-* Two guards were not weak but INVERTED: the opposite statement satisfied them (BG0571).
-* Three bugs were overturned by re-measurement rather than repaired - BG0519's 4.5x measured
-  0.98x, BG0555's debt list held eight already-fixed names, BG0545's second half no longer
-  reproduced.
+**BG0582, High.** `sprint plan` reads the rung; the close chain does not. `undelivered_blockers`
+carries no reference to it, so a design rung whose every story reached Ready exactly as intended
+raised 12 status stops, 12 done-gate stops demanding Done, and 12 sign-off stops. The rung is
+offered by the planner and unreachable through the closer. **BG0581** is the same asymmetry in
+the brief, which promised Review for a run that correctly ends at Ready.
 
 ## WHAT IS CARRIED
 
-* **BG0490, BG0493** - triaged rather than built on the operator's ruling, each claim re-measured.
-  BG0490 is half lapsed; BG0493 is fully live.
-* **BG0577** - shipped NARROWED. Its own premise check falsified the other two halves: 0 of 31
-  open bugs carried an executable `Verify:` line, so the repaired-but-open detector has nothing
-  to run until grooming catches up.
-* **BG0579's second half** - ~5,300 tests still run single-process on 16 cores. Parallelism needs
-  `pytest-xdist`, a dependency change that is the operator's call.
+* **BG0490, BG0493** - groomed here, still triaged rather than built, per the operator's ruling.
+* **The TSD is stale.** The plan reported it at open; nothing in this run refreshed it.
+* **The disclosure page and the release notes drifted apart three times this session**, each time
+  caught by the guard. A derived page and a hand-written claim kept in step by recollection.

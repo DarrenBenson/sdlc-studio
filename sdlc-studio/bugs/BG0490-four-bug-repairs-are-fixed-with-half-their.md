@@ -42,6 +42,14 @@ blast radius across every loading-guide cell, and that is engineering rather tha
 
 ## Acceptance Criteria
 
+> **What these criteria are.** They are the DELIVERY CONTRACT for the halves that still
+> reproduce, not a claim that this run built them. The operator's ruling stands: these bugs
+> are triaged, not built. What the design rung produced is criteria that fail RED now, so
+> whoever delivers the fix inherits a falsifiable target instead of a summary. The one
+> exception is called out where it sits: a criterion pinning a half that has already LAPSED
+> is a regression pin, and it goes green the moment its test exists rather than when a fix
+> lands.
+
 - [ ] **AC1** Given `templates/audit-profiles/code.md`, when its one real row is read, then the path resolves - the BG0434 half this bug carried, re-measured 2026-08-15 as ALREADY LAPSED and pinned so it cannot regress unnoticed.
   - **Verify:** pytest tools/tests/test_check_links.py::AuditProfilePathsTests::test_the_one_real_row_resolves
 - [ ] **AC2** Given a broken path shaped like an invocation (`scripts/rg-wrapper-DOES-NOT-EXIST.py`) or carrying an unlisted extension (`notes/X.txt`, `tools/X.toml`), when the link classifier reads it, then it is REPORTED rather than skipped - the BG0435 half, which still reproduces.
@@ -50,6 +58,14 @@ blast radius across every loading-guide cell, and that is engineering rather tha
   - **Verify:** pytest tools/tests/test_check_versions.py::DocstringMatchesTheCodeTests::test_the_never_by_grep_claim_is_true
 
 ## Steps to Reproduce
+
+> **Read the Triage section below first.** Two of the steps here assert conditions that
+> have since LAPSED and were confirmed lapsed by execution on 2026-08-15: `code.md:17` no
+> longer ends in a full stop, and `pre-commit`'s `run()` stashes `$out` on both paths
+> (fixed under BG0239). They are left unedited because a reproduction is a record of what
+> was observed when the bug was filed; the Triage table is the record of what is true now,
+> and an independent review found a reader could follow these steps and re-open the bug on
+> a premise the artefact itself already refutes.
 
 1. `grep -n 'ends in a full stop' templates/audit-profiles/code.md` - line 17 still does.
 2. Classify the three path shapes above through tools/`check_links.py` - all three skip.

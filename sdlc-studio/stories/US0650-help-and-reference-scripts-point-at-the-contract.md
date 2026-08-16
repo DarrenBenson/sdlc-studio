@@ -5,7 +5,7 @@
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/help/, tools/tests/test_check_spec_claims.py
+> **Affects:** .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/help/, tools/tests/test_check_spec_claims.py, tools/check_spec_claims.py
 > **Epic:** EP0210
 > **Points:** 3
 > **Persona:** Maya Okafor

@@ -23,8 +23,8 @@ BG0423 - `Verification depth: functional`, but both verifiers are source-text gr
 
 ## Triage 2026-08-15
 
-Re-measured before any code was written. **All three instances stand**, so this bug is carried
-unnarrowed - the opposite finding to BG0490 beside it, and the reason each was measured rather
+Re-measured before any code was written. **Three of the four instances stand** and the fourth is narrowed out explicitly below, so this bug is
+carried NARROWED - the opposite finding to BG0490 beside it, and the reason each was measured rather
 than assumed from its age.
 
 | Instance | Measured now |
@@ -32,12 +32,21 @@ than assumed from its age.
 | BG0476 | **STANDS** - `sys.path.insert` appears twice in `tools/tests/conftest.py`, at line 8 in the DOCSTRING and line 15 as the real call, so AC1's `assertIn` is satisfied with the call deleted |
 | US0606 | **STANDS** - the `lane-check` slice still opens inside a comment block, and the `\|\| true` its assertion finds belongs to an unrelated pipeline |
 | US0607 | **STANDS** - `best_practice_rules.py` is referenced by nothing in `.githooks/` or `package.json`, so it is wired into no gate |
+| BG0423 | **NOT RE-MEASURED.** Named in the Summary as the fourth instance and carried by no criterion here. An independent review found it dropped while the section claimed the bug was carried unnarrowed - which is the exact fault BG0490 beside it was filed to record, committed in the artefact recording it. It is narrowed OUT explicitly rather than left ambiguous, and needs its own re-measurement before it is worked |
 
 Not built here: each repair is a test-strengthening change to a guard, which is engineering
 rather than triage. What triage establishes is that the premise is still real - the three
 verifiers named here would still pass over a delivery that had been made inert.
 
 ## Acceptance Criteria
+
+> **What these criteria are.** They are the DELIVERY CONTRACT for the halves that still
+> reproduce, not a claim that this run built them. The operator's ruling stands: these bugs
+> are triaged, not built. What the design rung produced is criteria that fail RED now, so
+> whoever delivers the fix inherits a falsifiable target instead of a summary. The one
+> exception is called out where it sits: a criterion pinning a half that has already LAPSED
+> is a regression pin, and it goes green the moment its test exists rather than when a fix
+> lands.
 
 - [ ] **AC1** Given `tools/tests/conftest.py` with its `sys.path.insert` call DELETED, when BG0476's AC1 verifier runs, then it FAILS - today the file's own docstring mentions `sys.path.insert` at line 8, so the assertion is satisfied with the call gone.
   - **Verify:** pytest tools/tests/test_conftest_guard.py::TheGuardSeesTheCallNotTheDocstringTests::test_deleting_the_call_reddens_ac1

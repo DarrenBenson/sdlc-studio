@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 6 |
+| Open | 7 |
 | In Progress | 0 |
 | Fixed | 482 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 7 |
 | Superseded | 2 |
-| **Total** | **581** |
+| **Total** | **582** |
 
 ## All Bugs
 
@@ -121,6 +121,7 @@
 | [BG0579](BG0579-the-per-commit-gate-has-outgrown-the-tool.md) | the per-commit gate has outgrown the tool timeouts that run it, so a commit is KILLED rather than refused - and a kill reads as a hang, which invites --no-verify | Fixed | High | 2026-08-14 | 2026-08-14 |
 | [BG0580](BG0580-ten-units-reached-a-terminal-status-and-were.md) | ten units reached a terminal status and were signed off with test plans whose mutants were never executed, and five of those plans are still scaffold placeholders | Fixed | High | 2026-08-15 | 2026-08-15 |
 | [BG0581](BG0581-the-goal-review-brief-states-a-reachable-end.md) | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready | Open | Medium | 2026-08-16 | 2026-08-16 |
+| [BG0582](BG0582-the-design-rung-can-be-planned-and-groomed.md) | the design rung can be planned and groomed but not closed: sprint plan reads the rung and the close chain does not, so it demands Done for units the rung says correctly end at Ready | Open | High | 2026-08-16 | 2026-08-16 |
 
 ## Archived Releases
 

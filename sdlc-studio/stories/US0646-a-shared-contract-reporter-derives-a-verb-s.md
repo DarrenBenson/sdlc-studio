@@ -23,7 +23,7 @@
 - **Given** a verb whose guard refuses on a missing field
 - **When** the contract reporter is asked what that verb demands
 - **Then** the demand is derived by running the guard, not read from a list beside it - a restated contract drifts from the one that refuses, silently and in the direction that flatters
-- **Mutant:** read the demands from a hand-maintained table - it passes today and diverges the first time a guard changes
+- **Mutant:** report demands for a verb whose guard RAISES rather than executing it - the reporter answers from something other than the guard, which is what this criterion denies
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_contract_report.py::ContractReporterTests::test_the_demands_come_from_executing_the_guard
 
 ### AC2: a guard that changes changes the report
