@@ -2,6 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0344: Never repair the gate that is refusing your own run**
 - **L-0343: A mutant that cannot reach the code it names proves as little as a test that cannot fail**
 - **L-0342: A recorded list is a claim like any other and rots the same way.**
 - **L-0341: A guard a paraphrase can defeat is weak; one the OPPOSITE statement satisfies is inverted.**
