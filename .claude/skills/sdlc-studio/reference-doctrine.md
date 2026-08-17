@@ -54,7 +54,10 @@ rules, the agents/services) live in that project's agent-instructions file
    verifiers rather than reading the stored report (a merged report carries a stale green
    forward), and writes nothing back. **Nothing to prove is not proof:** no stories, no
    executable `Verify:` line, or a verifier the trust boundary refused to run all FAIL the
-   lane, and deselecting it under `--release` is refused rather than honoured. This is what
+   lane, and deselecting it under `--release` is refused rather than honoured. A red AC blocks
+   when its story CLAIMS completion - a failing criterion on `Ready`, `Superseded` or
+   `Won't Implement` work was never claimed finished, so it is reported with its status rather
+   than counted, and any status the vocabulary cannot resolve counts as a claim. This is what
    makes "Done" mean done. Author a `Verify:` line on every AC.
 
 6. **Full review set between releases – including a CODE leg.** A fast ship train

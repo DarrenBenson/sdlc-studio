@@ -52,7 +52,9 @@ not honoured, in every mode: no verdict is printed over the lane that defines it
 `--release` is the **pre-tag** form and the only command needed before a tag: it adds a blocking
 `verify` lane that **executes** every story's `Verify:` expression through `verify_ac` and names
 each red AC, so the gate and the AC layer fail as ONE exit code instead of two an operator must
-remember to read. The lane executes rather than reading the stored `verify-report.json` (a merged
+remember to read. A red AC blocks when its story CLAIMS completion; one on a `Ready`, `Superseded`
+or `Won't Implement` story is unbuilt or abandoned work and is reported separately rather than
+counted, while a status the vocabulary cannot resolve counts as a completion claim. The lane executes rather than reading the stored `verify-report.json` (a merged
 report carries a story's last green forward - a stale green is how a rotted verify layer reaches a
 tag), and it writes nothing: no `- **Verified:**` back-annotation, no report rewrite, so the gate
 stays read-only and hook-safe. The lane is absent without `--release` - the standard gate does not

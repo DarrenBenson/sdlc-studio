@@ -132,6 +132,12 @@ pre-commit run reported as advisory is judged here - and adds a blocking `verify
 - **It names the failures.** `2 red AC(s): US0001::AC3 (pytest tests/test_x.py::test_y), ...` -
   and the whole thing is one exit code, so tagging over a red AC layer means *ignoring a failing
   command* rather than misreading a passing-looking one.
+- **A red AC fails the lane when its story CLAIMS to be finished.** A failing criterion on a
+  story at `Ready`, `Superseded` or `Won't Implement` is unbuilt or abandoned work, not a
+  regression - a `design` rung authors such criteria deliberately, and they are its product. Those
+  are still executed and are reported on their own line with each story's status; what they do not
+  do is block. Anything the status vocabulary cannot resolve - absent, misspelled, off-vocabulary -
+  counts as claiming completion, so the exclusion cannot be reached by editing a status line.
 - **You cannot deselect the lane and keep the verdict.** `--release --skip verify` (or an
   `--only` that leaves it out) is **refused**, not honoured: a release PASS printed over an
   unexamined AC layer is the passing-looking command this mode exists to abolish. Want the AC

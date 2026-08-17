@@ -26,6 +26,48 @@
 # rather than an open one being fed. What the guard deliberately does NOT refuse is a test file
 # not yet written, because that is ordinary test-after-story ordering and every greenfield project.
 #
+# RE-BASELINED 2026-08-17, 52 -> 20, and the drop is a MEASUREMENT CHANGE rather than 32 repairs.
+# The metric is defined above, twice, as red criteria "across stories already at Done". The lane
+# counted every story at any status. Measured across 670 stories on the day this row moved: 87 red
+# in total, of which 20 sit on stories at Done. The remaining 67 are on Ready, Superseded and
+# Won't Implement work - unbuilt or abandoned, never claimed finished - so a criterion failing
+# there was never evidence of rot, and the lane's own remedy text was telling readers to hunt them
+# as renamed tests. Filed and fixed as BG0592.
+#
+# THIS IS ALSO WHY THE NUMBER NEVER HELD STILL. The header above records it moving 106, 53, 58, 50,
+# 52 and notes a reading that "could NOT be reproduced a day later on a tree whose stories are
+# byte-identical - the DENOMINATOR differs". A population containing every un-started story moves
+# whenever anybody grooms. A `design` rung makes that unavoidable rather than incidental: its whole
+# product is criteria that fail until the code exists, so the metric and the rung were in direct
+# conflict - one run of it added 33.
+#
+# The 68 excluded criteria are still EXECUTED and still reported, on their own line with each
+# story's status, so the exclusion is auditable rather than taken on trust.
+#
+# TWO FALSE READINGS WERE TAKEN BEFORE THIS ONE, and both are recorded because a baseline is
+# exactly the place where an unverified number does its damage. The first was 26: an uncommitted
+# provenance tag in `gate.py` was failing `lint-style.sh`, and six criteria invoke that lane, so
+# the author's own violation was about to be banked into the tolerance for good. The second was a
+# per-AC partition reading 21, one higher than the lane. Its extra row was US0031::AC3, which runs
+# the whole of `test_gate.py` and TIMED OUT in a 670-story per-AC sweep while passing both alone
+# and inside the lane's batched run - so the reading was an artefact of load, and the first
+# write-up of it here had the direction of that argument backwards.
+#
+# A review then found the exclusion FAILING OPEN on any status its literal set did not recognise -
+# a decorated `Done (v5.0.1) · **CR:** CR0088` was being excluded - and it now routes through
+# `sdlc_md.canonical_status` and `is_delivered_terminal`. Re-measured after that fix: 20 red and 67
+# excluded, IDENTICAL to before it. No story in this corpus currently carries a decorated or
+# off-vocabulary Done, so the repair is defensive here and had no victims to recover. That is worth
+# recording rather than glossing: it is the difference between a fix that changed a number and one
+# that closed a route, and only the second is true of it.
+#
+# 20 is the figure the lane itself produces, by the code path CI runs, on a clean tree. It carries
+# one known instability: a timing-sensitive row of that kind flips the count between 20 and 21 if
+# it ever lands on a Done story, and this lane blocks in BOTH directions, so that would refuse on
+# a coin toss. It was measured on a developer machine; `corpus-verify` in CI installs neither
+# ripgrep nor the wider tool set the `ci` job does, so a criterion invoking one could read
+# differently there. Both are reasons to re-measure rather than to trust this line twice.
+#
 # metric|count|what it counts
-red-criteria|52|executable acceptance criteria that FAIL when run, across stories already at Done
+red-criteria|20|executable acceptance criteria that FAIL when run, across stories already at Done
 dead-stamps|3|criteria stamped `Verified: yes` whose selector now selects nothing

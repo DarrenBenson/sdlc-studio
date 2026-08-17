@@ -1239,6 +1239,74 @@ def _status_value(body: str) -> str | None:
     return m.group(1).strip().strip("*").strip() if m else None
 
 
+def _story_status(path: Path) -> str | None:
+    """The story's own `Status` value, or None when it cannot be read.
+
+    Read from the file rather than from the verify report, because the report is about the
+    criteria and this question is about the story's claim.
+
+    Asked of `sdlc_md.extract_field`, the canonical field reader, NOT of this module's
+    `_status_value`. That helper takes a single metadata LINE - its `$` anchor has no `re.M` -
+    so over a whole document it answers None for every story. The first cut of this used it and
+    the existing release tests went red immediately, which is the only reason it is not still
+    here quietly classifying every story as claiming nothing.
+    """
+    try:
+        return sdlc_md.extract_field(path.read_text(encoding="utf-8", errors="replace"), "Status")
+    except OSError:
+        return None
+
+
+def _claims_completion(status: str | None, root: Path | str = ".") -> bool:
+    """Whether this status asserts the work is DONE - the only claim a red criterion can falsify.
+
+    ASKED OF THE LIBRARY, never re-decided here. `sdlc_md.canonical_status` folds the decorated
+    spellings this repository actually writes - `Done (v5.0.1) · **CR:** CR0088` is a real shape,
+    and that function exists because of it - and `sdlc_md.is_delivered_terminal` already means
+    exactly "claims completion", deriving the abandonments by wording rather than by a list.
+    The vocabulary comes from `status_vocab(..., root)`, so a project that extends
+    `status_vocab.story` in its config is covered.
+
+    The first cut of this carried its own `_ABANDONED_STATUSES` literal beside the terminal set,
+    with a comment claiming it was derived. It was already diverging - no `withdrawn`,
+    `cancelled` or `obsolete` - and it FAILED OPEN on every status the literal did not recognise:
+    a decorated `Done` was EXCLUDED from the metric, so a real regression on finished work
+    vanished from the number by having release context appended to its status line. Two lines
+    away, `_is_close_transition` had already reached for the canonical readers and written down
+    the rule this broke: an exemption granted on an unanswered question is the failure this lane
+    exists to prevent.
+
+    BG0592. The corpus baseline defines its metric, twice, as red criteria "across stories
+    already at Done", and the lane counted every story at any status. Measured across 670
+    stories: 87 red in total, 20 of them on stories at Done. The other 67 were unbuilt or
+    abandoned work, and the lane's own remedy text told the reader to hunt them as renamed tests.
+
+    That also explains the number's history. The baseline header records it moving 106, 53, 58,
+    50, 52 and notes a reading that "could NOT be reproduced a day later on a tree whose stories
+    are byte-identical - the DENOMINATOR differs". A population containing every un-started story
+    moves whenever anybody grooms, which is precisely what a metric about FINISHED work must be
+    immune to.
+
+    FAILS CLOSED, and that governs every uncertain case: an absent status, an unreadable one and
+    one the vocabulary does not recognise all count as claiming completion. "Cannot say, so it
+    claims nothing" sounds careful and is the permissive direction - it lets a story leave the
+    regression metric by dropping or misspelling a line, and it is the exclusion nobody notices
+    because the number only goes down.
+
+    The asymmetry is the argument. Wrongly counting a red criterion costs somebody an
+    investigation; wrongly excluding one loses a regression silently, in the one number this
+    repository's own baseline records having been wrong five times. Only a status the vocabulary
+    RECOGNISES and that is explicitly non-completing - unbuilt, or abandoned - earns the
+    exclusion.
+    """
+    if not status:
+        return True
+    canon = sdlc_md.canonical_status(status, sdlc_md.status_vocab("story", Path(root)))
+    if not canon:
+        return True          # off-vocabulary: unanswered, so not exempted
+    return sdlc_md.is_delivered_terminal("story", canon)
+
+
 def _artifact_type_of(root: Path, path: Path) -> str | None:
     """The artefact type `path` belongs to, from the declared type->directory map. Derived
     from `ARTIFACT_TYPES`, never a list written here, so a new type is covered on the day
@@ -1672,6 +1740,7 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
     pytest_collected = (verify_ac.pytest_batch_collected(pytest_cache)
                         if pytest_cache else None)
     red: list[str] = []
+    unbuilt: list[str] = []
     blocked: list[str] = []
     unspecified: list[str] = []
     acs = manual = unspec = 0
@@ -1686,9 +1755,27 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
         unspec += report.unspecified
         if report.unspecified:
             unspecified.append(f"{story_id} ({report.unspecified} AC(s) with no Verify: line)")
+        status = _story_status(path)
+        claims_done = _claims_completion(status, rr)
         for f in report.failures:
             name = f"{story_id}::{f['ac']} ({f['verifier']})"
-            (blocked if f.get("kind") == "blocked" else red).append(name)
+            # BLOCKED WINS, at every status. A blocked verifier was not run at all - the trust
+            # boundary refused it - so it is an UNPROVEN criterion rather than a judged one, and
+            # that is true whether or not the story claims completion. Ordered first deliberately:
+            # the alternative reading, `blocked and claims_done`, quietly un-blocks a
+            # `Provenance: external` story sitting at Ready, turning "nobody ran this" into
+            # "nothing to see" - and no test caught that until a review mutated it.
+            if f.get("kind") == "blocked":
+                blocked.append(name)
+            elif claims_done:
+                red.append(name)
+            else:
+                # COUNTED SEPARATELY, NOT DROPPED. A red criterion on a story nobody claims is
+                # finished is unbuilt behaviour, and on a `design` rung it is the RUNG'S OWN
+                # PRODUCT - that rung exists to author criteria that fail until the code exists.
+                # It is still executed, still listed, and still reported; what it is not is a
+                # regression, which is the only thing the corpus baseline measures.
+                unbuilt.append(f"{name} [{status or '?'}]")
     executable = acs - manual - unspec
     elapsed = int(time.time() - started)
     # State the cost and the scope. A `--release` run that got fast by judging less
@@ -1704,6 +1791,20 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
                      f"`Verify: manual`): {_elide(unspecified)}")
     if red:
         parts.append(f"{len(red)} red AC(s): {_elide(red)}")
+    if unbuilt:
+        # REPORTED, and deliberately not folded into the red count. Every suppression is also a
+        # blindfold: a criterion excluded from the metric but printed nowhere is one nobody can
+        # audit the exclusion of. It carries each story's status so a reader can judge the call
+        # rather than take it.
+        # LISTED IN FULL, deliberately not elided. Every other clause here names a handful of
+        # failures a reader will go and fix, and eliding those costs nothing. This clause is the
+        # EXCLUSION LEDGER - the criteria being removed from the number the release baseline
+        # enforces - and "auditable rather than taken on trust" is false if 57 of 67 read
+        # `(+57 more)`. A review measured exactly that against the real corpus. The set is
+        # verbose by construction and appears only under `--release`.
+        parts.append(f"{len(unbuilt)} failing AC(s) on stories claiming NO completion - unbuilt "
+                     f"or abandoned, not a regression, so outside the corpus red count: "
+                     f"{', '.join(unbuilt)}")
     if blocked:
         parts.append(f"{len(blocked)} unproven AC(s) - verifier BLOCKED unrun by the "
                      f"trust boundary (story stamped Provenance: external): {_elide(blocked)}; "

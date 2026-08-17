@@ -882,6 +882,208 @@ class ReleaseGateTests(unittest.TestCase):
         self.assertIn("verify", gate.BLOCKING_ON_ERROR)
 
 
+class RedCountsOnlyWhatClaimsCompletionTests(ReleaseGateTests):
+    """BG0592: the corpus metric counts red criteria "across stories already at Done", and the
+    lane counted every story at any status.
+
+    Measured across the real corpus: 87 red, 20 of them on Done stories. The other 67 sat on
+    Ready, Superseded and Won't Implement work - unbuilt or abandoned, never claimed finished -
+    while the lane's remedy told the reader to hunt them as renamed tests. It also explains why
+    the baseline never held still: its own header records 106, 53, 58, 50, 52 and a reading that
+    "could NOT be reproduced a day later on a tree whose stories are byte-identical". A
+    population containing every un-started story moves whenever anybody grooms.
+
+    A `design` rung makes this unavoidable rather than incidental: that rung's PRODUCT is
+    criteria that fail until the code exists, so the metric and the rung were in direct conflict.
+    """
+
+    def _at(self, root: Path, uid: str, status: str, verifier: str) -> None:
+        self._legs(root)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        (sd / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n> **Status:** {status}\n\n## Acceptance Criteria\n\n"
+            f"### AC1: works\n- **Verify:** {verifier}\n", encoding="utf-8")
+
+    def _lane(self, root: Path) -> dict:
+        r = gate.run_gate(str(root), checks={}, release=True)
+        return next(c for c in r["checks"] if c["check"] == "verify")
+
+    def test_a_red_criterion_on_a_ready_story_is_not_counted_as_red(self) -> None:
+        """MUTANT: drop the `_claims_completion` guard, counting every failure as red.
+
+        THE DEFECT ITSELF. One Done story red and one Ready story red must count 1, not 2.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0001", "Done", "shell exit 1")
+            self._at(root, "US0002", "Ready", "shell exit 1")
+            detail = self._lane(root)["detail"]
+            self.assertIn("1 red AC(s)", detail)
+            self.assertIn("US0001", detail)
+
+    def test_an_abandoned_story_claims_nothing_so_its_red_is_not_a_regression(self) -> None:
+        """MUTANT: test `is_terminal_status` alone instead of subtracting the abandonments.
+
+        `Superseded` and `Won't Implement` are TERMINAL for a story, so a terminal-only test
+        counts them - and neither asserts anything was finished. Only `Done` does.
+        """
+        for status in ("Superseded", "Won't Implement"):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as t:
+                root = Path(t)
+                self._at(root, "US0001", "Done", "shell true")
+                self._at(root, "US0002", status, "shell exit 1")
+                detail = self._lane(root)["detail"]
+                self.assertNotIn("red AC(s)", detail)
+
+    def test_the_excluded_failures_are_still_reported(self) -> None:
+        """MUTANT: `continue` past a non-completing story instead of collecting it.
+
+        Every suppression is also a blindfold. A criterion dropped from the metric and printed
+        nowhere is one whose exclusion nobody can audit, and this lane's whole subject is a
+        number people trust without re-deriving. The story's status rides along so a reader can
+        judge the exclusion rather than take it.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0002", "Ready", "shell exit 1")
+            detail = self._lane(root)["detail"]
+            self.assertIn("claiming NO completion", detail)
+            self.assertIn("US0002", detail)
+            self.assertIn("[Ready]", detail)
+
+    def test_every_excluded_row_is_named_not_just_the_first_ten(self) -> None:
+        """MUTANT: pass the exclusion list through `_elide`.
+
+        A review measured the real corpus printing 10 of 67 exclusions and `(+57 more)`, which
+        makes AC4's "auditable rather than taken on trust" false for 57 of them. Every other
+        clause elides a list of things to go and FIX; this one is the ledger of what was removed
+        from the enforced number, and a partial ledger is the thing being audited going missing.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            for n in range(1, 15):
+                self._at(root, f"US{n:04d}", "Ready", "shell exit 1")
+            detail = self._lane(root)["detail"]
+            self.assertNotIn("more)", detail, "the exclusion ledger was elided")
+            for n in range(1, 15):
+                self.assertIn(f"US{n:04d}::AC1", detail)
+
+    def test_a_red_criterion_on_a_done_story_still_fails_the_lane(self) -> None:
+        """THE REGRESSION CONTROL. MUTANT: exclude everything, or invert the predicate.
+
+        The whole purpose survives untouched: a story that CLAIMS it is finished and whose
+        criterion fails is the regression this lane exists to catch, and it must still block.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0001", "Done", "shell exit 1")
+            lane = self._lane(root)
+            self.assertEqual("fail", lane["status"])
+            self.assertTrue(lane["blocking"])
+            self.assertIn("1 red AC(s)", lane["detail"])
+
+    def test_a_corpus_whose_only_failures_claim_nothing_PASSES_the_lane(self) -> None:
+        """THE POINT OF THE WHOLE CHANGE, and it was unpinned until a review mutated it.
+
+        MUTANT: `"count": len(red) + len(unbuilt)` - one line, restores blocking on every
+        excluded criterion, hard-fails the corpus lane, and survived all fourteen tests. Every
+        other test here asserts what lands in which LIST; none asserted the lane's verdict, so
+        the behaviour the unit exists to deliver could be reverted with the suite green.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0001", "Done", "shell true")
+            self._at(root, "US0002", "Ready", "shell exit 1")
+            self._at(root, "US0003", "Superseded", "shell exit 1")
+            lane = self._lane(root)
+            self.assertEqual("pass", lane["status"],
+                             f"a corpus whose only failures claim no completion must not "
+                             f"block: {lane['detail']}")
+            self.assertEqual(0, lane.get("count", 0))
+
+    def test_an_unrun_verifier_stays_BLOCKED_even_when_the_story_claims_nothing(self) -> None:
+        """MUTANT: `if f.get("kind") == "blocked" and claims_done:`.
+
+        Found by review, and it survived the first cut of this class. `blocked` means the trust
+        boundary REFUSED TO RUN the verifier - the criterion is unproven, not judged - and that
+        is true at every status. Under the mutant a `Provenance: external` story sitting at
+        Ready falls through to the exclusion clause instead, so "nobody ran this" is silently
+        reclassified as "nothing to see here", which is the precise trade this whole change
+        must not make.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._legs(root)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / "US0004-x.md").write_text(
+                "# US0004: x\n\n> **Status:** Ready\n> **Provenance:** external\n\n"
+                "## Acceptance Criteria\n\n### AC1: works\n- **Verify:** shell exit 1\n",
+                encoding="utf-8")
+            lane = self._lane(root)
+            self.assertIn("unproven AC(s)", lane["detail"])
+            self.assertNotIn("claiming NO completion", lane["detail"])
+            self.assertEqual("fail", lane["status"])
+
+    def test_a_decorated_or_misspelled_status_is_counted_not_excused(self) -> None:
+        """MUTANT: match the raw status against a literal set instead of canonicalising it.
+
+        Found by review. This repository writes `Done (v5.0.1) · **CR:** CR0088`, and
+        `sdlc_md.canonical_status` exists BECAUSE of that shape. A literal-set test excluded it -
+        so a genuine regression on finished work left the metric by having release context
+        appended to its status line, which is the bypass this exclusion must not open. Anything
+        the vocabulary cannot resolve is counted, because an exemption granted on an unanswered
+        question is the failure this lane exists to prevent.
+        """
+        for status in ("Done (v5.0.1) · **CR:** CR0088", "Doen", "Complete"):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as t:
+                root = Path(t)
+                self._at(root, "US0001", status, "shell exit 1")
+                lane = self._lane(root)
+                self.assertEqual("fail", lane["status"], lane["detail"])
+                self.assertIn("1 red AC(s)", lane["detail"])
+
+    def test_a_story_with_no_status_is_counted_not_excused(self) -> None:
+        """MUTANT: return False for an absent status - "cannot say, so it claims nothing".
+
+        That reads as caution and is the permissive direction: it lets a story leave the
+        regression metric by DELETING a line, and the loss is invisible because the number only
+        goes down. The asymmetry decides it - wrongly counting costs an investigation, wrongly
+        excluding loses a regression silently. Only an EXPLICIT non-completing status is excused.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._legs(root)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / "US0003-x.md").write_text(
+                "# US0003: x\n\n## Acceptance Criteria\n\n### AC1: works\n"
+                "- **Verify:** shell exit 1\n", encoding="utf-8")
+            lane = self._lane(root)
+            self.assertEqual("fail", lane["status"])
+            self.assertIn("1 red AC(s)", lane["detail"])
+
+    def test_narrowing_the_count_does_not_narrow_what_is_executed(self) -> None:
+        """MUTANT: skip verification for stories that claim no completion.
+
+        The cheap way to fix the count is to stop running those criteria, and it would be
+        wrong: a criterion nobody executes cannot be reported red OR green, so the design
+        rung's red-now ledger - the evidence its whole exit condition rests on - would stop
+        being measurable by the release lane at all.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0002", "Ready", "shell exit 1")
+            detail = self._lane(root)["detail"]
+            # `executable AC(s)`, NOT `story/stories`. The story count comes from the WALK and is
+            # skip-invariant, so asserting it passed under a true never-executed mutant - a
+            # review caught that. The executable count comes from the reports actually produced,
+            # so it is 0 for a story nobody ran.
+            self.assertIn("1 executable AC(s)", detail)
+            self.assertIn("US0002", detail)
+
+
 class ReleaseSelectionGuardTests(ReleaseGateTests):
     """BG0111 review F1: `--release` must not print a release verdict when the lane that
     DEFINES it was deselected. A green banner over a deselected verify lane is the
@@ -3686,10 +3888,17 @@ class ReleaseGateCostTests(unittest.TestCase):
                             "only --release may batch")
 
     def test_a_non_conformant_unit_anywhere_still_fails_the_release_gate(self) -> None:
-        """AC2. The speedup must not narrow what is judged. A red AC in ANY story fails the
-        lane, whether or not that story is in a diff - which is the whole reason --release
-        restores the whole-workspace scope after US0354's diff scoping made the ordinary gate
-        judge zero units on a clean tree."""
+        """AC2. The speedup must not narrow what is judged: a red AC fails the lane wherever the
+        story sits, whether or not it is in a diff - which is the whole reason --release restores
+        the whole-workspace scope after US0354's diff scoping made the ordinary gate judge zero
+        units on a clean tree.
+
+        The fixtures below carry NO `Status` field, and since BG0592 that is load-bearing rather
+        than incidental: an unreadable status counts as claiming completion, so these still block.
+        A review pointed out the old wording - "a red AC in ANY story" - stopped being true the
+        day the count learned to skip stories claiming no completion, and that this test was
+        passing by fixture accident. It is also the only test that kills the fail-closed mutant,
+        so the accident was carrying real weight."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             stories = root / "sdlc-studio" / "stories"

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 14 |
+| Open | 15 |
 | In Progress | 0 |
 | Fixed | 483 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **591** |
+| **Total** | **592** |
 
 ## All Bugs
 
@@ -131,6 +131,7 @@
 | [BG0589](BG0589-the-close-pre-flight-counts-advisory-rows-as.md) | the close pre-flight counts advisory rows as unmet prerequisites | Open | Medium | 2026-08-17 | 2026-08-17 |
 | [BG0590](BG0590-sprint-close-appends-a-handoff-bullet-that-fails.md) | sprint close appends a handoff bullet that fails the repo's own markdown lane | Open | Medium | 2026-08-17 | 2026-08-17 |
 | [BG0591](BG0591-status-and-close-owed-give-opposite-answers-about.md) | status and close_owed give opposite answers about the same units | Open | Medium | 2026-08-17 | 2026-08-17 |
+| [BG0592](BG0592-the-corpus-red-criteria-metric-counts-unbuilt-stories.md) | the corpus red-criteria metric counts unbuilt stories, which is why its number has never been stable | Open | High | 2026-08-17 | 2026-08-17 |
 
 ## Archived Releases
 

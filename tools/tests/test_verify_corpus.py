@@ -135,6 +135,16 @@ class CorpusVerifyBaselineTests(unittest.TestCase):
 
     _GATE_RED_PLAIN = "  [FAIL] verify [2145.0s]: 58 red AC(s): US0063 AC2 [669 stories]\n"
 
+    #: The shape BG0592 introduced: an exclusion clause carrying its own "red count"-adjacent
+    #: wording and a comma-separated ledger, printed AFTER the red clause. This suite exists
+    #: because this parse broke once already on a clause it had not been shown, so a new clause
+    #: arrives with a fixture rather than with a hope.
+    _GATE_RED_WITH_EXCLUSIONS = (
+        "  [FAIL] verify [2145.0s]: 58 red AC(s): US0063 AC2, US0273 AC2; 67 failing AC(s) on "
+        "stories claiming NO completion - unbuilt or abandoned, not a regression, so outside the "
+        "corpus red count: US0625::AC1 (pytest x) [Ready], US0482::AC2 (pytest y) [Superseded] "
+        "[670 stories, 1943 executable AC(s) in 2145s (batched)]\n")
+
     def test_a_clean_verify_lane_is_read_as_zero_rather_than_as_a_crash(self) -> None:
         """The end state the baseline exists to force. Reading a marker the gate never prints made
         the green path unreachable: at `red-criteria|0` the lane could only ever have refused."""
@@ -156,6 +166,25 @@ class CorpusVerifyBaselineTests(unittest.TestCase):
         r = self._run_full(self._GATE_RED_PLAIN, "dead-stamps|5|s\nred-criteria|58|r\n")
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertIn("red-criteria: 58 (baseline 58)", r.stdout)
+
+    def test_the_red_count_is_read_past_an_exclusion_clause(self) -> None:
+        """MUTANT: let the red-count walk run to the end of the detail instead of stopping at the
+        first `N red AC` match.
+
+        The exclusion clause BG0592 added sits AFTER the red clause and contains the words
+        "corpus red count" plus a second per-AC list. A greedy or last-match read picks up the
+        wrong number, and the failure mode is the worst available: the lane reports a plausible
+        count and nobody re-derives it.
+        """
+        r = self._run_full(self._GATE_RED_WITH_EXCLUSIONS, "dead-stamps|5|s\nred-criteria|58|r\n")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("red-criteria: 58 (baseline 58)", r.stdout)
+
+    def test_the_exclusion_count_is_never_mistaken_for_the_red_count(self) -> None:
+        """THE DISCRIMINATOR. The exclusion clause's own number (67) must not be readable as the
+        metric. Baselined at 67, this run must BLOCK rather than report a tidy match."""
+        r = self._run_full(self._GATE_RED_WITH_EXCLUSIONS, "dead-stamps|5|s\nred-criteria|67|r\n")
+        self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
 
     def test_a_rise_in_red_criteria_blocks(self) -> None:
         r = self._run_full(self._GATE_RED_PLAIN, "dead-stamps|5|s\nred-criteria|57|r\n")
