@@ -100,6 +100,18 @@ works, not the one that lies.
 BG0582 was ruled `not-stop-ship` when this table was written and was FIXED before the close, on
 the operator's instruction. Its row stays as the record of the ruling that was made at the time.
 
+BG0585 to BG0589 were all raised by the three adversarial rounds over BG0582's own repair, after
+this table was first written. Every one is ruled `not-stop-ship` on the same reasoning: they are
+defects in the CLOSE ceremony and the grooming bar, and this run's product is 12 groomed units
+carrying 40 red criteria - a deliverable none of them touches. Two deserve naming, because ruling
+them not-stop-ship is a judgement rather than a formality. **BG0586** and **BG0588** together mean
+the design rung's remaining bar is weaker than it reads: a run whose units were groomed before the
+window, or left at `Draft`, closes clean. That is a real hole and it is the one to fix first, but
+it is a hole in a rung that could not be closed AT ALL an hour ago, so it is a smaller wrong than
+the one it replaced. **BG0585** is the sharpest of them - the `derived-only` detector is blind to
+the very form the tooling writes - and it is ruled not-stop-ship only because nothing in this
+batch relies on it: all 40 criteria here were hand-authored and independently measured red.
+
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
 | BG0463 | deferred | authoring session (recorded for the operator) | 2026-08-16 |
@@ -118,6 +130,12 @@ the operator's instruction. Its row stays as the record of the ruling that was m
 | CR0536 | deferred | authoring session (recorded for the operator) | 2026-08-16 |
 | CR0539 | deferred | authoring session (recorded for the operator) | 2026-08-16 |
 | BG0583 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-16 |
+| BG0584 | not-stop-ship | authoring session (waived for this close as D0144) | 2026-08-16 |
+| BG0585 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-17 |
+| BG0586 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-17 |
+| BG0587 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-17 |
+| BG0588 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-17 |
+| BG0589 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-17 |
 | BG0490 | deferred | operator (triage ruling, now groomed) | 2026-08-16 |
 | BG0493 | deferred | operator (triage ruling, now groomed) | 2026-08-16 |
 

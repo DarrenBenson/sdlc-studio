@@ -57,26 +57,35 @@ nothing for - `--story <id with no file>`, and `--ids <unmatched>`, which prints
 nothing and succeeded, and the two bugs were nearly recorded as unmeasured when their 7 criteria
 were in fact all red.
 
-## THIS RUN IS OPEN, AND THAT IS THE HONEST STATE
+## THE WALL, AND HOW IT CAME DOWN
 
-**RUN-01M05A5M has NOT closed.** The work is complete and committed; the ceremony cannot record
-it. `sprint close --file-and-close` refuses too, because its deferrable set is exactly
-`goal-verdict`, `retro` and `sign-off`, and all 53 outstanding rows are `status`, `done-gate`,
-`checklist` and `gate` - so the bounded exit files nothing here. `boundary` needs a rolling policy
-this run does not carry, and `stop` would record a run that reached its goal as abandoned.
+This run could not close at all. `--file-and-close` filed nothing, because its deferrable set is
+exactly `goal-verdict`, `retro` and `sign-off` while all 53 rows were `status`, `done-gate`,
+`checklist` and `gate`. `boundary` needs a rolling policy this run does not carry, and `stop`
+would have recorded a goal-reached run as abandoned. Forcing a terminal would have written Done
+against 40 deliberately red criteria.
 
-The remaining routes were both rejected on the record rather than taken:
+It was left OPEN on that reasoning, and **L-0344** records why: repairing the gate that is
+refusing your own run, in the session it refuses, is indistinguishable from disabling it. The
+operator then instructed the repair, which is the only thing that makes it legitimate - and the
+independence lost by authoring it here was bought back the only way left, with three adversarial
+rounds.
 
-* **Forcing a terminal** would write Done against 40 deliberately red criteria - a false record in
-  the one file every fresh session reads first.
-* **Making the closer rung-aware now** would mean editing the gate that is refusing this very run,
-  in the session it is refusing, with no independent review. That is the move this repository's
-  doctrine exists to prevent, and BG0582's own fix must be delivered by a session it is not
-  unblocking.
+**Two of the three REJECTED, and both found defects that made this close pass.** Round 1: the
+scope was `rung != "done"`, which moved the defect onto the `plan` and `triage` rungs; plus two
+mutants surviving all 895 tests. Round 2: **the identical scope error was still in the sibling
+`_signoff_preflight`**, dropping a hard done-gate blocker for those rungs with no substitute bar,
+and the round-1 renderer repair had no test at all. Round 3 (QA) drove 140 lane readings - 10
+fixture shapes across 7 rung spellings, both refs - and found every non-`design` rung
+byte-identical to the base. That is what an APPROVE here is worth.
 
-So the run stays open and the wall is recorded. The goal verdict (`achieved`), RETRO0103, the
-lessons and the mirrored installed copy are all landed; what is missing is the state flip, and it
-is missing because the tool cannot honestly perform it.
+Eight of the fourteen mutants came from the reviewers, not from me. `critic record` escalated the
+unit to the operator after the second REJECT, and that escalation stands on the record rather than
+being worked around.
+
+**The bar that replaced the wall is weaker than it reads, and that is stated rather than hidden.**
+BG0586 and BG0588 together mean a design run whose units were groomed before the window, or left
+at `Draft`, still closes clean. A smaller wrong than a rung nothing could close, but a wrong.
 
 ## WHAT IS CARRIED
 
