@@ -51,11 +51,17 @@ inescapable. `critic.py signoff` does not merely raise a stop - it REFUSES to wr
 SKIPPED for US0625: its status is 'Ready', which is neither terminal nor awaiting sign-off`,
 then `0 unit(s) written`. So the operator cannot clear the sign-off stop even by hand.
 
-**BG0583, High**, filed during the same close: `verify_ac.py run` exits 0 on two inputs it read
-nothing for - `--story <id with no file>`, and `--ids <unmatched>`, which prints a line beginning
-`error:` and still exits 0 against its own help. It was found because `--story BG0490` reported
-nothing and succeeded, and the two bugs were nearly recorded as unmeasured when their 7 criteria
-were in fact all red.
+**BG0583 was filed during the same close and is WON'T FIX - the premise was false.** It claimed
+`verify_ac.py run` exits 0 on inputs it read nothing for. Re-measured with the exit code read
+directly rather than after a pipe, every unresolvable scope exits 2, a resolving green run exits
+0 and a red one exits 1. The contract was always right.
+
+The defect was in the measurement: `... | tail -2; echo "exit=$?"` reports TAIL's status. The
+lesson already exists and is already general - L-0277, "reading a command's verdict through a
+pipe reports the pipe's status. Redirect, then echo the code separately." It was not too narrow
+and it did not need widening. It was READ AND NOT FOLLOWED, which AGENTS.md names as this
+repository's actual failure mode, and the cost this time was a fabricated High bug filed against
+a working contract.
 
 ## THE WALL, AND HOW IT CAME DOWN
 

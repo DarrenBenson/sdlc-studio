@@ -2,6 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0352: A false-premise filing costs more than the bug it invents**
 - **L-0351: A ledger that reads zero because nobody looked is indistinguishable from one that reads zero because it is zero.**
 - **L-0350: Repairs raised by a review round are new units nobody planned, and they are the systematic leak rather than the careless one.**
 - **L-0349: A batch is approved once and then only read, so work agreed AFTER the approval never joins it.**

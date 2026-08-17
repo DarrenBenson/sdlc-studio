@@ -93,11 +93,12 @@ read the same.
 Ruling is one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`. A `stop-ship`
 ruling HOLDS the close, which is the point of being able to make one.
 
-BG0583 is ruled `not-stop-ship` on evidence rather than on comfort: it lets `verify_ac run`
-report success for a unit it never read, which is exactly the failure that would undermine this
-run's red-now ledger - so the ledger was re-taken per unit and per PATH, and all twelve returned
-a real `ac=/pass=/fail=` line. The evidence this run rests on was measured through the path that
-works, not the one that lies.
+BG0583 was ruled `not-stop-ship` here and has since been closed WON'T FIX: the premise was
+false. It claimed `verify_ac run` reports success for a unit it never read, and the exit codes
+behind that claim were read after a pipe, so they were `tail`'s. Every unresolvable scope exits 2.
+The row stays as the record of a ruling made on a finding that did not survive re-measurement -
+and the ledger this run rests on is unaffected, having been taken per unit and per PATH with all
+twelve returning a real `ac=/pass=/fail=` line.
 
 BG0582 was ruled `not-stop-ship` when this table was written and was FIXED before the close, on
 the operator's instruction. Its row stays as the record of the ruling that was made at the time.
