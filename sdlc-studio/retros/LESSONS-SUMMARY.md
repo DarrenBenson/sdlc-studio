@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0351: A ledger that reads zero because nobody looked is indistinguishable from one that reads zero because it is zero.**
+- **L-0350: Repairs raised by a review round are new units nobody planned, and they are the systematic leak rather than the careless one.**
+- **L-0349: A batch is approved once and then only read, so work agreed AFTER the approval never joins it.**
 - **L-0348: An exit condition satisfied by deleting a marker is not an exit condition.**
 - **L-0347: A charter whose declared scope has emptied does not become a licence for whatever batch is convenient.**
 - **L-0346: A rung is a claim about what a run can reach, and stating a terminal without knowing the rung is stating an answer to a question nobody...**
