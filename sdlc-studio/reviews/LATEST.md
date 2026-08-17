@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01KZQ03V closed goal-reached.** 19 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
+> **RUN-01M05A5M closed goal-reached.** 12 unit(s) in the batch. This was a `design` rung, not a build - its units end at their own terminal and no Done sign-off is owed.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **Run of record:** RUN-01M05A5M - a DESIGN rung. 12 ungroomed units groomed to red acceptance

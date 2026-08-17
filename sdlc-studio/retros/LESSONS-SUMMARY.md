@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0348: An exit condition satisfied by deleting a marker is not an exit condition.**
+- **L-0347: A charter whose declared scope has emptied does not become a licence for whatever batch is convenient.**
+- **L-0346: A rung is a claim about what a run can reach, and stating a terminal without knowing the rung is stating an answer to a question nobody...**
+- **L-0345: An admission rule that asks a question whose answer moves with the tree admits entries that silently stop qualifying.**
 - **L-0344: Never repair the gate that is refusing your own run**
 - **L-0343: A mutant that cannot reach the code it names proves as little as a test that cannot fail**
 - **L-0342: A recorded list is a claim like any other and rots the same way.**

@@ -33,8 +33,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0584` | Medium | the tick-verification checklist row is rung-blind, so a grooming run cannot answer it |
 | `BG0587` | Medium | two answers to the grooming question inside one close |
 | `BG0589` | Medium | the close pre-flight counts advisory rows as unmet prerequisites |
+| `BG0590` | Medium | sprint close appends a handoff bullet that fails the repo's own markdown lane |
 
-9 findings: 9 Medium, 0 Low.
+10 findings: 10 Medium, 0 Low.
 
 ## Not carried
 
