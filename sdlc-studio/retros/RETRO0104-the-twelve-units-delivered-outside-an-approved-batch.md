@@ -112,6 +112,7 @@ could not be passed at all yesterday.
 | BG0588 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-17 |
 | BG0589 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-17 |
 | BG0590 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-17 |
+| BG0591 | not-stop-ship | authoring session (recorded for the operator) | 2026-08-17 |
 
 ## Estimate vs actual
 
@@ -208,7 +209,8 @@ every EXAMPLE row; a row left in place is reported at the close, and a retro sti
 | The batch is approved once and never re-checked, so mid-run work never joins it | CR0546 |
 | Twelve units delivered outside a batch, found only by the detector | fixed-in: this retro accounts for all twelve |
 | Whether `sprint batch --add` should be prompted at delivery rather than remembered | CR0546 |
-| BG0579/BG0580 absent from RETRO0102's Batch line | declined: `close_owed` reports no close owed for them, and rewriting a closed run's batch to look complete would be the counted-fiction this retro exists to record |
+| BG0579/BG0580 absent from RETRO0102's Batch line | fixed-in: accreted to RETRO0102, the retro of the run that actually delivered them. The first disposition here DECLINED this as counted fiction, which conflated two different things: adding them to THIS retro's batch would have been fiction, since no close is owed for them and they are not what this retro accounts for; adding them to RETRO0102's is recording a fact, since that run did deliver them. `close_owed` suggested exactly that and was right |
+| `status.py` advised a close was owed for BG0579/BG0580 while `close_owed detect` reported none for the same two ids, in the same tree | BG0591 |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
 

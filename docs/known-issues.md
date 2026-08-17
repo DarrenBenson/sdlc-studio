@@ -34,8 +34,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0587` | Medium | two answers to the grooming question inside one close |
 | `BG0589` | Medium | the close pre-flight counts advisory rows as unmet prerequisites |
 | `BG0590` | Medium | sprint close appends a handoff bullet that fails the repo's own markdown lane |
+| `BG0591` | Medium | status and close_owed give opposite answers about the same units |
 
-10 findings: 10 Medium, 0 Low.
+11 findings: 11 Medium, 0 Low.
 
 ## Not carried
 

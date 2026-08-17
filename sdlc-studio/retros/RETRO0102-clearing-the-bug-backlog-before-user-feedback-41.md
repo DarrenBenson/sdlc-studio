@@ -1,7 +1,7 @@
 # RETRO-0102: Clearing the bug backlog before user feedback: 41 open bugs to 2, and what measurement overturned
 
 > **Date:** 2026-08-15
-> **Batch:** BG0535, BG0536, BG0542, BG0543, BG0557, US0667, US0668, US0669, BG0406, BG0457, BG0469, BG0488, BG0497, BG0522, BG0523, BG0528, BG0566, BG0569, US0670
+> **Batch:** BG0535, BG0536, BG0542, BG0543, BG0557, US0667, US0668, US0669, BG0406, BG0457, BG0469, BG0488, BG0497, BG0522, BG0523, BG0528, BG0566, BG0569, US0670, BG0579, BG0580
 > **Goal:** Every gate that prints a refusal performs one, and the acceptance criteria the README says are executable do run.
 > **Delivered:** 19 / 19   **Blocked:** 0
 

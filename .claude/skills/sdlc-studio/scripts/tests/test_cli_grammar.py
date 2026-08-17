@@ -329,6 +329,13 @@ class RepeatableFlagConformance(unittest.TestCase):
 #: that quietly stops discriminating fails rather than passing forever - and the churn it has
 #: produced is the mechanism working, not a fault in it.
 #:
+#: `close_owed detect` is the FIFTH removal for this reason and the cleanest illustration of it:
+#: it names bug ids only while a close is OWED. Clearing the close-owed backlog - the tree being
+#: healthy - made it answer `close owed: none. 1000 unit(s) accounted for` and name nothing, and
+#: the control failed on the same commit. A row whose validity requires the repository to be in a
+#: BAD state is a row that rewards leaving it broken, which is the opposite of what this inventory
+#: is for. Removed rather than accommodated by widening the marker to accept a count.
+#:
 #: `doc_freshness` was removed after the control caught it drifting - which is the control
 #: doing its job rather than a fault in it. It named artefacts only while it had a STALE
 #: claim to report; once `reviews/LATEST.md` was brought current it answered `state documents
@@ -337,7 +344,7 @@ class RepeatableFlagConformance(unittest.TestCase):
 #: would have been a row that passes forever.
 ROOT_EFFECT_VERBS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ac_scope.py", ("check",)), ("changelog.py", ("check",)),
-    ("close_owed.py", ("detect",)), ("critic.py", ("show",)),
+    ("critic.py", ("show",)),
     ("decisions.py", ("list",)), ("flow.py", ("compute",)),
     ("integrity.py", ("check",)), ("reconcile.py", ("detect",)), ("retro.py", ("estimator",)),
     ("status.py", ("backlog",)), ("validate.py", ("check",)),
@@ -435,7 +442,7 @@ class RootIsReadNotJustParsed(unittest.TestCase):
                         "meaningful as the MEASURED discriminating subset, and a verb that "
                         "prints nothing either way passes this sweep forever")
 
-    @boundary_only("it runs all 15 listed verbs against the REAL tree at 83s. The guard it "
+    @boundary_only("it runs every listed verb against the REAL tree at 83s. The guard it "
                    "controls - the fixture sweep - still runs on every commit; what defers is "
                    "the proof that each row CAN fail, which changes only when the inventory "
                    "does, and an inventory edit reaches push before it reaches anyone else")
