@@ -904,8 +904,9 @@ class RegistrationTests(unittest.TestCase):
 class HandoffBulletFollowsTheDocumentTests(unittest.TestCase):
     """BG0590: the close appended a DASH bullet to the retro whatever the document used.
 
-    Every retro in this repository is scaffolded with asterisks (`artifact.py new`), so
-    `sprint close` exited 0 and then left the tree refused by the repo's own markdown lane:
+    Three of this repository's 105 retros are asterisk-styled - RETRO0102, RETRO0103 and
+    RETRO0104 - and the close wrote into one of them, so `sprint close` exited 0 and then
+    left the tree refused by the repo's own markdown lane:
     `MD004/ul-style Unordered list style [Expected: asterisk; Actual: dash]`. The close
     succeeds and THEN makes the tree uncommittable, which is the worst ordering - the operator
     has already been told the run closed.

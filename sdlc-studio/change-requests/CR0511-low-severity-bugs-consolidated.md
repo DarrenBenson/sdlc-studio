@@ -59,6 +59,7 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
   What the removal left behind is `shared = _coverage(ctx) or {}` still computed at the top of the row, and a guard reading `if not (shared.get(uid) or {}).get("covered") and not v:` whose first conjunct can no longer change the outcome. Collapsing both branches to a bare `if not v:` is behaviourally identical, and a reviewer proved it by executing the four-case truth table.
 
   So the row computes the shared reading and decides nothing with it. US0596's claim that all three readers read one value is, in this row, no longer true - it reads the value and then ignores it.
+- **the epic story-breakdown appender finds its insertion point with a hardcoded dash, so an asterisk epic takes the rebuild path**: `artifact._wire_story_to_epic` now writes a bullet in the document's own style, but it still LOCATES the insertion point with `startswith("- [")`. On an asterisk-styled epic no existing item is recognised, so the structure-preserving branch is dead and the section falls through to the rebuild path that the adjacent comment says exists to avoid MD032. Prose in the Story Breakdown is pulled into the list, blank lines collapse, and markdownlint reports MD032 on a file that was clean.
 
 ## Revision History
 

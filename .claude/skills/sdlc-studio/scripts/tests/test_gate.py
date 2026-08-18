@@ -1112,6 +1112,32 @@ class RedCountsOnlyWhatClaimsCompletionTests(ReleaseGateTests):
             self.assertIn("US0001", detail)
             self.assertNotIn("claiming NO completion", detail)
 
+    def test_the_shipped_cli_prints_the_exclusion_verdict(self) -> None:
+        """AC15. MUTANT: revert `_claims_completion` to counting every status.
+
+        THE ONLY CLI-DRIVEN VERIFIER IN THIS CLASS, and it exists because the unit's
+        `Verification depth` claimed "several through the shipped CLI rather than in-process"
+        while all fourteen `Verify:` lines resolved here, where the entry point is
+        `gate.run_gate(...)`. A review found the claim false. Rather than soften the sentence,
+        the coverage it describes is added: a library test cannot see whether the lane is
+        WIRED into the command an operator runs, which is this repository's most expensive
+        recorded scar.
+        """
+        import subprocess  # noqa: PLC0415 - the point is to leave this process
+        script = Path(__file__).resolve().parents[1] / "gate.py"
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0001", "Done", "shell true")
+            self._at(root, "US0002", "Ready", "shell exit 1")
+            # NOT `--only verify`: the release selection guard refuses deselecting a bound
+            # lane, which is BG0111's own fix working. The whole release gate runs.
+            r = subprocess.run([sys.executable, "-B", str(script), "--root", str(root),
+                                "--release"], capture_output=True, text=True)
+        page = r.stdout + r.stderr
+        self.assertIn("claiming NO completion", page, page)
+        self.assertIn("US0002", page, page)
+        self.assertNotIn("1 red AC(s)", page, page)
+
     def test_a_pass_over_an_exclusion_ledger_still_discloses_its_scope(self) -> None:
         """MUTANT: in gate.py, drop `scope_note` from the `if parts:` return.
 
@@ -1157,10 +1183,17 @@ class RedCountsOnlyWhatClaimsCompletionTests(ReleaseGateTests):
             self._at(root, "US0001", "Done", "shell true")
             self._at(root, "US0002", "Ready", "shell exit 1")
             self._at(root, "US0003", "Superseded", "shell exit 1")
+            # A MANUAL criterion, because every fixture in this class had `manual=0` and that
+            # made `acs - len(unbuilt)` an equivalent mutant - it counts manual criteria as
+            # green and nothing could see it. A review demonstrated the survivor. With this
+            # story present the numerator must be executable-and-passing, not "everything left".
+            self._at(root, "US0004", "Done", "manual")
             detail = self._lane(root)["detail"]
             self.assertIn("2 failing AC(s) on stories claiming NO completion", detail)
-            self.assertIn("1/3 executable AC(s) green", detail)
-            self.assertNotIn("3/3 executable AC(s) green", detail)
+            self.assertIn("1/4 executable AC(s) green", detail)
+            self.assertIn("(1 manual)", detail)
+            self.assertNotIn("2/4 executable AC(s) green", detail)
+            self.assertNotIn("3/4 executable AC(s) green", detail)
 
     def test_a_failing_verdict_claims_nothing_green(self) -> None:
         """MUTANT: emit the green clause unconditionally rather than only when the count is 0.

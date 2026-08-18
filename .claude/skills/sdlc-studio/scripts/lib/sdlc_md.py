@@ -1797,9 +1797,11 @@ def document_bullet(text: str, default: str = "-") -> str:
     markdownlint's MD004 defaults to `consistent`, which takes the FIRST list marker in the file
     as the rule for the rest - so the first is what an appender must copy, not the most common.
     A writer that hardcodes its own marker makes the very next commit uncommittable wherever the
-    document disagrees: the close writes a `## Handoff` bullet into a retro, and every retro here
-    carries asterisks, so `sprint close` exited 0 and then left the tree refused by the
-    repo's own markdown lane. The close succeeds and THEN makes the tree uncommittable, which is
+    document disagrees: the close writes a `## Handoff` bullet into a retro, and three of this
+    repository's 105 retros are asterisk-styled - the ones this line of work wrote - so
+    `sprint close` exited 0 and then left the tree refused by the repo's own markdown lane.
+    Three of 105 is the honest figure; two earlier attempts at this sentence said "every
+    retro" and "what `artifact.py new` produces", and a review measured both false. The close succeeds and THEN makes the tree uncommittable, which is
     the worst ordering - the operator has already been told the run closed.
 
     Fenced blocks are skipped through the shared `fence_step` state machine rather than a second

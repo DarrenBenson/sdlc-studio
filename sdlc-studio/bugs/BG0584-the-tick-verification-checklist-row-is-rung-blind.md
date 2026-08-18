@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, sdlc-studio/decisions.md
-> **Verification depth:** functional (four of the five criteria drive the real checklist resolver over a temp corpus at four rungs; AC4 drives NO resolver and says so - it asserts this repository's own decisions log, after asserting the log parsed to rows - the earlier form `assertIsNotNone(x or list_decisions(repo))` CANNOT fail, because `[] is not None`, and a review found it. Mutation: 8 mutants across two rounds, each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 8 KILLED, restore byte-exact - including one that leaves D0144 ACCEPTED, and one scoping the rung test back to `!= "done"`, which is what round 1 REJECTED this unit for)
+> **Verification depth:** functional (four of the five criteria drive the real checklist resolver over a temp corpus at four rungs; AC4 drives NO resolver and says so - it asserts this repository's own decisions log, after asserting the log parsed to rows - the earlier form `assertIsNotNone(x or list_decisions(repo))` CANNOT fail, because `[] is not None`, and a review found it. Mutation: 7 declared Test Plan rows across the 5 criteria - AC2 and AC5 carry two each - of which `run --from-plan` joins 5, one per criterion, because `_testplan_rows` keys by criterion and silently drops a second row on the same AC. Every row was executed. Each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 8 KILLED, restore byte-exact, all KILLED - including one that leaves D0144 ACCEPTED, and one scoping the rung test back to `!= "done"`, which is what round 1 REJECTED this unit for)
 > **Created:** 2026-08-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -46,6 +46,7 @@ Make the row rung-aware in the same way `undelivered_blockers` and `_signoff_pre
 | --- | --- | --- |
 | 2026-08-16 | sdlc-studio | Filed |
 | 2026-08-18 | sdlc-studio | Fixed. `Affects` corrected to name `sdlc-studio/decisions.md`: AC4's exit is the RETRACTION of D0144, so the file the fix must change was outside the scope bounding its own review diff - the same defect BG0590's filing recorded, met again one unit later |
+| 2026-08-18 | sdlc-studio | Round 1 REJECT repaired: the fix was scoped `!= "done"` and so moved the defect onto `plan` and `triage` - the identical error BG0582's siblings were rejected for, with the correct ruling already written twice in `sprint.py`. Scoped to `design`. AC5 added: the helper reported every criterion unticked having opened zero files. AC4's second assertion could not fail |
 
 ## Test Plan
 
@@ -58,4 +59,3 @@ Make the row rung-aware in the same way `undelivered_blockers` and `_signoff_pre
 | AC2 | drop the unit ids from the ticked-on-a-design-rung detail | A row that says something is wrong without saying WHAT cannot be acted on. |
 | AC5 | report `RAN` when no unit artefact resolved, so an unreadable batch reads as a clean design rung | Given a `design` rung whose batch names units that resolve to no file, when the row reports, then it REFUSES. |
 | AC5 | count units rather than files actually opened, so `read` is never incremented | The count must be of artefacts READ, not of ids named. |
-| 2026-08-18 | sdlc-studio | Round 1 REJECT repaired: the fix was scoped `!= "done"` and so moved the defect onto `plan` and `triage` - the identical error BG0582's siblings were rejected for, with the correct ruling already written twice in `sprint.py`. Scoped to `design`. AC5 added: the helper reported every criterion unticked having opened zero files. AC4's second assertion could not fail |

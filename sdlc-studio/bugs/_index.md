@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-18
+**Last Updated:** 2026-08-19
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 19 |
 | In Progress | 0 |
 | Fixed | 483 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **595** |
+| **Total** | **596** |
 
 ## All Bugs
 
@@ -135,6 +135,7 @@
 | [BG0593](BG0593-close-dry-run-previews-against-a-scratch-tree.md) | close --dry-run previews against a scratch tree with no git, so every git-reading row degrades to unjudged | Open | High | 2026-08-18 | 2026-08-18 |
 | [BG0594](BG0594-the-budget-lane-watches-the-per-commit-gate.md) | the budget lane watches the per-commit gate only, so the full suite grew 46% unobserved | Open | Medium | 2026-08-18 | 2026-08-18 |
 | [BG0595](BG0595-the-commit-msg-hook-test-is-not-hermetic.md) | the commit-msg hook test is not hermetic, so the full suite goes red whenever the working tree is dirty | Open | Medium | 2026-08-18 | 2026-08-18 |
+| [BG0596](BG0596-testplan-run-from-plan-keys-by-criterion-so.md) | testplan run --from-plan keys by criterion, so a second mutant on the same AC is silently dropped | Open | Medium | 2026-08-19 | 2026-08-19 |
 
 ## Archived Releases
 

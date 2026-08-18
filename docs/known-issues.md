@@ -37,8 +37,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0591` | Medium | status and close_owed give opposite answers about the same units |
 | `BG0594` | Medium | the budget lane watches the per-commit gate only, so the full suite grew 46% unobserved |
 | `BG0595` | Medium | the commit-msg hook test is not hermetic, so the full suite goes red whenever the working tree is dirty |
+| `BG0596` | Medium | testplan run --from-plan keys by criterion, so a second mutant on the same AC is silently dropped |
 
-13 findings: 13 Medium, 0 Low.
+14 findings: 14 Medium, 0 Low.
 
 ## Not carried
 

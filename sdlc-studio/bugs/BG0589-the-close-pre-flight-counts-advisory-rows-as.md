@@ -40,6 +40,7 @@ Count `held` in `_report_preflight`, as `_render_preflight` already does, and sa
 | --- | --- | --- |
 | 2026-08-17 | sdlc-studio | Filed |
 | 2026-08-18 | sdlc-studio | Fixed. `preflight_headline` is the one helper both renderers read |
+| 2026-08-18 | sdlc-studio | APPROVED by both seats. AC3 strengthened anyway: it named both renderers and tested only the helper, so churn in either print statement went unseen |
 
 ## Test Plan
 
@@ -49,4 +50,3 @@ Count `held` in `_report_preflight`, as `_render_preflight` already does, and sa
 | AC2 | leave `_report_preflight` computing its own count instead of reading the helper | Given the same rows, when `_render_preflight` prints, then it reports the same two numbers as `_report_preflight`. |
 | AC2 | revert `_render_preflight` to its own `len(held)`, fixing only the sibling | Both renderers must read ONE helper - fixing one and leaving the other lying is the scope error this repository keeps meeting. |
 | AC3 | always append the `of N reported` suffix, churning the common case | Given a pre-flight whose rows all block, when either renderer prints, then its headline is byte-identical to today. |
-| 2026-08-18 | sdlc-studio | APPROVED by both seats. AC3 strengthened anyway: it named both renderers and tested only the helper, so churn in either print statement went unseen |

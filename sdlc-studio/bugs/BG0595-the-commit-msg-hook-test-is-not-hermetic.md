@@ -23,8 +23,12 @@ Run the hook against a throwaway git repository rather than the one under develo
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `HonestDegradeTests::test_no_argument_does_not_block` runs the real `.githooks/commit-msg` against the REAL repository and asserts exit 0.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Run the hook against a throwaway git repository rather than the one under development, as the sibling hook tests do, or set the environment the lane reads so...
+- [ ] **AC1** Given a working tree carrying uncommitted changes, when the commit-msg hook tests run, then their verdict is identical to their verdict on a clean tree - the test must measure the hook, not the developer's in-flight work.
+  - **Verify:** pytest tools/tests/test_commit_msg_hook.py::HermeticTests::test_the_verdict_is_the_same_on_a_dirty_tree
+- [ ] **AC2** Given the hook under test, when it is invoked by a test, then it runs against a throwaway repository rather than the one under development - the sibling hook tests already do this, so the fix is to follow them rather than to invent a mechanism.
+  - **Verify:** pytest tools/tests/test_commit_msg_hook.py::HermeticTests::test_the_hook_runs_against_a_throwaway_repository
+- [ ] **AC3** Given the other tests in the same file, when they are checked for the same coupling, then each either runs against a fixture repository or states why it must not - one non-hermetic test fixed and its siblings left is the enumerated-list failure this repository keeps meeting.
+  - **Verify:** pytest tools/tests/test_commit_msg_hook.py::HermeticTests::test_every_test_in_this_file_is_hermetic
 
 ## Impact
 
