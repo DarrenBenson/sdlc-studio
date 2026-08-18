@@ -41,7 +41,7 @@
 # product is criteria that fail until the code exists, so the metric and the rung were in direct
 # conflict - one run of it added 33.
 #
-# The 68 excluded criteria are still EXECUTED and still reported, on their own line with each
+# The 67 excluded criteria are still EXECUTED and still reported, on their own line with each
 # story's status, so the exclusion is auditable rather than taken on trust.
 #
 # TWO FALSE READINGS WERE TAKEN BEFORE THIS ONE, and both are recorded because a baseline is

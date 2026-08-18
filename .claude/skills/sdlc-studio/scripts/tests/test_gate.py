@@ -919,8 +919,13 @@ class RedCountsOnlyWhatClaimsCompletionTests(ReleaseGateTests):
             self._at(root, "US0001", "Done", "shell exit 1")
             self._at(root, "US0002", "Ready", "shell exit 1")
             detail = self._lane(root)["detail"]
-            self.assertIn("1 red AC(s)", detail)
-            self.assertIn("US0001", detail)
+            # The id must sit INSIDE the red clause. Asserting it appeared anywhere in `detail`
+            # was satisfied by the inverted implementation too - which excludes the Done story
+            # and reds the Ready one - because the exclusion ledger names it and the count is 1
+            # either way. A round-2 review found the criterion could not discriminate its own
+            # claim; the fix belongs in the assertion, not in a second verifier.
+            self.assertIn("1 red AC(s): US0001", detail)
+            self.assertNotIn("1 red AC(s): US0002", detail)
 
     def test_an_abandoned_story_claims_nothing_so_its_red_is_not_a_regression(self) -> None:
         """MUTANT: test `is_terminal_status` alone instead of subtracting the abandonments.
@@ -1082,6 +1087,56 @@ class RedCountsOnlyWhatClaimsCompletionTests(ReleaseGateTests):
             # so it is 0 for a story nobody ran.
             self.assertIn("1 executable AC(s)", detail)
             self.assertIn("US0002", detail)
+
+    def test_a_project_declared_status_cannot_buy_an_exemption(self) -> None:
+        """MUTANT: in gate.py, drop the base-vocab membership test from `_claims_completion`.
+
+        Round 2, N1. `status_vocab(type_, root)` honours a project's `.config.yaml`
+        extensions, but `terminal_statuses` is built from module constants and can never
+        contain one. So a declared status was RECOGNISED - skipping the fail-closed branch
+        for an unknown one - and then classified as not-delivered-terminal, i.e. EXCLUDED.
+        A consuming project that moves finished stories to `Shipped` would have had every
+        red criterion on its completed work silently dropped from the release gate, and
+        reported as "unbuilt or abandoned", which is false of it.
+
+        Extending `status_vocab.<type>` is documented and supported, so this is a live
+        route rather than a hypothetical one.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0001", "Shipped", "shell exit 1")
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "status_vocab:\n  story:\n    - Shipped\n", encoding="utf-8")
+            detail = self._lane(root)["detail"]
+            self.assertIn("1 red AC(s)", detail)
+            self.assertIn("US0001", detail)
+            self.assertNotIn("claiming NO completion", detail)
+
+    def test_a_pass_over_an_exclusion_ledger_still_discloses_its_scope(self) -> None:
+        """MUTANT: in gate.py, drop `scope_note` from the `if parts:` return.
+
+        Round 2, N2, a REGRESSION this diff introduced. When the exclusion ledger is the
+        only clause the count is 0, so the branch renders PASS - and that branch never
+        appended the scope note. Before this change a PASS could only come from the green
+        return, which carries it. BG0530 AC5 says the lane must name what it did NOT walk;
+        that became conditionally false, and the existing scope test could not see it
+        because its fixture has no exclusions.
+
+        The bite lands exactly where this change steers: a baseline of 0 red with a full
+        exclusion ledger, printing PASS while omitting that the bug corpus was never walked.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0001", "Done", "shell true")
+            self._at(root, "US0002", "Ready", "shell exit 1")
+            bd = root / "sdlc-studio" / "bugs"
+            bd.mkdir(parents=True, exist_ok=True)
+            (bd / "BG0001-x.md").write_text("# BG0001: x\n", encoding="utf-8")
+            lane = self._lane(root)
+            self.assertEqual(lane["count"], 0)                    # this renders PASS
+            self.assertIn("claiming NO completion", lane["detail"])
+            self.assertIn("SCOPE: stories only", lane["detail"])
+            self.assertIn("executable AC(s) green", lane["detail"])
 
 
 class ReleaseSelectionGuardTests(ReleaseGateTests):

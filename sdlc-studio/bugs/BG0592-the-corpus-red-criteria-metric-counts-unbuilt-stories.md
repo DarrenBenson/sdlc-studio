@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** High
-> **Verification depth:** functional (all ten criteria drive the real release lane over temp corpora at seven story statuses. Mutation: 9 mutants, each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 9 KILLED, restore byte-exact - THREE of them from a review that REJECTED the first cut, including one that reverted the entire repair in a single line while all fourteen tests stayed green. Re-measured end to end through `verify-corpus.sh`: 20 red where the lane reported 88, with the 67 excluded rows printed in full with their statuses. THREE false readings were taken and discarded before the baseline moved - 26, inflated by the author's own uncommitted style violation breaking a lane six criteria invoke; a per-AC 21 whose extra row was a load timeout; and an 88/68/21 arithmetic carried into durable prose after the measurement had already corrected it to 87/67/20)
+> **Verification depth:** functional (all ten criteria drive the real release lane over temp corpora at seven story statuses. Mutation: 13 mutants, each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 13 KILLED, restore byte-exact - SIX of them from two reviews that REJECTED the first and second cuts, including one that reverted the entire repair in a single line while all fourteen tests stayed green. The count read 9 against 10 declared Test Plan rows until a round-2 review re-ran them; AC2's declared mutant named `_ABANDONED_STATUSES`, which the repair had deleted, so it was unrunnable as written and is restated against `is_delivered_terminal`. Re-measured end to end through `verify-corpus.sh`: 20 red where the lane reported 88, with the 67 excluded rows printed in full with their statuses. THREE false readings were taken and discarded before the baseline moved - 26, inflated by the author's own uncommitted style violation breaking a lane six criteria invoke; a per-AC 21 whose extra row was a load timeout; and an 88/68/21 arithmetic carried into durable prose after the measurement had already corrected it to 87/67/20)
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/verify-corpus-baseline.txt
 > **Created:** 2026-08-17
@@ -16,7 +16,7 @@ The corpus lane's own baseline defines its metric twice, and both times as red a
 
 ## Steps to Reproduce
 
-Measured 2026-08-17 at aba6b577 by running the verifier over all 670 stories and partitioning the failures by the story's own Status field: Done 647 stories / 21 red; Ready 19 / 62; Superseded 2 / 3; Won't Implement 2 / 2. `tools/verify-corpus-baseline.txt` records `red-criteria|52|executable acceptance criteria that FAIL when run, across stories already at Done` and its header repeats the Done wording. `gate.py`'s verify lane selects with `stories = list(verify_ac.walk_stories(rr / 'sdlc-studio' / 'stories'))` and applies no status filter before collecting `report.failures` into `red`. THE CORROBORATING EVIDENCE IS IN THE BASELINE'S OWN HEADER: it records the figure moving 106, then 53, then 58, then 50, then 52 and says the reading `could NOT be reproduced a day later on a tree whose stories are byte-identical - the DENOMINATOR differs`. A population that includes every un-started story moves whenever grooming happens, which is exactly what a metric about finished work should be immune to.
+Measured 2026-08-17 at aba6b577 by running the verifier over all 670 stories and partitioning the failures by the story's own Status field: Done 647 stories / 20 red; Ready 19 / 62; Superseded 2 / 3; Won't Implement 2 / 2 (87 in total, 20 of them on Done). An earlier partition of this same run read 21 on Done and 88 in total; 20/87 is the reading that reproduces, and the 21 is left recorded here rather than quietly dropped. `tools/verify-corpus-baseline.txt` records `red-criteria|52|executable acceptance criteria that FAIL when run, across stories already at Done` and its header repeats the Done wording. `gate.py`'s verify lane selects with `stories = list(verify_ac.walk_stories(rr / 'sdlc-studio' / 'stories'))` and applies no status filter before collecting `report.failures` into `red`. THE CORROBORATING EVIDENCE IS IN THE BASELINE'S OWN HEADER: it records the figure moving 106, then 53, then 58, then 50, then 52 and says the reading `could NOT be reproduced a day later on a tree whose stories are byte-identical - the DENOMINATOR differs`. A population that includes every un-started story moves whenever grooming happens, which is exactly what a metric about finished work should be immune to.
 
 ## Proposed Fix
 
@@ -24,7 +24,7 @@ Count what the metric says it counts: restrict the red tally to stories whose st
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a red criterion on a Done story and a red criterion on a Ready story, when the release verify lane counts, then it reports 1 red - the metric counts only what claims completion.
+- [ ] **AC1** Given a red criterion on a Done story and a red criterion on a Ready story, when the release verify lane counts, then it reports 1 red - the metric counts only what claims completion. A round-2 review found this criterion's own verifier could not discriminate it: it asserted `US0001` appeared SOMEWHERE in the detail, and under an inverted implementation it appears in the exclusion ledger while the count stays 1. The verifier now asserts the id inside the RED clause, so the inversion fails it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RedCountsOnlyWhatClaimsCompletionTests::test_a_red_criterion_on_a_ready_story_is_not_counted_as_red
   - **Verified:** yes (2026-08-17)
 - [ ] **AC2** Given a red criterion on a Superseded or Won't Implement story, when the lane counts, then it is not red - both are TERMINAL for a story, so a terminal-only test would count them, and neither asserts anything was finished.
@@ -54,6 +54,12 @@ Count what the metric says it counts: restrict the red tally to stories whose st
   - **Verified:** yes (2026-08-17)
 - [ ] **AC10** Given more excluded criteria than the lane's elision cap, when it reports, then every one is named - a partial ledger of what was removed from the enforced number is the audit going missing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RedCountsOnlyWhatClaimsCompletionTests::test_every_excluded_row_is_named_not_just_the_first_ten
+
+- [ ] **AC11** Given a project that DECLARES a story status in its `.config.yaml` and moves finished stories to it, when the lane classifies a red criterion on one, then it is COUNTED - a declared status is recognised by the extended vocabulary and can never be terminal in the module tables, so the first cut recognised it and then exempted it, losing every regression on a consuming project's completed work.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RedCountsOnlyWhatClaimsCompletionTests::test_a_project_declared_status_cannot_buy_an_exemption
+
+- [ ] **AC12** Given a corpus whose only failures are excluded, so the lane renders PASS, when it reports, then it still carries the SCOPE disclosure and the green denominator - the first cut moved PASS onto a branch that had never needed the scope note, making BG0530 AC5 conditionally false exactly at the end state this change steers towards.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RedCountsOnlyWhatClaimsCompletionTests::test_a_pass_over_an_exclusion_ledger_still_discloses_its_scope
   - **Verified:** yes (2026-08-17)
 
 ## Test Plan
@@ -61,7 +67,7 @@ Count what the metric says it counts: restrict the red tally to stories whose st
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
 | AC1 | delete the `claims_done` guard in gate.py, so every failure lands in the red list again | Given a red criterion on a Done story and a red criterion on a Ready story, when the release verify lane counts, then it reports 1 red - the metric counts only what claims completion. |
-| AC2 | delete the `_ABANDONED_STATUSES` membership test from gate.py, leaving the bare terminal-set lookup | Given a red criterion on a Superseded or Won't Implement story, when the lane counts, then it is not red - both are TERMINAL for a story, so a terminal-only test would count them, and neither asserts anything was finished. |
+| AC2 | replace `is_delivered_terminal` with `is_terminal_status` in gate.py, leaving the bare terminal-set lookup (the original row named `_ABANDONED_STATUSES`, which this repair deleted, so it was unrunnable as written - found by a round-2 review re-running the plan) | Given a red criterion on a Superseded or Won't Implement story, when the lane counts, then it is not red - both are TERMINAL for a story, so a terminal-only test would count them, and neither asserts anything was finished. |
 | AC3 | change `_claims_completion` in gate.py to return False for an absent status, so a story leaves the metric by dropping a line | Given a story carrying NO Status field at all, when the lane counts, then its red criterion IS counted - the exclusion must not be reachable by deleting a line. |
 | AC4 | replace the `unbuilt.append` collection in gate.py with `pass`, dropping the excluded rows instead of reporting them | Given a failing criterion excluded from the red count, when the lane reports, then it is named on its own line with the story's status - an exclusion nobody can see is one nobody can audit. |
 | AC5 | invert the guard in gate.py to `elif not claims_done`, counting everything except the finished work | Given a red criterion on a Done story, when the lane runs, then it FAILS and blocks - the regression the lane exists to catch is untouched. |
@@ -70,9 +76,12 @@ Count what the metric says it counts: restrict the red tally to stories whose st
 | AC8 | replace the canonical lookup in gate.py with a literal set match on the raw status text | Given a Done status carrying release decoration, a misspelling, or an off-vocabulary value, when the lane counts, then the criterion IS counted - the exclusion must not be reachable by editing a status line. |
 | AC9 | add `and claims_done` to the blocked branch in gate.py, so an unrun verifier is reclassified | Given a criterion the trust boundary refused to RUN on a story claiming no completion, when the lane classifies it, then it stays BLOCKED rather than excluded - unproven is not the same fact as unbuilt. |
 | AC10 | pass the exclusion ledger in gate.py through `_elide`, truncating it to the first ten | Given more excluded criteria than the lane's elision cap, when it reports, then every one is named - a partial ledger of what was removed from the enforced number is the audit going missing. |
+| AC11 | restore the root-aware vocabulary in `_claims_completion` (`status_vocab("story", root)`), so a project-declared status is recognised and then exempted | Given a project that DECLARES a story status in its `.config.yaml` and moves finished stories to it, when the lane classifies a red criterion on one, then it is COUNTED. |
+| AC12 | drop `scope_note` from the `if parts:` return in gate.py, so a PASS reached through the exclusion ledger discloses nothing | Given a corpus whose only failures are excluded, so the lane renders PASS, when it reports, then it still carries the SCOPE disclosure and the green denominator. |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-17 | sdlc-studio | Filed |
+| 2026-08-18 | sdlc-studio | Round 2 REJECT repaired: AC11 (a project-declared status bought a silent exemption - recognised by the extended vocab, unclassifiable by the module tables) and AC12 (a PASS reached through the exclusion ledger disclosed no scope). AC1's verifier could not discriminate its own claim. Mutation record corrected 9 -> 13; AC2's declared mutant named deleted code. Stale 68/21 and a stale ordinal cleared from durable prose; the shipped release-gate workflow still promised the old contract |

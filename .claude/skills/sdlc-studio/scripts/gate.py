@@ -1257,15 +1257,24 @@ def _story_status(path: Path) -> str | None:
         return None
 
 
-def _claims_completion(status: str | None, root: Path | str = ".") -> bool:
+def _claims_completion(status: str | None) -> bool:
     """Whether this status asserts the work is DONE - the only claim a red criterion can falsify.
 
     ASKED OF THE LIBRARY, never re-decided here. `sdlc_md.canonical_status` folds the decorated
     spellings this repository actually writes - `Done (v5.0.1) · **CR:** CR0088` is a real shape,
     and that function exists because of it - and `sdlc_md.is_delivered_terminal` already means
     exactly "claims completion", deriving the abandonments by wording rather than by a list.
-    The vocabulary comes from `status_vocab(..., root)`, so a project that extends
-    `status_vocab.story` in its config is covered.
+    THE VOCABULARY IS THE BASE ONE, DELIBERATELY. The first cut read `status_vocab(..., root)`,
+    which honours a project's `.config.yaml` extensions - and that was the hole. `terminal_statuses`
+    is built from module constants, so a declared status is RECOGNISED by the extended vocab
+    (skipping the fail-closed branch for an unknown one) and can never be terminal in the tables:
+    recognised, then excluded. A project moving finished stories to `Shipped` would have lost every
+    red criterion on its completed work from this metric, silently and permanently, reported as
+    "unbuilt or abandoned". Asking the BASE vocab asks the question that matters here - can the
+    terminal tables classify this? - so anything a project added falls to the same fail-closed
+    branch as anything misspelt. A review found this; the docstring it replaces claimed the
+    opposite, which is why the claim is now stated as the reason for the argument's absence.
+
 
     The first cut of this carried its own `_ABANDONED_STATUSES` literal beside the terminal set,
     with a comment claiming it was derived. It was already diverging - no `withdrawn`,
@@ -1301,9 +1310,11 @@ def _claims_completion(status: str | None, root: Path | str = ".") -> bool:
     """
     if not status:
         return True
-    canon = sdlc_md.canonical_status(status, sdlc_md.status_vocab("story", Path(root)))
+    canon = sdlc_md.canonical_status(status, sdlc_md.status_vocab("story"))
     if not canon:
-        return True          # off-vocabulary: unanswered, so not exempted
+        # Unknown OR project-declared - both are UNCLASSIFIABLE by the terminal tables, and
+        # unclassifiable is not the same as non-completing. Fails closed, like an absent one.
+        return True
     return sdlc_md.is_delivered_terminal("story", canon)
 
 
@@ -1756,7 +1767,7 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
         if report.unspecified:
             unspecified.append(f"{story_id} ({report.unspecified} AC(s) with no Verify: line)")
         status = _story_status(path)
-        claims_done = _claims_completion(status, rr)
+        claims_done = _claims_completion(status)
         for f in report.failures:
             name = f"{story_id}::{f['ac']} ({f['verifier']})"
             # BLOCKED WINS, at every status. A blocked verifier was not run at all - the trust
@@ -1810,8 +1821,18 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
                      f"trust boundary (story stamped Provenance: external): {_elide(blocked)}; "
                      f"pass --allow-external to run them once you trust the content")
     if parts:
-        return {"count": len(unspecified) + len(red) + len(blocked), "blocking": True,
-                "detail": "; ".join(parts) + f" [{cost}]"}
+        count = len(unspecified) + len(red) + len(blocked)
+        # The scope disclosure belongs on EVERY verdict, not only the green return. When the
+        # exclusion ledger is the only clause the count is 0 and this branch renders PASS - so
+        # a pass could be printed with the un-walked corpus undisclosed, which is BG0530 AC5's
+        # own false-green-over-a-fraction reintroduced one branch across. The green summary is
+        # restored on that path for the same reason: a PASS that states no denominator is a
+        # verdict a reader cannot size.
+        green = ("" if count else
+                 f" {executable}/{acs} executable AC(s) green across "
+                 f"{len(stories)} story/stories ({manual} manual).")
+        return {"count": count, "blocking": True,
+                "detail": "; ".join(parts) + f" [{cost}]" + green + scope_note}
     if acs == 0:
         return {"count": 1, "blocking": True,
                 "detail": f"no acceptance criteria across {len(stories)} story/stories - the "

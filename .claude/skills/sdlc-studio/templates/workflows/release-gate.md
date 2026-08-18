@@ -27,7 +27,9 @@ Related: reference-reconcile.md (drift check), reference-verify.md (AC verificat
       reading the stored verify-report, because a merged report carries a story's last
       green forward and a stale green is exactly how a rotted verify layer reaches a tag.
       It writes nothing (no `Verified:` back-annotation, no report rewrite), so it is safe
-      to run repeatedly and from a hook. It fails on a red AC, on an AC whose verifier the
+      to run repeatedly and from a hook. It fails on a red AC carried by a story that claims
+      completion - a criterion failing on unbuilt or abandoned work is reported, with that
+      story's status, on its own line and does not fail the lane. It fails on an AC whose verifier the
       trust boundary refused to run (reported **BLOCKED** - unproven is not proof;
       `--allow-external` runs those once you trust the content), and when there is nothing
       to verify at all. You cannot deselect the verify lane and keep the release verdict:
