@@ -74,8 +74,8 @@ documented command now works, pinned to `v5.0.1` or later.
 ## Known issues
 
 **v5.0.1 was TAGGED with zero Critical and zero High open against it.** That was true at the tag
-and is not a standing claim: four High findings have since been raised against this code -
-BG0585, BG0586, BG0588 and BG0592, all found by adversarial review after the tag - and they are
+and is not a standing claim: five High findings have since been raised against this code -
+BG0585, BG0586, BG0588, BG0592 and BG0593, all found by adversarial review after the tag - and they are
 open now. A fourth, BG0583, was raised and then closed WON'T FIX when its premise did not survive
 re-measurement. `tools/known_issues.py --bar` reads the live corpus rather than this sentence, so it
 reports them; that disagreement is the guard working, not drift to be edited away. They are

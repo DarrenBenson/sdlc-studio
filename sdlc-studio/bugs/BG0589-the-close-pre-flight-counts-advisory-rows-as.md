@@ -23,8 +23,12 @@ Count `held` in `_report_preflight`, as `_render_preflight` already does, and sa
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a pre-flight carrying blocking and non-blocking rows, when `_report_preflight` prints its headline, then the count of BLOCKING rows is stated distinctly from the total
-- [ ] **AC2** Given a pre-flight whose rows all block, when it prints, then the headline is unchanged from today - no cosmetic churn for the common case
+- [ ] **AC1** Given a pre-flight carrying blocking and non-blocking rows, when `_report_preflight` prints its headline, then the noun `unmet prerequisite(s)` carries the BLOCKING count, with the total stated beside it - `8 unmet prerequisite(s) (3 blocking)` keeps the overstatement this bug is about.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_the_headline_noun_carries_the_blocking_count
+- [ ] **AC2** Given the same rows, when `_render_preflight` prints, then it reports the same two numbers as `_report_preflight` - both read ONE helper, because fixing one renderer and leaving its sibling lying is the exact scope error that rejected BG0582 at round two.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_both_renderers_agree_and_read_one_helper
+- [ ] **AC3** Given a pre-flight whose rows all block, when either renderer prints, then its headline is byte-identical to today - no cosmetic churn for the common case.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_an_all_blocking_page_is_unchanged
 
 ## Revision History
 
