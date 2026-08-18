@@ -612,10 +612,14 @@ def _link_from_retro(retro_path: Path, disp: str, file_name: str, report: dict) 
     """Write the handoff link into the retro's `## Handoff` section (replacing it when one
     is already there, so a re-generated handoff never stacks a second)."""
     s = report["summary"]
-    body = (f"- [{disp}](../handoffs/{file_name}) - {s['remaining']} remaining item(s): "
+    text = retro_path.read_text(encoding="utf-8")
+    # Follow the document, never a hardcoded marker. MD004 defaults to `consistent`, so a dash
+    # written into an asterisk retro makes the very next commit uncommittable - and the close
+    # has already reported success by then.
+    mark = sdlc_md.document_bullet(text)
+    body = (f"{mark} [{disp}](../handoffs/{file_name}) - {s['remaining']} remaining item(s): "
             f"{s[COPILOT_TAIL]} copilot-tail, {s[JUDGEMENT]} judgement. Pick up with "
             f"`sprint plan --worklist {report['worklist']}`.\n")
-    text = retro_path.read_text(encoding="utf-8")
     sdlc_md.atomic_write(retro_path, artifact._put_section(text, ("Handoff",), body))
 
 

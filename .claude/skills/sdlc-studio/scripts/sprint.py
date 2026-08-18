@@ -6820,6 +6820,28 @@ def held_blockers(blockers: list) -> list:
     return [b for b in blockers if b.get("blocking", True)]
 
 
+def preflight_headline(blockers: list) -> str:
+    """The `N unmet prerequisite(s)` phrase, computed ONCE for both renderers.
+
+    The count is the number that HOLDS the close, never the length of the blocker list. Those
+    diverge whenever a row declares itself non-blocking, and `_report_preflight` used to render
+    the length while `_render_preflight` rendered the held count - one fact with two answers,
+    the louder one overstating. An operator told `8 unmet prerequisite(s)` when 3 hold is being
+    told the close is nearly twice as far away as it is, and a count that cries wolf is one
+    whose real refusals get waved through.
+
+    The total is stated BESIDE the blocking count rather than in place of it, so the advisory
+    rows stay visible without inflating the headline - they are still printed, and a page that
+    silently dropped them would be the opposite failure. When nothing is advisory the two
+    numbers coincide and the phrase is byte-identical to the one this replaces, so the common
+    case gains no cosmetic churn.
+    """
+    held = len(held_blockers(blockers))
+    total = len(blockers)
+    return (f"{held} unmet prerequisite(s)" if held == total
+            else f"{held} unmet prerequisite(s) of {total} reported")
+
+
 def _checklist_blockers(root: Path, retro_id: str, state: dict) -> list[dict]:
     """Every compulsory checklist row the close would stop on, ASKED of the one authority.
 
@@ -7010,8 +7032,8 @@ def _render_preflight(data: dict) -> None:
             print(f"  [{_blocker_label(b)}] {b['detail']}")
             print(f"      -> {b['remedy']}")
         return
-    print(f"preflight: {len(held)} unmet prerequisite(s) - ALL of them, so the close is one more "
-          f"run once these are cleared:")
+    print(f"preflight: {preflight_headline(data['blockers'])} - ALL of them, so the close is "
+          f"one more run once these are cleared:")
     for b in data["blockers"]:
         print(f"  [{_blocker_label(b)}] {b['detail']}")
         print(f"      -> {b['remedy']}")
@@ -7197,7 +7219,7 @@ def _report_preflight(root, retro_id: str | None) -> dict:
     """
     pre = close_preflight(root, retro_id)
     if not pre["ready"]:
-        print(f"close pre-flight: {len(pre['blockers'])} unmet prerequisite(s) - this is ALL "
+        print(f"close pre-flight: {preflight_headline(pre['blockers'])} - this is ALL "
               f"of them, not the first:", file=sys.stderr)
         for b in pre["blockers"]:
             # `_blocker_label`, not `_stage_label`: the first says "reported not blocking" and

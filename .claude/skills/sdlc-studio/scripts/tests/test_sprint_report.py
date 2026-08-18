@@ -1439,6 +1439,116 @@ class TickVerificationTests(ChecklistBase):
         self.assertIn("unjudged", row["detail"])
 
 
+class TickVerificationReadsTheRungTests(ChecklistBase):
+    """BG0584: the row asked the BUILD rung's question of every run.
+
+    `_ck_tick_verification` asks whether the tree supports what the units TICKED. On a `design`
+    rung nothing is ticked and nothing should be - that rung's PRODUCT is authored criteria that
+    are deliberately RED - so the row reported `no ticked criteria found` and held the close as a
+    compulsory unanswered item. That reasoning is exactly right for a build rung and structurally
+    unanswerable for a grooming one: it could not be ANSWERED, only waived, and D0144 waived it.
+    A row whose only exit is a waiver trains the operator to waive.
+
+    Same family as BG0582 - a lane that reads no rung and applies the build rung's question to a
+    run that never targeted it.
+    """
+
+    def _unit(self, uid: str, affects: str, ticked: bool) -> None:
+        mark = "x" if ticked else " "
+        (self.root / "sdlc-studio" / "stories" / f"{uid}-s.md").write_text(
+            f"# {uid}: s\n\n> **Status:** Done\n> **Affects:** {affects}\n> **Points:** 2\n\n"
+            f"## Acceptance Criteria\n\n- [{mark}] **AC1** the thing\n", encoding="utf-8")
+
+    def _row_for(self, goal: str, *, base: str = "abc123", changed=frozenset()) -> tuple:
+        self._run(base_ref=base, goal=goal)
+        with mock.patch.object(sr, "_changed_paths", return_value=changed):
+            ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US0001", "US0002"])
+        return self._row(ck, "tick-verification"), ck
+
+    def test_the_rung_is_read_before_the_diff_branches(self) -> None:
+        """AC1. MUTANT: move the rung check below the base-ref and diff-unreadable branches.
+
+        Both of those return NOT_RUN, and the REAL close resolved this row as `diff unreadable` -
+        so a rung check placed at `not examined` satisfies a fixture and leaves the observed wall
+        standing. The fixture therefore breaks BOTH: no recorded base ref, and a diff that cannot
+        be read. A correct implementation never reaches either.
+        """
+        self._unit("US0001", "src/a.py", ticked=False)
+        self._unit("US0002", "src/b.py", ticked=False)
+        self._run(base_ref="", goal="design")
+        with mock.patch.object(sr, "_changed_paths", return_value=None):
+            ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US0001", "US0002"])
+        row = self._row(ck, "tick-verification")
+        self.assertEqual(sr.RAN, row["state"], row["detail"])
+        self.assertIn("design", row["value"])
+        self.assertNotIn("base ref", row["detail"])
+        self.assertNotIn("diff unreadable", row["value"])
+        self.assertNotIn("tick-verification", ck["outstanding"])
+
+    def test_a_ticked_criterion_on_a_design_rung_is_reported_not_blocking(self) -> None:
+        """AC2. MUTANT: return NOT_RUN for a tick found on a design rung.
+
+        `checklist` is not in `_DEFERRABLE_CLOSE_STAGES`, so a blocking row here is a hard
+        refusal with no bounded exit - which is the shape this unit exists to REMOVE, not to
+        relocate from the empty case to the ticked one. The tick is still worth saying, and the
+        detail must name the unit or the report is a number nobody can act on.
+        """
+        self._unit("US0001", "src/a.py", ticked=True)
+        self._unit("US0002", "src/b.py", ticked=False)
+        row, ck = self._row_for("design")
+        self.assertEqual(sr.RAN, row["state"], row["detail"])
+        self.assertNotIn("tick-verification", ck["outstanding"])
+        self.assertIn("US0001", row["detail"])
+        self.assertIn("AC1", row["detail"])
+
+    def test_the_build_rung_is_unchanged(self) -> None:
+        """AC3. MUTANT: short-circuit on EVERY rung rather than only a non-`done` one.
+
+        The regression this row exists to catch must survive the fix. BG0582 was rejected at
+        round two for scoping its sibling on `!= done`, which moved the defect onto plan and
+        triage instead of removing it - so both an explicit `done` and an ABSENT goal are
+        asserted here, an absent one being what every run before rungs existed recorded.
+        """
+        for goal in ("done", None):
+            with self.subTest(goal=goal):
+                self._unit("US0001", "src/touched.py", ticked=True)
+                self._unit("US0002", "src/never_touched.py", ticked=True)
+                fields = {"goal": goal} if goal else {}
+                self._run(base_ref="abc123", **fields)
+                with mock.patch.object(sr, "_changed_paths",
+                                       return_value={"src/touched.py"}):
+                    ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US0001", "US0002"])
+                row = self._row(ck, "tick-verification")
+                self.assertEqual(sr.NOT_RUN, row["state"], row["detail"])
+                self.assertIn("US0002", row["detail"])
+                self.assertIn("tick-verification", ck["outstanding"])
+
+    def test_the_row_resolves_without_the_waiver(self) -> None:
+        """AC4. MUTANT: leave D0144 accepted.
+
+        A fix landing under a live waiver is a fix nobody can observe: `_resolve_item` lets a
+        waiver override whatever the resolver found, so the row reads WAIVED whether it is
+        repaired or not - and would conceal a regression in the repair just as effectively.
+        Asserted against THIS repository's own decisions log, not a fixture, because the waiver
+        being retracted is a fact about this repo.
+        """
+        import decisions  # noqa: PLC0415
+        repo = Path(__file__).resolve().parents[5]
+        # WITHOUT THIS the test is vacuous: `waiver_for` answers None for any tree with no
+        # decisions log, so a wrong `parents[]` index passes it while measuring nothing. The
+        # first cut of this test pointed at `.claude/` and passed for exactly that reason.
+        self.assertTrue((repo / "sdlc-studio" / "decisions.md").is_file(),
+                        f"decisions log not found under {repo} - this test is measuring nothing")
+        self.assertIsNotNone(decisions.waiver_for(repo, "rule:release:changelog-fragment")
+                             or decisions.list_decisions(repo),
+                             "the decisions log parsed to nothing, so an absent waiver is "
+                             "indistinguishable from an unreadable log")
+        self.assertIsNone(
+            decisions.waiver_for(repo, "rule:sprint-checklist:tick-verification"),
+            "D0144 is still live, so the tick-verification row reads WAIVED and this "
+            "unit's repair cannot be observed at the close it was filed from")
+
+
 class WaiverKindTests(ChecklistBase):
     """US0595 AC2. The retro counts the two kinds apart.
 

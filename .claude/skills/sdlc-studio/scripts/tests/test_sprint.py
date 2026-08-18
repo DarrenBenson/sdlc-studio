@@ -16234,5 +16234,65 @@ class ProbableDuplicatesAreReportedAtPlanTime(unittest.TestCase):
                                                                {"id": "BG9306"}]))
 
 
+class OnePreflightCountReadByBothRenderersTests(unittest.TestCase):
+    """BG0589: `N unmet prerequisite(s)` was rendered from the blocker LIST by one renderer and
+    from the HELD rows by its sibling - one fact with two answers, the louder one overstating.
+
+    Pre-existing, but BG0582's rung work made the overcount systematic rather than occasional:
+    every design-rung close now carries exactly one non-blocking row by construction, and the
+    advisory gate lanes add more. A close reporting 8 can have 3 that hold it, and a count that
+    cries wolf is one whose real refusals get waved through.
+    """
+
+    def _rows(self, blocking: int, advisory: int) -> list:
+        rows = [{"stage": "gate", "detail": f"b{i}", "remedy": "fix it", "blocking": True}
+                for i in range(blocking)]
+        rows += [{"stage": "gate", "detail": f"a{i}", "remedy": "note it", "blocking": False}
+                 for i in range(advisory)]
+        return rows
+
+    def test_the_headline_noun_carries_the_blocking_count(self) -> None:
+        """AC1. MUTANT: render `len(blockers)` in the headline again.
+
+        The noun must count what HOLDS the close. `8 unmet prerequisite(s) (3 blocking)` keeps
+        the overstatement this bug is about - the number the reader takes away is the one the
+        noun is attached to, so the noun carries 3 and the total is stated beside it.
+        """
+        rows = self._rows(blocking=3, advisory=5)
+        head = sprint.preflight_headline(rows)
+        self.assertTrue(head.startswith("3 unmet prerequisite(s)"), head)
+        self.assertIn("8", head)
+        self.assertFalse(head.startswith("8"), head)
+
+    def test_both_renderers_agree_and_read_one_helper(self) -> None:
+        """AC2. MUTANT: leave `_report_preflight` computing its own count.
+
+        Fixing one renderer and leaving its sibling lying is the exact scope error that
+        rejected BG0582 at round two, so this asserts the two OUTPUTS agree - not that the
+        helper exists, which a renderer can ignore.
+        """
+        rows = self._rows(blocking=2, advisory=4)
+        data = {"ready": False, "blockers": rows}
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            sprint._render_preflight(data)
+        err = io.StringIO()
+        with unittest.mock.patch.object(sprint, "close_preflight", return_value=data), \
+                contextlib.redirect_stderr(err):
+            sprint._report_preflight(".", None)
+        head = sprint.preflight_headline(rows)
+        self.assertIn(head, out.getvalue())
+        self.assertIn(head, err.getvalue())
+
+    def test_an_all_blocking_page_is_unchanged(self) -> None:
+        """AC3. MUTANT: always append the `of N reported` suffix.
+
+        No cosmetic churn for the common case: when nothing is advisory the two numbers
+        coincide and the phrase must be byte-identical to the one it replaces.
+        """
+        self.assertEqual("4 unmet prerequisite(s)",
+                         sprint.preflight_headline(self._rows(blocking=4, advisory=0)))
+
+
 if __name__ == "__main__":
     unittest.main()

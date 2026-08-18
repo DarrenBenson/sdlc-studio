@@ -4,6 +4,7 @@
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Verification depth:** functional (all three criteria drive the real renderers; AC2 asserts the two OUTPUTS agree rather than that a helper exists, which a renderer can ignore. Mutation: 4 mutants, each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 4 KILLED, restore byte-exact - including one reverting EACH renderer independently, because fixing one and leaving its sibling lying is the scope error that rejected BG0582 at round two)
 > **Created:** 2026-08-17
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,15 +24,28 @@ Count `held` in `_report_preflight`, as `_render_preflight` already does, and sa
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a pre-flight carrying blocking and non-blocking rows, when `_report_preflight` prints its headline, then the noun `unmet prerequisite(s)` carries the BLOCKING count, with the total stated beside it - `8 unmet prerequisite(s) (3 blocking)` keeps the overstatement this bug is about.
+- [x] **AC1** Given a pre-flight carrying blocking and non-blocking rows, when `_report_preflight` prints its headline, then the noun `unmet prerequisite(s)` carries the BLOCKING count, with the total stated beside it - `8 unmet prerequisite(s) (3 blocking)` keeps the overstatement this bug is about.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_the_headline_noun_carries_the_blocking_count
-- [ ] **AC2** Given the same rows, when `_render_preflight` prints, then it reports the same two numbers as `_report_preflight` - both read ONE helper, because fixing one renderer and leaving its sibling lying is the exact scope error that rejected BG0582 at round two.
+  - **Verified:** yes (2026-08-18)
+- [x] **AC2** Given the same rows, when `_render_preflight` prints, then it reports the same two numbers as `_report_preflight` - both read ONE helper, because fixing one renderer and leaving its sibling lying is the exact scope error that rejected BG0582 at round two.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_both_renderers_agree_and_read_one_helper
-- [ ] **AC3** Given a pre-flight whose rows all block, when either renderer prints, then its headline is byte-identical to today - no cosmetic churn for the common case.
+  - **Verified:** yes (2026-08-18)
+- [x] **AC3** Given a pre-flight whose rows all block, when either renderer prints, then its headline is byte-identical to today - no cosmetic churn for the common case.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_an_all_blocking_page_is_unchanged
+  - **Verified:** yes (2026-08-18)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-17 | sdlc-studio | Filed |
+| 2026-08-18 | sdlc-studio | Fixed. `preflight_headline` is the one helper both renderers read |
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | render `len(blockers)` in the headline again, so the noun carries the total | Given a pre-flight carrying blocking and non-blocking rows, when `_report_preflight` prints its headline, then the noun `unmet prerequisite(s)` carries the BLOCKING count. |
+| AC2 | leave `_report_preflight` computing its own count instead of reading the helper | Given the same rows, when `_render_preflight` prints, then it reports the same two numbers as `_report_preflight`. |
+| AC2 | revert `_render_preflight` to its own `len(held)`, fixing only the sibling | Both renderers must read ONE helper - fixing one and leaving the other lying is the scope error this repository keeps meeting. |
+| AC3 | always append the `of N reported` suffix, churning the common case | Given a pre-flight whose rows all block, when either renderer prints, then its headline is byte-identical to today. |

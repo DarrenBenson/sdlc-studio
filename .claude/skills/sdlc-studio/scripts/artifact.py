@@ -816,7 +816,11 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
     if ep is None:
         return False
     text = ep.read_text(encoding="utf-8")
-    line = f"- [ ] [{disp}: {title}](../stories/{file_id}-{slug}.md)"
+    # The sibling of the handoff appender, and it carried the same assumption. Fixing one
+    # instance of a class and leaving the other is the enumerated-list failure this repository
+    # keeps meeting, so both read the document rather than naming a marker.
+    line = (f"{sdlc_md.document_bullet(text)} [ ] "
+            f"[{disp}: {title}](../stories/{file_id}-{slug}.md)")
     if f"[{disp}:" in text or f"[{disp}]" in text:  # already wired (exact, not substring: US0001 != US00012)
         return True
     lines = text.splitlines()

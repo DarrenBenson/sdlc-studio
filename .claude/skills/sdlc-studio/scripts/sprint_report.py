@@ -1390,6 +1390,43 @@ def _ticked_criteria(text: str) -> list[str]:
     return out
 
 
+def _ticks_on_a_non_build_rung(ctx: dict, rung: str) -> tuple:
+    """The tick question a rung that did not target `Done` actually owes.
+
+    A tick asserts a criterion is MET. A `design` rung's PRODUCT is authored criteria that are
+    deliberately RED - every one unticked by definition - so "do the ticks match the diff?"
+    cannot be ANSWERED here, only waived. The row therefore held every design close as a
+    compulsory unanswered item and printed the waiver command as its own remedy. D0144 waived
+    it once; a row whose only exit is a waiver trains the operator to waive.
+
+    So it asks the question this rung DOES owe - that nothing is ticked yet - converting an
+    unanswerable item into one that would catch a criterion ticked before the behaviour
+    existed, which nothing checks today.
+
+    NEVER BLOCKING, in either direction. `checklist` is not in `_DEFERRABLE_CLOSE_STAGES`, so
+    an outstanding row here is a hard refusal with no bounded exit - the shape this exists to
+    remove, not to relocate. A tick on a design rung is worth SAYING and is the rung's own
+    `transition` gate to refuse, not this row's.
+    """
+    ticked: list[str] = []
+    for uid in (ctx.get("units") or []):
+        found = sdlc_md.find_by_id(ctx["root"], uid)
+        if not found:
+            continue
+        ticked.extend(f"{uid} {ac}"
+                      for ac in _ticked_criteria(sdlc_md.read_text_safe(found[0])))
+    units = len(ctx.get("units") or [])
+    if ticked:
+        return (RAN, f"{len(ticked)} criterion/criteria ticked on a {rung} rung",
+                f"a {rung} rung's exit is criteria that are authored and still RED, so a tick "
+                f"here claims a behaviour the rung did not build: {', '.join(ticked[:8])} - "
+                f"reported, not blocking, because the rung's own gate is `transition`")
+    return (RAN, f"no criteria ticked, which is the {rung} rung's exit",
+            f"all {units} unit(s) carry criteria that are unticked, which is what a {rung} rung "
+            f"delivers; the tick-versus-diff comparison is the BUILD rung's question and is not "
+            f"asked of a run that never targeted it")
+
+
 def _ck_tick_verification(ctx: dict) -> tuple:
     """Does the tree support what the units say they did?
 
@@ -1397,6 +1434,20 @@ def _ck_tick_verification(ctx: dict) -> tuple:
     ticks the diff contradicted, and the checklist passed them - because nothing compared the
     claim against the surfaces the unit itself declared.
     """
+    # THE RUNG IS READ FIRST, ahead of the base ref and the diff. Both of those branches return
+    # NOT_RUN, and the real close resolved this row as `diff unreadable` - so a rung check
+    # placed at `not examined` satisfies a fixture and leaves the observed wall standing.
+    # The record comes from `ctx["run"]`, which `_run_record` already resolved as the run
+    # covering THESE units, so the rung read is the one this sprint was driven to rather than
+    # whatever run happens to be open now.
+    try:
+        import sprint  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        rung = sprint.run_rung(ctx.get("run") or {})
+    except Exception as exc:  # noqa: BLE001 - a report must not die on a state read
+        sdlc_md.debug("sprint_report._ck_tick_verification.rung", exc)
+        rung = "done"
+    if rung != "done":
+        return _ticks_on_a_non_build_rung(ctx, rung)
     base = ""
     try:
         base = run_state.base_ref(ctx["root"])

@@ -1770,6 +1770,42 @@ def fence_step(stripped: str, fence: tuple[str, int] | None) -> tuple[tuple[str,
     return fence, True
 
 
+#: An unordered-list item: up to three leading spaces, a marker, then whitespace. `- [ ] x`
+#: (a task item) counts; `***` and `---` (thematic breaks, and setext underlines) do not,
+#: because the marker must be followed by whitespace and content.
+_UL_ITEM_RE = re.compile(r"^ {0,3}([-*+])\s+\S")
+
+
+def document_bullet(text: str, default: str = "-") -> str:
+    """The unordered-list marker this document already uses, for an appender to match.
+
+    markdownlint's MD004 defaults to `consistent`, which takes the FIRST list marker in the file
+    as the rule for the rest - so the first is what an appender must copy, not the most common.
+    A writer that hardcodes its own marker makes the very next commit uncommittable wherever the
+    document disagrees: the close writes a `## Handoff` bullet into a retro, and every retro here
+    is scaffolded with asterisks, so `sprint close` exited 0 and then left the tree refused by the
+    repo's own markdown lane. The close succeeds and THEN makes the tree uncommittable, which is
+    the worst ordering - the operator has already been told the run closed.
+
+    Fenced blocks are skipped through the shared `fence_step` state machine rather than a second
+    fence parser, because an illustrative bullet inside a code sample is not the document's style
+    and a naive toggle gets CommonMark's closing rules wrong.
+
+    `default` is returned for a document with no list at all - a first bullet cannot disagree with
+    a style that is not yet established.
+    """
+    fence = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        fence, is_fence = fence_step(stripped, fence)
+        if is_fence or fence is not None:
+            continue
+        m = _UL_ITEM_RE.match(line)
+        if m:
+            return m.group(1)
+    return default
+
+
 RETRACTED_DEPTH = "RETRACTED"
 
 

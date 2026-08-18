@@ -3,7 +3,8 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py
+> **Verification depth:** functional (every criterion runs the REAL markdownlint over the written file rather than asserting a marker - the claim is about a linter's verdict, not a character, and a string assertion passes on the defect as happily as on the fix; skipped, never faked, when markdownlint is absent. Mutation: 5 mutants, each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 5 KILLED, restore byte-exact. One SURVIVED the first four tests - dropping the fenced-block skip from `document_bullet` - and AC5 exists because of it)
 > **Created:** 2026-08-17
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -36,17 +37,35 @@ this repository keeps meeting, so AC3 covers it.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a retro whose lists use asterisk bullets, when the close appends its handoff section, then markdownlint reports no MD004 error for that file.
+- [x] **AC1** Given a retro whose lists use asterisk bullets, when the close appends its handoff section, then markdownlint reports no MD004 error for that file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffBulletFollowsTheDocumentTests::test_an_asterisk_retro_stays_clean
-- [ ] **AC2** Given a retro whose lists use dash bullets, when the close appends, then markdownlint reports no MD004 error either - the fix must follow the document, not swap one hardcoded bullet for another.
+  - **Verified:** yes (2026-08-18)
+- [x] **AC2** Given a retro whose lists use dash bullets, when the close appends, then markdownlint reports no MD004 error either - the fix must follow the document, not swap one hardcoded bullet for another.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffBulletFollowsTheDocumentTests::test_a_dash_retro_stays_clean
-- [ ] **AC3** Given the sibling appender at `artifact.py` that writes a bullet into an epic, when it appends, then it follows the document's style too - one instance of a class fixed and the other left is the enumerated-list failure this repo keeps meeting.
+  - **Verified:** yes (2026-08-18)
+- [x] **AC3** Given the sibling appender at `artifact.py` that writes a bullet into an epic, when it appends, then it follows the document's style too - one instance of a class fixed and the other left is the enumerated-list failure this repo keeps meeting.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffBulletFollowsTheDocumentTests::test_the_sibling_appender_follows_the_document
-- [ ] **AC4** Given any retro, when the close appends its handoff section, then every byte OUTSIDE that section is unchanged - a fix that normalises every bullet in the file satisfies AC1 and AC2 perfectly while silently reformatting the operator's prose.
+  - **Verified:** yes (2026-08-18)
+- [x] **AC4** Given any retro, when the close appends its handoff section, then every byte OUTSIDE that section is unchanged - a fix that normalises every bullet in the file satisfies AC1 and AC2 perfectly while silently reformatting the operator's prose.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffBulletFollowsTheDocumentTests::test_nothing_outside_the_handoff_section_changes
+  - **Verified:** yes (2026-08-18)
+- [x] **AC5** Given a retro that quotes a dash-bulleted transcript inside a FENCED block while its real lists use asterisks, when the close appends, then it writes an asterisk - a fenced block is not a list, and MD004 agrees. Added because a mutant dropping the fence skip SURVIVED the other four criteria.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffBulletFollowsTheDocumentTests::test_a_bullet_inside_fenced_code_is_not_the_documents_style
+  - **Verified:** yes (2026-08-18)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-17 | sdlc-studio | Filed |
+| 2026-08-18 | sdlc-studio | Fixed. `Affects` corrected a SECOND time: AC3's sibling lives in `artifact.py` and the shared helper in `lib/sdlc_md.py`, neither of which the corrected filing named - so the review diff would still have excluded most of the fix. AC5 added from a surviving mutant |
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | hardcode `-` in `_link_from_retro` again | Given a retro whose lists use asterisk bullets, when the close appends its handoff section, then markdownlint reports no MD004 error for that file. |
+| AC2 | hardcode `*` instead, swapping one fixed marker for another | Given a retro whose lists use dash bullets, when the close appends, then markdownlint reports no MD004 error either. |
+| AC3 | keep the hardcoded dash in `artifact._wire_story_to_epic` | Given the sibling appender at `artifact.py` that writes a bullet into an epic, when it appends, then it follows the document's style too. |
+| AC4 | normalise every bullet in the file to the document's style | Given any retro, when the close appends its handoff section, then every byte OUTSIDE that section is unchanged. |
+| AC5 | drop the fenced-block skip from `sdlc_md.document_bullet` | Given a retro that quotes a dash-bulleted transcript inside a FENCED block while its real lists use asterisks, when the close appends, then it writes an asterisk. |

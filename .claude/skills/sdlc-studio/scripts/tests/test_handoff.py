@@ -901,5 +901,120 @@ class RegistrationTests(unittest.TestCase):
             self.assertEqual(drift[0]["kind"], "missing-row")
 
 
+class HandoffBulletFollowsTheDocumentTests(unittest.TestCase):
+    """BG0590: the close appended a DASH bullet to the retro whatever the document used.
+
+    Every retro in this repository is scaffolded with asterisks (`artifact.py new`), so
+    `sprint close` exited 0 and then left the tree refused by the repo's own markdown lane:
+    `MD004/ul-style Unordered list style [Expected: asterisk; Actual: dash]`. The close
+    succeeds and THEN makes the tree uncommittable, which is the worst ordering - the operator
+    has already been told the run closed.
+
+    Every test here runs the REAL markdownlint over the result rather than asserting the
+    string. A test asserting a marker passes on the defect just as happily as on the fix, and
+    the claim being made is about a linter's verdict, not about a character.
+    """
+
+    RETRO = ("# RETRO0001: t\n\n> **Status:** Draft\n\n## What went well\n\n"
+             "{m} the first thing\n{m} the second thing\n\n## Handoff\n\n")
+
+    def _report(self) -> dict:
+        return {"summary": {"remaining": 12, handoff.COPILOT_TAIL: 3, handoff.JUDGEMENT: 9},
+                "worklist": "sdlc-studio/.local/worklist.md"}
+
+    def _append(self, root: Path, marker: str) -> Path:
+        rp = root / "RETRO0001-t.md"
+        rp.write_text(self.RETRO.format(m=marker), encoding="utf-8")
+        handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
+        return rp
+
+    def _lint(self, path: Path) -> str:
+        """The real lane. Skipped, never faked, when markdownlint is absent - a fixture that
+        reimplements MD004 would be asserting my reading of the rule, not the rule."""
+        try:
+            r = subprocess.run(["npx", "--no-install", "markdownlint-cli", str(path)],
+                               capture_output=True, text=True, timeout=120)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            self.skipTest(f"markdownlint unavailable: {exc}")
+        return r.stdout + r.stderr
+
+    def test_an_asterisk_retro_stays_clean(self) -> None:
+        """AC1. MUTANT: hardcode `-` in `_link_from_retro` again. The observed failure."""
+        with tempfile.TemporaryDirectory() as d:
+            rp = self._append(Path(d), "*")
+            self.assertIn("* [HO-0059]", rp.read_text(encoding="utf-8"))
+            self.assertNotIn("MD004", self._lint(rp))
+
+    def test_a_dash_retro_stays_clean(self) -> None:
+        """AC2. MUTANT: hardcode `*` instead.
+
+        The fix must FOLLOW the document, not swap one hardcoded bullet for another - which
+        would satisfy AC1 perfectly while breaking every dash-styled consuming project.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            rp = self._append(Path(d), "-")
+            self.assertIn("- [HO-0059]", rp.read_text(encoding="utf-8"))
+            self.assertNotIn("MD004", self._lint(rp))
+
+    def test_the_sibling_appender_follows_the_document(self) -> None:
+        """AC3. MUTANT: hardcode `-` in `artifact._wire_story_to_epic`.
+
+        `artifact.py` carries the same assumption, writing `- [ ] [US...]` into an epic. Fixing
+        one instance of a class and leaving the other is the enumerated-list failure this
+        repository keeps meeting, and the filing's own `Affects` had to be corrected for the
+        same reason.
+        """
+        artifact = _load("artifact")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            ep = ed / "EP0001-e.md"
+            ep.write_text("# EP0001: e\n\n> **Status:** Draft\n\n## Story Breakdown\n\n"
+                          "* [ ] [US0009: prior](../stories/US0009-p.md)\n", encoding="utf-8")
+            self.assertTrue(
+                artifact._wire_story_to_epic(root, "EP0001", "US0001", "t", "US0001", "t"))
+            self.assertIn("* [ ] [US0001: t]", ep.read_text(encoding="utf-8"))
+            self.assertNotIn("MD004", self._lint(ep))
+
+    def test_a_bullet_inside_fenced_code_is_not_the_documents_style(self) -> None:
+        """AC5. MUTANT: drop the fence skip from `document_bullet`.
+
+        A retro that quotes a dash-bulleted command transcript in a fenced block still has an
+        asterisk document style, and MD004 agrees - a fenced block is not a list. Reading the
+        first marker anywhere in the file takes the illustration as the rule and writes the
+        wrong bullet into a document that looked, to the naive reader, entirely consistent.
+        Found by a mutant that SURVIVED the first four tests.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "RETRO0001-t.md"
+            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Evidence\n\n"
+                          "```text\n- a quoted transcript line\n- another\n```\n\n"
+                          "## What went well\n\n* the real list\n\n## Handoff\n\n",
+                          encoding="utf-8")
+            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
+            self.assertIn("* [HO-0059]", rp.read_text(encoding="utf-8"))
+            self.assertNotIn("MD004", self._lint(rp))
+
+    def test_nothing_outside_the_handoff_section_changes(self) -> None:
+        """AC4. MUTANT: normalise every bullet in the file to the document's style.
+
+        That satisfies AC1 and AC2 perfectly while silently reformatting the operator's prose -
+        a writer that rewrites what it was not asked to touch is a worse defect than the one
+        being fixed, and the retro is a document a human authored.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rp = root / "RETRO0001-t.md"
+            before = ("# RETRO0001: t\n\n> **Status:** Draft\n\n## What went well\n\n"
+                      "* the first thing\n- a deliberately mixed line\n\n## Handoff\n\n")
+            rp.write_text(before, encoding="utf-8")
+            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
+            after = rp.read_text(encoding="utf-8")
+            head = before.split("## Handoff")[0]
+            self.assertEqual(head, after.split("## Handoff")[0],
+                             "the appender rewrote prose outside its own section")
+
+
 if __name__ == "__main__":
     unittest.main()
