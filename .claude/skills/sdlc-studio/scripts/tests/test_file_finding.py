@@ -2887,5 +2887,127 @@ class AffectsInferenceScopeTests(unittest.TestCase):
                          ff.unresolvable_affects(self.REPO, ["scripts/definitely_not_here.py"]))
 
 
+class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
+    """BG0585: `is_derived_criterion` matched ZERO output of the writer in its own module.
+
+    It shipped 2026-08-04; `criteria_block` gained the `**ACn**` marker two days later, and
+    nothing re-ran the detector against its own writer. For twelve days the `derived-only` limb
+    of `conformance.unit_is_ungroomed` was inert, so the placeholder that reads like content -
+    the shape that "satisfies every has-criteria check in the repo while being unjudgeable" -
+    passed every gate in the repository. A goal-review seat found it by executing the predicate
+    while judging a batch, not by reading the code.
+
+    Every fixture below is built by CALLING the writer where it can be, because a hand-typed
+    example that happens to match is exactly how the two drifted while looking fine.
+    """
+
+    def test_the_detector_matches_its_own_writers_output(self) -> None:
+        """MUTANT: delete the `_AC_NUMBER_RE.sub` line - the defect as filed.
+
+        THE ONE THAT MATTERS. Driven through `criteria_block`, so the assertion is about the
+        bytes the module actually emits rather than about a string in this test.
+        """
+        block = ff.criteria_block("bug", {"acs": ["The behaviour described is corrected: X"]})
+        lines = [ln for ln in block.splitlines() if ln.strip().startswith("- [")]
+        self.assertTrue(lines, block)
+        for line in lines:
+            self.assertTrue(ff.is_derived_criterion(line),
+                            f"the detector does not match its own writer:\n{line}")
+
+    def test_the_unnumbered_form_still_matches(self) -> None:
+        """REGRESSION CONTROL. MUTANT: anchor the pattern so it REQUIRES the number.
+
+        The bare form predates the marker and is still in the corpus; a fix that only reads the
+        new spelling trades one blindness for another.
+        """
+        self.assertTrue(ff.is_derived_criterion(
+            "- [ ] The behaviour described is corrected: X"))
+
+    def test_an_authored_numbered_criterion_is_not_derived(self) -> None:
+        """POSITIVE CONTROL. MUTANT: strip the number and return True unconditionally.
+
+        Without this, "make everything derived" passes the two tests above, and the grooming
+        gate would refuse every authored criterion in the repository.
+        """
+        self.assertFalse(ff.is_derived_criterion(
+            "- [ ] **AC1** Given a design rung, when it closes, then it refuses"))
+        # A word that merely BEGINS with those letters must survive the strip untouched.
+        self.assertFalse(ff.is_derived_criterion(
+            "- [ ] ACCEPTED: the behaviour described is corrected: X"))
+
+    def test_the_heading_form_matches_too(self) -> None:
+        """MUTANT: strip the `ACn` label but not the leading `###`.
+
+        `criteria_are_all_derived` deliberately collects heading lines, so leaving the heading
+        spelling blind is an enumerated list exempting what it forgot - the fourth carried
+        lesson in this run's own brief.
+        """
+        self.assertTrue(ff.is_derived_criterion(
+            "### AC4: The behaviour described is corrected: X"))
+
+    def test_every_spelling_the_writer_can_emit_is_covered(self) -> None:
+        """MUTANT: handle `AC1 ` but not `AC1: `.
+
+        The separator is optional in the corpus and both spellings occur, so the pattern must
+        consume either. Asserted as a set so a fix covering half of them cannot pass.
+        """
+        for line in ("- [ ] **AC1** The behaviour described is corrected: X",
+                     "- [ ] AC1: The behaviour described is corrected: X",
+                     "- [x] **AC12** The behaviour described is corrected: X",
+                     "* [ ] **AC3** The proposed fix lands, pinned by a test: X",
+                     "### AC4: The behaviour described is corrected: X"):
+            with self.subTest(line=line):
+                self.assertTrue(ff.is_derived_criterion(line), line)
+
+    def test_sprint_plan_refuses_the_numbered_scaffold(self) -> None:
+        """THE WIRING TEST. MUTANT: revert `is_derived_criterion`, and the CLI reports 0 ungroomed.
+
+        Driven through the shipped entry point in a throwaway fixture, because a library test
+        cannot see whether a predicate is WIRED. This repository spent a whole sprint with
+        `brief_fingerprint(brief(...))` passing in-process while `critic.py brief` printed
+        nothing, and every seat reviewing this unit named that scar by name. `breakdown` is the
+        reader `plan` refuses on, and it names the shape in its output.
+        """
+        import subprocess  # noqa: PLC0415 - the point is to leave this process
+        script = Path(__file__).resolve().parents[1] / "sprint.py"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / "bugs" / "BG9001-scaffold.md").write_text(
+                "# BG9001: a scaffolded finding\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                "> **Points:** 2\n> **Affects:** scripts/x.py\n\n## Summary\n\nA thing is "
+                "broken.\n\n## Acceptance Criteria\n\n- [ ] **AC1** The behaviour described "
+                "is corrected: a thing is broken.\n", encoding="utf-8")
+            wl = root / "wl.txt"
+            wl.write_text("BG9001\n", encoding="utf-8")
+            r = subprocess.run(
+                [sys.executable, "-B", str(script), "breakdown", "--root", str(root),
+                 "--worklist", str(wl)],
+                capture_output=True, text=True)
+        page = r.stdout + r.stderr
+        self.assertIn("1 ungroomed", page, page)
+        self.assertIn("BG9001", page, page)
+
+    def test_the_corpus_census_moves_by_exactly_four(self) -> None:
+        """MUTANT: broaden the pattern to `^AC.*?:` - it would swallow authored criteria.
+
+        Two review seats independently measured this number before the fix was written. Pinning
+        it means an over-reaching fix fails HERE rather than by refusing somebody's plan a week
+        later. Scoped to the four ids so the test survives new filings; a bare count would go
+        stale the next time anybody files a bug.
+        """
+        import conformance as _c  # noqa: PLC0415 - sibling, resolved via the tests path
+        repo = Path(__file__).resolve().parents[4]
+        expected = {"BG0537", "BG0547", "BG0578", "BG0581"}
+        for uid in expected:
+            hits = list((repo / "sdlc-studio" / "bugs").glob(f"{uid}-*.md"))
+            if not hits:
+                continue          # a corpus that moved on is not this test's business
+            _, why = _c.unit_is_ungroomed("bug", hits[0].read_text(encoding="utf-8"))
+            self.assertEqual("derived-only", why,
+                             f"{uid} was measured as derived-only by two seats before the fix")
+
+
 if __name__ == "__main__":
     unittest.main()

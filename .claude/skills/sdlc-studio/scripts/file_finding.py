@@ -844,6 +844,15 @@ def _derived_patterns() -> tuple[re.Pattern, ...]:
     return tuple(pats)
 
 
+#: The `ACn` label `criteria_block` writes ahead of the criterion text, in every spelling this
+#: repository emits: `AC1`, `**AC2**` (emphasis already stripped by the caller), `AC3:` and the
+#: `### AC4:` heading form. Anchored, and it consumes the separator, so `AC1 The behaviour...`
+#: and `AC1: The behaviour...` both reduce to the sentence the derived patterns match. It does
+#: NOT match a bare `AC` or a word merely starting with those letters - `ACCEPTED: ...` must
+#: survive intact, or stripping the number would start eating authored prose.
+_AC_NUMBER_RE = re.compile(r"^AC\d+[a-z]?\s*:?\s*", re.IGNORECASE)
+
+
 def is_derived_criterion(line: str) -> bool:
     """True when a criterion line is one THIS MODULE wrote from a finding's prose, rather than
     one an author wrote.
@@ -854,13 +863,23 @@ def is_derived_criterion(line: str) -> bool:
     what passing looks like. Nine bugs reached a plannable batch in that state.
 
     Matched against the whole form, read from `_CRITERION_FORM` rather than copied, so the
-    writer and the detector cannot drift apart."""
-    body = line.lstrip().lstrip("-*").lstrip()
+    writer and the detector cannot drift apart.
+
+    THE AC NUMBER IS STRIPPED TOO, and forgetting it made this whole limb inert. This function
+    shipped 2026-08-04; the `**ACn**` marker was added to `criteria_block` two days later, and
+    nothing re-ran the detector against its own writer. From then until 2026-08-18 the writer
+    emitted ONLY the numbered form, so this matched ZERO output of the module it lives in - the
+    placeholder that reads like content passed every "has criteria" check in the repository,
+    which is the exact state it exists to catch. The heading spelling is stripped as well,
+    because `criteria_are_all_derived` deliberately collects `### ACn:` lines, and an enumerated
+    list silently exempts whatever it forgot."""
+    body = line.lstrip().lstrip("#").lstrip().lstrip("-*").lstrip()
     for mark in ("[ ]", "[x]", "[X]"):
         if body.startswith(mark):
             body = body[len(mark):].lstrip()
             break
     body = body.replace("**", "").strip()
+    body = _AC_NUMBER_RE.sub("", body, count=1).lstrip()
     return any(pat.match(body) for pat in _derived_patterns())
 
 

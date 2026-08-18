@@ -25,16 +25,22 @@ Strip a leading `ACn` token in `is_derived_criterion` before matching, in the sa
 
 - [ ] **AC1** Given a criterion the shipped WRITER emits - `criteria_block` produces only the `- [ ] **ACn** ...` form - when `is_derived_criterion` reads it, then it returns True. Measured through the writer, not a hand-typed string.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DerivedDetectorSeesItsOwnWriterTests::test_the_detector_matches_its_own_writers_output
+  - **Verified:** yes (2026-08-18)
 - [ ] **AC2** Given the same criterion with no `ACn` prefix, when it reads it, then it still returns True - the existing form must not regress.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DerivedDetectorSeesItsOwnWriterTests::test_the_unnumbered_form_still_matches
+  - **Verified:** yes (2026-08-18)
 - [ ] **AC3** Given an authored criterion carrying an `ACn` prefix and real content, when it reads it, then it returns False - the positive control, so stripping the number does not make every numbered criterion derived.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DerivedDetectorSeesItsOwnWriterTests::test_an_authored_numbered_criterion_is_not_derived
+  - **Verified:** yes (2026-08-18)
 - [ ] **AC4** Given the `### ACn:` heading form, which `criteria_are_all_derived` deliberately collects, when the detector reads it, then it returns True - `###` is never stripped by the proposed fix, and an enumerated list silently exempts what it forgot.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DerivedDetectorSeesItsOwnWriterTests::test_the_heading_form_matches_too
+  - **Verified:** yes (2026-08-18)
 - [ ] **AC5** Given a batch naming a unit whose criteria are the numbered derived scaffold, when `sprint.py plan` runs, then it REFUSES naming `derived-only` - driven through the shipped CLI, because a library test cannot see whether the predicate is wired, which is the fault that let `brief_fingerprint` pass for a whole sprint while the CLI printed nothing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DerivedDetectorSeesItsOwnWriterTests::test_sprint_plan_refuses_the_numbered_scaffold
+  - **Verified:** yes (2026-08-18)
 - [ ] **AC6** Given the corpus, when the census is recomputed with the fix, then exactly 4 bugs flip to `derived-only` (BG0537, BG0547, BG0578, BG0581) and 0 stories - two seats measured this independently, and any other number means the fix over- or under-reaches.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DerivedDetectorSeesItsOwnWriterTests::test_the_corpus_census_moves_by_exactly_four
+  - **Verified:** yes (2026-08-18)
 
 ## Revision History
 
