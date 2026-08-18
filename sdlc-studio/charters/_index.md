@@ -11,8 +11,8 @@ backlog as it stood when the charter was written.
 
 | Status | Count |
 | --- | --- |
-| Queued | 6 |
-| Spent | 1 |
+| Queued | 5 |
+| Spent | 2 |
 | **Total** | **7** |
 
 ## Queue
@@ -26,5 +26,5 @@ In order. The head is what `sprint next` will run.
 | [SC0003](SC0003-v5-run-2-every-gate-that-refuses-actually.md) | v5 run 2: every gate that refuses actually refuses, and the criteria the README claims are run do run | Spent | 480min/8units | 2026-08-09 |
 | [SC0004](SC0004-v5-run-3-an-upgrading-project-is-asked.md) | v5 run 3: an upgrading project is asked about its own history rather than silently forgiven | Queued | 480min/8units | 2026-08-09 |
 | [SC0005](SC0005-v5-run-4-the-twenty-findings-filed-without.md) | v5 run 4: the twenty findings filed without criteria are given criteria, and the backlog becomes plannable | Queued | 240min/8units | 2026-08-09 |
-| [SC0006](SC0006-v5-runs-5-to-7-the-open-bug.md) | v5 runs 5 to 7: the open bug backlog reaches zero, in file-disjoint clusters | Queued | 480min/8units | 2026-08-09 |
+| [SC0006](SC0006-v5-runs-5-to-7-the-open-bug.md) | v5 runs 5 to 7: the open bug backlog reaches zero, in file-disjoint clusters | Spent | 480min/8units | 2026-08-09 |
 | [SC0007](SC0007-v5-run-8-the-release-is-rehearsed-signed.md) | v5 run 8: the release is rehearsed, signed and cut | Queued | 240min/8units | 2026-08-09 |

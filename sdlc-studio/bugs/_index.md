@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 16 |
+| Open | 17 |
 | In Progress | 0 |
 | Fixed | 483 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **593** |
+| **Total** | **594** |
 
 ## All Bugs
 
@@ -133,6 +133,7 @@
 | [BG0591](BG0591-status-and-close-owed-give-opposite-answers-about.md) | status and close_owed give opposite answers about the same units | Open | Medium | 2026-08-17 | 2026-08-17 |
 | [BG0592](BG0592-the-corpus-red-criteria-metric-counts-unbuilt-stories.md) | the corpus red-criteria metric counts unbuilt stories, which is why its number has never been stable | Open | High | 2026-08-17 | 2026-08-17 |
 | [BG0593](BG0593-close-dry-run-previews-against-a-scratch-tree.md) | close --dry-run previews against a scratch tree with no git, so every git-reading row degrades to unjudged | Open | High | 2026-08-18 | 2026-08-18 |
+| [BG0594](BG0594-the-budget-lane-watches-the-per-commit-gate.md) | the budget lane watches the per-commit gate only, so the full suite grew 46% unobserved | Open | Medium | 2026-08-18 | 2026-08-18 |
 
 ## Archived Releases
 

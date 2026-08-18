@@ -35,8 +35,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0589` | Medium | the close pre-flight counts advisory rows as unmet prerequisites |
 | `BG0590` | Medium | sprint close appends a handoff bullet that fails the repo's own markdown lane |
 | `BG0591` | Medium | status and close_owed give opposite answers about the same units |
+| `BG0594` | Medium | the budget lane watches the per-commit gate only, so the full suite grew 46% unobserved |
 
-11 findings: 11 Medium, 0 Low.
+12 findings: 12 Medium, 0 Low.
 
 ## Not carried
 

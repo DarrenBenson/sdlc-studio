@@ -81,7 +81,7 @@ re-measurement. `tools/known_issues.py --bar` reads the live corpus rather than 
 reports them; that disagreement is the guard working, not drift to be edited away. They are
 carried to v5.1.
 
-**v5.0.1 discloses 11 open defects: 11 Medium, 0 Low.** Listed by id in
+**v5.0.1 discloses 12 open defects: 12 Medium, 0 Low.** Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be
 missing from it.

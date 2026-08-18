@@ -1,6 +1,6 @@
 # SC0006: v5 runs 5 to 7: the open bug backlog reaches zero, in file-disjoint clusters
 
-> **Status:** Queued
+> **Status:** Spent
 > **Queue rank:** 5
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio new
