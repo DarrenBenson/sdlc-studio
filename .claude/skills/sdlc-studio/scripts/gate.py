@@ -1820,25 +1820,32 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
         parts.append(f"{len(blocked)} unproven AC(s) - verifier BLOCKED unrun by the "
                      f"trust boundary (story stamped Provenance: external): {_elide(blocked)}; "
                      f"pass --allow-external to run them once you trust the content")
+    # The criteria that actually PASSED. `executable` is everything that ran, failures
+    # included, so it is the green figure ONLY where nothing failed. The first repair of the
+    # exclusion-only PASS printed `executable` on a branch that is non-empty by construction
+    # and so reported `3/3 green` beside `2 failing` in one line - BG0530 AC5's own
+    # false-green-over-a-fraction, reintroduced by the sentence written to repair it. Subtract
+    # every failing class, never a subset: a partial subtraction is the same defect quieter.
+    passing = executable - len(red) - len(unbuilt) - len(blocked)
     if parts:
         count = len(unspecified) + len(red) + len(blocked)
-        # The scope disclosure belongs on EVERY verdict, not only the green return. When the
+        # The scope disclosure belongs on every verdict this lane can render. When the
         # exclusion ledger is the only clause the count is 0 and this branch renders PASS - so
-        # a pass could be printed with the un-walked corpus undisclosed, which is BG0530 AC5's
-        # own false-green-over-a-fraction reintroduced one branch across. The green summary is
+        # a pass could be printed with the un-walked corpus undisclosed. The green summary is
         # restored on that path for the same reason: a PASS that states no denominator is a
         # verdict a reader cannot size.
         green = ("" if count else
-                 f" {executable}/{acs} executable AC(s) green across "
+                 f" {passing}/{acs} executable AC(s) green across "
                  f"{len(stories)} story/stories ({manual} manual).")
         return {"count": count, "blocking": True,
                 "detail": "; ".join(parts) + f" [{cost}]" + green + scope_note}
     if acs == 0:
         return {"count": 1, "blocking": True,
                 "detail": f"no acceptance criteria across {len(stories)} story/stories - the "
-                          f"verify lane proved nothing about the AC layer (wrong --root?)"}
+                          f"verify lane proved nothing about the AC layer (wrong --root?)"
+                          + scope_note}
     return {"count": 0, "blocking": True,
-            "detail": f"{executable}/{acs} executable AC(s) green across "
+            "detail": f"{passing}/{acs} executable AC(s) green across "
                       f"{len(stories)} story/stories ({manual} manual) [{cost}]"
                       + scope_note}
 

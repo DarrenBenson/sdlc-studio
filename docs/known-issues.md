@@ -36,8 +36,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0590` | Medium | sprint close appends a handoff bullet that fails the repo's own markdown lane |
 | `BG0591` | Medium | status and close_owed give opposite answers about the same units |
 | `BG0594` | Medium | the budget lane watches the per-commit gate only, so the full suite grew 46% unobserved |
+| `BG0595` | Medium | the commit-msg hook test is not hermetic, so the full suite goes red whenever the working tree is dirty |
 
-12 findings: 12 Medium, 0 Low.
+13 findings: 13 Medium, 0 Low.
 
 ## Not carried
 

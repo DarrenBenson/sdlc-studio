@@ -16290,8 +16290,23 @@ class OnePreflightCountReadByBothRenderersTests(unittest.TestCase):
         No cosmetic churn for the common case: when nothing is advisory the two numbers
         coincide and the phrase must be byte-identical to the one it replaces.
         """
-        self.assertEqual("4 unmet prerequisite(s)",
-                         sprint.preflight_headline(self._rows(blocking=4, advisory=0)))
+        rows = self._rows(blocking=4, advisory=0)
+        self.assertEqual("4 unmet prerequisite(s)", sprint.preflight_headline(rows))
+        # THROUGH BOTH RENDERERS, because that is what the criterion says. Asserting the
+        # helper alone let a review reword either print statement and keep the suite green,
+        # which is the churn AC3 exists to forbid. The full line is pinned, not a substring.
+        data = {"ready": False, "blockers": rows}
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            sprint._render_preflight(data)
+        self.assertIn("preflight: 4 unmet prerequisite(s) - ALL of them, so the close is "
+                      "one more run once these are cleared:", out.getvalue())
+        err = io.StringIO()
+        with unittest.mock.patch.object(sprint, "close_preflight", return_value=data), \
+                contextlib.redirect_stderr(err):
+            sprint._report_preflight(".", None)
+        self.assertIn("close pre-flight: 4 unmet prerequisite(s) - this is ALL of them, "
+                      "not the first:", err.getvalue())
 
 
 if __name__ == "__main__":

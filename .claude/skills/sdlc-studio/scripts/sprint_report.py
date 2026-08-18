@@ -1390,8 +1390,8 @@ def _ticked_criteria(text: str) -> list[str]:
     return out
 
 
-def _ticks_on_a_non_build_rung(ctx: dict, rung: str) -> tuple:
-    """The tick question a rung that did not target `Done` actually owes.
+def _ticks_on_a_design_rung(ctx: dict, rung: str) -> tuple:
+    """The tick question a `design` rung actually owes.
 
     A tick asserts a criterion is MET. A `design` rung's PRODUCT is authored criteria that are
     deliberately RED - every one unticked by definition - so "do the ticks match the diff?"
@@ -1403,19 +1403,39 @@ def _ticks_on_a_non_build_rung(ctx: dict, rung: str) -> tuple:
     unanswerable item into one that would catch a criterion ticked before the behaviour
     existed, which nothing checks today.
 
-    NEVER BLOCKING, in either direction. `checklist` is not in `_DEFERRABLE_CLOSE_STAGES`, so
-    an outstanding row here is a hard refusal with no bounded exit - the shape this exists to
-    remove, not to relocate. A tick on a design rung is worth SAYING and is the rung's own
-    `transition` gate to refuse, not this row's.
+    NEVER BLOCKING where a unit was actually read. `checklist` is not in
+    `_DEFERRABLE_CLOSE_STAGES`, so an outstanding row here is a hard refusal with no bounded
+    exit - the shape this exists to remove, not to relocate. A tick on a design rung is worth
+    SAYING, and refusing it is a job for the rung's own gates rather than this row's.
+
+    SCOPED TO `design`, NOT TO "not `done`", and the distinction is a review finding against the
+    first cut of this repair - the SECOND time this repository has made it, after BG0582's
+    sibling readers were rejected for exactly it at their own round two. `plan` and `triage` are
+    also non-build rungs and their product is NOT grooming: `--goal plan` selects, sequences and
+    estimates already-groomed units, so telling such a run that "a plan rung's exit is criteria
+    that are authored and still RED" is false, and switching this gate off for it lets an
+    unsupported tick ship. That is the filed defect MOVED one rung over rather than closed. Those
+    rungs keep exactly the behaviour they already had, which is the bar.
     """
     ticked: list[str] = []
+    read = 0
     for uid in (ctx.get("units") or []):
         found = sdlc_md.find_by_id(ctx["root"], uid)
         if not found:
             continue
+        read += 1
         ticked.extend(f"{uid} {ac}"
                       for ac in _ticked_criteria(sdlc_md.read_text_safe(found[0])))
     units = len(ctx.get("units") or [])
+    if not read:
+        # A PASS OVER NOTHING IS NOT A PASS - the same rule the build-rung branch twenty lines
+        # below states and obeys. Reporting "every criterion is unticked" having opened zero
+        # artefacts is the affirmative-over-an-empty-set shape this row already exists to
+        # refuse, and it refuses it identically on either rung. Found by a review of the first
+        # cut, which had written the honest rule beside the branch that broke it.
+        return (NOT_RUN, "no unit artefact could be read",
+                f"none of the {units} unit(s) in the batch resolves to a file, so nothing was "
+                f"examined - which is not the same as nothing being ticked")
     if ticked:
         return (RAN, f"{len(ticked)} criterion/criteria ticked on a {rung} rung",
                 f"a {rung} rung's exit is criteria that are authored and still RED, so a tick "
@@ -1446,8 +1466,8 @@ def _ck_tick_verification(ctx: dict) -> tuple:
     except Exception as exc:  # noqa: BLE001 - a report must not die on a state read
         sdlc_md.debug("sprint_report._ck_tick_verification.rung", exc)
         rung = "done"
-    if rung != "done":
-        return _ticks_on_a_non_build_rung(ctx, rung)
+    if rung == "design":
+        return _ticks_on_a_design_rung(ctx, rung)
     base = ""
     try:
         base = run_state.base_ref(ctx["root"])

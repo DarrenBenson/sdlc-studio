@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, sdlc-studio/decisions.md
-> **Verification depth:** functional (all four criteria drive the real checklist resolver over a temp corpus at both rungs; AC4 asserts this repository's own decisions log. Mutation: 5 mutants, each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 5 KILLED, restore byte-exact - including one that leaves D0144 ACCEPTED, because a repair landing under a live waiver is one nobody can observe. AC4's test was VACUOUS in its first cut: it resolved the repo root to `.claude/` and `waiver_for` answers None for any tree with no decisions log, so it passed while measuring nothing; it now asserts the log was found before asserting what it does not contain)
+> **Verification depth:** functional (four of the five criteria drive the real checklist resolver over a temp corpus at four rungs; AC4 drives NO resolver and says so - it asserts this repository's own decisions log, after asserting the log parsed to rows - the earlier form `assertIsNotNone(x or list_decisions(repo))` CANNOT fail, because `[] is not None`, and a review found it. Mutation: 8 mutants across two rounds, each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 8 KILLED, restore byte-exact - including one that leaves D0144 ACCEPTED, and one scoping the rung test back to `!= "done"`, which is what round 1 REJECTED this unit for)
 > **Created:** 2026-08-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -30,11 +30,14 @@ Make the row rung-aware in the same way `undelivered_blockers` and `_signoff_pre
 - [x] **AC2** Given a `design` rung and a unit carrying a TICKED criterion, when the row resolves, then it reports that unit as a NON-BLOCKING row - `checklist` is not in `_DEFERRABLE_CLOSE_STAGES`, so a blocking row here would be a hard refusal with no bounded exit, which is the shape this unit exists to remove.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationReadsTheRungTests::test_a_ticked_criterion_on_a_design_rung_is_reported_not_blocking
   - **Verified:** yes (2026-08-18)
-- [x] **AC3** Given a `done` rung, when the row resolves, then its behaviour is byte-identical to today - the tick-versus-diff comparison still runs and still holds the close.
+- [x] **AC3** Given a `done` rung, when the row resolves, then its behaviour is byte-identical to today - AND SO IS a `plan` or `triage` rung's. Those are non-build rungs whose product is NOT grooming: `--goal plan` selects, sequences and estimates already-groomed units, so scoping this fix on `!= "done"` switches the gate off for them and MOVES the defect one rung over rather than closing it. That is what round 1 rejected, and it is the second time this repository has made the same mistake - `sprint.py` records the identical ruling twice in the sibling readers.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationReadsTheRungTests::test_the_build_rung_is_unchanged
   - **Verified:** yes (2026-08-18)
 - [x] **AC4** Given this repository with D0144 RETRACTED, when the sprint checklist is re-run over RETRO0103, then `tick-verification` resolves without a waiver - a fix landing under a live waiver is a fix nobody can observe, because the row reads WAIVED whether it is fixed or not.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationReadsTheRungTests::test_the_row_resolves_without_the_waiver
+  - **Verified:** yes (2026-08-18)
+- [x] **AC5** Given a `design` rung whose batch names units that resolve to no file, when the row reports, then it REFUSES rather than reporting every criterion unticked - a pass over nothing is not a pass, which is the rule the build-rung branch twenty lines below states in terms while the first cut of this helper broke it.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationReadsTheRungTests::test_a_design_rung_over_unreadable_units_is_not_a_pass
   - **Verified:** yes (2026-08-18)
 
 ## Revision History
@@ -50,6 +53,9 @@ Make the row rung-aware in the same way `undelivered_blockers` and `_signoff_pre
 | --- | --- | --- |
 | AC1 | delete the rung short-circuit from `_ck_tick_verification`, so the base-ref and diff branches are reached first | Given a run whose rung is `design`, when `_ck_tick_verification` resolves, then the rung is read BEFORE the base-ref and diff branches. |
 | AC2 | return `NOT_RUN` instead of `RAN` for a tick found on a non-build rung | Given a `design` rung and a unit carrying a TICKED criterion, when the row resolves, then it reports that unit as a NON-BLOCKING row. |
-| AC3 | change the rung test to `if True:`, short-circuiting every rung including the build one | Given a `done` rung, when the row resolves, then its behaviour is byte-identical to today. |
+| AC3 | scope the rung test back to `!= "done"`, switching the gate off for `plan` and `triage` too - the round-1 REJECT, and the second time this repo has made it | Given a `done` rung, when the row resolves, then its behaviour is byte-identical to today. |
 | AC4 | flip D0144 back to `accepted` in the decisions log, leaving the waiver live | Given this repository with D0144 RETRACTED, when the sprint checklist is re-run over RETRO0103, then `tick-verification` resolves without a waiver. |
 | AC2 | drop the unit ids from the ticked-on-a-design-rung detail | A row that says something is wrong without saying WHAT cannot be acted on. |
+| AC5 | report `RAN` when no unit artefact resolved, so an unreadable batch reads as a clean design rung | Given a `design` rung whose batch names units that resolve to no file, when the row reports, then it REFUSES. |
+| AC5 | count units rather than files actually opened, so `read` is never incremented | The count must be of artefacts READ, not of ids named. |
+| 2026-08-18 | sdlc-studio | Round 1 REJECT repaired: the fix was scoped `!= "done"` and so moved the defect onto `plan` and `triage` - the identical error BG0582's siblings were rejected for, with the correct ruling already written twice in `sprint.py`. Scoped to `design`. AC5 added: the helper reported every criterion unticked having opened zero files. AC4's second assertion could not fail |

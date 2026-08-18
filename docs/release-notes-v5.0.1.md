@@ -81,7 +81,7 @@ premise did not survive re-measurement. `tools/known_issues.py --bar` reads the 
 reports them; that disagreement is the guard working, not drift to be edited away. They are
 carried to v5.1.
 
-**v5.0.1 discloses 12 open defects: 12 Medium, 0 Low.** Listed by id in
+**v5.0.1 discloses 13 open defects: 13 Medium, 0 Low.** Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be
 missing from it.

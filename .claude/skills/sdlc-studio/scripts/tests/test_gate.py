@@ -1136,7 +1136,66 @@ class RedCountsOnlyWhatClaimsCompletionTests(ReleaseGateTests):
             self.assertEqual(lane["count"], 0)                    # this renders PASS
             self.assertIn("claiming NO completion", lane["detail"])
             self.assertIn("SCOPE: stories only", lane["detail"])
-            self.assertIn("executable AC(s) green", lane["detail"])
+            # The NUMBER, never the substring. A round-3 review mutated the numerator to
+            # `manual` and emitted the clause unconditionally; BOTH survived an
+            # `assertIn("executable AC(s) green")`. One green Done story and one red Ready
+            # story is 1 of 2, and the first repair printed `2/2 green` beside `1 failing`
+            # in the same line.
+            self.assertIn("1/2 executable AC(s) green", lane["detail"])
+
+    def test_the_green_figure_excludes_every_failing_class(self) -> None:
+        """MUTANT: report `executable` as the green count on the exclusion-only PASS.
+
+        Round 3, new-1. `executable` is everything that RAN, failures included, so it is the
+        green figure only where nothing failed - and this branch is non-empty by construction.
+        At the end state the baseline steers towards (0 red, 67 excluded) it would have claimed
+        1834 of 1906 green when 67 of those 1834 had failed. Subtracting a SUBSET is the same
+        defect quieter, so the fixture carries two excluded failures rather than one.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0001", "Done", "shell true")
+            self._at(root, "US0002", "Ready", "shell exit 1")
+            self._at(root, "US0003", "Superseded", "shell exit 1")
+            detail = self._lane(root)["detail"]
+            self.assertIn("2 failing AC(s) on stories claiming NO completion", detail)
+            self.assertIn("1/3 executable AC(s) green", detail)
+            self.assertNotIn("3/3 executable AC(s) green", detail)
+
+    def test_a_failing_verdict_claims_nothing_green(self) -> None:
+        """MUTANT: emit the green clause unconditionally rather than only when the count is 0.
+
+        Round 3. The clause exists to size a PASS; on a FAIL it is a green claim attached to a
+        refusal, which is the one place it can actively mislead. Survived every assertion until
+        this test existed, because the others only ever look at PASS output.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._at(root, "US0001", "Done", "shell exit 1")
+            lane = self._lane(root)
+            self.assertEqual(1, lane["count"])
+            self.assertNotIn("executable AC(s) green", lane["detail"])
+
+    def test_the_no_criteria_refusal_discloses_its_scope_too(self) -> None:
+        """MUTANT: drop `scope_note` from the no-acceptance-criteria return.
+
+        Round 3, new-4: the comment claimed the disclosure was on every verdict while two
+        returns omitted it - the same claim-versus-code gap round 2 blocked N1 for. A reader
+        told the lane "proved nothing about the AC layer" most needs to know which artefact
+        classes it never walked, because that is the likeliest explanation.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._legs(root)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+                "# US0001: x\n\n> **Status:** Done\n", encoding="utf-8")
+            bd = root / "sdlc-studio" / "bugs"
+            bd.mkdir(parents=True, exist_ok=True)
+            (bd / "BG0001-x.md").write_text("# BG0001: x\n", encoding="utf-8")
+            lane = self._lane(root)
+            self.assertIn("no acceptance criteria", lane["detail"])
+            self.assertIn("SCOPE: stories only", lane["detail"])
 
 
 class ReleaseSelectionGuardTests(ReleaseGateTests):

@@ -114,3 +114,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0102](RETRO0102-clearing-the-bug-backlog-before-user-feedback-41.md) | Clearing the bug backlog before user feedback: 41 open bugs to 2, and what measurement overturned | 2026-08-15 | -- | -- |
 | [RETRO-0103](RETRO0103-the-design-rung-12-units-groomed-to-red.md) | The design rung: 12 units groomed to RED criteria, and a goal review that rejected the first shape | 2026-08-16 | -- | -- |
 | [RETRO-0104](RETRO0104-the-twelve-units-delivered-outside-an-approved-batch.md) | The twelve units delivered outside an approved batch | 2026-08-17 | -- | -- |
+| [RETRO-0105](RETRO0105-four-close-ceremony-defects-three-of-them-found.md) | four close-ceremony defects, three of them found by reviews that rejected the first cut | 2026-08-18 | -- | -- |

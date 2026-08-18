@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
-> **Verification depth:** functional (all three criteria drive the real renderers; AC2 asserts the two OUTPUTS agree rather than that a helper exists, which a renderer can ignore. Mutation: 4 mutants, each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 4 KILLED, restore byte-exact - including one reverting EACH renderer independently, because fixing one and leaving its sibling lying is the scope error that rejected BG0582 at round two)
+> **Verification depth:** functional (AC2 and AC3 drive BOTH real renderers and pin the full headline line, not a substring - the first cut asserted the library helper alone for AC3 while the criterion says 'either renderer', and a review reworded each print statement in turn and watched the suite stay green; AC2 asserts the two OUTPUTS agree rather than that a helper exists, which a renderer can ignore. Mutation: 4 mutants, each anchor asserted unique, `__pycache__` purged and `python3 -B`, all 4 KILLED, restore byte-exact - including one reverting EACH renderer independently, because fixing one and leaving its sibling lying is the scope error that rejected BG0582 at round two)
 > **Created:** 2026-08-17
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -49,3 +49,4 @@ Count `held` in `_report_preflight`, as `_render_preflight` already does, and sa
 | AC2 | leave `_report_preflight` computing its own count instead of reading the helper | Given the same rows, when `_render_preflight` prints, then it reports the same two numbers as `_report_preflight`. |
 | AC2 | revert `_render_preflight` to its own `len(held)`, fixing only the sibling | Both renderers must read ONE helper - fixing one and leaving the other lying is the scope error this repository keeps meeting. |
 | AC3 | always append the `of N reported` suffix, churning the common case | Given a pre-flight whose rows all block, when either renderer prints, then its headline is byte-identical to today. |
+| 2026-08-18 | sdlc-studio | APPROVED by both seats. AC3 strengthened anyway: it named both renderers and tested only the helper, so churn in either print statement went unseen |

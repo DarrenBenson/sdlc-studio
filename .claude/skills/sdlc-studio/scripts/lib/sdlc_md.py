@@ -1771,9 +1771,24 @@ def fence_step(stripped: str, fence: tuple[str, int] | None) -> tuple[tuple[str,
 
 
 #: An unordered-list item: up to three leading spaces, a marker, then whitespace. `- [ ] x`
-#: (a task item) counts; `***` and `---` (thematic breaks, and setext underlines) do not,
-#: because the marker must be followed by whitespace and content.
+#: (a task item) counts.
 _UL_ITEM_RE = re.compile(r"^ {0,3}([-*+])\s+\S")
+
+#: A thematic break, tested FIRST and excluded. The unspaced forms (`***`, `---`) never matched
+#: the item pattern, but the SPACED ones (`* * *`, `- - -`) do - the marker is followed by
+#: whitespace and then a non-space character, which is exactly what the item pattern asks for.
+#: markdownlint counts neither as a list, so reading one as the document's style writes the wrong
+#: bullet into a file that was consistent: a review reproduced a dash-styled retro receiving an
+#: asterisk handoff bullet, and MD004 refusing it. The docstring beside the item pattern had
+#: asserted this case was already handled, which is the claim-versus-code gap this repository
+#: keeps meeting - so it is a pattern now rather than a sentence.
+_THEMATIC_BREAK_RE = re.compile(r"^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$")
+
+#: Blockquote markers, stripped before the item test. A list inside a blockquote IS a list to
+#: markdownlint - verified against the tool, not assumed - so a quoted reviewer verdict written
+#: with asterisks sets the document's style, and a helper blind to it answers the default and
+#: writes the wrong marker into a file that lints clean until it is appended to.
+_BLOCKQUOTE_RE = re.compile(r"^ {0,3}(?:> ?)+")
 
 
 def document_bullet(text: str, default: str = "-") -> str:
@@ -1783,13 +1798,17 @@ def document_bullet(text: str, default: str = "-") -> str:
     as the rule for the rest - so the first is what an appender must copy, not the most common.
     A writer that hardcodes its own marker makes the very next commit uncommittable wherever the
     document disagrees: the close writes a `## Handoff` bullet into a retro, and every retro here
-    is scaffolded with asterisks, so `sprint close` exited 0 and then left the tree refused by the
+    carries asterisks, so `sprint close` exited 0 and then left the tree refused by the
     repo's own markdown lane. The close succeeds and THEN makes the tree uncommittable, which is
     the worst ordering - the operator has already been told the run closed.
 
     Fenced blocks are skipped through the shared `fence_step` state machine rather than a second
     fence parser, because an illustrative bullet inside a code sample is not the document's style
-    and a naive toggle gets CommonMark's closing rules wrong.
+    and a naive toggle gets CommonMark's closing rules wrong. BLOCKQUOTED lists are NOT skipped,
+    and the asymmetry is deliberate: markdownlint parses a quoted list as a list and a fenced one
+    as text, so following it means matching that distinction rather than picking one rule. A
+    review caught the first cut treating them alike, by driving the real linter over a retro
+    whose only list was a quoted reviewer verdict.
 
     `default` is returned for a document with no list at all - a first bullet cannot disagree with
     a style that is not yet established.
@@ -1800,7 +1819,10 @@ def document_bullet(text: str, default: str = "-") -> str:
         fence, is_fence = fence_step(stripped, fence)
         if is_fence or fence is not None:
             continue
-        m = _UL_ITEM_RE.match(line)
+        body = _BLOCKQUOTE_RE.sub("", line)
+        if _THEMATIC_BREAK_RE.match(body):
+            continue
+        m = _UL_ITEM_RE.match(body)
         if m:
             return m.group(1)
     return default

@@ -2933,7 +2933,16 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
             "- [ ] **AC1** Given a design rung, when it closes, then it refuses"))
         # A word that merely BEGINS with those letters must survive the strip untouched.
         self.assertFalse(ff.is_derived_criterion(
-            "- [ ] ACCEPTED: the behaviour described is corrected: X"))
+            "- [ ] ACCEPTED: The behaviour described is corrected: X"))
+        # LOWER-CASE `the` HERE MADE THIS VACUOUS. `_derived_patterns` is
+        # case-sensitive, so the line was False whether or not `ACCEPTED:` was eaten,
+        # and the row's own mutant (`^AC\\w*`) survived all 6603 tests. A review found
+        # it. The boundary cases go beside it, so one spelling cannot carry the claim.
+        for line in ("- [ ] AC power: The behaviour described is corrected: X",
+                     "- [ ] ACL check: The behaviour described is corrected: X",
+                     "- [ ] ACCEPT: The behaviour described is corrected: X"):
+            with self.subTest(line=line):
+                self.assertFalse(ff.is_derived_criterion(line), line)
 
     def test_the_heading_form_matches_too(self) -> None:
         """MUTANT: strip the `ACn` label but not the leading `###`.
@@ -2965,8 +2974,12 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
         Driven through the shipped entry point in a throwaway fixture, because a library test
         cannot see whether a predicate is WIRED. This repository spent a whole sprint with
         `brief_fingerprint(brief(...))` passing in-process while `critic.py brief` printed
-        nothing, and every seat reviewing this unit named that scar by name. `breakdown` is the
-        reader `plan` refuses on, and it names the shape in its output.
+        nothing, and every seat reviewing this unit named that scar by name.
+
+        It drives `plan`, which REFUSES, rather than `breakdown`, which reports and exits 0.
+        The first cut named `plan` in the criterion and ran `breakdown` in the test, so no
+        refusal was ever asserted - the wiring guarantee the criterion exists for was the one
+        thing it did not check. A review found that.
         """
         import subprocess  # noqa: PLC0415 - the point is to leave this process
         script = Path(__file__).resolve().parents[1] / "sprint.py"
@@ -2982,12 +2995,30 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
             wl = root / "wl.txt"
             wl.write_text("BG9001\n", encoding="utf-8")
             r = subprocess.run(
-                [sys.executable, "-B", str(script), "breakdown", "--root", str(root),
+                [sys.executable, "-B", str(script), "plan", "--root", str(root),
+                 "--worklist", str(wl)],
+                capture_output=True, text=True)
+            # The CONTROL, in the same fixture: one hand-authored criterion and the identical
+            # command plans. Without it, a `plan` that refused everything would pass the
+            # assertions below.
+            (root / "sdlc-studio" / "bugs" / "BG9001-scaffold.md").write_text(
+                "# BG9001: a scaffolded finding\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                "> **Points:** 2\n> **Affects:** scripts/x.py\n\n## Summary\n\nA thing is "
+                "broken.\n\n## Acceptance Criteria\n\n- [ ] **AC1** Given a widget at rest, "
+                "when it is poked, then it wobbles.\n", encoding="utf-8")
+            ok = subprocess.run(
+                [sys.executable, "-B", str(script), "plan", "--root", str(root),
                  "--worklist", str(wl)],
                 capture_output=True, text=True)
         page = r.stdout + r.stderr
-        self.assertIn("1 ungroomed", page, page)
+        # `breakdown` was asserted here first. It is READ-ONLY and exits 0, so it could not
+        # show that anything REFUSES - and its two assertions held identically for a fixture
+        # with no criteria at all, which a review demonstrated. The exit code is the claim.
+        self.assertNotEqual(0, r.returncode, page)
+        self.assertIn("REFUSED", page, page)
+        self.assertIn("ungroomed", page, page)
         self.assertIn("BG9001", page, page)
+        self.assertEqual(0, ok.returncode, ok.stdout + ok.stderr)
 
     def test_the_corpus_census_moves_by_exactly_four(self) -> None:
         """MUTANT: broaden the pattern to `^AC.*?:` - it would swallow authored criteria.
@@ -2998,7 +3029,7 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
         stale the next time anybody files a bug.
         """
         import conformance as _c  # noqa: PLC0415 - sibling, resolved via the tests path
-        repo = Path(__file__).resolve().parents[4]
+        repo = Path(__file__).resolve().parents[5]
         expected = {"BG0537", "BG0547", "BG0578", "BG0581"}
         for uid in expected:
             hits = list((repo / "sdlc-studio" / "bugs").glob(f"{uid}-*.md"))
@@ -3007,6 +3038,30 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
             _, why = _c.unit_is_ungroomed("bug", hits[0].read_text(encoding="utf-8"))
             self.assertEqual("derived-only", why,
                              f"{uid} was measured as derived-only by two seats before the fix")
+
+        # THE COUNT, AND THE EMPTY STORY SET. Naming four ids pins nothing about REACH: a
+        # review made `is_derived_criterion` return True unconditionally - census 17 bugs / 0
+        # stories -> 364 / 669 - and the four assertions above still passed. AC6 says in terms
+        # that "any other number means the fix over- or under-reaches", so the number is the
+        # claim. Bounded, not exact, because filing a bug must not turn this red: the ceiling
+        # is what an over-reach breaches, and stories are asserted at zero because the whole
+        # corpus of them is authored.
+        def census(kind: str, dirname: str) -> int:
+            n = 0
+            for f in sorted((repo / "sdlc-studio" / dirname).glob("*.md")):
+                if f.name == "_index.md":
+                    continue
+                _, why = _c.unit_is_ungroomed(kind, f.read_text(encoding="utf-8"))
+                n += (why == "derived-only")
+            return n
+
+        bugs = census("bug", "bugs")
+        self.assertGreaterEqual(bugs, len(expected))
+        self.assertLess(bugs, 60, f"{bugs} bugs read derived-only - the fix is over-reaching; "
+                                  f"it was 13 before and 17 after, measured by two seats")
+        self.assertEqual(0, census("story", "stories"),
+                         "no story in this corpus carries tool-derived criteria, so any "
+                         "story reading derived-only is the pattern eating authored prose")
 
 
 if __name__ == "__main__":

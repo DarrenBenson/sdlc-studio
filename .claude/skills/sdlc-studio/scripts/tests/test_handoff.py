@@ -928,15 +928,45 @@ class HandoffBulletFollowsTheDocumentTests(unittest.TestCase):
         handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
         return rp
 
-    def _lint(self, path: Path) -> str:
-        """The real lane. Skipped, never faked, when markdownlint is absent - a fixture that
-        reimplements MD004 would be asserting my reading of the rule, not the rule."""
+    @classmethod
+    def _run_lint(cls, path: Path) -> tuple[bool, str]:
         try:
             r = subprocess.run(["npx", "--no-install", "markdownlint-cli", str(path)],
                                capture_output=True, text=True, timeout=120)
         except (OSError, subprocess.TimeoutExpired) as exc:
-            self.skipTest(f"markdownlint unavailable: {exc}")
-        return r.stdout + r.stderr
+            return False, str(exc)
+        return True, r.stdout + r.stderr
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """POSITIVE CONTROL, or the whole class is inert.
+
+        `npx --no-install` fails two different ways. A missing BINARY raises OSError, which the
+        first cut caught. A missing PACKAGE exits non-zero with `npm ERR! 404` on stderr - no
+        exception - so the helper returned that text and `assertNotIn("MD004", ...)` passed
+        against a linter that had never run. A review proved it by breaking the package name:
+        five passed, zero skipped. Both this helper's docstring and the unit's `Verification
+        depth` claimed "skipped, never faked", which was the opposite of the truth.
+
+        So: lint a known-bad file first and require MD004 in the output. A detector's SILENCE is
+        only evidence once it has been shown able to speak.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            bad = Path(d) / "bad.md"
+            bad.write_text("# t\n\n* a\n\n- b\n", encoding="utf-8")
+            ran, out = cls._run_lint(bad)
+        if not ran:
+            raise unittest.SkipTest(f"markdownlint unavailable: {out}")
+        if "MD004" not in out:
+            raise unittest.SkipTest(
+                "markdownlint did not report MD004 on a known-bad file, so it is not really "
+                f"running here and its silence proves nothing. Output was: {out[:200]}")
+
+    def _lint(self, path: Path) -> str:
+        """The real lane, after `setUpClass` has proved it can detect MD004."""
+        ran, out = self._run_lint(path)
+        self.assertTrue(ran, f"markdownlint stopped working mid-class: {out}")
+        return out
 
     def test_an_asterisk_retro_stays_clean(self) -> None:
         """AC1. MUTANT: hardcode `-` in `_link_from_retro` again. The observed failure."""
@@ -996,6 +1026,89 @@ class HandoffBulletFollowsTheDocumentTests(unittest.TestCase):
             self.assertIn("* [HO-0059]", rp.read_text(encoding="utf-8"))
             self.assertNotIn("MD004", self._lint(rp))
 
+    def test_a_blockquoted_list_sets_the_documents_style(self) -> None:
+        """AC6. MUTANT: drop the blockquote strip from `document_bullet`.
+
+        markdownlint parses a list inside a blockquote AS A LIST - verified against the tool,
+        not assumed - so a retro whose only list is a quoted reviewer verdict has an asterisk
+        style, and a helper blind to it answers the default and writes a dash. A review
+        reproduced exactly that end to end through the shipped CLI: the retro linted clean
+        before the close and carried an MD004 error after it, which is the ordering this unit
+        exists to remove.
+
+        The asymmetry with fenced blocks is the point: quoted lists count, fenced ones do not.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "RETRO0001-t.md"
+            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Verdict\n\n"
+                          "> * the first finding\n> * the second\n\n## Handoff\n\n",
+                          encoding="utf-8")
+            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
+            self.assertIn("* [HO-0059]", rp.read_text(encoding="utf-8"))
+            self.assertNotIn("MD004", self._lint(rp))
+
+    def test_the_first_marker_wins_not_the_last(self) -> None:
+        """AC7. MUTANT: return the LAST matching marker rather than the first.
+
+        MD004 defaults to `consistent`, which takes the FIRST list marker as the rule. The
+        docstring says so and nothing pinned it - a review mutated it to the last and 327 tests
+        stayed green. A mixed document is the only one that can tell them apart.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "RETRO0001-t.md"
+            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Mixed\n\n"
+                          "* the first marker in the file\n\n- a later, different one\n\n"
+                          "## Handoff\n\n", encoding="utf-8")
+            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
+            self.assertIn("* [HO-0059]", rp.read_text(encoding="utf-8"))
+
+    def test_a_plus_bulleted_document_is_followed_too(self) -> None:
+        """AC8. MUTANT: drop `+` from the marker class.
+
+        CommonMark has three unordered markers and MD004 judges all three. Dropping one is the
+        enumerated-list failure this repository keeps meeting, and nothing covered it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "RETRO0001-t.md"
+            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Notes\n\n"
+                          "+ a plus bullet\n\n## Handoff\n\n", encoding="utf-8")
+            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
+            self.assertIn("+ [HO-0059]", rp.read_text(encoding="utf-8"))
+
+    def test_a_spaced_thematic_break_is_not_a_list_marker(self) -> None:
+        """AC9. MUTANT: drop the thematic-break guard from `document_bullet`.
+
+        `* * *` and `- - -` match the item pattern - a marker, whitespace, then a non-space -
+        but markdownlint counts neither as a list. Reading one as the style writes the wrong
+        bullet into a document that was consistent, which is the failure this whole unit
+        exists to remove, reintroduced by its own first repair. A review reproduced it: a
+        dash-styled retro carrying `* * *` received an asterisk handoff bullet and MD004
+        refused the file, where the pre-fix code had linted clean.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "RETRO0001-t.md"
+            # THE BREAK COMES FIRST, or the guard is never reached and this test passes on
+            # the defect - which it did, until a mutant survived it.
+            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Notes\n\n"
+                          "* * *\n\n- a dash bullet\n\n## Handoff\n\n", encoding="utf-8")
+            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
+            self.assertIn("- [HO-0059]", rp.read_text(encoding="utf-8"))
+            self.assertNotIn("MD004", self._lint(rp))
+
+    def test_a_bullet_indented_as_code_does_not_set_the_style(self) -> None:
+        """AC10. MUTANT: relax the leading-space bound from `^ {0,3}` to `^ *`.
+
+        Four spaces is an indented code block, not a list. Same class as the fenced block AC5
+        was added for after a survivor, and a review found this sibling equally unpinned.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "RETRO0001-t.md"
+            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Sample\n\n"
+                          "    * a bullet inside an indented code block\n\n"
+                          "## Notes\n\n- the real list\n\n## Handoff\n\n", encoding="utf-8")
+            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
+            self.assertIn("- [HO-0059]", rp.read_text(encoding="utf-8"))
+
     def test_nothing_outside_the_handoff_section_changes(self) -> None:
         """AC4. MUTANT: normalise every bullet in the file to the document's style.
 
@@ -1014,6 +1127,12 @@ class HandoffBulletFollowsTheDocumentTests(unittest.TestCase):
             head = before.split("## Handoff")[0]
             self.assertEqual(head, after.split("## Handoff")[0],
                              "the appender rewrote prose outside its own section")
+            # The TAIL as well. AC4 says "every byte outside that section"; comparing only the
+            # head left content after the appended section unchecked - a review found it.
+            tail = "\n## After\n\n- a later bullet\n"
+            rp.write_text(before + tail, encoding="utf-8")
+            handoff._link_from_retro(rp, "HO-0060", "HO0060-x.md", self._report())
+            self.assertIn(tail.strip(), rp.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

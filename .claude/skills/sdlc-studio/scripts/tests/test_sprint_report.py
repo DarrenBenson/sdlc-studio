@@ -1506,10 +1506,14 @@ class TickVerificationReadsTheRungTests(ChecklistBase):
 
         The regression this row exists to catch must survive the fix. BG0582 was rejected at
         round two for scoping its sibling on `!= done`, which moved the defect onto plan and
-        triage instead of removing it - so both an explicit `done` and an ABSENT goal are
-        asserted here, an absent one being what every run before rungs existed recorded.
+        triage instead of removing it - and the FIRST cut of this unit made the same mistake
+        again, caught by its own review. So `plan` and `triage` are asserted here beside an
+        explicit `done` and an ABSENT goal: their product is not grooming (`--goal plan`
+        selects, sequences and estimates already-groomed units), so they keep exactly the
+        behaviour they had. The earlier version of this test asserted only `done` and `None`,
+        and the mutant `!= "done"` -> `== "design"` survived all 177 tests in this file.
         """
-        for goal in ("done", None):
+        for goal in ("done", None, "plan", "triage"):
             with self.subTest(goal=goal):
                 self._unit("US0001", "src/touched.py", ticked=True)
                 self._unit("US0002", "src/never_touched.py", ticked=True)
@@ -1522,6 +1526,22 @@ class TickVerificationReadsTheRungTests(ChecklistBase):
                 self.assertEqual(sr.NOT_RUN, row["state"], row["detail"])
                 self.assertIn("US0002", row["detail"])
                 self.assertIn("tick-verification", ck["outstanding"])
+
+    def test_a_design_rung_over_unreadable_units_is_not_a_pass(self) -> None:
+        """AC5. MUTANT: report `RAN` when no unit artefact resolved.
+
+        The first cut returned `all 1 unit(s) carry criteria that are unticked` having opened
+        ZERO files - the affirmative-over-an-empty-set shape the build-rung branch twenty lines
+        below refuses in terms, with the honest rule written beside the branch that broke it.
+        """
+        # The batch must NAME the unit, or `_run_record` resolves no run, the rung defaults to
+        # `done`, and this test would exercise the build branch while appearing to pass.
+        self._run(base_ref="abc123", goal="design", batch=["US9999"])
+        ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US9999"])
+        row = self._row(ck, "tick-verification")
+        self.assertEqual(sr.NOT_RUN, row["state"], row["detail"])
+        self.assertIn("tick-verification", ck["outstanding"])
+        self.assertIn("resolves to a file", row["detail"])
 
     def test_the_row_resolves_without_the_waiver(self) -> None:
         """AC4. MUTANT: leave D0144 accepted.
@@ -1539,10 +1559,14 @@ class TickVerificationReadsTheRungTests(ChecklistBase):
         # first cut of this test pointed at `.claude/` and passed for exactly that reason.
         self.assertTrue((repo / "sdlc-studio" / "decisions.md").is_file(),
                         f"decisions log not found under {repo} - this test is measuring nothing")
-        self.assertIsNotNone(decisions.waiver_for(repo, "rule:release:changelog-fragment")
-                             or decisions.list_decisions(repo),
-                             "the decisions log parsed to nothing, so an absent waiver is "
-                             "indistinguishable from an unreadable log")
+        # `assertIsNotNone(... or list_decisions(repo))` CANNOT FAIL - `list_decisions`
+        # returns [] for a missing log and `[] is not None`. A review found it; it is the
+        # same vacuity that made this test's first cut pass against `.claude/`. Assert the
+        # log parsed to actual ROWS, which is what distinguishes "no such waiver" from
+        # "nothing was read".
+        self.assertTrue(decisions.list_decisions(repo),
+                        "the decisions log parsed to zero rows, so an absent waiver is "
+                        "indistinguishable from an unreadable log")
         self.assertIsNone(
             decisions.waiver_for(repo, "rule:sprint-checklist:tick-verification"),
             "D0144 is still live, so the tick-verification row reads WAIVED and this "
