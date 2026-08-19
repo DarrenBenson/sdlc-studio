@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** tools/tests/test_commit_msg_hook.py, .githooks/commit-msg, tools/tests/test_precommit_lane_order.py
+> **Affects:** tools/tests/test_commit_msg_hook.py, .githooks/commit-msg
 > **Created:** 2026-08-18
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -64,7 +64,7 @@ Run the hook against a throwaway git repository rather than the one under develo
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given an `sdlc-gate-suites` record planted in the repository the test process runs in, when the commit-msg hook tests run, then their verdict and their wall-clock duration are unchanged from a run with no such record - the test PLANTS the record rather than depending on what the developer's git directory happens to hold
+- [ ] **AC1** Given an `sdlc-gate-suites` record planted in the THROWAWAY repository a hook invocation resolves to, and that invocation carrying no message file, when the hook runs, then it exits without entering the suite block - the record must be planted where the invocation actually looks, or once AC4's hermeticity lands no invocation can reach one and this criterion goes green whatever production does
 - [ ] **AC2** Given both of those runs, when they are compared, then BOTH are green - equality reached by making the record-absent run red too is not the property this asks for, and this is the control that says so
 - [ ] **AC3** Given an invocation of the hook carrying NO readable message file, when it runs, then it exits before the suite-running block: there is no commit to gate, so running the lanes is work nobody asked for. The condition is the ABSENT MESSAGE and never the identity of the caller - the hook must not learn to recognise a test, which is the second bypass `NoSecondBypassTests` exists to forbid
 - [ ] **AC4** Given every test in `test_commit_msg_hook.py`, when it invokes the hook, then it passes an explicit `cwd` and an environment with `GIT_DIR`, `GIT_WORK_TREE` and `GIT_INDEX_FILE` removed - `test_no_argument_does_not_block` passes neither today, and one exemption in twenty-five is the whole defect
@@ -87,11 +87,11 @@ so the condition to check is the absent message, not the caller.
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in `commit-msg`, remove the early exit for an invocation carrying no message file | Given an `sdlc-gate-suites` record planted in the repository the test process runs in, when the commit-msg hook tests run, then their verdict and their wall-clock duration are unchanged from a run with no such record - the test PLANTS the record rather than depending on what the developer's git directory happens to hold |
+| AC1 | in `commit-msg`, remove the early exit for an invocation carrying no message file | Given an `sdlc-gate-suites` record planted in the THROWAWAY repository a hook invocation resolves to, and that invocation carrying no message file, when the hook runs, then it exits without entering the suite block - the record must be planted where the invocation actually looks, or once AC4's hermeticity lands no invocation can reach one and this criterion goes green whatever production does |
 | AC2 | in `commit-msg`, raise a failure whenever no record is present | Given both of those runs, when they are compared, then BOTH are green - equality reached by making the record-absent run red too is not the property this asks for, and this is the control that says so |
 | AC3 | in `commit-msg`, move the message-absent exit below the handoff block | Given an invocation of the hook carrying NO readable message file, when it runs, then it exits before the suite-running block: there is no commit to gate, so running the lanes is work nobody asked for. The condition is the ABSENT MESSAGE and never the identity of the caller - the hook must not learn to recognise a test, which is the second bypass `NoSecondBypassTests` exists to forbid |
 | AC4 | unnameable: no change to production can falsify a rule about `test_commit_msg_hook.py`'s own harness - that each invocation supplies a cwd and a scrubbed environment - and the behaviour it protects is pinned by AC1 | Given every test in `test_commit_msg_hook.py`, when it invokes the hook, then it passes an explicit `cwd` and an environment with `GIT_DIR`, `GIT_WORK_TREE` and `GIT_INDEX_FILE` removed - `test_no_argument_does_not_block` passes neither today, and one exemption in twenty-five is the whole defect |
-| AC5 | in `commit-msg`, revert the handoff read to run before the message-file check | Given the full suite run twice, once with the record planted in the real git directory and once without, when the two verdicts are compared OUTSIDE the suite with each exit code read from `$?` on its own line and never through a pipe, then they are identical and any test whose result differs is NAMED |
+| AC5 | unnameable: this row takes AC3's change to `commit-msg` across the WHOLE suite rather than naming a second one to make; its value is the sweep that names any other test carrying the same coupling, and no distinct edit falsifies it. The mention of a path and of `make` is forced by BG0600, not meant | Given the full suite run twice, once with the record planted in the real git directory and once without, when the two verdicts are compared OUTSIDE the suite with each exit code read from `$?` on its own line and never through a pipe, then they are identical and any test whose result differs is NAMED |
 
 ## Revision History
 
