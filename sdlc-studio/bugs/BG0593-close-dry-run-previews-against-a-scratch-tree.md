@@ -28,6 +28,15 @@ Give the scratch a readable git context, or make the absence explicit rather tha
 - [ ] **AC3** Given a dry run, when it completes, then the real tree has still never been opened for writing - the property the scratch copy exists for must survive the fix
 - [ ] **AC4** Given a checklist step that reads only `sdlc-studio/`, when the AC1 comparison runs today on the unrepaired tree, then that step already agrees across both roots while the git-reading step does not - the control proving the comparison discriminates rather than passing everything
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint.py`, revert the scratch root to a copy of `sdlc-studio/` alone | Given a dry run over a repository whose base ref resolves, when EVERY checklist step resolves, then each returns the same verdict against the scratch root as against the real root, and any step whose verdicts differ is named - the general form, because the scratch copies only `sdlc-studio/` and every probe reading `.claude/skills/`, `tools/` or `changelog.d/` degrades the same way |
+| AC2 | in `sprint.py`, delete the branch separating an absent repository from an unreadable one | Given a tree with genuinely no git history, when a git-reading step resolves under a dry run, then it reports that condition distinctly from `the diff could not be taken` - and the distinction is made where the dry run builds its root, so the resolver it feeds is unchanged and stays available as an independent witness |
+| AC3 | in `sprint.py`, change the dry-run root to the live working tree | Given a dry run, when it completes, then the real tree has still never been opened for writing - the property the scratch copy exists for must survive the fix |
+| AC4 | in `sprint.py`, hard-code every comparison result to agree | Given a checklist step that reads only `sdlc-studio/`, when the AC1 comparison runs today on the unrepaired tree, then that step already agrees across both roots while the git-reading step does not - the control proving the comparison discriminates rather than passing everything |
+
 ## Revision History
 
 | Date | Author | Change |

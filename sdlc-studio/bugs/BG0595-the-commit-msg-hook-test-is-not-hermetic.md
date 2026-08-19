@@ -70,6 +70,17 @@ Run the hook against a throwaway git repository rather than the one under develo
 
 The full suite is the gate for push, release and close. A lane that goes red purely because work is in flight trains the operator to read a red full suite as noise, which is the state in which a real failure ships.
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `test_commit_msg_hook.py`, delete the fixture's handoff setup | Given a leftover `sdlc-gate-suites` handoff in the git directory, when the commit-msg hook tests run, then their verdict is identical to their verdict with no handoff present - and the test SETS UP that leftover rather than depending on whatever the developer's git directory happens to hold |
+| AC2 | in `commit-msg`, raise a failure whenever no handoff is present | Given both of those runs, when they are compared, then BOTH are green - equality reached by making the clean case red too is not the property this asks for, and this is the control that says so |
+| AC3 | in `commit-msg`, move `rm -f` back below the message-shape checks | Given a commit message the hook REFUSES, when the hook exits, then neither the `sdlc-gate-suites` handoff nor the `sdlc-repo-writes` snapshot survives - a one-shot record must be one-shot on every exit path, not only the happy one |
+| AC4 | in `test_commit_msg_hook.py`, change `GIT_DIR` to the live repository | Given a test that invokes the hook, when it runs, then it runs against a throwaway repository with its own git directory, so no record it leaves can reach the repository under development |
+| AC5 | in `commit-msg`, remove the early exit that keeps a test out of the run block | Given a test invocation of the hook that does find a handoff, when it proceeds, then it does NOT enter the suite-running block - a unit test must never be able to start a full gate suite inside itself, which is the consequence that made this defect expensive rather than merely wrong |
+| AC6 | in `test_precommit_lane_order.py`, narrow the sweep to one file | Given the full suite run twice - once with the git directory carrying both leftover records and once with neither - when the two verdicts are compared OUTSIDE the suite, with each exit code read from `$?` on its own line and never through a pipe, then they are identical, and any test whose result differs between the two runs is NAMED |
+
 ## Revision History
 
 | Date | Author | Change |

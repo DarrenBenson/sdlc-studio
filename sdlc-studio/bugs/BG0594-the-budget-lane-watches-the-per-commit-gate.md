@@ -74,6 +74,16 @@ The staleness guard needs the same treatment and is the reason AC4 exists. `test
 - [ ] **AC4** Given a run whose per-test rate genuinely rose while its width fell, when the lane judges it, then it reports the regression - the control proving a rate-based verdict discriminates rather than excusing every total
 - [ ] **AC5** Given a repository whose declared budget no longer describes its measured cost in either direction, when the staleness guard runs, then it says so - the guard today asserts a literal floor (`baseline >= 250.0`) against the live config, which neither notices a ceiling below the wide end of the series nor permits a baseline that has genuinely moved
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `gate_timing.py`, drop the rate term from the detail string | Given a per-commit series whose runs differ in selection width, when the budget lane reports, then it states the per-test RATE beside the total - the quantity that is stable across widths - so a wide commit is not read as a regression |
+| AC2 | in `gate_timing.py`, change the whole-suite branch to read the per-commit ceiling | Given a full-suite run, when the lane reports on it, then it is judged against a full-suite figure and not against the per-commit ceiling: `budget_report` reads `latest(root, "total")` whenever the last run was not selected and compares it to `gate_budget.seconds`, so a 899s full run is permanently OVER a 380s budget and that verdict carries no information |
+| AC3 | in `gate_timing.py`, drop the normalisation and compare raw seconds | Given two runs of equal per-test cost but different selection width, when the lane judges them, then it reaches the SAME verdict for both |
+| AC4 | in `gate_timing.py`, drop the regression branch and emit the total alone | Given a run whose per-test rate genuinely rose while its width fell, when the lane judges it, then it reports the regression - the control proving a rate-based verdict discriminates rather than excusing every total |
+| AC5 | in `test_gate_timing.py`, hard-code the floor at 250.0 | Given a repository whose declared budget no longer describes its measured cost in either direction, when the staleness guard runs, then it says so - the guard today asserts a literal floor (`baseline >= 250.0`) against the live config, which neither notices a ceiling below the wide end of the series nor permits a baseline that has genuinely moved |
+
 ## Revision History
 
 | Date | Author | Change |

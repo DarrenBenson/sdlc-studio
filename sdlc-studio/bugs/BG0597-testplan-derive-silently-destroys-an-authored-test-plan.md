@@ -25,15 +25,25 @@ Key the existing-plan read by (criterion, mutant) or by row index, matching the 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a Test Plan carrying two rows on one criterion, when `verify_ac.py testplan derive` re-derives that unit, then both rows are present in the file afterwards and the `| AC` row count has not fallen
-- [ ] **AC2** Given a re-derive that cannot carry an authored row forward, when the command runs, then it REFUSES with a non-zero exit and names the row it would have lost - a derive that loses evidence must not exit 0
-- [ ] **AC3** Given the fixture reproduced on 2026-08-19 (two criteria, three rows, two of them on AC1), when `verify_ac.py testplan derive` is driven through the shipped CLI by subprocess, then the file holds 3 rows before and 3 rows after, and the first AC1 mutant is still the first AC1 mutant
-- [ ] **AC4** Given a Test Plan with exactly one row per criterion, when derive runs, then the section round-trips unchanged and the exit is 0 - the control proving the fix refuses only real losses
-- [ ] **AC5** Given `_testplan_rows` with its changed return shape, when `testplan_derive` reads it, then a test pins that caller specifically - the repair does not relocate the defect into the sibling that shares the helper
+- [ ] **AC1** Given a Test Plan carrying two rows on one criterion, when `verify_ac.py testplan derive` re-derives that unit, then both rows are present afterwards, the Test Plan's criterion-row count has not fallen, the command EXITS 0 and the Test Plan section is rewritten - a derive that refuses every multi-row plan loses no rows and is not the fix, because it makes the format BG0596 requires unmaintainable through the shipped command
+- [ ] **AC2** Given a plan row whose criterion id is no longer among the unit's criteria - an ORPHAN row - when derive runs, then it REFUSES with a non-zero exit and PRINTS the row it would have dropped: measured 2026-08-19 in a fixture, a two-row plan (AC1 and AC7) against a one-criterion unit silently became one row at exit 0, which is a second silent-loss path neither this bug nor BG0596 originally named
+- [ ] **AC3** Given the fixture reproduced on 2026-08-19 - two criteria, three rows, two of them on AC1 - when `verify_ac.py` is driven as a SUBPROCESS (`sys.executable`, never import or runpy) against a root asserted to be under `tempfile`, then the file holds 3 rows before and 3 after, the rows compare as an ORDERED list rather than a set, and the repository's own artefacts are unchanged
+- [ ] **AC4** Given a Test Plan with exactly one row per criterion, when derive runs, then the Criterion and Mutant columns round-trip unchanged and the exit is 0 - the Title column is regenerated from the criterion by design, so a byte-identical assertion over the whole row would fail for a reason unrelated to this fix
+- [ ] **AC5** Given `_testplan_rows` with its changed return shape, when `mutation.plan_execution` reads it - the THIRD caller, in another file, which consumes the return as a dict via `sorted(planned.items())` - then `--from-plan` still reports correctly for a single-row plan and the ledger join is unchanged
 
 ## Impact
 
 This is the command the delivery gate instructs every in-scope unit to run - 29 of the 30 units in the batch now being planned. A criterion that can be wrong in several distinct ways is exactly the one worth pinning several times, so the loss falls hardest on the best-authored plans. The evidence is destroyed silently and on the happy path: the operator sees exit 0 and a plausible row count. A mutant that was authored, reviewed and then deleted by the tool is indistinguishable afterwards from one that was never written.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `verify_ac.py`, revert `_testplan_rows` to a single-assignment dict | Given a Test Plan carrying two rows on one criterion, when `verify_ac.py testplan derive` re-derives that unit, then both rows are present afterwards, the Test Plan's criterion-row count has not fallen, the command EXITS 0 and the Test Plan section is rewritten - a derive that refuses every multi-row plan loses no rows and is not the fix, because it makes the format BG0596 requires unmaintainable through the shipped command |
+| AC2 | in `verify_ac.py`, delete the orphan-row refusal | Given a plan row whose criterion id is no longer among the unit's criteria - an ORPHAN row - when derive runs, then it REFUSES with a non-zero exit and PRINTS the row it would have dropped: measured 2026-08-19 in a fixture, a two-row plan (AC1 and AC7) against a one-criterion unit silently became one row at exit 0, which is a second silent-loss path neither this bug nor BG0596 originally named |
+| AC3 | in `test_verify_ac.py`, call the function in-process rather than spawning it | Given the fixture reproduced on 2026-08-19 - two criteria, three rows, two of them on AC1 - when `verify_ac.py` is driven as a SUBPROCESS (`sys.executable`, never import or runpy) against a root asserted to be under `tempfile`, then the file holds 3 rows before and 3 after, the rows compare as an ORDERED list rather than a set, and the repository's own artefacts are unchanged |
+| AC4 | in `verify_ac.py`, make it refuse every re-derive | Given a Test Plan with exactly one row per criterion, when derive runs, then the Criterion and Mutant columns round-trip unchanged and the exit is 0 - the Title column is regenerated from the criterion by design, so a byte-identical assertion over the whole row would fail for a reason unrelated to this fix |
+| AC5 | in `mutation.py`, delete the shape adapter | Given `_testplan_rows` with its changed return shape, when `mutation.plan_execution` reads it - the THIRD caller, in another file, which consumes the return as a dict via `sorted(planned.items())` - then `--from-plan` still reports correctly for a single-row plan and the ledger join is unchanged |
 
 ## Revision History
 
@@ -42,3 +52,4 @@ This is the command the delivery gate instructs every in-scope unit to run - 29 
 | 2026-08-19 | sdlc-studio | Filed |
 | 2026-08-19 | sdlc-studio | Groomed: acceptance criteria authored so the unit is plannable |
 | 2026-08-19 | sdlc-studio | Scope widened: `mutation.plan_execution` is a THIRD caller of `_testplan_rows` and was undeclared, so the repair could relocate into a file the review may not read |
+| 2026-08-19 | sdlc-studio | Criteria hardened by the QA seat: AC1 gained the exit-0 clause a refuse-everything fix would otherwise satisfy, AC2 names the ORPHAN row as its reachable case (a second silent-loss path, reproduced), AC4 excludes the regenerated Title column, and AC5 re-points at `mutation.plan_execution` - the caller that actually breaks |

@@ -35,6 +35,17 @@ Ask the ledger. A unit carrying an unanswered REJECT is not built - it is work w
 
 The exclusion sentence tells the operator to `close them`, about a unit no reviewer has approved. The forecast under-prices the batch by exactly the units least likely to land, which is the wrong direction for a planning figure to be wrong in. It is also the shape this repository files hardest against: a count that survives because the artefacts it contradicts were never read.
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint.py`, drop the ledger read from `_built_not_closed` | Given a unit carrying an unanswered REJECT in the critic ledger, when `sprint._built_not_closed` judges it, then it returns False - a unit no reviewer has approved is not built work awaiting a close |
+| AC2 | in `sprint.py`, widen the check to exclude any unit carrying a verdict | Given a unit whose REJECT carries a recorded repair answering it, when `_built_not_closed` judges it, then verifier greens decide exactly as they do today - the control proving the ledger read discriminates rather than excluding every unit that was ever reviewed |
+| AC3 | in `sprint.py`, revert the forecast to subtract those points | Given a batch holding a unit with an unanswered REJECT, when `sprint.py plan` prints its forecast, then that unit's points are counted IN the total and no `BUILT-NOT-CLOSED` line names it |
+| AC4 | in `sprint.py`, merge the new class back into the existing sentence | Given that same unit, when the plan reports it, then it is named in a class of its own - reviewed and rejected, not built - so the exclusion sentence cannot read as an instruction to close a unit nobody approved |
+| AC5 | in `test_sprint.py`, clone one fixture unit over the other | Given a fixture workspace holding one unit with all criteria green and an unanswered REJECT and one with all criteria green and no verdict at all, when `sprint.py plan --worklist` is driven through the shipped CLI by subprocess, then the printed forecast prices the first and excludes the second - a fixture in which both units are alike cannot see this defect |
+| AC6 | in `sprint.py`, wrap the ledger read and fall through on error | Given a ledger that cannot be read at all, when `_built_not_closed` judges, then it fails closed and treats the unit as unbuilt - an unreadable record is not an approval |
+
 ## Revision History
 
 | Date | Author | Change |
