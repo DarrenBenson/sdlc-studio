@@ -33,10 +33,12 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0587` | Medium | two answers to the grooming question inside one close |
 | `BG0591` | Medium | status and close_owed give opposite answers about the same units |
 | `BG0594` | Medium | the budget lane watches the per-commit gate only, so the full suite grew 46% unobserved |
-| `BG0595` | Medium | the commit-msg hook test is not hermetic, so the full suite goes red whenever the working tree is dirty |
+| `BG0595` | Medium | one commit-msg hook test runs against the real repository, so it consumes the developer's gate handoff and starts a full suite inside a unit test |
 | `BG0596` | Medium | testplan run --from-plan keys by criterion, so a second mutant on the same AC is silently dropped |
+| `BG0599` | Medium | testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips |
+| `BG0600` | Medium | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written |
 
-11 findings: 11 Medium, 0 Low.
+13 findings: 13 Medium, 0 Low.
 
 ## Not carried
 

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 17 |
+| Open | 19 |
 | In Progress | 0 |
 | Fixed | 487 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **598** |
+| **Total** | **600** |
 
 ## All Bugs
 
@@ -134,10 +134,12 @@
 | [BG0592](BG0592-the-corpus-red-criteria-metric-counts-unbuilt-stories.md) | the corpus red-criteria metric counts unbuilt stories, which is why its number has never been stable | Open | High | 2026-08-17 | 2026-08-17 |
 | [BG0593](BG0593-close-dry-run-previews-against-a-scratch-tree.md) | close --dry-run previews against a scratch tree with no git, so every git-reading row degrades to unjudged | Open | High | 2026-08-18 | 2026-08-18 |
 | [BG0594](BG0594-the-budget-lane-watches-the-per-commit-gate.md) | the budget lane watches the per-commit gate only, so the full suite grew 46% unobserved | Open | Medium | 2026-08-18 | 2026-08-18 |
-| [BG0595](BG0595-the-commit-msg-hook-test-is-not-hermetic.md) | the commit-msg hook test is not hermetic, so the full suite goes red whenever the working tree is dirty | Open | Medium | 2026-08-18 | 2026-08-18 |
+| [BG0595](BG0595-the-commit-msg-hook-test-is-not-hermetic.md) | one commit-msg hook test runs against the real repository, so it consumes the developer's gate handoff and starts a full suite inside a unit test | Open | Medium | 2026-08-18 | 2026-08-18 |
 | [BG0596](BG0596-testplan-run-from-plan-keys-by-criterion-so.md) | testplan run --from-plan keys by criterion, so a second mutant on the same AC is silently dropped | Open | Medium | 2026-08-19 | 2026-08-19 |
 | [BG0597](BG0597-testplan-derive-silently-destroys-an-authored-test-plan.md) | testplan derive silently DESTROYS an authored Test Plan row when a criterion carries more than one, at exit 0 | Open | High | 2026-08-19 | 2026-08-19 |
 | [BG0598](BG0598-the-plan-s-built-not-closed-exclusion-reads.md) | the plan's BUILT-NOT-CLOSED exclusion reads verifier greens and not the verdict ledger, so a unit with an unanswered REJECT is priced at zero | Open | High | 2026-08-19 | 2026-08-19 |
+| [BG0599](BG0599-testplan-derive-reports-one-row-fault-per-invocation.md) | testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips | Open | Medium | 2026-08-19 | 2026-08-19 |
+| [BG0600](BG0600-the-unnameable-test-plan-exemption-is-still-held.md) | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written | Open | Medium | 2026-08-19 | 2026-08-19 |
 
 ## Archived Releases
 
