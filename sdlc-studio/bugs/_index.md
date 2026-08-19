@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 15 |
 | In Progress | 0 |
-| Fixed | 483 |
+| Fixed | 487 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 8 |
@@ -123,13 +123,13 @@
 | [BG0581](BG0581-the-goal-review-brief-states-a-reachable-end.md) | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready | Open | Medium | 2026-08-16 | 2026-08-16 |
 | [BG0582](BG0582-the-design-rung-can-be-planned-and-groomed.md) | the design rung can be planned and groomed but not closed: sprint plan reads the rung and the close chain does not, so it demands Done for units the rung says correctly end at Ready | Fixed | High | 2026-08-16 | 2026-08-16 |
 | [BG0583](BG0583-verify-ac-run-reports-success-for-a-unit.md) | verify_ac run reports success for a unit it never read | Won't Fix | High | 2026-08-16 | 2026-08-16 |
-| [BG0584](BG0584-the-tick-verification-checklist-row-is-rung-blind.md) | the tick-verification checklist row is rung-blind, so a grooming run cannot answer it | Open | Medium | 2026-08-16 | 2026-08-16 |
-| [BG0585](BG0585-the-derived-only-grooming-detector-is-defeated-by.md) | the derived-only grooming detector is defeated by the AC-number prefix it ships with | Open | High | 2026-08-16 | 2026-08-16 |
+| [BG0584](BG0584-the-tick-verification-checklist-row-is-rung-blind.md) | the tick-verification checklist row is rung-blind, so a grooming run cannot answer it | Fixed | Medium | 2026-08-16 | 2026-08-16 |
+| [BG0585](BG0585-the-derived-only-grooming-detector-is-defeated-by.md) | the derived-only grooming detector is defeated by the AC-number prefix it ships with | Fixed | High | 2026-08-16 | 2026-08-16 |
 | [BG0586](BG0586-a-design-rung-that-groomed-nothing-closes-exactly.md) | a design rung that groomed nothing closes exactly like one that groomed everything | Open | High | 2026-08-16 | 2026-08-16 |
 | [BG0587](BG0587-two-answers-to-the-grooming-question-inside-one.md) | two answers to the grooming question inside one close | Open | Medium | 2026-08-16 | 2026-08-16 |
 | [BG0588](BG0588-the-design-rung-has-no-terminal-check-so.md) | the design rung has no terminal check, so a unit left at Draft or Blocked closes it clean | Open | High | 2026-08-17 | 2026-08-17 |
-| [BG0589](BG0589-the-close-pre-flight-counts-advisory-rows-as.md) | the close pre-flight counts advisory rows as unmet prerequisites | Open | Medium | 2026-08-17 | 2026-08-17 |
-| [BG0590](BG0590-sprint-close-appends-a-handoff-bullet-that-fails.md) | sprint close appends a handoff bullet that fails the repo's own markdown lane | Open | Medium | 2026-08-17 | 2026-08-17 |
+| [BG0589](BG0589-the-close-pre-flight-counts-advisory-rows-as.md) | the close pre-flight counts advisory rows as unmet prerequisites | Fixed | Medium | 2026-08-17 | 2026-08-17 |
+| [BG0590](BG0590-sprint-close-appends-a-handoff-bullet-that-fails.md) | sprint close appends a handoff bullet that fails the repo's own markdown lane | Fixed | Medium | 2026-08-17 | 2026-08-17 |
 | [BG0591](BG0591-status-and-close-owed-give-opposite-answers-about.md) | status and close_owed give opposite answers about the same units | Open | Medium | 2026-08-17 | 2026-08-17 |
 | [BG0592](BG0592-the-corpus-red-criteria-metric-counts-unbuilt-stories.md) | the corpus red-criteria metric counts unbuilt stories, which is why its number has never been stable | Open | High | 2026-08-17 | 2026-08-17 |
 | [BG0593](BG0593-close-dry-run-previews-against-a-scratch-tree.md) | close --dry-run previews against a scratch tree with no git, so every git-reading row degrades to unjudged | Open | High | 2026-08-18 | 2026-08-18 |

@@ -1,6 +1,6 @@
 # BG0584: the tick-verification checklist row is rung-blind, so a grooming run cannot answer it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, sdlc-studio/decisions.md
@@ -40,6 +40,10 @@ Make the row rung-aware in the same way `undelivered_blockers` and `_signoff_pre
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationReadsTheRungTests::test_a_design_rung_over_unreadable_units_is_not_a_pass
   - **Verified:** yes (2026-08-18)
 
+- [x] **AC6** Given a `design` rung, when `sprint_report.py checklist` is driven as a SUBPROCESS, then it renders the design-rung resolution - the wiring test. `verify_ac lane-check` reported this unit as changing a command while none of its verifiers entered the shipped entry point, and the wiring is the part a library test does not exercise.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationReadsTheRungTests::test_the_shipped_cli_resolves_the_row_on_a_design_rung
+  - **Verified:** yes (2026-08-19)
+
 ## Revision History
 
 | Date | Author | Change |
@@ -59,3 +63,4 @@ Make the row rung-aware in the same way `undelivered_blockers` and `_signoff_pre
 | AC2 | drop the unit ids from the ticked-on-a-design-rung detail | A row that says something is wrong without saying WHAT cannot be acted on. |
 | AC5 | report `RAN` when no unit artefact resolved, so an unreadable batch reads as a clean design rung | Given a `design` rung whose batch names units that resolve to no file, when the row reports, then it REFUSES. |
 | AC5 | count units rather than files actually opened, so `read` is never incremented | The count must be of artefacts READ, not of ids named. |
+| AC6 | delete the rung short-circuit from `_ck_tick_verification` and ask whether the shipped `checklist` command still renders the design-rung resolution | Given a `design` rung, when `sprint_report.py checklist` is driven as a subprocess, then it renders the design-rung resolution. |

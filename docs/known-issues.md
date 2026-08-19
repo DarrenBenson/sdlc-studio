@@ -30,16 +30,13 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0567` | Medium | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere... |
 | `BG0578` | Medium | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner |
 | `BG0581` | Medium | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready |
-| `BG0584` | Medium | the tick-verification checklist row is rung-blind, so a grooming run cannot answer it |
 | `BG0587` | Medium | two answers to the grooming question inside one close |
-| `BG0589` | Medium | the close pre-flight counts advisory rows as unmet prerequisites |
-| `BG0590` | Medium | sprint close appends a handoff bullet that fails the repo's own markdown lane |
 | `BG0591` | Medium | status and close_owed give opposite answers about the same units |
 | `BG0594` | Medium | the budget lane watches the per-commit gate only, so the full suite grew 46% unobserved |
 | `BG0595` | Medium | the commit-msg hook test is not hermetic, so the full suite goes red whenever the working tree is dirty |
 | `BG0596` | Medium | testplan run --from-plan keys by criterion, so a second mutant on the same AC is silently dropped |
 
-14 findings: 14 Medium, 0 Low.
+11 findings: 11 Medium, 0 Low.
 
 ## Not carried
 

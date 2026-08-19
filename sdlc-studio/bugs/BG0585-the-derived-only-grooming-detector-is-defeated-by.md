@@ -1,6 +1,6 @@
 # BG0585: the derived-only grooming detector is defeated by the AC-number prefix it ships with
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py

@@ -1,101 +1,88 @@
 <!-- close-status:begin -->
-> **RUN-01M05A5M closed goal-reached.** 12 unit(s) in the batch. This was a `design` rung, not a build - its units end at their own terminal and no Done sign-off is owed.
-> Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **Run of record:** RUN-01M05A5M - a DESIGN rung. 12 ungroomed units groomed to red acceptance
-> criteria; `sprint breakdown` reports 0 ungroomed, down from 12. The ten stories reached Ready,
-> which is this rung's terminal; the two bugs stay Open with criteria, because their vocabulary
-> has no Ready and the rung's product for them is criteria rather than a fix.
+> **Run of record:** RUN-01M0ATVZ - a BUILD rung under SC0006. Four groomed bugs from the open
+> backlog, delivered file-disjoint: BG0584, BG0585, BG0589, BG0590. All four are Fixed with
+> adversarial evidence recorded. **Reviewer-of-record sign-off is OWED and is the operator's** -
+> `critic signoff` refuses a principal the authoring session controls, which is the gate working.
 
-## THE EXIT CONDITION, AND WHY IT IS NOT A MARKER
+## THE HEADLINE: THE CODE WAS RIGHT, THE EVIDENCE WAS NOT
 
-**40 criteria: 0 pass, 40 fail, 0 manual, 0 unspecified.** Ten stories carry 33, the two bugs 7.
+Six review rounds across five units. **Every rejection but the first was a defect in a repair, not
+in the original work** - and in three of four units the reviewer found the production code correct
+and the tests unable to fail.
 
-That figure has now been wrong twice - 38 here, 40 elsewhere - so it was re-measured at `ba8ac72e`
-by running the ledger per unit and summing the `ac=`/`pass=`/`fail=` fields rather than a total
-line. 40 is the measured one. The first re-measure was ALSO wrong: a `grep -oE '[0-9]+ pass'` read
-`ac=3 pass=0` as "3 pass" and reported all ten stories green. Parse the field, never the
-substring: the same fault as the anchor-uniqueness rule, one layer up.
+The clearest case: a seat enumerated every criterion-line spelling in the real corpus, confirmed
+the BG0585 detector judged all of them correctly, then rejected the unit because three of its six
+criteria were verified by tests that proved nothing.
 
-Zero passing is the column that matters. A criterion that passes before its behaviour exists is
-the vacuous verifier this rung exists to catch, and RETRO0071 found three of those in a
-comparable run. The mechanic was measured before a single criterion was written: a `Verify:` line
-naming a test that does not yet exist reports FAIL rather than `refused`.
+- A control asserted lower-case `the` against a case-sensitive matcher, so it read False whether
+  or not the fix over-reached, and the criterion's own declared mutant **survived all 6603 tests**.
+- A census test resolved the repository root to `.claude/`, so its glob matched nothing and every
+  assertion was skipped. **It measured nothing while reporting green.** Third instance of that
+  shape this session.
+- A wiring criterion named `sprint.py plan` and drove `breakdown` - read-only, exits 0 - so no
+  refusal was ever asserted.
 
-The ledger exists because `story_is_ungroomed` returns false the moment the placeholder token is
-deleted - an exit condition a `touch` satisfies is not one. QA rejected the goal on exactly that
-ground before the run opened.
+## WHAT THE NEXT SESSION SHOULD READ FIRST
 
-## WHAT THE GOAL REVIEW CHANGED, BEFORE ANYTHING WAS PLANNED
+**BG0592 is open, rejected FOUR times, and escalated twice.** Its diagnosis was right from round
+one; every subsequent rejection was of the repair. Round 2 found a project-declared status bought a
+silent exemption; round 3 found the repair of THAT reintroduced the false green the unit indicts
+(`3/3 green` printed beside `2 failing`); round 4 found the fixture could not see a numerator
+counting manual criteria as green, because every story in it had `manual=0`.
 
-Two NARROW verdicts and one REJECT, all five findings answered:
+**Its `Verification depth` field has now been wrong five times running** - criterion counts, mutant
+counts, and a claim of CLI coverage that did not exist. Read that field with suspicion, and prefer
+`mutation.py run --story <id> --from-plan`, which reports from the ledger rather than from prose.
 
-* `sprint plan` REFUSES this batch at the default rung. Only `--goal design` accepts it.
-* **SC0005 authorised none of it** - scope query `--bugs Open`, and its 20 named bug ids are all
-  terminal now. The charter was amended on the record rather than planned around.
-* Six of the original 16 needed nothing: 20 of 57 points already groomed. Transitioned as
-  pre-work, with the US0586-0588 dependency edges declared and US0590's `Affects` omission fixed.
-* Nothing gated the goal. Hence the ledger.
-* Two shared-file clusters: the batch is sequential, not parallel.
+**Two numbers moved under measurement and both corrections were themselves wrong**: the retro
+bullet style ("every retro carries asterisks" - measured 102 dash, 3 asterisk of 105) and the
+grooming census (13 -> 17, briefly 18 while a newly filed bug sat ungroomed). A false premise
+restated reads as verification, which is why it is worse than the original.
 
-## THE FINDING THIS RUN RAISED ABOUT THE TOOL
+## THE GATE BUDGET IS BIMODAL, AND THE FIGURE YOU SEE IS SELECTION WIDTH
 
-**BG0582, High.** `sprint plan` reads the rung; the close chain does not. `undelivered_blockers`
-carries no reference to it, so a design rung whose every story reached Ready exactly as intended
-raised 12 status stops, 12 done-gate stops demanding Done, and 12 sign-off stops. The rung is
-offered by the planner and unreachable through the closer. **BG0581** is the same asymmetry in
-the brief, which promised Review for a run that correctly ends at Ready.
+`total.selected` is two populations, not one series: ~1,400 tests selected costs ~212s, ~5,100
+costs ~540s, at a stable 0.105-0.171 s/test throughout. The declared 380s ceiling sits BETWEEN the
+modes, so it is wrong about both, and the lane reports the LATEST row rather than the series.
 
-A third lane was found while attempting the close, and it is the one that makes the other two
-inescapable. `critic.py signoff` does not merely raise a stop - it REFUSES to write: `sign-off
-SKIPPED for US0625: its status is 'Ready', which is neither terminal nor awaiting sign-off`,
-then `0 unit(s) written`. So the operator cannot clear the sign-off stop even by hand.
+An earlier reading of this took the three most recent 212s rows as the current cost and proposed
+re-baselining DOWNWARD. Two gate runs minutes later measured 535s and 554s. **The guard that
+refused that change was right; the premise was mine.** Filed as BG0594. The full suite - not the
+per-commit gate - is what genuinely grew, ~630s to ~921s, and nothing watches it.
 
-**BG0583 was filed during the same close and is WON'T FIX - the premise was false.** It claimed
-`verify_ac.py run` exits 0 on inputs it read nothing for. Re-measured with the exit code read
-directly rather than after a pipe, every unresolvable scope exits 2, a resolving green run exits
-0 and a red one exits 1. The contract was always right.
+## OPEN, AND WHY
 
-The defect was in the measurement: `... | tail -2; echo "exit=$?"` reports TAIL's status. The
-lesson already exists and is already general - L-0277, "reading a command's verdict through a
-pipe reports the pipe's status. Redirect, then echo the code separately." It was not too narrow
-and it did not need widening. It was READ AND NOT FOLLOWED, which AGENTS.md names as this
-repository's actual failure mode, and the cost this time was a fabricated High bug filed against
-a working contract.
+| Id | State |
+| --- | --- |
+| BG0592 | Open. 4 REJECTs, escalated. Diagnosis sound, repair not converging |
+| BG0593 | Open. `close --dry-run` previews against a scratch tree with no `.git`, so every git-reading row degrades to unjudged. Confirmed here: `tick-verification` reads `diff unreadable` under `--dry-run` and `24 ticked criteria supported` outside it |
+| BG0594 | Open. The budget lane watches the per-commit gate only, against a bimodal population |
+| BG0595 | Open. The commit-msg hook test is not hermetic, so the full suite goes red whenever work is in flight. Verified by stash: same code, clean passes, dirty fails |
+| BG0596 | Open. `_testplan_rows` keys by criterion, so a second mutant on the same AC is silently dropped and `--from-plan` reports every one killed over rows it never joined |
+| CR0511 | Open. `artifact._wire_story_to_epic` locates its insertion point with a hardcoded dash |
 
-## THE WALL, AND HOW IT CAME DOWN
+## WHAT THIS RUN CHANGED THAT EVERY LATER RUN INHERITS
 
-This run could not close at all. `--file-and-close` filed nothing, because its deferrable set is
-exactly `goal-verdict`, `retro` and `sign-off` while all 53 rows were `status`, `done-gate`,
-`checklist` and `gate`. `boundary` needs a rolling policy this run does not carry, and `stop`
-would have recorded a goal-reached run as abandoned. Forcing a terminal would have written Done
-against 40 deliberately red criteria.
+- **The `derived-only` grooming limb works for the first time since 2026-08-06.** It had been
+  reachable by nothing for twelve days, so the scaffold that reads like content passed every gate.
+  Two currently-open bugs, BG0578 and BG0581, are newly unplannable as a result. That is the gate
+  working, and it is a real cost to price.
+- **A `design` rung can close without waiving a row it cannot answer.** D0145 retracts D0144.
+- **`sprint close` no longer makes the tree uncommittable after reporting success.**
+- **39 mutants are executed and REGISTERED through the shipped tool** rather than asserted in
+  prose. Two reviewers found the prose record false where they re-ran it.
 
-It was left OPEN on that reasoning, and **L-0344** records why: repairing the gate that is
-refusing your own run, in the session it refuses, is indistinguishable from disabling it. The
-operator then instructed the repair, which is the only thing that makes it legitimate - and the
-independence lost by authoring it here was bought back the only way left, with three adversarial
-rounds.
+## PRACTICE WORTH CARRYING
 
-**Two of the three REJECTED, and both found defects that made this close pass.** Round 1: the
-scope was `rung != "done"`, which moved the defect onto the `plan` and `triage` rungs; plus two
-mutants surviving all 895 tests. Round 2: **the identical scope error was still in the sibling
-`_signoff_preflight`**, dropping a hard done-gate blocker for those rungs with no substitute bar,
-and the round-1 renderer repair had no test at all. Round 3 (QA) drove 140 lane readings - 10
-fixture shapes across 7 rung spellings, both refs - and found every non-`design` rung
-byte-identical to the base. That is what an APPROVE here is worth.
+**A detector's silence is evidence only once it has been shown able to speak.** The markdownlint
+helper caught a missing binary and not a missing package, so it handed `npm ERR! 404` to an
+`assertNotIn` and four criteria's lint half was inert in any clone without `npm ci` - while both
+its docstring and the depth field said "skipped, never faked". It now lints a known-bad file first.
 
-Eight of the fourteen mutants came from the reviewers, not from me. `critic record` escalated the
-unit to the operator after the second REJECT, and that escalation stands on the record rather than
-being worked around.
+**Scope a rung fix to the rung it is about, never to "not `done`".** Done twice now: BG0582's
+siblings were rejected for it, the ruling was written into `sprint.py` twice, and BG0584 made the
+same mistake again with those comments in the file.
 
-**The bar that replaced the wall is weaker than it reads, and that is stated rather than hidden.**
-BG0586 and BG0588 together mean a design run whose units were groomed before the window, or left
-at `Draft`, still closes clean. A smaller wrong than a rung nothing could close, but a wrong.
-
-## WHAT IS CARRIED
-
-* **BG0490, BG0493** - groomed here, still triaged rather than built, per the operator's ruling.
-* **The TSD is stale.** The plan reported it at open; nothing in this run refreshed it.
-* **The disclosure page and the release notes drifted apart three times this session**, each time
-  caught by the guard. A derived page and a hand-written claim kept in step by recollection.
+**Register mutants after the last edit.** An earlier pass was silently dropped when the files
+changed under it, exactly as BG0550 records.

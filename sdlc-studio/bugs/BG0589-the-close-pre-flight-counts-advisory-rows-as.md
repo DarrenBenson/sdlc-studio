@@ -1,6 +1,6 @@
 # BG0589: the close pre-flight counts advisory rows as unmet prerequisites
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -34,6 +34,10 @@ Count `held` in `_report_preflight`, as `_render_preflight` already does, and sa
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_an_all_blocking_page_is_unchanged
   - **Verified:** yes (2026-08-18)
 
+- [x] **AC4** Given a root the command is pointed at, when `sprint.py preflight` is driven as a SUBPROCESS, then its headline is the one `preflight_headline` produces for that same root - the wiring test, and derived from the helper rather than hardcoded so it asserts that the command REACHES the code, never that a tree is in a particular state.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_the_shipped_cli_prints_the_two_numbers
+  - **Verified:** yes (2026-08-19)
+
 ## Revision History
 
 | Date | Author | Change |
@@ -50,3 +54,4 @@ Count `held` in `_report_preflight`, as `_render_preflight` already does, and sa
 | AC2 | leave `_report_preflight` computing its own count instead of reading the helper | Given the same rows, when `_render_preflight` prints, then it reports the same two numbers as `_report_preflight`. |
 | AC2 | revert `_render_preflight` to its own `len(held)`, fixing only the sibling | Both renderers must read ONE helper - fixing one and leaving the other lying is the scope error this repository keeps meeting. |
 | AC3 | always append the `of N reported` suffix, churning the common case | Given a pre-flight whose rows all block, when either renderer prints, then its headline is byte-identical to today. |
+| AC4 | render the blocker LIST length in `_render_preflight`, which is the renderer the shipped `preflight` command actually uses - the `_report_preflight` mutant SURVIVED because that renderer serves `close`, not `preflight`, and the ledger refused the mismatch | Given a root the command is pointed at, when `sprint.py preflight` is driven as a subprocess, then its headline is the one `preflight_headline` produces for that same root. |

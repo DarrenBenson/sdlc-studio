@@ -1543,6 +1543,25 @@ class TickVerificationReadsTheRungTests(ChecklistBase):
         self.assertIn("tick-verification", ck["outstanding"])
         self.assertIn("resolves to a file", row["detail"])
 
+    def test_the_shipped_cli_resolves_the_row_on_a_design_rung(self) -> None:
+        """AC6. MUTANT: delete the rung short-circuit from `_ck_tick_verification`.
+
+        THE WIRING TEST. `verify_ac lane-check` reported this unit as changing a command while
+        none of its verifiers entered the shipped entry point. `sprint_report.py checklist` is
+        the command that renders this row to an operator, and a library test cannot see whether
+        the resolver is reached by it.
+        """
+        import subprocess  # noqa: PLC0415 - the point is to leave this process
+        script = Path(__file__).resolve().parents[1] / "sprint_report.py"
+        self._unit("US0001", "src/a.py", ticked=False)
+        self._unit("US0002", "src/b.py", ticked=False)
+        self._run(base_ref="abc123", goal="design")
+        r = subprocess.run([sys.executable, "-B", str(script), "--root", str(self.root),
+                            "checklist", "--id", "RETRO9100"], capture_output=True, text=True)
+        page = r.stdout + r.stderr
+        self.assertIn("design rung's exit", page, page)
+        self.assertNotIn("no ticked criteria found", page, page)
+
     def test_the_row_resolves_without_the_waiver(self) -> None:
         """AC4. MUTANT: leave D0144 accepted.
 

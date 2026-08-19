@@ -1,6 +1,6 @@
 # BG0590: sprint close appends a handoff bullet that fails the repo's own markdown lane
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py
@@ -68,6 +68,10 @@ this repository keeps meeting, so AC3 covers it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffBulletFollowsTheDocumentTests::test_a_bullet_indented_as_code_does_not_set_the_style
   - **Verified:** yes (2026-08-18)
 
+- [x] **AC11** Given an asterisk-styled retro, when `handoff.py generate` is driven as a SUBPROCESS - which is what the close actually invokes - then the appended bullet is an asterisk. Every other criterion here calls `_link_from_retro` directly, and the defect was OBSERVED through the command.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffBulletFollowsTheDocumentTests::test_the_shipped_cli_writes_the_documents_bullet
+  - **Verified:** yes (2026-08-19)
+
 ## Revision History
 
 | Date | Author | Change |
@@ -92,3 +96,4 @@ this repository keeps meeting, so AC3 covers it.
 | AC8 | drop `+` from the marker class | Given a `+`-bulleted document, when the close appends, then it writes `+`. |
 | AC9 | drop the thematic-break guard from `sdlc_md.document_bullet`, so `* * *` sets the style | Given a document whose first marker-shaped line is a SPACED thematic break, when the helper reads it, then that line does not set the style. |
 | AC10 | relax the leading-space bound from `^ {0,3}` to `^ *`, so an indented code block's bullet counts | Given a bullet indented four spaces, when the helper reads it, then it does not set the style. |
+| AC11 | hardcode a dash in `_link_from_retro` again and ask whether the shipped `handoff generate` command still writes the document's marker | Given an asterisk-styled retro, when `handoff.py generate` is driven as a subprocess, then the appended bullet is an asterisk. |

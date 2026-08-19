@@ -1110,6 +1110,36 @@ class HandoffBulletFollowsTheDocumentTests(unittest.TestCase):
             handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
             self.assertIn("- [HO-0059]", rp.read_text(encoding="utf-8"))
 
+    def test_the_shipped_cli_writes_the_documents_bullet(self) -> None:
+        """AC11. MUTANT: hardcode a dash in `_link_from_retro` again.
+
+        THE WIRING TEST. `verify_ac lane-check` reported this unit as changing a command while
+        none of its verifiers entered the shipped entry point - every other test here calls
+        `_link_from_retro` directly. `handoff.py generate` is what the close actually invokes,
+        and the defect this unit fixes was OBSERVED through that command, not through the
+        library.
+        """
+        import subprocess  # noqa: PLC0415 - the point is to leave this process
+        script = Path(__file__).resolve().parents[1] / "handoff.py"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rd = root / "sdlc-studio" / "retros"
+            rd.mkdir(parents=True)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            rp = rd / "RETRO0001-t.md"
+            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## What went well\n\n"
+                          "* the first thing\n\n## Handoff\n\n", encoding="utf-8")
+            # `--ids` is required: a handoff over no batch would report a clean close it never
+            # checked, which the command refuses outright.
+            r = subprocess.run([sys.executable, "-B", str(script), "generate",
+                                "--root", str(root), "--retro", "RETRO0001",
+                                "--ids", "US0001", "--title", "t"],
+                               capture_output=True, text=True)
+            after = rp.read_text(encoding="utf-8")
+            page = r.stdout + r.stderr
+        self.assertIn("* [HO", after, page + "\n---\n" + after)
+        self.assertNotIn("\n- [HO", after, after)
+
     def test_nothing_outside_the_handoff_section_changes(self) -> None:
         """AC4. MUTANT: normalise every bullet in the file to the document's style.
 

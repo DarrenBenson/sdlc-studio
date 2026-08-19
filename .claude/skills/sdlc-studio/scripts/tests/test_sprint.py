@@ -16284,6 +16284,46 @@ class OnePreflightCountReadByBothRenderersTests(unittest.TestCase):
         self.assertIn(head, out.getvalue())
         self.assertIn(head, err.getvalue())
 
+    def test_the_shipped_cli_prints_the_two_numbers(self) -> None:
+        """AC4. MUTANT: have `_report_preflight` compute its own count again.
+
+        THE WIRING TEST. `verify_ac lane-check` reported this unit as changing a command while
+        none of its verifiers entered the shipped entry point - the wiring is the part a
+        library test does not exercise, and this repository spent a whole sprint with a
+        function passing in-process while the command printed nothing.
+
+        Driven against a THROWAWAY root, not this repository. An earlier cut pointed at the
+        real tree, which made it depend on whatever the working copy happened to contain and
+        cost 87 seconds - the same non-hermetic coupling BG0595 was filed for, reproduced while
+        fixing something else.
+        """
+        import subprocess  # noqa: PLC0415 - the point is to leave this process
+        script = Path(__file__).resolve().parents[1] / "sprint.py"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / "stories").mkdir()
+            # A RUN STATE, so the gate's advisory lanes run and the two counts DIVERGE. A bare
+            # directory yields one blocking row, where held == total and `len(blockers)` is an
+            # equivalent mutant - which is exactly how the first cut of this test let it
+            # survive. The fixture has to be able to tell the two numbers apart.
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+                "schema": 1, "run_id": "RUN-T", "started_at": "2026-01-01T00:00:00Z",
+                "outcome": "running", "batch": ["US0001"], "batch_changes": [],
+                "base_ref": "abc", "goal": "done"}), encoding="utf-8")
+            pre = sprint.close_preflight(str(root), None)
+            self.assertLess(len(sprint.held_blockers(pre["blockers"])), len(pre["blockers"]),
+                            "the fixture produces no advisory row, so the two counts cannot "
+                            "diverge and this test would pass on the defect")
+            r = subprocess.run([sys.executable, "-B", str(script), "preflight",
+                                "--root", str(root)], capture_output=True, text=True)
+            page = r.stdout + r.stderr
+            # Derived from the SAME helper over the SAME root, so what is asserted is "the
+            # command reaches this code", never "the tree is in a particular state".
+            expected = sprint.preflight_headline(pre["blockers"])
+        self.assertIn("unmet prerequisite(s)", expected)
+        self.assertIn(expected, page, page)
+
     def test_an_all_blocking_page_is_unchanged(self) -> None:
         """AC3. MUTANT: always append the `of N reported` suffix.
 
