@@ -24,7 +24,11 @@ Take the rung. `reachable_end_state` should accept the goal/rung the brief is be
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `reachable_end_state(repo_root, batch)` takes the root and the batch and nothing else.
+- [ ] **AC1** Given a batch and the `design` rung, when `reachable_end_state` derives the terminal, then it returns Ready - the same terminal `anchor_status_block` stamps on a design run
+- [ ] **AC2** Given the same batch and the `done` rung, when it derives the terminal, then it returns Review - the positive control proving the rung is read rather than the answer hard-coded
+- [ ] **AC3** Given a rung that is genuinely unknown at brief time, when the brief prints its reachable end state, then it says the rung is undetermined and names no terminal
+- [ ] **AC4** Given `sprint.py goal-review brief --goal design` driven through the shipped CLI, when it prints, then the terminal in its output is the terminal `sprint.py plan --goal design` accepts for the same worklist - both read one source, so they cannot disagree
+- [ ] **AC5** Given the `triage` and `plan` rungs, when the brief is rendered for each, then each names its own terminal - the fix is not a two-case special case for design and done
 
 ## Impact
 
@@ -35,3 +39,4 @@ The brief is what an independent seat reads before judging a plan, and `reviews/
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-16 | sdlc-studio | Filed |
+| 2026-08-19 | sdlc-studio | Groomed: acceptance criteria authored so the unit is plannable |

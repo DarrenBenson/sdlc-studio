@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
 > **Created:** 2026-08-19
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,9 +23,13 @@ Key the join by (criterion, mutant) or by row index, so every declared row is a 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `verify_ac._testplan_rows` builds a mapping keyed by criterion, so a Test Plan declaring more than one mutant for the same AC keeps only one.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Measured 2026-08-19 by a review of BG0592.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Key the join by (criterion, mutant) or by row index, so every declared row is a planned mutant.
+- [ ] **AC1** Given a Test Plan declaring two mutants for one criterion, when `verify_ac._testplan_rows` builds the join, then the number of entries it returns equals `grep -c '^| AC'` over the same file - asserted against that independent reader, never against the new function's own idea of what it holds
+- [ ] **AC2** Given that plan, when `mutation.py run --from-plan` reports its planned count, then the count equals the number of declared ROWS, not the number of distinct criteria
+- [ ] **AC3** Given the mutation ledger, when a mutant is registered against a unit, then the record carries a ROW identity and not only `unit` + `criterion`, so two mutants on one criterion are distinguishable on the record - and an existing entry with no row key still reads back rather than being orphaned
+- [ ] **AC4** Given a plan carrying two rows on a criterion of which only one was executed, when the done-gate reads the join, then it refuses and NAMES the unaccounted row - `every one executed and killed` is not printed while a declared row is unexecuted
+- [ ] **AC5** Given BG0592's own Test Plan, when `--from-plan` runs against it, then the planned count it prints equals `grep -c '^| AC'` over BG0592's artefact - measured from the file, not asserted as the literal 18, so the criterion survives a repair that legitimately changes the row count
+- [ ] **AC6** Given a plan with exactly one row per criterion, when `--from-plan` runs, then its planned count is unchanged from today's - the control proving the fix does not inflate the single-row case
+- [ ] **AC7** Given a Test Plan whose row count and criterion count differ, when the report prints, then it states both figures, so a future divergence is visible rather than silent
 
 ## Impact
 
@@ -36,3 +40,6 @@ The done-gate reads this join to decide whether a unit's planned mutants were ex
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-19 | sdlc-studio | Filed |
+| 2026-08-19 | sdlc-studio | Groomed: acceptance criteria authored so the unit is plannable |
+| 2026-08-19 | sdlc-studio | Scope widened: `mutation.plan_execution` is a THIRD caller of `_testplan_rows`; the ledger keys by criterion, so the row identity AC3 needs is a schema change outside the original surface. Re-pointed 2 -> 3 |
+| 2026-08-19 | sdlc-studio | Criteria re-pointed: AC1/AC5 assert against an independent reader rather than the repaired function or a literal, and the ledger row identity AC3 needs is stated as its own criterion |

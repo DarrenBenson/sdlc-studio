@@ -3020,32 +3020,82 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
         self.assertIn("BG9001", page, page)
         self.assertEqual(0, ok.returncode, ok.stdout + ok.stderr)
 
-    def test_the_corpus_census_moves_by_exactly_four(self) -> None:
+    # The four shapes two review seats measured as derived-only, captured VERBATIM from the
+    # artefacts as they stood when the measurement was taken. They are held here rather than
+    # read from the live corpus because grooming a bug is a legitimate act that must not turn
+    # this test red: BG0578 and BG0581 were groomed the day after the measurement and the
+    # earlier form of this test, which globbed them off disk, went red for that reason alone.
+    # A pin whose subject is allowed to change is a pin on nothing.
+    DERIVED_ONLY_SHAPES = {
+        "BG0578": (
+            "- [ ] **AC1** The behaviour described is corrected: `test_census.attribute` places "
+            "a test file by counting how often it names each sibling module and taking the "
+            "most-mentioned.\n"
+            "- [ ] **AC2** The proposed fix lands, pinned by a test: Attribution should prefer "
+            "a DECLARED owner over a counted one: a unit's `Affects` already names the file, "
+            "and a module-level marker in the test would state its...\n"),
+        "BG0581": (
+            "- [ ] **AC1** The behaviour described is corrected: `reachable_end_state("
+            "repo_root, batch)` takes the root and the batch and nothing else.\n"),
+        "BG0537": (
+            "- [ ] **AC1** The behaviour described is corrected: <the summary, restated>.\n"),
+        "BG0547": (
+            "- [ ] **AC1** The behaviour described is corrected: <the summary, restated>.\n"
+            "- [ ] **AC2** Following the recorded steps no longer reproduces the defect: "
+            "<the steps, restated>.\n"),
+    }
+
+    @staticmethod
+    def _artefact(uid: str, criteria: str) -> str:
+        return (f"# {uid}: a finding\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                f"> **Points:** 2\n> **Affects:** scripts/x.py\n\n## Summary\n\n"
+                f"A thing is broken.\n\n## Acceptance Criteria\n\n{criteria}\n## Impact\n\n"
+                f"It misreports.\n")
+
+    def test_the_measured_derived_only_shapes_still_read_derived_only(self) -> None:
         """MUTANT: broaden the pattern to `^AC.*?:` - it would swallow authored criteria.
 
-        Two review seats independently measured this number before the fix was written. Pinning
-        it means an over-reaching fix fails HERE rather than by refusing somebody's plan a week
-        later. Scoped to the four ids so the test survives new filings; a bare count would go
-        stale the next time anybody files a bug.
+        Two review seats independently measured these four shapes before the fix was written.
+        Pinning them means an over-reaching fix fails HERE rather than by refusing somebody's
+        plan a week later. The TEXT is the subject, not the id: see DERIVED_ONLY_SHAPES.
+        """
+        import conformance as _c  # noqa: PLC0415 - sibling, resolved via the tests path
+        for uid, criteria in self.DERIVED_ONLY_SHAPES.items():
+            with self.subTest(uid=uid):
+                _, why = _c.unit_is_ungroomed("bug", self._artefact(uid, criteria))
+                self.assertEqual("derived-only", why,
+                                 f"the {uid} shape was measured as derived-only by two seats")
+
+    def test_an_authored_criterion_is_not_read_as_derived(self) -> None:
+        """MUTANT: return `derived-only` unconditionally - the control the id pins cannot give.
+
+        Every shape above is a POSITIVE case, so all four pass for a detector that says yes to
+        everything. This is the negative one, in the same fixture shape, so the pair
+        discriminates.
+        """
+        import conformance as _c  # noqa: PLC0415 - sibling, resolved via the tests path
+        authored = ("- [ ] **AC1** Given a widget at rest, when it is poked, then it wobbles\n"
+                    "- [ ] **AC2** Given a poked widget, when it settles, then it is still\n")
+        _, why = _c.unit_is_ungroomed("bug", self._artefact("BG9002", authored))
+        self.assertNotEqual("derived-only", why,
+                            "authored Given/When/Then criteria must not read as tool-derived")
+
+    def test_the_corpus_census_stays_within_its_measured_bounds(self) -> None:
+        """MUTANT: make `is_derived_criterion` return True unconditionally.
+
+        Naming shapes pins nothing about REACH: a review made that mutation and every shape
+        assertion above still passed, while the census went 17 bugs / 0 stories -> 364 / 669.
+        The NUMBER is the claim. Bounded rather than exact, because filing or grooming a bug
+        must not turn this red - the ceiling is what an over-reach breaches, and stories are
+        asserted at zero because the whole corpus of them is authored.
         """
         import conformance as _c  # noqa: PLC0415 - sibling, resolved via the tests path
         repo = Path(__file__).resolve().parents[5]
-        expected = {"BG0537", "BG0547", "BG0578", "BG0581"}
-        for uid in expected:
-            hits = list((repo / "sdlc-studio" / "bugs").glob(f"{uid}-*.md"))
-            if not hits:
-                continue          # a corpus that moved on is not this test's business
-            _, why = _c.unit_is_ungroomed("bug", hits[0].read_text(encoding="utf-8"))
-            self.assertEqual("derived-only", why,
-                             f"{uid} was measured as derived-only by two seats before the fix")
+        bugs_dir = repo / "sdlc-studio" / "bugs"
+        self.assertTrue(bugs_dir.is_dir(), f"{bugs_dir} is not the repo's bug corpus - the "
+                                           f"root resolved to {repo}, so this census would "
+                                           f"measure nothing while reporting green")
 
-        # THE COUNT, AND THE EMPTY STORY SET. Naming four ids pins nothing about REACH: a
-        # review made `is_derived_criterion` return True unconditionally - census 17 bugs / 0
-        # stories -> 364 / 669 - and the four assertions above still passed. AC6 says in terms
-        # that "any other number means the fix over- or under-reaches", so the number is the
-        # claim. Bounded, not exact, because filing a bug must not turn this red: the ceiling
-        # is what an over-reach breaches, and stories are asserted at zero because the whole
-        # corpus of them is authored.
         def census(kind: str, dirname: str) -> int:
             n = 0
             for f in sorted((repo / "sdlc-studio" / dirname).glob("*.md")):
@@ -3056,7 +3106,6 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
             return n
 
         bugs = census("bug", "bugs")
-        self.assertGreaterEqual(bugs, len(expected))
         self.assertLess(bugs, 60, f"{bugs} bugs read derived-only - the fix is over-reaching; "
                                   f"it was 13 before and 17 after, measured by two seats")
         self.assertEqual(0, census("story", "stories"),

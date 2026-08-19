@@ -1,4 +1,6 @@
 <!-- close-status:begin -->
+> **RUN-01M0ATVZ closed goal-reached.** 4 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
+> Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **Run of record:** RUN-01M0ATVZ - a BUILD rung under SC0006. Four groomed bugs from the open
 > backlog, delivered file-disjoint: BG0584, BG0585, BG0589, BG0590. All four are Fixed with

@@ -24,8 +24,12 @@ Attribution should prefer a DECLARED owner over a counted one: a unit's `Affects
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `test_census.attribute` places a test file by counting how often it names each sibling module and taking the most-mentioned.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Attribution should prefer a DECLARED owner over a counted one: a unit's `Affects` already names the file, and a module-level marker in the test would state its...
+- [ ] **AC1** Given a test file carrying a module-level subject marker, when `test_census.attribute` places it, then it returns the declared subject regardless of which sibling module the file names most often
+- [ ] **AC2** Given a test file with no marker whose unit declares it in `Affects` alongside exactly one script, when attribute places it, then it returns that script - the declared owner is read from the artefact before any counting happens
+- [ ] **AC3** Given a test file with neither a marker nor a declaring unit, and one sibling module named more often than any other, when attribute places it, then it returns that module - counting survives as the fallback, not as the rule
+- [ ] **AC4** Given a test file whose two most-mentioned siblings tie, when attribute places it, then it names the tied candidates in its result rather than reporting the file as unattributed
+- [ ] **AC5** Given `test_cli_grammar.py` as it stands on disk, when a mention of any sibling module is added to it and attribution is re-run, then the owner is unchanged - the exact edit that moved it to unattributed on 2026-08-14
+- [ ] **AC6** Given the attribution ratchet driven through its shipped entry point over the real corpus, when a prose-only edit is made to a test file, then the ratchet count does not move
 
 ## Impact
 
@@ -36,3 +40,4 @@ The ratchet is the guard on test attribution and it fires on edits that change n
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-14 | sdlc-studio | Filed |
+| 2026-08-19 | sdlc-studio | Groomed: acceptance criteria authored so the unit is plannable |
