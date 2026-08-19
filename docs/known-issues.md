@@ -32,7 +32,7 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0581` | Medium | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready |
 | `BG0587` | Medium | two answers to the grooming question inside one close |
 | `BG0591` | Medium | status and close_owed give opposite answers about the same units |
-| `BG0594` | Medium | the budget lane watches the per-commit gate only, so the full suite grew 46% unobserved |
+| `BG0594` | Medium | the budget lane watches the per-commit gate only, so the full suite grew 43% against a ceiling declared for the other population |
 | `BG0595` | Medium | one commit-msg hook test runs against the real repository, so it consumes the developer's gate handoff and starts a full suite inside a unit test |
 | `BG0596` | Medium | testplan run --from-plan keys by criterion, so a second mutant on the same AC is silently dropped |
 | `BG0599` | Medium | testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips |
