@@ -503,10 +503,15 @@ class MessageAbsentTests(unittest.TestCase):
                          "and consumed the handoff record")
 
     def test_a_present_message_still_reaches_the_suite_block(self):
-        """MUTANT: in `commit-msg`, raise a failure whenever no record is present.
+        """MUTANT: in `commit-msg`, make the message-absent exit unconditional.
 
-        The CONTROL. Without it the criterion above is satisfied by a hook that never enters
-        the suite block at all, which would disable the lanes rather than scope them.
+        The CONTROL. Without it the criterion above is satisfied by a hook that never enters the
+        suite block at all, which would disable the lanes rather than scope them.
+
+        The mutant is the OVER-REACH, not a failure-when-no-record: this fixture PLANTS the
+        record, so any mutant conditioned on its absence is pre-empted and survives. Two earlier
+        cuts of this row named exactly that, and both were measured surviving by independent
+        review.
         """
         r = _run("fix(BG0489): probe", plant_handoff=True)
         self.assertTrue(r.entered_suite_block,

@@ -16370,7 +16370,21 @@ class DryRunScratchParityTests(unittest.TestCase):
         (root / "sdlc-studio").mkdir()
         (root / "changelog.d").mkdir()
         (root / "tools").mkdir()
-        (root / ".claude" / "skills" / "sdlc-studio").mkdir(parents=True)
+        skill = root / ".claude" / "skills" / "sdlc-studio"
+        skill.mkdir(parents=True)
+        # SKILL-SHAPED, because `_ck_doc_surface` asks `is_skill_repo` first: without this the
+        # probe answers `not applicable` from BOTH roots and the parity control cannot fire.
+        (skill / "SKILL.md").write_text("# Skill\n\n`sprint plan` - plan a sprint.\n",
+                                        encoding="utf-8")
+        (skill / "help").mkdir()
+        (skill / "help" / "sprint.md").write_text("## `sprint plan`\n\n```bash\nsprint plan\n```\n",
+                                                  encoding="utf-8")
+        # The real script tree, LINKED. `verb_coverage` parses argparse surfaces, and against a
+        # stub it raises for both roots - so the probe reads `unreadable` either way and the
+        # measurement under test is never reached. This is a link into the repo the test is
+        # running in, read-only: the fixture never writes through it.
+        (skill / "scripts").symlink_to(
+            Path(__file__).resolve().parents[1], target_is_directory=True)
         (root / "tools" / "marker.txt").write_text("x\n", encoding="utf-8")
         (root / "changelog.d" / "US0001.md").write_text("- a change\n", encoding="utf-8")
         # Through `gitutil.git`, not a bare `subprocess.run`. The sweep in
@@ -16416,6 +16430,96 @@ class DryRunScratchParityTests(unittest.TestCase):
             self.assertNotEqual(root.resolve(), seen["root"].resolve(),
                                 "the WRITE root is the real tree - the scratch exists so that "
                                 "it is not")
+
+    def test_every_read_only_probe_honours_the_read_root(self) -> None:
+        """MUTANT: in `sprint_report.py`, read `.claude/skills/` from `ctx["root"]` again.
+
+        AC1's outcome clause, at PROBE level. The earlier verifier spied only that
+        `_close_checklist` was handed a read root - not that any probe honoured it - so
+        reverting `_ck_doc_surface`'s read, the `**kwargs` branch, or the `unevaluated` note left
+        all 1,097 tests in this file and its sibling green. The clause "so a probe reading any
+        surface outside `sdlc-studio/`" was the part left unpinned, and it is where the defect
+        relocated three rounds running.
+
+        Every read-only row is asked TWICE - once against the real root, once against a scratch
+        carrying only `sdlc-studio/` plus that read root - and the two verdicts must agree.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            scratch = Path(tempfile.mkdtemp(prefix="probe_"))
+            try:
+                shutil.copytree(root / "sdlc-studio", scratch / "sdlc-studio", symlinks=True)
+                base = {"retro_id": None, "units": [], "run": {}}
+                real = dict(base, root=root, read_root=root)
+                copy = dict(base, root=scratch, read_root=root)
+                # The SENSITIVITY CONTROL first: a scratch with NO read root must disagree, or
+                # this fixture cannot show the read root is what makes them agree.
+                blind = dict(base, root=scratch)
+                # (state, detail), not state alone: the blind scratch and the real tree both
+                # report NOT_RUN here and differ only in WHY - `not applicable` versus
+                # `unreadable` - so a state-only assertion passes whichever root the probe read.
+                a = sprint_report._ck_doc_surface(real)[:2]
+                b = sprint_report._ck_doc_surface(blind)[:2]
+                self.assertNotEqual(a, b,
+                                    "the probe answers the same with and without a real tree, "
+                                    "so this fixture cannot discriminate")
+                c = sprint_report._ck_doc_surface(copy)[:2]
+                self.assertEqual(a, c,
+                                 f"the doc-surface probe answers differently inside a preview "
+                                 f"({c}) from outside one ({a}), on a surface that lives outside "
+                                 f"`sdlc-studio/` - it is still reading the scratch")
+            finally:
+                shutil.rmtree(scratch, ignore_errors=True)
+
+    def test_a_step_taking_kwargs_still_receives_the_read_root(self) -> None:
+        """MUTANT: in `sprint.py`, delete the `**kwargs` branch from the step call.
+
+        A step that cannot be inspected for `read_root` was handed the scratch with nothing
+        said - the degradation this whole unit removes, restored one construct over and
+        silently. Pinned for both shapes: a `**kwargs` step must RECEIVE it, and a step whose
+        signature cannot be read at all must be reported rather than run blind.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            seen = {}
+
+            def kwargs_step(root_arg, retro, state, **kw):
+                seen["read_root"] = kw.get("read_root")
+                return True, "spy", ""
+
+            with unittest.mock.patch.object(sprint, "_close_checklist", kwargs_step):
+                sprint.close_dry_run(root, None)
+            self.assertIsNotNone(seen.get("read_root"),
+                                 "a step taking **kwargs was handed no read root, so it reads "
+                                 "the scratch with nothing reported")
+            self.assertEqual(root.resolve(), Path(seen["read_root"]).resolve())
+
+    def test_an_uninspectable_step_is_reported_not_run_blind(self) -> None:
+        """MUTANT: in `sprint.py`, drop the `unevaluated` note from the signature handler.
+
+        The other half: when the signature cannot be read at all, the step must be REPORTED
+        rather than handed the scratch quietly. A probe silently given the wrong tree is what
+        this unit exists to stop.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            class Unreadable:
+                """`inspect.signature` raises on this, as it does for some C callables and for a
+                decorator applied without `functools.wraps`."""
+                @property
+                def __signature__(self):
+                    raise ValueError("no signature")
+
+                def __call__(self, *a, **kw):
+                    return True, "ran blind", ""
+
+            with unittest.mock.patch.object(sprint, "_close_checklist", Unreadable()):
+                res = sprint.close_dry_run(root, None)
+            rows = {s.get("step"): s for s in (res.get("steps") or [])}
+            row = rows.get("checklist") or {}
+            self.assertEqual("unevaluated", row.get("status"),
+                             f"a step whose signature could not be read was run anyway, with "
+                             f"nothing said about which tree it got: {row}")
 
     def test_the_scratch_reaches_nothing_outside_sdlc_studio(self) -> None:
         """MUTANT: in `sprint.py`, symlink `.git` into the scratch beside the copy.

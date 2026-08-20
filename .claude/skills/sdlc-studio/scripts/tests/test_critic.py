@@ -5218,9 +5218,16 @@ class PlanReviewBriefTeachesMultiRowTests(unittest.TestCase):
         script = REPO_ROOT / ".claude" / "skills" / "sdlc-studio" / "scripts" / "critic.py"
         self.assertTrue(script.is_file(), f"{script} is not on disk - this measured nothing")
         src = script.read_text(encoding="utf-8")
-        self.assertNotIn("one row per criterion", src,
+        # CASE-INSENSITIVE, and the positive claim asserted too. A case-sensitive substring test
+        # dies on the exact declared sentence and survives a paraphrase - "One row per
+        # criterion" restores the defect and passes - so it pins the wording rather than the
+        # instruction.
+        self.assertNotIn("one row per criterion", src.lower(),
                          "the plan-review brief still tells every reviewer a criterion carries "
                          "exactly one row, which is the format BG0596 makes legal")
+        self.assertIn("may declare several rows", src.lower(),
+                      "the brief does not tell a reviewer that a criterion MAY carry several "
+                      "rows, so a multi-row plan reads as a mistake to whoever reviews it next")
 
     def test_the_mutation_help_page_states_the_row_join(self) -> None:
         """The other half of the same claim: `help/mutation.md` documented the worst verdict as
