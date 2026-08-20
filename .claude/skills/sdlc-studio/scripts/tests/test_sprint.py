@@ -16468,6 +16468,31 @@ class DryRunScratchParityTests(unittest.TestCase):
                                  f"the doc-surface probe answers differently inside a preview "
                                  f"({c}) from outside one ({a}), on a surface that lives outside "
                                  f"`sdlc-studio/` - it is still reading the scratch")
+
+                # THE CLASS, not the two lines the fix touched. A future probe that reads any
+                # surface outside `sdlc-studio/` without asking the read root is the same defect,
+                # and naming today's two would exempt whichever one is added next - the
+                # enumerated-list shape this repository keeps meeting. Every `_ck_*` resolver is
+                # swept, and the ones that legitimately read only `sdlc-studio/` agree trivially
+                # because the scratch carries a copy of it.
+                probes = [(n, f) for n, f in vars(sprint_report).items()
+                          if n.startswith("_ck_") and callable(f)]
+                self.assertGreater(len(probes), 15,
+                                   f"only {len(probes)} checklist probes were found - the sweep "
+                                   f"resolved nothing and measures nothing")
+                differing = []
+                for name, fn in probes:
+                    try:
+                        x = fn(real)[:2]
+                        y = fn(copy)[:2]
+                    except Exception:      # a probe that raises alike on both is not this test's
+                        continue           # subject; it answers the same either way
+                    if x != y:
+                        differing.append(f"{name}: real={x} preview={y}")
+                self.assertEqual([], differing,
+                                 "these checklist probes answer differently inside a preview "
+                                 "from outside one, so the close and its own preview disagree:\n"
+                                 + "\n".join(differing))
             finally:
                 shutil.rmtree(scratch, ignore_errors=True)
 
