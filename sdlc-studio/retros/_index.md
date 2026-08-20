@@ -115,3 +115,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0103](RETRO0103-the-design-rung-12-units-groomed-to-red.md) | The design rung: 12 units groomed to RED criteria, and a goal review that rejected the first shape | 2026-08-16 | -- | -- |
 | [RETRO-0104](RETRO0104-the-twelve-units-delivered-outside-an-approved-batch.md) | The twelve units delivered outside an approved batch | 2026-08-17 | -- | -- |
 | [RETRO-0105](RETRO0105-four-close-ceremony-defects-three-of-them-found.md) | four close-ceremony defects, three of them found by reviews that rejected the first cut | 2026-08-18 | -- | -- |
+| [RETRO-0106](RETRO0106-six-instruments-repaired-and-three-of-them-were.md) | Six instruments repaired, and three of them were not delivered when I first ticked them | 2026-08-20 | -- | -- |

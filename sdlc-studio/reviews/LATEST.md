@@ -2,89 +2,78 @@
 > **RUN-01M0ATVZ closed goal-reached.** 4 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **Run of record:** RUN-01M0ATVZ - a BUILD rung under SC0006. Four groomed bugs from the open
-> backlog, delivered file-disjoint: BG0584, BG0585, BG0589, BG0590. All four are Fixed with
-> adversarial evidence recorded. **Reviewer-of-record sign-off is OWED and is the operator's** -
-> `critic signoff` refuses a principal the authoring session controls, which is the gate working.
 
-## THE HEADLINE: THE CODE WAS RIGHT, THE EVIDENCE WAS NOT
+> **Run of record:** RUN-01M0CT8P - six instruments that reported verdicts their own evidence did
+> not support. Six units, 21 points, delivered. The goal was reached. It took FIVE plan-review
+> rounds and THREE delivery-review rounds, and that is the number worth reading, not the points.
 
-Six review rounds across five units. **Every rejection but the first was a defect in a repair, not
-in the original work** - and in three of four units the reviewer found the production code correct
-and the tests unable to fail.
+## THE HEADLINE: THREE OF SIX WERE NOT DELIVERED WHEN I FIRST TICKED THEM
 
-The clearest case: a seat enumerated every criterion-line spelling in the real corpus, confirmed
-the BG0585 detector judged all of them correctly, then rejected the unit because three of its six
-criteria were verified by tests that proved nothing.
+Both delivery seats REJECTED the first cut, and between them found that **eight of thirty-four
+mutants recorded as killed did not die on the test their criterion named.** The `--from-plan`
+greens were replaying verdicts that had been typed, not executions.
 
-- A control asserted lower-case `the` against a case-sensitive matcher, so it read False whether
-  or not the fix over-reached, and the criterion's own declared mutant **survived all 6603 tests**.
-- A census test resolved the repository root to `.claude/`, so its glob matched nothing and every
-  assertion was skipped. **It measured nothing while reporting green.** Third instance of that
-  shape this session.
-- A wiring criterion named `sprint.py plan` and drove `breakdown` - read-only, exits 0 - so no
-  refusal was ever asserted.
+- **BG0593's production change was unexercised.** Its tests rebuilt the scratch construction in a
+  private helper, so deleting the entire change left all four of its tests green AND all 916 tests
+  in the file green. Found by a reviewer deleting the code and running the suite.
+- **BG0594's rate verdict was never written.** `over` was still `measured > budget`; reverting the
+  intended fix survived all 53 tests in its file.
+- **BG0594 AC6 was not delivered while its mutant read KILLED** - the mutant had been applied to
+  the CALL SITE while the function behind it still returned the wrong series.
+
+## THE DEFECT RELOCATED IN EVERY SINGLE ROUND
+
+An equivalent mutant moved from BG0596 AC6 to BG0593 AC4. A duplicate pair moved from BG0595
+AC3/AC5 to AC1/AC3. The scratch degradation moved from the tick row to `_ck_doc_surface`, which
+still read the copy while its sibling read the real tree. **A repair judged only against its own
+finding is how.** Round 2 of the plan review and rounds 2 and 3 of the delivery review each exist
+because of it.
 
 ## WHAT THE NEXT SESSION SHOULD READ FIRST
 
-**BG0592 is open, rejected FOUR times, and escalated twice.** Its diagnosis was right from round
-one; every subsequent rejection was of the repair. Round 2 found a project-declared status bought a
-silent exemption; round 3 found the repair of THAT reintroduced the false green the unit indicts
-(`3/3 green` printed beside `2 failing`); round 4 found the fixture could not see a numerator
-counting manual criteria as green, because every story in it had `manual=0`.
+**LL0054** is the diagnosis, and it is short: a test and its mutant authored together share one
+mental model, so they agree with each other and not with the code. **Apply the mutant first,
+against the unmodified tree, and confirm the named test is red before writing a line of it.**
+Working that way caught the rate-ceiling error in one run where the old order needed a review
+round.
 
-**Its `Verification depth` field has now been wrong five times running** - criterion counts, mutant
-counts, and a claim of CLI coverage that did not exist. Read that field with suspicion, and prefer
-`mutation.py run --story <id> --from-plan`, which reports from the ledger rather than from prose.
+**CR0547 is the gate that would have caught the worst of this.** `verify_ac revert-check`: revert a
+unit's production files and REQUIRE its own verifiers to go red. It is filed, not built. The
+registry already holds LL0040, LL0020 and LL0017 describing that hole from three angles, enforced
+by nothing.
 
-**Two numbers moved under measurement and both corrections were themselves wrong**: the retro
-bullet style ("every retro carries asterisks" - measured 102 dash, 3 asterisk of 105) and the
-grooming census (13 -> 17, briefly 18 while a newly filed bug sat ungroomed). A false premise
-restated reads as verification, which is why it is worse than the original.
+**CR0548**: derive `Verification depth` from the ledger. Every one of those fields except BG0597's
+made a false factual claim in this batch, and two of the hand-written corrections were themselves
+wrong.
 
-## THE GATE BUDGET IS BIMODAL, AND THE FIGURE YOU SEE IS SELECTION WIDTH
+## WHAT THE GATES CAUGHT THAT I DID NOT
 
-`total.selected` is two populations, not one series: ~1,400 tests selected costs ~212s, ~5,100
-costs ~540s, at a stable 0.105-0.171 s/test throughout. The declared 380s ceiling sits BETWEEN the
-modes, so it is wrong about both, and the lane reports the LATEST row rather than the series.
+Eleven refusals, every one a real inconsistency: release notes claiming four open High findings
+against a corpus holding six; a disclosure page stale the moment two bugs were filed; a derived
+index that moved when a unit was re-pointed; ten internal bug ids in shipped `scripts/`; an
+unconfined git call; two criteria sharing one verifier; and `mutation register` dropping five
+registrations because the file had been edited after they were recorded.
 
-An earlier reading of this took the three most recent 212s rows as the current cost and proposed
-re-baselining DOWNWARD. Two gate runs minutes later measured 535s and 554s. **The guard that
-refused that change was right; the premise was mine.** Filed as BG0594. The full suite - not the
-per-commit gate - is what genuinely grew, ~630s to ~921s, and nothing watches it.
+The **verify-ratchet** deserves its own line: it refuses any new pair of criteria sharing one
+selector, and forcing BG0594 AC6 to have its own test is what exposed that it had never been
+delivered.
+
+## AND ONE THE TOOLING DID NOT CATCH, BECAUSE I WROTE IT
+
+The revert check I built to find unexercised fixes **destroyed uncommitted work on its first run** -
+it stashed the tree and restored production files from HEAD, discarding every edit since the last
+commit, including the fix it had just been used to validate. It snapshots bytes now.
 
 ## OPEN, AND WHY
 
 | Id | State |
 | --- | --- |
-| BG0592 | Open. 4 REJECTs, escalated. Diagnosis sound, repair not converging |
-| BG0593 | Open. `close --dry-run` previews against a scratch tree with no `.git`, so every git-reading row degrades to unjudged. Confirmed here: `tick-verification` reads `diff unreadable` under `--dry-run` and `24 ticked criteria supported` outside it |
-| BG0594 | Open. The budget lane watches the per-commit gate only, against a bimodal population |
-| BG0595 | Open. The commit-msg hook test is not hermetic, so the full suite goes red whenever work is in flight. Verified by stash: same code, clean passes, dirty fails |
-| BG0596 | Open. `_testplan_rows` keys by criterion, so a second mutant on the same AC is silently dropped and `--from-plan` reports every one killed over rows it never joined |
-| CR0511 | Open. `artifact._wire_story_to_epic` locates its insertion point with a hardcoded dash |
+| BG0599 | Open. `testplan derive` reports one row fault per invocation while computing all four - 22 round trips to clear 33 rows |
+| BG0600 | Open. The `unnameable` exemption is held to the four mutant rules, so an honest declaration is refused unless it names a file and a verb it is not about. It forced that wording three times in this batch |
+| CR0547 | Filed. The revert-check gate |
+| CR0548 | Filed. Derived `Verification depth` |
+| BG0586, BG0588, BG0592 | Open High. Untouched by this run |
 
-## WHAT THIS RUN CHANGED THAT EVERY LATER RUN INHERITS
-
-- **The `derived-only` grooming limb works for the first time since 2026-08-06.** It had been
-  reachable by nothing for twelve days, so the scaffold that reads like content passed every gate.
-  Two currently-open bugs, BG0578 and BG0581, are newly unplannable as a result. That is the gate
-  working, and it is a real cost to price.
-- **A `design` rung can close without waiving a row it cannot answer.** D0145 retracts D0144.
-- **`sprint close` no longer makes the tree uncommittable after reporting success.**
-- **39 mutants are executed and REGISTERED through the shipped tool** rather than asserted in
-  prose. Two reviewers found the prose record false where they re-ran it.
-
-## PRACTICE WORTH CARRYING
-
-**A detector's silence is evidence only once it has been shown able to speak.** The markdownlint
-helper caught a missing binary and not a missing package, so it handed `npm ERR! 404` to an
-`assertNotIn` and four criteria's lint half was inert in any clone without `npm ci` - while both
-its docstring and the depth field said "skipped, never faked". It now lints a known-bad file first.
-
-**Scope a rung fix to the rung it is about, never to "not `done`".** Done twice now: BG0582's
-siblings were rejected for it, the ruling was written into `sprint.py` twice, and BG0584 made the
-same mistake again with those comments in the file.
-
-**Register mutants after the last edit.** An earlier pass was silently dropped when the files
-changed under it, exactly as BG0550 records.
+**A junk row stands on BG0593's plan-review ledger** - reviewer `x`, issues `probe` - from a bad
+invocation of mine. `critic supersede` refuses a principal the authoring session controls, which is
+the gate working; clearing it is the operator's.
