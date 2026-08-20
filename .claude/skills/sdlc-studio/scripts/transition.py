@@ -1924,12 +1924,20 @@ def _planned_mutant_gate(root, unit: str) -> str | None:
     outstanding = res.get("outstanding") or []
     if not outstanding:
         return None
+    # NAME THE ROW, and quote its mutant. A criterion may declare several, and this printed one
+    # sentence per criterion with the mutant text dropped - so two unexecuted rows on one AC
+    # produced the same sentence twice and identified neither. The reader was told something was
+    # owed and not which thing.
+    rows = res.get("rows") or []
+    multi = {ac for ac in {r["ac"] for r in rows}
+             if sum(1 for x in rows if x["ac"] == ac) > 1}
     parts = []
     for r in outstanding:
+        where = f"{r['ac']} row {r.get('row', 0)}" if r["ac"] in multi else r["ac"]
         if r["verdict"] == mutation.NOT_RUN:
-            parts.append(f"{r['ac']} was planned and never executed")
+            parts.append(f"{where} was planned and never executed - `{r['mutant'][:60]}`")
         else:
-            parts.append(f"{r['ac']}'s mutant SURVIVED on {r.get('target')} - the test that "
+            parts.append(f"{where}'s mutant SURVIVED on {r.get('target')} - the test that "
                          f"criterion names did not notice `{r['mutant'][:60]}`")
     return (f"{unit}: {len(outstanding)} planned mutant(s) unaccounted for - " + "; ".join(parts)
             + f". Check them with `mutation.py run --story {unit} --from-plan`")

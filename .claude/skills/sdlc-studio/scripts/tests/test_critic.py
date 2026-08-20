@@ -5205,6 +5205,35 @@ class PlanReviewOriginTests(unittest.TestCase):
         self.assertEqual([], mod.unclassified_findings("[new] a finding"))
 
 
+class PlanReviewBriefTeachesMultiRowTests(unittest.TestCase):
+    """BG0596 AC8: the shipped guidance must not forbid the format the tool now accepts.
+
+    A format change the shipped brief contradicts is one nobody will use - the brief is what
+    every future plan reviewer reads before judging a plan, so it is the guidance that decides
+    whether a second row on a criterion is written at all.
+    """
+
+    def test_the_plan_review_brief_does_not_teach_one_row_per_criterion(self) -> None:
+        """MUTANT: in `critic.py`, restore the hard-coded sentence at `_plan_review_brief`."""
+        script = REPO_ROOT / ".claude" / "skills" / "sdlc-studio" / "scripts" / "critic.py"
+        self.assertTrue(script.is_file(), f"{script} is not on disk - this measured nothing")
+        src = script.read_text(encoding="utf-8")
+        self.assertNotIn("one row per criterion", src,
+                         "the plan-review brief still tells every reviewer a criterion carries "
+                         "exactly one row, which is the format BG0596 makes legal")
+
+    def test_the_mutation_help_page_states_the_row_join(self) -> None:
+        """The other half of the same claim: `help/mutation.md` documented the worst verdict as
+        held per CRITERION, which is the rule that changed."""
+        page = (REPO_ROOT / ".claude" / "skills" / "sdlc-studio" / "help" / "mutation.md")
+        self.assertTrue(page.is_file(), f"{page} is not on disk - this test measured nothing")
+        body = page.read_text(encoding="utf-8")
+        self.assertIn("(criterion, row)", body,
+                      "the help page does not document the join key, so an author has no way "
+                      "to learn that --row exists")
+        self.assertIn("--row", body, "the help page does not name the flag it requires")
+
+
 if __name__ == "__main__":
     unittest.main()
 

@@ -126,8 +126,15 @@ is committed.
   unset-delivered-field|no-op-mapper` when the mutant you applied by hand IS one of those. It is
   optional on purpose: picking the nearest label to satisfy the flag would make the join lie, and
   no comparison is better than a guessed one.
+- **A criterion may declare more than one mutant, and each is joined separately.** The join key
+  is `(criterion, row)`, `row` being 0-based in file order, so two mutants on one AC are two
+  claims rather than one. Pass `--row N` when registering the second and later ones; omit it for
+  a criterion carrying a single row. Keyed by criterion alone, one kill used to satisfy every
+  row on that criterion and `--from-plan` reported `every one executed and killed` over mutants
+  it had never joined. The report now prints the row count beside the criterion count so the two
+  cannot silently disagree, and an entry recorded before this shipped reads back as row 0.
 - **A mistyped verdict is corrected by `retract`, never by re-registering.** `plan_execution`
-  holds the WORST verdict per criterion, so registering `killed` over a mistaken `survived`
+  holds the WORST verdict per `(criterion, row)`, so registering `killed` over a mistaken `survived`
   leaves the survivor standing - deliberately, because a genuine correction and an author
   registering their way out of a survivor look identical to the tool. Use
   `mutation.py retract --unit <id> --criterion ACn --target F --line N --mutant "..."

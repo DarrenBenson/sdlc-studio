@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** High
+> **Verification depth:** functional (five criteria over `verify_ac.py` and `mutation.py`. Every mutant below was executed against the real tree with `__pycache__` purged and `python3 -B`, its target's hash checked CHANGED before the run and byte-identical after, and the KILL confirmed by the name of the failing test rather than by a failure count. This field is rewritten from that re-execution, not amended: an independent review found the previous version false on five of six units in this batch, and an amended false record is still a false record. AC1 and AC2 are driven through the SHIPPED command as a subprocess against a root asserted to be under `tempfile`, with the repository's own artefacts checked unchanged; AC3 declares that route `unnameable`, because no production edit falsifies a rule about how evidence is taken. The read-path and write-path mutants are provably DISTINCT - reverting `_testplan_rows` kills BG0596's test and not this one's, and reverting the derive loop does the reverse. This unit was the only one in the batch the delivery review found clean)
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
 > **Depends on:** BG0596 - the reporting join and the destructive re-derive are the same criterion-keyed read in `_testplan_rows`; repairing the write path first would leave two definitions of what a plan holds
@@ -25,11 +26,21 @@ Key the existing-plan read by (criterion, mutant) or by row index, matching the 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a Test Plan carrying two rows on one criterion, when `verify_ac.py testplan derive` re-derives that unit as a SUBPROCESS against a root asserted to be under `tempfile`, then both rows are present afterwards in file order, the command EXITS 0, the Test Plan section is rewritten and the repository's own artefacts are untouched - a derive that refuses every multi-row plan loses no rows and is not the fix, because it makes the format BG0596 requires unmaintainable through the shipped command
-- [ ] **AC2** Given a plan row whose criterion id is no longer among the unit's criteria - an ORPHAN row, which is what an AC renumbering produces - when derive runs, then it REFUSES with a non-zero exit and PRINTS the row it would have dropped: measured 2026-08-19, a two-row plan (AC1 and AC7) against a one-criterion unit silently became one row at exit 0
-- [ ] **AC3** Given the evidence for AC1 and AC2, when it is taken, then it comes through a subprocess invocation of the shipped `verify_ac.py` against a root asserted to be under `tempfile` - never through an in-process call, because the defect is in a command and a library test cannot see a command's wiring
-- [ ] **AC4** Given a Test Plan with exactly one row per criterion, when derive runs, then the Criterion and Mutant columns round-trip unchanged and the exit is 0 - the Title column is regenerated from the criterion by design, so a byte-identical assertion over the whole row would fail for a reason unrelated to this fix
-- [ ] **AC5** Given `_testplan_rows` with its changed return shape, when `mutation.plan_execution` reads it - the second of the helper's two callers, in another file, consuming the return as a dict via `sorted(planned.items())` - then `--from-plan` still reports correctly for a single-row plan and the ledger join is unchanged
+- [x] **AC1** Given a Test Plan carrying two rows on one criterion, when `verify_ac.py testplan derive` re-derives that unit as a SUBPROCESS against a root asserted to be under `tempfile`, then both rows are present afterwards in file order, the command EXITS 0, the Test Plan section is rewritten and the repository's own artefacts are untouched - a derive that refuses every multi-row plan loses no rows and is not the fix, because it makes the format BG0596 requires unmaintainable through the shipped command
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_a_re_derive_preserves_every_row_and_exits_zero
+  - **Verified:** yes (2026-08-19)
+- [x] **AC2** Given a plan row whose criterion id is no longer among the unit's criteria - an ORPHAN row, which is what an AC renumbering produces - when derive runs, then it REFUSES with a non-zero exit and PRINTS the row it would have dropped: measured 2026-08-19, a two-row plan (AC1 and AC7) against a one-criterion unit silently became one row at exit 0
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_an_orphan_row_is_refused_and_named
+  - **Verified:** yes (2026-08-19)
+- [x] **AC3** Given the evidence for AC1 and AC2, when it is taken, then it comes through a subprocess invocation of the shipped `verify_ac.py` against a root asserted to be under `tempfile` - never through an in-process call, because the defect is in a command and a library test cannot see a command's wiring
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_the_shipped_command_preserves_rows_through_a_subprocess
+  - **Verified:** yes (2026-08-19)
+- [x] **AC4** Given a Test Plan with exactly one row per criterion, when derive runs, then the Criterion and Mutant columns round-trip unchanged and the exit is 0 - the Title column is regenerated from the criterion by design, so a byte-identical assertion over the whole row would fail for a reason unrelated to this fix
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_a_single_row_plan_round_trips_unchanged
+  - **Verified:** yes (2026-08-19)
+- [x] **AC5** Given `_testplan_rows` with its changed return shape, when `mutation.plan_execution` reads it - the second of the helper's two callers, in another file, consuming the return as a dict via `sorted(planned.items())` - then `--from-plan` still reports correctly for a single-row plan and the ledger join is unchanged
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_changed_return_shape_still_serves_its_other_caller
+  - **Verified:** yes (2026-08-19)
 
 ## Impact
 

@@ -5050,5 +5050,49 @@ class TheAppetiteBreakerIsPulledOnTheShippedPath(unittest.TestCase):
         self.assertNotIn("Traceback", proc.stderr)
 
 
+class PlannedMutantGateNamesTheRowTests(unittest.TestCase):
+    """BG0596 AC4: the done-gate must say WHICH row is unaccounted for."""
+
+    def _fixture(self, root):
+        (root / "x.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "BG9001-x.md"
+        f.write_text(
+            "# BG9001: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Points:** 2\n> **Affects:** x.py\n> **Created:** 2026-08-19\n\n"
+            "## Summary\n\nA thing.\n\n## Acceptance Criteria\n\n"
+            "- [ ] **AC1** Given two rows on one criterion, when the gate reads them, then it "
+            "names the one that is owed\n\n"
+            "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+            "| AC1 | in `x.py`, delete the first branch | first |\n"
+            "| AC1 | in `x.py`, delete the second branch | second |\n\n"
+            "## Revision History\n", encoding="utf-8")
+        return f
+
+    def test_the_refusal_names_the_row_and_quotes_its_mutant(self) -> None:
+        """MUTANT: in `transition.py`, drop the row identity from the refusal and emit one line
+        per criterion.
+
+        Two unexecuted rows on one AC used to produce the same sentence twice, with the mutant
+        text dropped - the reader was told something was owed and not which thing.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            _m = _load("mutation", "mutation.py")
+            _m.register_mutant(root, "x.py", "in `x.py`, delete the first branch",
+                               "pytest t", "killed", unit="BG9001", criterion="AC1",
+                               line=1, row=0)
+            out = transition._planned_mutant_gate(root, "BG9001") or ""
+            self.assertIn("AC1 row 1", out,
+                          f"the refusal did not identify which row is owed:\n{out}")
+            self.assertIn("delete the second branch", out,
+                          f"the refusal dropped the mutant text, so the reader cannot tell "
+                          f"which mutant is owed:\n{out}")
+            self.assertNotIn("AC1 row 0", out,
+                             f"a row that WAS executed is reported as outstanding:\n{out}")
+
+
 if __name__ == "__main__":
     unittest.main()

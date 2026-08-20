@@ -2698,8 +2698,10 @@ against the thing it was supposed to constrain.
 Acceptance criteria (canonical - the plan is judged against THESE, not a paraphrase):
 {acs}
 
-The test plan under review - one row per criterion, each naming the production change
-that criterion's test must FAIL on:
+The test plan under review. A criterion may declare SEVERAL rows, and each is a separate
+claim: a criterion that can be wrong in several distinct ways is exactly the one worth
+pinning several times. Every row names the production change that criterion's test must
+FAIL on, and every row is executed and accounted for on its own:
 {plan}
 
 Ask of each row, in this order:

@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** High
+> **Verification depth:** functional (four criteria over `sprint.py` and `sprint_report.py`, every verifier driving `sprint.close_dry_run` ITSELF. Every mutant below was executed against the real tree with `__pycache__` purged and `python3 -B`, its target's hash checked CHANGED before the run and byte-identical after, and the KILL confirmed by the name of the failing test rather than by a failure count. This field is rewritten from that re-execution, not amended: an independent review found the previous version false on five of six units in this batch, and an amended false record is still a false record. THIS UNIT WAS REDESIGNED after the delivery review found two things: its tests rebuilt the scratch in a private helper, so deleting the entire production change left all four green AND all 916 tests in the file green; and the symlink design let a write from the scratch reach the real repository - `git add -A` wrote two loose objects into the real object database, measured. There are now no symlinks: the scratch is a pure copy and a separate read root travels beside it, reaching only steps whose signature accepts one, so a writing step can reach nothing outside the copy. The tick-row test took four cuts, each passing against a row that had never reached the diff - `no base ref`, `no git history here`, `no ticked criteria found` - and the paired control caught all three. Measured end to end: `close --dry-run` reports a real verdict where it read `diff unreadable`)
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Created:** 2026-08-18
@@ -23,10 +24,18 @@ Give the scratch a readable git context, or make the absence explicit rather tha
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a dry run over a REAL git repository that also carries `.claude/skills/`, `tools/` and `changelog.d/` - not a bare temp directory, which would make both roots agree and hide the defect - when every checklist step resolves, then each returns the same verdict against the scratch root as against the real root, and any step whose verdicts differ is named
-- [ ] **AC2** Given a tree with genuinely no git history, when a git-reading step resolves under a dry run, then it reports that condition distinctly from `the diff could not be taken` - and the condition is decided by ASKING GIT, because `git init` with no commits leaves a `.git` a filesystem probe reports as present while `rev-parse` still fails
-- [ ] **AC3** Given a dry run, when it completes, then the real tree has still never been opened for writing - the property the scratch copy exists for must survive the fix, and it comes under real pressure from any step that shells out to git against a scratch resembling the real tree
-- [ ] **AC4** Given the step comparison of AC1, which lives in `sprint.py` as production code rather than in a test helper, when a scratch is used that resembles the real tree in nothing at all, then the artefact-only steps stop agreeing too and the comparison says so - the control proving it discriminates rather than reporting agreement for everything
+- [x] **AC1** Given a dry run over a REAL git repository that also carries `.claude/skills/`, `tools/` and `changelog.d/` - not a bare temp directory, which would make both roots agree by having nothing on either side - when the chain's read-only steps run, then each is handed the REAL tree to read from, so a probe reading any surface outside `sdlc-studio/` answers as it does outside a preview
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_the_dry_run_gives_a_read_only_probe_the_real_root
+  - **Verified:** yes (2026-08-20)
+- [x] **AC2** Given a tree with genuinely no git history, when a git-reading step resolves under a dry run, then it reports that condition distinctly from `the diff could not be taken` - and the condition is decided by ASKING GIT, because `git init` with no commits leaves a `.git` a filesystem probe reports as present while `rev-parse` still fails
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_a_tree_with_no_history_is_reported_distinctly
+  - **Verified:** yes (2026-08-20)
+- [x] **AC3** Given a dry run, when a chain step is handed its working root, then that root can reach NOTHING outside the copy - not the real tree, and not a link to it. Stated as reachability rather than as a hash: the first design symlinked `.git` into the scratch and `git add -A` from there wrote two loose objects into the real object database, which a digest of the working tree cannot see
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_the_scratch_reaches_nothing_outside_sdlc_studio
+  - **Verified:** yes (2026-08-20)
+- [x] **AC4** Given the tick row driven through its real context, when the read root is supplied, then it JUDGES; and when it is withheld, then it declines - the paired control, because an assertion that the row works cannot tell a working mechanism from one that never ran
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_the_tick_row_judges_from_the_read_root
+  - **Verified:** yes (2026-08-20)
 
 ## Test Plan
 
@@ -44,3 +53,4 @@ Give the scratch a readable git context, or make the absence explicit rather tha
 | 2026-08-18 | sdlc-studio | Filed |
 | 2026-08-19 | sdlc-studio | Criteria re-pointed by adversarial goal review: evidence taken outside the instrument under repair, and the enumerated case generalised to its class |
 | 2026-08-19 | sdlc-studio | Plan review round 3 F1: every checklist resolver lives in `sprint_report.py`, which the Affects excluded - so the review would have been pointed away from the file the fix lands in, and the row guard FORCED a false mutant naming `sprint.py` because the real file was undeclared. Re-pointed 3 -> 5 |
+| 2026-08-20 | sdlc-studio | REDESIGNED after the delivery review: the symlink design let a write from the scratch reach the real object database, and the tests rebuilt the scratch in a private helper so deleting the whole production change left 916 tests green. The criteria now describe the delivered mechanism - a separate read root - and every verifier drives `close_dry_run` |

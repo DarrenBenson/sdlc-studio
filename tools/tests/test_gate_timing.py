@@ -662,5 +662,169 @@ class ScopeCollapseTests(unittest.TestCase):
                                 f"{payload} was accepted as an acknowledgement")
 
 
+class BudgetSeriesTests(unittest.TestCase):
+    """BG0594: one scalar cannot describe a population that varies with selection width.
+
+    The full suite WAS read - `latest(root, "total")` whenever the last run was not selected -
+    but it was judged against the per-commit ceiling, so a 899s full run read OVER a 380s budget
+    as a matter of course and the verdict carried no information.
+    """
+
+    def _timings(self, root, *, selected, series):
+        d = root / "sdlc-studio" / ".local"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "gate-timings.json").write_text(json.dumps(selected), encoding="utf-8")
+        return d / "gate-timings.json"
+
+    def _cfg(self, root, **kw):
+        block = {"seconds": 380, "baseline_seconds": 317, "baseline_date": "2026-07-26"}
+        block.update(kw)
+        body = "gate_budget:\n" + "".join(f"  {k}: {v}\n" for k, v in block.items())
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
+
+    def test_the_rate_is_reported_beside_the_total(self) -> None:
+        """MUTANT: in `gate_timing.py`, drop the rate term from the detail string."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cfg(root)
+            self._timings(root, selected={"total.selected": [200.0], "total.last_series":
+                                          "selected", "total.selected.tests": [1600.0]},
+                          series="selected")
+            res = gt.budget_report(root)
+            self.assertIsNotNone(res)
+            self.assertIn("s/test", res["detail"],
+                          f"the budget line states a total with no rate, so a wide commit and a "
+                          f"regression look the same:\n{res['detail']}")
+
+    def test_the_full_suite_is_judged_against_its_own_ceiling(self) -> None:
+        """MUTANT: in `gate_timing.py`, change the whole-suite branch to read the per-commit
+        ceiling.
+
+        899s against 380s is OVER by construction; against a declared full ceiling it is not.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cfg(root, full_seconds=1080, full_baseline_seconds=899,
+                      full_baseline_date="2026-08-19")
+            self._timings(root, selected={"total": [899.0], "total.tests": [7417.0],
+                                          "total.last_series": "full"}, series="full")
+            res = gt.budget_report(root)
+            self.assertIsNotNone(res)
+            self.assertEqual(1080.0, res["budget"],
+                             "the full suite is still judged against the per-commit ceiling")
+            self.assertFalse(res["over"],
+                             f"a full run inside its own declared ceiling reported OVER:\n"
+                             f"{res['detail']}")
+
+    def test_two_widths_of_equal_rate_reach_the_same_verdict(self) -> None:
+        """MUTANT: in `gate_timing.py`, revert `over` to `measured > budget`.
+
+        The criterion is that the two VERDICTS agree, so the assertion is on `over` - the first
+        cut asserted only that the totals straddled the ceiling and that each detail string
+        carried its own rate, which is true of the unfixed code and was exactly the shape an
+        independent review refused. The runs must straddle in RAW seconds, or a raw comparison
+        already agrees and the mutant survives.
+        """
+        with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:
+            narrow, wide = Path(d1), Path(d2)
+            for root, secs, tests in ((narrow, 200.0, 1600.0), (wide, 620.0, 4960.0)):
+                # A DECLARED rate ceiling, because that is what the verdict is on. 0.125s/test
+                # is the fixture's cost; 0.152 is the ceiling, so both runs sit under it and
+                # must agree - while their raw totals straddle 380s and would not.
+                self._cfg(root, rate_seconds_per_test=0.152)
+                self._timings(root, selected={"total.selected": [secs],
+                                              "total.selected.tests": [tests],
+                                              "total.last_series": "selected"},
+                              series="selected")
+            a, b = gt.budget_report(narrow), gt.budget_report(wide)
+            self.assertLess(a["measured"], a["budget"],
+                            "the narrow run must sit UNDER the ceiling in raw seconds")
+            self.assertGreater(b["measured"], b["budget"],
+                               "the wide run must sit OVER it in raw seconds, or a raw "
+                               "comparison already agrees and this proves nothing")
+            self.assertAlmostEqual(a["rate"], b["rate"], places=4,
+                                   msg="the two runs do not have equal per-test cost, so the "
+                                       "criterion is not being exercised")
+            self.assertEqual(a["over"], b["over"],
+                             f"two runs at an identical {a['rate']:.3f}s/test reached OPPOSITE "
+                             f"verdicts - narrow over={a['over']}, wide over={b['over']} - so "
+                             f"width alone decides, which is the defect")
+            self.assertFalse(b["over"],
+                             f"a wide run at the measured norm is reported as a regression: "
+                             f"{b['detail']}")
+
+    def test_a_risen_rate_on_a_narrower_run_is_still_visible(self) -> None:
+        """MUTANT: in `gate_timing.py`, revert `over` to `measured > budget`.
+
+        The CONTROL, and it asserts the VERDICT rather than a substring: this run is cheaper in
+        raw seconds than the ceiling and dearer per test than the norm, so a total-based reading
+        calls it headroom. The first cut only checked that `0.300s/test` appeared in the detail
+        string, which is true of code that prints the rate and never compares it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cfg(root, rate_seconds_per_test=0.152)
+            self._timings(root, selected={"total.selected": [300.0],
+                                          "total.selected.tests": [1000.0],
+                                          "total.last_series": "selected"}, series="selected")
+            res = gt.budget_report(root)
+            self.assertLess(res["measured"], res["budget"],
+                            "the fixture must be UNDER the ceiling in raw seconds, or the total "
+                            "alone already flags it and the rate proves nothing")
+            self.assertTrue(res["over"],
+                            f"a run at 0.300s/test - nearly double the declared 0.152 ceiling - "
+                            f"was reported as within budget because its TOTAL was small: "
+                            f"{res['detail']}")
+            self.assertIn("REGRESSION", res["detail"],
+                          f"the regression is not named in the line an operator reads: "
+                          f"{res['detail']}")
+
+    def test_a_run_at_the_norm_is_not_flagged(self) -> None:
+        """MUTANT: in `gate_timing.py`, set the comparison to `rate > 0`.
+
+        The other side of the control. A rate verdict that flags everything is no more use than
+        a total that flags by width; this pins that an ordinary run passes.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cfg(root, rate_seconds_per_test=0.152)
+            self._timings(root, selected={"total.selected": [187.0],
+                                          "total.selected.tests": [1539.0],
+                                          "total.last_series": "selected"}, series="selected")
+            res = gt.budget_report(root)
+            self.assertFalse(res["over"],
+                             f"a run at this repository's own measured norm is reported as a "
+                             f"regression: {res['detail']}")
+            self.assertNotIn("REGRESSION", res["detail"], res["detail"])
+
+    def test_an_undeclared_full_ceiling_falls_back_and_says_so(self) -> None:
+        """MUTANT: in `gate_timing.py`, drop the fallback label from the detail string.
+
+        The first cut of this criterion said `absent means silent`, and two PRE-EXISTING tests
+        proved it wrong: a project that declares only `seconds` and never runs selected would
+        have lost its budget line entirely. So the fallback stays - and is LABELLED, because an
+        unlabelled mis-comparison is the defect this unit is about. The drift clause must
+        survive the fallback too; reading `full_baseline_seconds` there silently dropped it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cfg(root)                        # no full_seconds
+            self._timings(root, selected={"total": [899.0], "total.tests": [7417.0],
+                                          "total.last_series": "full"}, series="full")
+            res = gt.budget_report(root)
+            self.assertIsNotNone(res, "the lane went silent and dropped the budget line for a "
+                                      "project that declares only the per-commit ceiling")
+            self.assertEqual(380.0, res["budget"], "the fallback did not use the declared "
+                                                   "per-commit ceiling")
+            self.assertIn("full_seconds", res["detail"],
+                          f"the fallback is unlabelled, so a reader takes a full run judged "
+                          f"against a per-commit ceiling for a like-for-like verdict:\n"
+                          f"{res['detail']}")
+            self.assertIn("baseline 317s", res["detail"],
+                          f"the drift clause was dropped on the fallback path, so the trend "
+                          f"the line exists to show is gone:\n{res['detail']}")
+
+
 if __name__ == "__main__":
     unittest.main()

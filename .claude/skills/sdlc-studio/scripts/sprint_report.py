@@ -1325,7 +1325,13 @@ def _ck_closing_review(ctx: dict) -> tuple:
 _TICKED_RE = re.compile(r"^\s*[-*]\s+\[[xX]\]\s+(?:\*\*(AC\d+)[^*]*\*\*[:\s]*)?(.*)$")
 
 
-def _changed_paths(root: Path, base_ref: str) -> set | None:
+#: "This tree has no commits", as distinct from `None` - "the diff could not be taken". A row
+#: that cannot tell them apart certifies the same way for a repository nobody has committed to
+#: and for one it simply failed to read.
+NO_HISTORY = "no-history"
+
+
+def _changed_paths(root: Path, base_ref: str):
     """The paths this run changed, or None when the diff cannot be taken.
 
     THE SEAM. It is drawn around the SOURCE of the changed set, never around the comparison the
@@ -1348,7 +1354,16 @@ def _changed_paths(root: Path, base_ref: str) -> set | None:
         ok = subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{base_ref}^{{commit}}"],
                             cwd=str(root), capture_output=True, text=True, timeout=30)
         if ok.returncode != 0:
-            return None
+            # WHY the ref did not resolve, asked of GIT and never of the filesystem. `git init`
+            # with no commits leaves a `.git` an `exists()` probe calls present while `rev-parse`
+            # still fails, so a filesystem answer reports "there is history here" for the one
+            # case that has none. NO_HISTORY is a distinct verdict from None: "this tree has no
+            # commits" is a fact about the tree, while None is the row admitting it could not
+            # look, and collapsing them is how a preview came to say `diff unreadable` about a
+            # repository that was simply empty.
+            head = subprocess.run(["git", "rev-parse", "--verify", "--quiet", "HEAD"],
+                                  cwd=str(root), capture_output=True, text=True, timeout=30)
+            return NO_HISTORY if head.returncode != 0 else None
         # `check=True`, so a failing diff raises into the handler below rather than taking a
         # second return path of its own. One way out for every "cannot look", because the branch
         # that had its own `return` was unreachable once the ref is verified first - and an
@@ -1480,7 +1495,13 @@ def _ck_tick_verification(ctx: dict) -> tuple:
         return (NOT_RUN, "no base ref",
                 "the run recorded no base ref, so no diff can be taken and no tick can be "
                 "checked against one; this row refuses rather than assuming everything changed")
-    changed = _changed_paths(ctx["root"], base)
+    changed = _changed_paths(ctx.get("read_root") or ctx["root"], base)
+    if changed is NO_HISTORY:
+        # NAMED, not folded into "unreadable". The remedies are opposite: an unreadable diff is
+        # something to investigate, while a tree with no commits is a state to commit out of.
+        return (NOT_RUN, "no git history here",
+                f"this tree carries no commits, so there is nothing for {base} to diff against - "
+                "which is a fact about the tree, not this row failing to read it")
     if changed is None:
         return (NOT_RUN, "diff unreadable",
                 f"the diff against {base} could not be taken, so the ticks are unjudged - "
@@ -2039,7 +2060,7 @@ def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
 
 
 def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = None,
-              rep: dict | None = None) -> dict:
+              rep: dict | None = None, read_root: Path | str | None = None) -> dict:
     """The compulsory checklist for a sprint, one row per item. Read-only.
 
     Every row carries `state`, and only `state` decides whether the close may proceed: a row is
@@ -2059,7 +2080,15 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
         sprint_reviews, review_rounds = [], []
     filed, still_open = _open_findings(root, run)
     ctx = {
-        "root": root, "retro_id": retro_id, "units": units, "run": run,
+        # `read_root` is the tree a READ-ONLY probe should ask, and it differs from `root` in
+        # exactly one caller: `close_dry_run`, whose `root` is a scratch copy holding only
+        # `sdlc-studio/`. A probe reading `.git`, `.claude/skills/`, `tools/` or `changelog.d/`
+        # from that copy finds nothing and degrades to a softer verdict than the close it
+        # previews. Carrying the real tree separately keeps every write confined to the scratch
+        # - a symlinked `.git` was tried first and let `git add` reach the real object database.
+        # Defaults to `root`, so every other caller is unchanged.
+        "root": root, "read_root": Path(read_root) if read_root else root,
+        "retro_id": retro_id, "units": units, "run": run,
         "planned": _planned_ids(run),
         "plan": sdlc_md.read_json(Path(root) / "sdlc-studio" / ".local" / "sprint-plan.json", {}),
         "sprint_goal": rep.get("sprint_goal"), "goal_verdict": rep.get("sprint_goal_verdict"),

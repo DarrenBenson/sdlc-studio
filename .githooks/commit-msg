@@ -170,6 +170,21 @@ fi
 # ---------------------------------------------------------------------------
 # 2. The unit suites, if pre-commit selected them.
 # ---------------------------------------------------------------------------
+# NO MESSAGE, NO COMMIT TO GATE. An invocation that was handed no readable message file has
+# nothing to check and nothing to gate, so running the lanes for it is work nobody asked for.
+# The condition is the ABSENT MESSAGE and never the identity of the caller: a probe for a test
+# variable is a second bypass, and it would not even work - this repo's own hook fixtures build
+# their environment as `{**os.environ}` minus three GIT_* keys, so `PYTEST_CURRENT_TEST` is set
+# inside every one of them and such a probe would fire for real commits made from a test too.
+#
+# BG0595: `test_no_argument_does_not_block` passed neither `cwd` nor a scrubbed env, so it ran
+# this hook against the developer's own repository, consumed the `sdlc-gate-suites` record a
+# real commit was going to use, and started a full skill suite inside a unit test - 1.84s
+# became minutes. The record is left in place on a REFUSED message deliberately (the retry
+# rewrites it), so the fix is not to delete it; it is to not come looking when there is no
+# message to gate.
+{ [ -n "$msg_file" ] && [ -r "$msg_file" ]; } || exit 0
+
 # The handover record, and the only thing that selects these lanes. Deliberately NOT an
 # exported environment latch: the tool-tests lane below runs this repo's own hook tests,
 # whose fixtures make real commits in their own throwaway repos, and a latch would be

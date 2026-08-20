@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
+> **Verification depth:** functional (eight criteria over `verify_ac.py`, `mutation.py`, `transition.py`, `critic.py` and `help/mutation.md`. Every mutant below was executed against the real tree with `__pycache__` purged and `python3 -B`, its target's hash checked CHANGED before the run and byte-identical after, and the KILL confirmed by the name of the failing test rather than by a failure count. This field is rewritten from that re-execution, not amended: an independent review found the previous version false on five of six units in this batch, and an amended false record is still a false record. Every count is asserted against an INDEPENDENT reader - a plain scan of the artefact for criterion rows - never against the repaired parser. AC5 now scans BG0592's REAL artefact and asserts agreement rather than a literal, because its first verifier used a synthetic fixture and its declared mutant survived. AC7's refusal branch printed neither figure until the delivery review said so; both branches now state rows and criteria. Measured on the corpus: BG0592 reports 18 planned mutants across 15 criteria where it reported 15, and refuses because three of AC13's four declared rows were never executed)
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/help/mutation.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Created:** 2026-08-19
@@ -23,14 +24,30 @@ Key the join by (criterion, mutant) or by row index, so every declared row is a 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a Test Plan declaring two mutants for one criterion, when `verify_ac._testplan_rows` builds the join, then the number of entries it returns equals the criterion-row count a plain text scan of the same file reports - asserted against that independent reader, never against the repaired function's own idea of what it holds
-- [ ] **AC2** Given that plan with a kill registered for EVERY declared row - `cmd_from_plan` prints its planned figure only on the all-executed branch, so a partly-executed fixture asserts against absent output - when `mutation.py run --from-plan` reports, then the planned count equals the number of declared ROWS, not the number of distinct criteria
-- [ ] **AC3** Given the mutation ledger, when a mutant is registered against a unit, then the record carries a ROW identity and not only `unit` plus `criterion`, so two mutants on one criterion are distinguishable on the record - and an existing entry with no row key still reads back rather than being orphaned
-- [ ] **AC4** Given a plan carrying two rows on a criterion of which only one was executed, when `transition._planned_mutant_gate` reads the join, then it refuses and NAMES the unexecuted row - today it appends one sentence per CRITERION and drops the mutant text, so two rows on AC13 print the same sentence twice and identify neither
-- [ ] **AC5** Given BG0592's artefact, when `--from-plan` runs against it end to end, then the planned count it prints equals the criterion-row count scanned directly from that file - the same production mutant as AC2, declared here as its instance over a real artefact rather than counted as a second mutant
-- [ ] **AC6** Given a plan with exactly one row per criterion, when `--from-plan` runs, then its planned count is unchanged from today's - and the control must survive a join that double-counts, which is why adding the criterion back into the row key cannot be this row's mutant: on a single-row plan that leaves the count identical, so it is equivalent by construction
-- [ ] **AC7** Given a Test Plan whose row count and criterion count differ, when `mutation.py`'s report prints - including on the REFUSAL branch, which prints neither figure today - then it states both, so a future divergence is visible rather than silent
-- [ ] **AC8** Given the plan-review brief and the mutation help page, when a multi-row plan becomes legal, then both say so: `critic._plan_review_brief` hard-codes "one row per criterion" into the brief handed to every future plan reviewer, and `help/mutation.md` documents the worst verdict as held per criterion - a format change the shipped guidance contradicts is one nobody will use
+- [x] **AC1** Given a Test Plan declaring two mutants for one criterion, when `verify_ac._testplan_rows` builds the join, then the number of entries it returns equals the criterion-row count a plain text scan of the same file reports - asserted against that independent reader, never against the repaired function's own idea of what it holds
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_the_parser_returns_one_entry_per_declared_row
+  - **Verified:** yes (2026-08-19)
+- [x] **AC2** Given that plan with a kill registered for EVERY declared row - `cmd_from_plan` prints its planned figure only on the all-executed branch, so a partly-executed fixture asserts against absent output - when `mutation.py run --from-plan` reports, then the planned count equals the number of declared ROWS, not the number of distinct criteria
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_planned_count_is_rows_not_criteria
+  - **Verified:** yes (2026-08-19)
+- [x] **AC3** Given the mutation ledger, when a mutant is registered against a unit, then the record carries a ROW identity and not only `unit` plus `criterion`, so two mutants on one criterion are distinguishable on the record - and an existing entry with no row key still reads back rather than being orphaned
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_an_entry_with_no_row_key_still_reads_back
+  - **Verified:** yes (2026-08-19)
+- [x] **AC4** Given a plan carrying two rows on a criterion of which only one was executed, when `transition._planned_mutant_gate` reads the join, then it refuses and NAMES the unexecuted row - today it appends one sentence per CRITERION and drops the mutant text, so two rows on AC13 print the same sentence twice and identify neither
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlannedMutantGateNamesTheRowTests::test_the_refusal_names_the_row_and_quotes_its_mutant
+  - **Verified:** yes (2026-08-19)
+- [x] **AC5** Given BG0592's artefact, when `--from-plan` runs against it end to end, then the planned count it prints equals the criterion-row count scanned directly from that file - the same production mutant as AC2, declared here as its instance over a real artefact rather than counted as a second mutant
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_corpus_artefact_agrees_with_a_plain_scan
+  - **Verified:** yes (2026-08-19)
+- [x] **AC6** Given a plan with exactly one row per criterion, when `--from-plan` runs, then its planned count is unchanged from today's - and the control must survive a join that double-counts, which is why adding the criterion back into the row key cannot be this row's mutant: on a single-row plan that leaves the count identical, so it is equivalent by construction
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_a_single_row_plan_counts_the_same_as_before
+  - **Verified:** yes (2026-08-19)
+- [x] **AC7** Given a Test Plan whose row count and criterion count differ, when `mutation.py`'s report prints - including on the REFUSAL branch, which prints neither figure today - then it states both, so a future divergence is visible rather than silent
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_report_states_both_figures
+  - **Verified:** yes (2026-08-19)
+- [x] **AC8** Given the plan-review brief and the mutation help page, when a multi-row plan becomes legal, then both say so: `critic._plan_review_brief` hard-codes "one row per criterion" into the brief handed to every future plan reviewer, and `help/mutation.md` documents the worst verdict as held per criterion - a format change the shipped guidance contradicts is one nobody will use
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewBriefTeachesMultiRowTests::test_the_plan_review_brief_does_not_teach_one_row_per_criterion
+  - **Verified:** yes (2026-08-19)
 
 ## Impact
 
@@ -59,3 +76,4 @@ The done-gate reads this join to decide whether a unit's planned mutants were ex
 | 2026-08-19 | sdlc-studio | Criteria re-pointed: AC1/AC5 assert against an independent reader rather than the repaired function or a literal, and the ledger row identity AC3 needs is stated as its own criterion |
 | 2026-08-19 | sdlc-studio | Plan review F22: the helper has exactly TWO callers, not three. The caller named is right; the count was taken from a review and restated without checking |
 | 2026-08-19 | sdlc-studio | Plan review REJECT: AC4 needs `transition.py`, AC8 added for the brief and help page that still teach one-row-per-criterion, AC6's mutant replaced (adding the criterion to the key is EQUIVALENT on a single-row plan), AC2 given a fixture that produces output to assert on. Re-pointed 3 -> 5 |
+| 2026-08-20 | sdlc-studio | AC5's declared mutant SURVIVED its own test: the verifier pointed at a SYNTHETIC fixture where the criterion names BG0592's real artefact. It now scans the corpus artefact and asserts agreement rather than the literal 18 |

@@ -2495,9 +2495,21 @@ def testplan_row_faults(mutant: str, then_clause: str, affects: list) -> list:
     return faults
 
 
-def _testplan_rows(text: str) -> dict:
-    """Existing plan rows, keyed by criterion id, so authored mutants survive a re-derive."""
-    rows, in_plan = {}, False
+def _testplan_rows(text: str) -> list:
+    """Existing plan rows IN FILE ORDER, one entry per row, so authored mutants survive a
+    re-derive even when a criterion carries several.
+
+    Returns `[{"ac", "mutant", "row"}]`, `row` being the 0-based position of that mutant among
+    the rows on its own criterion. It used to return `{ac: mutant}`, which silently kept the LAST
+    row on each criterion: a plan declaring two mutants for one AC came back with one, and the
+    author's first was destroyed at exit 0. The same key made `--from-plan` report a
+    planned count equal to the number of distinct criteria rather than of declared rows, and print
+    `every one executed and killed` over mutants it had never joined.
+
+    A criterion that can be wrong in several distinct ways is exactly the one worth pinning
+    several times, so the collapse fell hardest where the evidence mattered most.
+    """
+    rows, seen, in_plan = [], {}, False
     for line in text.splitlines():
         if line.startswith("## "):
             in_plan = line.strip() == _TESTPLAN_HEADING
@@ -2506,8 +2518,23 @@ def _testplan_rows(text: str) -> dict:
             continue
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if len(cells) >= 2 and re.fullmatch(r"AC\d+", cells[0] or ""):
-            rows[cells[0]] = cells[1]
+            ac = cells[0]
+            rows.append({"ac": ac, "mutant": cells[1], "row": seen.get(ac, 0)})
+            seen[ac] = seen.get(ac, 0) + 1
     return rows
+
+
+def testplan_rows_by_criterion(text: str) -> dict:
+    """The plan grouped as `{ac: [mutant, ...]}`, order preserved within each criterion.
+
+    The shape every caller that thinks in criteria wants, derived from the row list rather than
+    parsed a second time - two parsers of one artefact are how the row count and the criterion
+    count came to disagree in the first place.
+    """
+    out: dict = {}
+    for r in _testplan_rows(text):
+        out.setdefault(r["ac"], []).append(r["mutant"])
+    return out
 
 
 #: A criterion whose falsifying change nobody can name. A legitimate state - some criteria really
@@ -2603,14 +2630,31 @@ def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
                                f"stale. A plan the tool cannot parse is still a plan."]}
     lines = text.splitlines()
     bounds = [b.heading_line for b in blocks] + [_criteria_section_end(lines, blocks)]
+    by_ac = testplan_rows_by_criterion(text)
+    # AN ORPHAN ROW IS EVIDENCE, AND EVIDENCE IS NOT DROPPED SILENTLY. A row whose criterion is no
+    # longer declared - what renumbering an AC produces - used to vanish at exit 0, the second
+    # silent-loss path BG0597 found while its own criteria were being authored. Refuse instead:
+    # the author decides whether that mutant is stale, not the parser.
+    declared_ids = {b.ac_id for b in blocks}
+    orphans = [f"`| {ac} | {m} |`" for ac, ms in sorted(by_ac.items())
+               if ac not in declared_ids for m in ms]
+    if orphans:
+        return {"ok": False, "path": str(path), "rows": sum(len(v) for v in by_ac.values()),
+                "criteria": declared,
+                "errors": [f"{unit}: {len(orphans)} Test Plan row(s) name a criterion this unit "
+                           f"no longer declares, and re-deriving would delete them at exit 0: "
+                           f"{'; '.join(orphans[:6])}. Renumber them onto a live criterion, or "
+                           f"remove them deliberately - a derive that loses an authored mutant "
+                           f"must not report success."]}
     faults, rows = [], []
     for n, b in enumerate(blocks):
-        mutant = existing.get(b.ac_id) or _TESTPLAN_PLACEHOLDER
-        rows.append((b.ac_id, (b.title or "").strip(), mutant))
-        if mutant != _TESTPLAN_PLACEHOLDER:
-            then = _then_clause(lines, b.heading_line, bounds[n + 1])
-            for why in testplan_row_faults(mutant, then, affects):
-                faults.append(f"{unit} {b.ac_id}: {why}")
+        mutants = by_ac.get(b.ac_id) or [_TESTPLAN_PLACEHOLDER]
+        then = _then_clause(lines, b.heading_line, bounds[n + 1])
+        for mutant in mutants:
+            rows.append((b.ac_id, (b.title or "").strip(), mutant))
+            if mutant != _TESTPLAN_PLACEHOLDER:
+                for why in testplan_row_faults(mutant, then, affects):
+                    faults.append(f"{unit} {b.ac_id}: {why}")
     if faults:
         return {"ok": False, "path": str(path), "rows": len(rows), "criteria": declared,
                 "errors": faults}

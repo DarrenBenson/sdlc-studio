@@ -220,6 +220,8 @@ def latest(root: Path, suite: str) -> float | None:
 BUDGET_KEY = "gate_budget"
 
 
+
+
 def budget_config(root: Path) -> dict | None:
     """The declared budget block, or None when the project has not set one."""
     try:
@@ -268,13 +270,48 @@ def budget_report(root: Path) -> dict | None:
     measured, series = (selected, "selected") if _ran_selected(root) else (full, "full")
     if measured is None:
         return None
-    baseline = block.get("baseline_seconds")
-    when = block.get("baseline_date")
+    # THE FULL SUITE IS JUDGED AGAINST ITS OWN CEILING, not the per-commit one. The full series
+    # WAS read - `latest(root, "total")` whenever the last run was not selected - but it was
+    # compared to `gate_budget.seconds`, a figure declared for a commit. A ~899s full run
+    # against a 380s per-commit ceiling reads OVER as a matter of course, so the verdict carried
+    # no information and nothing watched the number that actually grew: ~630s to ~899s at 6,610
+    # to 7,417 tests (BG0594). An undeclared full-suite ceiling leaves the lane silent about the
+    # full series rather than inventing a default.
+    fallback = False
+    if series == "full":
+        # A DECLARED full-suite ceiling wins. Absent, the per-commit one is still used - going
+        # SILENT here would drop the budget line entirely for every project that declares only
+        # `seconds` and never runs selected, which is a regression, and two existing tests said
+        # so. But the comparison is then apples to oranges, and an unlabelled mis-comparison is
+        # the defect BG0594 is about: a ~899s full run against a 380s per-commit ceiling reads
+        # OVER as a matter of course. So it falls back and SAYS it fell back, naming the key
+        # that would judge it on its own terms.
+        try:
+            budget = float(block.get("full_seconds"))
+        except (TypeError, ValueError):
+            fallback = True
+    # The baseline follows the CEILING, including into the fallback: reading
+    # `full_baseline_seconds` while falling back to the per-commit ceiling dropped the drift
+    # clause entirely, so the line lost the trend it exists to show. One decision, not two.
+    own_series = (series == "full") and not fallback
+    baseline = block.get("full_baseline_seconds" if own_series else "baseline_seconds")
+    when = block.get("full_baseline_date" if own_series else "baseline_date")
     detail = f"{measured:.0f}s of a {budget:.0f}s budget"
+    # THE PER-TEST RATE, beside the total. The total is selection width times this, and width
+    # varies continuously - 1,418 to 5,573 tests across the recorded window - so one scalar
+    # cannot describe the population. The rate is what stays comparable: a wide commit is not a
+    # regression, and a narrower run whose rate ROSE is one.
+    tests = latest(root, "total.selected.tests" if series == "selected" else "total.tests")
+    rate = (measured / tests) if tests else None
+    if rate is not None:
+        detail += f", {rate:.3f}s/test over {tests:.0f} tests"
     if series == "selected":
         # Named, because a selected total is not comparable with the full-run baseline below
         # and a reader must not take the drift figure for a like-for-like one.
         detail += " [selected run]"
+    elif fallback:
+        detail += (" [FULL run judged against the per-commit ceiling - declare "
+                   "`gate_budget.full_seconds` to judge it on its own terms]")
     if baseline is not None and when:
         # The TREND, not just the instantaneous value. Reporting only "under budget" is how
         # test_gate.py grew 28% in two days without anyone noticing: it was under every ceiling
@@ -285,8 +322,39 @@ def budget_report(root: Path) -> dict | None:
                        f"{drift:+.0f}% since)")
         except (TypeError, ValueError):
             detail += f" (baseline {baseline}s on {when})"
+    # THE VERDICT IS ON THE RATE, not on the total, whenever a rate can be computed. The total is
+    # selection width times cost-per-test, and width varies continuously - 1,418 to 5,573 tests
+    # across the recorded window - so `measured > budget` reports a wide commit as a regression
+    # and a narrow one as headroom while neither has changed cost. The declared ceiling is
+    # converted to a rate against the SAME baseline width, and the comparison is made there.
+    #
+    # Where no test count is recorded there is no rate, and the raw comparison stands rather than
+    # a fabricated one: an unmeasured width is not a width of zero.
+    # DECLARED AS A RATE, never derived from the run's own width. Dividing the seconds ceiling by
+    # the CURRENT run's test count gives every run its own ceiling, so the comparison is
+    # tautological and two runs at identical cost still disagree - the first cut did exactly that
+    # and its own test caught it. The rate is the quantity being budgeted, so it is the quantity
+    # declared.
+    try:
+        ceiling_rate = float(block.get("rate_seconds_per_test"))
+    except (TypeError, ValueError):
+        ceiling_rate = None
+    over = measured > budget
+    rate_verdict = None
+    if rate is not None and ceiling_rate:
+        over = rate > ceiling_rate
+        rate_verdict = {"rate": rate, "ceiling_rate": ceiling_rate}
+        detail += f" [rate verdict: {rate:.3f} vs {ceiling_rate:.3f}s/test ceiling]"
+        if over:
+            detail += " - REGRESSION: the per-test cost rose, whatever the total did"
+    elif rate is not None:
+        # No declared rate ceiling: the raw total still decides, and the line SAYS the verdict is
+        # width-sensitive rather than leaving a reader to take it for a like-for-like one.
+        detail += (" [no `gate_budget.rate_seconds_per_test` declared - this verdict is on the "
+                   "raw total and moves with selection width]")
     return {"measured": measured, "budget": budget, "baseline": baseline,
-            "baseline_date": when, "over": measured > budget, "detail": detail}
+            "baseline_date": when, "over": over, "detail": detail,
+            "rate": rate, "rate_verdict": rate_verdict}
 
 
 def cmd_record(args: argparse.Namespace) -> int:

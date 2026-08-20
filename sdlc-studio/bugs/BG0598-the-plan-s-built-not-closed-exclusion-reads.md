@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** High
+> **Verification depth:** functional (six criteria over `sprint.py`. Every mutant below was executed against the real tree with `__pycache__` purged and `python3 -B`, its target's hash checked CHANGED before the run and byte-identical after, and the KILL confirmed by the name of the failing test rather than by a failure count. This field is rewritten from that re-execution, not amended: an independent review found the previous version false on five of six units in this batch, and an amended false record is still a false record. AC1's fixture records its REJECT in `sprint-review-record.md` ALONE and asserts `critic-verdicts.md` does not exist, so a single-file read finds nothing - the first cut wrote the wrong ledger and the two-ledger mutant survived the whole class, which is the defect the round-4 plan review had already refused once. AC5 is driven through the shipped CLI as a subprocess from a DIFFERENT working directory, against two units alike in every way except their verdict. AC6's guard is the exception handler, not the path probe I wrote first: that probe was dead code, because the ledger read raises rather than swallowing, and its mutant survived. Measured: BG0592 is named REVIEWED AND REJECTED with its points priced IN)
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Found by the product and engineering seats independently during the adversarial goal review of 2026-08-19; the classifier and the ledger record were then read directly to confirm the mechanism.
@@ -24,12 +25,24 @@ Ask the ledger. A unit carrying an unanswered REJECT is not built - it is work w
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit carrying an unanswered REJECT recorded in EITHER critic ledger - `critic-verdicts.md` from `critic record`, or `sprint-review-record.md` from `sprint review-batch` - when `sprint._built_not_closed` judges it, then it returns False. The read spans both, via `critic.review_rounds_across_ledgers`, which exists because reading only the first was a real defect twice over: a unit REJECTed by two `review-batch` rounds escalated nothing
-- [ ] **AC2** Given a unit whose REJECT carries a recorded repair answering it, when `_built_not_closed` judges it, then verifier greens decide exactly as they do today - the control proving the ledger read discriminates rather than excluding every unit that was ever reviewed
-- [ ] **AC3** Given a batch holding a unit with an unanswered REJECT, when `_token_forecast` accumulates the batch total, then that unit's points are counted IN it - the exclusion must be decided in ONE place, so a second accumulation path that short-circuits on green verifiers before consulting `_built_not_closed` cannot restore the defect behind the fix
-- [ ] **AC4** Given that same unit, when the plan reports it, then it is named in a class of its own - reviewed and rejected, not built - so the exclusion sentence cannot read as an instruction to close a unit nobody approved
-- [ ] **AC5** Given a fixture workspace passed by `--root`, holding one unit with all criteria green and an unanswered REJECT and one with all criteria green and no verdict at all, when `sprint.py plan --worklist` is driven through the shipped CLI by subprocess from a DIFFERENT working directory, then the printed forecast prices the first and excludes the second - a ledger path resolved from the process cwd rather than from `--root` passes an in-process test and fails this one
-- [ ] **AC6** Given a DIRECTORY at `sdlc-studio/reviews/critic-verdicts.md`, and separately at `sdlc-studio/reviews/sprint-review-record.md` - a shape that raises for every user, where `chmod 000` is a no-op when the suite runs as root - when `_built_not_closed` judges, then it fails closed and treats the unit as unbuilt; a MISSING ledger is the no-verdict case and must not satisfy this criterion
+- [x] **AC1** Given a unit carrying an unanswered REJECT recorded in EITHER critic ledger - `critic-verdicts.md` from `critic record`, or `sprint-review-record.md` from `sprint review-batch` - when `sprint._built_not_closed` judges it, then it returns False. The read spans both, via `critic.review_rounds_across_ledgers`, which exists because reading only the first was a real defect twice over: a unit REJECTed by two `review-batch` rounds escalated nothing
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RejectedUnitIsNotBuiltTests::test_a_unit_with_an_unanswered_reject_is_not_built
+  - **Verified:** yes (2026-08-19)
+- [x] **AC2** Given a unit whose REJECT carries a recorded repair answering it, when `_built_not_closed` judges it, then verifier greens decide exactly as they do today - the control proving the ledger read discriminates rather than excluding every unit that was ever reviewed
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RejectedUnitIsNotBuiltTests::test_an_answered_reject_still_decides_on_verifiers
+  - **Verified:** yes (2026-08-19)
+- [x] **AC3** Given a batch holding a unit with an unanswered REJECT, when `_token_forecast` accumulates the batch total, then that unit's points are counted IN it - the exclusion must be decided in ONE place, so a second accumulation path that short-circuits on green verifiers before consulting `_built_not_closed` cannot restore the defect behind the fix
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RejectedUnitIsNotBuiltTests::test_the_rejected_unit_is_priced_in_and_named_separately
+  - **Verified:** yes (2026-08-19)
+- [x] **AC4** Given that same unit, when the plan reports it, then it is named in a class of its own - reviewed and rejected, not built - so the exclusion sentence cannot read as an instruction to close a unit nobody approved
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RejectedUnitIsNotBuiltTests::test_the_rejected_unit_is_not_described_by_the_close_them_sentence
+  - **Verified:** yes (2026-08-19)
+- [x] **AC5** Given a fixture workspace passed by `--root`, holding one unit with all criteria green and an unanswered REJECT and one with all criteria green and no verdict at all, when `sprint.py plan --worklist` is driven through the shipped CLI by subprocess from a DIFFERENT working directory, then the printed forecast prices the first and excludes the second - a ledger path resolved from the process cwd rather than from `--root` passes an in-process test and fails this one
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RejectedUnitIsNotBuiltTests::test_the_shipped_cli_prices_it_in_from_another_working_directory
+  - **Verified:** yes (2026-08-19)
+- [x] **AC6** Given a DIRECTORY at `sdlc-studio/reviews/critic-verdicts.md`, and separately at `sdlc-studio/reviews/sprint-review-record.md` - a shape that raises for every user, where `chmod 000` is a no-op when the suite runs as root - when `_built_not_closed` judges, then it fails closed and treats the unit as unbuilt; a MISSING ledger is the no-verdict case and must not satisfy this criterion
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RejectedUnitIsNotBuiltTests::test_an_unreadable_ledger_fails_closed
+  - **Verified:** yes (2026-08-19)
 
 ## Impact
 
@@ -44,7 +57,7 @@ The exclusion sentence tells the operator to `close them`, about a unit no revie
 | AC3 | in `sprint.py`, revert the forecast to subtract those points | Given a batch holding a unit with an unanswered REJECT, when `_token_forecast` accumulates the batch total, then that unit's points are counted IN it - the exclusion must be decided in ONE place, so a second accumulation path that short-circuits on green verifiers before consulting `_built_not_closed` cannot restore the defect behind the fix |
 | AC4 | in `sprint.py`, merge the new class back into the existing sentence | Given that same unit, when the plan reports it, then it is named in a class of its own - reviewed and rejected, not built - so the exclusion sentence cannot read as an instruction to close a unit nobody approved |
 | AC5 | in `sprint.py`, take the ledger location from `os.getcwd()` | Given a fixture workspace passed by `--root`, holding one unit with all criteria green and an unanswered REJECT and one with all criteria green and no verdict at all, when `sprint.py plan --worklist` is driven through the shipped CLI by subprocess from a DIFFERENT working directory, then the printed forecast prices the first and excludes the second - a ledger path resolved from the process cwd rather than from `--root` passes an in-process test and fails this one |
-| AC6 | in `sprint.py`, delete the explicit ledger-path probe and let `read_text_safe` return empty | Given a DIRECTORY at `sdlc-studio/reviews/critic-verdicts.md`, and separately at `sdlc-studio/reviews/sprint-review-record.md` - a shape that raises for every user, where `chmod 000` is a no-op when the suite runs as root - when `_built_not_closed` judges, then it fails closed and treats the unit as unbuilt; a MISSING ledger is the no-verdict case and must not satisfy this criterion |
+| AC6 | in `sprint.py`, remove the except handler around the ledger read | Given a DIRECTORY at `sdlc-studio/reviews/critic-verdicts.md`, and separately at `sdlc-studio/reviews/sprint-review-record.md` - a shape that raises for every user, where `chmod 000` is a no-op when the suite runs as root - when `_built_not_closed` judges, then it fails closed and treats the unit as unbuilt; a MISSING ledger is the no-verdict case and must not satisfy this criterion |
 
 ## Revision History
 
@@ -53,3 +66,4 @@ The exclusion sentence tells the operator to `close them`, about a unit no revie
 | 2026-08-19 | sdlc-studio | Filed |
 | 2026-08-19 | sdlc-studio | Groomed: acceptance criteria authored so the unit is plannable |
 | 2026-08-19 | sdlc-studio | Plan review round 4 B2: the criteria said "the critic ledger" where there are TWO, so a read of `critic-verdicts.md` alone satisfied five of six while shipping the exact defect `review_rounds_across_ledgers` was written to fix |
+| 2026-08-19 | sdlc-studio | Delivery: AC6's declared mutant SURVIVED - the explicit path probe was redundant because `review_rounds_across_ledgers` raises rather than swallowing, so the probe was removed and the mutant re-pointed at the handler that actually holds |

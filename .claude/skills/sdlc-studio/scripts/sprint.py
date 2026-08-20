@@ -1554,6 +1554,46 @@ def _verifiers_all_green(root: Path, uid: str) -> bool:
     return False
 
 
+def _rejected_unanswered(root: Path, uid: str) -> bool:
+    """Does this unit carry a REJECT no repair has answered, in EITHER ledger?
+
+    Two ledgers, and the question spans them: `critic record` appends to `critic-verdicts.md`
+    while `sprint review-batch` appends a batch row to `sprint-review-record.md`. Reading only
+    the first was a real defect twice over - `review_rounds_across_ledgers` exists because two
+    `review-batch --verdict REJECT` rounds on one unit once escalated nothing - so this asks
+    that function rather than reaching for `verdict_for`, which reads one file.
+
+    FAILS CLOSED. An unreadable ledger is not an approval: a directory at the ledger's path, or
+    any other read fault, must leave the unit priced as unbuilt rather than waved through on the
+    strength of its own green verifiers.
+    """
+    try:
+        import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        rounds = critic.review_rounds_across_ledgers(root, uid)
+    except Exception as exc:  # noqa: BLE001 - an unreadable bar is not a passed one
+        # FAILS CLOSED, and this handler is the whole guard. An explicit `is_file()` probe was
+        # written here first and measured redundant: `review_rounds_across_ledgers` raises
+        # IsADirectoryError on a directory at the ledger's path rather than swallowing it, so
+        # the probe never fired and a mutant deleting it SURVIVED. Removed rather than kept -
+        # a guard that guards nothing still has to be read and maintained, and it invites the
+        # belief that the handler below is the fallback rather than the mechanism.
+        sdlc_md.debug("sprint._rejected_unanswered", exc)
+        return True
+    if not rounds:
+        return False
+    last = rounds[-1]
+    if str(last.get("verdict") or "").upper() != critic.REJECT:
+        return False
+    try:
+        # `complete` is the only state that answers a REJECT. `partial` leaves findings
+        # outstanding and `none` is no repair at all - read from the vocabulary the function
+        # documents rather than from a boolean it does not return.
+        return (critic.repair_state(root, uid) or {}).get("state") != "complete"
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint._rejected_unanswered.repair", exc)
+        return True
+
+
 def _built_not_closed(root: Path, uid: str, text: str) -> bool:
     """A non-terminal unit whose executable ACs ALL pass is BUILT but not CLOSED: it should be
     pointed at the close path, not priced as new work in the build forecast. An unverified,
@@ -1566,6 +1606,14 @@ def _built_not_closed(root: Path, uid: str, text: str) -> bool:
         # BG0372's vacuous tests kept passing after the review judged them meaningless - so the
         # retraction has to outrank it, or the two mechanisms disagree and the louder one is
         # the stale one.
+        return False
+    if _rejected_unanswered(root, uid):
+        # A unit no reviewer has approved is not built work awaiting a close. The exclusion
+        # sentence tells the reader to `close them`, and it was saying that about BG0592 - four
+        # REJECTs, unanswered - while removing its points from the forecast, so the unit with the
+        # worst convergence record in the batch was the one priced at nothing. Its own
+        # verifiers read green throughout; that is exactly the state `depth_retracted` is
+        # consulted for one branch above, and an unanswered REJECT is the same shape.
         return False
     return _verifiers_all_green(root, uid)
 
@@ -1633,12 +1681,20 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
     units: dict[str, dict] = {}
     unpriced: list[str] = []
     built_not_closed: list[str] = []
+    rejected_unanswered: list[str] = []
     built_points = 0
     total_points = 0
     gate = effort_gate(root)   # the compulsion in force for this whole plan
     for it in batch:
         text = Path(it["path"]).read_text(encoding="utf-8")
         uid = sdlc_md.norm_id(it["id"])
+        if _rejected_unanswered(root, uid) and _verifiers_all_green(root, uid) \
+                and (sdlc_md.extract_field(text, "Status") or "").strip() not in _CLOSED_STATUSES:
+            # A THIRD CLASS, priced IN. Green verifiers and an unanswered REJECT is neither
+            # built nor ordinary unbuilt work: its remaining cost is a repair round. Named
+            # separately so the exclusion sentence - which says `close them` - can never be read
+            # as an instruction about a unit no reviewer has approved.
+            rejected_unanswered.append(uid)
         if _built_not_closed(root, uid, text):
             # Green verifiers, not yet closed: a close-candidate, not work to build. Kept out of
             # the total so a delivered-but-open unit does not inflate the build forecast. The
@@ -1678,6 +1734,7 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
             "rung": rung, "rung_unmeasured": rung_unmeasured,
             # Units already built (green verifiers) but not yet closed: a close, not a build.
             "built_not_closed": built_not_closed, "built_points": built_points,
+            "rejected_unanswered": rejected_unanswered,
             "all_built": bool(built_not_closed and not per_unit and not unpriced),
         "scope": FORECAST_SCOPE, "excludes": list(FORECAST_EXCLUDES),
             "whole_sprint_excess": whole_sprint_excess(root),
@@ -4178,6 +4235,21 @@ def exclusion_line(tf: dict) -> str:
             f"{', '.join(built)}{tail}")
 
 
+def rejected_line(tf: dict) -> str | None:
+    """The REVIEWED-AND-REJECTED sentence, or None when the batch holds none.
+
+    Its own class, and priced IN. These units read green on their own verifiers and would have
+    been swept into BUILT-NOT-CLOSED, whose sentence ends `close them` - so the batch's least
+    trusted work was being both mispriced at zero and described as ready to close.
+    """
+    rejected = tf.get("rejected_unanswered") or []
+    if not rejected:
+        return None
+    return (f"REVIEWED AND REJECTED, priced IN (their verifiers are green, but no reviewer has "
+            f"approved them and the remaining cost is a repair round, not a close): "
+            f"{', '.join(rejected)}")
+
+
 def _render_token_forecast(data: dict) -> None:
     """LEAD WITH WHAT SPRINTS HAVE ACTUALLY COST. The forecast follows, as a range, and it STATES
     ITS RATE AND WHERE THAT RATE CAME FROM - a bare number would read as a fact, when it is a
@@ -4199,6 +4271,12 @@ def _render_token_forecast(data: dict) -> None:
         # tokens guard so a batch whose only unbuilt units are unpriced (tokens == 0) still shows
         # its close-candidates rather than rendering nothing.
         print(f"  {exclusion_line(tf)}")
+    # Printed on its own, and OUTSIDE the built-not-closed guard: a batch may hold a rejected
+    # unit and no close-candidate at all, and that is exactly the batch whose forecast used to
+    # be quietly short.
+    rejected = rejected_line(tf)
+    if rejected:
+        print(f"  {rejected}")
     marginal_unmeasured = tf.get("marginal_unmeasured")
     # Nothing to render only when there is genuinely nothing to say: no cost, no unmeasured
     # marginal to name, and no unpriced units to surface.
@@ -5386,7 +5464,7 @@ def mutation_evidence_note(root) -> tuple[bool, str]:
     return (True, f"mutation evidence: `{mode}` ({stated}) - {explain}")
 
 
-def _close_checklist(root, retro, state):
+def _close_checklist(root, retro, state, read_root=None):
     """The compulsory checklist, as a chain step. Refuses on an unanswered item, naming it.
 
     Placed after the retro and lessons steps and before the gate, because the rows it reads are
@@ -5399,7 +5477,7 @@ def _close_checklist(root, retro, state):
     """
     try:
         import sprint_report  # noqa: PLC0415 - deferred, like the chain's sibling imports
-        ck = sprint_report.checklist(root, retro)
+        ck = sprint_report.checklist(root, retro, read_root=read_root or root)
     except Exception as exc:  # noqa: BLE001 - a step that cannot check must not report a pass
         return (False, f"the sprint checklist could not be composed: {type(exc).__name__}: {exc}",
                 "fix the error above, or run `sprint_report.py checklist --id "
@@ -7094,6 +7172,26 @@ def close_dry_run(root, retro_id: str | None = None) -> dict:
     try:
         scratch = Path(tempfile.mkdtemp(prefix="close_dry_run_"))
         shutil.copytree(root / "sdlc-studio", scratch / "sdlc-studio", symlinks=True)
+        # THE READ ROOT, carried BESIDE the scratch rather than reconstructed inside it.
+        #
+        # Only `sdlc-studio/` is copied, so every probe reading `.git`, `.claude/skills/`,
+        # `tools/` or `changelog.d/` from the copy root found nothing and degraded to a softer
+        # verdict than the close it previews - the tick row read `diff unreadable` in a preview
+        # and `24 ticked criteria supported` outside it, two answers to one question within one
+        # invocation.
+        #
+        # SYMLINKING those surfaces was the first fix and it was WRONG. With `.git` linked, git
+        # resolves the git directory to the REAL repository: `git add -A` run from the scratch
+        # wrote two loose objects into the real object database, measured. "The real tree is
+        # never opened for writing" is the property this copy exists for, and a link makes it
+        # true only while nothing writes - which is a hope, not a guarantee. An independent
+        # review found it by executing rather than reading.
+        #
+        # So the scratch stays a pure copy that nothing outside `sdlc-studio/` can reach, and
+        # the READ root travels separately. A probe that only reads - the diff against the base
+        # ref is a commit-to-commit read that never touches the working tree - is given the real
+        # root; a step that writes gets the scratch and can reach nothing else.
+        read_root = Path(root)
     except OSError as exc:
         sdlc_md.debug("sprint.close_dry_run.copy", exc)
         for step in DRY_RUN_ACTION_STEPS:
@@ -7134,7 +7232,17 @@ def close_dry_run(root, retro_id: str | None = None) -> dict:
                 note(step, "unevaluated", "no read-only probe exists for this step", "")
                 continue
             try:
-                ok, detail, remedy = fn(scratch, rid, run_state.read(scratch) or state)
+                # The READ ROOT reaches only the steps that accept one. A step that writes is
+                # handed the scratch and can reach nothing else, which is what keeps "the real
+                # tree is never opened for writing" true by construction rather than by hope.
+                kw = {}
+                try:
+                    import inspect  # noqa: PLC0415 - deferred, one call per dry run
+                    if "read_root" in inspect.signature(fn).parameters:
+                        kw["read_root"] = read_root
+                except (TypeError, ValueError) as exc:   # a builtin or C callable: no signature
+                    sdlc_md.debug(f"sprint.close_dry_run.signature.{step}", exc)
+                ok, detail, remedy = fn(scratch, rid, run_state.read(scratch) or state, **kw)
             except Exception as exc:  # noqa: BLE001 - a step that explodes is UNEVALUATED
                 # Never "ok". A step whose probe failed for a reason peculiar to the copy has
                 # told us nothing about the real close, and calling that a pass is the single
@@ -11061,6 +11169,23 @@ def measured_gate_seconds(root) -> tuple[float | None, str]:
     return (runs[-1] if runs else None), (series if runs else "none")
 
 
+def full_gate_seconds(root) -> float | None:
+    """The most recent FULL-suite total, whatever series the last commit happened to run.
+
+    `measured_gate_seconds` answers "what did the last commit cost", which is the per-commit
+    question. The close and release boundaries pay a FULL run, and pricing them from a selected
+    total understates them by a factor of three - this repo's own plan for RUN-01M0CT8P printed
+    `at close FULL (~295s)` against a recorded full series of ~899s.
+    """
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "tools"))
+        import gate_timing  # noqa: PLC0415 - deferred, repo-local tooling
+        return gate_timing.latest(Path(root), "total")
+    except Exception as exc:  # noqa: BLE001 - an unmeasured cost is reported, never invented
+        sdlc_md.debug("sprint.full_gate_seconds", exc)
+        return None
+
+
 def execution_cost(root) -> dict:
     """The measured cost of one full run, or None with the reason it is not known.
 
@@ -11113,9 +11238,18 @@ def execution_policy(root) -> dict:
                              EXECUTION_DEFAULTS[moment]) or "").strip().lower()
         declared[moment] = raw if raw in EXECUTION_MODES else EXECUTION_DEFAULTS[moment]
     cost = execution_cost(root)
+    # THE MOMENT DECIDES THE SERIES. `per_commit` pays whatever the last commit paid, which is
+    # what `execution_cost` reports; `at_close` and `at_release` pay a FULL run, and pricing
+    # them from a selected total understates the two most expensive moments in the sprint by a
+    # factor of three - this plan printed `at close FULL (~295s)` against a recorded full series
+    # of ~899s. An unmeasured full run stays None and renders as NOT MEASURED rather
+    # than borrowing the per-commit figure.
+    full_s = full_gate_seconds(root)
     # `none` costs zero because nothing runs - that IS the measurement. Every other mode
-    # costs what a full run costs, or None when nobody has measured one.
-    cost_s = {m: (0.0 if declared[m] == "none" else cost["seconds"]) for m in declared}
+    # costs what a run at that moment costs, or None when nobody has measured one.
+    cost_s = {m: (0.0 if declared[m] == "none"
+                  else (cost["seconds"] if m == "per_commit" else full_s))
+              for m in declared}
     # The BREACH, stated on the plan. The budget lane already computes this verdict
     # after every commit, where the only thing that can act on it is a human reading past it.
     # Planning is the moment the cost can still be traded against scope, so the verdict has to

@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 import os
+import pathlib
+import re
 import subprocess
 import tempfile
 import unittest
@@ -21,7 +23,9 @@ HOOK = REPO / ".githooks" / "commit-msg"
 
 
 def _run(message: str, *, path: str | None = None, cwd: str | None = None,
-         env_extra: dict[str, str] | None = None, mid_operation: str | None = None):
+         env_extra: dict[str, str] | None = None, mid_operation: str | None = None,
+         no_argument: bool = False, plant_handoff: bool = False,
+         strip_caller_identity: bool = False):
     """Run the commit-msg hook against `message` in a HERMETIC fixture repo.
 
     The hook resolves its repo root and git dir from wherever it runs; run in the OUTER repo it
@@ -52,9 +56,29 @@ def _run(message: str, *, path: str | None = None, cwd: str | None = None,
         msg.write_text(message, encoding="utf-8")
         env = dict(clean)
         env.update(env_extra or {})
-        target = path if path is not None else str(msg)
-        return subprocess.run(["bash", str(HOOK), target], capture_output=True,
-                              text=True, env=env, cwd=cwd if cwd is not None else str(repo))
+        if strip_caller_identity:
+            # BG0595 AC3: the paired leg. A probe on a caller-identity variable is green under
+            # the identity leg alone, because this fixture's own env carries PYTEST_CURRENT_TEST
+            # through - it is `{**os.environ}` minus three GIT_* keys. Only the stripped leg
+            # tells such a probe apart from an honest message-absent exit.
+            for name in ("PYTEST_CURRENT_TEST", "PYTEST_VERSION", "TOX_ENV_NAME", "CI"):
+                env.pop(name, None)
+        if plant_handoff:
+            # The record `pre-commit` leaves for the suite lanes. The hook CONSUMES it (`rm -f`)
+            # at the point it enters those lanes, so its survival is the observable for "did
+            # this invocation enter the suite block" - no output parsing, no timing.
+            (repo / ".git" / "sdlc-gate-suites").write_text(
+                "precommit_seconds=1\n", encoding="utf-8")
+        argv = ["bash", str(HOOK)]
+        if not no_argument:
+            argv.append(path if path is not None else str(msg))
+        r = subprocess.run(argv, capture_output=True, text=True, env=env,
+                           cwd=cwd if cwd is not None else str(repo))
+        if plant_handoff:
+            # Stashed on the result so the caller can assert it without reaching into the
+            # tempdir after it is gone.
+            r.entered_suite_block = not (repo / ".git" / "sdlc-gate-suites").exists()
+        return r
 
 
 class CommitMsgGateTests(unittest.TestCase):
@@ -128,7 +152,11 @@ class HonestDegradeTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_no_argument_does_not_block(self):
-        r = subprocess.run(["bash", str(HOOK)], capture_output=True, text=True)
+        # BG0595 AC4: an explicit cwd and a git-scrubbed env, like every other invocation in
+        # this file. Without them this ran the hook against the REAL repository, consumed the
+        # `sdlc-gate-suites` record a commit was going to use, and started a full skill suite
+        # inside a unit test. One exemption in twenty-five was the whole defect.
+        r = _run("", path=None, no_argument=True)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_outside_a_repo_carrying_the_script_degrades_to_pass(self):
@@ -453,6 +481,110 @@ class ACollapsedSuiteLeavesNoReusableGreenTests(_VerdictPlacementFixture, unitte
         out = r.stdout + r.stderr
         self.assertIn("ok   tool-tests", out, f"the tool lane did not pass:\n{out}")
         self.assertIn("ok   skill-tests", out, f"the skill lane did not pass:\n{out}")
+
+
+class MessageAbsentTests(unittest.TestCase):
+    """BG0595. An invocation with no message file has no commit to gate.
+
+    The observable throughout is the `sdlc-gate-suites` record: the hook `rm -f`s it at the
+    point it enters the suite lanes, so its SURVIVAL means the lanes were not entered. That is
+    a byte on disk rather than a timing or an output match, and it cannot be satisfied by the
+    hook merely being slow or quiet.
+    """
+
+    def test_no_message_file_does_not_enter_the_suite_block(self):
+        """MUTANT: in `commit-msg`, remove the early exit for an invocation carrying no
+        message file. Without it the hook falls through to the handoff block, consumes the
+        record and runs the lanes."""
+        r = _run("", no_argument=True, plant_handoff=True)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertFalse(r.entered_suite_block,
+                         "an invocation with no message file entered the suite-running block "
+                         "and consumed the handoff record")
+
+    def test_a_present_message_still_reaches_the_suite_block(self):
+        """MUTANT: in `commit-msg`, raise a failure whenever no record is present.
+
+        The CONTROL. Without it the criterion above is satisfied by a hook that never enters
+        the suite block at all, which would disable the lanes rather than scope them.
+        """
+        r = _run("fix(BG0489): probe", plant_handoff=True)
+        self.assertTrue(r.entered_suite_block,
+                        "a real commit message did not reach the suite block - the exit is "
+                        "over-reaching, and the lanes are now off for everybody:\n"
+                        + r.stdout + r.stderr)
+
+    def test_the_exit_is_the_absent_message_not_the_caller(self):
+        """MUTANT: in `commit-msg`, gate the early exit on the caller being a test, via a
+        `PYTEST_CURRENT_TEST` probe.
+
+        THE PAIRED INVOCATION, and it is the whole criterion. The identity leg ALONE is green
+        under that mutant, because this file's own fixture carries `PYTEST_CURRENT_TEST`
+        through - `clean` is `{**os.environ}` minus three GIT_* keys. Only running the same
+        invocation with the caller-identity signals stripped tells an honest message-absent
+        exit apart from a probe for who is calling. A caller probe is also the second bypass
+        this repo forbids by name.
+        """
+        with_identity = _run("", no_argument=True, plant_handoff=True)
+        without_identity = _run("", no_argument=True, plant_handoff=True,
+                                strip_caller_identity=True)
+        self.assertEqual(with_identity.returncode, without_identity.returncode,
+                         "the hook behaved differently depending on caller-identity "
+                         "environment variables, which is a bypass rather than a gate")
+        self.assertFalse(with_identity.entered_suite_block, with_identity.stdout)
+        self.assertFalse(without_identity.entered_suite_block,
+                         "with caller-identity signals stripped the hook entered the suite "
+                         "block - the exit is keyed on WHO is calling, not on the absent "
+                         "message:\n" + without_identity.stdout + without_identity.stderr)
+
+
+class HookInvocationHermeticityTests(unittest.TestCase):
+    """BG0595 AC4/AC5. No test may invoke the hook against the repository under development."""
+
+    #: Every hook invocation must supply both, or it resolves to whatever repo the test process
+    #: happens to be sitting in. `_run` supplies them for the whole file; a bare call does not.
+    #: Assembled from parts so the pattern cannot match its own source line - a self-match made
+    #: the census report this class as its own offender, which is the shape where a detector
+    #: measures the detector.
+    _BARE = re.compile(r"subprocess" + r"\.run\(\s*\[[^]]*HOOK[^]]*\][^)]*\)", re.S)
+
+    def _offenders(self, path: pathlib.Path) -> list:
+        out = []
+        for m in self._BARE.finditer(path.read_text(encoding="utf-8")):
+            call = m.group(0)
+            if "cwd=" in call and "env=" in call:
+                continue
+            out.append(f"{path.name}:{path.read_text(encoding='utf-8')[:m.start()].count(chr(10)) + 1}")
+        return out
+
+    def test_every_invocation_in_this_file_supplies_a_cwd_and_an_env(self):
+        """MUTANT: in `test_commit_msg_hook.py`, change `GIT_DIR` to the live repository.
+
+        Named as a census rather than as one test, because one exemption in twenty-five was
+        the entire defect and a check that names the file it already knows about would not
+        have found it.
+        """
+        here = pathlib.Path(__file__)
+        self.assertEqual([], self._offenders(here),
+                         "these invocations resolve to whatever repository the test process "
+                         "runs in, so they can consume the developer's gate handoff")
+
+    def test_no_other_test_file_invokes_the_hook_bare(self):
+        """The sweep AC5 names: any OTHER test carrying the same coupling is reported by name
+        rather than left behind the one test this bug happened to catch."""
+        roots = [REPO / "tools" / "tests",
+                 REPO / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"]
+        seen, offenders = 0, []
+        for root in roots:
+            if not root.is_dir():
+                continue
+            for f in sorted(root.glob("test_*.py")):
+                seen += 1
+                offenders += self._offenders(f)
+        self.assertGreater(seen, 20, f"only {seen} test files were scanned - the sweep "
+                                     f"resolved the wrong root and measured nothing")
+        self.assertEqual([], offenders,
+                         "hook invocations that resolve to the repository under development")
 
 
 if __name__ == "__main__":

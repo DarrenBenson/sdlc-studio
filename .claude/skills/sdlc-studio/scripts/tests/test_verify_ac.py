@@ -4238,10 +4238,14 @@ class TestPlanDeriveTests(unittest.TestCase):
             body = f.read_text(encoding="utf-8")
             self.assertEqual(body.count(verify_ac._TESTPLAN_HEADING), 1,
                              "a second Test Plan section was appended beside the first")
-            rows = verify_ac._testplan_rows(body)
-            self.assertEqual(rows["AC2"], authored,
+            # `_testplan_rows` returns one entry PER ROW now, so a criterion's mutants are a
+            # list. Asserted through the grouped accessor rather than by index, and as the whole
+            # list rather than its first element - a criterion that gained a spurious second row
+            # would otherwise still read as preserved.
+            rows = verify_ac.testplan_rows_by_criterion(body)
+            self.assertEqual(rows["AC2"], [authored],
                              "the authored mutant was reassigned, appended to, or regenerated")
-            self.assertEqual(rows["AC1"], verify_ac._TESTPLAN_PLACEHOLDER)
+            self.assertEqual(rows["AC1"], [verify_ac._TESTPLAN_PLACEHOLDER])
 
     def test_a_derived_plan_does_not_stale_a_green_verify_entry(self) -> None:
         """`ac_fingerprint` covers ac_id, title and verifier. Writing a Test Plan section must not
@@ -4630,6 +4634,140 @@ class ResolvedDuplicateKeyTests(unittest.TestCase):
         self.assertEqual(sorted(written),
                          sorted([groups[0]["verifier"], *groups[0]["also_written"]]),
                          "the other spelling in the group is not shown beside it")
+
+
+class MultiRowTestPlanTests(unittest.TestCase):
+    """BG0596 / BG0597: a criterion may declare several mutants, and each is its own claim.
+
+    Every assertion here compares against an INDEPENDENT reader of the file - a plain scan for
+    `| AC` rows - never against the repaired parser's own idea of what it holds. Two readers of
+    one artefact disagreeing is how the row count and the criterion count came apart in the
+    first place, so the test must not use the reader under repair as its own witness.
+    """
+
+    PLAN = ("## Test Plan\n\n"
+            "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+            "| AC1 | in `verify_ac.py`, delete the first branch | first |\n"
+            "| AC1 | in `verify_ac.py`, delete the second branch | second |\n"
+            "| AC2 | in `verify_ac.py`, delete the single path | only |\n")
+
+    BODY = ("## Acceptance Criteria\n\n"
+            "- [ ] **AC1** Given two rows on one criterion, when the join runs, then both survive\n"
+            "- [ ] **AC2** Given one row, when the join runs, then the count is unchanged\n\n")
+
+    @staticmethod
+    def _scan(path) -> int:
+        """The independent reader: count `| ACn |` rows straight out of the file."""
+        return sum(1 for ln in path.read_text(encoding="utf-8").splitlines()
+                   if re.match(r"^\|\s*AC\d+\s*\|", ln))
+
+    def _fixture(self, root, body, plan):
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "BG9001-x.md"
+        f.write_text(f"# BG9001: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                     f"> **Points:** 2\n> **Affects:** scripts/verify_ac.py\n"
+                     f"> **Created:** 2026-08-19\n\n## Summary\n\nA thing.\n\n"
+                     f"{body}{plan}\n## Revision History\n", encoding="utf-8")
+        return f
+
+    # --- BG0596 AC1: the read path keeps every row -----------------------------------------
+    def test_the_parser_returns_one_entry_per_declared_row(self) -> None:
+        """MUTANT: in `verify_ac.py`, revert `_testplan_rows` to a single-assignment dict."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            f = self._fixture(root, self.BODY, self.PLAN)
+            rows = verify_ac._testplan_rows(f.read_text(encoding="utf-8"))
+            self.assertEqual(self._scan(f), len(rows),
+                             "the parser and a plain scan of the same file disagree about how "
+                             "many rows it holds")
+            self.assertEqual(3, len(rows))
+            self.assertEqual([0, 1, 0], [r["row"] for r in rows],
+                             "row identity is not 0-based within each criterion, so two mutants "
+                             "on one AC cannot be told apart")
+
+    # --- BG0597 AC1: the write path keeps every row ----------------------------------------
+    def test_a_re_derive_preserves_every_row_and_exits_zero(self) -> None:
+        """MUTANT: in `verify_ac.py`, revert `testplan_derive`'s row loop to emit one row per
+        criterion block.
+
+        The exit-0 clause is load-bearing: a fix that simply REFUSED every multi-row plan would
+        lose no rows and satisfy a bare 'both rows survive' assertion, while making the format
+        unmaintainable through the shipped command.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            f = self._fixture(root, self.BODY, self.PLAN)
+            before = self._scan(f)
+            res = verify_ac.testplan_derive(root, "BG9001", write=True)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual(before, self._scan(f),
+                             "a re-derive dropped an authored row - the count fell")
+            body = f.read_text(encoding="utf-8")
+            self.assertLess(body.index("delete the first branch"),
+                            body.index("delete the second branch"),
+                            "the rows survived but their order did not, so a set comparison "
+                            "would pass while the author's first mutant moved")
+
+    def test_the_shipped_command_preserves_rows_through_a_subprocess(self) -> None:
+        """BG0597 AC3's route: the SHIPPED entry point, as a subprocess, against a root asserted
+        to be under tempfile. A library call cannot see a command's wiring, and this defect was
+        found by running the command rather than by reading the function."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.assertTrue(str(root).startswith(tempfile.gettempdir()),
+                            "the fixture root is not under tempfile - this test would write "
+                            "into a real workspace")
+            f = self._fixture(root, self.BODY, self.PLAN)
+            before = self._scan(f)
+            script = (Path(__file__).resolve().parents[1] / "verify_ac.py")
+            r = subprocess.run([sys.executable, "-B", str(script), "testplan", "derive",
+                                "--unit", "BG9001", "--root", str(root)],
+                               capture_output=True, text=True)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertEqual(before, self._scan(f),
+                             f"the shipped command changed the row count: {r.stdout}{r.stderr}")
+
+    # --- BG0597 AC2: an orphan row is refused, not deleted ---------------------------------
+    def test_an_orphan_row_is_refused_and_named(self) -> None:
+        """MUTANT: in `verify_ac.py`, delete the orphan-row refusal.
+
+        The second silent-loss path, found while BG0597's own criteria were being authored: a
+        row whose criterion is no longer declared - what renumbering an AC produces - used to
+        vanish at exit 0 with nothing printed.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            orphan = self.PLAN + "| AC7 | in `verify_ac.py`, delete the gone branch | gone |\n"
+            f = self._fixture(root, self.BODY, orphan)
+            before = self._scan(f)
+            res = verify_ac.testplan_derive(root, "BG9001", write=True)
+            self.assertFalse(res["ok"], "an orphan row was accepted and would be deleted")
+            self.assertTrue(any("AC7" in e for e in res["errors"]),
+                            f"the refusal did not name the row it would have dropped: {res}")
+            self.assertEqual(before, self._scan(f), "the refusal still wrote the file")
+
+    # --- BG0597 AC4: the single-row case still round-trips ---------------------------------
+    def test_a_single_row_plan_round_trips_unchanged(self) -> None:
+        """MUTANT: in `verify_ac.py`, make it refuse every re-derive.
+
+        The CONTROL. Without it, a fix that refuses everything satisfies both preservation
+        criteria above. The Title column is regenerated from the criterion by design, so only
+        the Criterion and Mutant columns are compared.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            single = ("## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                      "| AC1 | in `verify_ac.py`, delete the first branch | t |\n"
+                      "| AC2 | in `verify_ac.py`, delete the single path | t |\n")
+            f = self._fixture(root, self.BODY, single)
+            res = verify_ac.testplan_derive(root, "BG9001", write=True)
+            self.assertTrue(res["ok"], res)
+            cols = [tuple(c.strip() for c in ln.strip("|").split("|")[:2])
+                    for ln in f.read_text(encoding="utf-8").splitlines()
+                    if re.match(r"^\|\s*AC\d+\s*\|", ln)]
+            self.assertEqual([("AC1", "in `verify_ac.py`, delete the first branch"),
+                              ("AC2", "in `verify_ac.py`, delete the single path")], cols)
 
 
 if __name__ == "__main__":

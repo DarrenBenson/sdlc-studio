@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-08-17
+**Last Updated:** 2026-08-19
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 23 |
+| Proposed | 25 |
 | Approved | 0 |
 | In Progress | 6 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **546** |
+| **Total** | **548** |
 
 ## All Changes
 
@@ -97,6 +97,8 @@
 | [CR-0544](CR0544-nothing-reviews-a-repair-s-approach-or-a.md) | Nothing reviews a REPAIR's approach or a PROCEDURE's plan before it is executed, and that is where this session's most expensive findings were | Proposed | High | enhancement | 2026-08-11 | -- |
 | [CR-0545](CR0545-everything-after-the-tag-is-un-tooled-no.md) | Everything after the tag is un-tooled: no command publishes a release, so the runbook has no row for the step and the assets the install path verifies against have never been produced | Proposed | P1 | Improvement | 2026-08-12 | -- |
 | [CR-0546](CR0546-the-run-should-notice-work-it-delivered-that.md) | the run should notice work it delivered that its batch never named | Proposed | High | Improvement | 2026-08-17 | -- |
+| [CR-0547](CR0547-verify-ac-revert-check-revert-a-unit-s.md) | verify_ac revert-check: revert a unit's production files and REQUIRE its own verifiers to go red | Proposed | High | enhancement | 2026-08-19 | -- |
+| [CR-0548](CR0548-derive-verification-depth-from-the-ledger-instead-of.md) | derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch | Proposed | High | enhancement | 2026-08-19 | -- |
 
 ## Archived Releases
 

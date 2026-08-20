@@ -1916,7 +1916,7 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
                     reason: str | None = None, run: str | None = None,
                     unit: str | None = None, criterion: str | None = None,
                     line: int | None = None, anchor: str | None = None,
-                    fault_class: str | None = None) -> dict:
+                    fault_class: str | None = None, row: int | None = None) -> dict:
     """Record a mutant that was ALREADY applied by hand, against the target's content NOW.
 
     The practice this exists for: a builder writes a test, applies a mutant to the code it
@@ -2033,6 +2033,13 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
               # execution to another's row.
               "unit": sdlc_md.norm_id(unit) if unit else None,
               "criterion": (criterion or "").strip().upper() or None,
+              # THE ROW HALF OF THE JOIN KEY. A criterion may declare several mutants, and each
+              # is a separate claim: subtracting a subset, counting a manual criterion as green
+              # and emitting a clause unconditionally are three distinct ways for one criterion
+              # to be wrong, and BG0592's AC13 declares all three. Keyed by criterion alone, one
+              # kill satisfied all of them. Absent means row 0, so every entry registered before
+              # this shipped still reads back.
+              "row": int(row) if row is not None else 0,
               # THE CROSS-PROVENANCE JOIN KEY. Optional, because a hand-applied mutant does not
               # always belong to a class the generator can produce, and demanding one would make
               # authors pick the nearest label - a join that is convenient is a join that lies.
@@ -2560,7 +2567,7 @@ def plan_execution(root: Path | str, unit: str) -> dict:
         return {"ok": False, "unit": unit, "rows": [],
                 "errors": [f"{unit}: no artefact with that id"]}
     text = sdlc_md.read_text_safe(found[0])
-    planned = _va._testplan_rows(text)
+    planned = _va._testplan_rows(text)          # one entry per declared ROW, in file order
     # Only a WELL-FORMED `unnameable` - one carrying its reason - exempts a row. A bare one is
     # malformed, and US0633 refuses it at grooming precisely so it costs something; exempting it
     # here too would refund that cost one lane later and make the marker a free pass at the gate
@@ -2584,18 +2591,26 @@ def plan_execution(root: Path | str, unit: str) -> dict:
             # The WORST verdict wins per criterion: a survivor is not cancelled by a later kill
             # of some other mutant on the same row. Silence about a survivor is the failure this
             # gate exists to catch.
-            prev = executed.get(m["criterion"])
+            # KEYED BY (criterion, row), not by criterion alone. A criterion carrying two
+            # mutants used to collapse to one execution record, so a second declared row was
+            # satisfied by the first row's kill and `--from-plan` reported `every one executed
+            # and killed` over a mutant nobody had run. `row` is absent on every entry
+            # registered before this shipped, and those fall back to row 0 rather than being
+            # orphaned - an existing ledger must keep reading back.
+            key = (m["criterion"].upper(), int(m.get("row") or 0))
+            prev = executed.get(key)
             if prev is None or prev["verdict"] != "survived":
-                executed[m["criterion"]] = {"verdict": m.get("verdict"),
-                                            "target": entry.get("target"),
-                                            "mutant": m.get("mutant"), "test": m.get("test")}
+                executed[key] = {"verdict": m.get("verdict"),
+                                 "target": entry.get("target"),
+                                 "mutant": m.get("mutant"), "test": m.get("test")}
     rows = []
-    for ac, mutant in sorted(planned.items()):
+    for entry_row in planned:
+        ac, mutant, idx = entry_row["ac"], entry_row["mutant"], entry_row["row"]
         if ac in unnameable:
-            rows.append({"ac": ac, "verdict": "unnameable", "mutant": mutant})
+            rows.append({"ac": ac, "verdict": "unnameable", "mutant": mutant, "row": idx})
             continue
-        hit = executed.get(ac.upper())
-        rows.append({"ac": ac, "mutant": mutant,
+        hit = executed.get((ac.upper(), idx))
+        rows.append({"ac": ac, "mutant": mutant, "row": idx,
                      "verdict": (hit or {}).get("verdict") or NOT_RUN,
                      "target": (hit or {}).get("target"),
                      "test": (hit or {}).get("test")})
@@ -2620,21 +2635,45 @@ def cmd_from_plan(args: argparse.Namespace) -> int:
     if res.get("errors"):
         return 2
     for r in res["rows"]:
-        print(f"  {r['ac']}: {r['verdict']}"
+        # The row index is printed only where a criterion carries more than one, so an ordinary
+        # single-row plan reads exactly as it always did and the marker means something when it
+        # appears.
+        multi = sum(1 for x in res["rows"] if x["ac"] == r["ac"]) > 1
+        label = f"{r['ac']}#{r.get('row', 0)}" if multi else r["ac"]
+        print(f"  {label}: {r['verdict']}"
               + (f" [{r.get('target')}]" if r.get("target") else "")
               + f" - {r['mutant'][:90]}")
     for r in res.get("retracted") or []:
         print(f"  RETRACTED {r['criterion'] or '?'} on {r['target']}:{r['line']} - a "
               f"{r['verdict']!r} verdict was withdrawn: {r['reason']}", file=sys.stderr)
     if res["ok"]:
-        print(f"from-plan: {res['planned']} planned mutant(s), every one executed and killed")
+        # BOTH FIGURES, always. The row count and the criterion count used to be the same number
+        # by construction, so nothing could show them diverging - and the join silently reported
+        # the smaller one while claiming to have covered the plan.
+        criteria = len({r["ac"] for r in res["rows"]})
+        print(f"from-plan: {res['planned']} planned mutant(s) across {criteria} criterion/criteria, "
+              f"every one executed and killed")
         return 0
+    # BOTH FIGURES ON THE REFUSAL BRANCH TOO. They were printed only on the branch that passes,
+    # so a plan whose row count and criterion count had diverged said nothing about it at the one
+    # moment the divergence matters - the moment something is owed. An independent review found
+    # that the criterion said "including on the REFUSAL branch" while the code changed only the
+    # success branch.
+    criteria = len({r["ac"] for r in res["rows"]})
+    print(f"from-plan: {res['unit']} - {res['planned']} planned mutant(s) across {criteria} "
+          f"criterion/criteria, {len(res['outstanding'])} unaccounted for:", file=sys.stderr)
     for r in res["outstanding"]:
         if r["verdict"] == NOT_RUN:
-            print(f"from-plan: {res['unit']} {r['ac']} was PLANNED and never executed - a plan "
-                  f"whose rows are optional measures nothing. Apply it, then record it with "
-                  f"`mutation.py register --unit {res['unit']} --criterion {r['ac']} ...`",
-                  file=sys.stderr)
+            # NAME THE ROW, not just the criterion. With four mutants on one AC the old message
+            # printed the same sentence four times and identified none of them, so the reader
+            # could not tell which mutant was owed.
+            multi = sum(1 for x in res["rows"] if x["ac"] == r["ac"]) > 1
+            where = f"{r['ac']} row {r.get('row', 0)}" if multi else r["ac"]
+            row_flag = f" --row {r.get('row', 0)}" if multi else ""
+            print(f"from-plan: {res['unit']} {where} was PLANNED and never executed - "
+                  f"`{r['mutant'][:80]}` - a plan whose rows are optional measures nothing. "
+                  f"Apply it, then record it with `mutation.py register --unit {res['unit']} "
+                  f"--criterion {r['ac']}{row_flag} ...`", file=sys.stderr)
         else:
             print(f"from-plan: {res['unit']} {r['ac']} mutant SURVIVED on {r.get('target')} - "
                   f"the test named by that criterion did not notice `{r['mutant'][:80]}`. The "
@@ -2810,6 +2849,7 @@ def cmd_register(args: argparse.Namespace) -> int:
                               line=getattr(args, "line", None),
                               criterion=getattr(args, "criterion", None),
                               anchor=getattr(args, "anchor", None),
+                              row=getattr(args, "row", None),
                               fault_class=getattr(args, "fault_class", None))
     except (ValueError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -2981,6 +3021,11 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--criterion", metavar="ACn",
                    help="the criterion whose planned mutant this is - the JOIN KEY "
                         "`run --from-plan` reads, recorded rather than matched out of prose")
+    g.add_argument("--row", type=int, default=None, metavar="N",
+                   help="which of that criterion's declared mutants this is, 0-based in file "
+                        "order. Omit for a criterion carrying one row; REQUIRED to tell two "
+                        "mutants on the same criterion apart, or the second is credited to the "
+                        "first's execution")
     g.add_argument("--target", required=True, help="the file the mutant was applied to")
     g.add_argument("--mutant", required=True,
                    help="what was mutated, in words a reviewer can check against the diff")

@@ -7,6 +7,7 @@ import importlib.util
 import inspect
 import io
 import json
+import hashlib
 import os
 import subprocess
 import sys
@@ -16347,6 +16348,428 @@ class OnePreflightCountReadByBothRenderersTests(unittest.TestCase):
             sprint._report_preflight(".", None)
         self.assertIn("close pre-flight: 4 unmet prerequisite(s) - this is ALL of them, "
                       "not the first:", err.getvalue())
+
+
+import sprint_report  # noqa: E402 - sibling, resolved via the tests path
+
+
+class DryRunScratchParityTests(unittest.TestCase):
+    """BG0593: a preview that answers a question differently from the close it previews.
+
+    `close_dry_run` copied `sdlc-studio/` and nothing else, so every probe reading `.git`,
+    `.claude/skills/`, `tools/` or `changelog.d/` from the copy root found nothing and degraded
+    to a softer verdict. The tick row read `diff unreadable` inside a dry run and `24 ticked
+    criteria supported` outside it - two answers to one question, within one invocation, and
+    neither the operator nor the row could tell which tree produced which.
+    """
+
+    def _repo(self, d: Path) -> Path:
+        """A fixture that RESEMBLES the real tree. A bare temp directory would make both roots
+        agree by having nothing on either side, and the mutant would survive."""
+        root = Path(d)
+        (root / "sdlc-studio").mkdir()
+        (root / "changelog.d").mkdir()
+        (root / "tools").mkdir()
+        (root / ".claude" / "skills" / "sdlc-studio").mkdir(parents=True)
+        (root / "tools" / "marker.txt").write_text("x\n", encoding="utf-8")
+        (root / "changelog.d" / "US0001.md").write_text("- a change\n", encoding="utf-8")
+        # Through `gitutil.git`, not a bare `subprocess.run`. The sweep in
+        # `test_gitutil.py` freezes the number of unconfined git calls per module at zero and
+        # only ever lets it fall - a raw call here inherits the developer's git config and can
+        # resolve outside the fixture, which is the class this whole batch is about.
+        gitutil.git(["init", "-q"], cwd=root)
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "seed"], cwd=root)
+        return root
+
+    # NO PRIVATE COPY OF THE PRODUCTION BUILD. The first cut of this class re-implemented the
+    # scratch construction here, so deleting the whole production change left every test in this
+    # class - and all 916 in this file - green. An independent review found it by deleting the
+    # code and running the suite. A helper that rebuilds the thing under test is not a fixture,
+    # it is a second implementation, and the tests then pin the copy.
+
+    def test_the_dry_run_gives_a_read_only_probe_the_real_root(self) -> None:
+        """MUTANT: in `sprint.py`, delete `read_root` from the dry run's step call.
+
+        Drives `sprint.close_dry_run` ITSELF. The first cut of this test rebuilt the scratch in
+        a private helper, so the entire production change could be deleted with this class - and
+        every one of the 916 tests in this file - still green. The seam is the ROOT the chain
+        step is handed, and only the real entry point decides that.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            seen = {}
+
+            def spy(root_arg, retro, state, read_root=None):
+                seen["root"] = Path(root_arg)
+                seen["read_root"] = Path(read_root) if read_root else None
+                return True, "spy", ""
+
+            with unittest.mock.patch.object(sprint, "_close_checklist", spy):
+                sprint.close_dry_run(root, None)
+            self.assertIn("read_root", seen, "the chain step was never called")
+            self.assertIsNotNone(seen["read_root"],
+                                 "a read-only step was given no read root, so it resolves "
+                                 "against a scratch holding only sdlc-studio/ and degrades")
+            self.assertEqual(root.resolve(), seen["read_root"].resolve(),
+                             f"the read root is not the real tree: {seen}")
+            self.assertNotEqual(root.resolve(), seen["root"].resolve(),
+                                "the WRITE root is the real tree - the scratch exists so that "
+                                "it is not")
+
+    def test_the_scratch_reaches_nothing_outside_sdlc_studio(self) -> None:
+        """MUTANT: in `sprint.py`, symlink `.git` into the scratch beside the copy.
+
+        The property the copy exists for, stated as REACHABILITY rather than as a hash. The
+        first design linked `.git`, `.claude`, `tools` and `changelog.d` into the scratch; git
+        then resolved its directory to the REAL repository and `git add -A` from the scratch
+        wrote two loose objects into the real object database. A hash of the working tree could
+        not see that, because the write went through the link into `.git`.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            captured = {}
+
+            def spy(root_arg, retro, state, read_root=None):
+                s = Path(root_arg)
+                captured["entries"] = sorted(p.name for p in s.iterdir())
+                return True, "spy", ""
+
+            with unittest.mock.patch.object(sprint, "_close_checklist", spy):
+                sprint.close_dry_run(root, None)
+            self.assertEqual(["sdlc-studio"], captured.get("entries"),
+                             f"the scratch carries more than the copy, so a write from a chain "
+                             f"step can reach the real tree: {captured}")
+
+    def test_a_tree_with_no_history_is_reported_distinctly(self) -> None:
+        """MUTANT: in `sprint_report.py`, swap `rev-parse` for an `exists()` check on the
+        directory.
+
+        `git init` with no commits leaves a `.git` a filesystem probe calls present while
+        `rev-parse` still fails, so the question must be put to GIT - otherwise this case
+        degrades to `diff unreadable` again and the two states are indistinguishable.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            gitutil.git(["init", "-q"], cwd=root)
+            self.assertTrue((root / ".git").exists(),
+                            "the fixture does not reproduce the case: a filesystem probe must "
+                            "see .git here, or the criterion is about nothing")
+            verdict = sprint_report._changed_paths(root, "deadbeef")
+            self.assertIs(sprint_report.NO_HISTORY, verdict,
+                          "a tree with no commits was reported the same way as one whose diff "
+                          "could not be read, so the two states are indistinguishable")
+
+    def test_the_close_and_release_boundaries_price_a_full_run(self) -> None:
+        """MUTANT: in `sprint.py`, return the per-commit series from `full_gate_seconds`.
+
+        BG0594 AC6. It shared BG0593's root-parity verifier until the verify-ratchet refused the
+        shared selector, and the non-delivery surfaced the moment it had a test of its own:
+        `full_gate_seconds` was returning `measured_gate_seconds(root)[0]`, the per-commit
+        figure, which is the defect the criterion exists to remove.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local" / "gate-timings.json").write_text(json.dumps({
+                "total": [900.0], "total.tests": [7400.0],
+                "total.selected": [190.0], "total.selected.tests": [1500.0],
+                "total.last_series": "selected"}), encoding="utf-8")
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "gate_budget:\n  seconds: 380\n  baseline_seconds: 317\n"
+                "  baseline_date: 2026-07-26\n", encoding="utf-8")
+            cost = (sprint.execution_policy(root) or {}).get("cost_s") or {}
+            self.assertEqual(190.0, cost.get("per_commit"),
+                             f"the per-commit moment is not priced from the series the last "
+                             f"commit ran: {cost}")
+            self.assertEqual(900.0, cost.get("at_close"),
+                             f"the close boundary is priced from the SELECTED series - it pays "
+                             f"a full run: {cost}")
+            self.assertEqual(900.0, cost.get("at_release"),
+                             f"the release boundary is priced from the selected series: {cost}")
+
+    def test_the_tick_row_judges_from_the_read_root(self) -> None:
+        """MUTANT: in `sprint_report.py`, read the diff from `ctx["root"]` again.
+
+        Drives `sprint_report._ck_tick_verification` THROUGH its real context. The first cut
+        asserted `_changed_paths(ctx.get("read_root") or ctx["root"], base)` - the production
+        expression, retyped in the test - so mutating that expression in `sprint_report.py`
+        changed nothing the assertion could see and the mutant SURVIVED. A test that restates
+        the line under test is pinned to its own copy.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            base = gitutil.git(["rev-parse", "HEAD"], cwd=root, text=True).stdout.strip()
+            (root / "sdlc-studio" / "changed.md").write_text("x\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-qm", "second"], cwd=root)
+            scratch = Path(tempfile.mkdtemp(prefix="parity_"))
+            try:
+                shutil.copytree(root / "sdlc-studio", scratch / "sdlc-studio", symlinks=True)
+                # The base ref is read from the RUN STATE in the scratch, not from this dict -
+                # the first cut passed it in `ctx["run"]` and the row answered `no base ref`,
+                # which does not contain the string the assertion looked for, so the assertion
+                # passed against a row that had never reached the diff. The control below is
+                # what caught it.
+                local = scratch / "sdlc-studio" / ".local"
+                local.mkdir(parents=True, exist_ok=True)
+                (local / "run-state.json").write_text(
+                    json.dumps({"schema": 1, "run_id": "RUN-TEST", "base_ref": base,
+                                "goal": "done", "batch": []}), encoding="utf-8")
+                # A unit with a TICKED criterion whose `Affects` names a path the diff carries.
+                # Without one the row declines with `no ticked criteria found`, which is
+                # NOT_RUN for a reason that has nothing to do with the read root - the third
+                # way this assertion passed against a row that had not been exercised.
+                bugs = scratch / "sdlc-studio" / "bugs"
+                bugs.mkdir(parents=True, exist_ok=True)
+                (bugs / "BG9020-x.md").write_text(
+                    "# BG9020: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                    "> **Points:** 2\n> **Affects:** sdlc-studio/changed.md\n"
+                    "> **Created:** 2026-08-19\n\n## Summary\n\nA thing.\n\n"
+                    "## Acceptance Criteria\n\n- [x] **AC1** Given a thing, when it runs, "
+                    "then it works\n\n## Revision History\n", encoding="utf-8")
+                ctx = {"root": scratch, "read_root": root, "units": ["BG9020"], "run": {}}
+                # Asserted on the STATE, not on a message. Two cuts of this assertion turned on
+                # a substring and both passed against a row that had never reached the diff:
+                # first `no base ref`, then `no git history here`. Whether the row JUDGES is the
+                # claim; which words it uses to decline is not.
+                state, detail, _ = sprint_report._ck_tick_verification(ctx)
+                self.assertNotEqual(sprint_report.NOT_RUN, state,
+                                    f"the row could not judge even though a read root was "
+                                    f"supplied - it is still asking the scratch: {detail}")
+                bare = dict(ctx); bare.pop("read_root")
+                bare_state, bare_detail, _ = sprint_report._ck_tick_verification(bare)
+                self.assertEqual(sprint_report.NOT_RUN, bare_state,
+                                 f"the row judged WITHOUT a read root, so this fixture cannot "
+                                 f"show the read root is what fixed it: {bare_detail}")
+            finally:
+                shutil.rmtree(scratch, ignore_errors=True)
+
+
+
+class RejectedUnitIsNotBuiltTests(unittest.TestCase):
+    """BG0598: the forecast read verifier greens and never the verdict ledger.
+
+    So a unit REJECTED four times and never repaired was classed BUILT-NOT-CLOSED, had its
+    points removed from the batch total, and appeared in a sentence ending `close them`. The
+    batch's least trusted work was both mispriced at zero and described as ready to close.
+    """
+
+    def _unit(self, root: Path, uid: str, points: int = 3) -> Path:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / f"{uid}-x.md"
+        f.write_text(f"# {uid}: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                     f"> **Points:** {points}\n> **Affects:** x.py\n"
+                     f"> **Created:** 2026-08-19\n\n## Summary\n\nA thing.\n\n"
+                     f"## Acceptance Criteria\n\n- [x] **AC1** Given a thing, when it runs, "
+                     f"then it works\n  - **Verify:** manual\n\n## Revision History\n",
+                     encoding="utf-8")
+        return f
+
+    def _green(self, root: Path, uid: str) -> None:
+        """A verify-report saying this unit's executable criteria pass. Without it the unit is
+        ordinary unbuilt work and never reaches either class, so the fixture would prove
+        nothing about the discrimination under test."""
+        d = root / "sdlc-studio" / ".local"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "verify-report.json").write_text(
+            json.dumps({"stories": {f"{uid}-x": {"verified": 1, "failed": 0, "stale": 0}}}),
+            encoding="utf-8")
+
+    def _ledger(self, root: Path, uid: str, verdict: str) -> None:
+        d = root / "sdlc-studio" / "reviews"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "critic-verdicts.md"
+        head = ("# Critic verdicts\n\n| Unit | Verdict | Reviewer | Author | Date | Brief |\n"
+                "| --- | --- | --- | --- | --- | --- |\n")
+        body = f.read_text(encoding="utf-8") if f.exists() else head
+        f.write_text(body + f"| {uid} | {verdict} | qa | author | 2026-08-19 | abc123 |\n",
+                     encoding="utf-8")
+
+    def _batch_ledger(self, root: Path, uid: str, verdict: str) -> None:
+        """A REJECT recorded by `sprint review-batch`, which writes the OTHER ledger.
+
+        The criterion says the read spans both files. A fixture that writes only
+        `critic-verdicts.md` cannot show it: swapping the two-ledger read for the single-file
+        one leaves such a fixture green, and an independent review proved exactly that against
+        the first cut of this class.
+        """
+        d = root / "sdlc-studio" / "reviews"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "sprint-review-record.md"
+        # The REAL column order, taken from `critic._SPRINT_COLS` rather than invented: base,
+        # reviewer, author, verdict, date, units, findings. A fixture whose columns are in the
+        # wrong order parses to nothing and the test passes for the wrong reason.
+        head = ("# Sprint-level Reviews\n\n"
+                "| Base | Reviewer | Author | Verdict | Date | Units | Findings |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n")
+        body = f.read_text(encoding="utf-8") if f.exists() else head
+        f.write_text(body + f"| abc1234 | qa | author | {verdict} | 2026-08-20 | {uid} | none |\n",
+                     encoding="utf-8")
+
+    def test_a_reject_in_the_batch_ledger_alone_is_seen(self) -> None:
+        """MUTANT: in `sprint.py`, replace `review_rounds_across_ledgers` with a single-file read.
+
+        THE criterion, and the one the first cut could not show: the REJECT lives only in
+        `sprint-review-record.md`, so a reader of `critic-verdicts.md` alone sees nothing and
+        prices the unit as built.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "BG9008")
+            self._green(root, "BG9008")
+            self._batch_ledger(root, "BG9008", "REJECT")
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "critic-verdicts.md").exists(),
+                             "the fixture also wrote the other ledger, so a single-file read "
+                             "would still find the REJECT and the mutant would survive")
+            self.assertTrue(sprint._rejected_unanswered(root, "BG9008"),
+                            "a REJECT recorded by `review-batch` was not seen - the read is not "
+                            "spanning both ledgers")
+            text = (root / "sdlc-studio" / "bugs" / "BG9008-x.md").read_text(encoding="utf-8")
+            self.assertFalse(sprint._built_not_closed(root, "BG9008", text),
+                             "the unit is still classed BUILT-NOT-CLOSED, which is the sentence "
+                             "that ends `close them`")
+
+    def test_a_unit_with_an_unanswered_reject_is_not_built(self) -> None:
+        """MUTANT: in `sprint.py`, drop the ledger read from `_built_not_closed`.
+
+        Asserted through `_built_not_closed`, which is what the criterion names - the first cut
+        called `_rejected_unanswered` directly and so said nothing about whether the classifier
+        consults it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "BG9001")
+            self._green(root, "BG9001")
+            self._ledger(root, "BG9001", "REJECT")
+            text = (root / "sdlc-studio" / "bugs" / "BG9001-x.md").read_text(encoding="utf-8")
+            self.assertTrue(sprint._verifiers_all_green(root, "BG9001"),
+                            "the fixture's verifiers are not green, so `_built_not_closed` "
+                            "returns False for a reason unrelated to the ledger")
+            self.assertFalse(sprint._built_not_closed(root, "BG9001", text),
+                             "a unit with an unanswered REJECT is still classed as built")
+
+    def test_an_answered_reject_still_decides_on_verifiers(self) -> None:
+        """MUTANT: in `sprint.py`, widen the check to exclude any unit carrying a verdict at all.
+
+        The CONTROL. Without it the fix excludes every unit that was ever reviewed, which is
+        every unit past the two-role cutoff - a gate that refuses everything is not a gate.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "BG9002")
+            self._ledger(root, "BG9002", "APPROVE")
+            self.assertFalse(sprint._rejected_unanswered(root, "BG9002"),
+                             "a unit whose last verdict is APPROVE was treated as rejected")
+
+    def test_an_unreadable_ledger_fails_closed(self) -> None:
+        """MUTANT: in `sprint.py`, delete the explicit ledger-path probe and let
+        `read_text_safe` return empty.
+
+        A DIRECTORY at the ledger's path, not `chmod 000` - the suite may run as root, where
+        chmod is a no-op and the mutant survives. `read_text_safe` catches OSError and returns
+        "", so without an explicit probe a directory reads back as "no verdict recorded", which
+        is indistinguishable from a unit nobody has reviewed. A MISSING ledger is the genuine
+        no-verdict case and must not satisfy this criterion.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "BG9003")
+            (root / "sdlc-studio" / "reviews").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").mkdir()
+            self.assertTrue(sprint._rejected_unanswered(root, "BG9003"),
+                            "an unreadable ledger was read as an approval")
+            with tempfile.TemporaryDirectory() as d2:
+                clean = Path(d2)
+                self._unit(clean, "BG9003")
+                self.assertFalse(sprint._rejected_unanswered(clean, "BG9003"),
+                                 "a MISSING ledger is the no-verdict case and must not be "
+                                 "confused with an unreadable one - the two now answer the same "
+                                 "way, so the criterion is satisfied by the wrong state")
+
+    def test_the_shipped_cli_prices_it_in_from_another_working_directory(self) -> None:
+        """MUTANT: in `sprint.py`, take the ledger location from `os.getcwd()`.
+
+        AC5's route, and the reason it is a SUBPROCESS from a DIFFERENT cwd: an in-process call
+        passes `root` explicitly, so a path resolved from the working directory instead is
+        invisible to it. Two fixture units, alike in every way except their verdict, so the
+        assertion turns on the discrimination rather than on the command running at all.
+        """
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as elsewhere:
+            root = Path(d)
+            for uid in ("BG9005", "BG9006"):
+                self._unit(root, uid, points=3)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / ".local" / "verify-report.json").write_text(
+                json.dumps({"stories": {"BG9005-x": {"verified": 1, "failed": 0, "stale": 0},
+                                        "BG9006-x": {"verified": 1, "failed": 0, "stale": 0}}}),
+                encoding="utf-8")
+            self._ledger(root, "BG9005", "REJECT")        # rejected, unanswered
+            # BG9006 carries NO verdict at all - the pair is what makes this discriminate.
+            wl = root / "worklist.txt"
+            wl.write_text("BG9005\nBG9006\n", encoding="utf-8")
+            script = Path(__file__).resolve().parents[1] / "sprint.py"
+            r = subprocess.run([sys.executable, "-B", str(script), "plan",
+                                "--worklist", str(wl), "--root", str(root), "--goal", "done"],
+                               capture_output=True, text=True, cwd=elsewhere)
+            out = r.stdout + r.stderr
+            self.assertIn("BG9005", out, out[:2000])
+            self.assertRegex(out, r"REVIEWED AND REJECTED[^\n]*BG9005",
+                             f"the rejected unit was not named in its own class when the "
+                             f"command ran from another directory:\n{out[:2000]}")
+            self.assertNotRegex(out, r"REVIEWED AND REJECTED[^\n]*BG9006",
+                                f"a unit with NO verdict was swept into the rejected class - "
+                                f"the fixture cannot discriminate:\n{out[:2000]}")
+
+    def test_the_rejected_unit_is_priced_in_and_named_separately(self) -> None:
+        """MUTANT: in `sprint.py`, merge the new class back into the existing sentence.
+
+        Both halves in one assertion set: the points stay in the total AND the unit is not
+        described by a sentence that ends `close them`.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "BG9004", points=3)
+            self._green(root, "BG9004")
+            self._ledger(root, "BG9004", "REJECT")
+            self.assertTrue(sprint._verifiers_all_green(root, "BG9004"),
+                            "the fixture's verifiers are not green, so this unit would be "
+                            "ordinary unbuilt work and the classes under test are not reached")
+            batch = [{"id": "BG9004", "path": str(root / "sdlc-studio" / "bugs" / "BG9004-x.md"),
+                      "points": 3}]
+            tf = sprint._token_forecast(root, batch)
+            self.assertIn("BG9004", tf.get("rejected_unanswered") or [],
+                          "the rejected unit was not named in its own class")
+            self.assertNotIn("BG9004", tf.get("built_not_closed") or [],
+                             "the rejected unit is still described as a close-candidate")
+            self.assertEqual(3, tf.get("points"),
+                             f"the rejected unit's points were removed from the batch total: {tf}")
+
+    def test_the_rejected_unit_is_not_described_by_the_close_them_sentence(self) -> None:
+        """MUTANT: in `sprint.py`, merge the new class back into the existing sentence.
+
+        Its OWN criterion and its own verifier. Pricing and NAMING are two claims: a fix that
+        counts the points but leaves the unit inside a sentence ending `close them` still tells
+        the reader to close work no reviewer approved, and one test covering both could not say
+        which half had failed.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "BG9007", points=3)
+            self._green(root, "BG9007")
+            self._ledger(root, "BG9007", "REJECT")
+            batch = [{"id": "BG9007", "path": str(root / "sdlc-studio" / "bugs" / "BG9007-x.md"),
+                      "points": 3}]
+            tf = sprint._token_forecast(root, batch)
+            line = sprint.rejected_line(tf) or ""
+            self.assertIn("BG9007", line,
+                          f"the rejected unit is not named in a class of its own: {tf}")
+            self.assertNotIn("close them", line,
+                             "the rejected unit is described by the close-them sentence")
+            self.assertNotIn("BG9007", sprint.exclusion_line(tf),
+                             "the rejected unit still appears in the BUILT-NOT-CLOSED sentence")
 
 
 if __name__ == "__main__":

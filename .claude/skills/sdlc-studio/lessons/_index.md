@@ -66,6 +66,7 @@ and from per-project memory (project-specific facts).
 | [LL0051](LL0051-apply-the-fix-as-a-mutant-if-tests-fail-they-were-pinning-the-defect.md) | Apply the FIX as a mutant: if tests fail, they were pinning the defect | testing, mutation, review, repair |
 | [LL0052](LL0052-a-repair-is-right-on-the-path-it-was-written-for-and-wrong-on-the-path-beside-it.md) | A repair is right on the path it was written for and wrong on the path beside it | testing, mutation, review, repair |
 | [LL0053](LL0053-a-registered-mutant-is-a-claim-clear-the-ledger-and-apply-them-before-believing-the-count.md) | A registered mutant is a claim; clear the ledger and apply them before believing the count | mutation, evidence, false-green, self-report, bug-class |
+| [LL0054](LL0054-a-test-and-its-mutant-authored-together-share-one-mental-model-so-they-agree-with-each-other-and-not-with-the-code.md) | A test and its mutant authored together share one mental model, so they agree with each other and not with the code | testing, mutation, false-green, evidence, bug-class |
 
 ## Notes
 

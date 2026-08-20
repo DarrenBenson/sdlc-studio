@@ -5,6 +5,7 @@ nothing beyond python3. Test titles are pinned by TS0002's AC Coverage Matrix.
 """
 from __future__ import annotations
 
+import argparse
 import contextlib
 import importlib.util
 import io
@@ -4739,6 +4740,247 @@ class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             self._retract()
         self.assertIn("re-measure it instead", str(ctx.exception))
+
+
+class RowKeyedJoinTests(unittest.TestCase):
+    """BG0596: the ledger join is keyed by (criterion, row), so two mutants on one criterion are
+    two claims rather than one."""
+
+    BODY = ("## Acceptance Criteria\n\n"
+            "- [ ] **AC1** Given two rows on one criterion, when the join runs, then both count\n"
+            "- [ ] **AC2** Given one row, when the join runs, then the count is unchanged\n\n")
+    PLAN = ("## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+            "| AC1 | in `x.py`, delete the first branch | first |\n"
+            "| AC1 | in `x.py`, delete the second branch | second |\n"
+            "| AC2 | in `x.py`, delete the single path | only |\n")
+
+    def _fixture(self, root):
+        # The ledger keys an entry on its target's content hash, so the target must exist.
+        (root / "x.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "BG9001-x.md"
+        f.write_text(f"# BG9001: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                     f"> **Points:** 2\n> **Affects:** x.py\n> **Created:** 2026-08-19\n\n"
+                     f"## Summary\n\nA thing.\n\n{self.BODY}{self.PLAN}\n"
+                     f"## Revision History\n", encoding="utf-8")
+        return f
+
+    @staticmethod
+    def _scan(path) -> int:
+        return sum(1 for ln in path.read_text(encoding="utf-8").splitlines()
+                   if re.match(r"^\|\s*AC\d+\s*\|", ln))
+
+    def test_the_planned_count_is_rows_not_criteria(self) -> None:
+        """MUTANT: in `mutation.py`, replace the row tally with a set of criterion ids.
+
+        Asserted against a plain scan of the artefact, not against the literal 3 - a criterion
+        count and a row count were the same number by construction until now, so a test pinning
+        one literal could not show them diverging.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mutation = _load()
+            f = self._fixture(root)
+            for i, mut in enumerate(("in `x.py`, delete the first branch",
+                                     "in `x.py`, delete the second branch")):
+                mutation.register_mutant(root, "x.py", mut, "pytest t", "killed",
+                                         unit="BG9001", criterion="AC1", line=1, row=i)
+            mutation.register_mutant(root, "x.py", "in `x.py`, delete the single path",
+                                     "pytest t", "killed", unit="BG9001", criterion="AC2",
+                                     line=2, row=0)
+            res = mutation.plan_execution(root, "BG9001")
+            self.assertEqual(self._scan(f), res["planned"],
+                             "the planned figure and a plain scan of the file disagree")
+            self.assertTrue(res["ok"], res)
+
+    def test_a_single_row_plan_counts_the_same_as_before(self) -> None:
+        """MUTANT: in `verify_ac.py`, duplicate every row entry under its criterion id as well.
+
+        BG0596 AC6's OWN control, and it must be its own test: sharing AC2's verifier meant one
+        assertion stood for both "counts rows, not criteria" and "does not inflate the ordinary
+        case", and a fix that double-counted would have satisfied the first while breaking the
+        second with nothing to say so.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mutation = _load()
+            (root / "x.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            b = root / "sdlc-studio" / "bugs"
+            b.mkdir(parents=True, exist_ok=True)
+            (b / "BG9010-x.md").write_text(
+                "# BG9010: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                "> **Points:** 2\n> **Affects:** x.py\n> **Created:** 2026-08-19\n\n"
+                "## Summary\n\nA thing.\n\n## Acceptance Criteria\n\n"
+                "- [ ] **AC1** Given one row, when it runs, then it counts once\n"
+                "- [ ] **AC2** Given one row, when it runs, then it counts once\n\n"
+                "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                "| AC1 | in `x.py`, delete a | one |\n"
+                "| AC2 | in `x.py`, delete b | two |\n\n## Revision History\n",
+                encoding="utf-8")
+            for ac in ("AC1", "AC2"):
+                mutation.register_mutant(root, "x.py", f"in `x.py`, delete {ac}", "pytest t",
+                                         "killed", unit="BG9010", criterion=ac, line=1, row=0)
+            res = mutation.plan_execution(root, "BG9010")
+            self.assertEqual(2, res["planned"],
+                             f"a one-row-per-criterion plan no longer counts one per criterion: "
+                             f"{res}")
+            self.assertEqual([0, 0], [r["row"] for r in res["rows"]],
+                             "a single-row criterion was given a row index above 0")
+            self.assertTrue(res["ok"], res)
+
+    def test_the_corpus_artefact_agrees_with_a_plain_scan(self) -> None:
+        """MUTANT: in `mutation.py`, replace the row tally with a set of criterion ids.
+
+        BG0596 AC5's own test, and the CORPUS instance the criterion names - the first cut used
+        a synthetic fixture, which is the same shape as AC2's and could not show the join works
+        on a real artefact. Asserted as AGREEMENT with a plain scan rather than as the literal
+        18, so a legitimate edit to BG0592's plan does not turn this red for a reason that has
+        nothing to do with the join.
+        """
+        repo = Path(__file__).resolve().parents[5]
+        hits = sorted((repo / "sdlc-studio" / "bugs").glob("BG0592-*.md"))
+        if not hits:
+            self.skipTest("BG0592 is not in this corpus")
+        text = hits[0].read_text(encoding="utf-8")
+        scanned = sum(1 for ln in text.splitlines()
+                      if re.match(r"^\|\s*AC\d+\s*\|", ln))
+        self.assertGreater(scanned, len(set(re.findall(r"^\|\s*(AC\d+)\s*\|", text, re.M))),
+                           "BG0592 no longer carries more rows than criteria, so this artefact "
+                           "can no longer show the difference the join is about")
+        mutation = _load()
+        res = mutation.plan_execution(repo, "BG0592")
+        self.assertEqual(scanned, res["planned"],
+                         f"`--from-plan` and a plain scan of BG0592 disagree about how many "
+                         f"rows it declares: {res['planned']} vs {scanned}")
+
+    def test_the_changed_return_shape_still_serves_its_other_caller(self) -> None:
+        """MUTANT: in `mutation.py`, delete the shape adapter.
+
+        BG0597 AC5's OWN test. `_testplan_rows` has two callers and this is the one in another
+        file; it consumed the return as a dict. Sharing AC2's verifier hid the question of
+        whether THIS caller survived the shape change.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mutation = _load()
+            self._fixture(root)
+            for i, ac in ((0, "AC1"), (1, "AC1"), (0, "AC2")):
+                mutation.register_mutant(root, "x.py", f"in `x.py`, delete {ac} row {i}",
+                                         "pytest t", "killed", unit="BG9001",
+                                         criterion=ac, line=1, row=i)
+            res = mutation.plan_execution(root, "BG9001")
+            self.assertTrue(res["ok"], f"the other caller of the changed shape reports an "
+                                       f"unaccounted row on a fully executed plan: {res}")
+            self.assertEqual(sorted([("AC1", 0), ("AC1", 1), ("AC2", 0)]),
+                             sorted((r["ac"], r["row"]) for r in res["rows"]),
+                             "the consumer lost or reordered rows reading the changed shape")
+
+    def test_one_kill_does_not_satisfy_a_criterion_second_row(self) -> None:
+        """MUTANT: in `mutation.py`, widen the gate to accept one execution per criterion.
+
+        The defect end to end: with the join keyed by criterion, registering AC1 row 0 alone
+        reported `every one executed and killed` over a mutant nobody had run.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mutation = _load()
+            self._fixture(root)
+            mutation.register_mutant(root, "x.py", "in `x.py`, delete the first branch",
+                                     "pytest t", "killed", unit="BG9001", criterion="AC1",
+                                     line=1, row=0)
+            mutation.register_mutant(root, "x.py", "in `x.py`, delete the single path",
+                                     "pytest t", "killed", unit="BG9001", criterion="AC2",
+                                     line=2, row=0)
+            res = mutation.plan_execution(root, "BG9001")
+            self.assertFalse(res["ok"], "a second declared row on AC1 was reported as executed")
+            owed = [r for r in res["outstanding"] if r["ac"] == "AC1"]
+            self.assertEqual(1, len(owed), res["outstanding"])
+            self.assertEqual(1, owed[0]["row"],
+                             "the refusal did not identify WHICH row is unaccounted for")
+
+    def test_an_entry_with_no_row_key_still_reads_back(self) -> None:
+        """MUTANT: in `mutation.py`, revert the ledger record to two keys.
+
+        Back-compat, and it is the half a schema change usually forgets: every mutant registered
+        before this shipped carries no `row`, and must keep joining as row 0 rather than being
+        orphaned into `not-run`.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mutation = _load()
+            self._fixture(root)
+            mutation.register_mutant(root, "x.py", "in `x.py`, delete the first branch",
+                                     "pytest t", "killed", unit="BG9001", criterion="AC1", line=1)
+            path = mutation.ledger_path(root)
+            state, reset = mutation._load_ledger(path)
+            entries = state.get("entries", [])
+            for e in entries:
+                for m in e.get("mutants", []):
+                    m.pop("row", None)          # an entry written by the previous schema
+            mutation._store_ledger(path, state, entries, reset)
+            res = mutation.plan_execution(root, "BG9001")
+            ac1 = [r for r in res["rows"] if r["ac"] == "AC1" and r["row"] == 0]
+            self.assertEqual("killed", ac1[0]["verdict"],
+                             "an entry carrying no row key was orphaned rather than read as row 0")
+
+    def test_the_report_states_both_figures(self) -> None:
+        """MUTANT: in `mutation.py`, delete the print on the refusal path.
+
+        Both counts, on both branches. The refusal branch printed neither, so a plan whose row
+        count and criterion count had diverged said nothing about it at the moment it mattered.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mutation = _load()
+            self._fixture(root)
+            mutation.register_mutant(root, "x.py", "in `x.py`, delete the first branch",
+                                     "pytest t", "killed", unit="BG9001", criterion="AC1",
+                                     line=1, row=0)
+            buf_out, buf_err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+                rc = mutation.cmd_from_plan(argparse.Namespace(root=str(root), story="BG9001"))
+            self.assertEqual(2, rc)
+            printed = buf_out.getvalue() + buf_err.getvalue()
+            self.assertIn("AC1#0", printed,
+                          "a multi-row criterion printed without its row index, so two rows on "
+                          f"one AC are indistinguishable in the report:\n{printed}")
+            # `AC1 row 1`, not the bare substring `row 1` - the remedy line also prints
+            # `--row 1`, so a loose match was satisfied by the flag whether or not the refusal
+            # named the row. The mutant SURVIVED against that first assertion, which is what
+            # caught it: the test asserted a string the message happened to contain elsewhere.
+            self.assertIn("AC1 row 1", printed,
+                          f"the refusal did not name the unexecuted row:\n{printed}")
+            self.assertIn("3 planned mutant(s) across 2 criterion/criteria", printed,
+                          f"the REFUSAL branch states neither figure, so a plan whose row count "
+                          f"and criterion count have diverged says nothing about it at the one "
+                          f"moment something is owed:\n{printed}")
+            self.assertNotIn("AC1 row 0", printed,
+                             f"a row that WAS executed is reported as outstanding:\n{printed}")
+
+    def test_the_success_line_states_rows_and_criteria_separately(self) -> None:
+        """The other half of AC7: on the branch that PASSES, both figures are printed.
+
+        `N planned mutant(s)` alone cannot show a divergence, because the row count and the
+        criterion count were the same number by construction until this shipped.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mutation = _load()
+            self._fixture(root)
+            for i in (0, 1):
+                mutation.register_mutant(root, "x.py", f"in `x.py`, delete branch {i}",
+                                         "pytest t", "killed", unit="BG9001",
+                                         criterion="AC1", line=1, row=i)
+            mutation.register_mutant(root, "x.py", "in `x.py`, delete the single path",
+                                     "pytest t", "killed", unit="BG9001", criterion="AC2",
+                                     line=2, row=0)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mutation.cmd_from_plan(argparse.Namespace(root=str(root), story="BG9001"))
+            self.assertEqual(0, rc, buf.getvalue())
+            self.assertIn("3 planned mutant(s) across 2 criterion/criteria", buf.getvalue(),
+                          f"the success line does not state both figures:\n{buf.getvalue()}")
 
 
 if __name__ == "__main__":

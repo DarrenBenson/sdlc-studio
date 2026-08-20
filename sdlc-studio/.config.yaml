@@ -203,6 +203,30 @@ gate_budget:
   seconds: 380
   baseline_seconds: 317
   baseline_date: 2026-07-26
+  # THE FULL SUITE'S OWN CEILING. The full series was always read - `budget_report` takes
+  # `latest(root, "total")` whenever the last commit did not run selected - but it was judged
+  # against `seconds`, a figure declared for a COMMIT. A ~899s full run against a 380s
+  # per-commit ceiling reads OVER as a matter of course, so the verdict carried no information
+  # and nothing watched the number that actually grew: ~630s to ~899s while the suite went
+  # 6,610 to 7,417 tests. Declared 2026-08-19 against that measured 899s peak with the same
+  # ~20% headroom the per-commit ceiling carries, so a normal full run reads under while a
+  # genuine ratchet still flags. Absent, the lane stays SILENT about the full series rather
+  # than inventing a default (BG0594).
+  # THE RATE CEILING, and the quantity actually being budgeted. A total is selection width times
+  # cost-per-test, and width varies continuously here - 1,418 to 5,573 tests across the recorded
+  # window - so a seconds ceiling reports a wide commit as a regression and a narrow one as
+  # headroom while neither has changed cost. Measured 2026-08-20: the last selected run is
+  # 187s/1,539 tests = 0.122 s/test and the last full run 899s/7,417 = 0.121, so the two series
+  # now cost the same per test and one ceiling serves both. 0.152 is that norm plus ~25%, which
+  # is the band that absorbs the selected series' own spread while still flagging a rise of the
+  # size the full suite made unobserved. An OPERATOR SETTING against a measured baseline, never
+  # a fitted constant, and it is declared beside the baseline it was chosen against.
+  rate_seconds_per_test: 0.152
+  rate_baseline_seconds_per_test: 0.122
+  rate_baseline_date: 2026-08-20
+  full_seconds: 1080
+  full_baseline_seconds: 899
+  full_baseline_date: 2026-08-19
 
 # Creation-time noise controls, switched on independently of the artefact schema (CR0510).
 # They were reachable only through a schema v3 bump that also switches on plan-review,
