@@ -1462,6 +1462,20 @@ def _ticks_on_a_design_rung(ctx: dict, rung: str) -> tuple:
             f"asked of a run that never targeted it")
 
 
+def read_root(ctx: dict):
+    """The tree a READ-ONLY probe should ask.
+
+    ONE accessor, because the alternative is every probe deciding for itself and one of them
+    getting it wrong: `_ck_doc_surface` asked `ctx["root"]` - a scratch holding only
+    `sdlc-studio/` under a dry run - and answered `not applicable` where the same row answers
+    `ran` outside a preview. That is the degradation this exists to remove, one probe over from
+    where it was found.
+
+    Defaults to `root`, so a caller that supplies no read root behaves exactly as before.
+    """
+    return ctx.get("read_root") or ctx["root"]
+
+
 def _ck_tick_verification(ctx: dict) -> tuple:
     """Does the tree support what the units say they did?
 
@@ -1495,7 +1509,7 @@ def _ck_tick_verification(ctx: dict) -> tuple:
         return (NOT_RUN, "no base ref",
                 "the run recorded no base ref, so no diff can be taken and no tick can be "
                 "checked against one; this row refuses rather than assuming everything changed")
-    changed = _changed_paths(ctx.get("read_root") or ctx["root"], base)
+    changed = _changed_paths(read_root(ctx), base)
     if changed is NO_HISTORY:
         # NAMED, not folded into "unreadable". The remedies are opposite: an unreadable diff is
         # something to investigate, while a tree with no commits is a state to commit out of.
@@ -1783,13 +1797,13 @@ def _ck_doc_surface(ctx: dict) -> tuple:
     so the two cannot disagree.
     """
     import doc_coverage  # noqa: PLC0415 - the ONE applicability reader, shared with the gate lane
-    if not doc_coverage.is_skill_repo(str(ctx["root"])):
+    if not doc_coverage.is_skill_repo(str(read_root(ctx))):
         return (NOT_RUN, "not applicable",
                 "the verb surface is the skill's own documentation, which this project does not "
                 "have - the row is undefined here rather than unmeasurable")
     try:
         import command_audit  # noqa: PLC0415
-        r = command_audit.verb_coverage(str(ctx["root"]))
+        r = command_audit.verb_coverage(str(read_root(ctx)))
     except Exception as exc:  # noqa: BLE001 - a report must not die on a measurement
         return (NOT_RUN, "unreadable",
                 f"the verb surface could not be measured ({type(exc).__name__}: {exc})")

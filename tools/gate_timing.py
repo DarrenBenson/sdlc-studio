@@ -352,6 +352,13 @@ def budget_report(root: Path) -> dict | None:
         # width-sensitive rather than leaving a reader to take it for a like-for-like one.
         detail += (" [no `gate_budget.rate_seconds_per_test` declared - this verdict is on the "
                    "raw total and moves with selection width]")
+    elif ceiling_rate:
+        # A rate ceiling IS declared and no test count was recorded, so the rate cannot be
+        # computed and the raw total decides after all. Labelled on the same terms as the state
+        # above: the neighbouring case disclosed its fallback and this one did not, which is the
+        # inconsistency an unlabelled mis-comparison always turns out to be.
+        detail += (" [a rate ceiling is declared but this run recorded no test count, so the "
+                   "verdict falls back to the raw total and moves with selection width]")
     return {"measured": measured, "budget": budget, "baseline": baseline,
             "baseline_date": when, "over": over, "detail": detail,
             "rate": rate, "rate_verdict": rate_verdict}

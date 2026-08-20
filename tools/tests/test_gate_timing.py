@@ -780,6 +780,27 @@ class BudgetSeriesTests(unittest.TestCase):
                           f"the regression is not named in the line an operator reads: "
                           f"{res['detail']}")
 
+    def test_a_declared_rate_with_no_test_count_says_it_fell_back(self) -> None:
+        """MUTANT: in `gate_timing.py`, drop the second fallback label.
+
+        The state next door - no rate ceiling at all - discloses its fallback. This one did not,
+        and an unlabelled mis-comparison is the whole defect this unit is about, so the two
+        states must be labelled on the same terms.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cfg(root, rate_seconds_per_test=0.152)
+            self._timings(root, selected={"total.selected": [200.0],
+                                          "total.last_series": "selected"}, series="selected")
+            res = gt.budget_report(root)
+            self.assertIsNotNone(res)
+            self.assertIsNone(res.get("rate"),
+                              "the fixture recorded a test count, so the fallback under test is "
+                              "never reached")
+            self.assertIn("no test count", res["detail"],
+                          f"a declared rate ceiling with no test count fell back to the raw "
+                          f"total and said nothing about it:\n{res['detail']}")
+
     def test_a_run_at_the_norm_is_not_flagged(self) -> None:
         """MUTANT: in `gate_timing.py`, set the comparison to `rate > 0`.
 

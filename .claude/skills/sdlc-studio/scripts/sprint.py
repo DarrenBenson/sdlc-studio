@@ -7238,10 +7238,26 @@ def close_dry_run(root, retro_id: str | None = None) -> dict:
                 kw = {}
                 try:
                     import inspect  # noqa: PLC0415 - deferred, one call per dry run
-                    if "read_root" in inspect.signature(fn).parameters:
+                    params = inspect.signature(fn).parameters
+                    if "read_root" in params:
                         kw["read_root"] = read_root
-                except (TypeError, ValueError) as exc:   # a builtin or C callable: no signature
+                    elif any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+                        # A step taking `**kwargs` cannot be inspected for `read_root`, so it
+                        # would be handed the scratch with nothing said - the degradation this
+                        # fix removes, restored silently one construct over. Pass it, and let a
+                        # step that does not want it ignore it.
+                        kw["read_root"] = read_root
+                except (TypeError, ValueError) as exc:
+                    # A builtin, a C callable, or a decorator without `functools.wraps`: the
+                    # signature cannot be read, so the read root cannot be routed. REPORTED
+                    # rather than dropped - a probe silently handed the wrong tree is exactly
+                    # what this step exists to stop.
                     sdlc_md.debug(f"sprint.close_dry_run.signature.{step}", exc)
+                    note(step, "unevaluated",
+                         f"this step's signature could not be read ({type(exc).__name__}), so "
+                         f"it could not be told which tree to read from",
+                         "give the step an explicit `read_root=None` parameter")
+                    continue
                 ok, detail, remedy = fn(scratch, rid, run_state.read(scratch) or state, **kw)
             except Exception as exc:  # noqa: BLE001 - a step that explodes is UNEVALUATED
                 # Never "ok". A step whose probe failed for a reason peculiar to the copy has
@@ -11177,10 +11193,20 @@ def full_gate_seconds(root) -> float | None:
     total understates them by a factor of three - this repo's own plan for RUN-01M0CT8P printed
     `at close FULL (~295s)` against a recorded full series of ~899s.
     """
+    # READ THE FILE, do not import the tool. `tools/` is repo-only and is NOT shipped with the
+    # skill, so `parents[4] / "tools"` resolves to nothing in every consuming project: the import
+    # failed, this returned None, and `execution_policy` priced the two most expensive moments in
+    # a sprint as NOT MEASURED for everybody except this repository. No test here could see it,
+    # because this repository HAS `tools/`; an independent review measured it from an
+    # installed-shape copy against a fixture project.
+    #
+    # The timings file is plain JSON at a fixed path and the value wanted is the last element of
+    # the FULL series - never whichever series the last commit happened to run, which is the
+    # per-commit question this function exists to avoid.
     try:
-        sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "tools"))
-        import gate_timing  # noqa: PLC0415 - deferred, repo-local tooling
-        return gate_timing.latest(Path(root), "total")
+        data = sdlc_md.read_json(Path(root) / GATE_TIMINGS_REL, {}) or {}
+        runs = [float(x) for x in (data.get("total") or []) if isinstance(x, (int, float))]
+        return runs[-1] if runs else None
     except Exception as exc:  # noqa: BLE001 - an unmeasured cost is reported, never invented
         sdlc_md.debug("sprint.full_gate_seconds", exc)
         return None

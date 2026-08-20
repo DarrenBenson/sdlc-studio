@@ -4794,6 +4794,30 @@ class RowKeyedJoinTests(unittest.TestCase):
                              "the planned figure and a plain scan of the file disagree")
             self.assertTrue(res["ok"], res)
 
+    def test_the_record_carries_a_row_identity(self) -> None:
+        """MUTANT: in `mutation.py`, revert the ledger record to two keys.
+
+        AC3's OWN test. Its first verifier was the back-compat one, which deliberately STRIPS
+        the row key - so removing that key from the record could not fail it, and the mutant
+        survived. This reads the ledger back and requires the two rows on one criterion to be
+        distinguishable ON THE RECORD, which is the claim.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mutation = _load()
+            self._fixture(root)
+            for i in (0, 1):
+                mutation.register_mutant(root, "x.py", f"in `x.py`, delete branch {i}",
+                                         "pytest t", "killed", unit="BG9001",
+                                         criterion="AC1", line=1, row=i)
+            state, _ = mutation._load_ledger(mutation.ledger_path(root))
+            rows = [m.get("row") for e in state.get("entries", [])
+                    for m in (e.get("mutants") or [])
+                    if m.get("unit") == "BG9001" and m.get("criterion") == "AC1"]
+            self.assertEqual([0, 1], sorted(r for r in rows if r is not None),
+                             f"the two mutants on AC1 are not distinguishable on the record, so "
+                             f"one execution stands for both: {rows}")
+
     def test_a_single_row_plan_counts_the_same_as_before(self) -> None:
         """MUTANT: in `verify_ac.py`, duplicate every row entry under its criterion id as well.
 
