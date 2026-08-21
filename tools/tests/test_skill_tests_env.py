@@ -149,6 +149,12 @@ SCRUB_SITES: dict[str, str] = {
         "(US0616). Same shape and same reason as the commit-msg fixture above - it scrubs its "
         "OWN child's environment rather than protecting a shipped path, and never writes "
         "outside its temp dir. Widen it to REPO_LOCATING when touched.",
+    ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py":
+        "NOT a scrub list - the INVERSE. `test_an_inherited_git_dir_does_not_steer_the_revert` "
+        "SETS GIT_DIR/GIT_WORK_TREE at a decoy repository on purpose, to prove `revert-check`'s "
+        "own scrub drops them; without the scrub the check reads the decoy and writes its bytes "
+        "over a production file. The sweep counts variable names, so a test that names them to "
+        "attack them looks the same as one that clears them.",
     ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py":
         "asserts the shipped helper's confinement behaviourally, against throwaway repos",
     ".claude/skills/sdlc-studio/scripts/tests/gitutil.py":

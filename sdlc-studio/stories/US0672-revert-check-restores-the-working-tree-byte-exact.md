@@ -5,7 +5,7 @@
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Verification depth:** functional [[derived: criteria 3; plan rows 3; executed 3; killed 3; survived 0; not-run 0; entry point 3 of 3 criteria through the shipped CLI, 0 in-process ]] (byte-equality is asserted over every file in the fixture outside `.git`, not over the reverted file alone, so a restore that repaired its target and damaged a sibling would fail. NOT covered: a process killed by a signal the interpreter cannot handle, where no `finally` runs at all)
+> **Verification depth:** functional [[derived: criteria 3; plan rows 3; executed 3; killed 3; survived 0; not-run 0; entry point 3 of 3 criteria through the shipped CLI, 0 in-process | fp 74af77eb7c4d ]] (byte-equality is asserted over every file in the fixture outside `.git`, not over the reverted file alone, so a restore that repaired its target and damaged a sibling would fail. NOT covered: a process killed by a signal the interpreter cannot handle, where no `finally` runs at all)
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Epic:** EP0217
 > **Points:** 3

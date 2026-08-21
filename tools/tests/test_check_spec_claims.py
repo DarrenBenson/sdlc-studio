@@ -134,6 +134,43 @@ class GateLaneTests(unittest.TestCase):
                               f"name it - a guard nobody has written down is one nobody "
                               f"notices losing")
 
+    def test_the_lane_roster_names_the_revert_check_and_calls_it_advisory(self) -> None:
+        """US0674. The second boundary-bound lane, and the same argument as the rehearsal above:
+        the hook-derived sweep reads the pre-commit hook, so a lane that deliberately does not
+        run per commit is invisible to it (LL0013).
+
+        Its BLOCKING STATUS is pinned as well as its name, which the rehearsal's row does not
+        need. This one ships advisory while its yield is measured, and a roster that named the
+        lane without saying so would leave nobody able to check whether it had quietly started
+        blocking - or quietly stopped."""
+        repo = Path(__file__).resolve().parents[2]
+        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("revert-check", agents,
+                      "AGENTS.md's roster does not name the revert-check lane")
+        # Bounded by DISTANCE rather than by "up to the next full stop": the row names
+        # `gate.py --boundary`, so a sentence-terminator rule stops at the dot in the filename
+        # and the word it is looking for is always just past it.
+        self.assertRegex(agents, r"(?s)revert-check.{0,120}boundar",
+                         "the roster does not say the lane binds at a boundary rather than per "
+                         "commit")
+        # Read the lane's OWN paragraph, not a window around its name. A 900-character window
+        # reached the `claim-drift` row, which also says ADVISORY, so the assertion passed with
+        # the word deleted from this lane's row - a guard satisfied by a neighbouring sentence.
+        para = next((b for b in agents.split("\n\n") if "revert-check" in b), "")
+        self.assertTrue(para, "no paragraph in AGENTS.md mentions revert-check")
+        self.assertIn("ADVISORY", para,
+                      "the roster names the lane but not that it is ADVISORY - a reader cannot "
+                      "tell whether it blocks, which is the one thing they need to know")
+        gate = (repo / ".claude" / "skills" / "sdlc-studio" / "scripts"
+                / "gate.py").read_text(encoding="utf-8")
+        self.assertIn('"revert-check"', gate,
+                      "AGENTS.md names a lane the gate does not register")
+        self.assertIn('"derived-depth"', gate,
+                      "AGENTS.md's gate block names derived-depth and the gate does not "
+                      "register it")
+        self.assertIn("derived-depth", agents,
+                      "the gate blocks on derived-depth and the roster does not name it")
+
     def test_the_lane_roster_names_the_release_rehearsal(self) -> None:
         """US0666: a lane bound at a BOUNDARY is invisible to the hook-derived sweep above, which
         reads the pre-commit hook - so the one lane that deliberately does not run per commit is

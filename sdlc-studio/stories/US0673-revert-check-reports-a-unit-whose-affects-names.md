@@ -5,7 +5,7 @@
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Verification depth:** functional [[derived: criteria 2; plan rows 2; executed 2; killed 2; survived 0; not-run 0; entry point 2 of 2 criteria through the shipped CLI, 0 in-process ]] (both reported conditions are driven through the command and asserted on their own exit code, so an absence cannot read as a pass. NOT covered: a production path that exists but cannot be read)
+> **Verification depth:** functional [[derived: criteria 2; plan rows 2; executed 2; killed 2; survived 0; not-run 0; entry point 2 of 2 criteria through the shipped CLI, 0 in-process | fp d39fb8daa9b6 ]] (both reported conditions are driven through the command and asserted on their own exit code, so an absence cannot read as a pass. NOT covered: a production path that exists but cannot be read)
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Epic:** EP0217
 > **Points:** 2

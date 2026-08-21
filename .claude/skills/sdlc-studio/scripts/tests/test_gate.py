@@ -290,7 +290,7 @@ class GateRealWrapperTests(unittest.TestCase):
                           "integrity", "duplicate-id", "provenance", "doc-coverage", "doc-surface",
                           "engagement-floor",
                           "disclosure", "doc-freshness", "mutation", "window", "hook-enabled",
-                          "batch-size", "changelog-fragments"})
+                          "batch-size", "changelog-fragments", "derived-depth"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
@@ -299,7 +299,7 @@ class GateRealWrapperTests(unittest.TestCase):
         # dev-repo guard rather than repeating it (BG0237).
         r = self._report()
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 18)   # +doc-surface (US0655), advisory
+        self.assertEqual(len(r["checks"]), 19)   # +doc-surface advisory, +derived-depth blocking
         for c in r["checks"]:
             # `seconds` is part of the row shape: the cost report derives the dominant lane
             # from it, and a lane with no share of the total cannot be named as the cause.
@@ -6399,7 +6399,15 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
                          "the rehearsal ran on a per-commit gate - it builds two fixture "
                          "projects, and the gate is already over its budget there")
         for boundary in ("push", "release"):
-            lanes = self._lanes(self._gate("--boundary", boundary).stdout)
+            # SCOPED to this lane. An unscoped boundary gate here binds every boundary lane
+            # against THIS repository, and `revert-check` reverts a batch unit's production
+            # files on disk to measure them. That is correct at a real push and wrong inside a
+            # parallel suite: it rewrote `verify_ac.py` underneath another xdist worker, whose
+            # `inspect.getsource` then returned lines from the base revision. `--only` still
+            # proves binding - an unregistered lane is refused outright, and the "not bound
+            # per-commit" half above is unchanged and still uses the plain gate.
+            lanes = self._lanes(self._gate("--boundary", boundary,
+                                           "--only", "release-rehearsal").stdout)
             self.assertIn("release-rehearsal", lanes,
                           f"the lane did not bind at the {boundary} boundary")
 
@@ -6443,6 +6451,309 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
             self.assertRegex(line, r"\[\d+\.\d+s\]",
                              "the lane's duration is not recorded beside the other lanes")
 
+
+
+class RevertCheckLaneTests(unittest.TestCase):
+    """US0674: the revert-check lane binds at the boundary, reports, and records its yield.
+
+    ADVISORY on the claim-drift lane's terms - a new blocking check on a gate already over its
+    ceiling earns its place on a number rather than on an assertion, so the number has to exist.
+    """
+
+    def _repo(self):
+        return pathlib.Path(__file__).resolve().parents[5]
+
+    def _gate(self, *extra, root=None):
+        import subprocess  # noqa: PLC0415
+        scripts = pathlib.Path(__file__).resolve().parents[1]
+        return subprocess.run(
+            [sys.executable, str(scripts / "gate.py"), "--root", str(root or self._repo()),
+             *extra],
+            capture_output=True, text=True, timeout=1800, check=False)
+
+    def _lanes(self, out):
+        return {m.group(1) for m in re.finditer(r"^\s+\[(?:PASS|FAIL|warn)\] ([a-z-]+) ",
+                                                out, re.M)}
+
+    def test_the_lane_runs_at_the_boundary_and_not_per_commit(self) -> None:
+        """MUTANT: in `gate.py`, register `revert-check` in `DEFAULT_CHECKS` so it binds on
+        every commit.
+
+        Both halves are proved by SELECTION, which is sharper than reading the printed lane
+        list and costs nothing: `--only <name>` is refused outright for a lane the run does not
+        register, so a refusal off-boundary and a run on-boundary are each positive evidence.
+        The plain gate is checked as well, because a lane can be registered without being
+        selectable and the printed list is what a reader actually sees.
+
+        Deliberately NOT driven as a full `--boundary` gate: that binds `release-rehearsal`,
+        which builds two fixture projects, and paying minutes to learn a lane's name is in a
+        registry is how a suite becomes one nobody runs.
+        """
+        off = self._gate("--only", "revert-check")
+        self.assertNotEqual(0, off.returncode,
+                            "`--only revert-check` was accepted on a per-commit gate, so the "
+                            "lane is registered there - it reverts and re-runs every batch "
+                            "unit's selectors, which is minutes against a gate at its ceiling")
+        self.assertIn("revert-check", off.stdout + off.stderr,
+                      "the refusal does not name the lane, so it may have failed for an "
+                      "unrelated reason and this assertion would pass either way")
+        plain = self._lanes(self._gate().stdout)
+        self.assertIn("integrity", plain,
+                      "the plain gate printed no lanes at all, so the absence below proves "
+                      "nothing")
+        self.assertNotIn("revert-check", plain, "the revert-check ran on a per-commit gate")
+        # A FIXTURE workspace: a boundary run here EXECUTES the lane, and the lane reverts
+        # production files on disk. Pointed at this repository it would rewrite `verify_ac.py`
+        # underneath the parallel suite reading it.
+        fixture = self._fixture_root(green_after_revert=False)
+        for boundary in ("push", "release"):
+            r = self._gate("--boundary", boundary, "--only", "revert-check", root=fixture)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("revert-check", self._lanes(r.stdout),
+                          f"the lane did not bind at the {boundary} boundary")
+
+    def test_a_unit_whose_verifiers_go_red_is_not_reported(self) -> None:
+        """MUTANT: in `gate._revert_check`, append every examined unit to `refused` rather than
+        only those whose status is `refused`.
+
+        The paired control. A lane that names every unit put in front of it has measured
+        nothing, and its yield figure would be a count of the batch rather than a finding.
+
+        DRIVEN AGAINST A FIXTURE WORKSPACE, NEVER THIS REPOSITORY. The first cut pointed the
+        boundary gate at the real repo, and the lane did exactly what it is built to do: it
+        reverted this repo's own `verify_ac.py` on disk while parallel xdist workers were
+        reading it, and `inspect.getsource` in an unrelated test came back with lines from the
+        base revision. A test that mutates the shared tree mid-suite is the hazard this whole
+        unit exists to handle, met from the other side."""
+        root = self._fixture_root(green_after_revert=False)
+        out = self._gate("--boundary", "push", "--only", "revert-check", root=root).stdout
+        line = next((ln for ln in out.splitlines() if "revert-check" in ln), "")
+        self.assertTrue(line, f"no revert-check lane in the output:\n{out}")
+        self.assertIn("none stayed green without its change", line,
+                      f"the lane reported units whose verifiers DO go red: {line}")
+        self.assertNotIn("[FAIL]", line,
+                         "the lane blocked - it ships ADVISORY while its yield is measured")
+
+    def test_a_unit_that_stays_green_is_named_without_blocking(self) -> None:
+        """MUTANT: in `gate._revert_check`, return `blocking: True` when anything is refused.
+
+        The other half of the pair, and the one that proves the lane can fire at all: a unit
+        whose verifier passes with its production change reverted IS named, and the gate still
+        passes. Advisory means reported-and-not-blocking, so both halves need asserting -
+        a lane that never fires and a lane that blocks are different failures."""
+        root = self._fixture_root(green_after_revert=True)
+        r = self._gate("--boundary", "push", "--only", "revert-check", root=root)
+        line = next((ln for ln in r.stdout.splitlines() if "revert-check" in ln), "")
+        self.assertIn("would be refused", line, r.stdout)
+        self.assertIn("US9200", line, r.stdout)
+        self.assertEqual(0, r.returncode, "the advisory lane failed the gate")
+
+    def _fixture_root(self, *, green_after_revert: bool):
+        """A throwaway workspace with its own git history, one unit and an open run."""
+        import subprocess  # noqa: PLC0415
+        import shutil, tempfile  # noqa: PLC0415
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+        import gitutil  # noqa: PLC0415 - the confined fixture git runner
+        from lib import run_state  # noqa: PLC0415
+        root = pathlib.Path(tempfile.mkdtemp(prefix="revert_lane_"))
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "scripts").mkdir()
+        (root / "scripts" / "prod.py").write_text("BASE_ONLY = 1\n", encoding="utf-8")
+        stories = root / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        gitutil.git(["init", "-q"], root)
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-qm", "base"], root)
+        base = gitutil.git(["rev-parse", "HEAD"], root).stdout.decode().strip()
+        (root / "scripts" / "prod.py").write_text(
+            'BASE_ONLY = 1\nSHIPPED = "SHIPPED"\n', encoding="utf-8")
+        # The discriminator: a verifier that greps the SHIPPED marker goes red on the revert;
+        # one that greps text the base already carries stays green and must be named.
+        pattern = "BASE_ONLY" if green_after_revert else "SHIPPED"
+        (stories / "US9200-fixture.md").write_text(
+            "# US9200: fixture\n\n> **Status:** Draft\n"
+            "> **Affects:** scripts/prod.py\n\n## Acceptance Criteria\n\n"
+            f"- [ ] **AC1** a claim\n  - **Verify:** grep {pattern} scripts/prod.py\n",
+            encoding="utf-8")
+        run_state.open_run(root, batch=["US9200"], goal="fixture")
+        state = run_state.read(root) or {}
+        state[run_state.BASE_REF] = base
+        run_state.write(root, state)
+        return root
+
+    def test_the_recorded_yield_changes_with_the_input(self) -> None:
+        """MUTANT: in `gate._record_revert_yield`, write a constant `{"runs": 1, "examined": 0,
+        "would_refuse": 0}` instead of accumulating.
+
+        The yield exists to support a decision about making the lane block, so a pair that
+        cannot move is worse than no pair at all - it would read as evidence. Asserted by
+        MOVING it: two runs over different batch sizes must not record the same figures."""
+        import json as _json  # noqa: PLC0415
+        import tempfile  # noqa: PLC0415
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+        import gate as gate_mod  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            gate_mod._record_revert_yield(root, 4, 1)
+            first = _json.loads((root / gate_mod._REVERT_YIELD_REL).read_text(encoding="utf-8"))
+            gate_mod._record_revert_yield(root, 7, 3)
+            second = _json.loads((root / gate_mod._REVERT_YIELD_REL).read_text(encoding="utf-8"))
+        self.assertEqual({"runs": 1, "examined": 4, "would_refuse": 1}, first)
+        self.assertEqual({"runs": 2, "examined": 11, "would_refuse": 4}, second,
+                         "the recorded pair did not move with the input - a constant cannot "
+                         "support the decision it exists to inform")
+
+    def test_the_yield_is_written_under_local(self) -> None:
+        """MUTANT: point `_REVERT_YIELD_REL` at a tracked path, as BG0481 did for claim-drift.
+
+        A lane-written record under a tracked path dirties the working tree on every boundary
+        run with a file the author never touched, and `repo-writes` then refuses the commit."""
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+        import gate as gate_mod  # noqa: PLC0415
+        self.assertIn("/.local/", gate_mod._REVERT_YIELD_REL,
+                      f"the yield is written to {gate_mod._REVERT_YIELD_REL}, which is not "
+                      f"under .local/ - it would dirty the tree on every boundary run")
+
+
+_DEPTH_FIXTURE = """\
+# US9100: fixture
+
+> **Status:** Draft
+> **Verification depth:** functional [[derived: criteria 1; plan rows 1; executed 1; killed 1; \
+survived 0; not-run 0; entry point 0 of 1 criteria through the shipped CLI, 1 in-process \
+| fp {fp} ]] (the judgement half)
+> **Affects:** scripts/prod.py
+
+## Acceptance Criteria
+
+- [ ] **AC1** a claim
+  - **Verify:** file scripts/prod.py
+"""
+
+_DEPTH_FACTS = ("criteria 1; plan rows 1; executed 1; killed 1; survived 0; not-run 0; "
+                "entry point 0 of 1 criteria through the shipped CLI, 1 in-process")
+
+
+class DerivedDepthLaneTests(unittest.TestCase):
+    """US0676: the derived half of `Verification depth` is refused when hand-edited.
+
+    Sealed rather than re-derived, and that is the load-bearing choice: re-deriving needs the
+    mutation ledger, which lives in gitignored `sdlc-studio/.local/`, so a re-deriving guard
+    reports every unit as unsupported in a fresh clone and refuses the whole corpus.
+    """
+
+    def setUp(self) -> None:
+        import tempfile  # noqa: PLC0415
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+        import verify_ac as _va  # noqa: PLC0415
+        self.va = _va
+        self.tmp = pathlib.Path(tempfile.mkdtemp(prefix="derived_depth_lane_"))
+        (self.tmp / "scripts").mkdir()
+        (self.tmp / "scripts" / "prod.py").write_text("x = 1\n", encoding="utf-8")
+        stories = self.tmp / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        self.unit = stories / "US9100-fixture.md"
+        self.unit.write_text(
+            _DEPTH_FIXTURE.format(fp=_va.depth_fingerprint(_DEPTH_FACTS)), encoding="utf-8")
+        (stories.parent / "test-specs").mkdir(exist_ok=True)
+        # A LEDGER, because a unit carrying a derived span is one whose mutants were run
+        # somewhere. Without it the regenerate command correctly refuses - it will not erase
+        # recorded counts in a workspace that has no ledger - and AC3's escape would be
+        # unreachable in the fixture while working perfectly in the field.
+        import mutation as _mut  # noqa: PLC0415
+        (self.tmp / "scripts" / "prod.py").write_text("x = 1\n", encoding="utf-8")
+        _mut.register_mutant(self.tmp, "scripts/prod.py",
+                             mutant="in `scripts/prod.py`, drop the assignment",
+                             test="tests/test_prod.py::test_x", verdict="killed",
+                             unit="US9100", criterion="AC1", row=0, line=1)
+
+    def tearDown(self) -> None:
+        import shutil  # noqa: PLC0415
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _lane(self):
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+        import gate as gate_mod  # noqa: PLC0415
+        return gate_mod._derived_depth(str(self.tmp))
+
+    def test_a_hand_edit_inside_the_derived_half_is_refused(self) -> None:
+        """MUTANT: in `verify_ac.depth_edit_faults`, return `[]` whenever the span carries a
+        fingerprint, without comparing it to the contents.
+
+        A derived surface nobody may hand-edit is only derived if something refuses the edit -
+        the same rule a hand-edited `_index.md` is held to. The edit here is the one an author
+        actually makes: correcting a count they believe is wrong."""
+        text = self.unit.read_text(encoding="utf-8")
+        self.unit.write_text(text.replace("killed 1", "killed 9"), encoding="utf-8")
+        res = self._lane()
+        self.assertEqual(1, res["count"], res["detail"])
+        self.assertTrue(res["blocking"], "the lane did not block on a hand-edited derived half")
+        self.assertIn("US9100", res["detail"])
+        self.assertIn("edited by hand", res["detail"])
+
+    def test_the_refusal_names_the_regenerate_command_and_it_clears_the_refusal(self) -> None:
+        """MUTANT: in `verify_ac.depth_edit_faults`, drop the regenerate command from the
+        message.
+
+        A refusal with no stated escape would leave this batch's own depth fields
+        uncorrectable and the tree uncommittable - a shape this repository has already shipped
+        once. The escape is asserted by RUNNING it, not by reading the sentence: the message
+        naming a command that does not clear the refusal is the same defect one step later."""
+        text = self.unit.read_text(encoding="utf-8")
+        self.unit.write_text(text.replace("survived 0", "survived 7"), encoding="utf-8")
+        res = self._lane()
+        self.assertEqual(1, res["count"])
+        self.assertIn("verify_ac.py depth --unit US9100 --write", res["detail"],
+                      "the refusal does not name the command that regenerates the field")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = self.va.main(["depth", "--unit", "US9100", "--root", str(self.tmp), "--write"])
+        self.assertEqual(0, rc, buf.getvalue())
+        self.assertEqual(0, self._lane()["count"],
+                         "the named command ran and the refusal did not clear")
+
+    def test_an_edit_to_the_judgement_half_passes(self) -> None:
+        """MUTANT: in `verify_ac.depth_edit_faults`, hash the whole field value rather than the
+        span's own facts.
+
+        The paired control. A guard that refuses every edit to the field has not distinguished
+        the two halves it exists to distinguish, and the judgement half - the tier, and the
+        honest statement of what was not covered - is the part no tool can supply."""
+        text = self.unit.read_text(encoding="utf-8")
+        self.unit.write_text(
+            text.replace("(the judgement half)",
+                         "(the judgement half, rewritten by hand after a review)"),
+            encoding="utf-8")
+        res = self._lane()
+        self.assertEqual(0, res["count"],
+                         f"an edit OUTSIDE the delimiters was refused: {res['detail']}")
+
+    def test_a_field_with_no_derived_half_is_left_alone(self) -> None:
+        """MUTANT: in `verify_ac.depth_edit_faults`, treat a missing span as a fault.
+
+        Most of this corpus carries a hand-authored `Verification depth` with no derived half
+        at all. That is the pre-existing state, not a defect, and a guard that refused 600
+        artefacts on the commit that shipped it is one that gets switched off rather than
+        satisfied."""
+        self.unit.write_text(
+            "# US9100: fixture\n\n> **Status:** Draft\n"
+            "> **Verification depth:** functional (all hand-written, no derived half)\n"
+            "> **Affects:** scripts/prod.py\n", encoding="utf-8")
+        self.assertEqual(0, self._lane()["count"],
+                         "a field with no derived span was refused")
+
+    def test_a_span_stripped_of_its_seal_is_still_refused(self) -> None:
+        """MUTANT: in `verify_ac.depth_edit_faults`, `continue` when no fingerprint is present.
+
+        Otherwise deleting the seal is a free bypass: an author who edits the counts and then
+        removes the fingerprint passes a guard that exists to catch exactly that edit."""
+        text = self.unit.read_text(encoding="utf-8")
+        import re as _re  # noqa: PLC0415
+        self.unit.write_text(_re.sub(r"\| fp [0-9a-f]+ ", "", text), encoding="utf-8")
+        res = self._lane()
+        self.assertEqual(1, res["count"], res["detail"])
+        self.assertIn("carries no fingerprint", res["detail"])
 
 if __name__ == "__main__":
     unittest.main()

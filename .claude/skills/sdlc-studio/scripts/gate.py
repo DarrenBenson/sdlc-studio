@@ -824,7 +824,7 @@ BLOCKING_ON_ERROR = {
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
     "engagement-floor", "review-current", "close-owed", "window",
-    "changelog-fragments",
+    "changelog-fragments", "derived-depth",
 }
 
 def _changelog(root: str) -> dict:
@@ -1110,6 +1110,93 @@ def _release_rehearsal(root: str) -> dict:
     return {"count": 1, "blocking": True, "detail": why.replace("rehearsal FAILED: ", "")}
 
 
+#: Where the advisory revert-check lane accumulates what it has examined and what it would have
+#: refused. Under `.local/`, which is gitignored: the first version of the claim-drift
+#: accumulator wrote to a TRACKED path and dirtied the working tree on every commit.
+_REVERT_YIELD_REL = "sdlc-studio/.local/revert-check-yield.json"
+
+
+def _derived_depth(root: str) -> dict:
+    """BLOCKING lane: a hand-edit inside the derived half of a `Verification depth`.
+
+    The counted half is derived output and is refused the way a hand-edited `_index.md` is.
+    Judged against the span's OWN seal rather than by re-deriving it: re-derivation needs the
+    mutation ledger, which is gitignored, so it would refuse every unit in a fresh clone.
+
+    Scoped to fields that CARRY a derived span. Most of this corpus holds a hand-authored depth
+    field with no derived half, and those are the pre-existing state rather than a fault.
+    """
+    import verify_ac as _va  # noqa: PLC0415 - deferred; it owns the field's format
+    root = Path(root)
+    units = _va.walk_units(_va.unit_dirs(root, root / "sdlc-studio" / "stories"))
+    faults = _va.depth_edit_faults(units)
+    if not faults:
+        return {"count": 0, "blocking": True,
+                "detail": f"{len(units)} unit(s), every derived half matches its own seal"}
+    return {"count": len(faults), "blocking": True,
+            "detail": "; ".join(f["why"] for f in faults[:3])
+                      + (f" (+{len(faults) - 3} more)" if len(faults) > 3 else "")}
+
+
+def _revert_check(root: str) -> dict:
+    """ADVISORY boundary lane: units whose own verifiers stay green with the change reverted.
+
+    Bound at the push and release boundaries only, on `release-rehearsal`'s precedent. Reverting
+    and re-running a unit's selectors costs minutes; the per-commit gate is already at its
+    ceiling, and a lane whose cost is paid on every commit gets switched off - and then it
+    guards nothing.
+
+    ADVISORY while its yield is measured. A new blocking check on a gate already over budget
+    earns its place on a number rather than on an assertion, which is the term the claim-drift
+    lane shipped under. The yield is recorded so that number exists to argue from.
+    """
+    import verify_ac as _va  # noqa: PLC0415 - deferred; it owns the check
+    from lib import run_state as _rs  # noqa: PLC0415
+    root = Path(root)
+    base = (_rs.base_ref(root) or "").strip()
+    batch = [str(b) for b in ((_rs.read(root) or {}).get("batch") or [])]
+    if not base or not batch:
+        return {"count": 0, "blocking": False,
+                "detail": "N/A (no open run with a base ref and a batch to examine)"}
+    examined, refused, named = 0, [], []
+    for uid in batch:
+        try:
+            res = _va.revert_check(root, uid, base)
+        except Exception as exc:  # noqa: BLE001 - an advisory lane never breaks the gate
+            named.append(f"{uid}: {exc}")
+            continue
+        if res.get("status") in ("error", "reported"):
+            continue  # not a measurement of this unit's evidence; `revert-check` reports it
+        examined += 1
+        if res.get("status") == "refused":
+            refused.append(uid)
+            named.append(f"{uid}: green after the revert - {', '.join(res.get('green') or [])}")
+    _record_revert_yield(root, examined, len(refused))
+    if not refused:
+        return {"count": 0, "blocking": False,
+                "detail": f"{examined} unit(s) examined, none stayed green without its change"}
+    return {"count": len(refused), "blocking": False,
+            "detail": f"{examined} examined, {len(refused)} would be refused - "
+                      + "; ".join(named[:3])}
+
+
+def _record_revert_yield(root: Path, examined: int, refused: int) -> None:
+    """Accumulate what the lane looked at and what it would have refused."""
+    try:
+        path = Path(root) / _REVERT_YIELD_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            rec = json.loads(path.read_text(encoding="utf-8"))  # bare-read-ok: own accumulator
+        except (OSError, ValueError):
+            rec = {}
+        rec = {"runs": int(rec.get("runs", 0)) + 1,
+               "examined": int(rec.get("examined", 0)) + examined,
+               "would_refuse": int(rec.get("would_refuse", 0)) + refused}
+        path.write_text(json.dumps(rec, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+
+
 DEFAULT_CHECKS = {
     "conformance": _conformance_scoped,
     "reconcile": _reconcile,
@@ -1131,6 +1218,7 @@ DEFAULT_CHECKS = {
     # Structure + hand-edit are COMMITTED faults, so the changelog lane runs in the standard
     # gate too; --release swaps in the superset that also refuses a stray fragment at the cut.
     "changelog-fragments": _changelog,
+    "derived-depth": _derived_depth,
 }
 
 
@@ -2102,6 +2190,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         # `--release --only <lane>` run, and a lane nothing can select around makes the mode
         # unusable for anything narrower than the whole gate.
         registry["release-rehearsal"] = _release_rehearsal
+        registry["revert-check"] = _revert_check
         # REGISTERED, not BOUND. Binding it refused every `--boundary push --only <lane>` run,
         # which the base ref supported for every other lane - a scoped boundary run is a caller
         # deliberately narrowing, and the refusal named mode flags they had not passed. The same

@@ -5,7 +5,7 @@
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Verification depth:** functional [[derived: criteria 5; plan rows 5; executed 5; killed 5; survived 0; not-run 0; entry point 5 of 5 criteria through the shipped CLI, 0 in-process ]] (every count is asserted to MOVE with the ledger rather than merely to be present, and the ledger is written by `mutation.register_mutant` rather than hand-built as JSON. NOT covered: the gate half that refuses a hand-edit inside the delimiters - that is US0676, which lands in the gate-lane commit)
+> **Verification depth:** functional [[derived: criteria 5; plan rows 5; executed 5; killed 5; survived 0; not-run 0; entry point 5 of 5 criteria through the shipped CLI, 0 in-process | fp 1eac765f2fb5 ]] (every count is asserted to MOVE with the ledger rather than merely to be present, and the ledger is written by `mutation.register_mutant` rather than hand-built as JSON. NOT covered: the gate half that refuses a hand-edit inside the delimiters - that is US0676, which lands in the gate-lane commit)
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Epic:** EP0217
 > **Points:** 5

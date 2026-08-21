@@ -5,8 +5,8 @@
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Verification depth:** functional [[derived: criteria 5; plan rows 6; executed 6; killed 6; survived 0; not-run 0; entry point 5 of 5 criteria through the shipped CLI, 0 in-process ]] (the whole command is exercised through `verify_ac.py revert-check` against real git repositories with real files on disk, because the subject is what happens to bytes while it runs. NOT covered: a unit whose production file was ADDED by the change and so does not exist at the base ref - the revert deletes it, which is right, but no criterion pins that path)
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/reference-scripts-surface.md, tools/tests/test_skill_tests_env.py
+> **Verification depth:** functional [[derived: criteria 5; plan rows 6; executed 6; killed 6; survived 0; not-run 0; entry point 5 of 5 criteria through the shipped CLI, 0 in-process | fp 3a9c3f123a3e ]] (the whole command is exercised through `verify_ac.py revert-check` against real git repositories with real files on disk, because the subject is what happens to bytes while it runs. NOT covered: a unit whose production file was ADDED by the change and so does not exist at the base ref - the revert deletes it, which is right, but no criterion pins that path)
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/reference-scripts-surface.md, tools/tests/test_skill_tests_env.py, .claude/skills/sdlc-studio/reference-schema.md
 > **Epic:** EP0217
 > **Points:** 5
 > **Persona:** Maya Okafor
@@ -55,3 +55,4 @@
 | 2026-08-21 | sdlc-studio | Goal review round 2: the pinned regression case named a commit that holds the REPAIR, not the defect, and the ledger it would read is gitignored - re-pinned as a named fixture. Exemption taxonomy added, without which the check refuses correct units |
 | 2026-08-21 | sdlc-studio | `Affects` extended with the generated verb catalogue: `command_audit --coverage` reads it, and the new verbs are absent from it until `docgen surface` runs |
 | 2026-08-21 | sdlc-studio | The full suite refused twice on guards this work tripped: `git -C` does not override an inherited repo-locating variable, and this check WRITES what git hands it, so the scrub carries the full list and is registered where every other copy is pinned. `Affects` extended to the registry that pins it |
+| 2026-08-21 | sdlc-studio | Delivery review round 1 REJECTED this unit on six blocking findings. `Revert-check-exempt` gates the check and existed in no schema, so the versioned contract now carries it and `Affects` names the file |

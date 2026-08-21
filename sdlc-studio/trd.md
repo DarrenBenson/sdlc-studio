@@ -167,7 +167,7 @@ with the agent's built-in tools.
 
 A third architectural element sits over both: `gate.py` composes the deterministic
 checks into **lanes**, each returning PASS / warn / FAIL, and the whole into one
-exit code. The default sweep runs `batch-size`, `changelog-fragments`, `conformance`, `constitution`, `disclosure`, `doc-coverage`, `doc-freshness`, `doc-surface`, `duplicate-id`, `engagement-floor`, `hook-enabled`, `index-derived`, `integrity`, `mutation`, `provenance`, `reconcile`, `validate` and `window`
+exit code. The default sweep runs `batch-size`, `changelog-fragments`, `conformance`, `constitution`, `derived-depth`, `disclosure`, `doc-coverage`, `doc-freshness`, `doc-surface`, `duplicate-id`, `engagement-floor`, `hook-enabled`, `index-derived`, `integrity`, `mutation`, `provenance`, `reconcile`, `validate` and `window`
 (the registry is `gate.DEFAULT_CHECKS`; this list is held to it by
 `tools/tests/test_trd_surface_derivation.py`). Bound lanes attach to a
 specific obligation and cannot be skipped or excluded away: `--require-retro` (the

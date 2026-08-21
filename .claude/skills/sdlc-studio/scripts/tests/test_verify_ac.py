@@ -10,11 +10,15 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 import re
 import shutil
+import signal
+import stat
 import sys
 import subprocess
 import tempfile
+import time
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -4863,11 +4867,31 @@ class _RevertRepo:
             encoding="utf-8")
 
     def hashes(self) -> dict:
+        """Content, MODE and link-target for every file outside `.git`.
+
+        Content alone was not enough, and that gap is why two defects shipped: a file recreated
+        by `write_bytes` came back at the umask default (a tracked `100755` script reading
+        `100644`, `git status` dirty) and a symlink came back as a regular file holding its
+        target's bytes. Both leave the content hash identical, so an assertion over content
+        was structurally incapable of failing on either. `lstat`, never `stat`, so the symlink
+        itself is measured rather than what it points at."""
         import hashlib
+        import os as _os
+        import stat as _stat
         out = {}
         for p in sorted(self.tmp.rglob("*")):
-            if p.is_file() and ".git/" not in str(p.relative_to(self.tmp)).replace("\\", "/"):
-                out[str(p.relative_to(self.tmp))] = hashlib.sha256(p.read_bytes()).hexdigest()
+            rel = str(p.relative_to(self.tmp)).replace("\\", "/")
+            if ".git/" in rel or rel.startswith(".git"):
+                continue
+            try:
+                st = p.lstat()
+            except OSError:
+                continue
+            if _stat.S_ISLNK(st.st_mode):
+                out[rel] = ("symlink", _os.readlink(p), _stat.S_IMODE(st.st_mode))
+            elif _stat.S_ISREG(st.st_mode):
+                out[rel] = ("file", hashlib.sha256(p.read_bytes()).hexdigest(),
+                            _stat.S_IMODE(st.st_mode))
         return out
 
     def cleanup(self) -> None:
@@ -5052,6 +5076,53 @@ class RevertCheckTests(unittest.TestCase):
                 self._run(repo)
         self.assertEqual(before, repo.hashes())
 
+    def test_a_sigterm_mid_check_still_restores_the_tree(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, drop the `_guard_signals(restore)` call.
+
+        A `finally` covers an exception and nothing else. An independent review measured the
+        gap by signalling a live check: SIGINT restored - Python raises `KeyboardInterrupt`, so
+        the `finally` ran - while **SIGTERM left the production change reverted on disk**. And
+        SIGTERM is what `kill`, a CI job timeout and a harness cancel all send.
+
+        Driven as a real subprocess receiving a real signal, because the defect is precisely
+        that the in-process path already worked: `test_..._after_an_interrupted_run` patches
+        `run_verifier` to raise and passes with the guard removed."""
+        repo = self._repo(_ac(1, "shell sleep 30"), "scripts/prod.py")
+        before = repo.hashes()
+        script = (
+            "import sys, os\n"
+            f"sys.path.insert(0, {str(SCRIPT_PATH.parent)!r})\n"
+            "import importlib.util\n"
+            f"spec = importlib.util.spec_from_file_location('verify_ac', {str(SCRIPT_PATH)!r})\n"
+            "m = importlib.util.module_from_spec(spec); sys.modules['verify_ac'] = m\n"
+            "spec.loader.exec_module(m)\n"
+            "print('go', flush=True)\n"
+            f"m.main(['revert-check', '--unit', {repo.uid!r}, '--root', {str(repo.tmp)!r},"
+            f" '--base', {repo.base!r}])\n")
+        proc = subprocess.Popen([sys.executable, "-c", script],
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        try:
+            self.assertEqual("go\n", proc.stdout.readline(),
+                             "the child never reached the check")
+            # The verifier is a 30s sleep, so the revert is live on disk right now.
+            deadline = time.time() + 10
+            reverted = False
+            while time.time() < deadline:
+                if b"SHIPPED_MARKER" not in repo.prod.read_bytes():
+                    reverted = True
+                    break
+                time.sleep(0.05)
+            self.assertTrue(reverted, "the revert never became visible, so the signal below "
+                                      "would prove nothing about restoring it")
+            proc.send_signal(signal.SIGTERM)
+            proc.wait(timeout=30)
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait(timeout=10)
+        self.assertEqual(before, repo.hashes(),
+                         "SIGTERM left the unit's production change reverted on disk")
+
     def test_uncommitted_edits_survive_the_check(self) -> None:
         """MUTANT: in `verify_ac.revert_check`, restore from git - `git checkout HEAD --
         <path>` - instead of from the byte snapshot.
@@ -5067,6 +5138,222 @@ class RevertCheckTests(unittest.TestCase):
         self.assertEqual(repo.prod.read_bytes(), before)
         self.assertIn("UNCOMMITTED", repo.prod.read_text(encoding="utf-8"))
 
+    def test_a_file_absent_at_base_keeps_its_mode_through_the_check(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, drop the `os.chmod(target, mode_)` from the
+        restore.
+
+        A file added by the change does not exist at the base ref, so the revert UNLINKS it and
+        the restore recreates it with `write_bytes` - at the process umask. An independent
+        review measured a tracked `100755` script coming back `100644` after a SUCCESSFUL run,
+        content hash identical, `git status` dirty. Every executable file in this repository is
+        a script named in some unit's `Affects`, and this repository's own `repo-writes` lane
+        refuses a commit whose run modified a tracked file - so the check would have broken the
+        commit it was meant to inform."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py"),
+                          "scripts/prod.py, scripts/new_tool.py")
+        added = repo.tmp / "scripts" / "new_tool.py"
+        added.write_text("# added by this change\n", encoding="utf-8")
+        added.chmod(0o755)
+        before = repo.hashes()
+        code, out = self._run(repo)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(before, repo.hashes())
+        self.assertEqual(0o755, stat.S_IMODE(added.lstat().st_mode),
+                         "the file came back at the umask default, not the mode it had")
+
+    def test_a_symlink_in_affects_is_reported_rather_than_reverted(self) -> None:
+        """MUTANT: in `verify_ac._revertible`, drop the `path.is_symlink()` arm.
+
+        `is_file()` FOLLOWS a symlink, so the link was classified production, unlinked, and
+        recreated as a regular file holding its target's bytes - `git status` reporting a type
+        change, at exit 0. Where the link existed at base, `write_bytes` wrote THROUGH it and
+        reverted the target instead of the declared path: a wrong measurement, taken in
+        silence. Neither is a revert of what the unit declared."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py"),
+                          "scripts/prod.py, scripts/link.py")
+        (repo.tmp / "scripts" / "link.py").symlink_to("prod.py")
+        before = repo.hashes()
+        code, out = self._run(repo)
+        self.assertEqual(code, 3, out)
+        self.assertIn("scripts/link.py", out)
+        self.assertEqual(before, repo.hashes())
+        self.assertTrue((repo.tmp / "scripts" / "link.py").is_symlink(),
+                        "the symlink was replaced by a regular file")
+
+    def test_a_path_outside_the_repo_root_is_reported_and_never_touched(self) -> None:
+        """MUTANT: in `verify_ac._revertible`, drop the `is_absolute()` / `is_relative_to`
+        arm.
+
+        `(root / rel)` resolves `..` segments, and an ABSOLUTE `rel` replaces the root
+        outright, so `../victim/secret.py` and `/tmp/…/victim.py` both looked like ordinary
+        production files. `git show <ref>:<path>` then failed, the file was read as absent at
+        base and DELETED, and it came back at the process umask - a `0o600` private file
+        returned group- and world-readable, with the unit reported as PASSING. `revert_targets`
+        promised this defence in its own docstring and the code did not have it."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py"), "scripts/prod.py")
+        victim = repo.tmp.parent / f"victim-{repo.tmp.name}.py"
+        victim.write_text("SECRET = 1\n", encoding="utf-8")
+        victim.chmod(0o600)
+        try:
+            text = repo.unit.read_text(encoding="utf-8")
+            repo.unit.write_text(
+                text.replace("> **Affects:** scripts/prod.py",
+                             f"> **Affects:** scripts/prod.py, {victim}"), encoding="utf-8")
+            code, out = self._run(repo)
+            self.assertEqual(code, 3, out)
+            # THE REASON, not just the exit code. Removing this arm alone still reported the
+            # unit - `git ls-tree` fails on an absolute path, so the git-failure guard caught
+            # it one step later and the mutant SURVIVED a test that only checked exit 3. A
+            # repair masking the defect beside it is invisible unless the report is read.
+            self.assertIn("not a readable file here", out,
+                          "the path was reported as a GIT failure rather than refused as "
+                          "outside the repository, so this passes with the guard removed")
+            self.assertNotIn("could not read", out)
+            self.assertTrue(victim.exists(), "a file OUTSIDE the repository was deleted")
+            self.assertEqual("SECRET = 1\n", victim.read_text(encoding="utf-8"))
+            self.assertEqual(0o600, stat.S_IMODE(victim.lstat().st_mode),
+                             "a private file outside the repository came back world-readable")
+        finally:
+            victim.unlink(missing_ok=True)
+
+    def test_a_git_failure_is_reported_rather_than_read_as_absent_at_base(self) -> None:
+        """MUTANT: in `verify_ac._base_blob`, return None on any non-zero git exit instead of
+        asking `ls-tree` whether the path exists at that ref.
+
+        Absent-at-base and could-not-ask are different answers, and reading the second as the
+        first DELETES the production file - which manufactures exactly the red this gate looks
+        for, then reports the unit as passing. Reached in practice by a workspace nested below
+        the repository root, where `git show` exits 128 saying the path exists but not under
+        that name, and by a `git show` timeout."""
+        repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py"), "scripts/prod.py")
+        before = repo.hashes()
+        with unittest.mock.patch.object(
+                verify_ac, "_base_blob",
+                side_effect=verify_ac._BaseUnreadable("fatal: path exists, but not in HEAD")):
+            code, out = self._run(repo)
+        self.assertEqual(code, 3, out)
+        self.assertIn("could not read", out)
+        self.assertEqual(before, repo.hashes(),
+                         "the production file was disturbed after git could not be asked")
+
+    def test_a_verifier_that_never_ran_is_not_counted_as_evidence(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, classify every non-ok result as `red`.
+
+        `run_verifier` already distinguishes an expression it could not parse (`invalid`), one
+        the trust boundary refused to run (`blocked`), and a runner that exited clean having
+        run nothing (`vacuous`). None of those is a test noticing the change. Counted red, a
+        unit whose `Verify:` line is a typo PASSES the one check that asks whether its tests
+        reach anything - the same false pass AC5 states the rule against, one kind over."""
+        repo = self._repo(_ac(1, "definitely-not-a-runner tests/x.py")
+                          + _ac(2, "grep BASE_ONLY scripts/prod.py"),
+                          "scripts/prod.py")
+        code, out = self._run(repo)
+        self.assertRegex(out, r"AC1\s+unmeasured", out)
+        self.assertEqual(code, 1, out)
+        self.assertIn("stayed GREEN", out)
+
+    def test_an_unnameable_row_beside_a_nameable_one_does_not_exempt(self) -> None:
+        """MUTANT: in `verify_ac.revert_exemptions`, exempt on ANY well-formed `unnameable`
+        row rather than requiring every row on that criterion to be one.
+
+        The marker's whole design is that it costs something to enter. A second row on the same
+        criterion naming a perfectly ordinary production change cost nothing and covered the
+        first, so the criterion went unmeasured while the plan showed a nameable mutant for
+        it."""
+        plan = ("\n## Test Plan\n\n"
+                "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                "| AC1 | unnameable: the criterion pins an ordering no single edit can "
+                "reverse without also deleting the field it orders | a |\n"
+                "| AC1 | in `scripts/prod.py`, drop the shipped marker | b |\n")
+        repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py"), "scripts/prod.py",
+                          extra_sections=plan)
+        code, out = self._run(repo)
+        self.assertNotRegex(out, r"AC1\s+exempt", out)
+        self.assertEqual(code, 1, out)
+        self.assertIn("stayed GREEN", out)
+
+    def test_a_plan_row_naming_a_bare_production_filename_does_not_exempt(self) -> None:
+        """MUTANT: in `verify_ac._MUTANT_PATH_RE`, require a `/` in a path token again.
+
+        272 of the 459 plan rows in this corpus name their file by BARE FILENAME - "in
+        `verify_ac.py`, delete the ..." - so a `/`-requiring pattern could not see the
+        production file at all. A row naming a production file beside a test path then read as
+        test-code-only and silently exempted the criterion, which is the taxonomy's escape
+        hatch swallowing the corpus's own house style."""
+        plan = ("\n## Test Plan\n\n"
+                "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                "| AC1 | in `prod.py`, drop the shipped marker so "
+                "`tests/test_prod.py::test_x` fails | a |\n")
+        repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py"), "scripts/prod.py",
+                          extra_sections=plan)
+        code, out = self._run(repo)
+        self.assertNotRegex(out, r"AC1\s+exempt", out)
+        self.assertEqual(code, 1, out)
+
+    def test_an_inherited_git_dir_does_not_steer_the_revert(self) -> None:
+        """MUTANT: in `verify_ac._base_blob`/`_ref_exists`, drop `env=_git_env()`.
+
+        The registration in `tools/tests/test_skill_tests_env.py` holds the LIST equal to every
+        other copy; it says nothing about the list being APPLIED, and an independent review
+        removed both `env=` arguments with all 348 tests in scope still green. `git -C` does not
+        override an inherited `GIT_DIR`, and git hooks export one - this repository's own hooks
+        run this code. Here `GIT_DIR` points at a DIFFERENT repository whose base ref does not
+        contain the path at all: unscrubbed, the check answers for that repository instead."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py"), "scripts/prod.py")
+        # A DECOY WITH DIFFERENT CONTENT. An identical fixture was tried first and could not
+        # discriminate: same bytes, same fixed identity, same timestamp second, so both base
+        # commits hashed to the same sha and the mis-steered read returned the right answer by
+        # coincidence. The decoy's base must be something the real base is not.
+        other = Path(tempfile.mkdtemp(prefix="revert_decoy_"))
+        self.addCleanup(shutil.rmtree, other, True)
+        (other / "scripts").mkdir(parents=True)
+        (other / "scripts" / "prod.py").write_text(
+            _PROD_HEAD + "DECOY = 1\n", encoding="utf-8")
+        _git(other, "init", "-q")
+        _git(other, "add", "-A")
+        _git(other, "commit", "-qm", "decoy")
+        before = repo.hashes()
+        env = dict(os.environ)
+        env["GIT_DIR"] = str(other / ".git")
+        env["GIT_WORK_TREE"] = str(other)
+        with unittest.mock.patch.dict(os.environ, env, clear=False):
+            code, out = self._run(repo)
+        self.assertEqual(code, 0, out)
+        self.assertRegex(out, r"AC1\s+red", out)
+        self.assertEqual(before, repo.hashes())
+
+    def test_the_revert_purges_cached_bytecode_for_every_file_it_touches(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, make `_purge_pyc` a no-op.
+
+        CPython invalidates a `.pyc` on (source mtime, source size), so a same-length revert
+        landing inside one timestamp granule reuses the ORIGINAL bytecode - a subprocess then
+        imports the code that is no longer on disk and the criterion reads green over a tree
+        that was reverted. This repository has recorded that false verdict twice, and an
+        independent review found the purge here pinned by nothing at all.
+
+        Asserted at the SURFACE the hazard lives on: a stale `.pyc` for a reverted module is
+        gone by the time any verifier runs, and gone again afterwards."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py"), "scripts/prod.py")
+        cache = repo.tmp / "scripts" / "__pycache__"
+        cache.mkdir()
+        stale = cache / "prod.cpython-999.pyc"
+        stale.write_bytes(b"stale bytecode for the un-reverted module\n")
+        seen = {}
+
+        real = verify_ac.run_verifier
+
+        def spy(expr, timeout, cwd, **kw):
+            seen["during"] = stale.exists()
+            return real(expr, timeout, cwd, **kw)
+
+        with unittest.mock.patch.object(verify_ac, "run_verifier", spy):
+            code, out = self._run(repo)
+        self.assertEqual(code, 0, out)
+        self.assertFalse(seen.get("during", True),
+                         "the stale .pyc was still on disk while the verifiers ran, so a "
+                         "subprocess could import the un-reverted module")
+        self.assertFalse(stale.exists(), "the stale .pyc survived the restore")
+
     def test_a_unit_with_no_production_file_is_reported_not_passed(self) -> None:
         """MUTANT: in `verify_ac.revert_check`, drop the empty-`production` branch so the
         check falls through and returns `pass`.
@@ -5078,6 +5365,48 @@ class RevertCheckTests(unittest.TestCase):
         code, out = self._run(repo)
         self.assertEqual(code, 3, out)
         self.assertIn("names no production file", out)
+
+    def test_a_unit_whose_every_selector_is_dead_is_reported_not_passed(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, delete the `not counted and unresolved` branch
+        so a unit with nothing measurable returns `pass`.
+
+        Found by running the boundary lane over a real batch: a unit whose tests are not
+        written yet came back GREEN from the one check that exists to ask whether its verifiers
+        reach anything at all. It is the empty-`Affects` rule one step further in - an absence
+        and a pass must not read the same - and it is distinguished from the all-EXEMPT case,
+        which legitimately passes."""
+        repo = self._repo(_ac(1, "pytest tests/test_absent.py::Missing::test_nope")
+                          + _ac(2, "pytest tests/test_absent.py::Missing::test_also_nope"),
+                          "scripts/prod.py")
+        code, out = self._run(repo)
+        self.assertEqual(code, 3, out)
+        self.assertIn("2 unresolvable selector(s)", out)
+        self.assertIn("REPORTED rather than passed", out)
+
+    def test_a_wholly_exempt_unit_is_reported_and_not_refused(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, return `pass` when `counted` is empty and every
+        criterion is exempt.
+
+        This test asserted the MUTANT until an independent review executed the consequence:
+        adding one self-authored line, `> **Revert-check-exempt:** AC1 AC2 AC3 AC4 AC5 - one
+        reason covering the lot`, turned the gate off for a whole unit and printed PASSES. A
+        declared exemption is a reason a criterion cannot be measured, never evidence that it
+        was.
+
+        REPORTED (exit 3) and not REFUSED (exit 1), which is the distinction AC3 turns on: its
+        law is that a declared exemption must not REFUSE the unit, and saying that nothing
+        could be measured is not a refusal."""
+        plan = ("\n## Test Plan\n\n"
+                "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                "| AC1 | unnameable: the criterion pins an ordering no single edit can "
+                "reverse without also deleting the field it orders | a |\n")
+        repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py"), "scripts/prod.py",
+                          extra_sections=plan)
+        code, out = self._run(repo)
+        self.assertEqual(code, 3, out)
+        self.assertIn("nothing measurable", out)
+        self.assertIn("1 exempt", out)
+        self.assertNotIn("stayed GREEN", out)
 
     def test_an_unresolvable_affects_path_is_reported(self) -> None:
         """MUTANT: in `verify_ac.revert_check`, drop the `unresolvable` branch and revert the
@@ -5106,6 +5435,8 @@ _DEPTH_UNIT = """\
   - **Verify:** pytest tests/test_prod.py::test_marker_is_present
 - [ ] **AC2** the second claim
   - **Verify:** pytest tests/test_prod.py::test_marker_reaches_production
+- [ ] **AC3** the third claim
+  - **Verify:** pytest tests/test_prod.py::test_third
 
 ## Test Plan
 
@@ -5113,6 +5444,8 @@ _DEPTH_UNIT = """\
 | --- | --- | --- |
 | AC1 | in `scripts/prod.py`, drop the shipped marker | a |
 | AC2 | in `scripts/prod.py`, restore the base constant | b |
+| AC2 | in `scripts/prod.py`, rename the constant | c |
+| AC3 | in `scripts/prod.py`, delete the third branch | d |
 """
 
 
@@ -5141,12 +5474,12 @@ class DerivedDepthTests(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def _register(self, criterion: str, verdict: str = "killed") -> None:
+    def _register(self, criterion: str, verdict: str = "killed", row: int = 0) -> None:
         self.mutation.register_mutant(
             self.tmp, "scripts/prod.py",
-            mutant=f"in `scripts/prod.py`, the change {criterion} pins",
+            mutant=f"in `scripts/prod.py`, the change {criterion} row {row} pins",
             test=f"tests/test_prod.py::{criterion}", verdict=verdict,
-            unit="US9002", criterion=criterion, row=0, line=2)
+            unit="US9002", criterion=criterion, row=row, line=2)
 
     def _depth(self, extra=()) -> tuple:
         buf = io.StringIO()
@@ -5156,20 +5489,32 @@ class DerivedDepthTests(unittest.TestCase):
         return code, buf.getvalue()
 
     def test_every_count_is_read_from_the_ledger(self) -> None:
-        """MUTANT: in `verify_ac.depth_facts`, count `killed` as `len(rows)` rather than from
-        the ledger's own verdicts.
+        """MUTANT: in `verify_ac.depth_facts`, read ANY of `criteria`, `rows`, `killed`,
+        `survived` or `executed` from a different quantity than the ledger's own verdicts -
+        e.g. `"executed": len(rows)` or `"criteria": len(rows)`.
 
-        The counts MOVE with the ledger and with nothing else: one kill and one survivor here,
-        against two plan rows. A renderer that reported `killed 2` would be exactly the field
-        this replaces - a figure nothing supports, in the record a reviewer reads first."""
+        EVERY COUNT IS A DIFFERENT NUMBER, and that is the point of the fixture rather than a
+        detail of it. An earlier cut used 2 criteria, 2 plan rows and 2 executions, so all five
+        figures were 2 and four of them survived being replaced with each other - an
+        independent review measured exactly that. Here: 3 criteria, 4 declared rows, 3 executed
+        (1 killed, 1 survived, 1 ruled equivalent), 1 never run. No two are equal, so no count
+        can stand in for another.
+
+        THE ARITHMETIC ALSO CLOSES: killed + survived + equivalent + not-run must equal the
+        declared rows, which is the property a reader uses to audit the line at all."""
         self._register("AC1", "killed")
-        self._register("AC2", "survived")
+        self._register("AC2", "survived", row=0)
+        self.mutation.register_mutant(
+            self.tmp, "scripts/prod.py", mutant="in `scripts/prod.py`, rename the constant",
+            test="", verdict="equivalent", reason="renaming it changes no observable behaviour",
+            unit="US9002", criterion="AC2", row=1)
         code, out = self._depth()
         self.assertEqual(code, 0, out)
-        self.assertIn("plan rows 2", out)
-        self.assertIn("executed 2", out)
-        self.assertIn("killed 1", out)
-        self.assertIn("survived 1", out)
+        for expected in ("criteria 3", "plan rows 4", "executed 3", "killed 1", "survived 1",
+                         "ruled equivalent 1", "NOT RUN 1"):
+            self.assertIn(expected, out, f"{expected!r} missing from: {out}")
+        self.assertNotIn("criteria 4", out)
+        self.assertNotIn("plan rows 3", out)
 
     def test_an_unexecuted_row_is_named_not_omitted(self) -> None:
         """MUTANT: in `verify_ac.render_depth`, drop the `NOT RUN` branch so an unexecuted row
@@ -5181,8 +5526,9 @@ class DerivedDepthTests(unittest.TestCase):
         self._register("AC1", "killed")
         code, out = self._depth()
         self.assertEqual(code, 0, out)
-        self.assertIn("NOT RUN 1", out)
-        self.assertIn("AC2 row 0", out)
+        self.assertIn("NOT RUN 3", out)
+        for named in ("AC2 row 0", "AC2 row 1", "AC3 row 0"):
+            self.assertIn(named, out, f"{named!r} not named among the unrun rows: {out}")
 
     def test_the_entry_point_split_is_derived_per_criterion(self) -> None:
         """MUTANT: in `verify_ac._entry_point_split`, return `through_cli = located`.
@@ -5196,10 +5542,37 @@ class DerivedDepthTests(unittest.TestCase):
         (self.tmp / "tests" / "test_prod.py").write_text(
             _REBUILT_TEST + "\n\nimport subprocess\n\n\n"
             "def test_marker_reaches_production():\n"
+            "    subprocess.run(['true'], check=True)\n\n\n"
+            "def test_third():\n"
+            "    assert _rebuild() == 'SHIPPED_MARKER'\n", encoding="utf-8")
+        code, out = self._depth()
+        self.assertEqual(code, 0, out)
+        self.assertIn("entry point 1 of 3 criteria through the shipped CLI, 2 in-process", out)
+
+    def test_a_criterion_whose_node_cannot_be_isolated_is_undetermined(self) -> None:
+        """MUTANT: in `verify_ac._entry_point_split`, fall back to `_enters_the_lane`'s
+        whole-file read when the named node cannot be isolated.
+
+        `_enters_the_lane` reads the WHOLE FILE when it cannot find the node, which is right
+        for `lane_check` - per-unit and report-only - and wrong here, where the answer becomes a
+        per-criterion COUNT presented as derived fact. Measured over this corpus, 185 of 311
+        through-CLI counts came from that fallback rather than from the criterion's own test.
+        CR0548 was raised on a claim of shipped-CLI coverage that did not exist, so deriving the
+        same claim from a detector that never read the criterion's node would re-manufacture it
+        with the authority of derivation. AC3 names the criterion's OWN node.
+
+        Here AC3's node is absent from the file, and the file DOES contain a `subprocess.run`
+        in an unrelated test - the exact shape that made the fallback over-claim."""
+        self._register("AC1", "killed")
+        (self.tmp / "tests" / "test_prod.py").write_text(
+            _REBUILT_TEST + "\n\nimport subprocess\n\n\n"
+            "def test_marker_reaches_production():\n"
             "    subprocess.run(['true'], check=True)\n", encoding="utf-8")
         code, out = self._depth()
         self.assertEqual(code, 0, out)
-        self.assertIn("entry point 1 of 2 criteria through the shipped CLI, 1 in-process", out)
+        self.assertIn("1 undetermined (the named node could not be isolated)", out)
+        self.assertIn("entry point 1 of 3 criteria through the shipped CLI, 1 in-process", out)
+        self.assertNotIn("2 of 3", out)
 
     def test_an_all_in_process_unit_reports_zero_cli_coverage(self) -> None:
         """MUTANT: in `verify_ac.render_depth`, emit the entry-point clause only when
@@ -5212,10 +5585,12 @@ class DerivedDepthTests(unittest.TestCase):
         self._register("AC2")
         (self.tmp / "tests" / "test_prod.py").write_text(
             _REBUILT_TEST + "\n\ndef test_marker_reaches_production():\n"
+            "    assert _rebuild() == 'SHIPPED_MARKER'\n\n\n"
+            "def test_third():\n"
             "    assert _rebuild() == 'SHIPPED_MARKER'\n", encoding="utf-8")
         code, out = self._depth()
         self.assertEqual(code, 0, out)
-        self.assertIn("entry point 0 of 2 criteria through the shipped CLI, 2 in-process", out)
+        self.assertIn("entry point 0 of 3 criteria through the shipped CLI, 3 in-process", out)
 
     def test_an_absent_ledger_is_reported_not_rendered_as_zero(self) -> None:
         """MUTANT: in `verify_ac.render_depth`, drop the `ledger_absent` branch so an empty
@@ -5246,6 +5621,85 @@ class DerivedDepthTests(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("carries no tier", out)
         self.assertNotIn("[[derived:", self.unit.read_text(encoding="utf-8"))
+
+    def test_an_unexecuted_plan_still_names_its_rows(self) -> None:
+        """MUTANT: in `verify_ac.depth_facts`, set `ledger_absent` to `not executed` again.
+
+        The regression an independent review found. `ledger_absent` meant "nothing executed",
+        so a unit whose every declared row was registered-but-unrun rendered EVIDENCE ABSENT
+        and NAMED NONE of them - the single configuration where a reviewer most needs those
+        names is the one that hid them. A ledger entry exists here; nothing has run."""
+        self._register("AC1", "killed")
+        self.mutation.retract_mutant(
+            self.tmp, "scripts/prod.py", "US9002", "AC1", 2,
+            mutant="in `scripts/prod.py`, the change AC1 row 0 pins",
+            verdict="killed",
+            reason="withdrawn, so the row reads as declared but never executed")
+        code, out = self._depth()
+        self.assertEqual(code, 0, out)
+        self.assertIn("NOT RUN 4", out)
+        for named in ("AC1 row 0", "AC2 row 0", "AC2 row 1", "AC3 row 0"):
+            self.assertIn(named, out, f"{named!r} not named among the unrun rows: {out}")
+        # BOTH facts, in one line: the ledger holds nothing live for this unit AND four
+        # declared rows were never executed. Naming the rows is what the mutant removes; the
+        # absent-ledger clause beside them is correct and stays.
+        self.assertIn("EVIDENCE ABSENT", out)
+        self.assertIn("retracted 1", out)
+
+    def test_a_ledger_holding_rows_no_plan_claims_is_reported(self) -> None:
+        """MUTANT: in `verify_ac.depth_facts`, set `ledger_absent` from the PLAN join again -
+        `not executed` - so a unit with no `## Test Plan` reads EVIDENCE ABSENT.
+
+        A claim about the LEDGER derived from the absence of a PLAN. 484 of the 561 units
+        carrying a depth field in this corpus have no test plan, so it was the majority case,
+        and it hid registered SURVIVORS - the one thing the gate exists to surface."""
+        self._register("AC1", "survived")
+        text = self.unit.read_text(encoding="utf-8")
+        self.unit.write_text(text.split("## Test Plan")[0], encoding="utf-8")
+        code, out = self._depth()
+        self.assertEqual(code, 0, out)
+        self.assertIn("NO TEST PLAN", out)
+        self.assertNotIn("EVIDENCE ABSENT", out)
+        self.assertIn("1 SURVIVED", out)
+
+    def test_writing_without_a_ledger_refuses_rather_than_erasing_the_counts(self) -> None:
+        """MUTANT: in `verify_ac.write_depth`, delete the `ledger_absent and prior` guard.
+
+        The ledger lives in gitignored `sdlc-studio/.local/`, so a fresh clone, a CI runner and
+        every review worktree have none. Rewriting a recorded set of counts as EVIDENCE ABSENT
+        there - at exit 0, in silence - destroys the evidence rather than reporting its absence.
+        This command must never make a unit's record LESS true than it found it."""
+        self._register("AC1", "killed")
+        self.assertEqual(self._depth(["--write"])[0], 0)
+        sealed = self.unit.read_text(encoding="utf-8")
+        self.assertIn("killed 1", sealed)
+        (self.tmp / "sdlc-studio" / ".local" / "mutation-runs.json").unlink()
+        code, out = self._depth(["--write"])
+        self.assertEqual(code, 1, out)
+        self.assertIn("no mutation ledger", out)
+        self.assertEqual(sealed, self.unit.read_text(encoding="utf-8"),
+                         "the recorded counts were overwritten in a workspace with no ledger")
+
+    def test_a_field_wrapping_onto_a_second_line_is_refused(self) -> None:
+        """MUTANT: in `verify_ac.write_depth`, drop the continuation-line guard.
+
+        `_DEPTH_LINE_RE` is line-anchored, so only the first line is rewritten and the
+        continuation's hand-typed counts stand beside a derived span contradicting them. Five
+        tracked units already carry a wrapped field, so this is a live shape rather than a
+        hypothetical one."""
+        self._register("AC1", "killed")
+        text = self.unit.read_text(encoding="utf-8")
+        self.unit.write_text(text.replace(
+            "> **Verification depth:** functional (the author's judgement half, "
+            "preserved verbatim)",
+            "> **Verification depth:** functional (the judgement half,\n"
+            "> continued: all 4 killed and 6 of 6 criteria driven through the shipped CLI)"),
+            encoding="utf-8")
+        before = self.unit.read_text(encoding="utf-8")
+        code, out = self._depth(["--write"])
+        self.assertEqual(code, 1, out)
+        self.assertIn("WRAPS onto a second line", out)
+        self.assertEqual(before, self.unit.read_text(encoding="utf-8"))
 
     def test_the_judgement_half_survives_regeneration_verbatim(self) -> None:
         """MUTANT: in `verify_ac.depth_field_value`, rebuild the whole value from the derived
