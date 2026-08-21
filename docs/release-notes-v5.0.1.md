@@ -74,18 +74,25 @@ documented command now works, pinned to `v5.0.1` or later.
 ## Known issues
 
 **v5.0.1 was TAGGED with zero Critical and zero High open against it.** That was true at the tag
-and is not a standing claim: seven High findings have since been raised against this code, all by
-adversarial review after the tag. Six are open now - BG0586, BG0588, BG0592, BG0593, BG0597 and
-BG0598 - and BG0585 has been fixed and independently reviewed. An eighth, BG0583, was raised at
-High and then closed WON'T FIX when its premise did not survive re-measurement.
+and is not a standing claim: nine High findings have since been raised against this code, every
+one of them by adversarial review after the tag. **Four are open now - BG0586, BG0588, BG0592 and
+BG0604.** Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
+BG0583 was raised at High and then closed WON'T FIX when its premise did not survive
+re-measurement.
 
-The two newest were raised by a goal review of the sprint that was being planned to fix the other
-four, which is worth stating rather than smoothing over: BG0597 records that `verify_ac testplan
-derive` silently destroys an authored Test Plan row at exit 0 when a criterion carries two, and
-BG0598 that the planner prices a unit carrying an unanswered REJECT at zero because it reads
-verifier greens and never the verdict ledger. Neither was visible to any existing test. `tools/known_issues.py --bar` reads the live corpus rather than this sentence, so it
-reports them; that disagreement is the guard working, not drift to be edited away. They are
-carried to v5.1.
+The newest, BG0604, is the one worth stating plainly because it is a defect in this project's own
+review procedure rather than in its code. The oracle rule recorded in D0149 requires a reviewer to
+take a unit's base revision BY HAND, and names no restore step; a reviewer ran it against the main
+working tree rather than their own worktree and destroyed a session's uncommitted work. Nothing
+could restore it, because the work had never been committed. The rule's substance was right - a
+tool's own output is not evidence of that tool's correctness - and what was missing is which tree
+the manual check runs in.
+
+`tools/known_issues.py --bar` reads the live corpus rather than this sentence, so it reports the
+open set directly; a disagreement between the two is the guard working, not drift to be edited
+away. This paragraph has now been wrong in both directions at once - naming three findings that
+had been fixed while missing one that was open - which is the argument for reading the command
+rather than the prose. All four are carried to v5.1.
 
 **v5.0.1 discloses 13 open defects: 13 Medium, 0 Low.** The six High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in

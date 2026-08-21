@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 24 |
+| Proposed | 26 |
 | Approved | 0 |
 | In Progress | 10 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **551** |
+| **Total** | **553** |
 
 ## All Changes
 
@@ -102,6 +102,8 @@
 | [CR-0549](CR0549-route-estimate-scores-whole-declared-files-so-the.md) | route.estimate scores whole declared files, so the risk band that drives review ceremony is a constant in any repo with large modules | In Progress | High | Improvement | 2026-08-21 | EP0217 |
 | [CR-0550](CR0550-the-test-plan-gate-is-scoped-by-date.md) | The test-plan gate is scoped by DATE alone, so it cannot be narrowed to the units whose risk earns it | In Progress | High | Improvement | 2026-08-21 | EP0217 |
 | [CR-0551](CR0551-the-appetite-ceiling-measures-wall-clock-since-the.md) | The appetite ceiling measures WALL-CLOCK since the run opened, so a run left open overnight reports spend it never incurred | Proposed | High | Improvement | 2026-08-21 | -- |
+| [CR-0552](CR0552-revert-check-mutates-the-live-working-tree-so.md) | revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo | Proposed | High | Improvement | 2026-08-21 | -- |
+| [CR-0553](CR0553-the-exemption-reason-floor-counts-characters-so-twelve.md) | The exemption reason floor counts characters, so twelve junk characters buy a blanket revert-check exemption | Proposed | Medium | Improvement | 2026-08-21 | -- |
 
 ## Archived Releases
 

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 16 |
+| Open | 17 |
 | In Progress | 0 |
 | Fixed | 493 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **603** |
+| **Total** | **604** |
 
 ## All Bugs
 
@@ -143,6 +143,7 @@
 | [BG0601](BG0601-the-dry-run-class-sweep-compares-only-the.md) | The dry-run class sweep compares only the first two probes of each pair | Open | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0602](BG0602-the-close-checklist-enumerates-its-checks-by-ck.md) | The close checklist enumerates its checks by `_ck_` name prefix | Open | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0603](BG0603-stacked-verify-lines-are-refused-at-draft-and.md) | Stacked Verify lines are refused at Draft and Ready but not on an Open bug | Open | Medium | 2026-08-21 | 2026-08-21 |
+| [BG0604](BG0604-the-oracle-procedure-tells-a-reviewer-to-revert.md) | The oracle procedure tells a reviewer to revert files by hand with no restore obligation, and it destroyed uncommitted work in the main tree | Open | High | 2026-08-21 | 2026-08-21 |
 
 ## Archived Releases
 
