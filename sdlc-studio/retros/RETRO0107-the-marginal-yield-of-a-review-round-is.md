@@ -67,8 +67,39 @@ read the same.
 Ruling is one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`. A `stop-ship`
 ruling HOLDS the close, which is the point of being able to make one.
 
+**Eight of the rows below are HIGH severity and are ruled `deferred`, not fixed.** BG0586,
+BG0588 and BG0592 are design-rung and corpus-metric defects carried from RUN-01M05A5M; CR0509,
+CR0533, CR0534, CR0535, CR0536, CR0546, CR0547 and CR0548 are requests rather than defects in
+delivered behaviour. None was touched by this run and none is a regression from it. They are
+deferred rather than marked not-stop-ship because that is the honest word: they are real, they
+are open, and they are waiting on capacity rather than on a judgement that they do not matter.
+CR0547 and CR0548 in particular would have caught this run's worst findings - a revert-check
+gate, and a `Verification depth` derived from the ledger instead of authored by hand.
+
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
+| BG0463 | deferred | authoring session | 2026-08-21 |
+| BG0567 | not-stop-ship | authoring session | 2026-08-21 |
+| BG0586 | deferred | authoring session | 2026-08-21 |
+| BG0587 | not-stop-ship | authoring session | 2026-08-21 |
+| BG0588 | deferred | authoring session | 2026-08-21 |
+| BG0591 | not-stop-ship | authoring session | 2026-08-21 |
+| BG0592 | deferred | authoring session | 2026-08-21 |
+| BG0599 | not-stop-ship | authoring session | 2026-08-21 |
+| BG0600 | not-stop-ship | authoring session | 2026-08-21 |
+| CR0509 | deferred | authoring session | 2026-08-21 |
+| CR0528 | deferred | authoring session | 2026-08-21 |
+| CR0529 | deferred | authoring session | 2026-08-21 |
+| CR0530 | deferred | authoring session | 2026-08-21 |
+| CR0531 | deferred | authoring session | 2026-08-21 |
+| CR0533 | deferred | authoring session | 2026-08-21 |
+| CR0534 | deferred | authoring session | 2026-08-21 |
+| CR0535 | deferred | authoring session | 2026-08-21 |
+| CR0536 | deferred | authoring session | 2026-08-21 |
+| CR0539 | deferred | authoring session | 2026-08-21 |
+| CR0546 | deferred | authoring session | 2026-08-21 |
+| CR0547 | deferred | authoring session | 2026-08-21 |
+| CR0548 | deferred | authoring session | 2026-08-21 |
 | BG0601 | not-stop-ship | authoring session | 2026-08-21 |
 | BG0602 | not-stop-ship | authoring session | 2026-08-21 |
 | BG0603 | not-stop-ship | authoring session | 2026-08-21 |
@@ -117,9 +148,7 @@ sprints fits noise.
 
 **0 of 6 unit(s) measured; 6 of 6 forecast at plan time.**
 
-**Sprint tokens/point: 525,434** (11,034,109 tokens over 21 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
-
-**Velocity: 0.44 points/elapsed-hour** (21 points ACCEPTED over 47.3h, operator-supplied, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
@@ -188,3 +217,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: 11,034,109 (main thread only; the six review rounds ran as subagents and are NOT counted, so this is a lower bound) · Duration: 2,839 min elapsed against a 960 min appetite · Critic rejects: 11 (five plan-review rounds, six delivery rounds), of which four units were escalated for a non-converging repair
+
+## Handoff
+
+- [HO-0061](../handoffs/HO0061-every-instrument-this-run-touches-reports-only-a.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

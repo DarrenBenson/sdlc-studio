@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M0ATVZ closed goal-reached.** 4 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
+> **RUN-01M0CT8P closed goal-reached.** 6 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
