@@ -1,6 +1,7 @@
 # CR-0548: derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0217
 > **Priority:** High
 > **Type:** enhancement
 > **Size:** S

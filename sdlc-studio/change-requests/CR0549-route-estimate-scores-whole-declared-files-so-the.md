@@ -1,6 +1,7 @@
 # CR-0549: route.estimate scores whole declared files, so the risk band that drives review ceremony is a constant in any repo with large modules
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0217
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

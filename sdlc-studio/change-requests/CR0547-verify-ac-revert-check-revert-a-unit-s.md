@@ -1,6 +1,7 @@
 # CR-0547: verify_ac revert-check: revert a unit's production files and REQUIRE its own verifiers to go red
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0217
 > **Priority:** High
 > **Type:** enhancement
 > **Size:** M

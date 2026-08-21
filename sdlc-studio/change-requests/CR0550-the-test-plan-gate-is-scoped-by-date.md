@@ -1,6 +1,7 @@
 # CR-0550: The test-plan gate is scoped by DATE alone, so it cannot be narrowed to the units whose risk earns it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0217
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-08-11
+**Last Updated:** 2026-08-21
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 0 |
+| Draft | 13 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 2 |
 | Blocked | 0 |
-| **Total** | **670** |
+| **Total** | **683** |
 
 ## All Stories
 
@@ -110,6 +110,19 @@
 | [US0668](US0668-a-selector-that-cannot-be-judged-is-accepted.md) | A selector that cannot be JUDGED is accepted and reported unjudged, never refused, so a missing runner never makes the writer unusable | Done | EP0215 | 2026-08-11 | 2026-08-11 |
 | [US0669](US0669-validate-sweeps-the-existing-corpus-for-unresolvable-selectors.md) | validate sweeps the existing corpus for unresolvable selectors, giving unresolvable_stamps its first caller | Done | EP0215 | 2026-08-11 | 2026-08-11 |
 | [US0670](US0670-the-release-discloses-every-open-medium-and-low.md) | The release discloses every open Medium and Low finding by id, and the page is derived from the bug corpus rather than maintained by hand | Done | EP0216 | 2026-08-11 | 2026-08-11 |
+| [US0671](US0671-revert-check-reverts-a-unit-s-production-files.md) | revert-check reverts a unit's production files and REFUSES when its own verifiers stay green | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0672](US0672-revert-check-restores-the-working-tree-byte-exact.md) | revert-check restores the working tree byte-exact, including when it is interrupted | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0673](US0673-revert-check-reports-a-unit-whose-affects-names.md) | revert-check REPORTS a unit whose Affects names no production file rather than passing it | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0674](US0674-revert-check-runs-as-a-gate-lane-so.md) | revert-check runs as a gate lane, so a unit whose tests reach nothing is refused rather than reported | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0675](US0675-every-count-in-verification-depth-is-read-from.md) | Every COUNT in Verification depth is read from the mutation ledger, and an unexecuted row SAYS so | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0676](US0676-the-derived-half-of-verification-depth-is-delimited.md) | The derived half of Verification depth is delimited and a hand-edit to it is refused, while the author's judgement half survives verbatim | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0677](US0677-the-code-and-risk-subscores-are-computed-from.md) | The code and risk subscores are computed from the hunks a unit CHANGES against the base ref, not from every function in every declared file | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0678](US0678-a-unit-whose-diff-cannot-be-resolved-bands.md) | A unit whose diff cannot be resolved bands FULL and names the basis the estimate used | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0679](US0679-the-scope-subscore-stops-counting-a-test-file.md) | The scope subscore stops counting a test file present only because the Affects convention requires it | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0680](US0680-the-band-distribution-over-this-repository-s-corpus.md) | The band distribution over this repository's corpus is RE-MEASURED after the change and recorded, so the claim that the gate discriminates rests on a number | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0681](US0681-plan-gate-active-takes-a-scope-as-well.md) | _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0682](US0682-review-mutation-evidence-stays-independent-of-the-test.md) | review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0683](US0683-the-close-reports-which-units-the-test-plan.md) | The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
 
 ## Archived Releases
 

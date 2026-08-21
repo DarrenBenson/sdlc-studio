@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 28 |
+| Proposed | 24 |
 | Approved | 0 |
-| In Progress | 6 |
+| In Progress | 10 |
 | Complete | 494 |
 | Rejected | 1 |
 | Deferred | 0 |
@@ -97,10 +97,10 @@
 | [CR-0544](CR0544-nothing-reviews-a-repair-s-approach-or-a.md) | Nothing reviews a REPAIR's approach or a PROCEDURE's plan before it is executed, and that is where this session's most expensive findings were | Proposed | High | enhancement | 2026-08-11 | -- |
 | [CR-0545](CR0545-everything-after-the-tag-is-un-tooled-no.md) | Everything after the tag is un-tooled: no command publishes a release, so the runbook has no row for the step and the assets the install path verifies against have never been produced | Proposed | P1 | Improvement | 2026-08-12 | -- |
 | [CR-0546](CR0546-the-run-should-notice-work-it-delivered-that.md) | the run should notice work it delivered that its batch never named | Proposed | High | Improvement | 2026-08-17 | -- |
-| [CR-0547](CR0547-verify-ac-revert-check-revert-a-unit-s.md) | verify_ac revert-check: revert a unit's production files and REQUIRE its own verifiers to go red | Proposed | High | enhancement | 2026-08-19 | -- |
-| [CR-0548](CR0548-derive-verification-depth-from-the-ledger-instead-of.md) | derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch | Proposed | High | enhancement | 2026-08-19 | -- |
-| [CR-0549](CR0549-route-estimate-scores-whole-declared-files-so-the.md) | route.estimate scores whole declared files, so the risk band that drives review ceremony is a constant in any repo with large modules | Proposed | High | Improvement | 2026-08-21 | -- |
-| [CR-0550](CR0550-the-test-plan-gate-is-scoped-by-date.md) | The test-plan gate is scoped by DATE alone, so it cannot be narrowed to the units whose risk earns it | Proposed | High | Improvement | 2026-08-21 | -- |
+| [CR-0547](CR0547-verify-ac-revert-check-revert-a-unit-s.md) | verify_ac revert-check: revert a unit's production files and REQUIRE its own verifiers to go red | In Progress | High | enhancement | 2026-08-19 | EP0217 |
+| [CR-0548](CR0548-derive-verification-depth-from-the-ledger-instead-of.md) | derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch | In Progress | High | enhancement | 2026-08-19 | EP0217 |
+| [CR-0549](CR0549-route-estimate-scores-whole-declared-files-so-the.md) | route.estimate scores whole declared files, so the risk band that drives review ceremony is a constant in any repo with large modules | In Progress | High | Improvement | 2026-08-21 | EP0217 |
+| [CR-0550](CR0550-the-test-plan-gate-is-scoped-by-date.md) | The test-plan gate is scoped by DATE alone, so it cannot be narrowed to the units whose risk earns it | In Progress | High | Improvement | 2026-08-21 | EP0217 |
 | [CR-0551](CR0551-the-appetite-ceiling-measures-wall-clock-since-the.md) | The appetite ceiling measures WALL-CLOCK since the run opened, so a run left open overnight reports spend it never incurred | Proposed | High | Improvement | 2026-08-21 | -- |
 
 ## Archived Releases
