@@ -18,10 +18,14 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+- [ ] **AC1** Given a unit whose `Affects` names no production file at all - only test files, or only markdown - when the check runs, then it REPORTS that condition by name and does not pass the unit. Nothing to revert is not evidence that the tests reach anything, and an absence and a pass must not read the same
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_a_unit_with_no_production_file_is_reported_not_passed
+- [ ] **AC2** Given a unit whose `Affects` names a production file absent from the tree, when the check runs, then it reports the unresolvable path rather than silently reverting the subset it could resolve - a partial revert tests a change nobody described
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_an_unresolvable_affects_path_is_reported
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |

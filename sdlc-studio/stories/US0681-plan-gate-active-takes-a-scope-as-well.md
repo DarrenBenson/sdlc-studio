@@ -18,10 +18,16 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+- [ ] **AC1** Given a project configuration naming a SCOPE as well as a date, when `_plan_gate_active` decides, then it applies the test-plan gate to units at or above that band only, rather than to every unit created after the date
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanGateScopeTests::test_the_gate_applies_to_the_configured_band_only
+- [ ] **AC2** Given a unit BELOW the configured scope, when it transitions to a terminal status, then it is not held for a planned-mutant join; and given a unit at or above it, then it is refused exactly as today. Both legs, because a scope that exempts everything and a scope that exempts nothing both pass a one-sided test
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanGateScopeTests::test_below_scope_passes_and_at_scope_is_refused
+- [ ] **AC3** Given a unit whose band cannot be resolved, when the gate decides, then it APPLIES the gate rather than skipping it - matching the existing fail-towards-deeper-review rule, so an unscoreable unit cannot buy an exemption by being unscoreable
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanGateScopeTests::test_an_unresolvable_band_applies_the_gate
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |

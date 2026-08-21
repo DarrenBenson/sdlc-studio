@@ -18,10 +18,14 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+- [ ] **AC1** Given a close over a batch, when the report is rendered, then it names which units the test-plan gate APPLIED to and which it EXEMPTED, with the band that decided each - an exemption nobody can see is one nobody can challenge
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::PlanGateReportTests::test_the_close_names_applied_and_exempted_units_with_their_bands
+- [ ] **AC2** Given a batch where every unit was exempted, when the report is rendered, then it says so explicitly rather than rendering an empty section - an empty list and a batch nobody scoped must not read the same, which is the blindness-first rule the impediments row already draws
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::PlanGateReportTests::test_a_wholly_exempt_batch_says_so_rather_than_rendering_empty
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |

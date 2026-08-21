@@ -18,10 +18,14 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+- [ ] **AC1** Given a project setting `review.mutation_evidence: block` AND a test-plan scope that exempts the unit, when it transitions, then the mutation-evidence lane still blocks - the two lanes ask different questions and must stay sequential, which is BG0541's defect recreated one level in
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanGateScopeTests::test_mutation_evidence_blocks_independently_of_the_test_plan_scope
+- [ ] **AC2** Given a fixture setting BOTH settings across their combinations, when each is exercised, then no combination lets one lane silently waive the other - asserted over the matrix rather than over the one pairing somebody thought to try, because a fixture setting both went green while carrying exactly this defect
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanGateScopeTests::test_no_combination_of_the_two_settings_waives_the_other
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
