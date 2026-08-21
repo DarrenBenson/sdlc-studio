@@ -157,6 +157,11 @@ SCRUB_SITES: dict[str, str] = {
         "PARTIAL: clears only GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE before a read-only "
         "`rev-parse`. It reads rather than writes, so an escape misreports rather than "
         "damages, and it is out of BG0230's scope. Widen it to REPO_LOCATING when touched.",
+    ".claude/skills/sdlc-studio/scripts/verify_ac.py":
+        "pinned by test_the_revert_check_git_calls_scrub_the_same_variables. NOT partial, and "
+        "deliberately so: `revert-check` reads a blob at a ref and WRITES those bytes over the "
+        "unit's production file, so an inherited variable here means another repository's "
+        "content on disk rather than a misread. It carries the full list.",
     ".claude/skills/sdlc-studio/scripts/lessons.py":
         "PARTIAL: same three variables, same read-only `git -C` shape, same debt as gate.py.",
     ".claude/skills/sdlc-studio/scripts/mutation.py":
@@ -258,6 +263,18 @@ class ScrubListsAgreeTests(unittest.TestCase):
         projects, where neither the hook nor `skill-tests.sh` exists to protect them."""
         self.assertEqual(
             sorted(self._named_tuple_in(self.GITUTIL, "REPO_LOCATING_GIT_VARS")),
+            sorted(REPO_LOCATING))
+
+    VERIFY_AC = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts" / "verify_ac.py"
+
+    def test_the_revert_check_git_calls_scrub_the_same_variables(self) -> None:
+        """`revert-check` is the only caller here that WRITES what git hands it.
+
+        Every other shipped copy clears three names and reads; this one writes the blob it
+        fetched over the unit's production file, so an inherited variable is data loss rather
+        than a misreading. It therefore carries the whole list, and this holds it equal."""
+        self.assertEqual(
+            sorted(self._named_tuple_in(self.VERIFY_AC, "_REPO_LOCATING_GIT_VARS")),
             sorted(REPO_LOCATING))
 
     def test_the_script_itself_still_scrubs_them(self) -> None:

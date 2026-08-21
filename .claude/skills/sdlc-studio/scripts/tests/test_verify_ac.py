@@ -16,6 +16,7 @@ import sys
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
@@ -29,6 +30,16 @@ sys.modules["verify_ac"] = verify_ac
 _spec.loader.exec_module(verify_ac)
 sdlc_md = verify_ac.sdlc_md  # shared parsing helpers, via the loaded module
 from lib import run_state  # noqa: E402 - reachable once verify_ac has put scripts/ on the path
+
+
+def _load_mutation():
+    """The sibling `mutation` module - the WRITER of the ledger these tests read back.
+
+    Loaded rather than faked: a ledger hand-built as JSON would pin this suite to a shape
+    nothing emits, which is the dead-reader defect the testing guidance names by name.
+    """
+    import mutation  # noqa: PLC0415 - scripts/ is on the path once verify_ac has loaded
+    return mutation
 
 
 def _quiet_main(*args, **kwargs):
@@ -4769,6 +4780,492 @@ class MultiRowTestPlanTests(unittest.TestCase):
             self.assertEqual([("AC1", "in `verify_ac.py`, delete the first branch"),
                               ("AC2", "in `verify_ac.py`, delete the single path")], cols)
 
+
+
+# -----------------------------------------------------------------------------
+# revert-check (US0671, US0672, US0673) and derived Verification depth (US0675)
+# -----------------------------------------------------------------------------
+
+_PROD_BASE = "BASE_ONLY = 1\n"
+_PROD_HEAD = 'BASE_ONLY = 1\nSHIPPED_MARKER = "SHIPPED_MARKER"\n'
+
+_REBUILT_TEST = '''\
+def _rebuild():
+    """A private helper holding its OWN copy of the production constant."""
+    return "SHIPPED_MARKER"
+
+
+def test_marker_is_present():
+    assert _rebuild() == "SHIPPED_MARKER"
+'''
+
+_REACHING_TEST = '''\
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
+
+
+def test_marker_reaches_production():
+    import prod
+    assert prod.SHIPPED_MARKER == "SHIPPED_MARKER"
+'''
+
+
+import gitutil  # noqa: E402 - tests/ is on the path; the CONFINED git runner
+
+
+def _git(cwd, *args):
+    """Every fixture git call goes through the confined runner.
+
+    An inherited repo-locating variable redirects a fixture's git onto the surrounding
+    checkout - it emptied this repository's index once - and the pre-commit hook that runs
+    this suite exports them.
+    """
+    gitutil.git(args, cwd)
+
+
+class _RevertRepo:
+    """A REAL git repository holding one unit, its production file and its verifiers.
+
+    Real git and real files rather than an injected reader, because the whole subject is what
+    happens to bytes on disk while the check runs. A stubbed `git show` would prove the
+    check's arithmetic and nothing about the property every criterion here is about.
+    """
+
+    def __init__(self, criteria: str, affects: str, *, test_body: str | None = None,
+                 extra_sections: str = "", uid: str = "US9001") -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="revert_check_"))
+        (self.tmp / "scripts").mkdir()
+        (self.tmp / "tests").mkdir()
+        self.prod = self.tmp / "scripts" / "prod.py"
+        self.prod.write_text(_PROD_BASE, encoding="utf-8")
+        if test_body:
+            (self.tmp / "tests" / "test_prod.py").write_text(test_body, encoding="utf-8")
+        _git(self.tmp, "init", "-q")
+        _git(self.tmp, "config", "user.email", "t@example.com")
+        _git(self.tmp, "config", "user.name", "t")
+        _git(self.tmp, "add", "-A")
+        _git(self.tmp, "commit", "-qm", "base")
+        self.base = gitutil.git(["rev-parse", "HEAD"], self.tmp).stdout.decode().strip()
+        self.prod.write_text(_PROD_HEAD, encoding="utf-8")
+        _git(self.tmp, "add", "-A")
+        _git(self.tmp, "commit", "-qm", "ship")
+        stories = self.tmp / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        self.uid = uid
+        self.unit = stories / f"{uid}-fixture.md"
+        self.unit.write_text(
+            f"# {uid}: fixture\n\n"
+            f"> **Status:** Draft\n"
+            f"> **Affects:** {affects}\n\n"
+            f"## Acceptance Criteria\n\n{criteria}\n{extra_sections}",
+            encoding="utf-8")
+
+    def hashes(self) -> dict:
+        import hashlib
+        out = {}
+        for p in sorted(self.tmp.rglob("*")):
+            if p.is_file() and ".git/" not in str(p.relative_to(self.tmp)).replace("\\", "/"):
+                out[str(p.relative_to(self.tmp))] = hashlib.sha256(p.read_bytes()).hexdigest()
+        return out
+
+    def cleanup(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+
+def _ac(num: int, verifier: str, text: str = "the change is reached") -> str:
+    return f"- [ ] **AC{num}** {text}\n  - **Verify:** {verifier}\n"
+
+
+class RevertCheckTests(unittest.TestCase):
+    """`verify_ac.py revert-check` - CR0547.
+
+    Every case drives `verify_ac.main([...])`, the shipped entry point, rather than
+    `revert_check` directly: the wiring between the command and the function is the part a
+    library test does not exercise, and this repository has shipped a working function behind
+    a command that never called it.
+    """
+
+    def setUp(self) -> None:
+        self.repos: list = []
+
+    def tearDown(self) -> None:
+        for r in self.repos:
+            r.cleanup()
+
+    def _repo(self, *args, **kwargs) -> _RevertRepo:
+        r = _RevertRepo(*args, **kwargs)
+        self.repos.append(r)
+        return r
+
+    def _run(self, repo, extra=()) -> tuple:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = verify_ac.main(["revert-check", "--unit", repo.uid, "--root", str(repo.tmp),
+                                   "--base", repo.base, *extra])
+        return code, buf.getvalue()
+
+    def test_a_wholly_green_unit_is_refused(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, delete the `if counted and not result["red"]`
+        branch so a unit whose every measurable criterion stays green returns `pass`.
+
+        Both criteria grep text the BASE revision already carries, so reverting the production
+        change moves neither. That is the defect the whole command exists for: a test that
+        passes without the change never reached it."""
+        repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py")
+                          + _ac(2, "grep 'BASE_ONLY = 1' scripts/prod.py"),
+                          "scripts/prod.py")
+        code, out = self._run(repo)
+        self.assertEqual(code, 1, out)
+        self.assertIn("stayed GREEN", out)
+        self.assertIn("AC1", out)
+        self.assertIn("AC2", out)
+
+    def test_a_unit_whose_verifiers_go_red_passes(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, refuse whenever ANY criterion stays green -
+        `if counted and result["green"]` in place of `not result["red"]`.
+
+        The paired control. AC1 greps the shipped marker and goes red on the revert; AC2 greps
+        base text and stays green. A gate that refused this has measured nothing, because it
+        would refuse every unit put in front of it."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py")
+                          + _ac(2, "grep BASE_ONLY scripts/prod.py"),
+                          "scripts/prod.py")
+        code, out = self._run(repo)
+        self.assertEqual(code, 0, out)
+        self.assertIn("PASSES", out)
+
+    def test_declared_exemptions_do_not_trigger_a_refusal(self) -> None:
+        """MUTANT: in `verify_ac.revert_exemptions`, return `{}`.
+
+        Three legitimately-green criteria, one of each declared class - a well-formed
+        `unnameable` plan row, a reasoned `Revert-check-exempt` field, and a criterion whose
+        plan row names only test code - beside one that goes red. RUN-01M0CT8P measured five
+        such criteria in a single six-unit batch, so a check without the taxonomy refuses
+        correct work on its first outing, and refusing correct work is how a gate gets
+        switched off."""
+        plan = ("\n## Test Plan\n\n"
+                "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                "| AC1 | in `scripts/prod.py`, drop the shipped marker | a |\n"
+                "| AC2 | unnameable: the criterion pins an ordering no single edit can "
+                "reverse without also deleting the field it orders | b |\n"
+                "| AC3 | in `tests/test_prod.py`, rename the private helper | c |\n"
+                "| AC4 | in `scripts/prod.py`, restore the base constant | d |\n")
+        repo = self._repo(
+            _ac(1, "grep SHIPPED_MARKER scripts/prod.py")
+            + _ac(2, "grep BASE_ONLY scripts/prod.py")
+            + _ac(3, "grep BASE_ONLY scripts/prod.py")
+            + _ac(4, "grep BASE_ONLY scripts/prod.py"),
+            "scripts/prod.py, tests/test_prod.py",
+            test_body=_REBUILT_TEST, extra_sections=plan)
+        text = repo.unit.read_text(encoding="utf-8")
+        repo.unit.write_text(text.replace(
+            "> **Affects:**",
+            "> **Revert-check-exempt:** AC4 - the paired control asserts the behaviour that "
+            "stood BEFORE the change, so it must stay green when the change is removed\n"
+            "> **Affects:**"), encoding="utf-8")
+        code, out = self._run(repo)
+        self.assertEqual(code, 0, out)
+        for ac in ("AC2", "AC3", "AC4"):
+            self.assertRegex(out, rf"{ac}\s+exempt", out)
+
+    def test_the_unexercised_change_fixture_is_refused(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, invert the run classification -
+        `"red" if res.ok else "green"`.
+
+        BG0593's pre-repair working-tree state, reproduced as a fixture: the production change
+        is present, and the test rebuilds the thing under test in a private helper, so the
+        change is unexercised. Stated as a fixture and NOT as a commit by necessity - that
+        state was never committed, it lived between 788e0c3f and its repair at 20de1d1c, and
+        the mutation ledger it would otherwise be read from lives in gitignored
+        `sdlc-studio/.local/`. A criterion claiming to pin a commit that does not hold the
+        defect is a fabricated regression case, which is the class this check exists to
+        refuse."""
+        repo = self._repo(_ac(1, "pytest tests/test_prod.py::test_marker_is_present"),
+                          "scripts/prod.py, tests/test_prod.py",
+                          test_body=_REBUILT_TEST)
+        code, out = self._run(repo)
+        self.assertEqual(code, 1, out)
+        self.assertIn("stayed GREEN", out)
+        self.assertIn("AC1", out)
+
+    def test_a_verifier_that_reaches_production_goes_red(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, skip the revert loop and run the verifiers
+        against the intact tree.
+
+        The control for the fixture above, and the reason the pair is worth having: the SAME
+        pytest runner, the same node shape, one test importing the production module and one
+        rebuilding it locally. Without this, `test_the_unexercised_change_fixture_is_refused`
+        could be passing because pytest never ran at all."""
+        repo = self._repo(_ac(1, "pytest tests/test_prod.py::test_marker_reaches_production"),
+                          "scripts/prod.py, tests/test_prod.py",
+                          test_body=_REACHING_TEST)
+        code, out = self._run(repo)
+        self.assertEqual(code, 0, out)
+        self.assertIn("PASSES", out)
+
+    def test_an_unresolvable_selector_is_unresolved_not_red(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, delete the `selector_resolves(...) is False`
+        arm so an unresolvable selector is executed and its non-zero exit counted as red.
+
+        A selector failing because it names nothing is not a test reaching the change. Counted
+        as red it would manufacture a false PASS - the unit would look measured while nothing
+        had been measured at all."""
+        repo = self._repo(_ac(1, "pytest tests/test_absent.py::Missing::test_nope")
+                          + _ac(2, "grep BASE_ONLY scripts/prod.py"),
+                          "scripts/prod.py")
+        code, out = self._run(repo)
+        self.assertRegex(out, r"AC1\s+unresolved", out)
+        self.assertEqual(code, 1, out)
+        self.assertIn("stayed GREEN", out)
+        self.assertNotIn("AC1,", out.split("stayed GREEN")[1])
+
+    def test_the_tree_is_byte_identical_after_a_normal_run(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, delete the snapshot-restore loop.
+
+        Compared by per-file hash taken before and after, over every tracked and untracked
+        file outside `.git`, rather than by reading `git status`: a restore that rewrote a
+        file with different bytes and then staged them would satisfy `git status` and fail
+        this."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py"), "scripts/prod.py")
+        before = repo.hashes()
+        code, out = self._run(repo)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(before, repo.hashes())
+
+    def test_the_tree_is_byte_identical_after_an_interrupted_run(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, move the restore out of the `finally` onto the
+        success path.
+
+        A check that dies must not be able to leave a unit's production change reverted on
+        disk. The interruption is the verifier run raising, which is where a real one happens -
+        a timeout, a killed runner, a keyboard interrupt."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py"), "scripts/prod.py")
+        before = repo.hashes()
+
+        def boom(*_a, **_k):
+            raise RuntimeError("interrupted")
+
+        with unittest.mock.patch.object(verify_ac, "run_verifier", boom):
+            with self.assertRaises(RuntimeError):
+                self._run(repo)
+        self.assertEqual(before, repo.hashes())
+
+    def test_uncommitted_edits_survive_the_check(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, restore from git - `git checkout HEAD --
+        <path>` - instead of from the byte snapshot.
+
+        The first build of this did exactly that and destroyed uncommitted work, including the
+        fix it had just been used to validate. The edit here is uncommitted and is NOT at HEAD,
+        so a git-sourced restore silently drops it while leaving the tree clean."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py"), "scripts/prod.py")
+        repo.prod.write_text(_PROD_HEAD + "UNCOMMITTED = 3\n", encoding="utf-8")
+        before = repo.prod.read_bytes()
+        code, out = self._run(repo)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(repo.prod.read_bytes(), before)
+        self.assertIn("UNCOMMITTED", repo.prod.read_text(encoding="utf-8"))
+
+    def test_a_unit_with_no_production_file_is_reported_not_passed(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, drop the empty-`production` branch so the
+        check falls through and returns `pass`.
+
+        Nothing to revert is not evidence that the tests reach anything. An absence and a pass
+        must not read the same, so this exits on its own code and names the condition."""
+        repo = self._repo(_ac(1, "grep _rebuild tests/test_prod.py"),
+                          "tests/test_prod.py, docs/notes.md", test_body=_REBUILT_TEST)
+        code, out = self._run(repo)
+        self.assertEqual(code, 3, out)
+        self.assertIn("names no production file", out)
+
+    def test_an_unresolvable_affects_path_is_reported(self) -> None:
+        """MUTANT: in `verify_ac.revert_check`, drop the `unresolvable` branch and revert the
+        subset that does resolve.
+
+        A partial revert tests a change nobody described: the unit is judged against a surface
+        smaller than the one it declared, and the verdict reads the same either way."""
+        repo = self._repo(_ac(1, "grep SHIPPED_MARKER scripts/prod.py"),
+                          "scripts/prod.py, scripts/absent.py")
+        code, out = self._run(repo)
+        self.assertEqual(code, 3, out)
+        self.assertIn("scripts/absent.py", out)
+        self.assertIn("not a readable file here", out)
+
+
+_DEPTH_UNIT = """\
+# US9002: fixture
+
+> **Status:** Draft
+> **Verification depth:** functional (the author's judgement half, preserved verbatim)
+> **Affects:** scripts/prod.py
+
+## Acceptance Criteria
+
+- [ ] **AC1** the first claim
+  - **Verify:** pytest tests/test_prod.py::test_marker_is_present
+- [ ] **AC2** the second claim
+  - **Verify:** pytest tests/test_prod.py::test_marker_reaches_production
+
+## Test Plan
+
+| Criterion | Mutant | Title |
+| --- | --- | --- |
+| AC1 | in `scripts/prod.py`, drop the shipped marker | a |
+| AC2 | in `scripts/prod.py`, restore the base constant | b |
+"""
+
+
+class DerivedDepthTests(unittest.TestCase):
+    """`verify_ac.py depth` - CR0548.
+
+    `Verification depth` is the field a reviewer reads first to decide how hard to look, and an
+    independent review found it making a false factual claim on five of six units in one batch.
+    Every count here is read from the mutation ledger through `mutation.plan_execution`, so a
+    figure the ledger does not hold cannot be rendered.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="derived_depth_"))
+        (self.tmp / "scripts").mkdir()
+        (self.tmp / "scripts" / "prod.py").write_text(_PROD_HEAD, encoding="utf-8")
+        (self.tmp / "tests").mkdir()
+        (self.tmp / "tests" / "test_prod.py").write_text(
+            _REBUILT_TEST + "\n" + _REACHING_TEST.split("\n\n", 1)[1], encoding="utf-8")
+        stories = self.tmp / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        self.unit = stories / "US9002-fixture.md"
+        self.unit.write_text(_DEPTH_UNIT, encoding="utf-8")
+        self.mutation = _load_mutation()
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _register(self, criterion: str, verdict: str = "killed") -> None:
+        self.mutation.register_mutant(
+            self.tmp, "scripts/prod.py",
+            mutant=f"in `scripts/prod.py`, the change {criterion} pins",
+            test=f"tests/test_prod.py::{criterion}", verdict=verdict,
+            unit="US9002", criterion=criterion, row=0, line=2)
+
+    def _depth(self, extra=()) -> tuple:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = verify_ac.main(["depth", "--unit", "US9002", "--root", str(self.tmp),
+                                   *extra])
+        return code, buf.getvalue()
+
+    def test_every_count_is_read_from_the_ledger(self) -> None:
+        """MUTANT: in `verify_ac.depth_facts`, count `killed` as `len(rows)` rather than from
+        the ledger's own verdicts.
+
+        The counts MOVE with the ledger and with nothing else: one kill and one survivor here,
+        against two plan rows. A renderer that reported `killed 2` would be exactly the field
+        this replaces - a figure nothing supports, in the record a reviewer reads first."""
+        self._register("AC1", "killed")
+        self._register("AC2", "survived")
+        code, out = self._depth()
+        self.assertEqual(code, 0, out)
+        self.assertIn("plan rows 2", out)
+        self.assertIn("executed 2", out)
+        self.assertIn("killed 1", out)
+        self.assertIn("survived 1", out)
+
+    def test_an_unexecuted_row_is_named_not_omitted(self) -> None:
+        """MUTANT: in `verify_ac.render_depth`, drop the `NOT RUN` branch so an unexecuted row
+        is silently absent.
+
+        A derived field that can only report success is the defect this replaces. The row is
+        named by criterion AND row index, because a criterion carrying two mutants can have one
+        executed and one not."""
+        self._register("AC1", "killed")
+        code, out = self._depth()
+        self.assertEqual(code, 0, out)
+        self.assertIn("NOT RUN 1", out)
+        self.assertIn("AC2 row 0", out)
+
+    def test_the_entry_point_split_is_derived_per_criterion(self) -> None:
+        """MUTANT: in `verify_ac._entry_point_split`, return `through_cli = located`.
+
+        CR0548's motivating defect was a PROSE claim of shipped-CLI coverage that did not
+        exist, so deriving only the five mutation counts would leave it standing in the half no
+        tool touches. AC2's test enters the lane through `subprocess`; AC1's rebuilds the value
+        in a private helper and never leaves the process."""
+        self._register("AC1")
+        self._register("AC2")
+        (self.tmp / "tests" / "test_prod.py").write_text(
+            _REBUILT_TEST + "\n\nimport subprocess\n\n\n"
+            "def test_marker_reaches_production():\n"
+            "    subprocess.run(['true'], check=True)\n", encoding="utf-8")
+        code, out = self._depth()
+        self.assertEqual(code, 0, out)
+        self.assertIn("entry point 1 of 2 criteria through the shipped CLI, 1 in-process", out)
+
+    def test_an_all_in_process_unit_reports_zero_cli_coverage(self) -> None:
+        """MUTANT: in `verify_ac.render_depth`, emit the entry-point clause only when
+        `through_cli` is non-zero.
+
+        The paired control. A renderer that only ever reports coverage it FOUND cannot
+        contradict a false claim of coverage, which is precisely the claim CR0548 was raised
+        on. Neither test here leaves the process, and the field must say so."""
+        self._register("AC1")
+        self._register("AC2")
+        (self.tmp / "tests" / "test_prod.py").write_text(
+            _REBUILT_TEST + "\n\ndef test_marker_reaches_production():\n"
+            "    assert _rebuild() == 'SHIPPED_MARKER'\n", encoding="utf-8")
+        code, out = self._depth()
+        self.assertEqual(code, 0, out)
+        self.assertIn("entry point 0 of 2 criteria through the shipped CLI, 2 in-process", out)
+
+    def test_an_absent_ledger_is_reported_not_rendered_as_zero(self) -> None:
+        """MUTANT: in `verify_ac.render_depth`, drop the `ledger_absent` branch so an empty
+        ledger renders `executed 0; killed 0; survived 0`.
+
+        Nought executed and nothing recorded are different facts, and a reader who cannot tell
+        them apart cannot judge the unit - a row of noughts reads as a measurement that found
+        nothing rather than as a measurement nobody took."""
+        code, out = self._depth()
+        self.assertEqual(code, 0, out)
+        self.assertIn("EVIDENCE ABSENT", out)
+        self.assertNotIn("killed 0", out)
+
+    def test_a_tier_less_field_is_refused_rather_than_written(self) -> None:
+        """MUTANT: in `verify_ac.write_depth`, delete the empty-value guard so the derived span
+        is spliced into a field carrying no tier.
+
+        `transition` reads the field's LEADING TOKEN as the tier. Splicing into an empty value
+        leaves `[[derived:` in that position, so a field that named no tier starts parsing as
+        one - the unparseable-but-honest state turned into a parseable false one, which is the
+        direction this whole command exists to move away from."""
+        self._register("AC1")
+        text = self.unit.read_text(encoding="utf-8")
+        self.unit.write_text(text.replace(
+            "> **Verification depth:** functional (the author's judgement half, "
+            "preserved verbatim)", "> **Verification depth:**"), encoding="utf-8")
+        code, out = self._depth(["--write"])
+        self.assertEqual(code, 1, out)
+        self.assertIn("carries no tier", out)
+        self.assertNotIn("[[derived:", self.unit.read_text(encoding="utf-8"))
+
+    def test_the_judgement_half_survives_regeneration_verbatim(self) -> None:
+        """MUTANT: in `verify_ac.depth_field_value`, rebuild the whole value from the derived
+        facts instead of splicing only the delimited span.
+
+        The tier and the honest statement of what was deliberately not covered are the part no
+        tool can supply. Regenerated TWICE, because a splice that appends rather than replaces
+        is byte-stable on its first run and doubles on its second."""
+        self._register("AC1")
+        self._register("AC2")
+        self.assertEqual(self._depth(["--write"])[0], 0)
+        once = self.unit.read_text(encoding="utf-8")
+        self.assertEqual(self._depth(["--write"])[0], 0)
+        twice = self.unit.read_text(encoding="utf-8")
+        self.assertEqual(once, twice)
+        self.assertIn("(the author's judgement half, preserved verbatim)", twice)
+        self.assertIn("**Verification depth:** functional [[derived:", twice)
+        self.assertEqual(
+            verify_ac.sdlc_md.extract_field(twice, "Verification depth").split()[0],
+            "functional")
 
 if __name__ == "__main__":
     unittest.main()

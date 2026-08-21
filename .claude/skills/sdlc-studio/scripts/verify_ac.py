@@ -3294,6 +3294,471 @@ def cmd_report(args: argparse.Namespace) -> int:
     return 1 if total_fail > 0 else 0
 
 
+# -----------------------------------------------------------------------------
+# revert-check: do a unit's own verifiers reach its production change?
+# -----------------------------------------------------------------------------
+
+
+def is_test_path(path: str) -> bool:
+    """Does this declared path hold TEST code rather than production code?
+
+    Reverting a test file cannot answer the question this check asks. The tests ARE the
+    measurement, so removing them removes the instrument rather than the thing under it.
+    Decided in ONE place, because a second predicate that disagreed about `tests/helpers.py`
+    would let a unit be judged against a surface nobody described - the same two-readers
+    defect `_is_markdown` was collapsed to fix.
+    """
+    parts = str(path).replace("\\", "/").split("/")
+    if any(seg in ("test", "tests", "__tests__", "testing") for seg in parts[:-1]):
+        return True
+    name = parts[-1]
+    stem = name.rsplit(".", 1)[0] if "." in name else name
+    return (name.startswith("test_") or stem.endswith("_test")
+            or stem.endswith(".test") or stem.endswith(".spec"))
+
+
+def revert_targets(root, text: str) -> dict:
+    """A unit's declared `Affects` split into what a revert may touch and what it may not.
+
+    Existence is judged against the REPO ROOT rather than through `sdlc_md.resolve_affects`,
+    which also searches the installed skill copy: a file that resolves outside this git tree
+    cannot be reverted to a ref of it, and reporting it as revertible would revert nothing
+    while claiming to have measured something.
+    """
+    root = Path(root)
+    out: dict = {"production": [], "tests": [], "docs": [], "unresolvable": []}
+    for raw in sdlc_md.affects_files(text):
+        rel = raw.strip().strip("`")
+        if _is_markdown(rel):
+            out["docs"].append(rel)
+        elif is_test_path(rel):
+            out["tests"].append(rel)
+        elif (root / rel).is_file():
+            out["production"].append(rel)
+        else:
+            out["unresolvable"].append(rel)
+    return out
+
+
+#: A declared, reasoned exemption from the revert check, e.g.
+#: `> **Revert-check-exempt:** AC2 - the paired control asserts the pre-change behaviour`.
+EXEMPT_FIELD = "Revert-check-exempt"
+_AC_TOKEN_RE = re.compile(r"\bAC\d+\b", re.I)
+#: A path INSIDE a test-plan mutant cell: at least one `/` and an extension, so ordinary prose
+#: cannot be mistaken for a file the criterion is about.
+_MUTANT_PATH_RE = re.compile(r"[\w.-]+(?:/[\w.-]+)+\.[A-Za-z0-9]+")
+
+
+def revert_exemptions(text: str) -> dict:
+    """`{AC id: why}` for each criterion a PRODUCTION-only revert may legitimately leave green.
+
+    The taxonomy is the difference between a gate people keep and one they switch off:
+    RUN-01M0CT8P measured five such criteria across a single six-unit batch, so a check
+    without it refuses correct work on its first outing. Three classes, each derived from
+    something already written down rather than from a judgement made here:
+
+      * a WELL-FORMED `unnameable` plan row - the plan already records that nobody can name a
+        falsifying production change, so demanding one here contradicts that record;
+      * a DECLARED exemption field carrying a reason with substance. A bare id list is
+        malformed and exempts nothing, on `unnameable`'s precedent: a state that costs nothing
+        to enter is the state every awkward criterion chooses;
+      * a criterion whose SUBJECT is test code - its plan row names paths and every one of
+        them is a test file, so no production revert can move it.
+    """
+    out: dict = {}
+    for row in testplan_unnameable(text):
+        if not row["malformed"]:
+            out[row["ac"].upper()] = f"declared `unnameable`: {row['reason']}"
+    for ac, mutants in testplan_rows_by_criterion(text).items():
+        paths = [p for m in mutants for p in _MUTANT_PATH_RE.findall(m)]
+        if paths and all(is_test_path(p) for p in paths):
+            out.setdefault(ac.upper(),
+                           "the plan row names only test code, so no production revert "
+                           "can move it")
+    raw = (sdlc_md.extract_field(text, EXEMPT_FIELD) or "").strip()
+    if raw:
+        ids = [m.upper() for m in _AC_TOKEN_RE.findall(raw)]
+        reason = _AC_TOKEN_RE.sub("", raw).strip(" ,;-").strip()
+        if ids and len(_reason_substance(reason)) >= 12:
+            for ac in ids:
+                out.setdefault(ac, f"declared exemption: {reason}")
+    return out
+
+
+#: Every environment variable that can point git at a different repository, index, object
+#: store, namespace or path prefix. The FULL list rather than the three-name partial the other
+#: read-only callers here carry, and the difference is the reason: they misreport when an escape
+#: gets through, this one writes another repository's bytes into a production file.
+#: `tools/tests/test_skill_tests_env.py` holds this copy equal to the one every other copy is
+#: pinned to, so it cannot drift on its own.
+_REPO_LOCATING_GIT_VARS = (
+    "GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_INDEX_VERSION",
+    "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_NAMESPACE",
+    "GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM", "GIT_PREFIX",
+)
+
+
+def _git_env() -> dict:
+    """The environment a git call here must run under.
+
+    `git -C <path>` does NOT override an inherited repo-locating variable, and git hooks export
+    them - this repository's own hooks run this code. Without the drop, `git show <ref>:<path>`
+    answers for whatever the environment names, and this check then writes those bytes into the
+    unit's production file. Reading the wrong repository is a false verdict; writing it is data
+    loss, which is why the whole list goes rather than the usual three.
+    """
+    return {k: v for k, v in os.environ.items() if k not in _REPO_LOCATING_GIT_VARS}
+
+
+def _base_blob(root: Path, ref: str, rel: str) -> bytes | None:
+    """The bytes of `rel` at `ref`, or None when the path did not exist there."""
+    try:
+        cp = subprocess.run(["git", "-C", str(root), "show", f"{ref}:{rel}"],
+                            capture_output=True, timeout=60, env=_git_env())
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return cp.stdout if cp.returncode == 0 else None
+
+
+def _ref_exists(root: Path, ref: str) -> bool:
+    try:
+        cp = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "--quiet",
+                             f"{ref}^{{commit}}"], capture_output=True, text=True, timeout=30,
+                            env=_git_env())
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return cp.returncode == 0
+
+
+def _purge_pyc(root: Path, rels: list[str]) -> None:
+    """Drop cached bytecode for every reverted file's directory.
+
+    A same-length replacement can land inside one filesystem timestamp granule, and CPython
+    then reuses the stale `.pyc` - this repository has recorded that false verdict twice, both
+    times as a SURVIVED mutant that had never actually run. Delegated to `mutation._purge_bytecode`
+    rather than re-implemented, imported here rather than at module scope because `mutation`
+    imports this module back.
+    """
+    try:
+        import mutation as _mut  # noqa: PLC0415 - deferred; mutation imports verify_ac back
+    except ImportError:  # pragma: no cover - the skill always ships both
+        return
+    for rel in rels:
+        try:
+            _mut._purge_bytecode(root / rel)
+        except OSError:
+            continue
+
+
+def revert_check(root, unit: str, base_ref: str | None = None, *,
+                 timeout: int = 600, allow_shell: bool = True) -> dict:
+    """Revert a unit's production files to `base_ref` and re-run ITS OWN verifiers.
+
+    The question no other lane asks: if the change were removed, would this unit's tests
+    notice? A unit can have every criterion green and every declared mutant recorded killed
+    over a change no test reaches - because the tests rebuilt the thing under test in a
+    fixture, or pinned a construct one step from the defect. A mutant applied to a call site
+    dies against a test that never enters the function behind it, and the ledger records that
+    as evidence. Measured on RUN-01M0CT8P: deleting BG0593's entire production change left all
+    four of its criteria AND all 916 tests in its file green.
+
+    GREEN AFTER THE REVERT IS THE REFUSAL. It is reported per criterion but decided per unit:
+    one criterion going red proves the tests reach the change, and demanding it of every
+    criterion refuses correct work (see `revert_exemptions`).
+
+    Selector resolution is settled BEFORE the revert, against the intact tree. A criterion
+    whose selector names nothing is a property of what the author wrote, not of the reverted
+    state, and judging it afterwards would let a revert that breaks collection be read as
+    evidence that the tests reached the change.
+
+    The working tree is restored from a BYTE SNAPSHOT in a `finally`, never from HEAD: a
+    `git checkout HEAD --` restore destroyed uncommitted work the first time this was built.
+    """
+    root = Path(root)
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        return {"ok": False, "status": "error", "unit": unit, "criteria": [], "reverted": [],
+                "errors": [f"{unit}: no artefact with that id"]}
+    path, _kind = found
+    text = sdlc_md.read_text_safe(path)
+    uid = sdlc_md.norm_id(unit)
+    result: dict = {"ok": False, "status": "error", "unit": uid, "path": str(path),
+                    "criteria": [], "reverted": [], "errors": [], "base": ""}
+
+    base = str(base_ref or run_state.base_ref(root) or "").strip()
+    if not base:
+        result["errors"].append(
+            f"{uid}: no base ref - the open run recorded none. This check must not invent one: "
+            f"a ref nobody owns is the defect, not the fix. Name it with `--base <ref>`")
+        return result
+    if not _ref_exists(root, base):
+        result["errors"].append(f"{uid}: base ref `{base}` does not resolve to a commit here")
+        return result
+    result["base"] = base
+
+    targets = revert_targets(root, text)
+    reported: list[str] = []
+    if targets["unresolvable"]:
+        reported.append(
+            f"{uid}: `Affects` names production path(s) that are not a readable file here - "
+            f"{', '.join(targets['unresolvable'])}. Reverting the subset that does resolve "
+            f"would test a change nobody described")
+    if not targets["production"]:
+        reported.append(
+            f"{uid}: `Affects` names no production file "
+            f"({len(targets['tests'])} test file(s), {len(targets['docs'])} markdown). "
+            f"Nothing to revert is not evidence that the tests reach anything, so this is "
+            f"REPORTED rather than passed")
+    if reported:
+        result["status"] = "reported"
+        result["errors"] = reported
+        return result
+
+    exempt = revert_exemptions(text)
+    story_allow_shell = shell_allowed_for(text, allow_shell=allow_shell)
+    criteria: list[dict] = []
+    to_run: list[tuple] = []
+    for block in parse_story(text):
+        ac = (block.ac_id or "").upper()
+        expr = (block.verifier or "").strip()
+        if ac in exempt:
+            criteria.append({"ac": ac, "state": "exempt", "why": exempt[ac]})
+        elif not expr:
+            criteria.append({"ac": ac, "state": "unspecified"})
+        elif _is_manual(expr):
+            criteria.append({"ac": ac, "state": "manual", "verifier": expr})
+        elif selector_resolves(expr, root) is False:
+            criteria.append({"ac": ac, "state": "unresolved", "verifier": expr})
+        else:
+            entry = {"ac": ac, "state": "pending", "verifier": expr}
+            criteria.append(entry)
+            to_run.append(entry)
+
+    snapshot = {rel: (root / rel).read_bytes() for rel in targets["production"]}
+    try:
+        for rel in targets["production"]:
+            blob = _base_blob(root, base, rel)
+            if blob is None:
+                (root / rel).unlink()
+            else:
+                (root / rel).write_bytes(blob)
+            result["reverted"].append(rel)
+        _purge_pyc(root, targets["production"])
+        for entry in to_run:
+            res = run_verifier(entry["verifier"], timeout, root,
+                               allow_shell=story_allow_shell)
+            entry["state"] = "green" if res.ok else "red"
+            entry["kind"] = res.kind
+    finally:
+        for rel, blob in snapshot.items():
+            target = root / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(blob)
+        _purge_pyc(root, targets["production"])
+
+    result["criteria"] = criteria
+    counted = [c for c in criteria if c["state"] in ("red", "green")]
+    green = [c["ac"] for c in counted if c["state"] == "green"]
+    result["green"] = green
+    result["red"] = [c["ac"] for c in counted if c["state"] == "red"]
+    result["exempt"] = [c["ac"] for c in criteria if c["state"] == "exempt"]
+    result["unresolved"] = [c["ac"] for c in criteria if c["state"] == "unresolved"]
+    if counted and not result["red"]:
+        result["status"] = "refused"
+        result["errors"].append(
+            f"{uid}: every measurable criterion stayed GREEN with "
+            f"{', '.join(targets['production'])} reverted to {base} - "
+            f"{', '.join(green)}. A test that passes without the change never reached it")
+        return result
+    result["ok"] = True
+    result["status"] = "pass"
+    if not counted:
+        result["note"] = (f"{uid}: nothing measurable - "
+                          f"{len(result['exempt'])} exempt, "
+                          f"{len(result['unresolved'])} unresolved selector(s)")
+    return result
+
+
+def cmd_revert_check(args: argparse.Namespace) -> int:
+    res = revert_check(args.root, args.unit, args.base, timeout=args.timeout)
+    if args.format == "json":
+        print(json.dumps(res, indent=2))
+    else:
+        for line in res.get("errors", []):
+            print(f"revert-check: {line}")
+        for c in res.get("criteria", []):
+            extra = c.get("why") or c.get("verifier") or ""
+            print(f"  {c['ac']:<6} {c['state']:<11} {extra}")
+        if res.get("note"):
+            print(f"revert-check: {res['note']}")
+        if res.get("ok"):
+            print(f"revert-check: {res['unit']} PASSES - "
+                  f"{len(res.get('red', []))} criterion/criteria go red without the change")
+    if res["status"] == "reported":
+        return 3
+    return 0 if res["ok"] else 1
+
+
+# -----------------------------------------------------------------------------
+# Derived `Verification depth`
+# -----------------------------------------------------------------------------
+
+#: The delimiters around the DERIVED half of `Verification depth`. Visible rather than an HTML
+#: comment: a fact a reader cannot see is one nobody checks, and this is the field a reviewer
+#: reads first to decide how hard to look.
+DERIVED_OPEN = "[[derived:"
+DERIVED_CLOSE = "]]"
+_DERIVED_RE = re.compile(r"\s*\[\[derived:.*?\]\]", re.S)
+_DEPTH_LINE_RE = re.compile(r"^(>\s*\*\*Verification depth:\*\*[ \t]*)(.*)$", re.M)
+
+
+def _entry_point_split(root, text: str) -> dict:
+    """How many of a unit's criteria enter the SHIPPED entry point, and how many run in-process.
+
+    Derived by the detector `lane-check` already uses, per criterion and scoped to the node the
+    selector names. CR0548's motivating defect was a `Verification depth` claiming shipped-CLI
+    coverage that did not exist, and that claim is PROSE: deriving only the mutation counts
+    would leave it standing in the half no tool touches.
+    """
+    root = Path(root)
+    cli = through = 0
+    for block in parse_story(text):
+        expr = (block.verifier or "").strip()
+        if not expr or _is_manual(expr):
+            continue
+        node = next((t.rsplit("::", 1)[-1] for t in expr.split() if "::" in t), "")
+        targets = [root / t for t in _lane_test_paths(expr)]
+        targets = [t for t in targets if t.exists()]
+        if not targets:
+            continue
+        cli += 1
+        if any(_enters_the_lane(t, node) for t in targets):
+            through += 1
+    return {"located": cli, "through_cli": through, "in_process": cli - through}
+
+
+def depth_facts(root, unit: str) -> dict:
+    """Every COUNT that belongs in a `Verification depth`, read from the artefact and the ledger.
+
+    A field nobody types cannot lie, and this one lied on five of six units in a single batch
+    while being the field a reviewer reads first. Counts come from `mutation.plan_execution`,
+    which joins the plan's rows to the ledger on the criterion and row recorded at
+    registration - never on the mutant's prose.
+
+    An ABSENT ledger and a ledger of noughts are different facts and are reported differently:
+    a reader who cannot tell them apart cannot judge the unit.
+    """
+    import mutation as _mut  # noqa: PLC0415 - deferred; mutation imports verify_ac back
+    root = Path(root)
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        return {"ok": False, "unit": unit, "errors": [f"{unit}: no artefact with that id"]}
+    path, _kind = found
+    text = sdlc_md.read_text_safe(path)
+    join = _mut.plan_execution(root, unit)
+    rows = join.get("rows", []) or []
+    verdicts = [str(r.get("verdict") or "") for r in rows]
+    executed = [r for r in rows if r.get("verdict") in ("killed", "survived")]
+    facts = {
+        "ok": True,
+        "unit": sdlc_md.norm_id(unit),
+        "path": str(path),
+        "criteria": sdlc_md.count_acs(text),
+        "rows": len(rows),
+        "executed": len(executed),
+        "killed": verdicts.count("killed"),
+        "survived": verdicts.count("survived"),
+        "unnameable": verdicts.count("unnameable"),
+        "not_run": [{"ac": r["ac"], "row": r.get("row", 0)} for r in rows
+                    if r.get("verdict") == _mut.NOT_RUN],
+        "ledger_absent": not executed,
+        "entry_point": _entry_point_split(root, text),
+        "errors": join.get("errors", []) or [],
+    }
+    return facts
+
+
+def render_depth(facts: dict) -> str:
+    """The derived half, as one line of readable prose. Never a claim the ledger does not hold."""
+    ep = facts["entry_point"]
+    parts = [f"criteria {facts['criteria']}", f"plan rows {facts['rows']}"]
+    if facts["ledger_absent"]:
+        parts.append("EVIDENCE ABSENT - the mutation ledger holds no executed row for this "
+                     "unit, which is not the same fact as nought killed")
+    else:
+        parts += [f"executed {facts['executed']}", f"killed {facts['killed']}",
+                  f"survived {facts['survived']}"]
+        if facts["not_run"]:
+            named = ", ".join(f"{r['ac']} row {r['row']}" for r in facts["not_run"])
+            parts.append(f"NOT RUN {len(facts['not_run'])} ({named})")
+        else:
+            parts.append("not-run 0")
+    if facts["unnameable"]:
+        parts.append(f"declared unnameable {facts['unnameable']}")
+    parts.append(f"entry point {ep['through_cli']} of {ep['located']} criteria through the "
+                 f"shipped CLI, {ep['in_process']} in-process")
+    return f"{DERIVED_OPEN} {'; '.join(parts)} {DERIVED_CLOSE}"
+
+
+def depth_field_value(current: str, derived: str) -> str:
+    """Rebuild the field's value with a fresh derived half.
+
+    The author's judgement - the tier, and the honest statement of what was deliberately not
+    covered - is the part no tool can supply, so it is carried through BYTE FOR BYTE rather
+    than re-rendered. Only the delimited span is replaced.
+    """
+    stripped = _DERIVED_RE.sub("", current).strip()
+    tier, sep, rest = stripped.partition(" ")
+    tail = f" {rest.strip()}" if sep and rest.strip() else ""
+    return f"{tier} {derived}{tail}" if tier else derived
+
+
+def write_depth(root, unit: str) -> dict:
+    """Derive the field and write it back, or report why it cannot be written."""
+    facts = depth_facts(root, unit)
+    if not facts.get("ok"):
+        return facts
+    path = Path(facts["path"])
+    text = sdlc_md.read_text_safe(path)
+    derived = render_depth(facts)
+    match = _DEPTH_LINE_RE.search(text)
+    if not match:
+        facts["ok"] = False
+        facts["errors"] = list(facts["errors"]) + [
+            f"{facts['unit']}: no `> **Verification depth:**` field to derive into - the tier "
+            f"and the judgement half are the author's, so this command amends a field rather "
+            f"than inventing one"]
+        return facts
+    if not _DERIVED_RE.sub("", match.group(2)).strip():
+        facts["ok"] = False
+        facts["errors"] = list(facts["errors"]) + [
+            f"{facts['unit']}: the `Verification depth` field carries no tier, so there is "
+            f"nothing to derive INTO. Writing the derived span alone would leave `{DERIVED_OPEN}` "
+            f"standing where the tier belongs - a field that parses as a tier while naming none, "
+            f"which is worse than the unparseable field it replaced"]
+        return facts
+    new_value = depth_field_value(match.group(2), derived)
+    text = text[:match.start()] + match.group(1) + new_value + text[match.end():]
+    path.write_text(text, encoding="utf-8")
+    facts["derived"] = derived
+    facts["written"] = True
+    return facts
+
+
+def cmd_depth(args: argparse.Namespace) -> int:
+    facts = write_depth(args.root, args.unit) if args.write else depth_facts(args.root, args.unit)
+    if facts.get("ok") and not args.write:
+        facts["derived"] = render_depth(facts)
+    if args.format == "json":
+        print(json.dumps(facts, indent=2))
+    else:
+        for line in facts.get("errors", []):
+            print(f"depth: {line}")
+        if facts.get("derived"):
+            print(facts["derived"])
+    return 0 if facts.get("ok") else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for the run and report subcommands."""
     p = argparse.ArgumentParser(
@@ -3413,6 +3878,26 @@ def build_parser() -> argparse.ArgumentParser:
     lc.add_argument("--ids", help="scope to these unit ids (comma-separated)")
     lc.add_argument("--root", default=".")
     lc.set_defaults(func=cmd_lane_check)
+
+    rc = sub.add_parser("revert-check",
+                        help="Revert a unit's production files to the run's base ref and "
+                             "re-run its own verifiers - green is the refusal")
+    rc.add_argument("--unit", required=True)
+    rc.add_argument("--base", help="base ref to revert to (default: the open run's)")
+    rc.add_argument("--timeout", type=int, default=600)
+    rc.add_argument("--format", choices=("text", "json"), default="text")
+    rc.add_argument("--root", default=".")
+    rc.set_defaults(func=cmd_revert_check)
+
+    dp = sub.add_parser("depth",
+                        help="Derive the counted half of a unit's `Verification depth` from "
+                             "the mutation ledger")
+    dp.add_argument("--unit", required=True)
+    dp.add_argument("--write", action="store_true",
+                    help="amend the field in place, keeping the author's judgement half")
+    dp.add_argument("--format", choices=("text", "json"), default="text")
+    dp.add_argument("--root", default=".")
+    dp.set_defaults(func=cmd_depth)
 
     rep = sub.add_parser("report", help="Print the latest verification report")
     rep.add_argument(
