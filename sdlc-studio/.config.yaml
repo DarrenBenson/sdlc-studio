@@ -101,12 +101,20 @@ review:
   # before any code; older units (the stories) do not. `retro.py accuracy` reports both arms, and
   # that number decides whether this process is pointed at the remaining unplanned backlog.
   test_plan_after: "2026-08-01"
-  # D0132: the review-repair round cap is raised from its default of 4 to 6, deliberately and on
-  # the record. The default STOPPED the RUN-01KZBBZ0 close, correctly - a cap nobody enforces is
-  # a comment. It is raised because the next batch is roughly twice the units, not because 4 was
-  # wrong: the cap exists to catch a loop that is not converging, and a bigger batch takes more
-  # rounds to converge without that meaning it never will. Revisit if a run reaches 6.
-  max_rounds: 6
+  # D0146 (2026-08-21) CUTS this from 6 to 2, superseding D0132's raise, and the reason is a
+  # measurement rather than a preference. D0132 raised it to 6 saying "revisit if a run reaches 6";
+  # RUN-01M0CT8P reached 5 delivery rounds on 6 units, and the marginal yield of those rounds is
+  # now known. Round 1 caught a defect that would have SHIPPED - a production change deletable
+  # with all 916 tests in its own file still green. Rounds 2 to 5 caught only defects in the
+  # EVIDENCE apparatus, most of them manufactured by the mutation registration ledger rather than
+  # found in the code. That run cost 525,434 tokens per point against a 44,427 forecast.
+  # Round 3 onward FILES its findings rather than holding the batch, which is what
+  # `policy: carry-forward` above already says and which a cap of 6 contradicted in practice.
+  # NOT relaxed by this, stated so nobody reads it as a general loosening: two-role review is
+  # untouched, and the authoring-time rule that a criterion names a production change its own
+  # test dies on still applies at every band - that rule is what caught round 1's defect. Only
+  # the register/retract/join LEDGER around it is in scope for narrowing, by CR0550.
+  max_rounds: 2
 
 engagement_floor:
   # The mechanical engagement floor is grandfathered forward-only, like conformance/provenance.
@@ -157,9 +165,20 @@ estimator:
 # Basis: Sprint 2 measured 240k tokens/unit and 75.5k/point. Sprint 3b is ~64 units / ~160
 # points, which lands near 15M. Re-derive from retros/VELOCITY.md when the shape changes -
 # a ceiling nobody chose against evidence is how this got stale the first time.
+# `minutes` re-set 2026-08-21 (D0147) from measurement, 960 -> 2880. 960 had been reported SPENT
+# on run after run and stopped nothing - it fired six consecutive times on RUN-01M0CT8P while that
+# run continued to a clean close, and a ceiling that only narrates its own breach is not one.
+# Basis, and it is thin: three runs carry a recorded elapsed figure - roughly 2,026, 2,839 and
+# 5,271 minutes. 2880 is two calendar days, the middle of those three, and one measurement better
+# than 960, which rests on none.
+# READ IT AS CALENDAR AGE, NOT COST. `loop_guard.elapsed_minutes` returns `now - started_at` and
+# subtracts nothing for intervals in which no work happened; RUN-01M0CT8P spanned two nights with
+# no process running. CR0551 derives working time from the evidence a run leaves and reports idle
+# intervals as excluded rather than dropped. Until it lands this bounds how long a run may stay
+# OPEN, not what it may cost - and the token ceiling above is the figure that bounds the cost.
 capacity:
   tokens: 15000000
-  minutes: 960
+  minutes: 2880
   units: 64
 
 two_backlog:

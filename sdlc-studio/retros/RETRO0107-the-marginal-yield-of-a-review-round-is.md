@@ -67,14 +67,20 @@ read the same.
 Ruling is one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`. A `stop-ship`
 ruling HOLDS the close, which is the point of being able to make one.
 
-**Eight of the rows below are HIGH severity and are ruled `deferred`, not fixed.** BG0586,
+**Eight of the rows below are HIGH severity. Six are ruled `deferred`; CR0547 and CR0548 are ruled `stop-ship` by the operator.** BG0586,
 BG0588 and BG0592 are design-rung and corpus-metric defects carried from RUN-01M05A5M; CR0509,
 CR0533, CR0534, CR0535, CR0536, CR0546, CR0547 and CR0548 are requests rather than defects in
 delivered behaviour. None was touched by this run and none is a regression from it. They are
 deferred rather than marked not-stop-ship because that is the honest word: they are real, they
 are open, and they are waiting on capacity rather than on a judgement that they do not matter.
-CR0547 and CR0548 in particular would have caught this run's worst findings - a revert-check
-gate, and a `Verification depth` derived from the ledger instead of authored by hand.
+CR0547 and CR0548 would have caught this run's worst findings outright - a revert-check gate
+that requires a unit's own verifiers to go red when its production files are reverted, and a
+`Verification depth` derived from the ledger instead of authored by hand. The operator ruled
+both STOP-SHIP on 2026-08-21: they gate the next release rather than being carried into it.
+Round 1 of this run's delivery review found a production change no test reached, and round 5
+found depth fields false in two particulars - those are precisely the two defect classes these
+two gates exist to refuse, so carrying them would be carrying the known cause of the run's
+worst findings into the next one.
 
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
@@ -98,8 +104,8 @@ gate, and a `Verification depth` derived from the ledger instead of authored by 
 | CR0536 | deferred | authoring session | 2026-08-21 |
 | CR0539 | deferred | authoring session | 2026-08-21 |
 | CR0546 | deferred | authoring session | 2026-08-21 |
-| CR0547 | deferred | authoring session | 2026-08-21 |
-| CR0548 | deferred | authoring session | 2026-08-21 |
+| CR0547 | stop-ship | operator (Darren Benson) | 2026-08-21 |
+| CR0548 | stop-ship | operator (Darren Benson) | 2026-08-21 |
 | BG0601 | not-stop-ship | authoring session | 2026-08-21 |
 | BG0602 | not-stop-ship | authoring session | 2026-08-21 |
 | BG0603 | not-stop-ship | authoring session | 2026-08-21 |

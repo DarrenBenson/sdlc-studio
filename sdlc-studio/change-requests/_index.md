@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 27 |
+| Proposed | 28 |
 | Approved | 0 |
 | In Progress | 6 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **550** |
+| **Total** | **551** |
 
 ## All Changes
 
@@ -101,6 +101,7 @@
 | [CR-0548](CR0548-derive-verification-depth-from-the-ledger-instead-of.md) | derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch | Proposed | High | enhancement | 2026-08-19 | -- |
 | [CR-0549](CR0549-route-estimate-scores-whole-declared-files-so-the.md) | route.estimate scores whole declared files, so the risk band that drives review ceremony is a constant in any repo with large modules | Proposed | High | Improvement | 2026-08-21 | -- |
 | [CR-0550](CR0550-the-test-plan-gate-is-scoped-by-date.md) | The test-plan gate is scoped by DATE alone, so it cannot be narrowed to the units whose risk earns it | Proposed | High | Improvement | 2026-08-21 | -- |
+| [CR-0551](CR0551-the-appetite-ceiling-measures-wall-clock-since-the.md) | The appetite ceiling measures WALL-CLOCK since the run opened, so a run left open overnight reports spend it never incurred | Proposed | High | Improvement | 2026-08-21 | -- |
 
 ## Archived Releases
 
