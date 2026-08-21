@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0361: Marginal review yield decays, and a round cap should be set from that rather than from batch size.**
+- **L-0360: Ceremony scaled by FILE size is not ceremony scaled by risk.**
+- **L-0359: A changelog fragment written at the first commit describes the design that existed THEN.**
+- **L-0358: Re-registering against a file edited since the first registration DISCARDS the earlier verdicts, and that is correct.**
+- **L-0357: A retract-and-re-register cycle leaves the superseded row LIVE unless something withdraws it, and a join keyed on `(criterion, row)` then...**
 - **L-0356: Scope a rung fix to the rung it is about, never to "not `done`".**
 - **L-0355: A false premise RESTATED is worse than the original, because each restatement reads as verification.**
 - **L-0354: A fixture that makes the mutant equivalent is the commonest way a test measures nothing here.**

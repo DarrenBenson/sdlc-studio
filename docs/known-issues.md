@@ -32,16 +32,13 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0581` | Medium | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready |
 | `BG0587` | Medium | two answers to the grooming question inside one close |
 | `BG0591` | Medium | status and close_owed give opposite answers about the same units |
-| `BG0594` | Medium | the budget lane watches the per-commit gate only, so the full suite grew 43% against a ceiling declared for the other population |
-| `BG0595` | Medium | one commit-msg hook test runs against the real repository, so it consumes the developer's gate handoff and starts a full suite inside a unit test |
-| `BG0596` | Medium | testplan run --from-plan keys by criterion, so a second mutant on the same AC is silently dropped |
 | `BG0599` | Medium | testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips |
 | `BG0600` | Medium | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written |
 | `BG0601` | Medium | The dry-run class sweep compares only the first two probes of each pair |
 | `BG0602` | Medium | The close checklist enumerates its checks by `_ck_` name prefix |
 | `BG0603` | Medium | Stacked Verify lines are refused at Draft and Ready but not on an Open bug |
 
-16 findings: 16 Medium, 0 Low.
+13 findings: 13 Medium, 0 Low.
 
 ## Not carried
 

@@ -87,7 +87,7 @@ verifier greens and never the verdict ledger. Neither was visible to any existin
 reports them; that disagreement is the guard working, not drift to be edited away. They are
 carried to v5.1.
 
-**v5.0.1 discloses 16 open defects: 16 Medium, 0 Low.** The six High findings above are
+**v5.0.1 discloses 13 open defects: 13 Medium, 0 Low.** The six High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

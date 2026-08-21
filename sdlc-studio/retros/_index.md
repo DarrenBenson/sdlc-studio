@@ -116,3 +116,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0104](RETRO0104-the-twelve-units-delivered-outside-an-approved-batch.md) | The twelve units delivered outside an approved batch | 2026-08-17 | -- | -- |
 | [RETRO-0105](RETRO0105-four-close-ceremony-defects-three-of-them-found.md) | four close-ceremony defects, three of them found by reviews that rejected the first cut | 2026-08-18 | -- | -- |
 | [RETRO-0106](RETRO0106-six-instruments-repaired-and-three-of-them-were.md) | Six instruments repaired, and three of them were not delivered when I first ticked them | 2026-08-20 | -- | -- |
+| [RETRO-0107](RETRO0107-the-marginal-yield-of-a-review-round-is.md) | the marginal yield of a review round is not flat, and this run measured where it falls off | 2026-08-21 | -- | -- |
