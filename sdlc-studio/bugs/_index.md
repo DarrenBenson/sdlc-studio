@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-19
+**Last Updated:** 2026-08-21
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 22 |
 | In Progress | 0 |
 | Fixed | 487 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **600** |
+| **Total** | **603** |
 
 ## All Bugs
 
@@ -140,6 +140,9 @@
 | [BG0598](BG0598-the-plan-s-built-not-closed-exclusion-reads.md) | the plan's BUILT-NOT-CLOSED exclusion reads verifier greens and not the verdict ledger, so a unit with an unanswered REJECT is priced at zero | Open | High | 2026-08-19 | 2026-08-19 |
 | [BG0599](BG0599-testplan-derive-reports-one-row-fault-per-invocation.md) | testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips | Open | Medium | 2026-08-19 | 2026-08-19 |
 | [BG0600](BG0600-the-unnameable-test-plan-exemption-is-still-held.md) | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written | Open | Medium | 2026-08-19 | 2026-08-19 |
+| [BG0601](BG0601-the-dry-run-class-sweep-compares-only-the.md) | The dry-run class sweep compares only the first two probes of each pair | Open | Medium | 2026-08-21 | 2026-08-21 |
+| [BG0602](BG0602-the-close-checklist-enumerates-its-checks-by-ck.md) | The close checklist enumerates its checks by `_ck_` name prefix | Open | Medium | 2026-08-21 | 2026-08-21 |
+| [BG0603](BG0603-stacked-verify-lines-are-refused-at-draft-and.md) | Stacked Verify lines are refused at Draft and Ready but not on an Open bug | Open | Medium | 2026-08-21 | 2026-08-21 |
 
 ## Archived Releases
 

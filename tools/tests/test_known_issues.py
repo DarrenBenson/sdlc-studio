@@ -18,6 +18,7 @@ row's severity cell; make the generator drop the Low severity from its disclosed
 
 from __future__ import annotations
 
+import re
 import sys
 import tempfile
 import unittest
@@ -231,6 +232,47 @@ class ReleaseNotesClaimTests(unittest.TestCase):
             self.assertIn(uid, notes,
                           f"{uid} is open at a barred severity and the release notes do not "
                           f"name it - `--bar` names ids, so the prose must too")
+
+
+class DepthFieldCountsTests(unittest.TestCase):
+    """A `Verification depth` field states counts the artefact can contradict.
+
+    That field has been wrong on this repository's units in every review round of
+    RUN-01M0CT8P - criterion counts, mutant counts, and claims about what was executed. The
+    counts are derivable, so a disagreement is mechanically checkable and does not need a
+    reviewer to notice it. CR0548 proposes deriving the field outright; until then this refuses
+    the one part of it that can be checked.
+    """
+
+    WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+             "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12}
+
+    def test_no_depth_field_states_a_criterion_count_the_artefact_contradicts(self) -> None:
+        repo = Path(__file__).resolve().parents[2]
+        units = sorted((repo / "sdlc-studio" / "bugs").glob("*.md"))
+        self.assertGreater(len(units), 50,
+                           f"only {len(units)} bug artefacts found - the census resolved the "
+                           f"wrong root and measures nothing")
+        wrong = []
+        for f in units:
+            text = f.read_text(encoding="utf-8")
+            m = re.search(r"^> \*\*Verification depth:\*\* (.*)$", text, re.M)
+            if not m:
+                continue
+            stated = re.search(r"\b(\w+) criteri(?:on|a)\b", m.group(1))
+            if not stated:
+                continue
+            word = stated.group(1).lower()
+            n = self.WORDS.get(word) or (int(word) if word.isdigit() else None)
+            if n is None:
+                continue
+            actual = len(re.findall(r"^- \[[x ]\] \*\*AC\d+\*\*", text, re.M))
+            if actual and n != actual:
+                wrong.append(f"{f.name.split('-')[0]}: depth says {n}, artefact has {actual}")
+        self.assertEqual([], wrong,
+                         "these `Verification depth` fields state a criterion count the artefact "
+                         "contradicts - the field a reviewer reads first, disagreeing with the "
+                         "unit it describes:\n" + "\n".join(wrong))
 
 
 if __name__ == "__main__":

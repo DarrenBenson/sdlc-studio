@@ -37,8 +37,11 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0596` | Medium | testplan run --from-plan keys by criterion, so a second mutant on the same AC is silently dropped |
 | `BG0599` | Medium | testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips |
 | `BG0600` | Medium | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written |
+| `BG0601` | Medium | The dry-run class sweep compares only the first two probes of each pair |
+| `BG0602` | Medium | The close checklist enumerates its checks by `_ck_` name prefix |
+| `BG0603` | Medium | Stacked Verify lines are refused at Draft and Ready but not on an Open bug |
 
-13 findings: 13 Medium, 0 Low.
+16 findings: 16 Medium, 0 Low.
 
 ## Not carried
 

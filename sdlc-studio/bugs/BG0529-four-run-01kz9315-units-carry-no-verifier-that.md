@@ -1,7 +1,7 @@
 # BG0529: four RUN-01KZ9315 units carry no verifier that enters the shipped entry point, so the wiring each one exists to add is pinned by nothing
 
 > **Status:** Fixed
-> **Verification depth:** functional (four CLI lane tests driving the shipped verbs in subprocesses; lane-check confirmed clear for all four units, and each unit's five criteria execute; mutation: 5 declared mutants, all KILLED - two were re-chosen after surviving because they patched a message rather than the resolver, and one registered verdict was RETRACTED on the record after executing it showed it survived; restore byte-exact)
+> **Verification depth:** functional (four CLI lane tests driving the shipped verbs in subprocesses; lane-check confirmed clear for all four units, and each unit's two criteria execute; mutation: 5 declared mutants, all KILLED - two were re-chosen after surviving because they patched a message rather than the resolver, and one registered verdict was RETRACTED on the record after executing it showed it survived; restore byte-exact)
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_config.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_plan_review.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_sprint_report.py
@@ -68,3 +68,4 @@ carry a lane verifier at all, and that the modules it adds pass.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-06 | sdlc-studio | Filed |
+| 2026-08-21 | sdlc-studio | `Verification depth` stated a criterion count the artefact contradicts. Corrected, and the class is now gated by a census over every bug artefact so a new disagreement is refused rather than found by a reviewer |

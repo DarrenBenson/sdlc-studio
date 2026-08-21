@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-08-19
+**Last Updated:** 2026-08-21
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 25 |
+| Proposed | 27 |
 | Approved | 0 |
 | In Progress | 6 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **548** |
+| **Total** | **550** |
 
 ## All Changes
 
@@ -99,6 +99,8 @@
 | [CR-0546](CR0546-the-run-should-notice-work-it-delivered-that.md) | the run should notice work it delivered that its batch never named | Proposed | High | Improvement | 2026-08-17 | -- |
 | [CR-0547](CR0547-verify-ac-revert-check-revert-a-unit-s.md) | verify_ac revert-check: revert a unit's production files and REQUIRE its own verifiers to go red | Proposed | High | enhancement | 2026-08-19 | -- |
 | [CR-0548](CR0548-derive-verification-depth-from-the-ledger-instead-of.md) | derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch | Proposed | High | enhancement | 2026-08-19 | -- |
+| [CR-0549](CR0549-route-estimate-scores-whole-declared-files-so-the.md) | route.estimate scores whole declared files, so the risk band that drives review ceremony is a constant in any repo with large modules | Proposed | High | Improvement | 2026-08-21 | -- |
+| [CR-0550](CR0550-the-test-plan-gate-is-scoped-by-date.md) | The test-plan gate is scoped by DATE alone, so it cannot be narrowed to the units whose risk earns it | Proposed | High | Improvement | 2026-08-21 | -- |
 
 ## Archived Releases
 
