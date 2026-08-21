@@ -220,8 +220,6 @@ def latest(root: Path, suite: str) -> float | None:
 BUDGET_KEY = "gate_budget"
 
 
-
-
 def budget_config(root: Path) -> dict | None:
     """The declared budget block, or None when the project has not set one."""
     try:

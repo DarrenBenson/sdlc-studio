@@ -16794,8 +16794,7 @@ class RejectedUnitIsNotBuiltTests(unittest.TestCase):
                              "a unit whose last verdict is APPROVE was treated as rejected")
 
     def test_an_unreadable_ledger_fails_closed(self) -> None:
-        """MUTANT: in `sprint.py`, delete the explicit ledger-path probe and let
-        `read_text_safe` return empty.
+        """MUTANT: in `sprint.py`, remove the except handler around the ledger read.
 
         A DIRECTORY at the ledger's path, not `chmod 000` - the suite may run as root, where
         chmod is a no-op and the mutant survives. `read_text_safe` catches OSError and returns
