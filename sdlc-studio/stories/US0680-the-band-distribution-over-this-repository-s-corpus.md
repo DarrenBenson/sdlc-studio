@@ -29,3 +29,4 @@
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
+| 2026-08-21 | sdlc-studio | HELD - not in the RUN batch. CR0549's correction of 2026-08-21 applies: AC1 asserts a markdown document matches a fresh run of the code that wrote it, which passes by construction, and AC2 asserts a widening that AC1 of US0678 makes impossible for a corpus of closed units. What a corpus re-measurement can honestly mean is unsettled - see the CR. Re-groom before planning. |

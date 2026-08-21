@@ -31,3 +31,4 @@
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
+| 2026-08-21 | sdlc-studio | HELD - not in the RUN batch. CR0549's correction of 2026-08-21 applies: the criteria here do not name `plan_review._difficulty_band` or the planner's banding, which are where this output is consumed and which both run before a diff exists. Re-groom before planning. |

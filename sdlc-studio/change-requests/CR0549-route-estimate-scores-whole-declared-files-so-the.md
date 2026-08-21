@@ -27,6 +27,36 @@ Every project using the skill, and this one first. The consequence is measurable
 
 What breaks if nothing changes: the tier gate stays decorative, ceremony stays uniform, and the only remaining levers are hand-tuned config cutpoints that nobody can defend with a measurement. What breaks if this is done carelessly: a diff-scoped estimate that reads only added lines will band a one-line change to a load-bearing branch as trivial, so the change's own complexity must be read in the context of the function it lands in, not in isolation.
 
+## Correction from an independent goal review, 2026-08-21
+
+Three defects in this request as filed, found by a goal review before any code was written, and
+recorded here rather than quietly edited out.
+
+**The consumers are not named, and they are the problem.** `route.estimate(repo_root, unit_path)`
+takes no base ref, and its two principal callers run BEFORE a diff exists:
+`plan_review._difficulty_band`, which decides whether a unit needs a pre-code plan review at all,
+and `sprint.py` at the point the planner bands a batch. A diff-scoped estimate at those two sites
+does not become accurate - it becomes UNRESOLVABLE, so this request as filed would replace a
+constant `full` band with a constant `missing` one at exactly the moment the band is used. Neither
+file appears in the `Affects` of any story decomposed from this CR.
+
+**`base_ref` is per-RUN, not per-unit.** `lib/run_state.base_ref` records where the open run
+started. It says nothing about where any individual historical unit's change began, so the
+corpus-wide re-measurement this request asks for has no diff to read for 603 bugs that are already
+closed. Two criteria written from this CR then contradicted each other: one sent every unresolvable
+unit to `full`, which makes the distribution NARROWER, while the other asserted the spread widens.
+
+**What "re-measure the corpus" can honestly mean** must therefore be settled before this is planned.
+A distribution over units whose diffs no longer resolve measures the degradation path, not the
+estimator. The candidates are a re-measurement over units delivered AFTER the change with their own
+diffs available, or a synthetic corpus of known-small and known-large changes against the same
+files - and either is a different claim from the one filed.
+
+None of this weakens the diagnosis. The measurement behind this CR stands: 87% of 603 bugs tier
+`full`, `code` and `risk` both saturated for 48%, and half the corpus inside a six-point spread.
+It is the REMEDY that was under-specified, and a request that cannot say where its own output is
+consumed is not ready to be built.
+
 ## Acceptance Criteria
 
 - [ ] The `code` and `risk` subscores are computed from the hunks a unit changes against the run's base ref, not from every function in every declared file, and a unit with no diff yet degrades to the missing-signal path rather than to a whole-file score
@@ -41,3 +71,4 @@ What breaks if nothing changes: the tier gate stays decorative, ceremony stays u
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Raised |
+| 2026-08-21 | sdlc-studio | Goal review CORRECTION: the two principal consumers (`plan_review._difficulty_band`, the planner's banding) run before a diff exists and were unnamed; `base_ref` is per-run so a corpus re-measurement has no diff for closed units; two derived criteria contradicted each other on whether the spread widens or narrows. Needs re-grooming before it can be planned |

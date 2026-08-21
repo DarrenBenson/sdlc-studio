@@ -13,7 +13,9 @@
 
 ## Summary
 
-`review.test_plan_after` turns the pre-code plan review and the planned-mutant execution join on for every unit created on or after a date. `_plan_gate_active` reads that date and nothing else - there is no band, severity or size scoping anywhere in it. So the only two settings available are ALL units after a date, or none, and a project that finds the gate too heavy has no move except to switch it off entirely.
+`review.test_plan_after` turns the planned-mutant execution join on for every unit created on or after a date. `_plan_gate_active` reads that date and nothing else - there is no band, severity or size scoping anywhere in it. So the only two settings available are ALL units after a date, or none, and a project that finds the gate too heavy has no move except to switch it off entirely.
+
+CORRECTED 2026-08-21, by an independent goal review, and the correction narrows this request materially. The first draft said this setting turns on THE PRE-CODE PLAN REVIEW as well as the mutant join. It does not. `review.test_plan_after` is read in `transition.py` alone, at lines 1897, 1922 and 2422. The pre-code plan review fires from `plan_review.triggers`, which is the OR of three independent signals - spec citation, affects count against a threshold, and difficulty band against a minimum - and reads this setting nowhere. So band-scoping `_plan_gate_active` narrows the mutant join at the transition boundary and leaves the plan-review passes untouched. On the run that motivated this request those passes numbered 31 against 6 code reviews, and they were the dominant cost. A request that claimed to reduce them and does not is worse than one that never claimed it, because the saving would have been reported as delivered.
 
 D0131 adopted the date deliberately, as an A/B whose result would decide whether to point the process at the rest of the backlog. That experiment has now run. RUN-01M0CT8P put six units through it and cost 11,034,109 main-thread tokens for 21 points - 525,434 per point against a 44,427 forecast, and against a corpus history whose worst previous row is 353,810. Ten independent review rounds for six units.
 
@@ -25,7 +27,7 @@ The rule worth keeping is the cheap one: a criterion names a production change i
 
 This repository and every consuming project past its `test_plan_after` date. Today a project can only choose between the full apparatus and nothing, so the predictable outcome is that it gets switched off wholesale - which `transition.py`'s own comment at US0566 already names as the failure mode a blanket demand produces.
 
-With band scoping, the pre-code plan review and the mutant-execution join would apply to the 88 of 603 bugs that band high (15%) rather than to all of them, while the authoring-time mutant rule stays universal. Note the dependency: that split is only meaningful once CR0549 lands, because the band today is derived from file size rather than change size and 87% of the corpus tiers `full` regardless. Scoping this gate to a band that does not discriminate would move nothing.
+With band scoping, the mutant-execution join would apply to the 88 of 603 bugs that band high (15%) rather than to all of them, while the authoring-time mutant rule stays universal. The PLAN-REVIEW half of the cost is out of this request's scope as filed and needs either `plan_review.py` brought into it - `plan_review.triggers` and its three signals are where that decision actually lives - or a separate request. Deciding which is grooming work this CR owes before it can be planned, and it is named here rather than left for the next reader to rediscover. Note the dependency: that split is only meaningful once CR0549 lands, because the band today is derived from file size rather than change size and 87% of the corpus tiers `full` regardless. Scoping this gate to a band that does not discriminate would move nothing.
 
 What breaks if this is done carelessly: the gate that caught round 1's defect must survive for the units that need it, and `review.mutation_evidence` must stay independent of this setting - BG0541 was exactly the defect of nesting one inside the other, and `transition.py:931-937` records why the two lanes are kept sequential.
 
@@ -43,3 +45,4 @@ What breaks if this is done carelessly: the gate that caught round 1's defect mu
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Raised |
+| 2026-08-21 | sdlc-studio | Goal review CORRECTION: the summary claimed this setting gates the pre-code plan review. It does not - `review.test_plan_after` is read only in `transition.py`, while the plan review fires from `plan_review.triggers`. The claimed saving against the 31 plan-review passes is withdrawn, and the scope question is named as owed grooming |

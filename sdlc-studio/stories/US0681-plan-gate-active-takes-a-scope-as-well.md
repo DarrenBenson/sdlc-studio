@@ -31,3 +31,4 @@
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
+| 2026-08-21 | sdlc-studio | HELD - not in the RUN batch. CR0550's correction of 2026-08-21 applies: this narrows the mutant join at the transition boundary only. `review.test_plan_after` is read in `transition.py` alone; the pre-code plan review fires from `plan_review.triggers` and is untouched by this story. Re-groom before planning. |

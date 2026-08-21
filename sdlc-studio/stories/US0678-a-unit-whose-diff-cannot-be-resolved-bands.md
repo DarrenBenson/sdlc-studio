@@ -29,3 +29,4 @@
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
+| 2026-08-21 | sdlc-studio | HELD - not in the RUN batch. CR0549's correction of 2026-08-21 applies: AC1 sends every unit with an unresolvable diff to FULL, which for a corpus of closed units is ALL of them - and that makes the band distribution narrower, contradicting US0680 AC2. The two were authored together and agree with each other rather than with the code. Re-groom before planning. |
