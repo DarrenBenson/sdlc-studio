@@ -2,6 +2,16 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0371: A repair for unpinned behaviour can itself ship unpinned, and did.**
+- **L-0370: The plan review took FOUR rounds, and the biggest single cause was a rule already written down: I hand-edited test-plan tables that...**
+- **L-0369: The derived field caught its own run's stale evidence, which is the first time an instrument this project built reported against the...**
+- **L-0368: A repair whose test can be satisfied by EITHER of two guards pins neither, and I shipped that shape while repairing this very defect.**
+- **L-0367: A plan row can be killed by a test the criterion does not name, and the toolchain will call that covered.**
+- **L-0366: A partial disposition recorded twice reads as two partial dispositions forever.**
+- **L-0365: A gate lane that mutates the shared working tree corrupts whatever else is reading it.**
+- **L-0364: A fixture whose counts are EQUAL cannot detect a swap, and the REPAIR for it moved the defect rather than closing it.**
+- **L-0363: Absent and could-not-ask must be different answers, and this run needed the lesson TWICE.**
+- **L-0362: A staging decision that puts a unit LAST also puts it outside the review that already ran.**
 - **L-0361: Marginal review yield decays, and a round cap should be set from that rather than from batch size.**
 - **L-0360: Ceremony scaled by FILE size is not ceremony scaled by risk.**
 - **L-0359: A changelog fragment written at the first commit describes the design that existed THEN.**
