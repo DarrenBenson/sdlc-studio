@@ -37,8 +37,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0601` | Medium | The dry-run class sweep compares only the first two probes of each pair |
 | `BG0602` | Medium | The close checklist enumerates its checks by `_ck_` name prefix |
 | `BG0603` | Medium | Stacked Verify lines are refused at Draft and Ready but not on an Open bug |
+| `BG0605` | Medium | The repair ledger computes outstanding findings per RECORD, so two partial repairs that together close everything both read as PARTIAL |
+| `BG0608` | Medium | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits i... |
 
-13 findings: 13 Medium, 0 Low.
+15 findings: 15 Medium, 0 Low.
 
 ## Not carried
 

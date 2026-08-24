@@ -3385,7 +3385,19 @@ _AC_TOKEN_RE = re.compile(r"\bAC\d+\b", re.I)
 #: form missed a bare filename, and 272 of the 459 plan rows in this corpus name their file
 #: that way - "in `verify_ac.py`, delete the ..." - so a row naming a production file beside a
 #: test path read as test-code-only and silently exempted the criterion.
-_MUTANT_PATH_RE = re.compile(r"[\w.-]*[\w-](?:/[\w.-]+)*\.(?:py|js|ts|tsx|go|sh|rb|java|rs|c|h)\b")
+#: TWO forms, because the extension list is the part that goes out of date (LL0013). A token
+#: carrying a `/` is a path whatever it ends in - that is what closed `config/settings.yaml`,
+#: which the allowlist-only form could not see at all, so a row naming it beside a test path
+#: read as test-code-only and exempted the criterion while `revert_targets` was reverting the
+#: very same file. A BARE filename still needs the allowlist: without a `/` there is nothing
+#: to tell `settings.yaml` from ordinary prose, and the list is widened to the config and
+#: markup families this corpus actually ships rather than left at the source-code ones.
+_MUTANT_PATH_EXTS = ("py|js|ts|tsx|jsx|mjs|cjs|go|sh|bash|rb|java|rs|c|h|hpp|cpp|cs|kt|php|lua|"
+                     "pl|sql|yaml|yml|json|toml|cfg|ini|conf|env|md|rst|txt|html|css|scss|xml|"
+                     "tf|hcl|proto|graphql|vue|svelte|gradle|properties")
+_MUTANT_PATH_RE = re.compile(
+    r"(?:[\w.-]*[\w-](?:/[\w.-]+)+\.[A-Za-z][\w+]{0,9}"      # any extension once a `/` is present
+    rf"|[\w-][\w.-]*\.(?:{_MUTANT_PATH_EXTS}))\b")
 
 
 def revert_exemptions(text: str) -> dict:
@@ -3834,16 +3846,26 @@ def depth_edit_faults(paths) -> list[dict]:
         match = _DEPTH_LINE_RE.search(text)
         if not match:
             continue
-        span = _DERIVED_SPAN_RE.search(match.group(2))
-        if not span:
+        spans = list(_DERIVED_SPAN_RE.finditer(match.group(2)))
+        if not spans:
             continue  # no derived half: nothing was sealed, so nothing can have been broken
         unit = sdlc_md.extract_record_id(path.stem) or path.stem
-        actual = depth_fingerprint(span.group("facts") or "")
-        claimed = span.group("fp")
-        if claimed == actual:
-            continue
-        why = ("its derived half carries no fingerprint" if not claimed
-               else f"its derived half was edited by hand (seal {claimed}, contents hash {actual})")
+        # EVERY span is judged, not the first. A field carries exactly ONE derived half, so a
+        # second one is an edit inside the delimiters by construction - and judging only
+        # `search()`'s first hit made the verdict depend on WHERE the forged span was placed.
+        if len(spans) > 1:
+            why = (f"its field carries {len(spans)} derived halves and a field has exactly one, "
+                   f"so all but the first are hand-added")
+            actual = depth_fingerprint(spans[0].group("facts") or "")
+            claimed = spans[0].group("fp") or ""
+        else:
+            span = spans[0]
+            actual = depth_fingerprint(span.group("facts") or "")
+            claimed = span.group("fp")
+            if claimed == actual:
+                continue
+            why = ("its derived half carries no fingerprint" if not claimed
+                   else f"its derived half was edited by hand (seal {claimed}, contents hash {actual})")
         out.append({"unit": unit, "path": str(path), "claimed": claimed or "", "actual": actual,
                     "why": f"{unit}: {why}. The counted half is DERIVED output - regenerate it "
                            f"with `{DEPTH_REGEN_CMD.format(unit=unit)}`, do not retype it. "

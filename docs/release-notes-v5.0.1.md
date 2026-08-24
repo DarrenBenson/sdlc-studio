@@ -74,9 +74,9 @@ documented command now works, pinned to `v5.0.1` or later.
 ## Known issues
 
 **v5.0.1 was TAGGED with zero Critical and zero High open against it.** That was true at the tag
-and is not a standing claim: nine High findings have since been raised against this code, every
-one of them by adversarial review after the tag. **Four are open now - BG0586, BG0588, BG0592 and
-BG0604.** Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
+and is not a standing claim: eleven High findings have since been raised against this code, every
+one of them by adversarial review after the tag. **Six are open now - BG0586, BG0588, BG0592,
+BG0604, BG0606 and BG0607.** Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
 BG0583 was raised at High and then closed WON'T FIX when its premise did not survive
 re-measurement.
 
@@ -92,9 +92,9 @@ the manual check runs in.
 open set directly; a disagreement between the two is the guard working, not drift to be edited
 away. This paragraph has now been wrong in both directions at once - naming three findings that
 had been fixed while missing one that was open - which is the argument for reading the command
-rather than the prose. All four are carried to v5.1.
+rather than the prose. All six are carried to v5.1.
 
-**v5.0.1 discloses 13 open defects: 13 Medium, 0 Low.** The six High findings above are
+**v5.0.1 discloses 15 open defects: 15 Medium, 0 Low.** The six High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

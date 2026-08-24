@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-21
+**Last Updated:** 2026-08-24
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 17 |
+| Open | 21 |
 | In Progress | 0 |
 | Fixed | 493 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **604** |
+| **Total** | **608** |
 
 ## All Bugs
 
@@ -144,6 +144,10 @@
 | [BG0602](BG0602-the-close-checklist-enumerates-its-checks-by-ck.md) | The close checklist enumerates its checks by `_ck_` name prefix | Open | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0603](BG0603-stacked-verify-lines-are-refused-at-draft-and.md) | Stacked Verify lines are refused at Draft and Ready but not on an Open bug | Open | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0604](BG0604-the-oracle-procedure-tells-a-reviewer-to-revert.md) | The oracle procedure tells a reviewer to revert files by hand with no restore obligation, and it destroyed uncommitted work in the main tree | Open | High | 2026-08-21 | 2026-08-21 |
+| [BG0605](BG0605-the-repair-ledger-computes-outstanding-findings-per-record.md) | The repair ledger computes outstanding findings per RECORD, so two partial repairs that together close everything both read as PARTIAL | Open | Medium | 2026-08-24 | 2026-08-24 |
+| [BG0606](BG0606-six-test-plan-rows-across-us0671-us0674-and.md) | Six test-plan rows across US0671, US0674 and US0676 declare mutants their own criterion's verifier cannot die on | Open | High | 2026-08-24 | 2026-08-24 |
+| [BG0607](BG0607-a-unit-s-verdict-is-the-last-row.md) | A unit's verdict is the LAST row written, so one seat's APPROVE recorded after another seat's REJECT makes a rejected unit read approved | Open | High | 2026-08-24 | 2026-08-24 |
+| [BG0608](BG0608-the-budget-line-still-leads-with-the-seconds.md) | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits in the last bracket | Open | Medium | 2026-08-24 | 2026-08-24 |
 
 ## Archived Releases
 

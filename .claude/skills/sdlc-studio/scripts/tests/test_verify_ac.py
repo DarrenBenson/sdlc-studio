@@ -5290,6 +5290,59 @@ class RevertCheckTests(unittest.TestCase):
         self.assertNotRegex(out, r"AC1\s+exempt", out)
         self.assertEqual(code, 1, out)
 
+    def test_a_plan_row_naming_a_non_source_production_file_does_not_exempt(self) -> None:
+        """MUTANT: in `verify_ac._MUTANT_PATH_RE`, drop the `/`-carrying arm and match only the
+        bare-filename extension allowlist, so a path whose extension is not a source-code one
+        is invisible to the exemption.
+
+        The FIRST repair widened this pattern on the bare-filename axis and left the extension
+        allowlist at the source-code families, so a row naming `config/settings.yaml` beside a
+        test path still read as test-code-only. `revert_targets` classified the same yaml as
+        production and reverted it, so two readers of one artefact disagreed about what
+        production is - which `is_test_path`'s own docstring says it was collapsed to fix. Live
+        rather than latent: over this corpus the widened pattern changes exactly one verdict,
+        BG0560 AC1, whose row names `docs/existing-users.md` beside a test file and which was
+        being exempted on that basis.
+
+        An enumerated list silently exempts whatever it forgot (LL0013), so the arm that closes
+        this is the one that needs NO list: a token carrying a `/` is a path whatever it ends
+        in. The allowlist survives only for bare filenames, where nothing else separates
+        `settings.yaml` from prose."""
+        ARMS = {
+            # BARE filename, allowlisted extension: only the allowlist arm can see this, so
+            # narrowing the allowlist back to the source-code families kills the test.
+            "the bare-filename allowlist": "in `settings.yaml`, drop the flag so ",
+            # A `/`-carrying path whose extension is in NO allowlist: only the path arm can see
+            # this, so deleting that arm kills the test. Two separate tests because each arm
+            # alone covered a single yaml-with-directory fixture, so neither was pinned and
+            # BOTH mutants survived the first cut of this test.
+            "the slash-carrying path arm": "in `config/values.jsonnet`, drop the flag so ",
+        }
+        for arm, cell in ARMS.items():
+            with self.subTest(arm=arm):
+                plan = ("\n## Test Plan\n\n"
+                        "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                        f"| AC1 | {cell}`tests/test_prod.py::test_x` fails | a |\n")
+                repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py"), "scripts/prod.py",
+                                  extra_sections=plan)
+                code, out = self._run(repo)
+                self.assertNotRegex(out, r"AC1\s+exempt", f"{arm} did not see the production file: {out}")
+                self.assertEqual(code, 1, out)
+
+    def test_a_plan_row_naming_only_test_code_still_exempts(self) -> None:
+        """The paired control for the widened pattern. Widening what counts as a path is only
+        safe if the exemption still FIRES when every path named really is test code - a
+        pattern that saw production everywhere would refuse correct work, and refusing correct
+        work is how a gate gets switched off."""
+        plan = ("\n## Test Plan\n\n"
+                "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                "| AC1 | in `tests/test_prod.py`, widen the assertion window in "
+                "`tests/helpers/fixtures.py` | a |\n")
+        repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py"), "scripts/prod.py",
+                          extra_sections=plan)
+        code, out = self._run(repo)
+        self.assertRegex(out, r"AC1.*exempt", out)
+
     def test_an_inherited_git_dir_does_not_steer_the_revert(self) -> None:
         """MUTANT: in `verify_ac._base_blob`/`_ref_exists`, drop `env=_git_env()`.
 
@@ -5443,9 +5496,17 @@ _DEPTH_UNIT = """\
 | Criterion | Mutant | Title |
 | --- | --- | --- |
 | AC1 | in `scripts/prod.py`, drop the shipped marker | a |
-| AC2 | in `scripts/prod.py`, restore the base constant | b |
-| AC2 | in `scripts/prod.py`, rename the constant | c |
-| AC3 | in `scripts/prod.py`, delete the third branch | d |
+| AC1 | in `scripts/prod.py`, return the base value from the marker | b |
+| AC1 | in `scripts/prod.py`, widen the marker guard to always pass | c |
+| AC1 | in `scripts/prod.py`, move the marker below its caller | d |
+| AC2 | in `scripts/prod.py`, restore the base constant | e |
+| AC2 | in `scripts/prod.py`, rename the constant | f |
+| AC2 | in `scripts/prod.py`, drop the constant's export | g |
+| AC2 | in `scripts/prod.py`, shadow the constant in the caller | h |
+| AC3 | in `scripts/prod.py`, delete the third branch | i |
+| AC3 | in `scripts/prod.py`, invert the third branch's test | j |
+| AC3 | in `scripts/prod.py`, fall through the third branch | k |
+| AC3 | in `scripts/prod.py`, swallow the third branch's error | l |
 """
 
 
@@ -5494,27 +5555,52 @@ class DerivedDepthTests(unittest.TestCase):
         e.g. `"executed": len(rows)` or `"criteria": len(rows)`.
 
         EVERY COUNT IS A DIFFERENT NUMBER, and that is the point of the fixture rather than a
-        detail of it. An earlier cut used 2 criteria, 2 plan rows and 2 executions, so all five
-        figures were 2 and four of them survived being replaced with each other - an
-        independent review measured exactly that. Here: 3 criteria, 4 declared rows, 3 executed
-        (1 killed, 1 survived, 1 ruled equivalent), 1 never run. No two are equal, so no count
-        can stand in for another.
+        detail of it. This has now been got wrong TWICE. The first cut used 2 criteria, 2 plan
+        rows and 2 executions, so all five figures were 2 and four survived being replaced with
+        each other. The repair for that moved to 3 criteria, 4 rows and 3 executions - and an
+        independent review measured THAT still degenerate: criteria equalled executed, and
+        killed, survived, equivalent and not-run were all 1, so three swap mutants survived this
+        very selector while the `killed: 99` positive control died on it.
+
+        So the property is asserted here rather than asserted ABOUT: 3 criteria, 12 declared
+        rows, 7 executed (1 killed, 2 survived, 4 ruled equivalent), 5 never run. The seven
+        figures are 3, 12, 7, 1, 2, 4, 5 - PAIRWISE distinct, so no count can stand in for any
+        other, and the test checks that pairwise-distinctness itself rather than trusting the
+        author who chose the numbers.
 
         THE ARITHMETIC ALSO CLOSES: killed + survived + equivalent + not-run must equal the
         declared rows, which is the property a reader uses to audit the line at all."""
         self._register("AC1", "killed")
-        self._register("AC2", "survived", row=0)
-        self.mutation.register_mutant(
-            self.tmp, "scripts/prod.py", mutant="in `scripts/prod.py`, rename the constant",
-            test="", verdict="equivalent", reason="renaming it changes no observable behaviour",
-            unit="US9002", criterion="AC2", row=1)
+        for row in (0, 1):
+            self._register("AC2", "survived", row=row)
+        for criterion, row in (("AC2", 2), ("AC2", 3), ("AC3", 0), ("AC3", 1)):
+            self.mutation.register_mutant(
+                self.tmp, "scripts/prod.py",
+                mutant=f"in `scripts/prod.py`, the equivalent change {criterion} row {row} pins",
+                test="", verdict="equivalent",
+                reason="the change is observationally equivalent",
+                unit="US9002", criterion=criterion, row=row)
         code, out = self._depth()
         self.assertEqual(code, 0, out)
-        for expected in ("criteria 3", "plan rows 4", "executed 3", "killed 1", "survived 1",
-                         "ruled equivalent 1", "NOT RUN 1"):
-            self.assertIn(expected, out, f"{expected!r} missing from: {out}")
-        self.assertNotIn("criteria 4", out)
-        self.assertNotIn("plan rows 3", out)
+        counts = {"criteria": 3, "plan rows": 12, "executed": 7, "killed": 1, "survived": 2,
+                  "ruled equivalent": 4, "NOT RUN": 5}
+        for label, value in counts.items():
+            self.assertIn(f"{label} {value}", out, f"{label} {value} missing from: {out}")
+        self.assertEqual(len(set(counts.values())), len(counts),
+                         "the fixture's counts are not pairwise distinct, so one count can be "
+                         "sourced from another undetected - the defect this fixture exists to "
+                         "make impossible, twice repaired and twice still present")
+        self.assertEqual(counts["killed"] + counts["survived"] + counts["ruled equivalent"]
+                         + counts["NOT RUN"], counts["plan rows"], "the row arithmetic does not close")
+        self.assertEqual(counts["killed"] + counts["survived"] + counts["ruled equivalent"],
+                         counts["executed"], "executed is not the sum of the executed verdicts")
+        import re as _re  # noqa: PLC0415 - local: only this assertion parses the rendered line
+        for label, value in counts.items():
+            found = _re.findall(rf"{_re.escape(label)} (\d+)", out)
+            self.assertEqual([str(value)], found,
+                             f"{label} rendered as {found}, expected exactly [{value!r}] - a "
+                             f"count read from a different quantity than the ledger's own "
+                             f"verdicts is the mutant this row exists to kill: {out}")
 
     def test_an_unexecuted_row_is_named_not_omitted(self) -> None:
         """MUTANT: in `verify_ac.render_depth`, drop the `NOT RUN` branch so an unexecuted row
@@ -5526,7 +5612,7 @@ class DerivedDepthTests(unittest.TestCase):
         self._register("AC1", "killed")
         code, out = self._depth()
         self.assertEqual(code, 0, out)
-        self.assertIn("NOT RUN 3", out)
+        self.assertIn("NOT RUN 11", out)
         for named in ("AC2 row 0", "AC2 row 1", "AC3 row 0"):
             self.assertIn(named, out, f"{named!r} not named among the unrun rows: {out}")
 
@@ -5637,7 +5723,7 @@ class DerivedDepthTests(unittest.TestCase):
             reason="withdrawn, so the row reads as declared but never executed")
         code, out = self._depth()
         self.assertEqual(code, 0, out)
-        self.assertIn("NOT RUN 4", out)
+        self.assertIn("NOT RUN 12", out)
         for named in ("AC1 row 0", "AC2 row 0", "AC2 row 1", "AC3 row 0"):
             self.assertIn(named, out, f"{named!r} not named among the unrun rows: {out}")
         # BOTH facts, in one line: the ledger holds nothing live for this unit AND four

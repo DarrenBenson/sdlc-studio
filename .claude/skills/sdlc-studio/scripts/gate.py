@@ -1158,12 +1158,18 @@ def _revert_check(root: str) -> dict:
     if not base or not batch:
         return {"count": 0, "blocking": False,
                 "detail": "N/A (no open run with a base ref and a batch to examine)"}
-    examined, refused, named = 0, [], []
+    examined, refused, named, crashed = 0, [], [], []
     for uid in batch:
         try:
             res = _va.revert_check(root, uid, base)
         except Exception as exc:  # noqa: BLE001 - an advisory lane never breaks the gate
-            named.append(f"{uid}: {exc}")
+            # A CRASH IS NOT A CLEAN RUN. Swallowing this into `named` and then dropping
+            # `named` on the no-refusal path made a lane that failed on every unit print
+            # "0 unit(s) examined, none stayed green" - an absence reading as a pass, which
+            # is the rule `verify_ac.revert_check` enforces four times over and this lane,
+            # its own caller, did not hold. It also silently biased the yield figure that the
+            # decision to make this lane blocking is supposed to rest on.
+            crashed.append(f"{uid}: {exc}")
             continue
         if res.get("status") in ("error", "reported"):
             continue  # not a measurement of this unit's evidence; `revert-check` reports it
@@ -1173,11 +1179,32 @@ def _revert_check(root: str) -> dict:
             named.append(f"{uid}: green after the revert - {', '.join(res.get('green') or [])}")
     _record_revert_yield(root, examined, len(refused))
     if not refused:
-        return {"count": 0, "blocking": False,
-                "detail": f"{examined} unit(s) examined, none stayed green without its change"}
-    return {"count": len(refused), "blocking": False,
-            "detail": f"{examined} examined, {len(refused)} would be refused - "
-                      + "; ".join(named[:3])}
+        if crashed:
+            # The failure leads. Appending it after "none stayed green without its change"
+            # still lets a reader skim the reassuring half of a sentence about a run that
+            # measured nothing.
+            detail = (f"{len(crashed)} unit(s) could not be examined at all - "
+                      + _first_three(crashed)
+                      + f"; {examined} examined and clean")
+        else:
+            detail = f"{examined} unit(s) examined, none stayed green without its change"
+        return {"count": 0, "blocking": False, "detail": detail}
+    detail = (f"{examined} examined, {len(refused)} would be refused - "
+              + _first_three(named))
+    if crashed:
+        detail += f"; {len(crashed)} could not be examined - " + _first_three(crashed)
+    return {"count": len(refused), "blocking": False, "detail": detail}
+
+
+def _first_three(items: list) -> str:
+    """The first three, and a count of what was dropped.
+
+    A silent truncation reads as "that was all of them". The sibling `_derived_depth` in this
+    same file already prints its remainder; this one did not, so a batch with four or more
+    refused units quietly under-delivered the lane's own promise to name each one.
+    """
+    head = "; ".join(items[:3])
+    return head + (f" (+{len(items) - 3} more)" if len(items) > 3 else "")
 
 
 def _record_revert_yield(root: Path, examined: int, refused: int) -> None:

@@ -6534,6 +6534,59 @@ class RevertCheckLaneTests(unittest.TestCase):
         self.assertNotIn("[FAIL]", line,
                          "the lane blocked - it ships ADVISORY while its yield is measured")
 
+    def test_the_boundary_lane_itself_writes_the_yield_file(self) -> None:
+        """MUTANT: in `gate._revert_check`, delete the `_record_revert_yield(root, examined,
+        len(refused))` call, so the lane records nothing at any boundary.
+
+        AC3's law is that THE LANE records its yield. The criterion's other verifier calls
+        `_record_revert_yield` directly, so it proves the recorder accumulates and proves
+        nothing about the lane using it - an independent review deleted the call site and
+        watched all ten lane tests pass, this criterion's own selector included. A repo-wide
+        grep then found no test anywhere that read the file back after a real lane run. That
+        is the library-test-standing-in-for-a-lane-test scar, on the surface that measures
+        whether this lane should ever become blocking.
+
+        So this drives the shipped `gate.py` at a real boundary and reads the file off disk."""
+        import gate as gate_mod  # noqa: PLC0415 - local: the tests import by path
+        root = self._fixture_root(green_after_revert=True)
+        yield_path = Path(root) / gate_mod._REVERT_YIELD_REL
+        self.assertFalse(yield_path.exists(),
+                         "the fixture already carries a yield file, so a later read proves nothing")
+        r = self._gate("--boundary", "push", "--only", "revert-check", root=root)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertTrue(yield_path.exists(),
+                        f"the lane ran at the boundary and wrote no yield file:\n{r.stdout}")
+        first = json.loads(yield_path.read_text(encoding="utf-8"))
+        self.assertEqual(1, first["runs"], first)
+        self.assertGreaterEqual(first["examined"], 1, first)
+        self.assertGreaterEqual(first["would_refuse"], 1, first)
+        self._gate("--boundary", "push", "--only", "revert-check", root=root)
+        second = json.loads(yield_path.read_text(encoding="utf-8"))
+        self.assertEqual(2, second["runs"], second)
+        self.assertEqual(first["examined"] * 2, second["examined"],
+                         "the lane's second run did not accumulate into the same file")
+
+    def test_a_unit_the_lane_cannot_examine_is_not_reported_as_a_clean_pass(self) -> None:
+        """MUTANT: in `gate._revert_check`, swallow the per-unit exception into `named` and
+        drop `named` on the no-refusal path, so a crashed check reports nothing.
+
+        An absence must not read as a pass. `verify_ac.revert_check` enforces that rule four
+        separate times inside this same diff, and its own caller did not hold it: with every
+        unit raising, the lane printed "0 unit(s) examined, none stayed green without its
+        change" and the crash text was gone. Two independent seats found it the same way, by
+        making the call raise rather than by reading the handler."""
+        import gate as gate_mod  # noqa: PLC0415 - local: the tests import by path
+        root = self._fixture_root(green_after_revert=True)
+        from unittest import mock as _mock  # noqa: PLC0415 - local: only this test patches
+        import verify_ac as _va  # noqa: PLC0415 - gate imports it deferred, inside the lane
+        with _mock.patch.object(_va, "revert_check",
+                                side_effect=RuntimeError("the check exploded")):
+            res = gate_mod._revert_check(str(root))
+        self.assertIn("could not be examined", res["detail"], res)
+        self.assertIn("the check exploded", res["detail"], res)
+        self.assertNotIn("none stayed green without its change", res["detail"].split(";")[0],
+                         "a lane that examined nothing still reported a clean sweep")
+
     def test_a_unit_that_stays_green_is_named_without_blocking(self) -> None:
         """MUTANT: in `gate._revert_check`, return `blocking: True` when anything is refused.
 
@@ -6754,6 +6807,36 @@ class DerivedDepthLaneTests(unittest.TestCase):
         res = self._lane()
         self.assertEqual(1, res["count"], res["detail"])
         self.assertIn("carries no fingerprint", res["detail"])
+
+    def test_a_second_derived_span_appended_to_the_field_is_refused(self) -> None:
+        """MUTANT: in `verify_ac.depth_edit_faults`, judge `_DERIVED_SPAN_RE.search(...)` - the
+        FIRST span - instead of iterating every span in the field.
+
+        A field carries exactly one derived half, so a second one is a hand-edit inside the
+        delimiters by construction. Judging only the first hit made the guard's verdict depend
+        on WHERE the forged span was placed: a bogus span appended AFTER the sealed one passed,
+        while the same span placed BEFORE it was refused. Position-dependence is the tell that
+        the guard judged one span rather than the field, and an independent review found it by
+        running both orders rather than by reading the code.
+
+        Asserted at BOTH positions here, because a repair that only looked at the last span
+        would swap which order escapes rather than close the escape."""
+        original = self.unit.read_text(encoding="utf-8")
+        forged = ("[[derived: criteria 99; plan rows 99; executed 99; killed 99; survived 0 "
+                  "| fp deadbeefcafe ]]")
+        line = next(l for l in original.splitlines() if "Verification depth" in l)
+        for where, rebuilt in (
+                ("appended after the sealed span", line + " " + forged),
+                ("placed before the sealed span",
+                 line.replace("[[derived:", forged + " [[derived:", 1)),
+        ):
+            with self.subTest(where=where):
+                self.unit.write_text(original.replace(line, rebuilt), encoding="utf-8")
+                res = self._lane()
+                self.assertEqual(1, res["count"],
+                                 f"a second derived span {where} was not refused: {res}")
+                self.assertIn("derived halves", res["detail"])
+        self.unit.write_text(original, encoding="utf-8")
 
 if __name__ == "__main__":
     unittest.main()

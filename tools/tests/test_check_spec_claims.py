@@ -170,6 +170,32 @@ class GateLaneTests(unittest.TestCase):
                       "register it")
         self.assertIn("derived-depth", agents,
                       "the gate blocks on derived-depth and the roster does not name it")
+        # TIE THE WORD TO THE FLAG. Everything above pins the roster's PROSE and the lane's
+        # NAME, and an independent review pointed out that neither reaches the lane's actual
+        # `blocking` value: flip the lane to blocking and the roster's "ADVISORY" becomes a
+        # lie with this test still green. So the flag itself is read here, on both of the
+        # lane's return paths - the one that found nothing and the one that found something -
+        # because a lane that is advisory only while it is silent is not an advisory lane.
+        import sys as _sys  # noqa: PLC0415 - local: only this assertion loads the gate
+        scripts = repo / ".claude" / "skills" / "sdlc-studio" / "scripts"
+        if str(scripts) not in _sys.path:
+            _sys.path.insert(0, str(scripts))
+        import gate as gate_mod  # noqa: PLC0415
+        from unittest import mock as _mock  # noqa: PLC0415
+        for found, label in ((0, "found nothing"), (2, "found two units")):
+            with self.subTest(path=label):
+                import verify_ac as _va  # noqa: PLC0415 - the lane imports both deferred
+                from lib import run_state as _rs  # noqa: PLC0415
+                with _mock.patch.object(gate_mod, "_record_revert_yield"), \
+                        _mock.patch.object(_rs, "base_ref", return_value="deadbeef"), \
+                        _mock.patch.object(_rs, "read", return_value={
+                            "batch": [f"US{9000 + i}" for i in range(2)]}), \
+                        _mock.patch.object(_va, "revert_check", return_value={
+                            "status": "refused" if found else "pass", "green": ["AC1"]}):
+                    res = gate_mod._revert_check(str(repo))
+                self.assertIs(False, res["blocking"],
+                              f"the lane returned blocking=True when it {label}, while "
+                              f"AGENTS.md's roster calls it ADVISORY")
 
     def test_the_lane_roster_names_the_release_rehearsal(self) -> None:
         """US0666: a lane bound at a BOUNDARY is invisible to the hook-derived sweep above, which
