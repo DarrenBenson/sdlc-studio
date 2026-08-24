@@ -59,7 +59,9 @@ it can reach Fixed - the gate that cost this run five rounds, with no `--force` 
 BG0606 is the proof: its fix SHIPPED and was independently approved, and it is still Open
 because closing it needs a sixth plan review for work already reviewed.
 
-So **CR0549 and CR0550 come first** - held as US0677-US0683, 24 points. CR0549 because
+So **CR0549 and CR0550 come first** - US0677-US0684, 30 points, and a pre-code goal review
+REJECTED that batch on 2026-08-24: measured over 610 bugs its design moves the band at one of
+four consumers, 87% to 85%, spread unchanged. Being re-specified. CR0549 because
 `route.estimate` scores whole declared FILES, so 87% of 603 bugs tier `full`; CR0550 because
 the test-plan gate is date-scoped and cannot be narrowed to the units that earn it. Operator
 decision, 2026-08-24.
@@ -75,6 +77,4 @@ decision, 2026-08-24.
 | CR0552 | `revert-check` mutates the live working tree - the shape that destroyed a reviewer's uncommitted work |
 | CR0554 | a row killed by a test no criterion names reads as `killed` |
 
-BG0607 is the one to read next: three of this batch's units carry a seat REJECT that
-`critic show` masks behind a later APPROVE. Each is answered by a recorded repair, but the
-roll-up cannot say so - so the two-role gate can today be satisfied by recorder ordering.
+BG0607 is the one to read next: the two-role gate can today be satisfied by recorder ordering.

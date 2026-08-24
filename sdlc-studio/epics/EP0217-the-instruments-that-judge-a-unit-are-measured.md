@@ -4,7 +4,7 @@
 > **Parent:** CR0550
 > **Parent:** CR0549
 > **Parent:** CR0548
-> **Derived Point Total:** 51
+> **Derived Point Total:** 62
 > **Parent:** CR0547
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
@@ -50,12 +50,13 @@ Decomposed from CR0547. Delivers the work CR0547 requested.
 
 ### From CR0549
 
-- [ ] The `code` and `risk` subscores are computed from the hunks a unit changes against the run's base ref, not from every function in every declared file, and a unit with no diff yet degrades to the missing-signal path rather than to a whole-file score
-- [ ] A two-line change to a large module and a rewrite of that module produce DIFFERENT bands, demonstrated by scoring both against the same file
-- [ ] `scope` stops counting a test file that is present only because the project convention requires it in `Affects`, or the convention's contribution is stated and weighted separately
-- [ ] The band distribution over this repository's bug corpus is re-measured after the change and recorded in the CR, so the claim that the gate now discriminates rests on a number rather than on the design
-- [ ] A unit whose diff cannot be resolved bands FULL and says why, preserving the existing fail-towards-deeper-review rule
-- [ ] `route.estimate`'s returned dict names which basis it used - diff or whole-file - so a reader can tell a measured band from a degraded one
+- [ ] The DECLARED basis - the one three of the four pre-code consumers read - is computed from the unit's own `Points` and `Affects` breadth, not from a complexity read over whole declared files
+- [ ] The same production file, changed at one point and at eight, produces DIFFERENT bands, which whole-file complexity cannot do because it never sees the change
+- [ ] The DIFF basis scopes `code` to the hunks a unit changes against the run's base ref; `risk` stays file-level and SAYS SO, because churn counts commits touching a file and has no per-hunk meaning
+- [ ] `route.estimate` names the basis it used - `declared` or `diff` - so a band can be interpreted, and a `diff` request that does not resolve is REFUSED rather than degraded to a whole-file score
+- [ ] Every existing caller keeps working: the three pre-code consumers ask for `declared`, `critic`'s tier asks for `diff`, and `project_upgrade`, `route.pick` and the `estimate` CLI are migrated rather than broken
+- [ ] `scope` stops counting a test file present only because the repository's convention requires it beside its production file, while a unit whose SUBJECT is a test file still counts it
+- [ ] The band distribution is re-measured on BOTH bases and both are recorded here beside the pre-change figures, with the basis named against each
 
 ### From CR0550
 
@@ -75,3 +76,4 @@ Decomposed from CR0547. Delivers the work CR0547 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-08-24 | sdlc-studio | CR0549's criteria rewritten here to match the third correction; the previous set encoded the superseded whole-file design. |

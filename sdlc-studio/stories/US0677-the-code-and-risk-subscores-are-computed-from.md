@@ -5,9 +5,9 @@
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/scripts/complexity.py, .claude/skills/sdlc-studio/scripts/tests/test_route.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/scripts/tests/test_complexity.py, .claude/skills/sdlc-studio/scripts/complexity.py, .claude/skills/sdlc-studio/scripts/tests/test_route.py
 > **Epic:** EP0217
-> **Points:** 5
+> **Points:** 8
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -18,12 +18,16 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit and a base ref, when `route.estimate` computes `code` and `risk`, then both are derived from the HUNKS the unit changes against that ref, not from every function in every file its `Affects` names
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffScopedEstimateTests::test_the_code_and_risk_subscores_read_the_changed_hunks
-- [ ] **AC2** Given a two-line change to a large module and a rewrite of that same module, when both are scored, then they produce DIFFERENT bands. The discrimination is the whole point: today both inherit the module's worst function and score identically, which is why 87% of this repository's 603 bugs tier `full`
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffScopedEstimateTests::test_a_small_change_and_a_rewrite_of_one_file_band_differently
-- [ ] **AC3** Given a change that is small in line count but lands inside a high-complexity branch, when it is scored, then the surrounding function's complexity still contributes - a diff-scoped estimate that reads added lines in isolation would band a one-line change to load-bearing code as trivial, which is the failure mode this must not introduce
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffScopedEstimateTests::test_a_small_change_in_a_complex_branch_is_not_banded_trivial
+- [ ] **AC1** Given the DECLARED basis, when `route.estimate` scores a unit, then `code` and `risk` are computed from the unit's own `Points` and `Affects` breadth and NOT from a complexity read over whole declared files - measured over this corpus that moves `light` from 13% to 33% while whole-file complexity leaves it at 13%
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DeclaredBasisTests::test_the_declared_score_reads_points_and_affects_not_whole_files
+- [ ] **AC2** Given the SAME production file declared by two units, one at one point and one at eight, when both are scored on the declared basis, then they band DIFFERENTLY - the discrimination is the whole request, and whole-file complexity cannot produce it because it never sees the change
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DeclaredBasisTests::test_one_file_two_sizes_two_bands
+- [ ] **AC3** Given the DIFF basis, when `route.estimate` scores a unit, then `code` is computed from the hunks that unit changes and `risk` is left FILE-level and says so in the returned dict - churn counts commits touching a file, so a two-line change and a rewrite carry identical churn and a per-hunk risk is not a quantity that exists
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffBasisTests::test_code_is_hunk_scoped_and_risk_declares_itself_file_level
+- [ ] **AC4** Given a run whose base ref names changes across several units, when one unit's diff basis is computed, then the changed lines are INTERSECTED with that unit's own `Affects` before scoring - without it every unit in a multi-unit run scores identically, which is a new constant reached by a different road
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffBasisTests::test_the_run_diff_is_intersected_with_the_units_own_affects
+- [ ] **AC5** Given a hunk that maps to no enclosing function - an import, module-level code, a deleted block - when it is scored, then it is counted by a stated rule rather than dropped, because that is the common case for the small change AC2 is about
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_complexity.py::HunkMappingTests::test_a_hunk_outside_any_function_is_counted_by_a_stated_rule
 
 ## Revision History
 
@@ -31,4 +35,5 @@
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
-| 2026-08-21 | sdlc-studio | HELD - not in the RUN batch. CR0549's correction of 2026-08-21 applies: the criteria here do not name `plan_review._difficulty_band` or the planner's banding, which are where this output is consumed and which both run before a diff exists. Re-groom before planning. |
+
+| 2026-08-24 | sdlc-studio | RE-GROOMED against CR0549's second and third corrections after a pre-code goal review REJECTED the first attempt: the declared basis now reads `Points` and `Affects` breadth rather than whole-file complexity, measured to move `light` from 13% to 33%. |

@@ -89,14 +89,58 @@ worth making is about the DIFF basis, and the only honest corpus for it is a syn
 small and known-large changes against the same files, where the expected bands are known in
 advance and a failure to discriminate is visible.
 
+## Third correction, 2026-08-24: the remedy, settled by measurement
+
+A pre-code goal review REJECTED the first re-groom, and it did so with a number rather than an
+opinion: scored over all 610 bugs, that design moved the band at ONE of four consumers -
+`medium`-or-above 87% to 85%, interquartile spread unchanged at six points, a uniform downward
+translation. The reason is structural. Three of the four consumers take a DECLARED basis, and the
+declared basis as specified was byte-for-byte today's algorithm - `complexity.assess` over whole
+files. Naming the basis without changing what the declared basis READS moves the problem.
+
+**So the declared basis stops reading whole-file complexity and reads what the unit itself
+declares.** Measured over the same corpus, a band led by `Points` with `Affects` breadth as its
+second term:
+
+| Band | Today | Points-led |
+| --- | --- | --- |
+| `light` | 13% | 33.4% |
+| `medium` | - | 46.3% |
+| `full` | 87% | 20.3% |
+
+And it DISCRIMINATES on a property whole-file complexity cannot see, because `Points` is a claim
+about the CHANGE rather than about the file: one point in one file bands `light`, three points in
+one file bands `medium`, eight points across four files bands `full` - the same file, three
+answers. That is CR0510's ask, and it is the half this request was filed to finish.
+
+**Why `Points` is available exactly when it is needed.** 467 of 610 historical bugs carry it, but
+the figure that matters is not that one: `sprint plan` REFUSES a batch holding a unit with no
+`Points` or no `Affects`, so at the moment the planner, the pre-code gate and the suitability seed
+read the band, both terms are present by construction. A signal the tooling already demands is
+strictly better than one it has to infer.
+
+**What the DIFF basis can and cannot be.** `risk` is `composite_risk(cognitive, churn)` and churn
+counts commits touching a FILE - a two-line change and a rewrite of the same module have identical
+churn. `risk` therefore has no per-hunk meaning and must stay file-level and be stated as such; only
+`code` becomes hunk-scoped. A criterion demanding both from hunks is unsatisfiable, and the first
+re-groom carried one.
+
+**The consumer list is seven, not four.** `sprint.py:1094`, `plan_review.py:106` and `:110`,
+`handoff.py:308`, `critic.py:2666` (via `plan_review._difficulty_band`), `project_upgrade.py:706`
+(the `migrate --apply` backfill, exercised by the release-boundary rehearsal) and `route.pick`
+at `route.py:229`, plus the shipped `cmd_estimate` CLI. A basis parameter with no default breaks
+all of them; `_difficulty_band` also swallows a bare `Exception`, so a refusal degrades silently at
+every existing site unless that is changed too.
+
 ## Acceptance Criteria
 
-- [ ] The `code` and `risk` subscores are computed from the hunks a unit changes against the run's base ref, not from every function in every declared file, and a unit with no diff yet degrades to the missing-signal path rather than to a whole-file score
-- [ ] A two-line change to a large module and a rewrite of that module produce DIFFERENT bands, demonstrated by scoring both against the same file
-- [ ] `scope` stops counting a test file that is present only because the project convention requires it in `Affects`, or the convention's contribution is stated and weighted separately
-- [ ] The band distribution over this repository's bug corpus is re-measured after the change and recorded in the CR, so the claim that the gate now discriminates rests on a number rather than on the design
-- [ ] A unit whose diff cannot be resolved bands FULL and says why, preserving the existing fail-towards-deeper-review rule
-- [ ] `route.estimate`'s returned dict names which basis it used - diff or whole-file - so a reader can tell a measured band from a degraded one
+- [ ] The DECLARED basis - the one three of the four pre-code consumers read - is computed from the unit's own `Points` and `Affects` breadth, not from a complexity read over whole declared files
+- [ ] The same production file, changed at one point and at eight, produces DIFFERENT bands, which whole-file complexity cannot do because it never sees the change
+- [ ] The DIFF basis scopes `code` to the hunks a unit changes against the run's base ref; `risk` stays file-level and SAYS SO, because churn counts commits touching a file and has no per-hunk meaning
+- [ ] `route.estimate` names the basis it used - `declared` or `diff` - so a band can be interpreted, and a `diff` request that does not resolve is REFUSED rather than degraded to a whole-file score
+- [ ] Every existing caller keeps working: the three pre-code consumers ask for `declared`, `critic`'s tier asks for `diff`, and `project_upgrade`, `route.pick` and the `estimate` CLI are migrated rather than broken
+- [ ] `scope` stops counting a test file present only because the repository's convention requires it beside its production file, while a unit whose SUBJECT is a test file still counts it
+- [ ] The band distribution is re-measured on BOTH bases and both are recorded here beside the pre-change figures, with the basis named against each
 
 ## Revision History
 
@@ -104,3 +148,4 @@ advance and a failure to discriminate is visible.
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Raised |
 | 2026-08-21 | sdlc-studio | Goal review CORRECTION: the two principal consumers (`plan_review._difficulty_band`, the planner's banding) run before a diff exists and were unnamed; `base_ref` is per-run so a corpus re-measurement has no diff for closed units; two derived criteria contradicted each other on whether the spread widens or narrows. Needs re-grooming before it can be planned |
+| 2026-08-24 | sdlc-studio | Second and third corrections: the consumer list is seven, not two; the estimator answers two questions and names which; and the DECLARED basis is re-specified onto `Points` and `Affects` breadth after a goal review measured the first re-groom moving the band at one of four consumers. Acceptance criteria rewritten to the settled design - the previous set encoded the superseded one and `critic.py brief` serves them as law. |

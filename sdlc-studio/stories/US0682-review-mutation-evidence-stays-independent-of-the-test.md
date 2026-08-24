@@ -19,9 +19,9 @@
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a project setting `review.mutation_evidence: block` AND a test-plan scope that exempts the unit, when it transitions, then the mutation-evidence lane still blocks - the two lanes ask different questions and must stay sequential, which is BG0541's defect recreated one level in
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanGateScopeTests::test_mutation_evidence_blocks_independently_of_the_test_plan_scope
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceIndependenceTests::test_mutation_evidence_blocks_independently_of_the_test_plan_scope
 - [ ] **AC2** Given a fixture setting BOTH settings across their combinations, when each is exercised, then no combination lets one lane silently waive the other - asserted over the matrix rather than over the one pairing somebody thought to try, because a fixture setting both went green while carrying exactly this defect
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanGateScopeTests::test_no_combination_of_the_two_settings_waives_the_other
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceIndependenceTests::test_no_combination_of_the_two_settings_waives_the_other
 
 ## Revision History
 
@@ -29,4 +29,5 @@
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
-| 2026-08-21 | sdlc-studio | HELD - not in the RUN batch. CR0550's correction of 2026-08-21 applies. Re-groom before planning. |
+
+| 2026-08-24 | sdlc-studio | RE-GROOMED against CR0549's second and third corrections after a pre-code goal review REJECTED the first attempt: the declared basis now reads `Points` and `Affects` breadth rather than whole-file complexity, measured to move `light` from 13% to 33%. |
