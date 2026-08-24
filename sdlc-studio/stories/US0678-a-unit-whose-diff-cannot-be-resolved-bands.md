@@ -18,10 +18,12 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit whose diff cannot be resolved - no base ref, no git history, or an unreadable tree - when it is scored, then it bands FULL and the returned dict names the basis it used, preserving the existing rule that unknown risk fails towards the deeper review
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffScopedEstimateTests::test_an_unresolvable_diff_bands_full_and_names_its_basis
-- [ ] **AC2** Given any estimate, when it returns, then the dict states whether the score came from the DIFF or from the whole file, so a reader can tell a measured band from a degraded one - the two are different facts and a caller that cannot distinguish them will trust both equally
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffScopedEstimateTests::test_the_estimate_names_diff_or_whole_file_as_its_basis
+- [ ] **AC1** Given a DECLARED-basis estimate for a unit whose `Affects` cannot be read - absent, empty, or naming nothing that resolves - when it is scored, then it bands FULL and the dict says WHY, preserving the fail-towards-deeper-review rule at the layer that must still answer. This is the declared path only: a DIFF-basis request that does not resolve is refused rather than degraded, which US0684 owns
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffScopedEstimateTests::test_an_unreadable_declared_surface_bands_full_and_says_why
+- [ ] **AC2** Given any estimate that returns at all, when its dict is read, then it names its basis - `declared` or `diff` - so a reader can tell which question was answered. A band with no basis beside it cannot be interpreted, and interpreting one as the other is the conflation this epic exists to remove
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffScopedEstimateTests::test_every_estimate_names_its_basis
+- [ ] **AC3** Given a DIFF-basis estimate and a DECLARED-basis estimate of the SAME unit whose change is small against a large file, when both are taken, then they DIFFER - the paired control, because two bases that always agree are one basis with two names and the whole change would be inert
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::DiffScopedEstimateTests::test_the_two_bases_disagree_on_a_small_change_to_a_large_file
 
 ## Revision History
 

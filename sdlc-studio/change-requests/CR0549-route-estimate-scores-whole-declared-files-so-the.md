@@ -57,6 +57,38 @@ None of this weakens the diagnosis. The measurement behind this CR stands: 87% o
 It is the REMEDY that was under-specified, and a request that cannot say where its own output is
 consumed is not ready to be built.
 
+## Second correction, 2026-08-24: the consumer list was short, and it settles the design
+
+The correction above named two consumers. There are FOUR, found by grep rather than by memory,
+and the split between them is the design this request needs before it can be planned:
+
+| Caller | Site | When it runs |
+| --- | --- | --- |
+| `sprint.py` | 1094, the planner banding a batch | BEFORE the unit is implemented |
+| `plan_review.py` | 106, `_difficulty_band` for the pre-code gate | BEFORE, by definition |
+| `handoff.py` | 308, the suitability seed | BEFORE |
+| `critic.py` | 2666, choosing the review TIER via `_difficulty_band` | AFTER, for a delivery brief |
+
+So THREE of the four ask the question before a diff can exist, and one asks it after. A single
+diff-scoped estimator does not serve both: at the three pre-code sites it would resolve to
+nothing, and the fail-towards-deeper-review rule would then band every unit `full` - the constant
+this request exists to remove, arrived at by a different route.
+
+**The estimator therefore answers two questions and must say which it answered.** A DECLARED
+basis, from the unit's `Affects` and its stated size, is what a planner and a pre-code gate can
+have; a DIFF basis, from the hunks against the run's base ref, is what a delivery brief can have.
+Both are legitimate; conflating them is what makes the band uninterpretable. `route.estimate`
+gains an explicit basis in its returned dict, each caller asks for the basis it can actually
+support, and a caller that asks for `diff` where none resolves is REFUSED rather than silently
+degraded - because a silent degradation to `full` is indistinguishable from the defect.
+
+This also disposes of the re-measurement contradiction the first correction found. A distribution
+over 603 closed bugs has no per-unit diff, so it can only be measured on the DECLARED basis, which
+is what the estimator already does - re-measuring it proves nothing about the change. The claim
+worth making is about the DIFF basis, and the only honest corpus for it is a synthetic one: known-
+small and known-large changes against the same files, where the expected bands are known in
+advance and a failure to discriminate is visible.
+
 ## Acceptance Criteria
 
 - [ ] The `code` and `risk` subscores are computed from the hunks a unit changes against the run's base ref, not from every function in every declared file, and a unit with no diff yet degrades to the missing-signal path rather than to a whole-file score

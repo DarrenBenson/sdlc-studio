@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-08-21
+**Last Updated:** 2026-08-24
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 7 |
+| Draft | 8 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 2 |
 | Blocked | 0 |
-| **Total** | **683** |
+| **Total** | **684** |
 
 ## All Stories
 
@@ -123,6 +123,7 @@
 | [US0681](US0681-plan-gate-active-takes-a-scope-as-well.md) | _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0682](US0682-review-mutation-evidence-stays-independent-of-the-test.md) | review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0683](US0683-the-close-reports-which-units-the-test-plan.md) | The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0684](US0684-every-consumer-of-route-estimate-asks-for-the.md) | Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded | Draft | EP0217 | 2026-08-24 | 2026-08-24 |
 
 ## Archived Releases
 

@@ -4,7 +4,7 @@
 > **Parent:** CR0550
 > **Parent:** CR0549
 > **Parent:** CR0548
-> **Derived Point Total:** 45
+> **Derived Point Total:** 51
 > **Parent:** CR0547
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
@@ -30,6 +30,7 @@ Decomposed from CR0547. Delivers the work CR0547 requested.
 - [ ] [US0681: _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone](../stories/US0681-plan-gate-active-takes-a-scope-as-well.md)
 - [ ] [US0682: review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested](../stories/US0682-review-mutation-evidence-stays-independent-of-the-test.md)
 - [ ] [US0683: The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each](../stories/US0683-the-close-reports-which-units-the-test-plan.md)
+- [ ] [US0684: Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded](../stories/US0684-every-consumer-of-route-estimate-asks-for-the.md)
 
 ## Acceptance Criteria (Epic Level)
 

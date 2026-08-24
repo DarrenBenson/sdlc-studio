@@ -7,7 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/scripts/tests/test_route.py, sdlc-studio/change-requests/CR0549-route-estimate-scores-whole-declared-files-so-the.md
 > **Epic:** EP0217
-> **Points:** 2
+> **Points:** 3
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -18,10 +18,14 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given the changed estimator, when the band distribution over this repository's whole bug corpus is re-measured, then the measurement is RECORDED in CR0549 beside the pre-change figures - 87% full, 48% with `code` and `risk` both saturated, and a p25-median-p75 of 48-50-54
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::BandDistributionTests::test_the_recorded_distribution_matches_a_fresh_measurement
-- [ ] **AC2** Given the re-measured distribution, when the spread is computed, then it is WIDER than the six-point interquartile band the current estimator produces - stated as a number the test asserts, because 'the gate now discriminates' is exactly the kind of claim this project has shipped false before
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::BandDistributionTests::test_the_interquartile_spread_is_wider_than_six_points
+- [ ] **AC1** Given a SYNTHETIC corpus of changes whose expected bands are known in advance - a one-line edit, a small localised edit and a whole-module rewrite, each against the SAME large production file - when each is scored on the DIFF basis, then they land in different bands in that order. The corpus is synthetic by necessity: 603 closed bugs carry no per-unit diff, so a re-measurement over them can only use the declared basis and would re-measure the estimator this change replaces
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::BandDistributionTests::test_three_known_changes_to_one_file_band_differently
+- [ ] **AC2** Given that synthetic corpus, when the interquartile spread of its diff-basis scores is computed, then it is WIDER than the six-point spread the declared basis produces over the same three changes - stated as a number the test asserts, because "the gate now discriminates" is exactly the kind of claim this project has shipped false before
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::BandDistributionTests::test_the_diff_basis_spread_is_wider_than_the_declared_basis
+- [ ] **AC3** Given this repository's whole bug corpus scored on the DECLARED basis, when the distribution is re-measured after the change, then it is UNCHANGED from the pre-change figures - 87% full, 48% with `code` and `risk` both saturated, p25-median-p75 of 48-50-54 - because the declared basis is what those figures always measured. The paired control: a change that moved this number would mean the declared path had been altered by accident
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::BandDistributionTests::test_the_declared_basis_distribution_is_unchanged
+- [ ] **AC4** Given both measurements, when they are recorded, then BOTH are written into CR0549 beside the pre-change figures, with the basis named against each - a single number with no basis stated is the conflation this whole change exists to remove
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::BandDistributionTests::test_both_recorded_distributions_match_a_fresh_measurement
 
 ## Revision History
 
