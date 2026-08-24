@@ -1,6 +1,7 @@
 # CR-0555: The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0218
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
@@ -19,12 +20,29 @@
 
 Every project using the skill. Today a two-line bug fix and a rewrite pay the identical pre-code ceremony, and the ceremony is paid before anyone can see what the change is. BG0606 is the concrete case: its fix shipped and was independently approved, and it is still Open because closing it needs a plan review for work already reviewed. Nothing changes for the authoring rule - a criterion must still name a production change its test dies on, at every band - so this narrows WHEN the independent approval is demanded, not WHETHER a plan is required.
 
+## Scope note, 2026-08-25: this request MOVES the gate and does not scope it
+
+An earlier draft of AC4 had the terminal gate read a diff-basis band. That is deliberately out of
+scope here. CR0549's remedy failed three specifications on banding, and D0150 rules out the whole
+pre-code family; adding a band to this request would re-import the risk that killed it.
+
+**What the move alone buys, without any band.** The plan review and the delivery review currently
+bind at opposite ends of a unit's life, so a unit pays two independent review cycles. Bound at the
+same point they are one brief and one round - and the reviewer can see the CODE while judging the
+plan, which is the thing that took five rounds to establish by hand on RUN-01M0JD1W: whether a
+declared mutant can actually fail the test its criterion names is a question about the diff, and
+the pre-code reviewer cannot answer it.
+
+**Scoping by band remains open** and is worth doing once a signal exists that D0150 permits - one
+derived from the change rather than declared by its author. It belongs in its own request, argued
+on its own measurement, and it should not be bundled here.
+
 ## Acceptance Criteria
 
 - [ ] Given a unit entering implementation, when the gate runs, then a `## Test Plan` is still REQUIRED and its absence still refuses - the authoring-time rule is untouched at every band
 - [ ] Given that same unit entering implementation, when the gate runs, then an independent plan-review approval is NOT demanded there, and the refusal message says when it will be
 - [ ] Given a unit reaching a terminal status, when the gate runs, then the independent plan-review approval IS demanded, and a unit without one is refused exactly as it is refused at entry today
-- [ ] Given the terminal gate reading a band, when it asks the estimator, then it asks on the DIFF basis, because a diff exists at that point - and no author-declared field is consulted, per D0150
+- [ ] Given the plan review and the delivery review now binding at the SAME point, when a reviewer is briefed, then both are carried in one brief, so a unit takes one round where it took two - this is the saving the move buys, and it needs no band at all
 - [ ] Given a project that has not adopted this, when it transitions a unit, then behaviour is unchanged - the move is behind the same dated cutoff the existing gate uses, so an existing backlog is not retro-refused
 - [ ] Given the close, when it reports, then it names units whose plan approval was demanded at terminal and those exempted by the cutoff, so the move is visible rather than silent
 
@@ -37,3 +55,4 @@ Option 1. The plan must still EXIST at entry, which preserves the authoring-time
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-24 | sdlc-studio | Raised |
+| 2026-08-25 | sdlc-studio | Scope note: AC4 re-cut from a diff-basis band to the one-brief saving. Banding is deferred to its own request - three specifications died on it. |

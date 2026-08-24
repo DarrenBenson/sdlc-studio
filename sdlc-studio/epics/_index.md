@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-08-21
+**Last Updated:** 2026-08-25
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 6 |
+| Draft | 7 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 211 |
-| **Total** | **217** |
+| **Total** | **218** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -63,6 +63,7 @@
 | [EP0215](EP0215-a-verify-selector-that-resolves-to-nothing-is.md) | A Verify selector that resolves to nothing is refused where it is WRITTEN, and the existing corpus is swept | Done | 3 | -- | 2026-08-11 | 2026-08-11 |
 | [EP0216](EP0216-a-release-states-the-bar-it-was-held.md) | A release states the bar it was held to and discloses, by id, every finding it ships open | Done | 1 | -- | 2026-08-11 | 2026-08-11 |
 | [EP0217](EP0217-the-instruments-that-judge-a-unit-are-measured.md) | The instruments that judge a unit are measured from the change, not asserted about the file | Draft | 14 | -- | 2026-08-21 | 2026-08-21 |
+| [EP0218](EP0218-the-plan-review-binds-where-the-code-is.md) | The plan review binds where the code is, so a unit takes one review round instead of two | Draft | 6 | -- | 2026-08-25 | 2026-08-25 |
 
 ## Archived Releases
 

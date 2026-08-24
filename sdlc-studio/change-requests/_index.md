@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 28 |
+| Proposed | 27 |
 | Approved | 0 |
-| In Progress | 9 |
+| In Progress | 10 |
 | Complete | 494 |
 | Rejected | 1 |
 | Deferred | 0 |
@@ -105,7 +105,7 @@
 | [CR-0552](CR0552-revert-check-mutates-the-live-working-tree-so.md) | revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo | Proposed | High | Improvement | 2026-08-21 | -- |
 | [CR-0553](CR0553-the-exemption-reason-floor-counts-characters-so-twelve.md) | The exemption reason floor counts characters, so twelve junk characters buy a blanket revert-check exemption | Proposed | Medium | Improvement | 2026-08-21 | -- |
 | [CR-0554](CR0554-a-plan-row-whose-recorded-kill-node-is.md) | A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts | Proposed | High | Improvement | 2026-08-24 | -- |
-| [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | Proposed | High | Improvement | 2026-08-24 | -- |
+| [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | In Progress | High | Improvement | 2026-08-24 | EP0218 |
 
 ## Archived Releases
 

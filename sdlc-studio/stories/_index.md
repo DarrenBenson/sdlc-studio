@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-08-24
+**Last Updated:** 2026-08-25
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 0 |
+| Draft | 6 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 2 |
 | Blocked | 8 |
-| **Total** | **684** |
+| **Total** | **690** |
 
 ## All Stories
 
@@ -124,6 +124,12 @@
 | [US0682](US0682-review-mutation-evidence-stays-independent-of-the-test.md) | review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0683](US0683-the-close-reports-which-units-the-test-plan.md) | The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0684](US0684-every-consumer-of-route-estimate-asks-for-the.md) | Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded | Blocked | EP0217 | 2026-08-24 | 2026-08-24 |
+| [US0685](US0685-the-entry-gate-keeps-the-demand-that-a.md) | The entry gate keeps the demand that a test plan EXISTS and drops the demand that a seat has approved it | Draft | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0686](US0686-the-entry-refusal-names-when-the-independent-approval.md) | The entry refusal names WHEN the independent approval will be demanded, so the move is not a silent relaxation | Draft | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0687](US0687-the-terminal-transition-demands-the-independent-plan-review.md) | The terminal transition demands the independent plan-review approval and refuses without one exactly as entry does today | Draft | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0688](US0688-the-plan-review-and-the-delivery-review-are.md) | The plan review and the delivery review are carried in ONE brief, so a unit takes one round where it took two | Draft | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0689](US0689-the-move-binds-behind-the-existing-dated-cutoff.md) | The move binds behind the existing dated cutoff, so a project that has not adopted it is unchanged and no backlog is retro-refused | Draft | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0690](US0690-the-close-names-which-units-had-the-approval.md) | The close names which units had the approval demanded at terminal and which the cutoff exempted | Draft | EP0218 | 2026-08-25 | 2026-08-25 |
 
 ## Archived Releases
 
