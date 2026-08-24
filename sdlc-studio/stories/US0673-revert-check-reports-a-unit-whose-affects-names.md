@@ -1,6 +1,6 @@
 # US0673: revert-check REPORTS a unit whose Affects names no production file rather than passing it
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0547
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new

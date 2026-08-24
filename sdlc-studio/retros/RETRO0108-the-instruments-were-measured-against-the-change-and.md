@@ -45,6 +45,8 @@
 
 - A repair whose test can be satisfied by EITHER of two guards pins neither, and I shipped that shape while repairing this very defect. The widened path pattern grew two arms - any extension once a `/` is present, and an allowlist for bare filenames - and my first test used one fixture, `config/settings.yaml`, which BOTH arms match. Deleting either arm left the test green. Two mutants survived my own repair, and I found them only because I executed them rather than trusting the green. The fix was two tests, each with a fixture only one arm can see: a bare `settings.yaml` and a `config/values.jsonnet`. Name the mutant first is not enough - name one mutant PER GUARD.
 
+- The derived field caught its own run's stale evidence, which is the first time an instrument this project built reported against the session that built it. Registering the newly-executed mutants invalidated every earlier registration for the same targets - registration is keyed on the target's content hash, and the close had edited `verify_ac.py` and `gate.py` - so `depth` went from "executed 5" to "executed 3" and named the rows that no longer had support. Nothing else in the toolchain would have said a word: the suite was green, the criteria all passed, and the old counts sat in the fields looking exactly as they had. Twenty-two rows were re-executed against the current tree as a result, and every unit now reads `not-run 0`. LL0053 says register AFTER the last edit; what this adds is that the FIELD is what tells you when you did not.
+
 ## Carried lessons
 
 The 5 that matter most for the NEXT batch, chosen now rather than ranked from the whole
@@ -75,7 +77,6 @@ ruling HOLDS the close, which is the point of being able to make one.
 | BG0592 | not-stop-ship | authoring session | 2026-08-24 |
 | BG0604 | not-stop-ship | authoring session | 2026-08-24 |
 | BG0605 | not-stop-ship | authoring session | 2026-08-24 |
-| BG0606 | not-stop-ship | authoring session | 2026-08-24 |
 | BG0607 | not-stop-ship | authoring session | 2026-08-24 |
 | CR0552 | deferred | authoring session | 2026-08-24 |
 | CR0554 | deferred | authoring session | 2026-08-24 |
@@ -138,7 +139,7 @@ every EXAMPLE row; a row left in place is reported at the close, and a retro sti
 | The exemption reason floor counts characters, so twelve junk characters buy a blanket exemption | CR0553 |
 | The D0149 oracle procedure tells a reviewer to revert by hand and imposes no restore obligation | BG0604 |
 | The repair ledger computes outstanding findings per record, so two partial repairs both read as PARTIAL | BG0605 |
-| Six test-plan rows across US0671, US0674 and US0676 declare mutants their own criterion's verifier cannot die on | BG0606 |
+| Six test-plan rows across US0671, US0674 and US0676 declare mutants their own criterion's verifier cannot die on | fixed-in: the close - the rows were re-filed onto criteria whose tests reach them, nine criteria were added binding behaviours that had a test and no criterion, and BG0606 is closed by that work rather than carried |
 | A row killed by a test no criterion names reads as `killed`, though the ledger records both the kill node and the criterion's asked-for node | CR0554 |
 | A unit's verdict is the last row written, so one seat's APPROVE after another seat's REJECT makes a rejected unit read approved | BG0607 |
 | Round 2: the exemption pattern still could not see a production file whose extension was not a source-code one, live on BG0560 AC1 | fixed-in: the close commit, pinned by two tests isolating each arm of the pattern |

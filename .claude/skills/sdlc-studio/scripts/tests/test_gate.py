@@ -6587,6 +6587,42 @@ class RevertCheckLaneTests(unittest.TestCase):
         self.assertNotIn("none stayed green without its change", res["detail"].split(";")[0],
                          "a lane that examined nothing still reported a clean sweep")
 
+    def test_a_reported_unit_is_not_counted_as_examined(self) -> None:
+        """MUTANT: in `gate._revert_check`, count a unit whose status is `reported` as examined
+        by moving the `continue` below `examined += 1`.
+
+        A unit the check REPORTS was never measured - its `Affects` names no production file,
+        or every selector is dead. Counting it as examined inflates the denominator of the
+        yield pair, and that pair is the number the unit's own title says the decision to make
+        this lane blocking will rest on. An independent plan review found the skip silent: the
+        unit vanished from the message AND from the pair with nothing pinning either."""
+        import gate as gate_mod  # noqa: PLC0415 - local: the tests import by path
+        import verify_ac as _va  # noqa: PLC0415 - the lane imports it deferred
+        from unittest import mock as _mock  # noqa: PLC0415
+        root = self._fixture_root(green_after_revert=True)
+        with _mock.patch.object(_va, "revert_check",
+                                return_value={"status": "reported", "errors": ["nothing to revert"]}):
+            res = gate_mod._revert_check(str(root))
+        self.assertIn("0 unit(s) examined", res["detail"],
+                      f"a REPORTED unit was counted as examined, so the yield pair the blocking "
+                      f"decision rests on is inflated: {res}")
+        self.assertEqual(0, res["count"], res)
+
+    def test_the_lane_says_how_many_findings_it_dropped(self) -> None:
+        """MUTANT: in `gate._first_three`, return `"; ".join(items[:3])` with no remainder.
+
+        `_first_three` shipped in the repair for the truncation finding and had NO test and no
+        plan row - production code added to fix a silent truncation, itself unpinned, found by
+        an independent plan review. AC6 claims a stays-green unit is NAMED and so is each green
+        criterion; with four or more the lane can only name three, so the claim is BOUNDED by
+        this remainder and the bound has to be visible or the claim is false."""
+        import gate as gate_mod  # noqa: PLC0415 - local: the tests import by path
+        self.assertEqual("a; b; c", gate_mod._first_three(["a", "b", "c"]),
+                         "three items should print whole, with no remainder")
+        self.assertEqual("a; b; c (+2 more)", gate_mod._first_three(["a", "b", "c", "d", "e"]),
+                         "the lane dropped two findings and did not say so")
+        self.assertEqual("", gate_mod._first_three([]))
+
     def test_a_unit_that_stays_green_is_named_without_blocking(self) -> None:
         """MUTANT: in `gate._revert_check`, return `blocking: True` when anything is refused.
 
@@ -6599,6 +6635,13 @@ class RevertCheckLaneTests(unittest.TestCase):
         line = next((ln for ln in r.stdout.splitlines() if "revert-check" in ln), "")
         self.assertIn("would be refused", line, r.stdout)
         self.assertIn("US9200", line, r.stdout)
+        # THE CRITERION, not just the unit. An independent review found that deleting the
+        # joined green criteria from `_revert_check`'s `named.append` survived every declared
+        # row and every lane test: the unit id was asserted and the criterion half - which is
+        # the half a reader needs to know WHICH evidence is unsupported - was asserted nowhere.
+        self.assertRegex(line, r"AC\d+",
+                         f"the lane named the unit but no criterion, so a reader cannot tell "
+                         f"which evidence stayed green: {line}")
         self.assertEqual(0, r.returncode, "the advisory lane failed the gate")
 
     def _fixture_root(self, *, green_after_revert: bool):

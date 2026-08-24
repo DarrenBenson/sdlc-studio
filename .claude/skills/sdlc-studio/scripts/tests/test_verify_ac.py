@@ -5333,15 +5333,30 @@ class RevertCheckTests(unittest.TestCase):
         """The paired control for the widened pattern. Widening what counts as a path is only
         safe if the exemption still FIRES when every path named really is test code - a
         pattern that saw production everywhere would refuse correct work, and refusing correct
-        work is how a gate gets switched off."""
+        work is how a gate gets switched off.
+
+        DISCRIMINATION MATTERS HERE. An earlier cut asserted only that AC1 came back exempt,
+        and an independent review proved that vacuous: a mutant which exempts EVERY criterion
+        keeps AC1 exempt too, so the control passed with the taxonomy destroyed and the ledger
+        recorded a kill that had not happened. The fixture now carries a SECOND criterion whose
+        row names production, and the assertion is that the two are treated DIFFERENTLY - which
+        no blanket-exemption mutant can satisfy."""
         plan = ("\n## Test Plan\n\n"
                 "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
                 "| AC1 | in `tests/test_prod.py`, widen the assertion window in "
-                "`tests/helpers/fixtures.py` | a |\n")
-        repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py"), "scripts/prod.py",
-                          extra_sections=plan)
+                "`tests/helpers/fixtures.py` | a |\n"
+                "| AC2 | in `scripts/prod.py`, drop the shipped marker | b |\n")
+        repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py")
+                          + _ac(2, "grep SHIPPED_MARKER scripts/prod.py"),
+                          "scripts/prod.py", extra_sections=plan)
         code, out = self._run(repo)
         self.assertRegex(out, r"AC1.*exempt", out)
+        self.assertNotRegex(out, r"AC2\s+exempt",
+                            f"a criterion whose row names PRODUCTION was exempted too, so the "
+                            f"taxonomy is not discriminating: {out}")
+        # AC2 is measurable and goes red, so the UNIT passes. A blanket-exemption mutant leaves
+        # nothing measurable at all and the check exits 3 REPORTED, so the exit code moves too.
+        self.assertEqual(code, 0, out)
 
     def test_an_inherited_git_dir_does_not_steer_the_revert(self) -> None:
         """MUTANT: in `verify_ac._base_blob`/`_ref_exists`, drop `env=_git_env()`.

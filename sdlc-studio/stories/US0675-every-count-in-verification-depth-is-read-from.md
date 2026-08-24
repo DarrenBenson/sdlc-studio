@@ -1,6 +1,6 @@
 # US0675: Every COUNT in Verification depth is read from the mutation ledger, and an unexecuted row SAYS so
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0548
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new

@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 13 |
+| Draft | 10 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 3 |
 | Done | 647 |
 | Won't Implement | 2 |
 | Deferred | 0 |
@@ -111,10 +111,10 @@
 | [US0669](US0669-validate-sweeps-the-existing-corpus-for-unresolvable-selectors.md) | validate sweeps the existing corpus for unresolvable selectors, giving unresolvable_stamps its first caller | Done | EP0215 | 2026-08-11 | 2026-08-11 |
 | [US0670](US0670-the-release-discloses-every-open-medium-and-low.md) | The release discloses every open Medium and Low finding by id, and the page is derived from the bug corpus rather than maintained by hand | Done | EP0216 | 2026-08-11 | 2026-08-11 |
 | [US0671](US0671-revert-check-reverts-a-unit-s-production-files.md) | revert-check reverts a unit's production files and REFUSES when its own verifiers stay green | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0672](US0672-revert-check-restores-the-working-tree-byte-exact.md) | revert-check restores the working tree byte-exact, including when it is interrupted | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0673](US0673-revert-check-reports-a-unit-whose-affects-names.md) | revert-check REPORTS a unit whose Affects names no production file rather than passing it | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0672](US0672-revert-check-restores-the-working-tree-byte-exact.md) | revert-check restores the working tree byte-exact, including when it is interrupted | Review | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0673](US0673-revert-check-reports-a-unit-whose-affects-names.md) | revert-check REPORTS a unit whose Affects names no production file rather than passing it | Review | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0674](US0674-revert-check-runs-as-a-gate-lane-so.md) | revert-check runs as an ADVISORY gate lane that records its yield, so the decision to make it blocking rests on a number | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0675](US0675-every-count-in-verification-depth-is-read-from.md) | Every COUNT in Verification depth is read from the mutation ledger, and an unexecuted row SAYS so | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0675](US0675-every-count-in-verification-depth-is-read-from.md) | Every COUNT in Verification depth is read from the mutation ledger, and an unexecuted row SAYS so | Review | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0676](US0676-the-derived-half-of-verification-depth-is-delimited.md) | The derived half of Verification depth is delimited and a hand-edit to it is refused, while the author's judgement half survives verbatim | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0677](US0677-the-code-and-risk-subscores-are-computed-from.md) | The code and risk subscores are computed from the hunks a unit CHANGES against the base ref, not from every function in every declared file | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0678](US0678-a-unit-whose-diff-cannot-be-resolved-bands.md) | A unit whose diff cannot be resolved bands FULL and names the basis the estimate used | Draft | EP0217 | 2026-08-21 | 2026-08-21 |

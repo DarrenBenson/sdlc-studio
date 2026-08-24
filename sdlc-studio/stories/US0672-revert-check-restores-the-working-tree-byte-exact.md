@@ -1,6 +1,6 @@
 # US0672: revert-check restores the working tree byte-exact, including when it is interrupted
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0547
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
