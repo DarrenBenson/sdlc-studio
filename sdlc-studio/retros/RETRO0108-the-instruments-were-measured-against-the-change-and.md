@@ -47,6 +47,10 @@
 
 - The derived field caught its own run's stale evidence, which is the first time an instrument this project built reported against the session that built it. Registering the newly-executed mutants invalidated every earlier registration for the same targets - registration is keyed on the target's content hash, and the close had edited `verify_ac.py` and `gate.py` - so `depth` went from "executed 5" to "executed 3" and named the rows that no longer had support. Nothing else in the toolchain would have said a word: the suite was green, the criteria all passed, and the old counts sat in the fields looking exactly as they had. Twenty-two rows were re-executed against the current tree as a result, and every unit now reads `not-run 0`. LL0053 says register AFTER the last edit; what this adds is that the FIELD is what tells you when you did not.
 
+- The plan review took FOUR rounds, and the biggest single cause was a rule already written down: I hand-edited test-plan tables that `verify_ac.py testplan derive` owns. That produced a FUSED table row inside US0674's AC4 Title cell - a row a human reads and `testplan_rows_by_criterion` cannot see, so the unit's own derived field said "plan rows 8; executed 8; not-run 0" and every one of those numbers was computed over a table missing a row - and Title cells on two US0676 criteria stating a different criterion's claim. Running the tool repaired all of it in one command and then reported "unchanged". AGENTS.md's rule is "always look for a tool before doing anything by hand", the runbook names this exact command, and the failure mode it prevents is not sloppiness but a table that parses differently from how it reads.
+
+- A repair for unpinned behaviour can itself ship unpinned, and did. `_first_three` was added to fix a finding that the lane truncated its output silently - and it shipped with no test and no plan row, so the fix for "this is not pinned" was not pinned. An independent review found it one round later. The check is mechanical: after writing a repair, ask what test fails if the repair is removed, and if the answer is none, the repair is a claim.
+
 ## Carried lessons
 
 The 5 that matter most for the NEXT batch, chosen now rather than ranked from the whole
@@ -72,15 +76,65 @@ ruling HOLDS the close, which is the point of being able to make one.
 
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
+| BG0463 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0490 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0493 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0567 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0578 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0581 | not-stop-ship | authoring session | 2026-08-24 |
 | BG0586 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0587 | not-stop-ship | authoring session | 2026-08-24 |
 | BG0588 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0591 | not-stop-ship | authoring session | 2026-08-24 |
 | BG0592 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0599 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0600 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0601 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0602 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0603 | not-stop-ship | authoring session | 2026-08-24 |
 | BG0604 | not-stop-ship | authoring session | 2026-08-24 |
 | BG0605 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0606 | not-stop-ship | authoring session | 2026-08-24 |
 | BG0607 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0608 | not-stop-ship | authoring session | 2026-08-24 |
+| BG0609 | not-stop-ship | authoring session | 2026-08-24 |
+| CR0549 | deferred | authoring session | 2026-08-24 |
+| CR0550 | deferred | authoring session | 2026-08-24 |
+| CR0551 | deferred | authoring session | 2026-08-24 |
 | CR0552 | deferred | authoring session | 2026-08-24 |
-| CR0554 | deferred | authoring session | 2026-08-24 |
 | CR0553 | deferred | authoring session | 2026-08-24 |
+| CR0554 | deferred | authoring session | 2026-08-24 |
+| CR0424 | deferred | authoring session | 2026-08-24 |
+| CR0441 | deferred | authoring session | 2026-08-24 |
+| CR0496 | deferred | authoring session | 2026-08-24 |
+| CR0497 | deferred | authoring session | 2026-08-24 |
+| CR0499 | deferred | authoring session | 2026-08-24 |
+| CR0503 | deferred | authoring session | 2026-08-24 |
+| CR0504 | deferred | authoring session | 2026-08-24 |
+| CR0507 | deferred | authoring session | 2026-08-24 |
+| CR0509 | deferred | authoring session | 2026-08-24 |
+| CR0511 | deferred | authoring session | 2026-08-24 |
+| CR0512 | deferred | authoring session | 2026-08-24 |
+| CR0515 | deferred | authoring session | 2026-08-24 |
+| CR0523 | deferred | authoring session | 2026-08-24 |
+| CR0524 | deferred | authoring session | 2026-08-24 |
+| CR0526 | deferred | authoring session | 2026-08-24 |
+| CR0528 | deferred | authoring session | 2026-08-24 |
+| CR0529 | deferred | authoring session | 2026-08-24 |
+| CR0530 | deferred | authoring session | 2026-08-24 |
+| CR0531 | deferred | authoring session | 2026-08-24 |
+| CR0533 | deferred | authoring session | 2026-08-24 |
+| CR0534 | deferred | authoring session | 2026-08-24 |
+| CR0535 | deferred | authoring session | 2026-08-24 |
+| CR0536 | deferred | authoring session | 2026-08-24 |
+| CR0539 | deferred | authoring session | 2026-08-24 |
+| CR0540 | deferred | authoring session | 2026-08-24 |
+| CR0543 | deferred | authoring session | 2026-08-24 |
+| CR0544 | deferred | authoring session | 2026-08-24 |
+| CR0545 | deferred | authoring session | 2026-08-24 |
+| CR0546 | deferred | authoring session | 2026-08-24 |
+| CR0547 | deferred | authoring session | 2026-08-24 |
+| CR0548 | deferred | authoring session | 2026-08-24 |
 
 ## Estimate vs actual
 
@@ -167,5 +221,5 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Metrics
 
-- Delivery review rounds: 2, plus one test-plan plan review. Round 2 ran three seats over all six units and REJECTED four of them on five blocking findings, every one proved by execution rather than by reading; all five were repaired at the close and each is pinned by a mutant that was applied and killed. Round 1 never saw US0674 or US0676.
+- Delivery review rounds: 2. Test-plan plan review rounds: 4 - it rejected all three units three times, and every round's blocking findings were closed by the next. Round 2 ran three seats over all six units and REJECTED four of them on five blocking findings, every one proved by execution rather than by reading; all five were repaired at the close and each is pinned by a mutant that was applied and killed. Round 1 never saw US0674 or US0676.
 - Tokens: captured by `accuracy --tokens-from-harness` at close · Duration: captured at close · Critic rejects: 4 recorded at round 1 (US0671, US0672, US0673, US0675), all repaired; US0674 and US0676 had no round-1 pass

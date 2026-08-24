@@ -6608,6 +6608,37 @@ class RevertCheckLaneTests(unittest.TestCase):
                       f"decision rests on is inflated: {res}")
         self.assertEqual(0, res["count"], res)
 
+    def test_the_lane_itself_says_how_many_findings_it_dropped(self) -> None:
+        """MUTANT: in `gate._revert_check`, call `"; ".join(named[:3])` at the truncation site
+        instead of `_first_three(named)`.
+
+        THE SIBLING TEST BELOW CANNOT FAIL ON THAT EDIT. It calls `_first_three` in isolation,
+        while AC10's criterion is about the LANE - "when IT truncates them, then IT says how
+        many it dropped". An independent review bypassed the helper at the call site and
+        watched all nine lane tests pass, so the silent truncation the criterion exists to
+        forbid could be reintroduced with the criterion green.
+
+        That is the library-test-standing-in-for-a-lane-test scar, shipped again one criterion
+        over from `test_the_boundary_lane_itself_writes_the_yield_file`, whose own docstring
+        records it. So this drives `_revert_check` over FOUR refused units and reads its
+        message."""
+        import gate as gate_mod  # noqa: PLC0415 - local: the tests import by path
+        import verify_ac as _va  # noqa: PLC0415 - the lane imports it deferred
+        from lib import run_state as _rs  # noqa: PLC0415 - so is run_state
+        from unittest import mock as _mock  # noqa: PLC0415
+        root = self._fixture_root(green_after_revert=True)
+        batch = [f"US9{200 + i}" for i in range(4)]
+        with _mock.patch.object(gate_mod, "_record_revert_yield"), \
+                _mock.patch.object(_rs, "read", return_value={"batch": batch}), \
+                _mock.patch.object(_rs, "base_ref", return_value="deadbeef"), \
+                _mock.patch.object(_va, "revert_check",
+                                   return_value={"status": "refused", "green": ["AC1"]}):
+            res = gate_mod._revert_check(str(root))
+        self.assertEqual(4, res["count"], res)
+        self.assertIn("(+1 more)", res["detail"],
+                      f"the lane named three of four refused units and did not say it had "
+                      f"dropped one, so its own naming claim is silently unmet: {res}")
+
     def test_the_lane_says_how_many_findings_it_dropped(self) -> None:
         """MUTANT: in `gate._first_three`, return `"; ".join(items[:3])` with no remainder.
 

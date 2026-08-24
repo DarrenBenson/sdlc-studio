@@ -1,6 +1,6 @@
 # US0673: revert-check REPORTS a unit whose Affects names no production file rather than passing it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0547
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
@@ -19,10 +19,10 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit whose `Affects` names no production file at all - only test files, or only markdown - when the check runs, then it REPORTS that condition by name and does not pass the unit. Nothing to revert is not evidence that the tests reach anything, and an absence and a pass must not read the same
+- [x] **AC1** Given a unit whose `Affects` names no production file at all - only test files, or only markdown - when the check runs, then it REPORTS that condition by name and does not pass the unit. Nothing to revert is not evidence that the tests reach anything, and an absence and a pass must not read the same
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_a_unit_with_no_production_file_is_reported_not_passed
   - **Verified:** yes (2026-08-21)
-- [ ] **AC2** Given a unit whose `Affects` names a production file absent from the tree, when the check runs, then it reports the unresolvable path rather than silently reverting the subset it could resolve - a partial revert tests a change nobody described
+- [x] **AC2** Given a unit whose `Affects` names a production file absent from the tree, when the check runs, then it reports the unresolvable path rather than silently reverting the subset it could resolve - a partial revert tests a change nobody described
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_an_unresolvable_affects_path_is_reported
   - **Verified:** yes (2026-08-21)
 

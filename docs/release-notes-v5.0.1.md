@@ -74,14 +74,15 @@ documented command now works, pinned to `v5.0.1` or later.
 ## Known issues
 
 **v5.0.1 was TAGGED with zero Critical and zero High open against it.** That was true at the tag
-and is not a standing claim: eleven High findings have since been raised against this code, every
+and is not a standing claim: twelve High findings have since been raised against this code, every
 one of them by adversarial review after the tag. **Six are open now - BG0586, BG0588, BG0592,
-BG0604, BG0606 and BG0607.** Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
+BG0606, BG0607 and BG0609.** Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
 BG0583 was raised at High and then closed WON'T FIX when its premise did not survive
 re-measurement.
 
-The newest, BG0604, is the one worth stating plainly because it is a defect in this project's own
-review procedure rather than in its code. The oracle rule recorded in D0149 requires a reviewer to
+BG0604 was raised at High and RE-TRIAGED to Medium on 2026-08-24, against the rubric: a
+workaround exists and the shipped tooling already prints it. It is worth stating plainly anyway,
+because it is a defect in this project's own review procedure rather than in its code. The oracle rule recorded in D0149 requires a reviewer to
 take a unit's base revision BY HAND, and names no restore step; a reviewer ran it against the main
 working tree rather than their own worktree and destroyed a session's uncommitted work. Nothing
 could restore it, because the work had never been committed. The rule's substance was right - a
@@ -92,9 +93,10 @@ the manual check runs in.
 open set directly; a disagreement between the two is the guard working, not drift to be edited
 away. This paragraph has now been wrong in both directions at once - naming three findings that
 had been fixed while missing one that was open - which is the argument for reading the command
-rather than the prose. All six are carried to v5.1.
+rather than the prose. All six are carried to v5.1, and BG0606's fix has already shipped - it stays open only because
+closing it needs a test-plan review for work an independent seat has already approved.
 
-**v5.0.1 discloses 15 open defects: 15 Medium, 0 Low.** The six High findings above are
+**v5.0.1 discloses 16 open defects: 16 Medium, 0 Low.** The six High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

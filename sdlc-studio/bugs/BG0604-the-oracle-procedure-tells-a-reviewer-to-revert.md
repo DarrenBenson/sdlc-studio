@@ -1,7 +1,8 @@
 # BG0604: The oracle procedure tells a reviewer to revert files by hand with no restore obligation, and it destroyed uncommitted work in the main tree
 
 > **Status:** Open
-> **Severity:** High
+> **Re-triaged:** High -> Medium, 2026-08-24, against the rubric in reference-bug.md. High is 'major feature broken, NO workaround'; Medium is 'feature impaired, workaround exists'. A workaround exists and the shipped tooling already prints it: every brief that critic.py brief generates carries 'Mutate in an ISOLATED CHECKOUT of your own, never the author's working tree' and 'Do NOT use git stash or git checkout --'. The defect is that D0149's oracle procedure does not repeat that guard, so the exposure is a decision record contradicting a brief rather than an unguarded path. The data loss it caused was real and is why it was filed High on consequence; re-triaged on likelihood and workaround.
+> **Severity:** Medium
 > **Points:** 3
 > **Affects:** sdlc-studio/decisions.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Evidence:** RUN-01M0JD1W, 2026-08-21: an adversarial reviewer briefed under D0149 ran the manual revert against the main working tree; `verify_ac.py` came back byte-identical to the base ref with the session's uncommitted work in it gone.

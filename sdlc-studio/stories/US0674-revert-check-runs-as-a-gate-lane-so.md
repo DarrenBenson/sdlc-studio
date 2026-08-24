@@ -1,6 +1,6 @@
 # US0674: revert-check runs as an ADVISORY gate lane that records its yield, so the decision to make it blocking rests on a number
 
-> **Status:** Draft
+> **Status:** Done
 > **Closed with findings in:** BG0606 - the test-plan plan review REJECTed this unit's plan, and the plan-review gate was overridden at the close on the operator's recorded decision to carry it rather than repair it in this run. The rows are named in BG0606 and the tests that would bind them already exist.
 > **Delivers:** CR0547
 > **Created:** 2026-08-21
@@ -21,35 +21,35 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given `gate.py --boundary push` or `--boundary release`, when it runs, then `revert-check` runs as a named lane and REPORTS a unit whose verifiers stay green, while the exit code is unchanged. Bound at the boundary and NOT per-commit, on `release-rehearsal`'s precedent: reverting and re-running per unit costs minutes against a per-commit gate already at 53s, and a lane whose cost is paid on every commit gets switched off
+- [x] **AC1** Given `gate.py --boundary push` or `--boundary release`, when it runs, then `revert-check` runs as a named lane and REPORTS a unit whose verifiers stay green, while the exit code is unchanged. Bound at the boundary and NOT per-commit, on `release-rehearsal`'s precedent: reverting and re-running per unit costs minutes against a per-commit gate already at 53s, and a lane whose cost is paid on every commit gets switched off
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_the_lane_runs_at_the_boundary_and_not_per_commit
   - **Verified:** yes (2026-08-21)
-- [ ] **AC2** Given a unit whose verifiers DO go red after the revert, when the lane runs, then it reports nothing for that unit - the paired control, because a lane that names every unit put in front of it has measured nothing and its yield figure would be meaningless
+- [x] **AC2** Given a unit whose verifiers DO go red after the revert, when the lane runs, then it reports nothing for that unit - the paired control, because a lane that names every unit put in front of it has measured nothing and its yield figure would be meaningless
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_a_unit_whose_verifiers_go_red_is_not_reported
   - **Verified:** yes (2026-08-21)
-- [ ] **AC3** Given the lane running over a batch, when it completes, then it records its YIELD - how many units it examined and how many it would have refused - to a file, and that recorded pair CHANGES with the input rather than being a constant the test could not falsify
+- [x] **AC3** Given the lane running over a batch, when it completes, then it records its YIELD - how many units it examined and how many it would have refused - to a file, and that recorded pair CHANGES with the input rather than being a constant the test could not falsify
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_the_recorded_yield_changes_with_the_input
   - **Verified:** yes (2026-08-21)
-- [ ] **AC4** Given the pre-commit lane roster AGENTS.md documents, when `tools/tests/test_check_spec_claims.py` runs, then it names `revert-check` and names it as ADVISORY - a lane absent from the roster is one nobody notices losing (LL0013), and a lane the roster miscategorises is one whose blocking status nobody can check
+- [x] **AC4** Given the pre-commit lane roster AGENTS.md documents, when `tools/tests/test_check_spec_claims.py` runs, then it names `revert-check` and names it as ADVISORY - a lane absent from the roster is one nobody notices losing (LL0013), and a lane the roster miscategorises is one whose blocking status nobody can check
   - **Verify:** pytest tools/tests/test_check_spec_claims.py -k revert_check
   - **Verified:** yes (2026-08-21)
-- [ ] **AC5** Given the yield file, when the lane writes it, then it is written under gitignored `sdlc-studio/.local/` - the pair is this repository's own working measurement, not a tracked artefact every consuming project inherits
+- [x] **AC5** Given the yield file, when the lane writes it, then it is written under gitignored `sdlc-studio/.local/` - the pair is this repository's own working measurement, not a tracked artefact every consuming project inherits
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_the_yield_is_written_under_local
   - **Verified:** yes (2026-08-24)
-- [ ] **AC6** Given a unit whose verifiers stay green after the revert, when the lane reports it, then that unit is NAMED, and so is each criterion that stayed green, and the gate still PASSES - advisory means reported-and-not-blocking, and a lane that never fires and a lane that blocks are different failures
+- [x] **AC6** Given a unit whose verifiers stay green after the revert, when the lane reports it, then that unit is NAMED, and so is each criterion that stayed green, and the gate still PASSES - advisory means reported-and-not-blocking, and a lane that never fires and a lane that blocks are different failures
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_a_unit_that_stays_green_is_named_without_blocking
   - **Verified:** yes (2026-08-24)
-- [ ] **AC7** Given a unit the lane cannot examine at all, when the lane reports, then the failure LEADS its message rather than being dropped behind a clean-sweep sentence - an absence must not read as a pass, which is the rule the checked code enforces four times over
+- [x] **AC7** Given a unit the lane cannot examine at all, when the lane reports, then the failure LEADS its message rather than being dropped behind a clean-sweep sentence - an absence must not read as a pass, which is the rule the checked code enforces four times over
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_a_unit_the_lane_cannot_examine_is_not_reported_as_a_clean_pass
   - **Verified:** yes (2026-08-24)
-- [ ] **AC8** Given a real boundary run of the shipped `gate.py`, when it completes, then THE LANE has written the yield file and a second run accumulates into it - the lane's own use of the recorder, not the recorder in isolation
+- [x] **AC8** Given a real boundary run of the shipped `gate.py`, when it completes, then THE LANE has written the yield file and a second run accumulates into it - the lane's own use of the recorder, not the recorder in isolation
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_the_boundary_lane_itself_writes_the_yield_file
   - **Verified:** yes (2026-08-24)
-- [ ] **AC9** Given a unit the check REPORTS rather than measures, when the lane runs, then that unit is not counted as examined and the yield pair says so - a unit that silently vanishes from the message and from the pair biases the very number the decision to make this lane blocking rests on
+- [x] **AC9** Given a unit the check REPORTS rather than measures, when the lane runs, then that unit is not counted as examined and the yield pair says so - a unit that silently vanishes from the message and from the pair biases the very number the decision to make this lane blocking rests on
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_a_reported_unit_is_not_counted_as_examined
   - **Verified:** yes (2026-08-24)
-- [ ] **AC10** Given more findings than the lane prints, when it truncates them, then it says how many it dropped - AC6's naming claim is BOUNDED by that remainder, and a silent truncation reads as "that was all of them"
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_the_lane_says_how_many_findings_it_dropped
+- [x] **AC10** Given more findings than the lane prints, when it truncates them, then it says how many it dropped - AC6's naming claim is BOUNDED by that remainder, and a silent truncation reads as "that was all of them"
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_the_lane_itself_says_how_many_findings_it_dropped
   - **Verified:** yes (2026-08-24)
 
 ## Test Plan
@@ -65,7 +65,7 @@
 | AC7 | in `gate.py`, swallow the per-unit exception into `named` and drop `named` on the no-refusal path | Given a unit the lane cannot examine at all, when the lane reports, then the failure LEADS its message rather than being dropped behind a clean-sweep sentence - an absence must not read as a pass, which is the rule the checked code enforces four times over |
 | AC8 | in `gate.py`, delete the `_record_revert_yield(root, examined, len(refused))` call from `_revert_check` | Given a real boundary run of the shipped `gate.py`, when it completes, then THE LANE has written the yield file and a second run accumulates into it - the lane's own use of the recorder, not the recorder in isolation |
 | AC9 | in `gate.py`, move the `continue` for a reported unit below `examined += 1` in `_revert_check`, so a unit that measured nothing is counted as examined | Given a unit the check REPORTS rather than measures, when the lane runs, then that unit is not counted as examined and the yield pair says so - a unit that silently vanishes from the message and from the pair biases the very number the decision to make this lane blocking rests on |
-| AC10 | in `gate.py`, return `"; ".join(items[:3])` from `_first_three` with no remainder, so a truncated finding list reads as the whole one | Given more findings than the lane prints, when it truncates them, then it says how many it dropped - AC6's naming claim is BOUNDED by that remainder, and a silent truncation reads as "that was all of them" |
+| AC10 | in `gate.py`, replace the `_first_three(named)` call at `_revert_check`'s truncation site with `"; ".join(named[:3])`, so the lane drops findings without saying so | Given more findings than the lane prints, when it truncates them, then it says how many it dropped - AC6's naming claim is BOUNDED by that remainder, and a silent truncation reads as "that was all of them" |
 
 ## Revision History
 

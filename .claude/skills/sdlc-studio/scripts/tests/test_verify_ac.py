@@ -5217,8 +5217,13 @@ class RevertCheckTests(unittest.TestCase):
             victim.unlink(missing_ok=True)
 
     def test_a_git_failure_is_reported_rather_than_read_as_absent_at_base(self) -> None:
-        """MUTANT: in `verify_ac._base_blob`, return None on any non-zero git exit instead of
-        asking `ls-tree` whether the path exists at that ref.
+        """MUTANT: in `verify_ac.revert_check`, swallow `_BaseUnreadable` and carry on with an
+        empty blob.
+
+        THIS TEST CANNOT FAIL ON AN EDIT INSIDE `_base_blob`, because it patches `_base_blob`
+        wholesale - an independent review named that and proved it by collapsing the reader
+        with this test still green. The `_base_blob` decision is AC14's, driven end to end
+        against a real git failure. What this one pins is the CATCH site.
 
         Absent-at-base and could-not-ask are different answers, and reading the second as the
         first DELETES the production file - which manufactures exactly the red this gate looks
@@ -5231,6 +5236,44 @@ class RevertCheckTests(unittest.TestCase):
                 verify_ac, "_base_blob",
                 side_effect=verify_ac._BaseUnreadable("fatal: path exists, but not in HEAD")):
             code, out = self._run(repo)
+        self.assertEqual(code, 3, out)
+        self.assertIn("could not read", out)
+        self.assertEqual(before, repo.hashes(),
+                         "the production file was disturbed after git could not be asked")
+
+    def test_a_real_git_failure_at_the_base_ref_is_reported_rather_than_read_as_absent(self) -> None:
+        """MUTANT: in `verify_ac._base_blob`, drop the `ls-tree` existence question and return
+        `None` whenever `git show` exits non-zero.
+
+        THE SIBLING TEST ABOVE CANNOT FAIL ON THAT EDIT, because it patches `_base_blob`
+        wholesale and so mocks out the very decision the criterion is about. An independent
+        review collapsed `_base_blob` to `shown = _git("show", ...); return None if
+        shown.returncode else shown.stdout` and watched all 25 tests in this class pass. So
+        this one drives a REAL git failure end to end: the tree object still lists the path,
+        and the BLOB it points at is deleted from the object store, so `ls-tree` answers yes
+        and `show` fails. Absent-at-base and could-not-ask are then genuinely different
+        questions and only the real code can tell them apart.
+
+        Read as absent, the check DELETES the production file and manufactures the red it is
+        looking for."""
+        repo = self._repo(_ac(1, "grep BASE_ONLY scripts/prod.py"), "scripts/prod.py")
+        blob = gitutil.git(["rev-parse", f"{repo.base}:scripts/prod.py"],
+                           repo.tmp).stdout.decode().strip()
+        loose = repo.tmp / ".git" / "objects" / blob[:2] / blob[2:]
+        if not loose.exists():                       # packed: unpack rather than skip
+            gitutil.git(["unpack-objects"], repo.tmp, check=False)
+        self.assertTrue(loose.exists(),
+                        "the base blob is not a loose object, so this fixture cannot break it")
+        loose.unlink()
+        listed = gitutil.git(["ls-tree", "--name-only", repo.base, "--", "scripts/prod.py"],
+                             repo.tmp, check=False)
+        self.assertIn(b"scripts/prod.py", listed.stdout,
+                      "the tree no longer lists the path, so `show` failing proves nothing")
+        shown = gitutil.git(["show", f"{repo.base}:scripts/prod.py"], repo.tmp, check=False)
+        self.assertNotEqual(0, shown.returncode,
+                            "git could still read the blob, so there is no failure to report")
+        before = repo.hashes()
+        code, out = self._run(repo)
         self.assertEqual(code, 3, out)
         self.assertIn("could not read", out)
         self.assertEqual(before, repo.hashes(),
