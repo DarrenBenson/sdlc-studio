@@ -1,6 +1,6 @@
 # CR-0549: route.estimate scores whole declared files, so the risk band that drives review ceremony is a constant in any repo with large modules
 
-> **Status:** In Progress
+> **Status:** Superseded
 > **Decomposed-into:** EP0217
 > **Priority:** High
 > **Type:** Improvement
@@ -132,6 +132,31 @@ at `route.py:229`, plus the shipped `cmd_estimate` CLI. A basis parameter with n
 all of them; `_difficulty_band` also swallows a bare `Exception`, so a refusal degrades silently at
 every existing site unless that is changed too.
 
+## Fourth correction, 2026-08-24: the remedy is WITHDRAWN and replaced by CR0555
+
+A third specification was rejected, and this time the finding was not about cutpoints. The
+measurement justifying the Points-led band was taken against a throwaway script; `route.estimate`
+computes five weighted subscores into a 0-100 score and bands it at 20/40/60/80. Run through the
+pipeline that actually ships, three literal readings of the criterion land at 81%, 92% and 97%
+`light` - the mirror image of this request's own defect, in the direction that ships defects.
+
+Two further things this record should carry, because both were errors of mine rather than of the
+reviewer. The published table compared two different definitions of `full`: the 87% baseline is
+`medium`-or-above under `critic.BAND_TIER`, and the model's own script printed the honest
+figure - ceremony 87% to 66.6% - while the flattering 20.3% went into the correction. And the
+Points-led band is threshold tuning on a different field, which this request's Summary rejects
+in terms: "any cutpoint chosen there is tuning noise rather than measuring risk."
+
+**D0150 then settled it as a class**: no author-declared field may gate review depth, and `Points`
+is author-declared. That rules out the whole family of pre-code remedies, because everything
+available before a unit is implemented is a declaration by its author.
+
+**The diagnosis stands and the remedy moves to CR0555.** The gate does not need a better pre-code
+band - it needs to fire where a diff exists. `critic.tier_for` already reads a post-code band
+successfully for exactly that reason. What survives from this request is the `scope` convention fix
+(US0679) and the diff basis for the one consumer that runs after code, and both should be re-cut
+against CR0555 rather than salvaged from a batch three reviews have rejected.
+
 ## Acceptance Criteria
 
 - [ ] The DECLARED basis - the one three of the four pre-code consumers read - is computed from the unit's own `Points` and `Affects` breadth, not from a complexity read over whole declared files
@@ -149,3 +174,4 @@ every existing site unless that is changed too.
 | 2026-08-21 | sdlc-studio | Raised |
 | 2026-08-21 | sdlc-studio | Goal review CORRECTION: the two principal consumers (`plan_review._difficulty_band`, the planner's banding) run before a diff exists and were unnamed; `base_ref` is per-run so a corpus re-measurement has no diff for closed units; two derived criteria contradicted each other on whether the spread widens or narrows. Needs re-grooming before it can be planned |
 | 2026-08-24 | sdlc-studio | Second and third corrections: the consumer list is seven, not two; the estimator answers two questions and names which; and the DECLARED basis is re-specified onto `Points` and `Affects` breadth after a goal review measured the first re-groom moving the band at one of four consumers. Acceptance criteria rewritten to the settled design - the previous set encoded the superseded one and `critic.py brief` serves them as law. |
+| 2026-08-24 | sdlc-studio | Fourth correction: remedy WITHDRAWN after a third rejection, superseded by CR0555. D0150 rules out the whole pre-code family. Diagnosis stands. |

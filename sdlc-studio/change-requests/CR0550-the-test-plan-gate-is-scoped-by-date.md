@@ -31,6 +31,23 @@ With band scoping, the mutant-execution join would apply to the 88 of 603 bugs t
 
 What breaks if this is done carelessly: the gate that caught round 1's defect must survive for the units that need it, and `review.mutation_evidence` must stay independent of this setting - BG0541 was exactly the defect of nesting one inside the other, and `transition.py:931-937` records why the two lanes are kept sequential.
 
+## Correction, 2026-08-24: this request depends on a band that is not being built
+
+CR0550 scopes the test-plan gate by BAND, and states that band-scoping buys nothing until CR0549
+lands. CR0549's remedy is now withdrawn - D0150 forbids gating review depth on an author-declared
+field, and everything available before a unit is implemented is one - so the dependency cannot be
+satisfied as written.
+
+CR0555 replaces the approach: rather than scoping the gate by a band that must be read before a
+diff exists, it MOVES the expensive half of the gate to the terminal transition, where a diff does
+exist. That serves this request's purpose - a project finding the ceremony heavy gains relief
+without switching the gate off wholesale - by a mechanism that does not need a pre-code band at all.
+
+This request's AC1 also no longer describes the intended behaviour. It reads "a project can require
+the test plan for high-band units alone"; the settled design keeps the PLAN required at every band
+and narrows only the independent APPROVAL, which is AC3's promise and the half that costs. Rework
+against CR0555 rather than building this as filed.
+
 ## Acceptance Criteria
 
 - [ ] `_plan_gate_active` takes a scope as well as a date, so a project can require the test plan for high-band units alone rather than for every unit past the cutoff
@@ -46,3 +63,4 @@ What breaks if this is done carelessly: the gate that caught round 1's defect mu
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Raised |
 | 2026-08-21 | sdlc-studio | Goal review CORRECTION: the summary claimed this setting gates the pre-code plan review. It does not - `review.test_plan_after` is read only in `transition.py`, while the plan review fires from `plan_review.triggers`. The claimed saving against the 31 plan-review passes is withdrawn, and the scope question is named as owed grooming |
+| 2026-08-24 | sdlc-studio | Correction: the CR0549 dependency cannot be satisfied (D0150). Rework against CR0555, which moves the gate rather than scoping it. AC1 contradicts the settled design. |

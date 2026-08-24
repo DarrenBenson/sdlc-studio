@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 8 |
+| Draft | 0 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 2 |
 | Deferred | 0 |
 | Superseded | 2 |
-| Blocked | 0 |
+| Blocked | 8 |
 | **Total** | **684** |
 
 ## All Stories
@@ -116,14 +116,14 @@
 | [US0674](US0674-revert-check-runs-as-a-gate-lane-so.md) | revert-check runs as an ADVISORY gate lane that records its yield, so the decision to make it blocking rests on a number | Done | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0675](US0675-every-count-in-verification-depth-is-read-from.md) | Every COUNT in Verification depth is read from the mutation ledger, and an unexecuted row SAYS so | Done | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0676](US0676-the-derived-half-of-verification-depth-is-delimited.md) | The derived half of Verification depth is delimited and a hand-edit to it is refused, while the author's judgement half survives verbatim | Done | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0677](US0677-the-code-and-risk-subscores-are-computed-from.md) | The code and risk subscores are computed from the hunks a unit CHANGES against the base ref, not from every function in every declared file | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0678](US0678-a-unit-whose-diff-cannot-be-resolved-bands.md) | A unit whose diff cannot be resolved bands FULL and names the basis the estimate used | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0679](US0679-the-scope-subscore-stops-counting-a-test-file.md) | The scope subscore stops counting a test file present only because the Affects convention requires it | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0680](US0680-the-band-distribution-over-this-repository-s-corpus.md) | The band distribution over this repository's corpus is RE-MEASURED after the change and recorded, so the claim that the gate discriminates rests on a number | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0681](US0681-plan-gate-active-takes-a-scope-as-well.md) | _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0682](US0682-review-mutation-evidence-stays-independent-of-the-test.md) | review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0683](US0683-the-close-reports-which-units-the-test-plan.md) | The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each | Draft | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0684](US0684-every-consumer-of-route-estimate-asks-for-the.md) | Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded | Draft | EP0217 | 2026-08-24 | 2026-08-24 |
+| [US0677](US0677-the-code-and-risk-subscores-are-computed-from.md) | The code and risk subscores are computed from the hunks a unit CHANGES against the base ref, not from every function in every declared file | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0678](US0678-a-unit-whose-diff-cannot-be-resolved-bands.md) | A unit whose diff cannot be resolved bands FULL and names the basis the estimate used | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0679](US0679-the-scope-subscore-stops-counting-a-test-file.md) | The scope subscore stops counting a test file present only because the Affects convention requires it | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0680](US0680-the-band-distribution-over-this-repository-s-corpus.md) | The band distribution over this repository's corpus is RE-MEASURED after the change and recorded, so the claim that the gate discriminates rests on a number | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0681](US0681-plan-gate-active-takes-a-scope-as-well.md) | _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0682](US0682-review-mutation-evidence-stays-independent-of-the-test.md) | review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0683](US0683-the-close-reports-which-units-the-test-plan.md) | The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0684](US0684-every-consumer-of-route-estimate-asks-for-the.md) | Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded | Blocked | EP0217 | 2026-08-24 | 2026-08-24 |
 
 ## Archived Releases
 

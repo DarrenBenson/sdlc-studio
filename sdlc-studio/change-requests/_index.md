@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 27 |
+| Proposed | 28 |
 | Approved | 0 |
-| In Progress | 10 |
+| In Progress | 9 |
 | Complete | 494 |
 | Rejected | 1 |
 | Deferred | 0 |
-| Superseded | 22 |
+| Superseded | 23 |
 | Blocked | 0 |
-| **Total** | **554** |
+| **Total** | **555** |
 
 ## All Changes
 
@@ -99,12 +99,13 @@
 | [CR-0546](CR0546-the-run-should-notice-work-it-delivered-that.md) | the run should notice work it delivered that its batch never named | Proposed | High | Improvement | 2026-08-17 | -- |
 | [CR-0547](CR0547-verify-ac-revert-check-revert-a-unit-s.md) | verify_ac revert-check: revert a unit's production files and REQUIRE its own verifiers to go red | In Progress | High | enhancement | 2026-08-19 | EP0217 |
 | [CR-0548](CR0548-derive-verification-depth-from-the-ledger-instead-of.md) | derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch | In Progress | High | enhancement | 2026-08-19 | EP0217 |
-| [CR-0549](CR0549-route-estimate-scores-whole-declared-files-so-the.md) | route.estimate scores whole declared files, so the risk band that drives review ceremony is a constant in any repo with large modules | In Progress | High | Improvement | 2026-08-21 | EP0217 |
+| [CR-0549](CR0549-route-estimate-scores-whole-declared-files-so-the.md) | route.estimate scores whole declared files, so the risk band that drives review ceremony is a constant in any repo with large modules | Superseded | High | Improvement | 2026-08-21 | EP0217 |
 | [CR-0550](CR0550-the-test-plan-gate-is-scoped-by-date.md) | The test-plan gate is scoped by DATE alone, so it cannot be narrowed to the units whose risk earns it | In Progress | High | Improvement | 2026-08-21 | EP0217 |
 | [CR-0551](CR0551-the-appetite-ceiling-measures-wall-clock-since-the.md) | The appetite ceiling measures WALL-CLOCK since the run opened, so a run left open overnight reports spend it never incurred | Proposed | High | Improvement | 2026-08-21 | -- |
 | [CR-0552](CR0552-revert-check-mutates-the-live-working-tree-so.md) | revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo | Proposed | High | Improvement | 2026-08-21 | -- |
 | [CR-0553](CR0553-the-exemption-reason-floor-counts-characters-so-twelve.md) | The exemption reason floor counts characters, so twelve junk characters buy a blanket revert-check exemption | Proposed | Medium | Improvement | 2026-08-21 | -- |
 | [CR-0554](CR0554-a-plan-row-whose-recorded-kill-node-is.md) | A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts | Proposed | High | Improvement | 2026-08-24 | -- |
+| [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | Proposed | High | Improvement | 2026-08-24 | -- |
 
 ## Archived Releases
 

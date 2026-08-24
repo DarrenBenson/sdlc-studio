@@ -1,12 +1,13 @@
 # US0683: The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each
 
-> **Status:** Draft
+> **Status:** Blocked
 > **Delivers:** CR0550
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0217
+> **Blocked by:** D0150 and CR0555. A pre-code goal review REJECTED this batch three times. The third rejection was decisive: the measurement justifying the design was taken against a throwaway script rather than the weighted pipeline `route.estimate` actually runs, and three literal readings of the criterion through the real pipeline land at 81 to 97 per cent `light` - the mirror image of the defect, in the more dangerous direction. D0150 then ruled out the class entirely: no author-declared field may gate review depth, and `Points` is author-declared. CR0555 replaces the approach - the expensive half of the gate MOVES to the terminal transition where a diff exists, rather than being banded on a signal that must be read before one does. Do not build this batch; it is kept for its review record, which cost three rounds to produce. Disposition: the close report - still wanted, re-target at CR0555's shape.
 > **Points:** 5
 > **Persona:** Maya Okafor
 
@@ -33,5 +34,4 @@
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
-
 | 2026-08-24 | sdlc-studio | RE-GROOMED against CR0549's second and third corrections after a pre-code goal review REJECTED the first attempt: the declared basis now reads `Points` and `Affects` breadth rather than whole-file complexity, measured to move `light` from 13% to 33%. |

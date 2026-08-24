@@ -1,12 +1,13 @@
 # US0684: Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded
 
-> **Status:** Draft
+> **Status:** Blocked
 > **Created:** 2026-08-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Delivers:** CR0549
 > **Affects:** .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/scripts/plan_review.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_route.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff.py
 > **Epic:** EP0217
+> **Blocked by:** D0150 and CR0555. A pre-code goal review REJECTED this batch three times. The third rejection was decisive: the measurement justifying the design was taken against a throwaway script rather than the weighted pipeline `route.estimate` actually runs, and three literal readings of the criterion through the real pipeline land at 81 to 97 per cent `light` - the mirror image of the defect, in the more dangerous direction. D0150 then ruled out the class entirely: no author-declared field may gate review depth, and `Points` is author-declared. CR0555 replaces the approach - the expensive half of the gate MOVES to the terminal transition where a diff exists, rather than being banded on a signal that must be read before one does. Do not build this batch; it is kept for its review record, which cost three rounds to produce. Disposition: per-caller basis - only the `critic.tier_for` half survives; the pre-code callers no longer need a basis.
 > **Points:** 8
 > **Persona:** Maya Okafor
 

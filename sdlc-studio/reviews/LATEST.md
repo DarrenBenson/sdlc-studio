@@ -22,13 +22,9 @@ in the fields looking correct. All 22 were re-executed. Every unit now reads `no
 Delivery: 3 rounds. **Test-plan plan review: 5 rounds**, rejecting three units three times;
 every round's blocking findings were closed by the next, and round 5 APPROVED all three.
 
-The dominant cause was hand-editing plan tables that `verify_ac.py testplan derive` OWNS. That
-produced a FUSED row inside US0674's AC4 Title cell - readable by a human, invisible to
-`testplan_rows_by_criterion` - so that unit's own derived field said "plan rows 8; executed 8;
-not-run 0" and every figure was computed over a table missing a row. Running the tool fixed it
-and three wrong Title cells in one command.
-
-What the rounds found that was not mechanical:
+The dominant cause was hand-editing plan tables that `verify_ac.py testplan derive` OWNS - it
+produced a FUSED row invisible to the parser, so a unit's derived field counted over a table
+missing a row. What the rounds found that was not mechanical:
 
 - a FALSE KILL: US0671 AC8's declared mutant SURVIVED, because its control asserted only that
   AC1 came back exempt - which a mutant exempting EVERYTHING satisfies too
@@ -59,12 +55,16 @@ it can reach Fixed - the gate that cost this run five rounds, with no `--force` 
 BG0606 is the proof: its fix SHIPPED and was independently approved, and it is still Open
 because closing it needs a sixth plan review for work already reviewed.
 
-So **CR0549 and CR0550 come first** - US0677-US0684, 30 points, and a pre-code goal review
-REJECTED that batch on 2026-08-24: measured over 610 bugs its design moves the band at one of
-four consumers, 87% to 85%, spread unchanged. Being re-specified. CR0549 because
-`route.estimate` scores whole declared FILES, so 87% of 603 bugs tier `full`; CR0550 because
-the test-plan gate is date-scoped and cannot be narrowed to the units that earn it. Operator
-decision, 2026-08-24.
+**CR0549's remedy is WITHDRAWN and CR0555 replaces it.** Three pre-code goal reviews rejected
+three specifications, all failing in the same place: the gate fires BEFORE a unit is implemented,
+so every available signal is a declaration by its author - and **D0150** now forbids an
+author-declared field from gating review depth. US0677-US0684 are Blocked, kept for their review
+record. The diagnosis stands: 87% of the corpus tiers `full`.
+
+CR0555 moves the gate instead of banding it. `_test_plan_gate` demands two things - that a plan
+EXISTS, which is cheap and stays at every band, and that an independent seat has APPROVED it,
+which cost five rounds here and blocks 20 of 21 open bugs. Only the approval moves, to the
+terminal transition where a diff exists and `critic.tier_for` already bands successfully.
 
 ## OPEN
 
