@@ -2480,6 +2480,18 @@ def testplan_row_faults(mutant: str, then_clause: str, affects: list) -> list:
     if not text or text == _TESTPLAN_PLACEHOLDER or not _substance_tokens(text):
         return ["blank - a mutant is a change to production code, and no change is named"]
     lowered = text.lower()
+    # THE `unnameable` MARKER IS ITS OWN CONTRACT, asked BEFORE the four mutant rules. A row
+    # declaring that no production change can falsify its criterion cannot also be required to
+    # name one: held to the mutant rules it fails all four by construction, so the declaration
+    # this project charges for was unusable and the criterion had no honest row at all. What it
+    # owes instead is a REASON with substance - the marker costs a written declaration, and a
+    # free pass is what it exists to prevent.
+    if lowered.startswith(UNNAMEABLE):
+        reason = text[len(UNNAMEABLE):].lstrip(" :-").strip()
+        if len(_reason_substance(reason)) < 12:
+            return ["declared `unnameable` with no reason of substance - the marker costs a "
+                    "written declaration of WHY no production change can falsify the criterion"]
+        return []
     # MEMBERSHIP of the unit's own Affects, never path SHAPE: the mutant that defeated the
     # original wording named a real file, so a rule checking shape still accepts it.
     names = {Path(a).name.lower() for a in affects if a} | {str(a).strip().lower() for a in affects if a}

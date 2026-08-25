@@ -3113,5 +3113,60 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
                          "story reading derived-only is the pattern eating authored prose")
 
 
+class ScalarForListTests(unittest.TestCase):
+    """BG0610 - a scalar supplied where a list is expected was ITERATED, not stored."""
+
+    def _doc(self, root: Path, **fields) -> Path:
+        p = root / "fields.json"
+        p.write_text(json.dumps(fields), encoding="utf-8")
+        return p
+
+    def test_a_scalar_where_a_list_is_expected_is_refused(self) -> None:
+        """MUTANT: in `file_finding._refuse_scalar_for_list`, return without checking.
+
+        `for i, v in enumerate(f.get("verify") or [])` iterates a STRING's characters, so one
+        Verify expression became one letter per criterion - the six criteria of a story were
+        written with verifiers reading p, y, t, e, s, t - and the command reported success. The
+        keys were validated; the types were not."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            doc = self._doc(root, title="probe", acs=["one", "two"], options="a single option")
+            with self.assertRaises(ValueError) as caught:
+                ff.load_fields_file(doc)
+            self.assertIn("options", str(caught.exception))
+            self.assertIn("not a list", str(caught.exception))
+
+    def test_a_proper_list_is_accepted(self) -> None:
+        """The paired control. The check must refuse a scalar, not every fields-file - a guard
+        that refused the documented path would be worse than the defect."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            doc = self._doc(root, title="probe", acs=["one"], options=["a", "b"])
+            out = ff.load_fields_file(doc)
+            self.assertEqual(["a", "b"], out["options"])
+
+    def test_a_scalar_for_a_scalar_field_is_still_accepted(self) -> None:
+        """The second control. The rule is about LIST-valued fields; demanding lists everywhere
+        would refuse `title`, `summary` and every other single-value field in the contract."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            doc = self._doc(root, title="a plain string title", acs=["one"])
+            self.assertEqual("a plain string title", ff.load_fields_file(doc)["title"])
+
+    def test_both_readers_share_the_rule(self) -> None:
+        """MUTANT: apply the check in one caller rather than in the shared loader.
+
+        `artifact.py` and `file_finding.py` read the same contract through the same function,
+        so the rule belongs there - a check wired into one caller leaves the other carrying the
+        defect, which is how a repair ships half-applied."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            doc = self._doc(root, title="probe", acs="one criterion as a string")
+            for allowed in (ff.FIELDS_FILE_KEYS,):
+                with self.assertRaises(ValueError) as caught:
+                    ff.load_fields_file(doc, allowed)
+                self.assertIn("acs", str(caught.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

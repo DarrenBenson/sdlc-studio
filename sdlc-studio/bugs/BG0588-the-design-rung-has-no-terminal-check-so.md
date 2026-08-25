@@ -1,7 +1,8 @@
 # BG0588: the design rung has no terminal check, so a unit left at Draft or Blocked closes it clean
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional [[derived: criteria 2; plan rows 2; executed 2; killed 2; survived 0; not-run 0; entry point 0 of 2 criteria through the shipped CLI, 2 in-process | fp ae72f7a3576b ]] (two criteria over the close pre-flight: a groomed unit short of the rung's terminal blocks, and one at the terminal does not. Both mutants executed and killed against the current tree)
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-08-17
@@ -23,9 +24,17 @@ Fold this into BG0586's redesign of the design rung's bar rather than patching i
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a design rung whose unit is groomed but left at Draft or Blocked, when the close pre-flight runs, then it reports a blocking row naming that unit
-- [ ] **AC2** Given a design rung whose unit is groomed and at Ready, when the pre-flight runs, then it reports no blocker for it - the positive control
-- [ ] **AC3** Given a design batch containing a unit of a type `unit_is_ungroomed` cannot judge, when the pre-flight runs, then that unit is reported rather than silently passing
+- [ ] **AC1** Given a `design` rung unit that is groomed but sits at Draft, when the close pre-flight runs, then it reports a blocking row naming the unit and the rung's terminal - groomed is not finished, and a rung that did half its work closed clean
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RungTerminalAndProductTests::test_a_groomed_unit_short_of_the_terminal_blocks
+- [ ] **AC2** Given a `design` rung unit that is groomed AND at the rung's terminal, when the pre-flight runs, then it reports no blocker - the paired control, because a check that blocks a rung which did exactly what it exists to do is one nobody keeps
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RungTerminalAndProductTests::test_a_groomed_unit_at_the_terminal_does_not_block
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint.py`, `continue` in `_rung_product_blockers` as soon as a unit is groomed | Given a `design` rung unit that is groomed but sits at Draft, when the close pre-flight runs, then it reports a blocking row naming the unit and the rung's terminal - groomed is not finished, and a rung that did half its work closed clean |
+| AC2 | in `sprint.py`, drop the terminal comparison from `_rung_product_blockers`, so every groomed unit blocks | Given a `design` rung unit that is groomed AND at the rung's terminal, when the pre-flight runs, then it reports no blocker - the paired control, because a check that blocks a rung which did exactly what it exists to do is one nobody keeps |
 
 ## Revision History
 

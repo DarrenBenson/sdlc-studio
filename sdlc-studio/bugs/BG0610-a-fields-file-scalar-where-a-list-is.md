@@ -1,10 +1,11 @@
 # BG0610: A --fields-file scalar where a list is expected is iterated CHARACTER BY CHARACTER, so one Verify line becomes one letter per criterion
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Premise narrowed 2026-08-25:** the `acs` character-by-character limb was already closed under 4f276b31. What stands is the untyped path: `artifact.py:154` still reads `for i, v in enumerate((f.get("verify") or []), 1)`, so a scalar supplied for a list-valued field is still iterated per character. Build the type check; do not re-fix `acs`. Found by an independent goal review before any code was written.
+> **Verification depth:** functional [[derived: criteria 4; plan rows 4; executed 4; killed 4; survived 0; not-run 0; entry point 0 of 4 criteria through the shipped CLI, 4 in-process | fp 81eb122393d9 ]] (four criteria over the shared fields-file loader, each with its own mutant executed and killed: the check removed, widened to refuse lists too, widened to every field, and moved out of the shared loader into one caller. The last is the one that matters - `artifact.py` and `file_finding.py` read one contract through one function, so a check wired into a single caller ships the repair half-applied. NOT covered: the `acs` character-slicing limb this bug was filed for, which a prior commit had already closed - that was found by a pre-code review and the criteria were narrowed to the limb still live.)
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
 > **Evidence:** artifact.py:154, `for i, v in enumerate((f.get("verify") or []), 1)`. Reproduced by inspection of the artefact it produced: sdlc-studio/stories/US0684 as first written carried six Verify lines of one character each. The criteria themselves rendered in a non-canonical bullet form at the same time, so the file needed rewriting by hand.
 > **Created:** 2026-08-24
 > **Created-by:** sdlc-studio file
@@ -25,10 +26,23 @@ Validate the TYPE of every field beside its name, with the same refusal the unkn
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fields-file supplying a scalar string for a list-valued field, when the artefact is created, then the command REFUSES naming the field and the type it expected, and no artefact is written
-- [ ] **AC2** Given a fields-file supplying a proper list for that field, when the artefact is created, then it is written exactly as today - the paired control, so the refusal is shown to discriminate rather than to reject every fields-file
-- [ ] **AC3** Given a fields-file supplying a scalar for a scalar field, when the artefact is created, then it is accepted, so the check does not simply demand lists everywhere
-- [ ] **AC4** Given the same scalar-for-list shape supplied to `file_finding.py`, when the finding is filed, then it is refused on the same rule, because the two share the fields-file contract
+- [ ] **AC1** Given a fields-file supplying a scalar where a LIST-valued field is expected, when it is read, then it is REFUSED naming the field and the type it got - a string is ITERATED rather than stored, so one value becomes one character per item
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ScalarForListTests::test_a_scalar_where_a_list_is_expected_is_refused
+- [ ] **AC2** Given the same field supplied as a proper list, when it is read, then it is accepted unchanged - the paired control, because a guard that refused the documented path would be worse than the defect
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ScalarForListTests::test_a_proper_list_is_accepted
+- [ ] **AC3** Given a scalar supplied for a SCALAR field, when it is read, then it is still accepted - the rule is about list-valued fields, and demanding lists everywhere would refuse `title` and every other single-value field in the contract
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ScalarForListTests::test_a_scalar_for_a_scalar_field_is_still_accepted
+- [ ] **AC4** Given the same shape supplied through either reader, when it is read, then both refuse it - `artifact.py` and `file_finding.py` share one loader, and a check wired into one caller leaves the other carrying the defect
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ScalarForListTests::test_both_readers_share_the_rule
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `file_finding.py`, return early from `_refuse_scalar_for_list` without checking | Given a fields-file supplying a scalar where a LIST-valued field is expected, when it is read, then it is REFUSED naming the field and the type it got - a string is ITERATED rather than stored, so one value becomes one character per item |
+| AC2 | in `file_finding.py`, extend `_refuse_scalar_for_list` to refuse a list as well as a scalar | Given the same field supplied as a proper list, when it is read, then it is accepted unchanged - the paired control, because a guard that refused the documented path would be worse than the defect |
+| AC3 | in `file_finding.py`, add every field name to `LIST_VALUED_FIELDS` | Given a scalar supplied for a SCALAR field, when it is read, then it is still accepted - the rule is about list-valued fields, and demanding lists everywhere would refuse `title` and every other single-value field in the contract |
+| AC4 | in `file_finding.py`, move the check out of `load_fields_file` into one caller | Given the same shape supplied through either reader, when it is read, then both refuse it - `artifact.py` and `file_finding.py` share one loader, and a check wired into one caller leaves the other carrying the defect |
 
 ## Revision History
 

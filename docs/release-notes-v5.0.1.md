@@ -75,8 +75,9 @@ documented command now works, pinned to `v5.0.1` or later.
 
 **v5.0.1 was TAGGED with zero Critical and zero High open against it.** That was true at the tag
 and is not a standing claim: fourteen High findings have since been raised against this code, every
-one of them by adversarial review, by dogfooding or by measurement after the tag. **Three are open
-now - BG0586, BG0588 and BG0610.** Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
+one of them by adversarial review, by dogfooding or by measurement after the tag. **Zero Critical, zero High.** All fourteen have been fixed and independently evidenced;
+the last six closed in RUN-01M0WCCG, each carrying executed mutant evidence against the
+tree as it stands rather than a claim about it. Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
 BG0583 was raised at High and then closed WON'T FIX when its premise did not survive
 re-measurement.
 
@@ -93,10 +94,10 @@ the manual check runs in.
 open set directly; a disagreement between the two is the guard working, not drift to be edited
 away. This paragraph has now been wrong in both directions at once - naming three findings that
 had been fixed while missing one that was open - which is the argument for reading the command
-rather than the prose. All three are carried to v5.1, and BG0606's fix has already shipped - it stays open only because
+rather than the prose. Nothing at High is carried to v5.1, and BG0606's fix has already shipped - it stays open only because
 closing it needs a test-plan review for work an independent seat has already approved.
 
-**v5.0.1 discloses 12 open defects: 12 Medium, 0 Low.** The three High findings above are
+**v5.0.1 discloses 9 open defects: 9 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

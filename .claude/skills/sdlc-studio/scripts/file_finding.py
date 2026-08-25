@@ -1284,7 +1284,32 @@ def load_fields_file(path: Path | str, allowed: tuple[str, ...] = FIELDS_FILE_KE
         raise ValueError(f"--fields-file {p} carries unknown field(s): {', '.join(unknown)} - "
                          f"known fields are {', '.join(allowed)}. A key nobody reads is a field "
                          f"that silently went missing, so it is refused rather than ignored")
+    _refuse_scalar_for_list(p, data)
     return {k: v for k, v in data.items() if v is not None}
+
+
+#: Fields every fields-file reader treats as a LIST. A scalar here is not a near-miss: Python
+#: iterates a string's CHARACTERS, so one Verify expression became one letter per criterion and
+#: the artefact was written, indexed and reported created. The keys are validated; the types
+#: were not, and the damage was visible only by reading the rendered file.
+LIST_VALUED_FIELDS = ("acs", "verify", "options", "affects_list", "steps_list")
+
+
+def _refuse_scalar_for_list(where, data: dict) -> None:
+    """Refuse a scalar supplied where a list is expected, naming the field and both types.
+
+    Refusing rather than coercing, on this module's own stated rule: a key nobody reads is a
+    field that silently went missing, and a character-sliced value is that failure one level
+    down. A writer who means one item can write a one-item list.
+    """
+    wrong = [(k, type(data[k]).__name__) for k in LIST_VALUED_FIELDS
+             if k in data and data[k] is not None and not isinstance(data[k], (list, tuple))]
+    if wrong:
+        detail = "; ".join(f"`{k}` is a {kind}, not a list" for k, kind in wrong)
+        raise ValueError(
+            f"--fields-file {where} supplies a scalar where a list is expected: {detail}. A "
+            f"string here is ITERATED rather than stored - one value becomes one character per "
+            f"item - so it is refused. Write a one-item list if you mean one item")
 
 
 def index_template_path(type_: str) -> Path:

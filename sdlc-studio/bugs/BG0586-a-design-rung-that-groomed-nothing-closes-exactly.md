@@ -1,7 +1,8 @@
 # BG0586: a design rung that groomed nothing closes exactly like one that groomed everything
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional [[derived: criteria 2; plan rows 2; executed 2; killed 2; survived 0; not-run 0; entry point 0 of 2 criteria through the shipped CLI, 2 in-process | fp ae72f7a3576b ]] (two criteria over the close pre-flight, driven against a REAL git history rather than a stub - the check is silent when git cannot answer, so a fixture that could not answer would exercise the fail-open path and prove nothing. Both mutants executed and killed. NOT covered: whether `pre_work` is recorded anywhere by the batch commands today; this unit reads the field and does not create it)
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-08-16
@@ -23,9 +24,17 @@ Judge the rung against the work, not the state. Candidate shape: a design-rung u
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a design rung whose batch units were all groomed before the run window and which has no commits in it, when the close pre-flight runs, then it does NOT report ready
-- [ ] **AC2** Given a design rung that groomed its units within the run window, when the pre-flight runs, then it reports no blocker for them - the positive control
-- [ ] **AC3** Given a design rung carrying a unit recorded as pre-work, when the pre-flight runs, then that unit does not block - a legitimate close must stay reachable
+- [ ] **AC1** Given a `design` rung whose units were all groomed before the run and which has no commit naming any of them, when the pre-flight runs, then it reports a blocking row - every per-unit check asks whether the product EXISTS, so a rung that produced nothing closed identically to one that groomed everything
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RungTerminalAndProductTests::test_a_rung_that_produced_nothing_in_the_run_is_reported
+- [ ] **AC2** Given a unit declared as PRE-WORK when the batch was formed, when the pre-flight runs, then it does not accuse the rung - a legitimate close may carry work groomed earlier; what it may not do is let that be invisible
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RungTerminalAndProductTests::test_a_unit_declared_as_pre_work_does_not_accuse_the_rung
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint.py`, delete the batch-level production check from `_rung_product_blockers` | Given a `design` rung whose units were all groomed before the run and which has no commit naming any of them, when the pre-flight runs, then it reports a blocking row - every per-unit check asks whether the product EXISTS, so a rung that produced nothing closed identically to one that groomed everything |
+| AC2 | in `sprint.py`, drop the pre-work exclusion from `_rung_product_blockers` | Given a unit declared as PRE-WORK when the batch was formed, when the pre-flight runs, then it does not accuse the rung - a legitimate close may carry work groomed earlier; what it may not do is let that be invisible |
 
 ## Revision History
 

@@ -3144,14 +3144,29 @@ END_STATE_DONE = "Done"
 END_STATE_REVIEW = "Review"
 
 
-def reachable_end_state(repo_root: Path | str, batch: list[dict]) -> dict:
+#: The terminal each rung is trying to reach, and the state a capped batch stops at. A `design`
+#: rung is finished when its units are GROOMED, not when they are built, so reporting `Done` for
+#: it describes work it never set out to do.
+RUNG_TERMINALS = {"triage": ("Triaged", "Triaged"), "plan": ("Ready", "Ready"),
+                  "design": ("Ready", "Ready"), "done": (END_STATE_DONE, END_STATE_REVIEW)}
+
+
+def reachable_end_state(repo_root: Path | str, batch: list[dict],
+                        rung: str | None = None) -> dict:
     """The furthest state this batch can reach under the gates that apply to it.
 
-    Reports `Done` and no reason when nothing caps it, so the check cannot degrade into a
-    warning that always fires. Only the two-role rule is derived here; other gates that could
-    cap a batch are not claimed to be covered.
+    Reports the rung's own terminal and no reason when nothing caps it, so the check cannot
+    degrade into a warning that always fires. Only the two-role rule is derived here; other
+    gates that could cap a batch are not claimed to be covered.
+
+    THE CAP IS STORY-ONLY, because the gate it derives from is. `transition.py` guards the
+    two-role rule with `type_ == "story" and target_canon == "Done"`, so a batch of bugs is
+    capped by nothing here - and reporting `Review` for one named a state that is not in a
+    bug's vocabulary at all. This report was doing that on a bug batch while a unit filed
+    about it sat in that very batch.
     """
     root = Path(repo_root)
+    terminal, capped = RUNG_TERMINALS.get((rung or "done").lower(), RUNG_TERMINALS["done"])
     try:
         cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
     except ValueError as exc:  # a config typo fails loud in the gate; it must not break a plan
@@ -3169,14 +3184,18 @@ def reachable_end_state(repo_root: Path | str, batch: list[dict]) -> dict:
             # unit as reaching Done when the sign-off gate may well cap it, which is the
             # direction this whole report exists to refuse. An unanswerable comparison is
             # treated as PAST the cutoff, which is the same way the conformance gate reads it.
+            # STORIES ONLY. The gate this derives from is story-and-Done only, so a bug or a
+            # CR in the batch is not capped by it and must not be named as though it were.
+            if (it.get("type") or it.get("kind") or "story").lower() != "story":
+                continue
             if num is None or num > cutoff:
                 reached.append(sdlc_md.norm_id(it["id"]))
     if not reached:
-        return {"state": END_STATE_DONE, "reason": None, "units": [],
+        return {"state": terminal, "reason": None, "units": [],
                 "gate": "review.two_role_after", "cutoff": cutoff,
-                "basis": "no gate in this project caps this batch below Done"}
+                "basis": f"no gate in this project caps this batch below {terminal}"}
     return {
-        "state": END_STATE_REVIEW,
+        "state": capped,
         "reason": (f"review.two_role_after is {cutoff}, so {len(reached)} unit(s) past it "
                    f"reach Done only with an independent reviewer-of-record sign-off that the "
                    f"authoring session is refused"),
@@ -3249,7 +3268,11 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
                             if order == "wsjf" and not skip_personas else None),
         # How far this batch can actually get under its own gates. Recorded on every plan, so
         # a goal nothing could satisfy is visible before the work rather than at the close.
-        "reachable_end_state": reachable_end_state(root, batch),
+        # THE RUNG IS PASSED, not assumed. A `design` rung is finished when its units are
+        # GROOMED, so reporting `Done` for it describes work it never set out to do - and the
+        # brief that carried this figure named `Review` for a batch of bugs, a state that is
+        # not in a bug's vocabulary at all.
+        "reachable_end_state": reachable_end_state(root, batch, rung=goal),
         # A token cost FORECAST for the batch (estimate, never a gate - see _token_forecast).
         "token_forecast": forecast,
         # Does the batch FIT? Sized against the sprint capacity at PLAN time - and carrying the
@@ -5936,10 +5959,16 @@ def grooming_report(root, batch: list[str]) -> dict:
     total = 0
     for uid in batch or []:
         hit = sdlc_md.find_by_id(Path(root), uid)
-        if not hit or hit[1] != "story":
+        # EVERY TYPE, and the SAME definition the pre-flight uses. This counted stories and
+        # asked `story_is_ungroomed`, while the pre-flight asks `unit_is_ungroomed` of every
+        # type - so one close carried two answers to one question, and a batch of bugs read
+        # "no story units in this batch" beside a pre-flight blocking on those very bugs.
+        if not hit or hit[1] == "epic":
             continue
         total += 1
-        if conformance.story_is_ungroomed(sdlc_md.read_text_safe(Path(hit[0]))):
+        ungroomed, _why = conformance.unit_is_ungroomed(hit[1],
+                                                        sdlc_md.read_text_safe(Path(hit[0])))
+        if ungroomed:
             names.append(sdlc_md.norm_id(uid))
     return {"total": total, "groomed": total - len(names),
             "ungroomed": len(names), "names": sorted(names)}
@@ -5950,7 +5979,7 @@ def render_grooming_report(rep: dict) -> str:
     ordinary close - accepting an ungroomed batch and grooming none of it is the abuse the
     relaxation invites, so it must be the loudest thing the close says about the rung."""
     if not rep["total"]:
-        return "grooming: no story units in this batch"
+        return "grooming: no gradeable units in this batch"
     if rep["ungroomed"] and not rep["groomed"]:
         return (f"grooming: NOTHING WAS GROOMED - all {rep['total']} unit(s) are as ungroomed as "
                 f"they were at plan time ({', '.join(rep['names'][:6])}). This rung was accepted "
@@ -6613,7 +6642,27 @@ def _rung_product_blockers(root, state, rung: str) -> list:
     """
     import conformance  # noqa: PLC0415 - deferred; one definition of "ungroomed", never a second
     out: list[dict] = []
-    for unit in [u for u in (sdlc_md.norm_id(x) for x in (state.get("batch") or [])) if u]:
+    units = [u for u in (sdlc_md.norm_id(x) for x in (state.get("batch") or [])) if u]
+    # DID THE RUNG PRODUCE ANYTHING? A batch groomed BEFORE the run opened, with no commit in
+    # the run naming any of its units, closes identically to one that groomed everything - the
+    # per-unit checks below all pass, because they ask whether the product EXISTS rather than
+    # whether this run made it. Reported once for the batch, not per unit: the finding is about
+    # the run.
+    pre_work = {u for u in units if _unit_recorded_as_pre_work(state, u)}
+    judged = [u for u in units if u not in pre_work]
+    if judged and not _rung_touched_any(root, state, judged):
+        out.append({"stage": "status",
+                    "cause": f"a `{rung}` rung produced nothing in this run",
+                    "detail": (f"every unit in this batch was already groomed when the run "
+                               f"opened and no commit in the run names one of them, so this "
+                               f"close cannot be told from one where the rung did nothing. "
+                               f"Units judged: {', '.join(sorted(judged))}"
+                               + (f"; recorded as pre-work and not judged: "
+                                  f"{', '.join(sorted(pre_work))}" if pre_work else "")),
+                    "remedy": ("record what this rung produced - or close it `partial` with "
+                               "`sprint.py close --goal-verdict partial --note '<why>'`, which "
+                               "is the honest verdict for a rung that found its work done")})
+    for unit in units:
         try:
             found = sdlc_md.find_by_id(Path(root), unit)
             if not found:
@@ -6625,6 +6674,25 @@ def _rung_product_blockers(root, state, rung: str) -> list:
             sdlc_md.debug("sprint._rung_product_blockers", exc)
             continue
         if not ungroomed:
+            # GROOMED IS NOT FINISHED. A unit whose criteria are authored and which sits at
+            # Draft or Blocked has the rung's product and has not reached the rung's terminal,
+            # so the close read it as complete. The rung is exempt from the build rung's bar,
+            # not from having a terminal of its own.
+            terminal, _capped = RUNG_TERMINALS.get(rung.lower(), RUNG_TERMINALS["done"])
+            status = (sdlc_md.extract_field(sdlc_md.read_text_safe(path), "Status") or "").strip()
+            vocab = sdlc_md.status_vocab(type_, Path(root))
+            canon = sdlc_md.canonical_status(status, vocab)
+            if canon and canon != terminal and terminal in vocab:
+                out.append({"stage": "status",
+                            "cause": f"a `{rung}` rung unit is groomed but not at its terminal",
+                            "detail": (f"{unit}: this run's rung is `{rung}`, whose terminal is "
+                                       f"`{terminal}`, and this unit is groomed but sits at "
+                                       f"`{status or '?'}`. Producing the criteria and leaving "
+                                       f"the unit short of the terminal closes a run that did "
+                                       f"only half of what the rung exists to do"),
+                            "remedy": (f"move {unit} to `{terminal}`, or drop it from the batch "
+                                       f"with `sprint.py batch drop --id {unit} "
+                                       f"--reason '<why>'`")})
             continue
         out.append({"stage": "status",
                     "cause": f"a `{rung}` rung did not produce its own output",
@@ -6636,6 +6704,39 @@ def _rung_product_blockers(root, state, rung: str) -> list:
                                f"or drop it from the batch with `sprint.py batch drop --id "
                                f"{unit} --reason '<why>'`")})
     return out
+
+
+
+def _unit_recorded_as_pre_work(state: dict, unit: str) -> bool:
+    """Was this unit declared as PRE-WORK when the batch was formed?
+
+    A legitimate close may carry a unit somebody groomed before the run - what it may not do is
+    let that be invisible. Declared pre-work is named and not judged; undeclared pre-work is
+    exactly the shape the batch-level check above refuses.
+    """
+    declared = state.get("pre_work") or state.get("prework") or []
+    return sdlc_md.norm_id(unit) in {sdlc_md.norm_id(x) for x in declared if x}
+
+
+def _rung_touched_any(root, state: dict, units: list) -> bool:
+    """True when any commit in the run names one of these units.
+
+    Read-only and SILENT WHEN GIT CANNOT ANSWER: a run whose history cannot be read is not
+    accused of having produced nothing, which is the same rule `undelivered_blockers` follows.
+    """
+    base = (state.get("base_ref") or "").strip()
+    if not base:
+        return True                       # unanswerable, so not accused
+    try:
+        res = _git(root, "log", f"{base}..HEAD", "--format=%s%n%b")
+        if res.returncode != 0:
+            return True
+        out = res.stdout
+        log = (out.decode("utf-8", "replace") if isinstance(out, bytes) else str(out)).upper()
+    except Exception as exc:  # noqa: BLE001 - a read-only report never fails the preflight
+        sdlc_md.debug("sprint._rung_touched_any", exc)
+        return True
+    return any(sdlc_md.norm_id(u).upper() in log for u in units)
 
 
 def undelivered_blockers(root, state) -> list:

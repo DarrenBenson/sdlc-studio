@@ -1,7 +1,8 @@
 # BG0600: the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
+> **Verification depth:** functional [[derived: criteria 3; plan rows 3; executed 3; killed 3; survived 0; not-run 0; entry point 0 of 3 criteria through the shipped CLI, 3 in-process | fp 7685bed880df ]] (three criteria over `testplan_row_faults`, each with its own mutant executed and killed: the contract asked after the mutant rules rather than before, the reason floor removed, and the marker test widened to any prefix. The exemption is shown to be NARROW by a control - an ordinary vague row is still refused for carrying no edit verb.)
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Evidence:** Found while authoring the RUN-01M0CT8P test plans, 2026-08-19; both functions run directly against the same row to confirm they disagree.
@@ -34,6 +35,14 @@ Ask `testplan_unnameable`'s question before the fault rules: a row whose cell be
 ## Impact
 
 The one escape valve the test-plan gate ships is unusable as documented, so the author of an unfalsifiable criterion has three options: write a dishonest exemption, write a dishonest mutant, or drop the criterion. All three are worse than the declaration the mechanism was built to collect, and the third silently shrinks what the plan covers. It also means the count of declared exemptions - the number that would show whether this bar is being gamed - is measuring reluctance to fight the tool rather than genuine unfalsifiability.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `verify_ac.py`, move the `unnameable` branch of `testplan_row_faults` below the four mutant rules | Given a row whose cell begins `unnameable` and carries a reason with substance, when the row rules run, then it is judged by the `unnameable` contract and NOT by the four mutant rules - a declaration that no production change can falsify the criterion cannot also be required to name one |
+| AC2 | in `verify_ac.py`, return no faults from `testplan_row_faults` for any row beginning `unnameable` | Given a row beginning `unnameable` whose reason is empty or junk, when the row rules run, then it is REFUSED - the marker costs a written declaration, and a free pass is what it exists to prevent |
+| AC3 | in `verify_ac.py`, widen the marker test in `testplan_row_faults` to accept any prefix | Given an ordinary row that does NOT begin `unnameable`, when the row rules run, then all four mutant rules still apply to it exactly as today - the paired control, so the exemption is shown to be narrow |
 
 ## Revision History
 

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 15 |
+| Open | 9 |
 | In Progress | 0 |
-| Fixed | 500 |
+| Fixed | 506 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
@@ -120,14 +120,14 @@
 | [BG0578](BG0578-test-file-attribution-is-decided-by-name-frequency.md) | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner | Open | Medium | 2026-08-14 | 2026-08-14 |
 | [BG0579](BG0579-the-per-commit-gate-has-outgrown-the-tool.md) | the per-commit gate has outgrown the tool timeouts that run it, so a commit is KILLED rather than refused - and a kill reads as a hang, which invites --no-verify | Fixed | High | 2026-08-14 | 2026-08-14 |
 | [BG0580](BG0580-ten-units-reached-a-terminal-status-and-were.md) | ten units reached a terminal status and were signed off with test plans whose mutants were never executed, and five of those plans are still scaffold placeholders | Fixed | High | 2026-08-15 | 2026-08-15 |
-| [BG0581](BG0581-the-goal-review-brief-states-a-reachable-end.md) | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready | Open | Medium | 2026-08-16 | 2026-08-16 |
+| [BG0581](BG0581-the-goal-review-brief-states-a-reachable-end.md) | the goal-review brief states a reachable end state without knowing the rung, so it promises Review for a design rung that ends at Ready | Fixed | Medium | 2026-08-16 | 2026-08-16 |
 | [BG0582](BG0582-the-design-rung-can-be-planned-and-groomed.md) | the design rung can be planned and groomed but not closed: sprint plan reads the rung and the close chain does not, so it demands Done for units the rung says correctly end at Ready | Fixed | High | 2026-08-16 | 2026-08-16 |
 | [BG0583](BG0583-verify-ac-run-reports-success-for-a-unit.md) | verify_ac run reports success for a unit it never read | Won't Fix | High | 2026-08-16 | 2026-08-16 |
 | [BG0584](BG0584-the-tick-verification-checklist-row-is-rung-blind.md) | the tick-verification checklist row is rung-blind, so a grooming run cannot answer it | Fixed | Medium | 2026-08-16 | 2026-08-16 |
 | [BG0585](BG0585-the-derived-only-grooming-detector-is-defeated-by.md) | the derived-only grooming detector is defeated by the AC-number prefix it ships with | Fixed | High | 2026-08-16 | 2026-08-16 |
-| [BG0586](BG0586-a-design-rung-that-groomed-nothing-closes-exactly.md) | a design rung that groomed nothing closes exactly like one that groomed everything | Open | High | 2026-08-16 | 2026-08-16 |
-| [BG0587](BG0587-two-answers-to-the-grooming-question-inside-one.md) | two answers to the grooming question inside one close | Open | Medium | 2026-08-16 | 2026-08-16 |
-| [BG0588](BG0588-the-design-rung-has-no-terminal-check-so.md) | the design rung has no terminal check, so a unit left at Draft or Blocked closes it clean | Open | High | 2026-08-17 | 2026-08-17 |
+| [BG0586](BG0586-a-design-rung-that-groomed-nothing-closes-exactly.md) | a design rung that groomed nothing closes exactly like one that groomed everything | Fixed | High | 2026-08-16 | 2026-08-16 |
+| [BG0587](BG0587-two-answers-to-the-grooming-question-inside-one.md) | two answers to the grooming question inside one close | Fixed | Medium | 2026-08-16 | 2026-08-16 |
+| [BG0588](BG0588-the-design-rung-has-no-terminal-check-so.md) | the design rung has no terminal check, so a unit left at Draft or Blocked closes it clean | Fixed | High | 2026-08-17 | 2026-08-17 |
 | [BG0589](BG0589-the-close-pre-flight-counts-advisory-rows-as.md) | the close pre-flight counts advisory rows as unmet prerequisites | Fixed | Medium | 2026-08-17 | 2026-08-17 |
 | [BG0590](BG0590-sprint-close-appends-a-handoff-bullet-that-fails.md) | sprint close appends a handoff bullet that fails the repo's own markdown lane | Fixed | Medium | 2026-08-17 | 2026-08-17 |
 | [BG0591](BG0591-status-and-close-owed-give-opposite-answers-about.md) | status and close_owed give opposite answers about the same units | Open | Medium | 2026-08-17 | 2026-08-17 |
@@ -139,7 +139,7 @@
 | [BG0597](BG0597-testplan-derive-silently-destroys-an-authored-test-plan.md) | testplan derive silently DESTROYS an authored Test Plan row when a criterion carries more than one, at exit 0 | Fixed | High | 2026-08-19 | 2026-08-19 |
 | [BG0598](BG0598-the-plan-s-built-not-closed-exclusion-reads.md) | the plan's BUILT-NOT-CLOSED exclusion reads verifier greens and not the verdict ledger, so a unit with an unanswered REJECT is priced at zero | Fixed | High | 2026-08-19 | 2026-08-19 |
 | [BG0599](BG0599-testplan-derive-reports-one-row-fault-per-invocation.md) | testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips | Closed | Medium | 2026-08-19 | 2026-08-19 |
-| [BG0600](BG0600-the-unnameable-test-plan-exemption-is-still-held.md) | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written | Open | Medium | 2026-08-19 | 2026-08-19 |
+| [BG0600](BG0600-the-unnameable-test-plan-exemption-is-still-held.md) | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written | Fixed | Medium | 2026-08-19 | 2026-08-19 |
 | [BG0601](BG0601-the-dry-run-class-sweep-compares-only-the.md) | The dry-run class sweep compares only the first two probes of each pair | Open | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0602](BG0602-the-close-checklist-enumerates-its-checks-by-ck.md) | The close checklist enumerates its checks by `_ck_` name prefix | Closed | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0603](BG0603-stacked-verify-lines-are-refused-at-draft-and.md) | Stacked Verify lines are refused at Draft and Ready but not on an Open bug | Open | Medium | 2026-08-21 | 2026-08-21 |
@@ -149,7 +149,7 @@
 | [BG0607](BG0607-a-unit-s-verdict-is-the-last-row.md) | A unit's verdict is the LAST row written, so one seat's APPROVE recorded after another seat's REJECT makes a rejected unit read approved | Fixed | High | 2026-08-24 | 2026-08-24 |
 | [BG0608](BG0608-the-budget-line-still-leads-with-the-seconds.md) | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits in the last bracket | Open | Medium | 2026-08-24 | 2026-08-24 |
 | [BG0609](BG0609-transition-py-annotate-has-no-fields-file-so.md) | transition.py annotate has no --fields-file, so a value carrying backticks is EXECUTED by the shell and its output silently replaces the text | Fixed | High | 2026-08-24 | 2026-08-24 |
-| [BG0610](BG0610-a-fields-file-scalar-where-a-list-is.md) | A --fields-file scalar where a list is expected is iterated CHARACTER BY CHARACTER, so one Verify line becomes one letter per criterion | Open | High | 2026-08-24 | 2026-08-24 |
+| [BG0610](BG0610-a-fields-file-scalar-where-a-list-is.md) | A --fields-file scalar where a list is expected is iterated CHARACTER BY CHARACTER, so one Verify line becomes one letter per criterion | Fixed | High | 2026-08-24 | 2026-08-24 |
 | [BG0611](BG0611-the-verdict-ledger-is-re-parsed-and-re.md) | The verdict ledger is re-parsed and re-annotated on EVERY lookup, so conformance spends 122 seconds making 374 million calls to judge 23 units | Fixed | High | 2026-08-25 | 2026-08-25 |
 | [BG0612](BG0612-three-limbs-that-survived-the-closure-of-bg0599.md) | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot | Open | Medium | 2026-08-25 | 2026-08-25 |
 

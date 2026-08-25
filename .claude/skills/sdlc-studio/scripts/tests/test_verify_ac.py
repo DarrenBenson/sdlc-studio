@@ -5865,5 +5865,46 @@ class DerivedDepthTests(unittest.TestCase):
             verify_ac.sdlc_md.extract_field(twice, "Verification depth").split()[0],
             "functional")
 
+
+class UnnameableRowTests(unittest.TestCase):
+    """BG0600 - the `unnameable` marker was held to the four rules it exists to be exempt from."""
+
+    AFFECTS = ["scripts/prod.py"]
+
+    def test_an_unnameable_row_is_not_held_to_the_mutant_rules(self) -> None:
+        """MUTANT: in `verify_ac.testplan_row_faults`, ask the four mutant rules before the
+        `unnameable` contract.
+
+        A row declaring that NO production change can falsify its criterion cannot also be
+        required to name one: held to the mutant rules it fails all four by construction - no
+        path from Affects, no edit verb - so the declaration this project charges for was
+        unusable and the criterion had no honest row at all."""
+        row = ("unnameable: this criterion constrains the harness, and nothing in production "
+               "can falsify it")
+        self.assertEqual([], verify_ac.testplan_row_faults(row, "then it holds", self.AFFECTS))
+
+    def test_an_unnameable_row_with_no_reason_is_refused(self) -> None:
+        """MUTANT: in `verify_ac.testplan_row_faults`, return no faults for any row beginning
+        `unnameable`.
+
+        The marker costs a WRITTEN DECLARATION. Exempting it from the mutant rules without
+        charging for the reason turns it into the free pass it exists to prevent - twelve junk
+        characters would buy an exemption for any criterion."""
+        for row in ("unnameable", "unnameable: -", "unnameable: n/a"):
+            with self.subTest(row=row):
+                faults = verify_ac.testplan_row_faults(row, "then it holds", self.AFFECTS)
+                self.assertTrue(faults, f"{row!r} bought an exemption with no reason")
+                self.assertIn("no reason of substance", " ".join(faults))
+
+    def test_an_ordinary_row_is_unaffected(self) -> None:
+        """The paired control. The exemption is narrow: a row that does not declare itself
+        unnameable is still held to all four rules, so this change cannot be read as loosening
+        the plan rules generally."""
+        faults = verify_ac.testplan_row_faults("something vague happens", "then it holds",
+                                               self.AFFECTS)
+        self.assertTrue(faults, "an ordinary vague row was accepted")
+        self.assertIn("edit verb", " ".join(faults))
+
+
 if __name__ == "__main__":
     unittest.main()

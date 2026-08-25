@@ -16900,5 +16900,176 @@ class RejectedUnitIsNotBuiltTests(unittest.TestCase):
                              "the rejected unit still appears in the BUILT-NOT-CLOSED sentence")
 
 
+class RungTerminalAndProductTests(unittest.TestCase):
+    """BG0581, BG0586, BG0588 - what a rung's own bar is, and whether the rung met it."""
+
+    def _unit(self, root: Path, uid: str, status: str, groomed: bool = True) -> None:
+        d = root / "sdlc-studio" / ("stories" if uid.startswith("US") else "bugs")
+        d.mkdir(parents=True, exist_ok=True)
+        acs = ("## Acceptance Criteria\n\n- [ ] **AC1** Given a thing, when it happens, then it "
+               "holds\n  - **Verify:** pytest tests/test_x.py\n" if groomed else
+               "## Acceptance Criteria\n\n- [ ] **AC1** {{placeholder}}\n")
+        (d / f"{uid}-fixture.md").write_text(
+            f"# {uid}: fixture\n\n> **Status:** {status}\n> **Points:** 2\n"
+            f"> **Affects:** scripts/x.py\n\n{acs}", encoding="utf-8")
+
+    def test_the_end_state_is_the_rungs_own_terminal(self) -> None:
+        """MUTANT: in `sprint.reachable_end_state`, ignore the rung and report the build rung's
+        terminal for every batch.
+
+        A `design` rung is finished when its units are GROOMED, so reporting `Done` for it
+        describes work it never set out to do."""
+        batch = [{"id": "US0700", "type": "story"}]
+        self.assertEqual("Ready", sprint.reachable_end_state(".", batch, rung="design")["state"])
+        self.assertEqual("Triaged", sprint.reachable_end_state(".", batch, rung="triage")["state"])
+        self.assertEqual("Ready", sprint.reachable_end_state(".", batch, rung="plan")["state"])
+
+    def test_the_build_rung_still_reports_its_own_terminal(self) -> None:
+        """The paired control. Making the report rung-aware must not stop it reporting the
+        build rung correctly - a story past the cutoff is still capped at Review."""
+        batch = [{"id": "US0700", "type": "story"}]
+        self.assertEqual("Review", sprint.reachable_end_state(".", batch, rung="done")["state"])
+
+    def test_a_bug_batch_is_not_capped_by_a_story_only_gate(self) -> None:
+        """MUTANT: in `sprint.reachable_end_state`, cap every unit rather than stories only.
+
+        The two-role gate is guarded by `type_ == "story" and target_canon == "Done"`, so a
+        batch of bugs is capped by nothing here - and reporting `Review` named a state that is
+        not in a bug's vocabulary at all. The planner's own brief did that on a bug batch while
+        the unit filed about it sat in that batch."""
+        batch = [{"id": "BG0611", "type": "bug"}, {"id": "BG0586", "type": "bug"}]
+        state = sprint.reachable_end_state(".", batch, rung="done")
+        self.assertEqual("Done", state["state"])
+        self.assertNotIn("Review", state["state"])
+
+    def test_a_groomed_unit_short_of_the_terminal_blocks(self) -> None:
+        """MUTANT: in `sprint._rung_product_blockers`, `continue` as soon as a unit is groomed.
+
+        Groomed is not finished. A unit whose criteria are authored and which sits at Draft has
+        the rung's product and has not reached the rung's terminal, so the close read it as
+        complete and a rung that did half its work closed clean."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0801", "Draft")
+            blockers = sprint._rung_product_blockers(
+                root, {"batch": ["US0801"], "base_ref": ""}, "design")
+            self.assertTrue(blockers, "a groomed unit at Draft did not block a design rung")
+            self.assertIn("not at its terminal", " ".join(b["cause"] for b in blockers))
+
+    def test_a_groomed_unit_at_the_terminal_does_not_block(self) -> None:
+        """The paired control. A rung whose units are groomed AND at Ready has done exactly
+        what it exists to do, and a check that blocked it would be one nobody keeps."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0802", "Ready")
+            self.assertEqual([], sprint._rung_product_blockers(
+                root, {"batch": ["US0802"], "base_ref": ""}, "design"))
+
+    def test_a_rung_that_produced_nothing_in_the_run_is_reported(self) -> None:
+        """MUTANT: in `sprint._rung_product_blockers`, drop the batch-level production check.
+
+        A batch groomed BEFORE the run opened, with no commit in the run naming any of its
+        units, closes identically to one that groomed everything: every per-unit check asks
+        whether the product EXISTS rather than whether this run made it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0803", "Ready")
+            # A REAL repository, because the check is SILENT when git cannot answer - a run
+            # whose history is unreadable is not accused of having produced nothing. A fixture
+            # that could not answer would exercise the fail-open path and prove nothing.
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["config", "user.email", "t@example.com"], root)
+            gitutil.git(["config", "user.name", "t"], root)
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "base"], root)
+            base = gitutil.git(["rev-parse", "HEAD"], root).stdout.decode().strip()
+            (root / "unrelated.txt").write_text("a commit naming no batch unit\n")
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "unrelated work"], root)
+            blockers = sprint._rung_product_blockers(
+                root, {"batch": ["US0803"], "base_ref": base}, "design")
+            causes = " ".join(b["cause"] for b in blockers)
+            self.assertIn("produced nothing in this run", causes,
+                          f"a rung with no commits reported no blocker: {blockers}")
+
+    def test_a_unit_declared_as_pre_work_does_not_accuse_the_rung(self) -> None:
+        """The paired control. A legitimate close may carry a unit somebody groomed before the
+        run - what it may not do is let that be invisible. Declared pre-work is named and not
+        judged."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0804", "Ready")
+            # A REAL repository, for the same reason as the sibling above: with git unable to
+            # answer the check fails open and the control would pass on any input.
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["config", "user.email", "t@example.com"], root)
+            gitutil.git(["config", "user.name", "t"], root)
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "base"], root)
+            base = gitutil.git(["rev-parse", "HEAD"], root).stdout.decode().strip()
+            (root / "unrelated.txt").write_text("a commit naming no batch unit\n")
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "unrelated work"], root)
+            blockers = sprint._rung_product_blockers(
+                root, {"batch": ["US0804"], "base_ref": base,
+                       "pre_work": ["US0804"]}, "design")
+            self.assertEqual([], blockers, f"declared pre-work still accused the rung: {blockers}")
+
+
+class OneGroomingAnswerTests(unittest.TestCase):
+    """BG0587 - the close carried two answers to one question."""
+
+    def _unit(self, root: Path, uid: str, groomed: bool) -> None:
+        d = root / "sdlc-studio" / ("stories" if uid.startswith("US") else "bugs")
+        d.mkdir(parents=True, exist_ok=True)
+        acs = ("## Acceptance Criteria\n\n- [ ] **AC1** Given a thing, when it happens, then it "
+               "holds\n  - **Verify:** pytest tests/test_x.py\n" if groomed else
+               "## Acceptance Criteria\n\n- [ ] **AC1** {{placeholder}}\n")
+        (d / f"{uid}-fixture.md").write_text(
+            f"# {uid}: fixture\n\n> **Status:** Ready\n> **Points:** 2\n"
+            f"> **Affects:** scripts/x.py\n\n{acs}", encoding="utf-8")
+
+    def test_the_report_and_the_preflight_name_the_same_units(self) -> None:
+        """MUTANT: in `sprint.grooming_report`, count stories only and ask
+        `story_is_ungroomed`.
+
+        The report filtered to stories while the pre-flight asks `unit_is_ungroomed` of every
+        type, so one close carried two answers to one question."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0901", False)
+            self._unit(root, "BG0901", False)
+            batch = ["US0901", "BG0901"]
+            reported = set(sprint.grooming_report(root, batch)["names"])
+            blocked = {b["detail"].split(":")[0]
+                       for b in sprint._rung_product_blockers(
+                           root, {"batch": batch, "base_ref": ""}, "design")}
+            self.assertEqual(reported, blocked,
+                             f"the report named {sorted(reported)} and the pre-flight "
+                             f"{sorted(blocked)}")
+
+    def test_a_batch_of_bugs_is_not_reported_as_having_no_units(self) -> None:
+        """MUTANT: in `sprint.render_grooming_report`, keep the story-only wording.
+
+        A batch of bugs read 'no story units in this batch' beside a pre-flight blocking on
+        those very bugs - the close stating, in one breath, that there was nothing to grade and
+        that what there was had failed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "BG0902", False)
+            line = sprint.render_grooming_report(sprint.grooming_report(root, ["BG0902"]))
+            self.assertNotIn("no story units", line)
+            self.assertIn("BG0902", line)
+
+    def test_a_fully_groomed_batch_still_reads_clean(self) -> None:
+        """The paired control. Widening the report to every type must not make it report a
+        grievance about a batch that has none."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "BG0903", True)
+            line = sprint.render_grooming_report(sprint.grooming_report(root, ["BG0903"]))
+            self.assertIn("none outstanding", line)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,8 @@
 # BG0587: two answers to the grooming question inside one close
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
+> **Verification depth:** functional [[derived: criteria 3; plan rows 3; executed 3; killed 3; survived 0; not-run 0; entry point 0 of 3 criteria through the shipped CLI, 3 in-process | fp 7685bed880df ]] (three criteria over the close's grooming report, each with its own mutant executed and killed: the story-only filter restored, the unit names dropped from the rendered line, and every unit reported ungroomed. The first criterion asserts the report and the pre-flight name the SAME set rather than asserting either alone, which is the property the bug is about - one definition, asked once.)
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-08-16
@@ -23,8 +24,20 @@ Point `grooming_report` at `unit_is_ungroomed` and drop its story-only filter, s
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a design batch containing both a story and a bug, when the close runs, then the grooming report and the pre-flight name the same set of ungroomed units
-- [ ] **AC2** Given a batch of bugs only, when the grooming report renders, then it does not report 'no story units in this batch' while the pre-flight blocks on those bugs
+- [ ] **AC1** Given a batch containing both a story and a bug, when the close runs, then the grooming report and the pre-flight name the SAME set of ungroomed units - one definition, asked once
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OneGroomingAnswerTests::test_the_report_and_the_preflight_name_the_same_units
+- [ ] **AC2** Given a batch of bugs only, when the grooming report renders, then it names those bugs rather than reporting that there are no units to grade - a close cannot say in one breath that there was nothing to grade and that what there was had failed
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OneGroomingAnswerTests::test_a_batch_of_bugs_is_not_reported_as_having_no_units
+- [ ] **AC3** Given a batch every unit of which is groomed, when the report renders, then it reads clean - the paired control, so widening the report to every type does not make it report a grievance about a batch that has none
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OneGroomingAnswerTests::test_a_fully_groomed_batch_still_reads_clean
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint.py`, narrow `grooming_report` back to stories and ask `story_is_ungroomed` | Given a batch containing both a story and a bug, when the close runs, then the grooming report and the pre-flight name the SAME set of ungroomed units - one definition, asked once |
+| AC2 | in `sprint.py`, drop the unit names from `render_grooming_report`'s ungroomed line | Given a batch of bugs only, when the grooming report renders, then it names those bugs rather than reporting that there are no units to grade - a close cannot say in one breath that there was nothing to grade and that what there was had failed |
+| AC3 | in `sprint.py`, report every unit as ungroomed from `grooming_report` | Given a batch every unit of which is groomed, when the report renders, then it reads clean - the paired control, so widening the report to every type does not make it report a grievance about a batch that has none |
 
 ## Revision History
 
