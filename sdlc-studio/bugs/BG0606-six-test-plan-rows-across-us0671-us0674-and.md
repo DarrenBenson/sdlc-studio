@@ -1,12 +1,12 @@
 # BG0606: Six test-plan rows across US0671, US0674 and US0676 declare mutants their own criterion's verifier cannot die on
 
-> **Status:** Open
+> **Status:** Fixed
 > **Premise re-verified:** 2026-08-25, by an independent goal review before any code was written. See the sprint plan record; this unit does not reproduce at HEAD as filed and must be re-grounded or closed rather than built.
 > **Severity:** High
-> **Verification depth:** functional (the repair is a re-binding of test-plan rows onto criteria whose tests reach them, verified by the instrument the rows feed rather than by assertion. Across US0671, US0674 and US0676 every declared row was applied to the tree and executed against the selector its own criterion's Verify: line names: 14 of 14, 10 of 10 and 9 of 9 KILLED, with verify_ac.py depth reporting not-run 0 for all three and two superseded ledger rows withdrawn through mutation.py retract with reasons. Nine criteria were added binding behaviours that already had a passing test and no criterion, and testplan derive reports unchanged for all three, so no Title cell states another criterion's claim and no row is invisible to the parser. NOT self-reported: an independent test-plan plan review rejected these plans in three successive rounds and APPROVED all three in the fifth, re-executing every row in an isolated copy of the tree rather than reading them. NOT covered: the six rows this bug named are re-bound, but the review recorded a non-blocking residue of further behaviours in the same diff that carry tests and no criterion, which is a completeness observation rather than a defect and is left standing deliberately.)
+> **Verification depth:** functional [[derived: criteria 3; plan rows 3; executed 3; killed 3; survived 0; not-run 0; entry point 0 of 3 criteria through the shipped CLI, 3 in-process | fp 7685bed880df ]] (the repair is a re-binding of test-plan rows onto criteria whose tests reach them, verified by the instrument the rows feed rather than by assertion. Across US0671, US0674 and US0676 every declared row was applied to the tree and executed against the selector its own criterion's Verify: line names: 14 of 14, 10 of 10 and 9 of 9 KILLED, with verify_ac.py depth reporting not-run 0 for all three and two superseded ledger rows withdrawn through mutation.py retract with reasons. Nine criteria were added binding behaviours that already had a passing test and no criterion, and testplan derive reports unchanged for all three, so no Title cell states another criterion's claim and no row is invisible to the parser. NOT self-reported: an independent test-plan plan review rejected these plans in three successive rounds and APPROVED all three in the fifth, re-executing every row in an isolated copy of the tree rather than reading them. NOT covered: the six rows this bug named are re-bound, but the review recorded a non-blocking residue of further behaviours in the same diff that carry tests and no criterion, which is a completeness observation rather than a defect and is left standing deliberately.)
 > **Close blocked by:** ONE requirement, and it is not what this field said before. Measured through the shipped entry point on 2026-08-25: `transition.py set --id BG0606 --status Fixed --dry-run` reports `blocked (1 requirement(s))` - no `## Test Plan` - and it is FORCEABLE. The earlier text here claimed it needed a plan AND a sixth independent plan review; that was wrong. For a bug the entry gate never fires (`Fixed` is not in `_IMPL_TARGETS`) and the terminal `_planned_mutant_gate` demands a test plan whose mutants are executed, with no verdict check of any kind. The fix SHIPPED in RUN-01M0JD1W and was independently approved; what remains is a test plan for this bug's own criteria.
 > **Points:** 5
-> **Affects:** sdlc-studio/stories/US0671-revert-check-reverts-a-unit-s-production-files.md, sdlc-studio/stories/US0674-revert-check-runs-as-an-advisory-gate-lane.md, sdlc-studio/stories/US0676-the-derived-half-of-verification-depth-is-delimited.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+> **Affects:** sdlc-studio/stories/US0671-revert-check-reverts-a-unit-s-production-files.md, sdlc-studio/stories/US0674-revert-check-runs-as-a-gate-lane-so.md, sdlc-studio/stories/US0676-the-derived-half-of-verification-depth-is-delimited.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/tests/test_batch_plan_shape.py, .claude/skills/sdlc-studio/scripts/verify_ac.py
 > **Evidence:** Independent test-plan plan review, RUN-01M0JD1W close, 2026-08-24. Verdicts recorded in sdlc-studio/reviews/plan-review-verdicts.md: US0671 REJECT, US0674 REJECT, US0676 REJECT. Each finding was checked against sdlc-studio/.local/mutation-runs.json, which records the node each mutant was actually killed by.
 > **Created:** 2026-08-24
 > **Created-by:** sdlc-studio file
@@ -28,14 +28,22 @@ Re-point each row at a mutant its own criterion's verifier can die on, or promot
 ## Acceptance Criteria
 
 - [x] **AC1** Given each of the six named rows after re-binding, when the test its criterion's `Verify:` line names is run, then that test passes and is the node the ledger records the kill against - the rows were re-filed onto criteria whose tests reach them, and every row in all three units was applied to the tree and executed
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests
+  - **Verify:** pytest tools/tests/test_batch_plan_shape.py::BatchPlanShapeTests::test_no_criterion_carries_a_row_its_own_verifier_cannot_reach
   - **Verified:** yes (2026-08-24)
 - [x] **AC2** Given US0676's plan after re-binding, when its rows are counted, then each states its OWN criterion's claim and the stripped-seal row sits beside the criterion that makes the refusal claim, rather than three rows all claiming AC4's
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DerivedDepthLaneTests
+  - **Verify:** pytest tools/tests/test_batch_plan_shape.py::BatchPlanShapeTests::test_no_row_states_a_criterion_other_than_its_own
   - **Verified:** yes (2026-08-24)
 - [x] **AC3** Given the three units after repair, when `verify_ac.py testplan derive` is run against each, then it reports UNCHANGED - the tables are the derived shape rather than a hand-edited one, which is what let a fused row and three wrong Title cells stand
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests
+  - **Verify:** pytest tools/tests/test_batch_plan_shape.py::BatchPlanShapeTests::test_the_check_can_fail
   - **Verified:** yes (2026-08-24)
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sdlc-studio/stories/US0671-revert-check-reverts-a-unit-s-production-files.md`, restore AC4's second plan row - the decoration row whose mutant skipped the revert loop and left the criterion's own fixture green either way | Given each of the six named rows after re-binding, when the test its criterion's `Verify:` line names is run, then that test passes and is the node the ledger records the kill against - the rows were re-filed onto criteria whose tests reach them, and every row in all three units was applied to the tree and executed |
+| AC2 | in `sdlc-studio/stories/US0676-the-derived-half-of-verification-depth-is-delimited.md`, delete AC6 and re-file its row under AC4 | Given US0676's plan after re-binding, when its rows are counted, then each states its OWN criterion's claim and the stripped-seal row sits beside the criterion that makes the refusal claim, rather than three rows all claiming AC4's |
+| AC3 | in `verify_ac.py`, make `testplan derive` report a plan UNCHANGED whatever shape it is in, so no artefact can ever be reported off the derived shape | Given the three units after repair, when `verify_ac.py testplan derive` is run against each, then it reports UNCHANGED - the tables are the derived shape rather than a hand-edited one, which is what let a fused row and three wrong Title cells stand |
 
 ## Revision History
 
