@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-24
+**Last Updated:** 2026-08-25
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
+| Open | 24 |
 | In Progress | 0 |
 | Fixed | 493 |
 | Verified | 0 |
 | Closed | 84 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **610** |
+| **Total** | **611** |
 
 ## All Bugs
 
@@ -150,6 +150,7 @@
 | [BG0608](BG0608-the-budget-line-still-leads-with-the-seconds.md) | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits in the last bracket | Open | Medium | 2026-08-24 | 2026-08-24 |
 | [BG0609](BG0609-transition-py-annotate-has-no-fields-file-so.md) | transition.py annotate has no --fields-file, so a value carrying backticks is EXECUTED by the shell and its output silently replaces the text | Open | High | 2026-08-24 | 2026-08-24 |
 | [BG0610](BG0610-a-fields-file-scalar-where-a-list-is.md) | A --fields-file scalar where a list is expected is iterated CHARACTER BY CHARACTER, so one Verify line becomes one letter per criterion | Open | High | 2026-08-24 | 2026-08-24 |
+| [BG0611](BG0611-the-verdict-ledger-is-re-parsed-and-re.md) | The verdict ledger is re-parsed and re-annotated on EVERY lookup, so conformance spends 122 seconds making 374 million calls to judge 23 units | Open | High | 2026-08-25 | 2026-08-25 |
 
 ## Archived Releases
 
