@@ -2,6 +2,13 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0378: A pre-code review that re-verifies premises is worth more than one that critiques a plan.**
+- **L-0377: A repair believed shipped can be withdrawn by the review that judges it, and that is the gate working - and the review that judged the...**
+- **L-0376: **Two rules agreeing is corroboration only if they are INDEPENDENT, and mine were nested.** BG0607's roll-up was keyed on the reviewer...**
+- **L-0375: A criterion about an ARTEFACT cannot be verified by a test over CODE.**
+- **L-0374: Order a batch by what compounds over the run, not by severity.**
+- **L-0373: A fixture that cannot reach the branch is a fixture that proves the fail-open path.**
+- **L-0372: A gate's behaviour must be read for the POPULATION you care about, not in general.**
 - **L-0371: A repair for unpinned behaviour can itself ship unpinned, and did.**
 - **L-0370: The plan review took FOUR rounds, and the biggest single cause was a rule already written down: I hand-edited test-plan tables that...**
 - **L-0369: The derived field caught its own run's stale evidence, which is the first time an instrument this project built reported against the...**

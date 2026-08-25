@@ -75,3 +75,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0060](HO0060-a-design-run-that-did-its-work-can.md) | A design run that did its work can be closed, committed and counted honestly - no wall a command cannot clear, and no count that overstates what blocks | 2026-08-19 |
 | [HO-0061](HO0061-every-instrument-this-run-touches-reports-only-a.md) | Every instrument this run touches reports only a verdict its own recorded evidence supports, and refuses rather than softens when the evidence is not there | 2026-08-21 |
 | [HO-0062](HO0062-a-unit-s-own-evidence-is-made-honest.md) | A unit's own evidence is made honest: a test that never reaches the change it claims to cover is reported rather than counted as proof, and a `Verification depth` field states only what the mutation ledger supports | 2026-08-24 |
+| [HO-0063](HO0063-twelve-of-thirteen-closed-and-bg0607-opens-the.md) | Twelve of thirteen closed, and BG0607 opens the next run | 2026-08-25 |
