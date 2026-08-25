@@ -1,7 +1,9 @@
 # BG0602: The close checklist enumerates its checks by `_ck_` name prefix
 
-> **Status:** Open
+> **Status:** Closed
+> **Premise re-verified:** 2026-08-25, by an independent goal review before any code was written. See the sprint plan record; this unit does not reproduce at HEAD as filed and must be re-grounded or closed rather than built.
 > **Severity:** Medium
+> **Closed because:** NOT-REPRODUCING as diagnosed. There is no `_ck_` namespace scan: `CHECKLIST` is an explicit tuple at `sprint_report.py:955` and `_resolve_item` at `:2157` does `globals().get(item["resolver"])`, so a renamed function raises, is caught into NOT_RUN/UNANSWERED, and REFUSES the close rather than vanishing from it. `_CLOSE_CHAIN` uses the same shape. The premise - a roster derived from a name prefix - does not exist. SURVIVING LIMBS re-filed: the roster is pinned by neither names nor count, and a registered-but-undefined check is caught at call time rather than at import.
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Created:** 2026-08-21

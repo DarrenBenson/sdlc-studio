@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 24 |
+| Open | 22 |
 | In Progress | 0 |
 | Fixed | 493 |
 | Verified | 0 |
-| Closed | 84 |
+| Closed | 87 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **611** |
+| **Total** | **612** |
 
 ## All Bugs
 
@@ -24,7 +24,7 @@
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Won't Fix | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0457](BG0457-four-spec-agreement-guards-pin-prose-to-prose.md) | Four spec-agreement guards pin prose to prose: a set comparison that cannot fail in the reverse direction, a whole-file substring satisfied by the Revision History row describing the change, a word-presence check an unrelated sentence already satisfies, and a source-substring wiring check a comment satisfies | Fixed | High | 2026-07-31 | 2026-07-31 |
-| [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Open | Medium | 2026-07-31 | 2026-07-31 |
+| [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Closed | Medium | 2026-07-31 | 2026-07-31 |
 | [BG0469](BG0469-close-owed-reports-a-close-that-already-happened.md) | close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0477](BG0477-refine-mints-stories-nothing-can-plan-placeholder-acceptance.md) | refine mints stories nothing can plan: placeholder acceptance criteria, unfilled user-story fields, and a persona that is no seat | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0485](BG0485-the-goal-review-panel-maps-a-seat-s.md) | the goal-review panel maps a seat's no to partial, and fans a whole-goal answer across every clause | Fixed | Medium | 2026-08-02 | 2026-08-02 |
@@ -138,10 +138,10 @@
 | [BG0596](BG0596-testplan-run-from-plan-keys-by-criterion-so.md) | testplan run --from-plan keys by criterion, so a second mutant on the same AC is silently dropped | Fixed | Medium | 2026-08-19 | 2026-08-19 |
 | [BG0597](BG0597-testplan-derive-silently-destroys-an-authored-test-plan.md) | testplan derive silently DESTROYS an authored Test Plan row when a criterion carries more than one, at exit 0 | Fixed | High | 2026-08-19 | 2026-08-19 |
 | [BG0598](BG0598-the-plan-s-built-not-closed-exclusion-reads.md) | the plan's BUILT-NOT-CLOSED exclusion reads verifier greens and not the verdict ledger, so a unit with an unanswered REJECT is priced at zero | Fixed | High | 2026-08-19 | 2026-08-19 |
-| [BG0599](BG0599-testplan-derive-reports-one-row-fault-per-invocation.md) | testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips | Open | Medium | 2026-08-19 | 2026-08-19 |
+| [BG0599](BG0599-testplan-derive-reports-one-row-fault-per-invocation.md) | testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips | Closed | Medium | 2026-08-19 | 2026-08-19 |
 | [BG0600](BG0600-the-unnameable-test-plan-exemption-is-still-held.md) | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written | Open | Medium | 2026-08-19 | 2026-08-19 |
 | [BG0601](BG0601-the-dry-run-class-sweep-compares-only-the.md) | The dry-run class sweep compares only the first two probes of each pair | Open | Medium | 2026-08-21 | 2026-08-21 |
-| [BG0602](BG0602-the-close-checklist-enumerates-its-checks-by-ck.md) | The close checklist enumerates its checks by `_ck_` name prefix | Open | Medium | 2026-08-21 | 2026-08-21 |
+| [BG0602](BG0602-the-close-checklist-enumerates-its-checks-by-ck.md) | The close checklist enumerates its checks by `_ck_` name prefix | Closed | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0603](BG0603-stacked-verify-lines-are-refused-at-draft-and.md) | Stacked Verify lines are refused at Draft and Ready but not on an Open bug | Open | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0604](BG0604-the-oracle-procedure-tells-a-reviewer-to-revert.md) | The oracle procedure tells a reviewer to revert files by hand with no restore obligation, and it destroyed uncommitted work in the main tree | Open | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0605](BG0605-the-repair-ledger-computes-outstanding-findings-per-record.md) | The repair ledger computes outstanding findings per RECORD, so two partial repairs that together close everything both read as PARTIAL | Open | Medium | 2026-08-24 | 2026-08-24 |
@@ -151,6 +151,7 @@
 | [BG0609](BG0609-transition-py-annotate-has-no-fields-file-so.md) | transition.py annotate has no --fields-file, so a value carrying backticks is EXECUTED by the shell and its output silently replaces the text | Open | High | 2026-08-24 | 2026-08-24 |
 | [BG0610](BG0610-a-fields-file-scalar-where-a-list-is.md) | A --fields-file scalar where a list is expected is iterated CHARACTER BY CHARACTER, so one Verify line becomes one letter per criterion | Open | High | 2026-08-24 | 2026-08-24 |
 | [BG0611](BG0611-the-verdict-ledger-is-re-parsed-and-re.md) | The verdict ledger is re-parsed and re-annotated on EVERY lookup, so conformance spends 122 seconds making 374 million calls to judge 23 units | Open | High | 2026-08-25 | 2026-08-25 |
+| [BG0612](BG0612-three-limbs-that-survived-the-closure-of-bg0599.md) | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot | Open | Medium | 2026-08-25 | 2026-08-25 |
 
 ## Archived Releases
 

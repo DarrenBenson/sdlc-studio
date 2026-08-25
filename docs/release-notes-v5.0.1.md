@@ -96,7 +96,7 @@ had been fixed while missing one that was open - which is the argument for readi
 rather than the prose. All eight are carried to v5.1, and BG0606's fix has already shipped - it stays open only because
 closing it needs a test-plan review for work an independent seat has already approved.
 
-**v5.0.1 discloses 16 open defects: 16 Medium, 0 Low.** The eight High findings above are
+**v5.0.1 discloses 14 open defects: 14 Medium, 0 Low.** The eight High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

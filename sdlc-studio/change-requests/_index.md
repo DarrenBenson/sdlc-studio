@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 28 |
+| Proposed | 29 |
 | Approved | 0 |
 | In Progress | 10 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 23 |
 | Blocked | 0 |
-| **Total** | **556** |
+| **Total** | **557** |
 
 ## All Changes
 
@@ -107,6 +107,7 @@
 | [CR-0554](CR0554-a-plan-row-whose-recorded-kill-node-is.md) | A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts | Proposed | High | Improvement | 2026-08-24 | -- |
 | [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | In Progress | High | Improvement | 2026-08-24 | EP0218 |
 | [CR-0556](CR0556-a-bug-reaches-a-terminal-status-with-no.md) | A bug reaches a terminal status with no independent judgement of its plan OR its code - the only gate is evidence it reports about itself | Proposed | High | Improvement | 2026-08-25 | -- |
+| [CR-0557](CR0557-bg0463-s-twenty-batch-boundary-findings-need-re.md) | BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered | Proposed | Medium | Improvement | 2026-08-25 | -- |
 
 ## Archived Releases
 

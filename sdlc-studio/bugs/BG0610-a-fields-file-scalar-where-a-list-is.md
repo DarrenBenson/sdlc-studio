@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** High
+> **Premise narrowed 2026-08-25:** the `acs` character-by-character limb was already closed under 4f276b31. What stands is the untyped path: `artifact.py:154` still reads `for i, v in enumerate((f.get("verify") or []), 1)`, so a scalar supplied for a list-valued field is still iterated per character. Build the type check; do not re-fix `acs`. Found by an independent goal review before any code was written.
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
 > **Evidence:** artifact.py:154, `for i, v in enumerate((f.get("verify") or []), 1)`. Reproduced by inspection of the artefact it produced: sdlc-studio/stories/US0684 as first written carried six Verify lines of one character each. The criteria themselves rendered in a non-canonical bullet form at the same time, so the file needed rewriting by hand.

@@ -1,7 +1,9 @@
 # BG0599: testplan derive reports ONE row fault per invocation while computing all four, so authoring N mutants costs N round trips
 
-> **Status:** Open
+> **Status:** Closed
+> **Premise re-verified:** 2026-08-25, by an independent goal review before any code was written. See the sprint plan record; this unit does not reproduce at HEAD as filed and must be re-grounded or closed rather than built.
 > **Severity:** Medium
+> **Closed because:** NOT-REPRODUCING (load-bearing half already shipped). `verify_ac.py:2652-2662` accumulates `faults` across every row and every limb, and has since the commit that first shipped `derive`. Demonstrated 2026-08-25: `verify_ac.py testplan derive --unit BG0592 --dry-run` prints ELEVEN fault lines across FIVE criteria and THREE distinct fault kinds in ONE invocation. AC1 and AC2 are already true. The filing measured 22 invocations on 2026-08-19 and attributed them to one-fault-per-call; the real cause was rows being rewritten between calls. SURVIVING LIMB re-filed: the `_EDIT_VERBS` vocabulary omits `restore` and `keep` among 61 verbs, which the Proposed Fix here already called an interim.
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Evidence:** RUN-01M0CT8P, 2026-08-19: 22 invocations to clear 33 rows, counted while authoring the batch's own test plans.

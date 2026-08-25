@@ -178,7 +178,14 @@ estimator:
 # OPEN, not what it may cost - and the token ceiling above is the figure that bounds the cost.
 capacity:
   tokens: 15000000
-  minutes: 2880
+  # Re-declared 2026-08-25 as a STANDING decision, not a per-run resize. The ceiling measures
+  # WALL-CLOCK since the run opened (CR0551), so a run spanning more than two days burns it
+  # without a minute of work: RUN-01M0JD1W read 4308 of 2880 while its working time was a
+  # fraction of that. INTERIM by decision - when CR0551 lands this should be re-declared
+  # against working minutes rather than raised again. A `sprint appetite resize` recorded
+  # this for one run only and left the standing figure here untouched, which is why the
+  # value is being set here rather than by that command.
+  minutes: 5760
   units: 64
 
 two_backlog:

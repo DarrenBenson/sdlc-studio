@@ -1,7 +1,8 @@
 # BG0463: Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert
 
-> **Status:** Open
+> **Status:** Closed
 > **Severity:** Medium
+> **Closed because:** CLOSED, residue re-filed. Unbuildable as written: `verify_ac.py testplan derive --unit BG0463` refuses with "the plan would carry 0 row(s) for 4 criterion/criteria" because its items are bare `- [ ]` with no `**ACn**` ids, so no test plan can be derived and no terminal gate can read it. It is the oldest unit in the backlog, carries no re-measurement unlike its siblings BG0490 and BG0493, and is partly delivered already. Its `Affects` also welds critic.py, sprint_report.py and lib/sdlc_md.py into a single 20-point atomic block, which is a planning cost paid for a unit nobody can size. Twenty findings from a 2026-07 batch-boundary review: re-filed as one groomed unit for re-triage rather than carried as an unbuildable aggregate.
 > **Points:** 5
 > **Verification depth:** functional
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/critic.py, tools/check_spec_claims.py, tools/check_script_tests.py, tools/tests/test_check_versions.py, tools/tests/test_porting_doctrine.py, sdlc-studio/tsd.md, sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, tools/tests/test_check_spec_claims.py, tools/tests/test_check_script_tests.py
