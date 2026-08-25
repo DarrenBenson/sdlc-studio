@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
+| Open | 20 |
 | In Progress | 0 |
-| Fixed | 494 |
+| Fixed | 495 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
@@ -131,7 +131,7 @@
 | [BG0589](BG0589-the-close-pre-flight-counts-advisory-rows-as.md) | the close pre-flight counts advisory rows as unmet prerequisites | Fixed | Medium | 2026-08-17 | 2026-08-17 |
 | [BG0590](BG0590-sprint-close-appends-a-handoff-bullet-that-fails.md) | sprint close appends a handoff bullet that fails the repo's own markdown lane | Fixed | Medium | 2026-08-17 | 2026-08-17 |
 | [BG0591](BG0591-status-and-close-owed-give-opposite-answers-about.md) | status and close_owed give opposite answers about the same units | Open | Medium | 2026-08-17 | 2026-08-17 |
-| [BG0592](BG0592-the-corpus-red-criteria-metric-counts-unbuilt-stories.md) | the corpus red-criteria metric counts unbuilt stories, which is why its number has never been stable | Open | High | 2026-08-17 | 2026-08-17 |
+| [BG0592](BG0592-the-corpus-red-criteria-metric-counts-unbuilt-stories.md) | the corpus red-criteria metric counts unbuilt stories, which is why its number has never been stable | Fixed | High | 2026-08-17 | 2026-08-17 |
 | [BG0593](BG0593-close-dry-run-previews-against-a-scratch-tree.md) | close --dry-run previews against a scratch tree with no git, so every git-reading row degrades to unjudged | Fixed | High | 2026-08-18 | 2026-08-18 |
 | [BG0594](BG0594-the-budget-lane-watches-the-per-commit-gate.md) | the budget lane watches the per-commit gate only, so the full suite grew 43% against a ceiling declared for the other population | Fixed | Medium | 2026-08-18 | 2026-08-18 |
 | [BG0595](BG0595-the-commit-msg-hook-test-is-not-hermetic.md) | one commit-msg hook test runs against the real repository, so it consumes the developer's gate handoff and starts a full suite inside a unit test | Fixed | Medium | 2026-08-18 | 2026-08-18 |
