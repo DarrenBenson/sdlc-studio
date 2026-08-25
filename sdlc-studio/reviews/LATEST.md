@@ -32,10 +32,8 @@ missing a row. What the rounds found that was not mechanical:
 - twice, a test that MOCKED OUT the mechanism its own criterion was about: `_base_blob` patched
   wholesale, and `_first_three` tested in isolation while the criterion was about the lane
 - two superseded `killed` rows left live in the ledger, correct only by registration order
-Three of the five delivery-round findings were recurrences of recorded lessons: **LL0040**
-(a library test is not a lane test), **LL0013** (an enumerated list exempts what it forgot),
-**LL0044/LL0045**. Read, and not applied. The fix is not more review - it is mechanising those
-classes, and **CR0554** and **CR0539** would do it.
+Three of five delivery findings were recurrences of recorded lessons - **LL0040**, **LL0013**,
+**LL0044/LL0045**. Read, not applied. **CR0554** and **CR0539** would mechanise them.
 
 ## NUMBERS
 
@@ -48,12 +46,15 @@ CR0551 lands.
 
 ## THE NEXT RUN IS DECIDED, AND IT IS NOT THE BUGS
 
-`review.test_plan_after: "2026-08-01"`. **20 of 21 open bugs are past that cutoff and exactly
-one has a test plan.** Each therefore needs a plan authored AND independently APPROVED before
-it can reach Fixed - the gate that cost this run five rounds, with no `--force` past it.
+**MEASURED 2026-08-25, and it corrects what this file said before: NO open bug owes an
+independent review.** Dry-run across all 23: 21 owe a `## Test Plan`, 20 a `Verification depth`,
+18 ticked criteria with `Verify:` lines, 1 its mutants executed, 1 nothing at all. Every one is
+mechanical and self-service.
 
-BG0606 is the proof: its fix SHIPPED and was independently approved, and it is still Open
-because closing it needs a sixth plan review for work already reviewed.
+For a bug the entry gate NEVER fires - `Fixed` is not in `_IMPL_TARGETS` - and the terminal
+`_planned_mutant_gate` carries no verdict check. Two functions carry the identical "has no
+`## Test Plan`" message and the bug refusal was attributed to the wrong one, three times running.
+The five-round ceremony is a STORY cost.
 
 **CR0549's remedy is WITHDRAWN and CR0555 replaces it.** Three pre-code goal reviews rejected
 three specifications, all failing in the same place: the gate fires BEFORE a unit is implemented,
@@ -61,10 +62,9 @@ so every available signal is a declaration by its author - and **D0150** now for
 author-declared field from gating review depth. US0677-US0684 are Blocked, kept for their review
 record. The diagnosis stands: 87% of the corpus tiers `full`.
 
-CR0555 moves the gate instead of banding it. `_test_plan_gate` demands two things - that a plan
-EXISTS, which is cheap and stays at every band, and that an independent seat has APPROVED it,
-which cost five rounds here and blocks 20 of 21 open bugs. Only the approval moves, to the
-terminal transition where a diff exists and `critic.tier_for` already bands successfully.
+CR0555 moves the gate instead of banding it, and is NARROWED TO STORIES - they do pay two
+independent cycles; bugs pay none. D0151 records the rule both failures broke: name the
+population and quote the gate's current behaviour for it, from source, before filing.
 
 ## OPEN
 

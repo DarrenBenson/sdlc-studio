@@ -37,6 +37,57 @@ the pre-code reviewer cannot answer it.
 derived from the change rather than declared by its author. It belongs in its own request, argued
 on its own measurement, and it should not be bundled here.
 
+## Correction, 2026-08-25: the saving this request claims does not exist for BUGS
+
+A pre-code goal review rejected the batch refined from this request, and its first finding
+invalidates the premise. Verified in the source rather than relayed: `transition.py:961` reads
+
+```python
+if type_ == "story" and not force and target_canon == "Done":
+```
+
+so the two-role delivery review is STORY-only and DONE-only. A bug reaching `Fixed` passes
+`_bug_depth_gate`, which asks for a parseable `Verification depth` and is not a review, and passes
+no independent delivery review at all.
+
+**So for the 20 of 21 open bugs this request leads with, there is NO gated independent review at
+all.** The
+"two cycles become one round" saving holds only for stories reaching Done. BG0606, the evidence
+case named in this request's own Impact section, stays blocked after the move: it still owes a
+plan, and it still owes an independent approval, now demanded at `Fixed` instead of at entry.
+
+**What the finding exposes is more interesting than the request it kills.** Bugs pay an
+independent review BEFORE the code exists and none after. The expensive judgement is spent on a
+test plan nobody can check against an implementation, and the implementation itself is never
+independently reviewed at all. Whether that is the right way round is the question this request
+should have asked first, and did not.
+
+This request is NOT withdrawn - the move may still be right for stories - but its claim must be
+narrowed to stories and re-argued, and the bug population needs a different answer.
+
+## Second correction, 2026-08-25: bugs owe no independent review, and this request never applied to them
+
+The correction above was itself wrong one layer down, and D0151 - recorded hours earlier - exists
+to stop exactly this. Measured through the shipped entry point across all 23 open bugs rather than
+read: NOT ONE owes an independent review of any kind.
+
+For a bug, `Fixed` is not in `_IMPL_TARGETS`, so the entry `_test_plan_gate` NEVER FIRES. The
+demand a bug meets is `_planned_mutant_gate` at the terminal transition (`transition.py:921`,
+message at `:1922`), which requires a `## Test Plan` whose planned mutants have been executed - and
+contains no verdict check, no `APPROVE`, no independence test. Two different functions carry the
+identical "has no `## Test Plan`" message, and the bug refusal was attributed to the wrong one.
+
+What the 23 open bugs actually owe, by dry-run: 21 a test plan, 20 a `Verification depth`, 18
+ticked criteria carrying `Verify:` lines, 1 its mutants executed, and 1 nothing at all. Every one
+of those is mechanical and self-service. The five-round ceremony that made RUN-01M0JD1W expensive
+is a STORY cost.
+
+**This request therefore never applied to bugs**, and its Impact section leading with them was
+wrong from the moment it was filed. It is narrowed to stories, where the two-cycle saving is real.
+The bug population needs no relief from this gate; whether it needs MORE review is a separate
+question, and the honest observation is that a bug today gets no independent judgement of either
+its plan or its code.
+
 ## Acceptance Criteria
 
 - [ ] Given a unit entering implementation, when the gate runs, then a `## Test Plan` is still REQUIRED and its absence still refuses - the authoring-time rule is untouched at every band
@@ -56,3 +107,5 @@ Option 1. The plan must still EXIST at entry, which preserves the authoring-time
 | --- | --- | --- |
 | 2026-08-24 | sdlc-studio | Raised |
 | 2026-08-25 | sdlc-studio | Scope note: AC4 re-cut from a diff-basis band to the one-brief saving. Banding is deferred to its own request - three specifications died on it. |
+| 2026-08-25 | sdlc-studio | Correction: the two-role gate is story-and-Done only (transition.py:961), so the saving does not exist for bugs and BG0606 stays blocked. Claim must narrow to stories. |
+| 2026-08-25 | sdlc-studio | Second correction: measured across all 23 open bugs - NONE owes an independent review. The entry gate never fires for a bug. Request narrowed to stories; its bug Impact was wrong as filed. |
