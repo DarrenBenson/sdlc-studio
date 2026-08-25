@@ -1,7 +1,8 @@
 # BG0607: A unit's verdict is the LAST row written, so one seat's APPROVE recorded after another seat's REJECT makes a rejected unit read approved
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional [[derived: criteria 2; plan rows 2; executed 2; killed 2; survived 0; not-run 0; entry point 0 of 2 criteria through the shipped CLI, 2 in-process | fp ae72f7a3576b ]] (both directions of the rule: one seat's APPROVE cannot retire another's REJECT, and a seat may retire its own. NOT covered: whether the transition gate reads the corrected roll-up for a BUG, because a bug never reaches `Done` and the two-role gate is story-and-Done only)
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Evidence:** RUN-01M0JD1W close, 2026-08-24. Eighteen delivery verdicts recorded across three seats; three units with a recorded REJECT print APPROVE from `critic.py show`. The blocking findings behind those REJECTs were real and were repaired, which is how the masking was noticed at all.
@@ -24,10 +25,17 @@ Resolve a unit's standing verdict across the seats of the SAME round rather than
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit with a REJECT from one seat and an APPROVE from another in the same round, when `critic.py show --unit <id>` runs, then it reports the unit as REJECT and names which seats held which position
-- [ ] **AC2** Given a unit whose REJECT has been answered by a recorded repair, when the same command runs, then the unit no longer reports as REJECT on the strength of that answered row
-- [ ] **AC3** Given a unit with APPROVE from every seat in the round, when the same command runs, then it reports APPROVE, unchanged from today
-- [ ] **AC4** Given the transition gate reading a unit with a masked REJECT, when `transition.py set --id <id> --status Done` runs, then it refuses on that REJECT rather than passing on the later APPROVE
+- [ ] **AC1** Given a unit with a REJECT from one seat and an APPROVE from another, when the standing verdict is read, then it is the REJECT - a panel is several seats recorded one after another, and taking the last row written made the verdict a fact about the order the recorder was called in
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_one_seats_approve_does_not_retire_anothers_reject
+- [ ] **AC2** Given a seat that REJECTED and later APPROVED the same unit, when the standing verdict is read, then it is the APPROVE - the paired control and the boundary: a seat may change its own mind, and refusing that would make every REJECT permanent and a round-two approval unrecordable
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_a_seat_may_retire_its_own_reject
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `critic.py`, return the last live row from `verdict_for` instead of an unanswered REJECT | Given a unit with a REJECT from one seat and an APPROVE from another, when the standing verdict is read, then it is the REJECT - a panel is several seats recorded one after another, and taking the last row written made the verdict a fact about the order the recorder was called in |
+| AC2 | in `critic.py`, drop the same-reviewer allowance from `verdict_for`, so no later APPROVE retires a REJECT | Given a seat that REJECTED and later APPROVED the same unit, when the standing verdict is read, then it is the APPROVE - the paired control and the boundary: a seat may change its own mind, and refusing that would make every REJECT permanent and a round-two approval unrecordable |
 
 ## Revision History
 

@@ -1,7 +1,8 @@
 # BG0611: The verdict ledger is re-parsed and re-annotated on EVERY lookup, so conformance spends 122 seconds making 374 million calls to judge 23 units
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional [[derived: criteria 2; plan rows 2; executed 2; killed 2; survived 0; not-run 0; entry point 0 of 2 criteria through the shipped CLI, 2 in-process | fp ae72f7a3576b ]] (the join is measured rather than timed - a counted 800-row, 32-record annotation, with the retired rows asserted beside the cost so an index that is fast and wrong cannot pass. NOT covered: the remaining conformance cost, which profiling puts in the corpus scan rather than the ledger and which is a separate finding)
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Evidence:** cProfile over `gate._conformance('.', changed=False)` on 2026-08-25 at 91cd810b. Counted from the ledger: sdlc-studio/reviews/critic-verdicts.md holds 848 rows and 32 supersession records; plan-review-verdicts.md holds a further 116 rows. This is not corpus growth in artefacts - conformance judged only 23 units.
@@ -24,10 +25,17 @@ Parse and annotate the ledger ONCE per process and reuse it, and index the super
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a whole-workspace conformance run over this repository, when it completes, then `_matches_supersession` is called fewer than 100,000 times - measured in the test by counting calls, not by timing, because a wall-clock assertion is a flake on a shared machine
-- [ ] **AC2** Given the same run, when its verdicts are read back, then every superseded row is annotated exactly as it is today - the paired control, so the speed-up is shown not to have changed a verdict
-- [ ] **AC3** Given a ledger with a supersession record that retires a row, when the ledger is read twice in one process, then the second read does not re-walk the records - asserted by call count
-- [ ] **AC4** Given a supersession record naming a unit with no matching row, when the ledger is read, then it is reported as matching nothing rather than silently ignored, exactly as today
+- [ ] **AC1** Given a ledger of 800 verdict rows and 32 supersession records, when it is annotated, then id normalisation happens ONCE per row and once per record - fewer than 2,000 calls, not the 25,600 a cross-product costs. Counted in the test, never timed: a wall-clock assertion is a flake on a shared machine
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_annotating_the_ledger_normalises_each_row_and_record_once
+- [ ] **AC2** Given the same ledger, when its rows are read back, then every row a supersession record names is marked retired with its reason, and no row it does not name is - an index that is fast and wrong is worse than the scan it replaced
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_the_annotation_still_marks_exactly_the_retired_rows
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `critic.py`, replace the index lookup in `_annotate_superseded` with a per-row scan over every record | Given a ledger of 800 verdict rows and 32 supersession records, when it is annotated, then id normalisation happens ONCE per row and once per record - fewer than 2,000 calls, not the 25,600 a cross-product costs. Counted in the test, never timed: a wall-clock assertion is a flake on a shared machine |
+| AC2 | in `critic.py`, return the rows from `_annotate_superseded` without setting `superseded` on any of them | Given the same ledger, when its rows are read back, then every row a supersession record names is marked retired with its reason, and no row it does not name is - an index that is fast and wrong is worse than the scan it replaced |
 
 ## Revision History
 

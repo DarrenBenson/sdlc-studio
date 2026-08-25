@@ -34,12 +34,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0600` | Medium | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written |
 | `BG0601` | Medium | The dry-run class sweep compares only the first two probes of each pair |
 | `BG0603` | Medium | Stacked Verify lines are refused at Draft and Ready but not on an Open bug |
-| `BG0604` | Medium | The oracle procedure tells a reviewer to revert files by hand with no restore obligation, and it destroyed uncommitted work in the main tree |
-| `BG0605` | Medium | The repair ledger computes outstanding findings per RECORD, so two partial repairs that together close everything both read as PARTIAL |
 | `BG0608` | Medium | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits i... |
 | `BG0612` | Medium | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot |
 
-14 findings: 14 Medium, 0 Low.
+12 findings: 12 Medium, 0 Low.
 
 ## Not carried
 

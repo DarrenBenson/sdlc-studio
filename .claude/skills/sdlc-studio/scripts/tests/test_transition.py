@@ -5094,5 +5094,80 @@ class PlannedMutantGateNamesTheRowTests(unittest.TestCase):
                              f"a row that WAS executed is reported as outstanding:\n{out}")
 
 
+class AnnotateFieldsFileTests(unittest.TestCase):
+    """BG0609 - `annotate` had only `--value`, so a backticked value was executed by the shell."""
+
+    def _unit(self, root: Path) -> None:
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / "BG9100-fixture.md").write_text(
+            "# BG9100: fixture\n\n> **Status:** Open\n> **Points:** 1\n"
+            "> **Affects:** scripts/x.py\n\n## Acceptance Criteria\n\n- [ ] **AC1** a claim\n",
+            encoding="utf-8")
+
+    def test_a_value_carrying_backticks_is_stored_verbatim(self) -> None:
+        """MUTANT: in `transition._annotate_fields`, ignore `--fields-file` and read the flags.
+
+        Backticks are command substitution inside a shell argument, so on the flag path a value
+        quoting a command is RUN and its output is stored in place of the text. A re-triage
+        rationale quoting a command was written with the command gone and the two spaces that
+        flanked it closed up, and the annotation reported success (BG0609)."""
+        mod = tr
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            doc = root / "fields.json"
+            value = "the brief that `critic.py brief` generates carries the guard"
+            doc.write_text(json.dumps({"field": "Note", "value": value}), encoding="utf-8")
+            rc = mod.main(["annotate", "--id", "BG9100", "--fields-file", str(doc),
+                           "--root", str(root)])
+            self.assertEqual(0, rc)
+            body = (root / "sdlc-studio" / "bugs" / "BG9100-fixture.md").read_text()
+            self.assertIn(value, body,
+                          "the stored value is not the text the document carried")
+
+    def test_the_flag_path_still_works(self) -> None:
+        """The paired control. The file is the recommended path, not the only one - a change
+        that broke `--value` would break every caller in the toolchain."""
+        mod = tr
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            rc = mod.main(["annotate", "--id", "BG9100", "--field", "Note",
+                           "--value", "plain text", "--root", str(root)])
+            self.assertEqual(0, rc)
+            body = (root / "sdlc-studio" / "bugs" / "BG9100-fixture.md").read_text()
+            self.assertIn("plain text", body)
+
+    def test_an_unknown_key_in_the_document_is_refused(self) -> None:
+        """MUTANT: in `transition._annotate_fields`, ignore keys the reader does not know.
+
+        A key nobody reads is a field that silently went missing, which is the rule
+        `file_finding.py` already states for the same contract."""
+        mod = tr
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            doc = root / "fields.json"
+            doc.write_text(json.dumps({"field": "Note", "value": "x", "reason": "y"}),
+                           encoding="utf-8")
+            self.assertEqual(2, mod.main(["annotate", "--id", "BG9100", "--fields-file",
+                                          str(doc), "--root", str(root)]))
+
+    def test_a_non_string_value_is_refused(self) -> None:
+        """MUTANT: in `transition._annotate_fields`, accept any JSON type for `value`.
+
+        BG0610's shape one contract over: a scalar supplied where a string is expected is
+        iterated rather than stored, and the artefact is written with the damage invisible."""
+        mod = tr
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            doc = root / "fields.json"
+            doc.write_text(json.dumps({"field": "Note", "value": ["a", "b"]}), encoding="utf-8")
+            self.assertEqual(2, mod.main(["annotate", "--id", "BG9100", "--fields-file",
+                                          str(doc), "--root", str(root)]))
+
+
 if __name__ == "__main__":
     unittest.main()

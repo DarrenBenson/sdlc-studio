@@ -919,7 +919,7 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     # plans is not retro-refused - a gate that refuses everything is a gate that gets switched
     # off wholesale.
     if not force and target_canon in _TERMINAL_FOR_PLAN and _plan_gate_active(root, text):
-        # SCOPED TO REPAIRS (US0566). Feature work is already held by a test written before
+        # SCOPED TO REPAIRS. Feature work is already held by a test written before
         # anyone knew which way the implementation would go; only a repair's test is authored
         # with the answer in hand. A blanket demand on all work is the one that gets switched
         # off wholesale, and then it holds nothing.
@@ -1033,7 +1033,7 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             # advisory depending on statement order.
             warn = f"plan-review advisory: {pr_res['reason']}"
             gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
-    # TEST-PLAN gate (US0630). A SECOND pre-code gate, beside the spec one above and keyed to a
+    # TEST-PLAN gate. A SECOND pre-code gate, beside the spec one above and keyed to a
     # different `Kind`, so neither discharges the other - that separation is BG0510's whole
     # point, and without it one approval clears both while neither reviewer read the other's
     # artefact. Fires on the same entry so a direct Ready->Done cannot smuggle an unreviewed
@@ -1792,14 +1792,54 @@ def cmd_set(args: argparse.Namespace) -> int:
     return 1 if refused else 0
 
 
+def _annotate_fields(args: argparse.Namespace) -> tuple[str, str]:
+    """`(field, value)` from `--fields-file` if given, else from the flags.
+
+    THE FILE IS THE RECOMMENDED PATH, on the same terms as every sibling verb. Backticks and
+    `$(` are command substitution inside a shell argument, so on the flag path a value quoting
+    a command is RUN and whatever it printed is stored in place of the text: a
+    re-triage rationale quoting `critic.py brief` was written with the command replaced by its
+    empty output, and the annotation reported success. Every other prose-taking verb here
+    already offers a file; this was the one that was missed.
+    """
+    if not getattr(args, "fields_file", None):
+        if not (args.field and args.value is not None):
+            raise ValueError("annotate needs --field and --value, or --fields-file")
+        return args.field, args.value
+    raw = sys.stdin.read() if args.fields_file == "-" else Path(args.fields_file).read_text(
+        encoding="utf-8")
+    try:
+        doc = json.loads(raw)
+    except ValueError as exc:
+        raise ValueError(f"--fields-file is not valid JSON: {exc}") from exc
+    if not isinstance(doc, dict):
+        raise ValueError("--fields-file must hold a JSON object of {field, value}")
+    unknown = sorted(set(doc) - {"field", "value"})
+    if unknown:
+        raise ValueError(f"--fields-file carries unknown field(s): {', '.join(unknown)} - known "
+                         f"fields are field, value. A key nobody reads is a field that silently "
+                         f"went missing, so it is refused rather than ignored")
+    field = args.field or doc.get("field")
+    value = args.value if args.value is not None else doc.get("value")
+    if not field or value is None:
+        raise ValueError("--fields-file must carry both `field` and `value` unless a flag "
+                         "supplies the other")
+    if not isinstance(value, str):
+        raise ValueError(f"--fields-file `value` must be a string, not {type(value).__name__} - "
+                         f"a scalar supplied where a string is expected is iterated rather than "
+                         f"stored")
+    return field, value
+
+
 def cmd_annotate(args: argparse.Namespace) -> int:
     try:
-        r = annotate(args.root, args.id, args.field, args.value)
-    except (FileNotFoundError, ValueError) as exc:
+        field, value = _annotate_fields(args)
+        r = annotate(args.root, args.id, field, value)
+    except (FileNotFoundError, ValueError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(r, indent=2) if args.format == "json"
-          else f"annotated {args.id}: {args.field} = {args.value}"
+          else f"annotated {args.id}: {field} = {value}"
                + ("" if r["changed"] else " (already set)"))
     return 0
 
@@ -2555,8 +2595,14 @@ def build_parser() -> argparse.ArgumentParser:
     a = sub.add_parser("annotate", help="Set/update one metadata field on an artifact "
                                         "(deterministic stamp; index untouched).")
     a.add_argument("--id", required=True, help="Artifact id, e.g. BG0042 / US0023")
-    a.add_argument("--field", required=True, help="Field name, e.g. 'Verification depth'")
-    a.add_argument("--value", required=True)
+    a.add_argument("--field", help="Field name, e.g. 'Verification depth'")
+    a.add_argument("--value")
+    a.add_argument("--fields-file", metavar="FIELDS.json",
+                   help="THE RECOMMENDED PATH for prose carrying backticks or `$(`. A JSON "
+                        "object {field, value} read straight off disk so no value crosses a "
+                        "shell - on the flag path such prose is EXECUTED rather than stored. "
+                        "`-` reads the document from stdin. An explicit flag overrides the "
+                        "document; an unknown key is refused.")
     a.add_argument("--root", default=".")
     a.add_argument("--format", choices=("text", "json"), default="text")
     a.set_defaults(func=cmd_annotate)

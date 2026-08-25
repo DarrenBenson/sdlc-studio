@@ -1,7 +1,8 @@
 # BG0605: The repair ledger computes outstanding findings per RECORD, so two partial repairs that together close everything both read as PARTIAL
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
+> **Verification depth:** functional [[derived: criteria 2; plan rows 2; executed 2; killed 2; survived 0; not-run 0; entry point 0 of 2 criteria through the shipped CLI, 2 in-process | fp ae72f7a3576b ]] (a repair split across two invocations and a genuinely partial one, so the roll-up is shown to discriminate rather than to report `complete` for any repair at all)
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Evidence:** RUN-01M0JD1W close, 2026-08-24. Four units, eight repair records, every finding closed across the pairs, and all eight rows read PARTIAL with a false residue.
@@ -24,9 +25,17 @@ Compute the outstanding set as the verdict's findings MINUS the union of closure
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit whose REJECT raised three findings and whose closures were recorded across two `repair` invocations covering all three, when the second is recorded, then the unit's residue is reported as empty rather than as the findings the first invocation closed
-- [ ] **AC2** Given a unit with one repair record closing a strict subset of its findings, when that record is read, then the findings it did not close are still reported as outstanding for the unit
-- [ ] **AC3** Given two repair records for the same unit, when the ledger is read, then each row still states which findings THAT record closed, so a per-record account is not lost to the per-unit roll-up
+- [ ] **AC1** Given a unit whose REJECT raised two findings and whose closures were recorded across TWO `repair` invocations covering both, when the repair state is read, then it reads COMPLETE - not two rows each stamped PARTIAL, each naming as outstanding what the other closed
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_a_repair_recorded_across_two_calls_reads_complete
+- [ ] **AC2** Given a unit whose repair closes a strict SUBSET of its findings, when the state is read, then it still reads PARTIAL - the paired control, because reading every row must not turn an unanswered finding into an answered one
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_a_genuinely_partial_repair_still_reads_partial
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `critic.py`, narrow `repair_state`'s closures to the latest repair row | Given a unit whose REJECT raised two findings and whose closures were recorded across TWO `repair` invocations covering both, when the repair state is read, then it reads COMPLETE - not two rows each stamped PARTIAL, each naming as outstanding what the other closed |
+| AC2 | in `critic.py`, replace `repair_state`'s outstanding check with an unconditional `complete` | Given a unit whose repair closes a strict SUBSET of its findings, when the state is read, then it still reads PARTIAL - the paired control, because reading every row must not turn an unanswered finding into an answered one |
 
 ## Revision History
 

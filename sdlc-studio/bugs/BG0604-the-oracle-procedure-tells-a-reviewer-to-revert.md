@@ -1,9 +1,10 @@
 # BG0604: The oracle procedure tells a reviewer to revert files by hand with no restore obligation, and it destroyed uncommitted work in the main tree
 
-> **Status:** Open
+> **Status:** Fixed
 > **Re-triaged:** High -> Medium, 2026-08-24, against the rubric in reference-bug.md. High is 'major feature broken, NO workaround'; Medium is 'feature impaired, workaround exists'. A workaround exists and the shipped tooling already prints it: every brief that critic.py brief generates carries 'Mutate in an ISOLATED CHECKOUT of your own, never the author's working tree' and 'Do NOT use git stash or git checkout --'. The defect is that D0149's oracle procedure does not repeat that guard, so the exposure is a decision record contradicting a brief rather than an unguarded path. The data loss it caused was real and is why it was filed High on consequence; re-triaged on likelihood and workaround.
 > **Severity:** Medium
 > **Premise corrected 2026-08-25:** AC4 as filed claimed D0149 'says only that the procedure is manual'. That is FALSE - D0149 reads 'run by the adversarial reviewer in an isolated worktree', committed hours before this bug was filed. The defect stands but is narrower and different in kind: the rule EXISTS in the decision and in every generated brief, and was broken anyway, so what is missing is enforcement rather than words. Found by an independent goal review before any code was written.
+> **Verification depth:** functional [[derived: criteria 1; plan rows 1; executed 1; killed 1; survived 0; not-run 0; entry point 0 of 1 criteria through the shipped CLI, 1 in-process | fp 44015675e303 ]] (the brief is asserted to name the snapshot-and-restore obligation and to say why `git checkout --` is the wrong restore. NOT covered: whether a reviewer FOLLOWS it - D0149 already said 'in an isolated worktree' and was broken anyway, which is why this unit moves the rule into the surface a reviewer reads rather than adding another rule)
 > **Points:** 3
 > **Affects:** sdlc-studio/decisions.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Evidence:** RUN-01M0JD1W, 2026-08-21: an adversarial reviewer briefed under D0149 ran the manual revert against the main working tree; `verify_ac.py` came back byte-identical to the base ref with the session's uncommitted work in it gone.
@@ -41,10 +42,14 @@ Filed as High rather than Medium on consequence, not on frequency: the failure i
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a reviewer following the oracle procedure as briefed, when they take the base revision of a unit's production files, then no file in any shared checkout is written at any point - the measurement happens in a checkout created for it and removed afterwards
-- [ ] **AC2** Given the procedure, when it is delivered to a reviewer, then it arrives from `critic.py brief` rather than from a hand-written prompt, so it cannot be paraphrased into a form with no restore step
-- [ ] **AC3** Given a reviewer who nevertheless reverts in place, when the procedure runs, then it takes a byte snapshot FIRST and restores from it unconditionally - the paired control being that an interrupted run leaves the tree unchanged
-- [ ] **AC4** Given a reviewer briefed to run the manual oracle, when the brief is generated, then it names the restore obligation as well as the worktree - D0149 already SAYS 'in an isolated worktree' and a reviewer still ran it against the main tree, so the gap is enforcement rather than specification, and the brief is the surface a reviewer actually reads
+- [ ] **AC1** Given a reviewer briefed to run the manual oracle, when `critic.py brief` generates the brief, then it names the SNAPSHOT-AND-RESTORE obligation and not only the worktree - D0149 already said 'in an isolated worktree' and a reviewer reverted in the author's tree anyway, so what was missing is the rule's presence in the surface a reviewer reads
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_the_brief_names_the_restore_obligation_not_only_the_worktree
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `critic.py`, delete the snapshot-and-restore paragraph from the mutation-practice brief text | Given a reviewer briefed to run the manual oracle, when `critic.py brief` generates the brief, then it names the SNAPSHOT-AND-RESTORE obligation and not only the worktree - D0149 already said 'in an isolated worktree' and a reviewer reverted in the author's tree anyway, so what was missing is the rule's presence in the surface a reviewer reads |
 
 ## Revision History
 

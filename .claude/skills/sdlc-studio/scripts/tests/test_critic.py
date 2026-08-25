@@ -5241,6 +5241,137 @@ class PlanReviewBriefTeachesMultiRowTests(unittest.TestCase):
         self.assertIn("--row", body, "the help page does not name the flag it requires")
 
 
+class LedgerRollupTests(unittest.TestCase):
+    """BG0611, BG0605, BG0607, BG0604 - what the ledger says when it is read as a whole."""
+
+    def test_annotating_the_ledger_normalises_each_row_and_record_once(self) -> None:
+        """MUTANT: in `critic._annotate_superseded`, scan the records per row again instead of
+        building the index once.
+
+        The join was a cross-product and it ran on EVERY lookup: 848 rows against 32 records is
+        27,136 comparisons per annotation, and one whole-workspace conformance run made 16.8
+        million of them with 37 million id normalisations. Counted here, never timed - a
+        wall-clock assertion is a flake on a shared machine."""
+        mod = _load()
+        rows = [{"unit": f"US{i:04d}", "date": "2026-01-01", "verdict": "APPROVE",
+                 "reviewer": "seat"} for i in range(800)]
+        records = [{"unit": f"US{i:04d}", "row_date": "2026-01-01", "row_verdict": "APPROVE",
+                    "row_reviewer": "seat", "reason": "r", "authorised_by": "a",
+                    "recorded": "2026-01-02"} for i in range(32)]
+        calls = {"n": 0}
+        real = mod.sdlc_md.norm_id
+
+        def counted(value):
+            calls["n"] += 1
+            return real(value)
+
+        with unittest.mock.patch.object(mod.sdlc_md, "norm_id", side_effect=counted):
+            mod._annotate_superseded(rows, records)
+        self.assertLess(calls["n"], 2000,
+                        f"{calls['n']} id normalisations for 800 rows and 32 records - a "
+                        f"cross-product costs 25,600 and an indexed join costs one per row and "
+                        f"one per record")
+
+    def test_the_annotation_still_marks_exactly_the_retired_rows(self) -> None:
+        """The paired control. An index that is fast and wrong is worse than the scan it
+        replaced, so the verdicts it produces are asserted beside its cost."""
+        mod = _load()
+        rows = [{"unit": "US0001", "date": "2026-01-01", "verdict": "REJECT", "reviewer": "a"},
+                {"unit": "US0002", "date": "2026-01-01", "verdict": "REJECT", "reviewer": "a"}]
+        records = [{"unit": "US0001", "row_date": "2026-01-01", "row_verdict": "REJECT",
+                    "row_reviewer": "a", "reason": "why", "authorised_by": "op",
+                    "recorded": "2026-01-02"}]
+        out = mod._annotate_superseded(rows, records)
+        self.assertTrue(out[0]["superseded"], "the retired row was not marked")
+        self.assertEqual("why", out[0]["superseded_reason"])
+        self.assertFalse(out[1]["superseded"], "a row no record names was marked retired")
+
+    def test_a_repair_recorded_across_two_calls_reads_complete(self) -> None:
+        """MUTANT: in `critic.repair_state`, read closures from the latest repair row alone.
+
+        Two partial repairs that together close every finding both read PARTIAL, each naming as
+        outstanding what the other closed (BG0605)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0021", "reject", author="builder",
+                               issues="[new] one; [new] two")
+            mod.record_repair(root, "US0021", author="builder", closed="#1 -> first evidence")
+            mod.record_repair(root, "US0021", author="builder", closed="#2 -> second evidence")
+            state = mod.repair_state(root, "US0021")
+            self.assertEqual("complete", state["state"],
+                             f"a repair split across two calls read {state['state']}: "
+                             f"outstanding {state['outstanding']}")
+
+    def test_a_genuinely_partial_repair_still_reads_partial(self) -> None:
+        """The paired control. Reading every row must not turn an unanswered finding into an
+        answered one - that would convert every REJECT into an APPROVE for one command."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0022", "reject", author="builder",
+                               issues="[new] one; [new] two")
+            mod.record_repair(root, "US0022", author="builder", closed="#1 -> only this one")
+            self.assertEqual("partial", mod.repair_state(root, "US0022")["state"])
+
+    def test_one_seats_approve_does_not_retire_anothers_reject(self) -> None:
+        """MUTANT: in `critic.verdict_for`, take the last live row written.
+
+        A panel is several seats recorded one after another, so a unit REJECTed by one and
+        APPROVEd by another reported whichever was written second - the verdict became a fact
+        about the order the recorder was called in (BG0607)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0023", "reject", reviewer="engineering seat",
+                               author="builder", issues="[new] a real defect")
+            mod.record_verdict(root, "US0023", "approve", reviewer="product seat",
+                               author="builder")
+            self.assertEqual("REJECT", mod.verdict_for(root, "US0023")["verdict"],
+                             "a second seat's APPROVE retired the first seat's REJECT")
+
+    def test_a_seat_may_retire_its_own_reject(self) -> None:
+        """The paired control, and the boundary. A seat that rejected and then approved has
+        re-reviewed the same work; refusing that would make every REJECT permanent."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0024", "reject", reviewer="qa seat", author="builder",
+                               issues="[new] a defect")
+            mod.record_verdict(root, "US0024", "approve", reviewer="qa seat", author="builder")
+            self.assertEqual("APPROVE", mod.verdict_for(root, "US0024")["verdict"])
+
+    def test_the_brief_names_the_restore_obligation_not_only_the_worktree(self) -> None:
+        """MUTANT: in `critic.py`, drop the snapshot-and-restore paragraph from the brief.
+
+        D0149 already said 'in an isolated worktree' and a reviewer reverted in the author's
+        tree anyway, destroying roughly four hundred uncommitted lines (BG0604). What was
+        missing is not the rule but its presence in the surface a reviewer reads."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            seats = root / "sdlc-studio" / "personas" / "seats"
+            seats.mkdir(parents=True)
+            # The SHIPPED seat card, from the skill's own templates - so the fixture carries a
+            # real charter rather than a stub the brief would render differently.
+            src = (Path(__file__).resolve().parents[2] / "templates" / "personas"
+                   / "amigos" / "qa.md")
+            (seats / "qa.md").write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+            (bugs / "BG9001-fixture.md").write_text(
+                "# BG9001: fixture\n\n> **Status:** Open\n"
+                "> **Affects:** scripts/x.py\n\n## Acceptance Criteria\n\n"
+                "- [ ] **AC1** a claim\n  - **Verify:** pytest tests/test_x.py\n",
+                encoding="utf-8")
+            text = mod.brief(root, "BG9001", "qa")
+        self.assertIn("SNAPSHOT THE BYTES FIRST", text,
+                      "the brief warns about the worktree and never states what to do if a "
+                      "reviewer reverts in place anyway")
+        self.assertIn("restores the COMMITTED state", text,
+                      "the brief does not say why `git checkout --` is the wrong restore")
+
+
 if __name__ == "__main__":
     unittest.main()
 

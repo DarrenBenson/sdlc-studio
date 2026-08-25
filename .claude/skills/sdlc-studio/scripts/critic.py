@@ -79,7 +79,7 @@ _HEADERS = {
     "plan-review": (
         "# Plan-Review Verdicts\n\n"
         "> Append-only. The independent non-author plan reviewer's verdict per unit -\n"
-        "> the pre-implementation AC-vs-spec check (US0090). Latest row per unit wins.\n"
+        "> the pre-implementation AC-vs-spec check. Latest row per unit wins.\n"
         "> Reviewer must differ from the plan author - a self-review never clears the gate.\n"
         "> Kind names WHICH pre-code artefact was judged; a gate asks for its own kind.\n\n"
         + _PLAN_TABLE),
@@ -485,6 +485,7 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
     """
     target = sdlc_md.norm_id(unit)
     latest = None
+    live: list[dict] = []
     for v in read_verdicts(repo_root, phase):
         if sdlc_md.norm_id(v["unit"]) != target:
             continue
@@ -496,8 +497,32 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
         if v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
                                     or _is_principal_superseded(repo_root, unit, v)):
             continue
+        live.append(v)
         latest = v
-    return latest
+    # AN UNANSWERED REJECT STANDS. Taking the last row written made the verdict a fact about
+    # the ORDER the recorder was called in: a panel is several seats, and one seat's APPROVE
+    # written after another's REJECT reported the unit approved. Measured on RUN-01M0JD1W,
+    # where three units carried a seat REJECT and read APPROVE. A REJECT stops
+    # standing when a repair answers it - which is what the repair ledger is for - so this
+    # reads the repair rows directly rather than `repair_state`, which would recurse.
+    answered = {str(r.get("verdict_date") or "")
+                for r in _read_rows(repair_path(repo_root), _REPAIR_COLS)
+                if sdlc_md.norm_id(r.get("unit", "")) == target}
+    unanswered = []
+    for i, v in enumerate(live):
+        if (v.get("verdict") or "").upper() != REJECT:
+            continue
+        if str(v.get("date") or "") in answered:
+            continue
+        # A SEAT MAY CHANGE ITS OWN MIND, and only its own. A later APPROVE from the SAME
+        # reviewer is a re-review of the same work; one from a DIFFERENT seat is a second
+        # opinion and cannot speak for the first. Taking the last row written conflated them.
+        me = _id(v.get("reviewer", ""))
+        if any((later.get("verdict") or "").upper() == APPROVE and _id(later.get("reviewer", "")) == me
+               for later in live[i + 1:]):
+            continue
+        unanswered.append(v)
+    return unanswered[-1] if unanswered else latest
 
 
 # --- Supersession (a verdict row retired by addition) ----------------------------------
@@ -558,18 +583,34 @@ def read_supersessions(repo_root: Path | str, phase: str = "delivery") -> list[d
     return out
 
 
-def _matches_supersession(row: dict, rec: dict) -> bool:
-    return (sdlc_md.norm_id(row.get("unit", "")) == sdlc_md.norm_id(rec.get("unit", ""))
-            and row.get("date", "") == rec.get("row_date", "")
-            and (row.get("verdict", "") or "").upper() == (rec.get("row_verdict", "") or "").upper()
-            and _id(row.get("reviewer", "")) == _id(rec.get("row_reviewer", "")))
+def _supersession_index(records: list[dict]) -> dict:
+    """Supersession records grouped by NORMALISED unit id, with their join keys pre-computed.
+
+    The join was a cross-product: every row walked every record, and every comparison
+    normalised four ids. Over this repository - 848 verdict rows against 32 records - that is
+    27,136 comparisons per annotation, and the ledger is annotated on EVERY lookup, so a single
+    whole-workspace conformance run made 16,837,139 of them and 37 million id normalisations
+    A record retires a row of ITS OWN unit or of none, so the unit is the index.
+    """
+    index: dict = {}
+    for rec in records:
+        key = (sdlc_md.norm_id(rec.get("unit", "")),
+               rec.get("row_date", ""),
+               (rec.get("row_verdict", "") or "").upper(),
+               _id(rec.get("row_reviewer", "")))
+        index.setdefault(key, rec)      # first record wins, as `next()` did
+    return index
 
 
 def _annotate_superseded(rows: list[dict], records: list[dict]) -> list[dict]:
     """Mark each row a supersession record retires. Every row carries the `superseded*` keys,
     so a reader never has to tell 'live' from 'field absent'."""
+    index = _supersession_index(records)
     for row in rows:
-        rec = next((r for r in records if _matches_supersession(row, r)), None)
+        rec = index.get((sdlc_md.norm_id(row.get("unit", "")),
+                         row.get("date", ""),
+                         (row.get("verdict", "") or "").upper(),
+                         _id(row.get("reviewer", ""))))
         row["superseded"] = rec is not None
         row["superseded_reason"] = rec["reason"] if rec else ""
         row["superseded_by"] = rec["authorised_by"] if rec else ""
@@ -1049,6 +1090,19 @@ def repair_for(repo_root: Path | str, unit: str):
     return _latest_for(_read_rows(repair_path(repo_root), _REPAIR_COLS), unit)
 
 
+def repairs_for(repo_root: Path | str, unit: str) -> list[dict]:
+    """EVERY repair row for a unit, oldest first.
+
+    A repair recorded across two calls - one closing finding #1, a second closing #2 and #3 -
+    left two rows, each stamped PARTIAL, each naming as outstanding what the other had closed
+    The unit was fully repaired and nothing in the ledger said so, because the state
+    was computed from one row rather than from the unit's whole answer.
+    """
+    target = sdlc_md.norm_id(unit)
+    return [r for r in _read_rows(repair_path(repo_root), _REPAIR_COLS)
+            if sdlc_md.norm_id(r.get("unit", "")) == target]
+
+
 def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> dict:
     """`{state, closed, outstanding, filed, fixed}` for a unit's repair, or state `none`.
 
@@ -1057,17 +1111,21 @@ def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> d
     being opened by recording any repair at all - a worse gate than the one being replaced,
     because it would convert every REJECT into an APPROVE for the cost of one command.
     """
-    row = repair_for(repo_root, unit)
+    rows = repairs_for(repo_root, unit)
+    row = rows[-1] if rows else None
     verdict = verdict_for(repo_root, unit, phase) or {}
     # The repair must answer THIS rejection. `verdict_date` was recorded and then read nowhere,
     # so a round-one repair kept satisfying a later, different REJECT - the unit reading
     # `repaired` against findings nobody had answered. A repair whose recorded verdict date does
     # not match the live verdict's is an answer to an older question.
-    if row and str(row.get("verdict_date") or "") != str(verdict.get("date") or ""):
-        row = None
-    if not row:
+    answering = [r for r in rows
+                 if str(r.get("verdict_date") or "") == str(verdict.get("date") or "")]
+    if not answering:
         return {"state": "none", "closed": [], "outstanding": [], "filed": 0, "fixed": 0}
-    closures = parse_closures(row.get("closed", ""))
+    row = answering[-1]
+    # EVERY row answering this verdict, not the last one. The closures are the unit's whole
+    # answer to the rejection; which invocation recorded each is bookkeeping.
+    closures = [c for r in answering for c in parse_closures(r.get("closed", ""))]
     outstanding = repair_outstanding(verdict.get("issues", ""), closures)
     return {"state": "partial" if outstanding else "complete",
             "closed": closures, "outstanding": outstanding,
@@ -2385,7 +2443,7 @@ def is_independent(verdict: dict | None) -> bool:
 #: The explicit token for a repair that executed NO plan - the repair-plan gate is off, or a
 #: repair was made without one. Recorded so a reader can tell a planned repair from an
 #: unplanned one, and so an ABSENT field (which reads as missing data) is never mistaken for a
-#: planned repair whose id was dropped (US0314).
+#: planned repair whose id was dropped.
 REPAIR_UNPLANNED = "repair:unplanned"
 
 
@@ -2542,7 +2600,16 @@ are tree-wide, so either one silently reverts a concurrent reviewer's mutant mid
 result reported SURVIVED may never have been on disk when its test ran. Four reviewers were
 once dispatched over one shared tree and a live mutant was left behind in it; it was caught
 only because the tree was otherwise clean, and over uncommitted work it would have been
-indistinguishable from that work."""
+indistinguishable from that work.
+
+If you revert IN PLACE anyway - and the manual oracle is the case where a reviewer is most
+tempted to - the obligation is to SNAPSHOT THE BYTES FIRST and restore from that snapshot
+unconditionally, in a `finally`, before you report anything. Not `git checkout --`, which
+restores the COMMITTED state and destroys whatever was uncommitted: a reviewer following this
+procedure took a unit's base revision by hand in the author's working tree and roughly four
+hundred uncommitted lines were gone, with nothing able to bring them back. The rule
+existed and was broken anyway, so it is stated here, in the brief a reviewer actually reads,
+rather than only in the decision that records it."""
 
 # Each practice: (name, instruction-regex, reason-regex). Both must be present in a brief for
 # the practice to count as carried; the reason clause is the half worth keeping. Searched over
