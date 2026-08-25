@@ -79,6 +79,9 @@ ruling HOLDS the close, which is the point of being able to make one.
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
 | BG0607 | deferred | authoring session | 2026-08-25 |
+| BG0613 | not-stop-ship | authoring session | 2026-08-25 |
+| BG0614 | not-stop-ship | authoring session | 2026-08-25 |
+| CR0558 | deferred | authoring session | 2026-08-25 |
 | BG0490 | not-stop-ship | authoring session | 2026-08-25 |
 | BG0493 | not-stop-ship | authoring session | 2026-08-25 |
 | BG0567 | not-stop-ship | authoring session | 2026-08-25 |
