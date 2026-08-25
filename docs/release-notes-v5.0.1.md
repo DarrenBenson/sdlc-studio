@@ -84,17 +84,22 @@ re-measurement.
 
 **BG0607 was fixed in RUN-01M0WCCG and the fix was WITHDRAWN on 2026-08-25.** A unit's standing
 verdict is the last row written, so one seat's APPROVE recorded after another seat's REJECT makes a
-rejected unit read approved - measured on three units of RUN-01M0JD1W, and real. Two fix directions
-have now been measured against the whole corpus and both fail the same way. Keying the roll-up on
-the reviewer STRING took the conformance lane from 608/690 to 579/690 with 69 units flipping
-APPROVE to REJECT, because this repository names seats per round and a second-round approval by the
-same seat reads as a different seat. Keying it on a recorded REPAIR instead - which is what the
-bug's own criterion asks for - flips the SAME 69 units, because none of those rejections carries a
-repair row: they were answered by a re-review, and the ledger stores no record of that. So the
-defect is not in the roll-up. Neither a round identifier nor an answer-link exists in the verdict
-schema, and nothing computed from what is stored can tell "rejected and never answered" from
-"rejected, repaired and re-approved". Fixing it is a change to the ledger contract, and it is
-carried to v5.1 rather than guessed at here.
+rejected unit read approved - measured on three units of RUN-01M0JD1W, and real. The shipped fix
+keyed the roll-up on the reviewer STRING and took the conformance lane from 608/690 to 579/690,
+because this repository names seats per round and a second-round approval by the same seat reads as
+a different seat. A second direction, keying on a recorded REPAIR, flips the same units.
+
+**The re-scope that followed was itself corrected by review, and the correction is the useful part.**
+This page first claimed that nothing computed from stored data could tell "rejected and never
+answered" from "rejected, repaired and re-approved", and that the fix therefore needed a schema
+change. That was wrong twice over. The ledger already stores a partial round identifier - the
+`Brief` column, a content hash of the brief the seat was handed - and keying the retraction on a
+matching fingerprint recovers a strict superset of what the reviewer string recovers: 81 units with
+an unanswered REJECT under the reviewer string against 49 under the fingerprint, 32 recovered and
+none lost. The two rules that were said to corroborate each other were also nested rather than
+independent, so their agreement was guaranteed before either ran. What the fix actually costs is an
+evidence backfill of the residue, not a change to the ledger contract, and BG0607 now carries that
+scope with the measurements behind it.
 
 BG0604 was raised at High and RE-TRIAGED to Medium on 2026-08-24, against the rubric: a
 workaround exists and the shipped tooling already prints it. It is worth stating plainly anyway,
@@ -109,11 +114,10 @@ the manual check runs in.
 open set directly; a disagreement between the two is the guard working, not drift to be edited
 away. This paragraph has now been wrong in both directions at once - naming three findings that
 had been fixed while missing one that was open - which is the argument for reading the command
-rather than the prose. BG0607 is the one finding carried to v5.1 at High, and it is carried deliberately: two fix
-directions were built and measured, and the measurement is what says the fix belongs in the schema
-rather than in the roll-up.
+rather than the prose. BG0607 is the one finding carried to v5.1 at High, and it is carried with a scope that survived
+review rather than with the first one written down.
 
-**v5.0.1 discloses 9 open defects: 9 Medium, 0 Low.** The High findings above are
+**v5.0.1 discloses 11 open defects: 11 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

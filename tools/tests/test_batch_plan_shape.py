@@ -55,21 +55,35 @@ class BatchPlanShapeTests(unittest.TestCase):
                 self._assert_derived_shape(unit)
 
     def _titles_match_criteria(self, unit: str) -> None:
-        """Every plan row's Title cell states the criterion the row is filed under."""
+        """Every plan row's Title cell states the criterion the row is filed under.
+
+        Read off the FILE, never through `derive`. A review found the earlier version unable to
+        fail on its own: it ran after the derived-shape assertion, which regenerates the Title
+        cell from the criterion and so caught every real mismatch first, leaving this one able to
+        fire on exactly one input - a checkbox written `- [X]`, which its own pattern rejected
+        and `parse_story` accepts. That is a check with no failure mode of its own and one false
+        positive, which is worse than no check.
+        """
         import re as _re
-        path = next((REPO / "sdlc-studio" / sub).glob(f"{unit}-*.md")
-                    for sub in ("stories", "bugs")
-                    if list((REPO / "sdlc-studio" / sub).glob(f"{unit}-*.md")))
-        text = next(path).read_text(encoding="utf-8")
-        criteria = dict(_re.findall(r"^- \[[ x]\] \*\*(AC\d+)\*\* (.+)$", text, _re.M))
+        hits = [m for sub in ("stories", "bugs")
+                for m in (REPO / "sdlc-studio" / sub).glob(f"{unit}-*.md")]
+        self.assertTrue(hits, f"{unit}: no artefact found to read")
+        text = hits[0].read_text(encoding="utf-8")
+        criteria = dict(_re.findall(r"^- \[[ xX]\] \*\*(AC\d+)\*\* (.+)$", text, _re.M))
+        self.assertTrue(criteria, f"{unit}: no `**ACn**` criteria parsed")
+        rows = 0
         for line in text.splitlines():
             if not line.startswith("| AC"):
                 continue
+            rows += 1
             cells = [c.strip() for c in line.split("|")]
             ac, title = cells[1], cells[3]
-            self.assertTrue(criteria.get(ac, "").startswith(title[:40]),
+            self.assertIn(ac, criteria,
+                          f"{unit}: a plan row is filed under {ac}, which is not a criterion")
+            self.assertTrue(criteria[ac].startswith(title),
                             f"{unit} {ac}: its row's Title states another criterion - "
-                            f"{title[:60]!r} against {criteria.get(ac, '')[:60]!r}")
+                            f"{title[:60]!r} against {criteria[ac][:60]!r}")
+        self.assertTrue(rows, f"{unit}: no plan rows to check")
 
     def test_no_row_states_a_criterion_other_than_its_own(self) -> None:
         """MUTANT: in US0676, delete AC6 and re-file its row under AC4.
@@ -77,11 +91,13 @@ class BatchPlanShapeTests(unittest.TestCase):
         The review found the stripped-seal row - a REFUSAL claim - sitting on AC4, which is the
         PASS control. A row filed under a criterion that does not claim it reads as evidence for
         something nobody asserted, and `derive` will not reproduce that arrangement."""
-        self._assert_derived_shape("US0676")
-        # ASSERTED DIRECTLY, not only through `derive`. Reading the Title cells against the
-        # criteria is a different question from whether the table is the derived shape, and an
-        # independent review found this criterion's verifier a strict SUBSET of its sibling's -
-        # it could not fail unless the sibling did.
+        # ASSERTED OFF THE FILE, and deliberately NOT through `derive`. Calling the sibling's
+        # derived-shape check here first made this criterion a strict SUBSET of that one: derive
+        # regenerates the Title cell from the criterion, so it caught every real mismatch before
+        # this line was reached, and a second review measured that it could then fail on nothing
+        # but a false positive. Whether each row is filed under the criterion it states is a
+        # different question from whether the table is the shape `derive` writes, and it is only
+        # a different question if it is asked of the file.
         self._titles_match_criteria("US0676")
 
     def test_the_check_can_fail(self) -> None:

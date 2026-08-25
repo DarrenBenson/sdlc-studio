@@ -1,9 +1,9 @@
 # RETRO-0109: Twelve of thirteen, and the thirteenth was withdrawn at the close by its own review
 
 > **Date:** 2026-08-25
-> **Batch:** BG0606, BG0592, BG0611, BG0609, BG0607, BG0605, BG0604, BG0610, BG0600, BG0581, BG0586, BG0587, BG0588
+> **Batch:** BG0606, BG0592, BG0611, BG0609, BG0605, BG0604, BG0610, BG0600, BG0581, BG0586, BG0587, BG0588
 > **Goal:** The v5 release bar reaches zero open High: the twelve bugs open at run-open reach a terminal status carrying evidence executed against the tree AS IT STANDS AT CLOSE, or are closed by triage under a recorded reason, with no High triaged and at most four Mediums.
-> **Delivered:** 12 / 13   **Blocked:** 1   **Verdict:** partial
+> **Delivered:** 12 / 12 (batch opened at 13)   **Blocked:** 1   **Verdict:** partial
 
 ## Delivered
 
@@ -22,7 +22,7 @@
 
 ## Blocked / deferred
 
-- **BG0607 was delivered and then WITHDRAWN at the close, and is re-opened at High.** Twelve units reached Fixed. The close review measured the shipped fix taking whole-workspace conformance from 608/690 to 579/690, with 69 units flipping APPROVE to REJECT, on a lane that BLOCKS at `--release`. It was reverted, and a second fix direction - keying the roll-up on a recorded REPAIR, which is what the bug's own AC1 asks for - was then measured and flips the SAME 69 units, because none of those rejections carries a repair row. The defect is real and neither rule can compute it: the ledger records neither the ROUND a verdict belongs to nor the rejection an approval ANSWERS. Re-scoped to the verdict schema and carried to v5.1.
+- **BG0607 was delivered, WITHDRAWN at the close, and DROPPED from the batch with that reason on the record; it is re-opened at High.** The other twelve reached Fixed. The close review measured the shipped fix taking whole-workspace conformance from 608/690 to 579/690, with 69 units flipping APPROVE to REJECT, on a lane that BLOCKS at `--release`. It was reverted, and a second fix direction - keying the roll-up on a recorded REPAIR, which is what the bug's own AC1 asks for - was then measured and flips the SAME 69 units, because none of those rejections carries a repair row. The defect is real and neither rule can compute it: the ledger records neither the ROUND a verdict belongs to nor the rejection an approval ANSWERS. Re-scoped to the verdict schema and carried to v5.1.
 - The run's stated goal - zero open High - is therefore NOT reached, and this retro says so rather than counting the withdrawn unit as delivered.
 - BG0599, BG0602 and BG0463 were CLOSED before the run rather than built: a pre-code goal review found their premises did not reproduce at HEAD. Their surviving limbs are re-filed as BG0612 and CR0557.
 - Nine Medium bugs remain open and were never in this batch.
@@ -47,8 +47,8 @@
 - A fixture that cannot reach the branch is a fixture that proves the fail-open path. Two mutants survived here not because the code was unguarded but because the check is deliberately silent when git cannot answer, and the fixture gave it nothing to answer with. When a guard has a documented fail-open, every test of it must first prove the guard was ASKED.
 - Order a batch by what compounds over the run, not by severity. Four of this run's thirteen units repair instruments the run itself uses - the ledger it appends to, the annotate verb it calls, the roll-ups it writes into. Fixing them first made every later unit cheaper and its evidence more trustworthy; fixing them last would have meant delivering twelve units on instruments known to be wrong.
 - A criterion about an ARTEFACT cannot be verified by a test over CODE. Three mutants survived BG0606's first cut for that reason, and the bug they were pinning was itself about criteria whose verifiers cannot reach what they claim.
-- **Two fix directions measuring the SAME number is the signal that the defect is not where you are looking.** BG0607's roll-up was keyed on the reviewer string and then on a recorded repair. Both flipped the identical 69 units. One wrong answer is a bug in the rule; the same wrong answer from two independent rules is missing DATA, and no amount of cleverness in the roll-up recovers a round identifier the ledger never wrote. Measuring the second direction cost one script and turned a guess about scope into a finding.
-- A repair believed shipped can be withdrawn by the review that judges it, and that is the gate working. This one shipped, was measured against the whole corpus by an independent pass, and came out. The cost of finding it at the close rather than at the commit is one revert; the cost of not finding it is a release lane that blocks for everyone downstream.
+- **Two rules agreeing is corroboration only if they are INDEPENDENT, and mine were nested.** BG0607's roll-up was keyed on the reviewer string and then on a recorded repair; both flipped the same units, and I read that agreement as proof the data was missing and the fix needed a schema change. The repair-keyed rule's unanswered set CONTAINS the reviewer-keyed one by construction - the distinguishing allowance retired two rows and changed no unit-level answer - so the agreement was guaranteed before either rule ran. An adversarial review then found the third rule in the ledger's own `Brief` column, a content hash that identifies the seat and the round together: keyed on it, the unanswered set falls from 81 units to 49, a strict superset recovering 32 and losing none. Two measurements had made me confident in a conclusion one command refutes. Before treating agreement as evidence, state what would have to be true for the two rules to disagree - if nothing could, they are one rule counted twice.
+- A repair believed shipped can be withdrawn by the review that judges it, and that is the gate working - and the review that judged the WITHDRAWAL then refuted its stated reason. This one shipped, was measured against the whole corpus by an independent pass, came out, and its re-scope was wrong until a second independent pass computed the counter-example. The cost of finding it at the close rather than at the commit is one revert; the cost of not finding it is a release lane that blocks for everyone downstream, and a re-scope that would have pointed the next run at the most expensive available option.
 - A pre-code review that re-verifies premises is worth more than one that critiques a plan. This one found six false premises in a 24-unit sample - two of them load-bearing for the plan itself - and cut the batch from 24 units and 89 mutants to 13 units, twelve of which closed.
 
 ## Carried lessons
@@ -74,8 +74,11 @@ read the same.
 Ruling is one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`. A `stop-ship`
 ruling HOLDS the close, which is the point of being able to make one.
 
+**BG0607 is the one row here that needs its reason stated.** It is High, it is open, and it is ruled `deferred` rather than `stop-ship` because the thing it stops is a RELEASE TAG, not this close - and `known_issues.py --bar` already refuses that independently, naming BG0607, so the refusal does not rest on this row. What is deferred is not the decision but the BUILD: two fix directions were measured and both are wrong in the same way, and the third is a change to the verdict schema that this run has no mandate to make.
+
 | Issue | Ruling | Ruled by | Date |
 | --- | --- | --- | --- |
+| BG0607 | deferred | authoring session | 2026-08-25 |
 | BG0490 | not-stop-ship | authoring session | 2026-08-25 |
 | BG0493 | not-stop-ship | authoring session | 2026-08-25 |
 | BG0567 | not-stop-ship | authoring session | 2026-08-25 |

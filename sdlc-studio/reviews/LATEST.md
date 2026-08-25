@@ -5,11 +5,11 @@
 
 > **Run of record:** RUN-01M0WCCG - twelve bugs closed, each carrying evidence executed against
 > the tree as it stands rather than a claim about it. **The bar is NOT met: BG0607 is open at
-> High.** Its fix shipped in this run and was WITHDRAWN at the close, when an adversarial review
-> measured it taking whole-workspace conformance from 608/690 to 579/690. A second fix direction
-> was then measured and flips the same 69 units, so the ledger cannot compute this roll-up at
-> all. The re-opening note on BG0607 carries both measurements. Read `known_issues.py --bar` for
-> the live set, never this line.
+> High**, dropped from the batch, and the run closed `partial`. Its fix shipped in this run and was
+> WITHDRAWN when an adversarial pass measured it taking whole-workspace conformance from 608/690 to
+> 579/690. The re-scope I then wrote said the fix needed a ledger schema change; a second
+> adversarial pass REFUTED that from the ledger's own `Brief` column, and it was right. Read
+> `known_issues.py --bar` for the live set, never this line.
 
 ## THE HEADLINE: I WAS WRONG ABOUT THE COST FOR THREE DAYS RUNNING
 

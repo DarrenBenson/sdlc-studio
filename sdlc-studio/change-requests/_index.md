@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 29 |
+| Proposed | 30 |
 | Approved | 0 |
 | In Progress | 10 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 23 |
 | Blocked | 0 |
-| **Total** | **557** |
+| **Total** | **558** |
 
 ## All Changes
 
@@ -108,6 +108,7 @@
 | [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | In Progress | High | Improvement | 2026-08-24 | EP0218 |
 | [CR-0556](CR0556-a-bug-reaches-a-terminal-status-with-no.md) | A bug reaches a terminal status with no independent judgement of its plan OR its code - the only gate is evidence it reports about itself | Proposed | High | Improvement | 2026-08-25 | -- |
 | [CR-0557](CR0557-bg0463-s-twenty-batch-boundary-findings-need-re.md) | BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered | Proposed | Medium | Improvement | 2026-08-25 | -- |
+| [CR-0558](CR0558-the-derived-depth-lane-checks-each-span-against.md) | the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes | Proposed | High | enhancement | 2026-08-25 | -- |
 
 ## Archived Releases
 

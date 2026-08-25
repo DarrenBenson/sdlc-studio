@@ -2,7 +2,7 @@
 
 > **Status:** Fixed
 > **Severity:** Medium
-> **Verification depth:** functional [[derived: criteria 3; plan rows 4; executed 4; killed 4; survived 0; not-run 0; entry point 0 of 3 criteria through the shipped CLI, 3 in-process | fp 1904f42b82cf ]] (three criteria over the close's grooming report and four mutants, each executed and killed: the story-only filter restored, the shared `_rung_grades` guard deleted from the pre-flight, the unit names dropped from the rendered line, and every unit reported ungroomed. AC1 asserts the report and the pre-flight name the SAME set rather than asserting either alone, and the batch it asks it of holds an EPIC - the type over which the two disagreed after the first fix, because one skipped it and the other blocked on it.)
+> **Verification depth:** functional [[derived: criteria 4; plan rows 5; executed 5; killed 5; survived 0; not-run 0; entry point 0 of 4 criteria through the shipped CLI, 4 in-process | fp 05a1630bbd39 ]] (three criteria over the close's grooming report and four mutants, each executed and killed: the story-only filter restored, the shared `_rung_grades` guard deleted from the pre-flight, the unit names dropped from the rendered line, and every unit reported ungroomed. AC1 asserts the report and the pre-flight name the SAME set rather than asserting either alone, and the batch it asks it of holds an EPIC - the type over which the two disagreed after the first fix, because one skipped it and the other blocked on it.)
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-08-16
@@ -32,6 +32,8 @@ Point `grooming_report` at `unit_is_ungroomed` and drop its story-only filter, s
   - **Verified:** yes (2026-08-25)
 - [ ] **AC3** Given a batch every unit of which is groomed, when the report renders, then it reads clean - the paired control, so widening the report to every type does not make it report a grievance about a batch that has none
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OneGroomingAnswerTests::test_a_fully_groomed_batch_still_reads_clean
+- [ ] **AC4** Given a batch unit of a type the rung cannot GRADE but whose vocabulary holds the rung's TERMINAL - an epic on a `design` rung - when the pre-flight runs, then it is still judged against that terminal and blocks at a sub-terminal status, and is never accused of failing to produce acceptance criteria it does not have: two questions, and sharing one predicate must answer the first without silently dropping the second
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OneGroomingAnswerTests::test_an_epic_short_of_the_rungs_terminal_still_blocks
   - **Verified:** yes (2026-08-25)
 
 ## Test Plan
@@ -42,10 +44,12 @@ Point `grooming_report` at `unit_is_ungroomed` and drop its story-only filter, s
 | AC1 | in `sprint.py`, delete the `_rung_grades` guard from `_rung_product_blockers`, so the pre-flight grades an epic the report skips | Given a batch containing a story, a bug and an epic, when the close runs, then the grooming report and the pre-flight name the SAME set of ungroomed units - one definition, asked once - and neither names the epic, which carries no acceptance criteria of its own to grade |
 | AC2 | in `sprint.py`, drop the unit names from `render_grooming_report`'s ungroomed line | Given a batch of bugs only, when the grooming report renders, then it names those bugs rather than reporting that there are no units to grade - a close cannot say in one breath that there was nothing to grade and that what there was had failed |
 | AC3 | in `sprint.py`, report every unit as ungroomed from `grooming_report` | Given a batch every unit of which is groomed, when the report renders, then it reads clean - the paired control, so widening the report to every type does not make it report a grievance about a batch that has none |
+| AC4 | in `sprint.py`, `continue` in `_rung_product_blockers` for a type the rung cannot grade, instead of falling through to the terminal check | Given a batch unit of a type the rung cannot GRADE but whose vocabulary holds the rung's TERMINAL - an epic on a `design` rung - when the pre-flight runs, then it is still judged against that terminal and blocks at a sub-terminal status, and is never accused of failing to produce acceptance criteria it does not have: two questions, and sharing one predicate must answer the first without silently dropping the second |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-16 | sdlc-studio | Filed |
+| 2026-08-25 | sdlc-studio | AC4 added on review: the shared predicate skipped BG0588's terminal check as well as the grading one, so a design-rung epic left at Draft raised nothing |
 | 2026-08-25 | sdlc-studio | AC1 widened on review: an epic was named by the pre-flight and skipped by the report, so the two answers the bug is about survived its own fix |

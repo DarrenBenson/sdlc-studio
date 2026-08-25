@@ -1089,7 +1089,8 @@ class RedCountsOnlyWhatClaimsCompletionTests(ReleaseGateTests):
             self.assertIn("US0002", detail)
 
     def test_a_project_declared_status_cannot_buy_an_exemption(self) -> None:
-        """MUTANT: in gate.py, drop the base-vocab membership test from `_claims_completion`.
+        """MUTANT: in gate.py, extend `_claims_completion`'s `status_vocab` call with a project
+        root.
 
         Round 2, N1. `status_vocab(type_, root)` honours a project's `.config.yaml`
         extensions, but `terminal_statuses` is built from module constants and can never

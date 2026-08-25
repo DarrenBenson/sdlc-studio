@@ -16921,8 +16921,15 @@ class RungTerminalAndProductTests(unittest.TestCase):
         describes work it never set out to do."""
         batch = [{"id": "US0700", "type": "story"}]
         self.assertEqual("Ready", sprint.reachable_end_state(".", batch, rung="design")["state"])
-        self.assertEqual("Triaged", sprint.reachable_end_state(".", batch, rung="triage")["state"])
         self.assertEqual("Ready", sprint.reachable_end_state(".", batch, rung="plan")["state"])
+        # `Triaged` is the ISSUE vocabulary's, which is the type the triage rung operates on.
+        # Asserting it of a STORY batch is how the rung axis was fixed while the type axis went
+        # on reporting a state its batch could not hold - the assertion encoded the defect.
+        self.assertEqual("Triaged", sprint.reachable_end_state(
+            ".", [{"id": "IS0001", "type": "issue"}], rung="triage")["state"])
+        self.assertEqual(sprint.STATE_UNCHANGED, sprint.reachable_end_state(
+            ".", batch, rung="triage")["state"],
+            "a story has no triage lane, so the triage rung does not move one")
 
     def test_the_build_rung_still_reports_its_own_terminal(self) -> None:
         """The paired control. Making the report rung-aware must not stop it reporting the
@@ -16970,6 +16977,21 @@ class RungTerminalAndProductTests(unittest.TestCase):
             "Ready", sprint.reachable_end_state(".", [{"id": "US0700", "type": "story"}],
                                                 rung="design")["state"],
             "the paired control: a type that HOLDS the rung terminal still reports it")
+        # THE CAPPED PATH. `_state_for_batch` writes the two-role cap over the story entry, and
+        # writing it in unconditionally put the raw rung token back over the resolved answer -
+        # so a STORY batch on the `triage` rung reported `Triaged`, which no story can hold.
+        # Every assertion above probes bug batches or the uncapped control, so none of them can
+        # see it: this criterion needs the one input where the cap and the resolver meet.
+        for rung in ("triage", "plan", "design"):
+            res = sprint.reachable_end_state(
+                ".", [{"id": "US0700", "type": "story"}], rung=rung)
+            self.assertNotIn("Triaged", res["state"],
+                             f"{rung} named an issue state for a story batch")
+            self.assertNotIn("Review", res["state"],
+                             f"{rung} applied the story-and-Done cap on a rung that is not Done")
+            self.assertIsNone(res["reason"],
+                              f"{rung} gave a two-role reason though that gate is Done-only")
+            self.assertEqual([], res["units"], f"{rung} named units reached by a Done-only gate")
 
     def test_a_groomed_unit_short_of_the_terminal_blocks(self) -> None:
         """MUTANT: in `sprint._rung_product_blockers`, `continue` as soon as a unit is groomed.
@@ -17084,6 +17106,33 @@ class OneGroomingAnswerTests(unittest.TestCase):
             self.assertEqual({"US0901", "BG0901"}, reported,
                              "an epic carries no criteria of its own, so neither the report "
                              "nor the pre-flight may grade one")
+
+    def test_an_epic_short_of_the_rungs_terminal_still_blocks(self) -> None:
+        """MUTANT: in `sprint._rung_product_blockers`, `continue` for a type the rung cannot
+        grade, instead of falling through to the terminal check.
+
+        Two questions, not one. An epic carries no acceptance criteria to grade - but it DOES
+        hold `Ready`, which is the design rung's terminal, so a design rung moves one and the
+        terminal question has a real answer for it. Skipping the grading question with a
+        `continue` skipped the terminal one beside it and silently reverted the check BG0588
+        shipped, with the whole suite green, because every test of that check used a STORY."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            epics = root / "sdlc-studio" / "epics"
+            epics.mkdir(parents=True, exist_ok=True)
+            (epics / "EP0903-fixture.md").write_text(
+                "# EP0903: fixture\n\n> **Status:** Draft\n> **Points:** 2\n"
+                "> **Affects:** scripts/x.py\n\n## Acceptance Criteria\n\n"
+                "- [ ] **AC1** Given a thing, when it happens, then it holds\n"
+                "  - **Verify:** pytest tests/test_x.py\n", encoding="utf-8")
+            blockers = sprint._rung_product_blockers(
+                root, {"batch": ["EP0903"], "base_ref": ""}, "design")
+            self.assertTrue(blockers, "an epic left at Draft by a design rung raised nothing")
+            joined = " ".join(b["cause"] for b in blockers)
+            self.assertIn("not at its terminal", joined)
+            self.assertNotIn("did not produce its own output", joined,
+                             "an epic has no criteria to grade, so it must not be accused of "
+                             "failing to produce them")
 
     def test_a_batch_of_bugs_is_not_reported_as_having_no_units(self) -> None:
         """MUTANT: in `sprint.render_grooming_report`, keep the story-only wording.

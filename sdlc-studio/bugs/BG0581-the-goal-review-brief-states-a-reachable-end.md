@@ -2,7 +2,7 @@
 
 > **Status:** Fixed
 > **Severity:** Medium
-> **Verification depth:** functional [[derived: criteria 4; plan rows 4; executed 4; killed 4; survived 0; not-run 0; entry point 0 of 4 criteria through the shipped CLI, 4 in-process | fp 81eb122393d9 ]] (four criteria over `reachable_end_state`, each with its own mutant executed and killed: the rung ignored, the cap dropped, the story-only filter deleted, and the terminal returned unresolved. The type axis needed the fourth: the first three left a bug batch reported at `Done` on the build rung and `Ready` on a design one, and neither state is in a bug's vocabulary at all)
+> **Verification depth:** functional [[derived: criteria 4; plan rows 5; executed 5; killed 5; survived 0; not-run 0; entry point 0 of 4 criteria through the shipped CLI, 4 in-process | fp 05a1630bbd39 ]] (four criteria over `reachable_end_state`, each with its own mutant executed and killed: the rung ignored, the cap dropped, the story-only filter deleted, and the terminal returned unresolved. The type axis needed the fourth: the first three left a bug batch reported at `Done` on the build rung and `Ready` on a design one, and neither state is in a bug's vocabulary at all)
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Adversarial goal review of the SC0005 grooming batch, 2026-08-16, before the run opened. Verified independently at sprint.py:3090 (no rung parameter) and sprint.py:5474 (the design rung's stated terminal).
@@ -25,7 +25,7 @@ Take the rung. `reachable_end_state` should accept the goal/rung the brief is be
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a batch and a rung, when the reachable end state is derived, then it reports THAT RUNG's terminal - `design` and `plan` reach Ready, `triage` reaches Triaged - rather than the build rung's, which describes work the rung never set out to do
+- [ ] **AC1** Given a batch and a rung, when the reachable end state is derived, then it reports THAT RUNG's terminal for that batch's types - `design` and `plan` reach Ready for a story, and `triage` reaches Triaged for an issue - rather than the build rung's, which describes work the rung never set out to do
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RungTerminalAndProductTests::test_the_end_state_is_the_rungs_own_terminal
   - **Verified:** yes (2026-08-25)
 - [ ] **AC2** Given the `done` rung and a story past the two-role cutoff, when the state is derived, then it is Review exactly as today - the paired control, proving the rung was made visible rather than the build case broken
@@ -46,10 +46,11 @@ The brief is what an independent seat reads before judging a plan, and `reviews/
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in `sprint.py`, drop the `rung` lookup from `reachable_end_state` and return the build rung's terminal | Given a batch and a rung, when the reachable end state is derived, then it reports THAT RUNG's terminal - `design` and `plan` reach Ready, `triage` reaches Triaged - rather than the build rung's, which describes work the rung never set out to do |
+| AC1 | in `sprint.py`, drop the `rung` lookup from `reachable_end_state` and return the build rung's terminal | Given a batch and a rung, when the reachable end state is derived, then it reports THAT RUNG's terminal for that batch's types - `design` and `plan` reach Ready for a story, and `triage` reaches Triaged for an issue - rather than the build rung's, which describes work the rung never set out to do |
 | AC2 | in `sprint.py`, return the uncapped terminal from `reachable_end_state` for every batch | Given the `done` rung and a story past the two-role cutoff, when the state is derived, then it is Review exactly as today - the paired control, proving the rung was made visible rather than the build case broken |
 | AC3 | in `sprint.py`, delete the story-only filter from `reachable_end_state`'s cap loop | Given a batch of BUGS on the build rung, when the state is derived, then it is the bug's own terminal and never `Review`, and the report names NO unit as reached by the gate and gives no reason - the two-role gate is story-and-Done only, so a bug batch is capped by nothing here |
 | AC4 | in `sprint.py`, return `terminal` unresolved from `_terminal_in_type_vocab`, so the rung's terminal is reported whatever the batch is made of | Given a batch whose type cannot hold the rung's terminal, when the state is derived, then it is said in THAT TYPE's vocabulary - a bug reaches `Fixed` on the build rung and is not moved at all by a design one - and never borrows `Ready`, `Triaged`, `Done` or `Review` from the story vocabulary the rung terminals are written in |
+| AC4 | in `sprint.py`, drop the `COMPLETING_RUNGS` gate from `reachable_end_state`'s cap loop, so the story-and-Done cap is computed on every rung and written over the resolved answer | Given a batch whose type cannot hold the rung's terminal, when the state is derived, then it is said in THAT TYPE's vocabulary - a bug reaches `Fixed` on the build rung and is not moved at all by a design one - and never borrows `Ready`, `Triaged`, `Done` or `Review` from the story vocabulary the rung terminals are written in |
 
 ## Revision History
 

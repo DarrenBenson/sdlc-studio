@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 10 |
+| Open | 12 |
 | In Progress | 0 |
 | Fixed | 505 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **612** |
+| **Total** | **614** |
 
 ## All Bugs
 
@@ -152,6 +152,8 @@
 | [BG0610](BG0610-a-fields-file-scalar-where-a-list-is.md) | A --fields-file scalar where a list is expected is iterated CHARACTER BY CHARACTER, so one Verify line becomes one letter per criterion | Fixed | High | 2026-08-24 | 2026-08-24 |
 | [BG0611](BG0611-the-verdict-ledger-is-re-parsed-and-re.md) | The verdict ledger is re-parsed and re-annotated on EVERY lookup, so conformance spends 122 seconds making 374 million calls to judge 23 units | Fixed | High | 2026-08-25 | 2026-08-25 |
 | [BG0612](BG0612-three-limbs-that-survived-the-closure-of-bg0599.md) | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot | Open | Medium | 2026-08-25 | 2026-08-25 |
+| [BG0613](BG0613-sprint-breakdown-grades-an-epic-that-the-close.md) | sprint breakdown grades an epic that the close's two grooming surfaces both skip, so one run refuses to plan a batch and then closes saying that unit was not gradeable | Open | Medium | 2026-08-25 | 2026-08-25 |
+| [BG0614](BG0614-the-mutation-ledger-keeps-several-live-rows-on.md) | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last | Open | Medium | 2026-08-25 | 2026-08-25 |
 
 ## Archived Releases
 

@@ -33,8 +33,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0603` | Medium | Stacked Verify lines are refused at Draft and Ready but not on an Open bug |
 | `BG0608` | Medium | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits i... |
 | `BG0612` | Medium | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot |
+| `BG0613` | Medium | sprint breakdown grades an epic that the close's two grooming surfaces both skip, so one run refuses to plan a batch and then closes saying that un... |
+| `BG0614` | Medium | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last |
 
-9 findings: 9 Medium, 0 Low.
+11 findings: 11 Medium, 0 Low.
 
 ## Not carried
 
