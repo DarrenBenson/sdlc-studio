@@ -23,9 +23,12 @@ Hold the checks in an explicit registry (a module-level tuple, or a decorator th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint_report` gathers the close checklist by scanning its own module namespace for callables whose name starts with `_ck_`.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Read the checklist assembly in `.claude/skills/sdlc-studio/scripts/sprint_report.py` and confirm the roster comes from a name-prefix scan rather than an...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Hold the checks in an explicit registry (a module-level tuple, or a decorator that appends), and add a test pinning the roster's length and names so a silent...
+- [ ] **AC1** Given a checklist function renamed so it no longer carries the `_ck_` prefix, when the close runs, then the roster is UNCHANGED or the run refuses naming the missing check - today it vanishes silently and the close still reports a clean pass
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ChecklistRegistryTests::test_a_renamed_check_does_not_vanish_from_the_roster
+- [ ] **AC2** Given the checklist registry, when the roster test runs, then it asserts the exact NAMES and the count, so adding a check without registering it fails
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ChecklistRegistryTests::test_the_roster_pins_names_and_count
+- [ ] **AC3** Given a check registered but not defined, when the module loads, then it refuses at import rather than reporting a shorter roster - an absent check and a check nobody wrote must not read the same
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ChecklistRegistryTests::test_a_registered_but_undefined_check_refuses_at_import
 
 ## Revision History
 

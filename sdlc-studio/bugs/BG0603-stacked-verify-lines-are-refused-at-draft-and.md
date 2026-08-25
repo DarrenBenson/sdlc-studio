@@ -23,9 +23,12 @@ Apply `lint_stacked_verifiers` at Open as well. The status gate was presumably m
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `lint_stacked_verifiers` refuses a criterion carrying more than one `Verify:` line, but `verify_ac.py` applies it only at Draft and Ready.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Author an Open bug with two `Verify:` lines under one criterion.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Apply `lint_stacked_verifiers` at Open as well.
+- [ ] **AC1** Given an OPEN bug carrying two `Verify:` lines under one criterion, when `verify_ac.py lint` runs, then it is REFUSED - Open is the status a bug occupies while its criteria are written, so it is exactly where the rule needs to apply
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StackedVerifierTests::test_stacked_verifiers_are_refused_at_open
+- [ ] **AC2** Given the same artefact at Ready, when lint runs, then it is refused exactly as today - the control that shows the rule was widened rather than moved
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StackedVerifierTests::test_ready_still_refuses
+- [ ] **AC3** Given an Open bug carrying ONE `Verify:` line per criterion, when lint runs, then it passes - the paired control, because a rule that refuses every Open artefact is one that gets switched off
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StackedVerifierTests::test_a_single_verifier_at_open_passes
 
 ## Revision History
 

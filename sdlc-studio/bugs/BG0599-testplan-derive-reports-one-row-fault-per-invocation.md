@@ -24,9 +24,12 @@ Report every offending row and every fault on it in ONE refusal, as the function
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `testplan_row_faults` computes all four row rules and RETURNS THEM AS A LIST - its own docstring says 'named rather than counted' precisely so each limb is...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Measured 2026-08-19 while authoring the RUN-01M0CT8P test plans: 33 rows across six units took 22 invocations of `verify_ac.py testplan derive` before the...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Report every offending row and every fault on it in ONE refusal, as the function already computes them: collect across rows rather than returning at the first.
+- [ ] **AC1** Given a test plan with faults on THREE separate rows, when `testplan derive` runs, then ONE invocation reports all three, each naming its row and its fault - the function already computes every limb and returns them as a list; only the caller was stopping at the first
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanRowFaultTests::test_every_faulty_row_is_reported_in_one_invocation
+- [ ] **AC2** Given a single row carrying TWO faults at once - no edit verb and restating its criterion - when the same command runs, then both are named, not just the first found
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanRowFaultTests::test_both_faults_on_one_row_are_named
+- [ ] **AC3** Given a test plan with no faults at all, when the command runs, then it derives cleanly and reports nothing - the paired control, so collecting faults is shown not to have invented one
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanRowFaultTests::test_a_clean_plan_still_derives
 
 ## Impact
 

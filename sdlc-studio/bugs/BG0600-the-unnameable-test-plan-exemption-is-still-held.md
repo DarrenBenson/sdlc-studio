@@ -24,8 +24,12 @@ Ask `testplan_unnameable`'s question before the fault rules: a row whose cell be
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `testplan_unnameable` exists so a criterion no production change can falsify costs a written declaration rather than a free pass - its docstring says so: 'a...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Ask `testplan_unnameable`'s question before the fault rules: a row whose cell begins `unnameable` is judged by ITS contract - a reason with enough substance...
+- [ ] **AC1** Given a row whose cell begins `unnameable` and carries a reason with substance, when the row rules run, then it is judged by the `unnameable` contract and NOT by the four mutant rules - a declaration that no production change can falsify the criterion cannot also be required to name one
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::UnnameableRowTests::test_an_unnameable_row_is_not_held_to_the_mutant_rules
+- [ ] **AC2** Given a row beginning `unnameable` whose reason is empty or junk, when the row rules run, then it is REFUSED - the marker costs a written declaration, and a free pass is what it exists to prevent
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::UnnameableRowTests::test_an_unnameable_row_with_no_reason_is_refused
+- [ ] **AC3** Given an ordinary row that does NOT begin `unnameable`, when the row rules run, then all four mutant rules still apply to it exactly as today - the paired control, so the exemption is shown to be narrow
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::UnnameableRowTests::test_an_ordinary_row_is_unaffected
 
 ## Impact
 
