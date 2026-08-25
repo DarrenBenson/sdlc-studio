@@ -485,7 +485,6 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
     """
     target = sdlc_md.norm_id(unit)
     latest = None
-    live: list[dict] = []
     for v in read_verdicts(repo_root, phase):
         if sdlc_md.norm_id(v["unit"]) != target:
             continue
@@ -497,32 +496,8 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
         if v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
                                     or _is_principal_superseded(repo_root, unit, v)):
             continue
-        live.append(v)
         latest = v
-    # AN UNANSWERED REJECT STANDS. Taking the last row written made the verdict a fact about
-    # the ORDER the recorder was called in: a panel is several seats, and one seat's APPROVE
-    # written after another's REJECT reported the unit approved. Measured on RUN-01M0JD1W,
-    # where three units carried a seat REJECT and read APPROVE. A REJECT stops
-    # standing when a repair answers it - which is what the repair ledger is for - so this
-    # reads the repair rows directly rather than `repair_state`, which would recurse.
-    answered = {str(r.get("verdict_date") or "")
-                for r in _read_rows(repair_path(repo_root), _REPAIR_COLS)
-                if sdlc_md.norm_id(r.get("unit", "")) == target}
-    unanswered = []
-    for i, v in enumerate(live):
-        if (v.get("verdict") or "").upper() != REJECT:
-            continue
-        if str(v.get("date") or "") in answered:
-            continue
-        # A SEAT MAY CHANGE ITS OWN MIND, and only its own. A later APPROVE from the SAME
-        # reviewer is a re-review of the same work; one from a DIFFERENT seat is a second
-        # opinion and cannot speak for the first. Taking the last row written conflated them.
-        me = _id(v.get("reviewer", ""))
-        if any((later.get("verdict") or "").upper() == APPROVE and _id(later.get("reviewer", "")) == me
-               for later in live[i + 1:]):
-            continue
-        unanswered.append(v)
-    return unanswered[-1] if unanswered else latest
+    return latest
 
 
 # --- Supersession (a verdict row retired by addition) ----------------------------------

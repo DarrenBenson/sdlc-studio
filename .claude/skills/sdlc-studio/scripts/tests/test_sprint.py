@@ -16939,8 +16939,37 @@ class RungTerminalAndProductTests(unittest.TestCase):
         the unit filed about it sat in that batch."""
         batch = [{"id": "BG0611", "type": "bug"}, {"id": "BG0586", "type": "bug"}]
         state = sprint.reachable_end_state(".", batch, rung="done")
-        self.assertEqual("Done", state["state"])
+        self.assertEqual("Fixed", state["state"])
         self.assertNotIn("Review", state["state"])
+        # The STATE alone no longer detects this: resolving the terminal into the bug vocabulary
+        # answers `Fixed` whether or not the bugs were collected. What the story-only filter
+        # actually controls is WHO the report says the gate reaches - so assert that, or the
+        # criterion is verified by something the mutant cannot move.
+        self.assertEqual([], state["units"],
+                         "a story-and-Done gate must reach no bug")
+        self.assertIsNone(state["reason"],
+                          "nothing caps a bug batch here, so there is no reason to give")
+
+    def test_a_rung_terminal_is_said_in_the_batchs_own_vocabulary(self) -> None:
+        """MUTANT: in `sprint._terminal_in_type_vocab`, return `terminal` unresolved, so the
+        rung's own terminal is reported whatever the batch is made of.
+
+        The rung terminals are written in the STORY vocabulary. A bug has no `Ready` and no
+        `Done`, so a bug batch reported at either was told it reaches a state that does not
+        exist for it - and the fix for the rung axis left this one standing."""
+        bugs = [{"id": "BG0611", "type": "bug"}]
+        for rung in ("design", "plan", "triage"):
+            state = sprint.reachable_end_state(".", bugs, rung=rung)["state"]
+            self.assertEqual(sprint.STATE_UNCHANGED, state, f"{rung} moved a bug")
+            for borrowed in ("Ready", "Triaged", "Done", "Review"):
+                self.assertNotIn(borrowed, state, f"{rung} named {borrowed} for a bug batch")
+        self.assertEqual(
+            "Fixed", sprint.reachable_end_state(".", bugs, rung="done")["state"],
+            "a completing rung must reach the BUG's own terminal, not the story's")
+        self.assertEqual(
+            "Ready", sprint.reachable_end_state(".", [{"id": "US0700", "type": "story"}],
+                                                rung="design")["state"],
+            "the paired control: a type that HOLDS the rung terminal still reports it")
 
     def test_a_groomed_unit_short_of_the_terminal_blocks(self) -> None:
         """MUTANT: in `sprint._rung_product_blockers`, `continue` as soon as a unit is groomed.
@@ -17020,7 +17049,8 @@ class OneGroomingAnswerTests(unittest.TestCase):
     """BG0587 - the close carried two answers to one question."""
 
     def _unit(self, root: Path, uid: str, groomed: bool) -> None:
-        d = root / "sdlc-studio" / ("stories" if uid.startswith("US") else "bugs")
+        sub = {"US": "stories", "BG": "bugs", "EP": "epics"}[uid[:2]]
+        d = root / "sdlc-studio" / sub
         d.mkdir(parents=True, exist_ok=True)
         acs = ("## Acceptance Criteria\n\n- [ ] **AC1** Given a thing, when it happens, then it "
                "holds\n  - **Verify:** pytest tests/test_x.py\n" if groomed else
@@ -17039,7 +17069,11 @@ class OneGroomingAnswerTests(unittest.TestCase):
             root = Path(d)
             self._unit(root, "US0901", False)
             self._unit(root, "BG0901", False)
-            batch = ["US0901", "BG0901"]
+            # An EPIC in the batch is the case that falsified the claim: the report skipped it
+            # and the pre-flight blocked on it, so the two named different sets while AC1 said
+            # they named one. An epic has no criteria of its own to grade - neither may judge it.
+            self._unit(root, "EP0901", False)
+            batch = ["US0901", "BG0901", "EP0901"]
             reported = set(sprint.grooming_report(root, batch)["names"])
             blocked = {b["detail"].split(":")[0]
                        for b in sprint._rung_product_blockers(
@@ -17047,6 +17081,9 @@ class OneGroomingAnswerTests(unittest.TestCase):
             self.assertEqual(reported, blocked,
                              f"the report named {sorted(reported)} and the pre-flight "
                              f"{sorted(blocked)}")
+            self.assertEqual({"US0901", "BG0901"}, reported,
+                             "an epic carries no criteria of its own, so neither the report "
+                             "nor the pre-flight may grade one")
 
     def test_a_batch_of_bugs_is_not_reported_as_having_no_units(self) -> None:
         """MUTANT: in `sprint.render_grooming_report`, keep the story-only wording.

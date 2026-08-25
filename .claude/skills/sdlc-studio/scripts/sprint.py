@@ -3150,6 +3150,46 @@ END_STATE_REVIEW = "Review"
 RUNG_TERMINALS = {"triage": ("Triaged", "Triaged"), "plan": ("Ready", "Ready"),
                   "design": ("Ready", "Ready"), "done": (END_STATE_DONE, END_STATE_REVIEW)}
 
+#: The rungs whose terminal is a COMPLETING state. Every other rung stops at a pre-terminal one
+#: - `Ready`, `Triaged` - and a type without that state in its vocabulary is simply not moved by
+#: the rung. This is a fact about the RUNGS, not something derivable from a status name.
+COMPLETING_RUNGS = frozenset({"done"})
+
+#: What a rung reaches for a type it does not transition. Reported instead of a state borrowed
+#: from another type's vocabulary, which is the defect this whole function exists to refuse.
+STATE_UNCHANGED = "its status unchanged"
+
+
+def _terminal_in_type_vocab(rung: str, type_: str, terminal: str) -> str:
+    """`terminal` said in `type_`'s own vocabulary.
+
+    The rung terminals above are written in the STORY vocabulary, and `triage`'s in the issue
+    one, because that is the type each rung usually operates on. A bug has neither `Ready` nor
+    `Done`, so naming either for a bug batch names a state that does not exist for it - the same
+    defect as the story-only cap below, one axis over. A completing rung resolves to the type's
+    own completed outcome (`Fixed` for a bug, `Complete` for a CR); a pre-terminal rung resolves
+    to nothing at all, because it does not move that type."""
+    if sdlc_md.canonical_status(terminal, sdlc_md.status_vocab(type_) or []):
+        return terminal
+    if rung in COMPLETING_RUNGS:
+        return sdlc_md.default_terminal_status(type_) or STATE_UNCHANGED
+    return STATE_UNCHANGED
+
+
+def _state_for_batch(rung: str, types: list[str], terminal: str,
+                     story_capped: str | None = None) -> str:
+    """The reported end state: `terminal` in every type present, joined when they disagree.
+
+    `story_capped` is the two-role cap, applied to STORIES only because the gate it derives
+    from is story-and-Done only."""
+    per = {t: _terminal_in_type_vocab(rung, t, terminal) for t in (types or ["story"])}
+    if story_capped and "story" in per:
+        per["story"] = story_capped
+    distinct = set(per.values())
+    if len(distinct) == 1:
+        return distinct.pop()
+    return ", ".join(f"{per[t]} ({t})" for t in sorted(per))
+
 
 def reachable_end_state(repo_root: Path | str, batch: list[dict],
                         rung: str | None = None) -> dict:
@@ -3166,7 +3206,9 @@ def reachable_end_state(repo_root: Path | str, batch: list[dict],
     about it sat in that very batch.
     """
     root = Path(repo_root)
-    terminal, capped = RUNG_TERMINALS.get((rung or "done").lower(), RUNG_TERMINALS["done"])
+    rung_key = (rung or "done").lower()
+    terminal, capped = RUNG_TERMINALS.get(rung_key, RUNG_TERMINALS["done"])
+    types = sorted({(it.get("type") or it.get("kind") or "story").lower() for it in batch})
     try:
         cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
     except ValueError as exc:  # a config typo fails loud in the gate; it must not break a plan
@@ -3191,11 +3233,13 @@ def reachable_end_state(repo_root: Path | str, batch: list[dict],
             if num is None or num > cutoff:
                 reached.append(sdlc_md.norm_id(it["id"]))
     if not reached:
-        return {"state": terminal, "reason": None, "units": [],
+        state = _state_for_batch(rung_key, types, terminal)
+        return {"state": state, "reason": None, "units": [], "types": types,
                 "gate": "review.two_role_after", "cutoff": cutoff,
-                "basis": f"no gate in this project caps this batch below {terminal}"}
+                "basis": f"no gate in this project caps this batch below {state}"}
     return {
-        "state": capped,
+        "state": _state_for_batch(rung_key, types, terminal, story_capped=capped),
+        "types": types,
         "reason": (f"review.two_role_after is {cutoff}, so {len(reached)} unit(s) past it "
                    f"reach Done only with an independent reviewer-of-record sign-off that the "
                    f"authoring session is refused"),
@@ -5946,6 +5990,16 @@ def _disclose_delegated_signoffs(root) -> None:
         print(f"  (+{len(rows) - 12} more)", file=sys.stderr)
 
 
+def _rung_grades(type_: str) -> bool:
+    """Whether a RUNG can grade this type at all.
+
+    An epic is a container: its product is the units beneath it, not acceptance criteria of its
+    own, so grading one asks a question it has no answer to. ONE definition, because two of them
+    is the very defect this predicate closes - the report skipped epics while the pre-flight
+    blocked on them, so a single close carried two answers to one question about one batch."""
+    return (type_ or "").lower() != "epic"
+
+
 def grooming_report(root, batch: list[str]) -> dict:
     """What a design rung actually groomed: {"total", "groomed", "ungroomed", "names"}.
 
@@ -5963,7 +6017,7 @@ def grooming_report(root, batch: list[str]) -> dict:
         # asked `story_is_ungroomed`, while the pre-flight asks `unit_is_ungroomed` of every
         # type - so one close carried two answers to one question, and a batch of bugs read
         # "no story units in this batch" beside a pre-flight blocking on those very bugs.
-        if not hit or hit[1] == "epic":
+        if not hit or not _rung_grades(hit[1]):
             continue
         total += 1
         ungroomed, _why = conformance.unit_is_ungroomed(hit[1],
@@ -6668,6 +6722,8 @@ def _rung_product_blockers(root, state, rung: str) -> list:
             if not found:
                 continue
             path, type_ = found
+            if not _rung_grades(type_):
+                continue   # the SAME predicate the report uses, so the two cannot disagree
             ungroomed, why = conformance.unit_is_ungroomed(
                 type_, sdlc_md.read_text_safe(path))
         except Exception as exc:  # noqa: BLE001 - a read-only report never fails the preflight

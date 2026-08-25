@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 9 |
+| Open | 10 |
 | In Progress | 0 |
-| Fixed | 506 |
+| Fixed | 505 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
@@ -146,7 +146,7 @@
 | [BG0604](BG0604-the-oracle-procedure-tells-a-reviewer-to-revert.md) | The oracle procedure tells a reviewer to revert files by hand with no restore obligation, and it destroyed uncommitted work in the main tree | Fixed | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0605](BG0605-the-repair-ledger-computes-outstanding-findings-per-record.md) | The repair ledger computes outstanding findings per RECORD, so two partial repairs that together close everything both read as PARTIAL | Fixed | Medium | 2026-08-24 | 2026-08-24 |
 | [BG0606](BG0606-six-test-plan-rows-across-us0671-us0674-and.md) | Six test-plan rows across US0671, US0674 and US0676 declare mutants their own criterion's verifier cannot die on | Fixed | High | 2026-08-24 | 2026-08-24 |
-| [BG0607](BG0607-a-unit-s-verdict-is-the-last-row.md) | A unit's verdict is the LAST row written, so one seat's APPROVE recorded after another seat's REJECT makes a rejected unit read approved | Fixed | High | 2026-08-24 | 2026-08-24 |
+| [BG0607](BG0607-a-unit-s-verdict-is-the-last-row.md) | A unit's verdict is the LAST row written, so one seat's APPROVE recorded after another seat's REJECT makes a rejected unit read approved | Open | High | 2026-08-24 | 2026-08-24 |
 | [BG0608](BG0608-the-budget-line-still-leads-with-the-seconds.md) | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits in the last bracket | Open | Medium | 2026-08-24 | 2026-08-24 |
 | [BG0609](BG0609-transition-py-annotate-has-no-fields-file-so.md) | transition.py annotate has no --fields-file, so a value carrying backticks is EXECUTED by the shell and its output silently replaces the text | Fixed | High | 2026-08-24 | 2026-08-24 |
 | [BG0610](BG0610-a-fields-file-scalar-where-a-list-is.md) | A --fields-file scalar where a list is expected is iterated CHARACTER BY CHARACTER, so one Verify line becomes one letter per criterion | Fixed | High | 2026-08-24 | 2026-08-24 |

@@ -118,3 +118,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0106](RETRO0106-six-instruments-repaired-and-three-of-them-were.md) | Six instruments repaired, and three of them were not delivered when I first ticked them | 2026-08-20 | -- | -- |
 | [RETRO-0107](RETRO0107-the-marginal-yield-of-a-review-round-is.md) | the marginal yield of a review round is not flat, and this run measured where it falls off | 2026-08-21 | -- | -- |
 | [RETRO-0108](RETRO0108-the-instruments-were-measured-against-the-change-and.md) | The instruments were measured against the change, and wave 2 shipped unreviewed | 2026-08-24 | -- | -- |
+| [RETRO-0109](RETRO0109-twelve-of-thirteen-and-the-thirteenth-was-withdrawn.md) | Twelve of thirteen, and the thirteenth was withdrawn at the close by its own review | 2026-08-25 | -- | -- |

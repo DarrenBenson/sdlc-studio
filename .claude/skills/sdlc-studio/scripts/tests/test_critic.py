@@ -5314,32 +5314,7 @@ class LedgerRollupTests(unittest.TestCase):
             mod.record_repair(root, "US0022", author="builder", closed="#1 -> only this one")
             self.assertEqual("partial", mod.repair_state(root, "US0022")["state"])
 
-    def test_one_seats_approve_does_not_retire_anothers_reject(self) -> None:
-        """MUTANT: in `critic.verdict_for`, take the last live row written.
 
-        A panel is several seats recorded one after another, so a unit REJECTed by one and
-        APPROVEd by another reported whichever was written second - the verdict became a fact
-        about the order the recorder was called in (BG0607)."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_verdict(root, "US0023", "reject", reviewer="engineering seat",
-                               author="builder", issues="[new] a real defect")
-            mod.record_verdict(root, "US0023", "approve", reviewer="product seat",
-                               author="builder")
-            self.assertEqual("REJECT", mod.verdict_for(root, "US0023")["verdict"],
-                             "a second seat's APPROVE retired the first seat's REJECT")
-
-    def test_a_seat_may_retire_its_own_reject(self) -> None:
-        """The paired control, and the boundary. A seat that rejected and then approved has
-        re-reviewed the same work; refusing that would make every REJECT permanent."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_verdict(root, "US0024", "reject", reviewer="qa seat", author="builder",
-                               issues="[new] a defect")
-            mod.record_verdict(root, "US0024", "approve", reviewer="qa seat", author="builder")
-            self.assertEqual("APPROVE", mod.verdict_for(root, "US0024")["verdict"])
 
     def test_the_brief_names_the_restore_obligation_not_only_the_worktree(self) -> None:
         """MUTANT: in `critic.py`, drop the snapshot-and-restore paragraph from the brief.

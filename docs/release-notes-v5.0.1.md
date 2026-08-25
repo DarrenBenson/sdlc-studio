@@ -75,11 +75,26 @@ documented command now works, pinned to `v5.0.1` or later.
 
 **v5.0.1 was TAGGED with zero Critical and zero High open against it.** That was true at the tag
 and is not a standing claim: fourteen High findings have since been raised against this code, every
-one of them by adversarial review, by dogfooding or by measurement after the tag. **Zero Critical, zero High.** All fourteen have been fixed and independently evidenced;
-the last six closed in RUN-01M0WCCG, each carrying executed mutant evidence against the
-tree as it stands rather than a claim about it. Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
+one of them by adversarial review, by dogfooding or by measurement after the tag. **One is open:
+BG0607.** Thirteen have been fixed and independently evidenced; the last six closed in
+RUN-01M0WCCG, each carrying executed mutant evidence against the tree as it stands rather than a
+claim about it. Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
 BG0583 was raised at High and then closed WON'T FIX when its premise did not survive
 re-measurement.
+
+**BG0607 was fixed in RUN-01M0WCCG and the fix was WITHDRAWN on 2026-08-25.** A unit's standing
+verdict is the last row written, so one seat's APPROVE recorded after another seat's REJECT makes a
+rejected unit read approved - measured on three units of RUN-01M0JD1W, and real. Two fix directions
+have now been measured against the whole corpus and both fail the same way. Keying the roll-up on
+the reviewer STRING took the conformance lane from 608/690 to 579/690 with 69 units flipping
+APPROVE to REJECT, because this repository names seats per round and a second-round approval by the
+same seat reads as a different seat. Keying it on a recorded REPAIR instead - which is what the
+bug's own criterion asks for - flips the SAME 69 units, because none of those rejections carries a
+repair row: they were answered by a re-review, and the ledger stores no record of that. So the
+defect is not in the roll-up. Neither a round identifier nor an answer-link exists in the verdict
+schema, and nothing computed from what is stored can tell "rejected and never answered" from
+"rejected, repaired and re-approved". Fixing it is a change to the ledger contract, and it is
+carried to v5.1 rather than guessed at here.
 
 BG0604 was raised at High and RE-TRIAGED to Medium on 2026-08-24, against the rubric: a
 workaround exists and the shipped tooling already prints it. It is worth stating plainly anyway,
@@ -94,8 +109,9 @@ the manual check runs in.
 open set directly; a disagreement between the two is the guard working, not drift to be edited
 away. This paragraph has now been wrong in both directions at once - naming three findings that
 had been fixed while missing one that was open - which is the argument for reading the command
-rather than the prose. Nothing at High is carried to v5.1, and BG0606's fix has already shipped - it stays open only because
-closing it needs a test-plan review for work an independent seat has already approved.
+rather than the prose. BG0607 is the one finding carried to v5.1 at High, and it is carried deliberately: two fix
+directions were built and measured, and the measurement is what says the fix belongs in the schema
+rather than in the roll-up.
 
 **v5.0.1 discloses 9 open defects: 9 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in

@@ -3,78 +3,77 @@
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-> **Run of record:** RUN-01M0JD1W - a unit's own evidence made honest. Six units, 21 points.
-> `revert-check` reports a test that never reached the change; `Verification depth` reads its
-> counts from the mutation ledger and seals them.
+> **Run of record:** RUN-01M0WCCG - twelve bugs closed, each carrying evidence executed against
+> the tree as it stands rather than a claim about it. **The bar is NOT met: BG0607 is open at
+> High.** Its fix shipped in this run and was WITHDRAWN at the close, when an adversarial review
+> measured it taking whole-workspace conformance from 608/690 to 579/690. A second fix direction
+> was then measured and flips the same 69 units, so the ledger cannot compute this roll-up at
+> all. The re-opening note on BG0607 carries both measurements. Read `known_issues.py --bar` for
+> the live set, never this line.
 
-## THE HEADLINE: THE INSTRUMENT REPORTED AGAINST THE SESSION THAT BUILT IT
+## THE HEADLINE: I WAS WRONG ABOUT THE COST FOR THREE DAYS RUNNING
 
-Registering the close's newly-executed mutants invalidated 22 earlier registrations - they had
-run against `verify_ac.py` and `gate.py` as they stood BEFORE the close's repairs, and
-registration is keyed on target content hash. `depth` dropped from `executed 5` to `executed 3`
-and NAMED the unsupported rows.
+I told the operator that 20 of 21 open bugs owed a test plan AND an independent plan review, and
+built two change requests on it. **Not one bug owes an independent review.** For a bug the entry
+gate NEVER fires - `Fixed` is not in `_IMPL_TARGETS` - and the terminal `_planned_mutant_gate`
+has no verdict check, no APPROVE, no independence test.
 
-Nothing else would have said a word: suite green, every criterion passing, stale counts sitting
-in the fields looking correct. All 22 were re-executed. Every unit now reads `not-run 0`.
+TWO functions carry the identical `"has no ## Test Plan"` message, and I attributed the bug
+refusal to the wrong one. Measured across all 23 open bugs: 21 owed a test plan, 20 a depth
+field, 18 ticked criteria, and ZERO owed a review. The five-round ceremony that made the previous
+run expensive is a STORY cost.
 
-## THE COST WAS THE REVIEW, AND THE CAUSE WAS A RULE I BROKE
+**D0151 records the rule this broke** - name the population and quote the gate's current
+behaviour for it, from source, before filing. I then broke it again within the hour, which is
+the honest measure of what a prose rule is worth.
 
-Delivery: 3 rounds. **Test-plan plan review: 5 rounds**, rejecting three units three times;
-every round's blocking findings were closed by the next, and round 5 APPROVED all three.
+## WHAT THE PRE-CODE REVIEW BOUGHT
 
-The dominant cause was hand-editing plan tables that `verify_ac.py testplan derive` OWNS - it
-produced a FUSED row invisible to the parser, so a unit's derived field counted over a table
-missing a row. What the rounds found that was not mechanical:
+It returned NOT-ACHIEVABLE against a 24-unit batch and re-verified all 24 PREMISES rather than
+critiquing the ordering. **Six were false**, including the plan's own stated enabler:
 
-- a FALSE KILL: US0671 AC8's declared mutant SURVIVED, because its control asserted only that
-  AC1 came back exempt - which a mutant exempting EVERYTHING satisfies too
-- `_first_three`, added to repair a SILENT TRUNCATION finding, shipped with no test and no row
-- twice, a test that MOCKED OUT the mechanism its own criterion was about: `_base_blob` patched
-  wholesale, and `_first_three` tested in isolation while the criterion was about the lane
-- two superseded `killed` rows left live in the ledger, correct only by registration order
-Three of five delivery findings were recurrences of recorded lessons - **LL0040**, **LL0013**,
-**LL0044/LL0045**. Read, not applied. **CR0554** and **CR0539** would mechanise them.
+- **BG0599** already fixed in its load-bearing half - one `derive` invocation prints eleven
+  fault lines across five criteria. The whole W0 justification was void.
+- **BG0602** stated cause absent; **BG0606** stale status; **BG0592** code-complete;
+  **BG0604 AC4** contradicted by D0149's own text; **BG0610**'s limb already closed.
 
-## NUMBERS
+Three closed for the cost of reading source. The batch was cut from 24 units and 89 mutants to
+13 that could actually close.
 
-Delivery ran at **128,183 tokens per point against 525,434 on the previous run**, with the
-forecast inside 1% for the first time. The close then cost more than the delivery.
+## ORDER BY WHAT COMPOUNDS, NOT BY SEVERITY
 
-Appetite read 4,308 minutes of 2,880 - it measures CALENDAR AGE (CR0551), so a run left open
-overnight burns it without work. Reset to 5,760 as a recorded standing decision, interim until
-CR0551 lands.
+Four of the thirteen repair instruments the run itself uses. BG0611 first, because this run
+appends to the ledger it re-walked 620 times per conformance pass; then BG0609, because this run
+annotates depth fields through the one verb that executed backticks; then BG0607 and BG0605,
+because this run writes into two roll-ups that were wrong. The critic.py/transition.py units ran
+as ONE ATOMIC BLOCK - all edits, then all registrations, then all transitions - which cost
+nothing and avoided the invalidation that cost the last close 22 re-executions.
 
-## THE NEXT RUN IS DECIDED, AND IT IS NOT THE BUGS
+## WHAT BIT, AND IS WORTH CARRYING
 
-**MEASURED 2026-08-25, and it corrects what this file said before: NO open bug owes an
-independent review.** Dry-run across all 23: 21 owe a `## Test Plan`, 20 a `Verification depth`,
-18 ticked criteria with `Verify:` lines, 1 its mutants executed, 1 nothing at all. Every one is
-mechanical and self-service.
+**A fixture that cannot reach the branch proves the fail-open path.** Two mutants survived
+because BG0586's git check is deliberately silent when git cannot answer and the fixture gave it
+nothing to answer with. The mutants were fine; the fixtures were not. When a guard has a
+documented fail-open, prove it was ASKED before believing what it reports.
 
-For a bug the entry gate NEVER fires - `Fixed` is not in `_IMPL_TARGETS` - and the terminal
-`_planned_mutant_gate` carries no verdict check. Two functions carry the identical "has no
-`## Test Plan`" message and the bug refusal was attributed to the wrong one, three times running.
-The five-round ceremony is a STORY cost.
+**A criterion about an ARTEFACT cannot be verified by a test over CODE.** All three of BG0606's
+first mutants survived for that reason - committed while fixing a bug about exactly that.
 
-**CR0549's remedy is WITHDRAWN and CR0555 replaces it.** Three pre-code goal reviews rejected
-three specifications, all failing in the same place: the gate fires BEFORE a unit is implemented,
-so every available signal is a declaration by its author - and **D0150** now forbids an
-author-declared field from gating review depth. US0677-US0684 are Blocked, kept for their review
-record. The diagnosis stands: 87% of the corpus tiers `full`.
-
-CR0555 moves the gate instead of banding it, and is NARROWED TO STORIES - they do pay two
-independent cycles; bugs pay none. D0151 records the rule both failures broke: name the
-population and quote the gate's current behaviour for it, from source, before filing.
+**BG0581 fired on this run's own planning brief**, which declared a reachable end state of
+`Review` for a batch of bugs. That status does not exist in a bug's vocabulary. The unit filed
+about it was in the batch being planned.
 
 ## OPEN
 
+Nine Medium bugs, none of them in this batch. The ones to read first:
+
 | Id | What |
 | --- | --- |
-| BG0605 | the repair ledger computes outstanding findings per RECORD, so two partial repairs both read PARTIAL |
-| BG0607 | a unit's verdict is the LAST row written, so an APPROVE after a REJECT makes a rejected unit read approved |
-| BG0608 | the budget line leads with the seconds figure BG0594 proved uninformative |
-| BG0609 | `transition.py annotate` has no `--fields-file`, so a backticked value is EXECUTED and its output stored |
-| CR0552 | `revert-check` mutates the live working tree - the shape that destroyed a reviewer's uncommitted work |
-| CR0554 | a row killed by a test no criterion names reads as `killed` |
+| CR0556 | a bug gets NO independent judgement of its plan OR its code - the only gate is evidence it reports about itself, and this repository holds 612 bugs against 683 stories |
+| CR0554 | a row killed by a test no criterion names still reads `killed` |
+| BG0612 | the limbs that survived BG0599 and BG0602 |
+| CR0557 | BG0463's twenty findings need individual re-triage against HEAD |
 
-BG0607 is the one to read next: the two-role gate can today be satisfied by recorder ordering.
+CR0556 is the one to read next. This run closed thirteen bugs on self-reported mutant evidence,
+which is exactly the situation that request is filed about - and it was filed deliberately
+unacted-on, because acting on it first would have made this sweep more expensive.

@@ -54,6 +54,23 @@ class BatchPlanShapeTests(unittest.TestCase):
             with self.subTest(unit=unit):
                 self._assert_derived_shape(unit)
 
+    def _titles_match_criteria(self, unit: str) -> None:
+        """Every plan row's Title cell states the criterion the row is filed under."""
+        import re as _re
+        path = next((REPO / "sdlc-studio" / sub).glob(f"{unit}-*.md")
+                    for sub in ("stories", "bugs")
+                    if list((REPO / "sdlc-studio" / sub).glob(f"{unit}-*.md")))
+        text = next(path).read_text(encoding="utf-8")
+        criteria = dict(_re.findall(r"^- \[[ x]\] \*\*(AC\d+)\*\* (.+)$", text, _re.M))
+        for line in text.splitlines():
+            if not line.startswith("| AC"):
+                continue
+            cells = [c.strip() for c in line.split("|")]
+            ac, title = cells[1], cells[3]
+            self.assertTrue(criteria.get(ac, "").startswith(title[:40]),
+                            f"{unit} {ac}: its row's Title states another criterion - "
+                            f"{title[:60]!r} against {criteria.get(ac, '')[:60]!r}")
+
     def test_no_row_states_a_criterion_other_than_its_own(self) -> None:
         """MUTANT: in US0676, delete AC6 and re-file its row under AC4.
 
@@ -61,6 +78,11 @@ class BatchPlanShapeTests(unittest.TestCase):
         PASS control. A row filed under a criterion that does not claim it reads as evidence for
         something nobody asserted, and `derive` will not reproduce that arrangement."""
         self._assert_derived_shape("US0676")
+        # ASSERTED DIRECTLY, not only through `derive`. Reading the Title cells against the
+        # criteria is a different question from whether the table is the derived shape, and an
+        # independent review found this criterion's verifier a strict SUBSET of its sibling's -
+        # it could not fail unless the sibling did.
+        self._titles_match_criteria("US0676")
 
     def test_the_check_can_fail(self) -> None:
         """The paired control. A unit whose plan is NOT in derived shape must be reported, or the
