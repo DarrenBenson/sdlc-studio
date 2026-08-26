@@ -35,8 +35,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0612` | Medium | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot |
 | `BG0613` | Medium | sprint breakdown grades an epic that the close's two grooming surfaces both skip, so one run refuses to plan a batch and then closes saying that un... |
 | `BG0614` | Medium | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last |
+| `BG0616` | Medium | a unit CLOSED by triage can never be covered by a retro, so it owes a close-down for ever and the advisory can only be cleared by lying |
 
-11 findings: 11 Medium, 0 Low.
+12 findings: 12 Medium, 0 Low.
 
 ## Not carried
 

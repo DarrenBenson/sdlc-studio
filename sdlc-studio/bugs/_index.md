@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-25
+**Last Updated:** 2026-08-26
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 12 |
+| Open | 14 |
 | In Progress | 0 |
 | Fixed | 505 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
 | Superseded | 2 |
-| **Total** | **614** |
+| **Total** | **616** |
 
 ## All Bugs
 
@@ -154,6 +154,8 @@
 | [BG0612](BG0612-three-limbs-that-survived-the-closure-of-bg0599.md) | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot | Open | Medium | 2026-08-25 | 2026-08-25 |
 | [BG0613](BG0613-sprint-breakdown-grades-an-epic-that-the-close.md) | sprint breakdown grades an epic that the close's two grooming surfaces both skip, so one run refuses to plan a batch and then closes saying that unit was not gradeable | Open | Medium | 2026-08-25 | 2026-08-25 |
 | [BG0614](BG0614-the-mutation-ledger-keeps-several-live-rows-on.md) | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last | Open | Medium | 2026-08-25 | 2026-08-25 |
+| [BG0615](BG0615-an-abandoned-guided-onboarding-marker-outranks-the-whole.md) | an abandoned guided-onboarding marker outranks the whole hint ladder forever, so an established project is told to go and onboard itself | Open | High | 2026-08-26 | 2026-08-26 |
+| [BG0616](BG0616-a-unit-closed-by-triage-can-never-be.md) | a unit CLOSED by triage can never be covered by a retro, so it owes a close-down for ever and the advisory can only be cleared by lying | Open | Medium | 2026-08-26 | 2026-08-26 |
 
 ## Archived Releases
 

@@ -114,10 +114,19 @@ the manual check runs in.
 open set directly; a disagreement between the two is the guard working, not drift to be edited
 away. This paragraph has now been wrong in both directions at once - naming three findings that
 had been fixed while missing one that was open - which is the argument for reading the command
-rather than the prose. BG0607 is the one finding carried to v5.1 at High, and it is carried with a scope that survived
-review rather than with the first one written down.
+rather than the prose. **BG0615 is a second open High, found on 2026-08-26 by running `hint`.** An abandoned
+guided-onboarding marker outranks the entire hint ladder for ever: the onboarding check is asked
+first and answers from its own stored state, never from whether the stage's output already exists.
+In this repository a marker written on 2026-08-14 with all seven stages pending made `hint` answer
+"guided onboarding in progress" for twelve days, in a project holding a complete PRD, TRD, TSD,
+personas and 218 epics, while suppressing the real next step. `status` and `hint` are the commands a
+session runs to orient itself, including after a context reset, which makes them the worst place in
+the tool for a claim the tree cannot contradict.
 
-**v5.0.1 discloses 11 open defects: 11 Medium, 0 Low.** The High findings above are
+BG0607 and BG0615 are the two findings carried to v5.1 at High. BG0607 is carried with a scope that
+survived review rather than with the first one written down.
+
+**v5.0.1 discloses 12 open defects: 12 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be
