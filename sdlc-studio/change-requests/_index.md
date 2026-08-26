@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 31 |
+| Proposed | 32 |
 | Approved | 0 |
 | In Progress | 10 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 23 |
 | Blocked | 0 |
-| **Total** | **559** |
+| **Total** | **560** |
 
 ## All Changes
 
@@ -110,6 +110,7 @@
 | [CR-0557](CR0557-bg0463-s-twenty-batch-boundary-findings-need-re.md) | BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered | Proposed | Medium | Improvement | 2026-08-25 | -- |
 | [CR-0558](CR0558-the-derived-depth-lane-checks-each-span-against.md) | the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes | Proposed | High | enhancement | 2026-08-25 | -- |
 | [CR-0559](CR0559-the-same-concept-is-named-three-ways-across.md) | the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal | Proposed | Medium | enhancement | 2026-08-26 | -- |
+| [CR-0560](CR0560-filing-a-finding-leaves-the-disclosure-page-stale.md) | filing a finding leaves the disclosure page stale, so the tree is red until somebody separately remembers to regenerate it | Proposed | Medium | enhancement | 2026-08-26 | -- |
 
 ## Archived Releases
 

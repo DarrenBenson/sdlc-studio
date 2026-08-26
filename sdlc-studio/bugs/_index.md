@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 20 |
 | In Progress | 0 |
-| Fixed | 505 |
+| Fixed | 506 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
 | Superseded | 3 |
-| **Total** | **622** |
+| **Total** | **624** |
 
 ## All Bugs
 
@@ -160,8 +160,10 @@
 | [BG0618](BG0618-a-repair-s-evidence-is-split-on-a.md) | a repair's evidence is split on a bare semicolon and the remainder is SILENTLY DROPPED, so the review ledger records less than the author wrote | Open | High | 2026-08-26 | 2026-08-26 |
 | [BG0619](BG0619-a-retro-and-a-handoff-can-be-created.md) | a retro and a handoff can be CREATED by the shipped creator but not FOUND by id, so every id-addressed tool refuses the artefacts the close itself mints | Open | Medium | 2026-08-26 | 2026-08-26 |
 | [BG0620](BG0620-eighteen-units-carry-a-reject-no-repair-record.md) | eighteen units carry a REJECT no repair record answers, so the fingerprint-keyed roll-up BG0607 needs cannot land until their evidence is backfilled | Superseded | Medium | 2026-08-26 | 2026-08-26 |
-| [BG0621](BG0621-the-release-bar-can-report-met-while-a.md) | the release bar can report MET while a High is open: severity is matched case-sensitively, only the literal status Open counts, and a hyphenated heading skips the file entirely | Open | High | 2026-08-26 | 2026-08-26 |
+| [BG0621](BG0621-the-release-bar-can-report-met-while-a.md) | the release bar can report MET while a High is open: severity is matched case-sensitively, only the literal status Open counts, and a hyphenated heading skips the file entirely | Fixed | High | 2026-08-26 | 2026-08-26 |
 | [BG0622](BG0622-a-goal-review-can-record-achievable-through-fields.md) | a goal review can record ACHIEVABLE through --fields-file but not NOT-ACHIEVABLE, because a JSON false is read as a missing field | Open | Medium | 2026-08-26 | 2026-08-26 |
+| [BG0623](BG0623-artifact-py-retitle-refuses-precisely-the-artefact-that.md) | artifact.py retitle refuses precisely the artefact that needs it, because a malformed H1 is both the defect and the thing the tool requires to work | Open | Medium | 2026-08-26 | 2026-08-26 |
+| [BG0624](BG0624-a-finding-at-a-severity-in-neither-the.md) | a finding at a severity in neither the barred nor the disclosed set is silently absent from BOTH the release bar and the disclosure page | Open | Medium | 2026-08-26 | 2026-08-26 |
 
 ## Archived Releases
 

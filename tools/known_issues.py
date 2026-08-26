@@ -47,7 +47,10 @@ TITLE_MAX = 150
 
 _STATUS = re.compile(r"^> \*\*Status:\*\* *(.+)$", re.M)
 _SEVERITY = re.compile(r"^> \*\*Severity:\*\* *(.+)$", re.M)
-_HEADING = re.compile(r"^# (BG\d+): (.+)$", re.M)
+#: The id form is `BG0123` canonically, but 21 files in this corpus write `BG-0123`, and a
+#: heading that does not match skips the WHOLE file - status and severity with it. A finding
+#: does not leave the release bar because of a hyphen.
+_HEADING = re.compile(r"^# (BG-?\d+): (.+)$", re.M)
 _ROW = re.compile(r"^\| `(BG\d+)` \| (\w+) \|", re.M)
 
 HEAD = """# Known issues
@@ -92,20 +95,74 @@ Regenerate with `python3 tools/known_issues.py --write`.
 """
 
 
+#: The statuses at which a finding has LEFT the population. Everything else is open, including
+#: `In Progress` and `Blocked`. Enumerating the open states instead - which is what a literal
+#: `== "Open"` does - is an enumeration of a rule, and an enumeration is a lower bound rather
+#: than a boundary: it silently exempts whatever it forgot, and what it forgot here was the
+#: resting state of every bug somebody is halfway through fixing.
+TERMINAL = ("Fixed", "Verified", "Closed", "Won't Fix", "Superseded")
+
+
+def _is_open(status: str) -> bool:
+    """Whether a finding is still open - NOT terminal, rather than one literal spelling."""
+    return status.strip().casefold() not in {s.casefold() for s in TERMINAL}
+
+
+def _matches(severity: str, wanted: tuple[str, ...]) -> bool:
+    """Severity against a set, case-insensitively. `file_finding.py` does not normalise the
+    field and the corpus holds seven bugs written `high`, so a case-sensitive compare makes the
+    release bar's answer depend on how somebody typed."""
+    return severity.strip().casefold() in {w.casefold() for w in wanted}
+
+
+def _read(path: Path):
+    """`(id, status, severity, title)` for a finding file, or None when it cannot be parsed."""
+    text = path.read_text(encoding="utf-8")
+    status, severity, heading = _STATUS.search(text), _SEVERITY.search(text), _HEADING.search(text)
+    if not (status and severity and heading):
+        return None
+    return (heading.group(1), status.group(1).strip(), severity.group(1).strip(),
+            heading.group(2).strip())
+
+
+def unparseable(repo: Path | None = None) -> list[str]:
+    """Every finding file neither reader can parse, repo-relative.
+
+    The three guards this replaced each dropped such a file SILENTLY, and a finding absent from
+    a release bar is indistinguishable from a corpus that is clean. Whatever the fourth
+    unreadable shape turns out to be, it is reported rather than skipped.
+    """
+    base = repo or REPO
+    return [str(p.relative_to(base)) for p in sorted((base / BUGS_REL).glob("BG*.md"))
+            if _read(p) is None]
+
+
+def _warn_unparseable(repo: Path | None = None) -> None:
+    """Say so, on any path that reads the corpus - not only at the release boundary.
+
+    `--bar` refuses on an unreadable finding, but `--check` and `--write` ran the same readers
+    and said nothing, so a malformed filing stayed invisible until somebody cut a tag. The
+    per-commit lane is where it should be caught; that is LL0027, and it is what let BG0131 sit
+    unread from 2026-07-14.
+    """
+    blind = unparseable(repo)
+    if blind:
+        print(f"warning: {len(blind)} finding(s) neither the bar nor this page can parse, so "
+              f"they are absent from both - {', '.join(blind)}", file=sys.stderr)
+
+
 def corpus(repo: Path | None = None) -> dict[str, tuple[str, str]]:
-    """`{bug id: (severity, title)}` for every bug at `Open` at a disclosed severity."""
-    root = (repo or REPO) / BUGS_REL
+    """`{bug id: (severity, title)}` for every OPEN bug at a disclosed severity.
+
+    Reads the same population as `barred_open` - the page and the bar are both surfaces a
+    release is judged on, and repairing one alone leaves the defect standing in this file.
+    """
     found: dict[str, tuple[str, str]] = {}
-    for path in sorted(root.glob("BG*.md")):
-        text = path.read_text(encoding="utf-8")
-        status, severity, heading = _STATUS.search(text), _SEVERITY.search(text), _HEADING.search(text)
-        if not (status and severity and heading):
+    for path in sorted(((repo or REPO) / BUGS_REL).glob("BG*.md")):
+        row = _read(path)
+        if row is None or not _is_open(row[1]) or not _matches(row[2], DISCLOSED):
             continue
-        if status.group(1).strip() != "Open":
-            continue
-        sev = severity.group(1).strip()
-        if sev in DISCLOSED:
-            found[heading.group(1)] = (sev, heading.group(2).strip())
+        found[row[0]] = (row[2], row[3])
     return found
 
 
@@ -116,17 +173,12 @@ def barred_open(repo: Path | None = None) -> dict[str, str]:
     separate read from `corpus()` rather than a filter on it: the two answer different questions,
     and folding them together is how a residue check ends up standing in for a bar check.
     """
-    root = (repo or REPO) / BUGS_REL
     found: dict[str, str] = {}
-    for path in sorted(root.glob("BG*.md")):
-        text = path.read_text(encoding="utf-8")
-        status, severity, heading = _STATUS.search(text), _SEVERITY.search(text), _HEADING.search(text)
-        if not (status and severity and heading):
+    for path in sorted(((repo or REPO) / BUGS_REL).glob("BG*.md")):
+        row = _read(path)
+        if row is None or not _is_open(row[1]) or not _matches(row[2], BARRED):
             continue
-        if status.group(1).strip() != "Open":
-            continue
-        if severity.group(1).strip() in BARRED:
-            found[heading.group(1)] = severity.group(1).strip()
+        found[row[0]] = row[2]
     return found
 
 
@@ -169,9 +221,20 @@ def main(argv: list[str] | None = None) -> int:
     if args.bar:
         root = Path(args.root).resolve()
         open_barred = barred_open(root)
-        if not open_barred:
+        # A finding neither reader can parse is NOT evidence of a clean corpus. Reported before
+        # the verdict and it refuses, because the three guards this replaced each dropped such a
+        # file silently, and silence read exactly like "bar met".
+        blind = unparseable(root)
+        if blind:
+            print(f"release bar UNKNOWN: {len(blind)} finding(s) neither the bar nor the "
+                  f"disclosure page can parse, so their status and severity are invisible to "
+                  f"both - {', '.join(blind)}. Repair the heading, status or severity field; a "
+                  f"finding nobody can read must never count as a corpus with nothing in it")
+        if not open_barred and not blind:
             print(f"release bar met: no open finding at {' or '.join(BARRED)} severity")
             return 0
+        if not open_barred:
+            return 1
         listing = ", ".join(f"{b} ({s})" for b, s in sorted(open_barred.items()))
         print(f"release bar NOT met: {len(open_barred)} open finding(s) at a barred severity - "
               f"{listing}. {NOTES_REL} claims zero; fix them or change the bar in a recorded "
@@ -186,6 +249,7 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("pass exactly one of --write or --check")
 
     root = Path(args.root).resolve()
+    _warn_unparseable(root)   # every path that reads the corpus, not only the release boundary
     want = render(root)
     page = root / PAGE_REL
 

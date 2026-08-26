@@ -39,8 +39,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0617` | Medium | sprint close titles the run's handoff with the run's GOAL, so a run that missed its goal ships a handoff asserting it |
 | `BG0619` | Medium | a retro and a handoff can be CREATED by the shipped creator but not FOUND by id, so every id-addressed tool refuses the artefacts the close itself... |
 | `BG0622` | Medium | a goal review can record ACHIEVABLE through --fields-file but not NOT-ACHIEVABLE, because a JSON false is read as a missing field |
+| `BG0623` | Medium | artifact.py retitle refuses precisely the artefact that needs it, because a malformed H1 is both the defect and the thing the tool requires to work |
+| `BG0624` | Medium | a finding at a severity in neither the barred nor the disclosed set is silently absent from BOTH the release bar and the disclosure page |
 
-15 findings: 15 Medium, 0 Low.
+17 findings: 17 Medium, 0 Low.
 
 ## Not carried
 

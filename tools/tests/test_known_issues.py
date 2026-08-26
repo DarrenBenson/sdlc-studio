@@ -18,6 +18,8 @@ row's severity cell; make the generator drop the Low severity from its disclosed
 
 from __future__ import annotations
 
+import contextlib
+import io
 import re
 import sys
 import tempfile
@@ -186,6 +188,148 @@ class ReleaseBarTests(unittest.TestCase):
         root = self._corpus(("BG0001", "Open", "High"))
         self.assertEqual({}, ki.corpus(root))
         self.assertEqual({"BG0001": "High"}, ki.barred_open(root))
+
+
+class BarPopulationTests(unittest.TestCase):
+    """BG0621 - WHICH findings the bar and the page can see at all.
+
+    ReleaseBarTests above pins what the bar DECIDES for a finding it reads. This class pins the
+    prior question: whether it reads the finding. Three guards each skipped one, and a finding
+    skipped is indistinguishable from a clean bill of health - which is what makes a bar that
+    can answer MET while a High is open worse than no bar.
+    """
+
+    def _corpus(self, *bugs, heading="# {id}: t"):
+        root = Path(tempfile.mkdtemp(prefix="bar_population_"))
+        (root / ki.BUGS_REL).mkdir(parents=True)
+        (root / "docs").mkdir(parents=True)
+        for bug_id, status, severity in bugs:
+            (root / ki.BUGS_REL / f"{bug_id}-x.md").write_text(
+                f"{heading.format(id=bug_id)}\n\n> **Status:** {status}\n"
+                f"> **Severity:** {severity}\n", encoding="utf-8")
+        return root
+
+    def test_severity_is_matched_regardless_of_casing(self):
+        """MUTANT: in `known_issues.py`, compare the severity against `BARRED` without
+        normalising case, as the shipped guard does.
+
+        `BARRED` is a tuple of capitalised strings and `file_finding.py` does not normalise the
+        field, so the corpus holds seven bugs written `high`. A bar whose answer depends on how
+        somebody typed is not a bar."""
+        root = self._corpus(("BG0001", "Open", "high"), ("BG0002", "Open", "CRITICAL"))
+        self.assertEqual({"BG0001": "high", "BG0002": "CRITICAL"}, ki.barred_open(root))
+        self.assertEqual(1, ki.main(["--bar", "--root", str(root)]))
+
+    def test_every_non_terminal_status_counts_as_open(self):
+        """MUTANT: in `known_issues.py`, restore the `!= "Open"` literal-status test in place of
+        the not-terminal test.
+
+        `In Progress` is a legitimate bug status and the resting state of a bug somebody is
+        halfway through fixing. Reading only the literal `Open` made the bar answer MET for
+        exactly the finding most likely to be in flight when somebody asks. `Blocked` is NOT in
+        the bug vocabulary at all, and is here on purpose: an out-of-vocabulary status must fall
+        OPEN, so a typo or a project-declared status over-refuses rather than hides."""
+        root = self._corpus(("BG0001", "In Progress", "High"), ("BG0002", "Blocked", "High"))
+        self.assertEqual({"BG0001": "High", "BG0002": "High"}, ki.barred_open(root))
+        self.assertEqual(1, ki.main(["--bar", "--root", str(root)]))
+
+    def test_a_hyphenated_heading_is_still_read(self):
+        """MUTANT: in `known_issues.py`, narrow `_HEADING` back to `^# (BG\\d+): (.+)$`, so a
+        hyphenated id no longer matches.
+
+        21 files in this corpus write their H1 as `# BG-0123:`. A heading that does not match
+        skips the WHOLE file, taking its status and severity with it - the finding does not
+        merely lose its title, it leaves the population."""
+        root = self._corpus(("BG0001", "Open", "High"), heading="# BG-0001: t")
+        self.assertEqual({"BG-0001": "High"}, ki.barred_open(root))
+        self.assertEqual(1, ki.main(["--bar", "--root", str(root)]))
+
+    def test_an_unparseable_finding_is_reported_not_dropped(self):
+        """MUTANT: in `known_issues.py`, drop the unparseable-finding report and `continue`
+        silently, as the shipped guard does.
+
+        This is what the three hatches have in common, and the only guard that covers the fourth
+        shape nobody has thought of yet. A file the readers cannot parse must never be silently
+        absent from a release bar."""
+        root = self._corpus(("BG0001", "Fixed", "High"))     # nothing else can refuse the bar
+        self.assertEqual(0, ki.main(["--bar", "--root", str(root)]),
+                         "the control must pass BEFORE the unreadable file is added, or this "
+                         "test cannot tell which finding refused")
+        (root / ki.BUGS_REL / "BG0002-x.md").write_text("nothing parseable here\n",
+                                                        encoding="utf-8")
+        self.assertEqual(["sdlc-studio/bugs/BG0002-x.md"], ki.unparseable(root))
+        self.assertEqual(1, ki.main(["--bar", "--root", str(root)]),
+                         "an unreadable finding is the ONLY thing wrong with this corpus, so "
+                         "the bar refusing proves it was the unreadable file that did it")
+
+    def test_a_clean_corpus_still_reports_the_bar_met(self):
+        """The paired control. Widening the population must not turn the bar into a check that
+        can never pass - a gate that always refuses is switched off within the week."""
+        root = self._corpus(("BG0001", "Open", "Medium"), ("BG0002", "Fixed", "High"),
+                            ("BG0003", "Won't Fix", "Critical"), ("BG0004", "Closed", "high"),
+                            # a lowercase TERMINAL status, which pins `_is_open`'s casefold the
+                            # way BG0004 pins `_matches`'. Without it, dropping that casefold
+                            # left every test in this file green.
+                            ("BG0005", "fixed", "High"))
+        self.assertEqual({}, ki.barred_open(root))
+        self.assertEqual([], ki.unparseable(root))
+        self.assertEqual(0, ki.main(["--bar", "--root", str(root)]))
+
+    def test_the_live_corpus_has_no_unparseable_finding(self):
+        """MUTANT: in `known_issues.py`, narrow `_HEADING` back so a hyphenated id no longer
+        matches - 21 live files then become unreadable.
+
+        The mutant is a HEADING change rather than a `--bar` change because this test reads the
+        corpus in-process and never calls `main`: deleting the report from the CLI path leaves it
+        green, which was the declaration it carried until a review executed it.
+
+        Deliberately against the LIVE corpus, not a fixture. The fixture test above proves the
+        guard CAN see an unreadable finding; this one proves it was pointed at the real thing.
+        Its first run found BG0131, invisible to both readers since 2026-07-14 because its H1
+        carried a parenthetical between the id and the colon - a guard whose first execution over
+        real data finds nothing has not been shown to look."""
+        self.assertEqual([], ki.unparseable(),
+                         "a finding neither the bar nor the disclosure page can parse is "
+                         "invisible to both, and invisible reads exactly like clean")
+
+    def test_check_and_write_also_report_an_unreadable_finding(self):
+        """MUTANT: in `known_issues.py`, drop the `_warn_unparseable` call from the check/write
+        path, leaving the report on `--bar` alone.
+
+        The bar runs at a release boundary; `--check` runs every commit. Warning only at the
+        boundary is how BG0131 sat unread from 2026-07-14 - LL0027, a gate belongs in the command
+        people actually run."""
+        root = self._corpus(("BG0001", "Open", "Medium"))
+        (root / ki.BUGS_REL / "BG0002-x.md").write_text("nothing parseable\n", encoding="utf-8")
+        (root / "docs" / "known-issues.md").write_text(ki.render(root), encoding="utf-8")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc = ki.main(["--check", "--root", str(root)])
+        self.assertEqual(0, rc, "the page agrees with the corpus, so --check must still pass")
+        self.assertIn("BG0002-x.md", err.getvalue(),
+                      "an unreadable finding must be named on the per-commit path, not only at "
+                      "the release boundary")
+
+    def test_the_terminal_set_matches_the_shipped_bug_vocabulary(self):
+        """`TERMINAL` is a hand-copy of what `sdlc_md` already owns, so it can only drift. A
+        terminal status added to the vocabulary later would read as OPEN here and the bar would
+        over-refuse - safe, but silent, and nobody would connect the two."""
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]
+                               / ".claude/skills/sdlc-studio/scripts/lib"))
+        import sdlc_md  # noqa: PLC0415 - deferred; tools/ does not import skill internals at load
+        self.assertEqual(set(sdlc_md.TERMINAL_STATUS["bug"]), set(ki.TERMINAL),
+                         "known_issues.TERMINAL has drifted from the shipped bug vocabulary")
+
+    def test_the_disclosure_page_reads_the_same_population_as_the_bar(self):
+        """MUTANT: in `known_issues.py`, leave the page's population reader on the old three
+        guards while the bar uses the new ones.
+
+        `corpus` renders the disclosure page and repeats all three guards verbatim. A release is
+        judged on the page as well as on the bar, so repairing one and not the other leaves the
+        defect standing in the file it was found in."""
+        root = self._corpus(("BG0001", "In Progress", "medium"), heading="# BG-0001: t")
+        self.assertEqual({"BG-0001": ("medium", "t")}, ki.corpus(root))
+
 
 
 class ReleaseNotesClaimTests(unittest.TestCase):

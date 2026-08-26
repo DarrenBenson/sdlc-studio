@@ -1,4 +1,4 @@
-# BG0131 (CORRECTED - the original claim was WRONG): The subagent token metric does not track work - it cannot be used for calibration as-is
+# BG0131: The subagent token metric does not track work - it cannot be used for capacity (CORRECTED - the original claim in this bug was WRONG)
 
 > **Status:** Won't Fix
 > **Severity:** Low

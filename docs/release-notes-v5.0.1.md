@@ -137,11 +137,11 @@ heading pattern skips 21 files whose H1 uses the hyphenated id form. None bites 
 non-terminal High currently escapes - but the status hatch becomes active inside any run that
 repairs a High, which is why it is fixed before the other three rather than alongside them.
 
-BG0607, BG0615, BG0618 and BG0621 are the four findings carried to v5.1 at High, and all four are in
+BG0621 is FIXED as of 2026-08-26, the first unit of the run opened against these. BG0607, BG0615 and BG0618 are the three findings still carried to v5.1 at High, and all four are in
 the batch of the run now open against them. BG0607 is carried with a scope that survived two
 independent reviews rather than with the first one written down.
 
-**v5.0.1 discloses 15 open defects: 15 Medium, 0 Low.** The High findings above are
+**v5.0.1 discloses 17 open defects: 17 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be
