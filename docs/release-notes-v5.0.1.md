@@ -123,10 +123,17 @@ personas and 218 epics, while suppressing the real next step. `status` and `hint
 session runs to orient itself, including after a context reset, which makes them the worst place in
 the tool for a claim the tree cannot contradict.
 
-BG0607 and BG0615 are the two findings carried to v5.1 at High. BG0607 is carried with a scope that
-survived review rather than with the first one written down.
+**BG0618 is a third open High, and it is the one to read first.** A repair's evidence text is split
+on a bare semicolon and every fragment the parser cannot understand is silently discarded, so the
+review ledger records less than the author wrote and says nothing. Proven by execution: a single
+closure whose evidence ran to two clauses lost 72 characters - the half naming the actual proof.
+`--issues` shares the channel. The `--closed-file` path exists so prose can be carried verbatim off
+disk, and it guards backticks while leaving this open.
 
-**v5.0.1 discloses 12 open defects: 12 Medium, 0 Low.** The High findings above are
+BG0607, BG0615 and BG0618 are the three findings carried to v5.1 at High. BG0607 is carried with a
+scope that survived review rather than with the first one written down.
+
+**v5.0.1 discloses 14 open defects: 14 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

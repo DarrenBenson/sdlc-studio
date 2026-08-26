@@ -36,8 +36,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0613` | Medium | sprint breakdown grades an epic that the close's two grooming surfaces both skip, so one run refuses to plan a batch and then closes saying that un... |
 | `BG0614` | Medium | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last |
 | `BG0616` | Medium | a unit CLOSED by triage can never be covered by a retro, so it owes a close-down for ever and the advisory can only be cleared by lying |
+| `BG0617` | Medium | sprint close titles the run's handoff with the run's GOAL, so a run that missed its goal ships a handoff asserting it |
+| `BG0619` | Medium | a retro and a handoff can be CREATED by the shipped creator but not FOUND by id, so every id-addressed tool refuses the artefacts the close itself... |
 
-12 findings: 12 Medium, 0 Low.
+14 findings: 14 Medium, 0 Low.
 
 ## Not carried
 
