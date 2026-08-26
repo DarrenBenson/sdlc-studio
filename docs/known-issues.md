@@ -41,8 +41,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0622` | Medium | a goal review can record ACHIEVABLE through --fields-file but not NOT-ACHIEVABLE, because a JSON false is read as a missing field |
 | `BG0623` | Medium | artifact.py retitle refuses precisely the artefact that needs it, because a malformed H1 is both the defect and the thing the tool requires to work |
 | `BG0624` | Medium | a finding at a severity in neither the barred nor the disclosed set is silently absent from BOTH the release bar and the disclosure page |
+| `BG0625` | Medium | an empty brief fingerprint on both rows lets a different seat's APPROVE retire a REJECT, which is the defect BG0607 exists to close |
 
-17 findings: 17 Medium, 0 Low.
+18 findings: 18 Medium, 0 Low.
 
 ## Not carried
 

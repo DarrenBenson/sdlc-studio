@@ -5113,8 +5113,14 @@ class ClosureResolutionTests(unittest.TestCase):
                                    "[new] a completely different defect", "delivery",
                                    "abcdef123456")
                 state = mod.repair_state(root, "US0904")
-        self.assertEqual(state["state"], "none",
-                         "a repair answering an earlier rejection satisfied a later one")
+        # Was `state == "none"` while a unit could carry only ONE live rejection. Under the
+        # fingerprint-keyed roll-up it carries both, so the honest answer is PARTIAL - round
+        # one is answered and round two is not - and the assertion is on the intent rather
+        # than on the literal, which the old model happened to produce.
+        self.assertNotEqual(state["state"], "complete",
+                            "a repair answering an earlier rejection satisfied a later one")
+        self.assertIn("a completely different defect", " ".join(state["outstanding"]),
+                      "the later rejection's finding must be outstanding, not invisible")
 
 
 class ThreeStateCoverageTests(unittest.TestCase):
@@ -5400,6 +5406,91 @@ class PlanReviewBriefTeachesMultiRowTests(unittest.TestCase):
 
 class LedgerRollupTests(unittest.TestCase):
     """BG0611, BG0605, BG0607, BG0604 - what the ledger says when it is read as a whole."""
+
+    def test_one_seats_approve_does_not_retire_anothers_reject(self) -> None:
+        """MUTANT: in `critic.py`, return the last live row from `verdict_for` instead of the
+        latest unanswered REJECT.
+
+        A panel is several seats recorded one after another, so taking the last row written made
+        a unit's standing verdict a fact about the ORDER the recorder was invoked in. Measured
+        on three units of RUN-01M0JD1W before this shipped."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod.record_verdict(root, "US0017", "REJECT", "engineering", "builder",
+                               "[new] alpha broke", "delivery", "aaaaaaaaaaaa")
+            mod.record_verdict(root, "US0017", "APPROVE", "product", "builder",
+                               "none", "delivery", "bbbbbbbbbbbb")
+            self.assertEqual("REJECT", mod.verdict_for(root, "US0017")["verdict"],
+                             "a different seat's approval retired an unanswered rejection")
+
+    def test_a_seat_may_retire_its_own_reject(self) -> None:
+        """The paired control AND the boundary. A seat must be able to change its mind, or every
+        REJECT is permanent and a round-two approval is unrecordable.
+
+        The key is the BRIEF FINGERPRINT, not the reviewer string: this repository names seats
+        per round - `qa-seat-ep0171` against `qa-seat-close-r2` - so keying on the name made a
+        legitimate second-round approval by the same seat read as a different seat. That version
+        shipped and was withdrawn at 579/690 conformant."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod.record_verdict(root, "US0017", "REJECT", "qa-seat-round-1", "builder",
+                               "[new] alpha broke", "delivery", "aaaaaaaaaaaa")
+            mod.record_verdict(root, "US0017", "APPROVE", "qa-seat-round-2", "builder",
+                               "none", "delivery", "aaaaaaaaaaaa")   # same brief, later round
+            self.assertEqual("APPROVE", mod.verdict_for(root, "US0017")["verdict"],
+                             "a seat could not retire its own rejection in a later round")
+
+    def test_the_latest_unanswered_reject_is_the_one_reported(self) -> None:
+        """MUTANT: in `critic.py`, report the EARLIEST unanswered REJECT rather than the latest.
+
+        The tie-break is load-bearing rather than incidental: on this corpus the earliest
+        reading leaves 18 units non-conformant and the latest leaves 19, and the unit it drops
+        is US0671 - the first one BG0607's own Steps to Reproduce name as masked. The reading
+        that gives the tidier number is the one that hides the example."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod.record_verdict(root, "US0017", "REJECT", "engineering", "builder",
+                               "[new] the first round finding", "delivery", "aaaaaaaaaaaa")
+            mod.record_verdict(root, "US0017", "REJECT", "qa", "builder",
+                               "[new] the second round finding", "delivery", "bbbbbbbbbbbb")
+            mod.record_verdict(root, "US0017", "APPROVE", "product", "builder",
+                               "none", "delivery", "cccccccccccc")
+            standing = mod.verdict_for(root, "US0017")
+            self.assertEqual("REJECT", standing["verdict"])
+            self.assertIn("second round", standing["issues"],
+                          "the EARLIEST unanswered rejection was reported, which is the reading "
+                          "that drops US0671 from the non-conformant set")
+
+    def test_every_unanswered_rejection_contributes_its_findings(self) -> None:
+        """MUTANT: in `critic.py`, narrow `repair_state` back to the standing rejection alone.
+
+        Before the fingerprint-keyed roll-up a unit carried ONE live rejection by construction,
+        so reading the standing row was the same as reading them all. It is not any more, and
+        deriving `outstanding` from the standing row alone left 118 findings across six units
+        invisible to this function, to the conformance lane that calls it, and to every checker
+        built on either. A gate that cannot see most of what it checks is not a gate."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # Two rejections from DIFFERENT seats, so neither retires the other.
+            mod.record_verdict(root, "US0905", "REJECT", "engineering", "b",
+                               "[new] the engineering finding", "delivery", "aaaaaaaaaaaa")
+            mod.record_verdict(root, "US0905", "REJECT", "qa", "b",
+                               "[new] the qa finding", "delivery", "bbbbbbbbbbbb")
+            # The QA rejection is answered; the engineering one is not. This is the real shape
+            # of the six units the roll-up surfaced - a partial repair against one round.
+            mod.record_repair(root, "US0905", "b",
+                              "the qa finding -> the mutant was re-applied and killed")
+            state = mod.repair_state(root, "US0905")
+            outstanding = " ".join(state["outstanding"])
+            self.assertIn("the engineering finding", outstanding,
+                          "only the standing rejection's findings were counted, so the earlier "
+                          "rejection's were invisible to the gate")
+            self.assertNotEqual("complete", state["state"],
+                                "a unit with an unanswered rejection read as fully repaired")
 
     def test_annotating_the_ledger_normalises_each_row_and_record_once(self) -> None:
         """MUTANT: in `critic._annotate_superseded`, scan the records per row again instead of

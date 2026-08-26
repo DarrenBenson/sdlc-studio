@@ -485,6 +485,7 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
     """
     target = sdlc_md.norm_id(unit)
     latest = None
+    seen: list[dict] = []
     for v in read_verdicts(repo_root, phase):
         if sdlc_md.norm_id(v["unit"]) != target:
             continue
@@ -497,7 +498,39 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
                                     or _is_principal_superseded(repo_root, unit, v)):
             continue
         latest = v
-    return latest
+        seen.append(v)
+    unanswered = _unanswered_rejects(seen)
+    # THE LATEST unanswered REJECT, and the tie-break is load-bearing rather than incidental:
+    # reporting the EARLIEST instead leaves 18 units non-conformant rather than 19, and the unit
+    # it drops is US0671 - the first one this bug's own Steps to Reproduce names as masked. The
+    # reading that gives the tidier number is the one that hides the example.
+    return unanswered[-1] if unanswered else latest
+
+
+def _unanswered_rejects(rows: list[dict]) -> list[dict]:
+    """Every REJECT no LATER APPROVE from the same seat-and-round has retired, oldest first.
+
+    THE KEY IS THE BRIEF FINGERPRINT, not the reviewer string. A panel is several seats recorded
+    one after another, so taking the last row written made a unit's verdict a fact about the
+    order the recorder was invoked in. Keying on the reviewer instead fails the other way: this
+    repository names seats PER ROUND - `qa-seat-ep0171` against `qa-seat-close-r2` - so a
+    legitimate second-round approval by the same seat reads as a different seat and can never
+    retire the rejection. That version shipped and was withdrawn at 579/690.
+
+    The fingerprint hashes the BRIEF the seat was handed, which embeds the seat charter and the
+    unit's own scope, so it identifies the seat and the round together. Measured on this corpus
+    it recovers 32 units the reviewer string leaves unanswered and loses none.
+    """
+    out = []
+    for i, r in enumerate(rows):
+        if not str(r.get("verdict") or "").upper().startswith(REJECT):
+            continue
+        fp = str(r.get("brief") or "")
+        if any(str(l.get("verdict") or "").upper().startswith(APPROVE)
+               and str(l.get("brief") or "") == fp for l in rows[i + 1:]):
+            continue
+        out.append(r)
+    return out
 
 
 # --- Supersession (a verdict row retired by addition) ----------------------------------
@@ -900,6 +933,9 @@ _ITEM_SPLIT = re.compile(r"(?<!\\);")
 _ESCAPED_SEMI = "\\;"
 _ESCAPED_BACKSLASH = "\\\\"
 
+#: Rows already reported this process, so a repeated read does not repeat the warning.
+_WARNED_UNREADABLE: set[str] = set()
+
 
 def split_items(text: str) -> list[str]:
     """Split a channel string into items on an UNESCAPED `;`, unescaping as it goes.
@@ -995,9 +1031,15 @@ def parse_closures(closed: str) -> list[dict]:
             # is the READ path, where 67 chunks already on disk lack the separator and raising
             # would crash every reader of the ledger. So it warns and carries on: silence is the
             # half of this defect that made it dangerous, and skipping quietly keeps it.
-            print(f"warning: a closure with no `{_CLOSURE_SPLIT}` separator is being skipped - "
-                  f"{item[:70]!r}. Its evidence is NOT in the repair state computed from this "
-                  f"row", file=sys.stderr)
+            # ONCE per distinct row per process. The report is the point - silence is what made
+            # this defect dangerous - but `repair_state` is called per unit by every reader of
+            # the ledger, so an unconditional print turns 67 legacy rows into hundreds of lines
+            # on a single conformance run. A warning nobody can read is the same silence louder.
+            if item not in _WARNED_UNREADABLE:
+                _WARNED_UNREADABLE.add(item)
+                print(f"warning: a closure with no `{_CLOSURE_SPLIT}` separator is being "
+                      f"skipped - {item[:70]!r}. Its evidence is NOT in the repair state "
+                      f"computed from this row", file=sys.stderr)
             continue
         if tok := _DISPOSITION_TOKEN.match(evidence):
             disposition = tok.group(1).lower()
@@ -1186,21 +1228,36 @@ def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> d
     because it would convert every REJECT into an APPROVE for the cost of one command.
     """
     rows = repairs_for(repo_root, unit)
-    row = rows[-1] if rows else None
-    verdict = verdict_for(repo_root, unit, phase) or {}
-    # The repair must answer THIS rejection. `verdict_date` was recorded and then read nowhere,
-    # so a round-one repair kept satisfying a later, different REJECT - the unit reading
-    # `repaired` against findings nobody had answered. A repair whose recorded verdict date does
-    # not match the live verdict's is an answer to an older question.
-    answering = [r for r in rows
-                 if str(r.get("verdict_date") or "") == str(verdict.get("date") or "")]
+    # EVERY unanswered rejection, not just the standing one. Before the fingerprint-keyed
+    # roll-up a unit had one live REJECT by construction, so reading the standing row was the
+    # same as reading them all. It is not any more: six units carry several simultaneously, and
+    # deriving `outstanding` from the standing row alone left 118 findings invisible to this
+    # function, to the conformance lane that calls it and to every checker built on either. A
+    # gate that cannot see most of what it is meant to check is not a gate.
+    live = [r for r in read_verdicts(repo_root, phase)
+            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit)]
+    rejections = _unanswered_rejects(live) or (
+        [verdict_for(repo_root, unit, phase)] if verdict_for(repo_root, unit, phase) else [])
+    rejections = [r for r in rejections
+                  if str(r.get("verdict") or "").upper().startswith(REJECT)]
+    if not rejections:
+        return {"state": "none", "closed": [], "outstanding": [], "filed": 0, "fixed": 0}
+    # A repair answers ONE rejection, matched on the verdict date it was recorded against - a
+    # round-one repair must not go on satisfying a later, different REJECT. Matched PER
+    # rejection rather than pooled: a closure may name its finding by ORDINAL, and an ordinal is
+    # positional, so `#1` checked against another rejection's list resolves to that list's first
+    # finding and silently answers it. Pooling made a round-one repair close a round-two finding
+    # it had never seen.
+    closures, outstanding, answering = [], [], []
+    for rejection in rejections:
+        when = str(rejection.get("date") or "")
+        mine = [r for r in rows if str(r.get("verdict_date") or "") == when]
+        answering += mine
+        theirs = [c for r in mine for c in parse_closures(r.get("closed", ""))]
+        closures += theirs
+        outstanding += repair_outstanding(rejection.get("issues", ""), theirs)
     if not answering:
         return {"state": "none", "closed": [], "outstanding": [], "filed": 0, "fixed": 0}
-    row = answering[-1]
-    # EVERY row answering this verdict, not the last one. The closures are the unit's whole
-    # answer to the rejection; which invocation recorded each is bookkeeping.
-    closures = [c for r in answering for c in parse_closures(r.get("closed", ""))]
-    outstanding = repair_outstanding(verdict.get("issues", ""), closures)
     return {"state": "partial" if outstanding else "complete",
             "closed": closures, "outstanding": outstanding,
             "filed": sum(1 for c in closures if c["disposition"] == "filed"),

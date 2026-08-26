@@ -73,33 +73,30 @@ documented command now works, pinned to `v5.0.1` or later.
 
 ## Known issues
 
-**v5.0.1 was TAGGED with zero Critical and zero High open against it.** That was true at the tag
-and is not a standing claim: fourteen High findings have since been raised against this code, every
-one of them by adversarial review, by dogfooding or by measurement after the tag. **One is open:
-BG0607.** Thirteen have been fixed and independently evidenced; the last six closed in
-RUN-01M0WCCG, each carrying executed mutant evidence against the tree as it stands rather than a
-claim about it. Four have been fixed and independently reviewed (BG0585, BG0593, BG0597, BG0598), and
-BG0583 was raised at High and then closed WON'T FIX when its premise did not survive
-re-measurement.
+**v5.0.1 was TAGGED with zero Critical and zero High open against it, and it is back there.**
+That was true at the tag and was not a standing claim: fourteen High findings were raised against
+this code afterwards, every one by adversarial review, by dogfooding or by measurement.
+**Zero Critical, zero High.** All fourteen are fixed and independently evidenced. The last four closed
+in RUN-01M0YXN3 - BG0621, BG0615, BG0618 and BG0607 - each carrying executed mutant evidence
+against the tree as it stands rather than a claim about it, and BG0583 was raised at High and then
+closed WON'T FIX when its premise did not survive re-measurement.
 
-**BG0607 was fixed in RUN-01M0WCCG and the fix was WITHDRAWN on 2026-08-25.** A unit's standing
-verdict is the last row written, so one seat's APPROVE recorded after another seat's REJECT makes a
-rejected unit read approved - measured on three units of RUN-01M0JD1W, and real. The shipped fix
-keyed the roll-up on the reviewer STRING and took the conformance lane from 608/690 to 579/690,
-because this repository names seats per round and a second-round approval by the same seat reads as
-a different seat. A second direction, keying on a recorded REPAIR, flips the same units.
-
-**The re-scope that followed was itself corrected by review, and the correction is the useful part.**
-This page first claimed that nothing computed from stored data could tell "rejected and never
-answered" from "rejected, repaired and re-approved", and that the fix therefore needed a schema
-change. That was wrong twice over. The ledger already stores a partial round identifier - the
-`Brief` column, a content hash of the brief the seat was handed - and keying the retraction on a
-matching fingerprint recovers a strict superset of what the reviewer string recovers: 81 units with
-an unanswered REJECT under the reviewer string against 49 under the fingerprint, 32 recovered and
-none lost. The two rules that were said to corroborate each other were also nested rather than
-independent, so their agreement was guaranteed before either ran. What the fix actually costs is an
-evidence backfill of the residue, not a change to the ledger contract, and BG0607 now carries that
-scope with the measurements behind it.
+**BG0607 is the one worth reading.** A unit's standing verdict was the last row written, so one
+seat's APPROVE recorded after another seat's REJECT made a rejected unit read approved. Its first
+fix keyed the roll-up on the reviewer STRING and was withdrawn when a review measured it taking
+whole-workspace conformance from 608/690 to 579/690. The note written at that withdrawal claimed no
+roll-up computable from stored data could tell "rejected and never answered" from "rejected,
+repaired and re-approved" - and a second review refuted that from the ledger's own `Brief` column,
+a content hash of the brief a seat was handed, which identifies the seat and the round together.
+Keyed on it, the unanswered set is a strict subset of the reviewer string's. The roll-up surfaces, for the first time,
+nineteen units carrying a rejection no seat ever answered. A backfill attempting to close them was
+REJECTED at review for citing, as its evidence, the cross-seat approval this very rule exists to
+refuse - the record made prettier rather than truer - and it was removed. Those nineteen are
+resolved instead by a recorded WAIVER naming each unit, because a historical rejection cannot be
+answered retroactively without fabricating evidence. What is set aside is the gap, not the rule:
+every unit reviewed after 2026-08-26 is held to it in full. The same review found that
+`repair_state` read only the standing rejection, so 118 findings on units carrying several were
+invisible to the gate that decides whether a rejection was answered; it now reads every one.
 
 BG0604 was raised at High and RE-TRIAGED to Medium on 2026-08-24, against the rubric: a
 workaround exists and the shipped tooling already prints it. It is worth stating plainly anyway,
@@ -141,7 +138,7 @@ BG0621, BG0615 and BG0618 are FIXED as of 2026-08-26 by the run opened against t
 the batch of the run now open against them. BG0607 is carried with a scope that survived two
 independent reviews rather than with the first one written down.
 
-**v5.0.1 discloses 17 open defects: 17 Medium, 0 Low.** The High findings above are
+**v5.0.1 discloses 18 open defects: 18 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

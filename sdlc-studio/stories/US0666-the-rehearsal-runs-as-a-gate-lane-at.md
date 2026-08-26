@@ -27,7 +27,7 @@
   commit gets switched off.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k the_rehearsal_lane_runs_at_the_push_and_release_boundaries
-- **Verified:** yes (2026-08-10)
+- **Verified:** yes (2026-08-26)
 
 ### AC2
 
@@ -37,7 +37,7 @@
   duration is recorded alongside the other lanes rather than being untimed.
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k the_rehearsal_lane_names_its_failing_half_and_records_its_cost
-- **Verified:** yes (2026-08-10)
+- **Verified:** yes (2026-08-26)
 
 ### AC3
 
