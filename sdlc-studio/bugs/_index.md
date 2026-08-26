@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 17 |
+| Open | 19 |
 | In Progress | 0 |
 | Fixed | 505 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
-| Superseded | 2 |
-| **Total** | **619** |
+| Superseded | 3 |
+| **Total** | **622** |
 
 ## All Bugs
 
@@ -159,6 +159,9 @@
 | [BG0617](BG0617-sprint-close-titles-the-run-s-handoff-with.md) | sprint close titles the run's handoff with the run's GOAL, so a run that missed its goal ships a handoff asserting it | Open | Medium | 2026-08-26 | 2026-08-26 |
 | [BG0618](BG0618-a-repair-s-evidence-is-split-on-a.md) | a repair's evidence is split on a bare semicolon and the remainder is SILENTLY DROPPED, so the review ledger records less than the author wrote | Open | High | 2026-08-26 | 2026-08-26 |
 | [BG0619](BG0619-a-retro-and-a-handoff-can-be-created.md) | a retro and a handoff can be CREATED by the shipped creator but not FOUND by id, so every id-addressed tool refuses the artefacts the close itself mints | Open | Medium | 2026-08-26 | 2026-08-26 |
+| [BG0620](BG0620-eighteen-units-carry-a-reject-no-repair-record.md) | eighteen units carry a REJECT no repair record answers, so the fingerprint-keyed roll-up BG0607 needs cannot land until their evidence is backfilled | Superseded | Medium | 2026-08-26 | 2026-08-26 |
+| [BG0621](BG0621-the-release-bar-can-report-met-while-a.md) | the release bar can report MET while a High is open: severity is matched case-sensitively, only the literal status Open counts, and a hyphenated heading skips the file entirely | Open | High | 2026-08-26 | 2026-08-26 |
+| [BG0622](BG0622-a-goal-review-can-record-achievable-through-fields.md) | a goal review can record ACHIEVABLE through --fields-file but not NOT-ACHIEVABLE, because a JSON false is read as a missing field | Open | Medium | 2026-08-26 | 2026-08-26 |
 
 ## Archived Releases
 

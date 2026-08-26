@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
+> **Depends on:** BG0621
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Evidence:** Hit repeatedly while recording the RUN-01M0WCCG repair round on 2026-08-25, where several closures were rejected or partially recorded until every semicolon was removed from the prose. Root cause isolated by executing `parse_closures` directly on 2026-08-26 and measuring the lost text. Parser quoted from critic.py:903 and 909-910.
 > **Created:** 2026-08-26
@@ -24,8 +25,14 @@ Two changes, and the second matters more than the first. Give the channel a way 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `parse_closures` splits the `closed` text on a bare `;` (critic.py:903) and then discards any chunk that has no ` -> ` in it (critic.py:909-910, `if not...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Two changes, and the second matters more than the first.
+- [ ] **AC1** Given a closure whose EVIDENCE contains a semicolon, when the repair is recorded and read back, then the evidence is stored WHOLE - every clause the author wrote reaches the record, modulo the ledger's own markdown escaping (`_` and `|`, which `_clean` applies deliberately for MD037 and table safety) - rather than being truncated at the first semicolon
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_evidence_carrying_a_semicolon_is_stored_whole
+- [ ] **AC2** Given a closure whose evidence contains NO semicolon, when it is recorded, then it parses exactly as it does today - the paired control, so carrying a semicolon does not become the only shape the channel accepts
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_ordinary_evidence_still_parses_unchanged
+- [ ] **AC3** Given a chunk the parser cannot read as `<finding> -> <evidence>`, when it is WRITTEN, then the write is REFUSED by name - and when an existing row is READ, it is REPORTED and not raised. The silence is the defect, but refusing on the read path crashes `conformance.py check` inside `repair_state`: 68 chunks already on disk across 11 units lack the separator, five of them among the units this run must backfill
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_an_unparseable_chunk_is_refused_rather_than_dropped
+- [ ] **AC4** Given a `--issues` string carrying a semicolon inside one finding, when a verdict is recorded, then that finding survives whole - the channel BG0618 is about is shared, so a fix that repairs only the repair path leaves the verdict path corrupting the same way
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_the_issues_channel_carries_a_semicolon_too
 
 ## Impact
 

@@ -130,10 +130,18 @@ closure whose evidence ran to two clauses lost 72 characters - the half naming t
 `--issues` shares the channel. The `--closed-file` path exists so prose can be carried verbatim off
 disk, and it guards backticks while leaving this open.
 
-BG0607, BG0615 and BG0618 are the three findings carried to v5.1 at High. BG0607 is carried with a
-scope that survived review rather than with the first one written down.
+**BG0621 is a fourth, and it is the release bar itself.** `known_issues.py --bar` can answer MET
+while a High is open: severity is matched case-sensitively against a corpus holding seven bugs
+written `high`, only the literal status `Open` counts so a High mid-repair is invisible, and the
+heading pattern skips 21 files whose H1 uses the hyphenated id form. None bites today - no
+non-terminal High currently escapes - but the status hatch becomes active inside any run that
+repairs a High, which is why it is fixed before the other three rather than alongside them.
 
-**v5.0.1 discloses 14 open defects: 14 Medium, 0 Low.** The High findings above are
+BG0607, BG0615, BG0618 and BG0621 are the four findings carried to v5.1 at High, and all four are in
+the batch of the run now open against them. BG0607 is carried with a scope that survived two
+independent reviews rather than with the first one written down.
+
+**v5.0.1 discloses 15 open defects: 15 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

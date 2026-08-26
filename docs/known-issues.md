@@ -38,8 +38,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0616` | Medium | a unit CLOSED by triage can never be covered by a retro, so it owes a close-down for ever and the advisory can only be cleared by lying |
 | `BG0617` | Medium | sprint close titles the run's handoff with the run's GOAL, so a run that missed its goal ships a handoff asserting it |
 | `BG0619` | Medium | a retro and a handoff can be CREATED by the shipped creator but not FOUND by id, so every id-addressed tool refuses the artefacts the close itself... |
+| `BG0622` | Medium | a goal review can record ACHIEVABLE through --fields-file but not NOT-ACHIEVABLE, because a JSON false is read as a missing field |
 
-14 findings: 14 Medium, 0 Low.
+15 findings: 15 Medium, 0 Low.
 
 ## Not carried
 
