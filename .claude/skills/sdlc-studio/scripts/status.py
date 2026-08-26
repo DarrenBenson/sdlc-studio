@@ -472,6 +472,9 @@ def compute_hint(data: dict, repo_root: Path) -> dict:
             "discovery": awaiting if awaiting is not None else discovery_awaiting(repo_root)}
 
 
+SDLC_DIR = "sdlc-studio"
+
+
 def _onboarding_hint(repo_root: Path) -> dict | None:
     """If guided onboarding is under way, resuming it IS the next step - `init guided` walks the
     operator through the remaining docs to a first plan, so it takes precedence over the pipeline
@@ -480,11 +483,24 @@ def _onboarding_hint(repo_root: Path) -> dict | None:
     state = init.read_onboarding(repo_root)
     if not state:
         return None
-    stage = init.first_incomplete(state)
+    # ASKED OF THE TREE, not only of the marker. A marker records what somebody last clicked;
+    # passing the root lets a stage whose output already exists stop holding the hint, which is
+    # what makes this answer falsifiable at all.
+    stage = init.first_incomplete(state, repo_root)
+    superseded = init.superseded_stages(repo_root, state)
     if not stage:
+        if superseded:
+            # Named rather than silently skipped. A stale marker nobody is told about is one
+            # nobody ever removes - this one sat for twelve days across a dozen closes.
+            return {"next_command": None,
+                    "note": (f"a guided-onboarding marker is still on disk and every stage it "
+                             f"lists is already done in this project ({', '.join(superseded)}) - "
+                             f"it is SUPERSEDED and safe to remove: "
+                             f"`rm {SDLC_DIR}/.local/onboarding.json`")}
         return None
     return {"next_command": "init guided",
-            "reason": f"guided onboarding in progress - next stage: {stage}"}
+            "reason": f"guided onboarding in progress - next stage: {stage}"
+                      + (f" (superseded and skipped: {', '.join(superseded)})" if superseded else "")}
 
 
 def _compute_hint_rung(data: dict, repo_root: Path) -> dict:

@@ -308,10 +308,59 @@ def stage_status(state: dict, name: str) -> str | None:
     return next((s["status"] for s in state.get("stages", []) if s["name"] == name), None)
 
 
-def first_incomplete(state: dict) -> str | None:
-    """The first stage still PENDING - what resume points at. Done and skipped are both handled
-    (a skip is a deliberate, recorded decision, not unfinished work), so neither is incomplete."""
-    return next((s["name"] for s in state.get("stages", []) if s["status"] == "pending"), None)
+#: The SINGLETON stages, whose output is `sdlc-studio/{name}.md` - the same path `_seed_singleton`
+#: writes, so the two cannot disagree about what a stage produces.
+_SINGLETON_STAGES = ("prd", "trd", "tsd", "personas")
+
+
+def stage_output_exists(root: Path | str, stage: str) -> bool:
+    """Whether this stage's OUTPUT is already on disk.
+
+    A marker records what somebody last clicked, not what the project contains, and until this
+    existed nothing compared the two: a marker written once and abandoned outranked the whole
+    hint ladder for ever, because `first_incomplete` read only its own `status` field. So a
+    project holding a PRD, a TRD, a TSD, personas and 218 epics was told to go and onboard
+    itself, and no state of the tree could dislodge it. A claim nothing can contradict is not a
+    claim - and this is the orientation command, read before a reader knows enough to doubt it.
+    """
+    root = Path(root)
+    if stage == "agents":
+        return (root / "AGENTS.md").is_file()
+    if stage in _SINGLETON_STAGES:
+        return (root / SDLC / f"{stage}.md").is_file()
+    if stage == "decompose":
+        return any((root / SDLC / "epics").glob("EP*.md"))
+    if stage == "plan":
+        # A planned sprint leaves a retro behind; `.local/` is gitignored, so it is not evidence.
+        return any((root / SDLC / "retros").glob("RETRO*.md"))
+    return False          # an unknown stage is never assumed done - the fail-closed direction
+
+
+def superseded_stages(root: Path | str, state: dict) -> list[str]:
+    """PENDING stages whose output already exists, oldest first.
+
+    Reported rather than silently skipped: a stale marker that is quietly stepped over is one
+    nobody ever cleans up, and the operator is entitled to know the tool disagreed with the file.
+    """
+    return [s["name"] for s in state.get("stages", [])
+            if s["status"] == "pending" and stage_output_exists(root, s["name"])]
+
+
+def first_incomplete(state: dict, root: Path | str | None = None) -> str | None:
+    """The first stage still PENDING and NOT already satisfied by the tree.
+
+    Done and skipped are both handled (a skip is a deliberate, recorded decision, not unfinished
+    work), so neither is incomplete. A stage whose output exists is not incomplete either, which
+    is what makes the marker falsifiable by the project it describes. `root` is optional so
+    every existing caller keeps working; without it the answer is the marker's alone.
+    """
+    for s in state.get("stages", []):
+        if s["status"] != "pending":
+            continue
+        if root is not None and stage_output_exists(root, s["name"]):
+            continue
+        return s["name"]
+    return None
 
 
 def set_stage(root: Path | str, name: str, status: str) -> dict:

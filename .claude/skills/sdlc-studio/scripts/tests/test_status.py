@@ -983,5 +983,84 @@ class RunLineDocTests(unittest.TestCase):
                       "the page must land a reader on the re-anchor instruction")
 
 
+
+
+class OnboardingHintFalsifiabilityTests(unittest.TestCase):
+    """BG0615 - a marker that no state of the tree could dislodge.
+
+    `_onboarding_hint` is asked FIRST and its answer returned whenever any stage is pending, and
+    `first_incomplete` decided that from the marker's own `status` field alone. So a marker
+    written once and abandoned outranked the entire pipeline ladder for ever. Measured in this
+    repository: one written 2026-08-14 with all seven stages pending, in a project holding a PRD,
+    a TRD, a TSD, personas and 218 epics, made `hint` answer `init guided` for twelve days.
+    """
+
+    def _marked(self, root: Path, *pending: str) -> None:
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".local" / "onboarding.json").write_text(json.dumps(
+            {"path": "brownfield",
+             "stages": [{"name": s, "status": "pending"} for s in pending]}), encoding="utf-8")
+
+    def _output_for(self, root: Path, stage: str) -> None:
+        """Create exactly what `init`'s own stage for `stage` produces."""
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        if stage == "agents":
+            (root / "AGENTS.md").write_text("# agents\n", encoding="utf-8")
+        elif stage in ("prd", "trd", "tsd", "personas"):
+            (root / "sdlc-studio" / f"{stage}.md").write_text(f"# {stage}\n", encoding="utf-8")
+        elif stage == "decompose":
+            d = root / "sdlc-studio" / "epics"; d.mkdir(parents=True, exist_ok=True)
+            (d / "EP0001-x.md").write_text("# EP0001: x\n", encoding="utf-8")
+        elif stage == "plan":
+            d = root / "sdlc-studio" / "retros"; d.mkdir(parents=True, exist_ok=True)
+            (d / "RETRO0001-x.md").write_text("# RETRO-0001: x\n", encoding="utf-8")
+
+    def test_a_stage_whose_output_exists_does_not_hold_the_hint(self) -> None:
+        """MUTANT: in `init.py`, drop the `stage_output_exists` check from `first_incomplete`,
+        deciding from the marker's `status` field alone.
+
+        This is the whole defect: no state of the tree could dislodge the marker."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._marked(root, "agents", "prd")
+            for s in ("agents", "prd"):
+                self._output_for(root, s)
+            self.assertIsNone(init.first_incomplete(
+                json.loads((root / "sdlc-studio" / ".local" / "onboarding.json").read_text()),
+                root), "a stage whose output is on disk is not incomplete")
+
+    def test_a_genuinely_incomplete_stage_still_holds_the_hint(self) -> None:
+        """The paired control. Making the marker falsifiable must not disable guided onboarding
+        for the projects genuinely mid-way through it - a check that never fires is switched
+        off, and this one exists to help a real greenfield project."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._marked(root, "agents", "prd")
+            self._output_for(root, "agents")          # prd's output is NOT on disk
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "onboarding.json").read_text())
+            self.assertEqual("prd", init.first_incomplete(state, root))
+
+    def test_a_fully_superseded_marker_is_named_not_silently_skipped(self) -> None:
+        """MUTANT: in `init.py`, return an empty list from `superseded_stages`.
+
+        A stale file that is quietly stepped over is one nobody ever removes. This one sat for
+        twelve days across a dozen sprint closes and nothing reported it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            stages = ("agents", "prd", "trd", "tsd", "personas", "decompose", "plan")
+            self._marked(root, *stages)
+            for s in stages:
+                self._output_for(root, s)
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "onboarding.json").read_text())
+            self.assertEqual(list(stages), init.superseded_stages(root, state))
+            hint = status._onboarding_hint(root)
+            self.assertIsNotNone(hint, "a superseded marker must be REPORTED, not ignored")
+            self.assertIn("SUPERSEDED", hint["note"])
+            self.assertIn("onboarding.json", hint["note"],
+                          "the report must name the file, or nobody can act on it")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4763,6 +4763,163 @@ def _bug_on_disk(root, bid="BG0123"):
         f"# {bid}: the residue\n\n> **Status:** Open\n> **Points:** 1\n", encoding="utf-8")
 
 
+class ClosureChannelTests(unittest.TestCase):
+    """BG0618 - the channel that carries a repair's EVIDENCE, and what it silently threw away.
+
+    `parse_closures` split on a bare `;` and then `continue`d past any chunk with no ` -> `. So
+    evidence containing a semicolon was truncated at it and the remainder vanished: measured, 72
+    characters of a two-clause closure, no warning, exit 0. This is the record a reviewer reads
+    to judge whether a REJECT was answered, and `repair_state` computes complete-versus-partial
+    from it.
+    """
+
+    def test_evidence_carrying_a_semicolon_is_stored_whole(self) -> None:
+        r"""MUTANT: in `critic.py`, split the closure text on a bare `;` again.
+
+        Whole modulo the ledger's own markdown escaping - `_clean` turns `_` into `\_` for MD037
+        and `|` into `/` for table safety, deliberately, and that is not what this is about."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root)
+            mod.record_repair(root, "US0017", "builder",
+                              r"alpha broke -> mutant re-applied and killed\; the test now "
+                              r"reddens on the branch it pins; beta broke -> filed")
+            st = mod.repair_state(root, "US0017")
+            self.assertEqual(2, len(st["closed"]), "the escaped `;` is not an item separator")
+            alpha = next(c for c in st["closed"] if "alpha" in c["finding"])
+            self.assertIn("the test now reddens on the branch it pins", alpha["evidence"],
+                          "the clause after the semicolon was dropped, which is the defect")
+
+    def test_ordinary_evidence_still_parses_unchanged(self) -> None:
+        """The paired control. Carrying a semicolon must not become the only accepted shape -
+        every closure already on disk is written without one."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root)
+            mod.record_repair(root, "US0017", "builder",
+                              "alpha broke -> mutant re-applied and killed; "
+                              "beta broke -> test now reddens")
+            st = mod.repair_state(root, "US0017")
+            self.assertEqual("complete", st["state"])
+            self.assertEqual(2, len(st["closed"]))
+
+    def test_an_unparseable_chunk_is_refused_rather_than_dropped(self) -> None:
+        """MUTANT: in `critic.py`, drop the `unreadable_closures` refusal from `record_repair`.
+
+        Refused at WRITE and tolerated at READ, and the asymmetry is the point: 68 chunks
+        already on disk across 11 units have no separator, so raising on the read path crashes
+        `conformance.py check` inside `repair_state` - which a review measured before this
+        shipped. A writer must not add more of what a reader has to live with."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root)
+            with self.assertRaises(ValueError) as caught:
+                mod.record_repair(root, "US0017", "builder",
+                                  "alpha broke -> killed; a fragment with no separator")
+            self.assertIn("not `<finding> -> <evidence>`", str(caught.exception))
+            self.assertIn("a fragment with no separator", str(caught.exception),
+                          "the refusal must NAME the chunk, or it is the same silence louder")
+            # READ tolerates it: this is what is already on disk.
+            self.assertEqual([], mod.parse_closures("a fragment with no separator"))
+
+    def test_a_value_ending_in_a_backslash_does_not_swallow_the_next_item(self) -> None:
+        """MUTANT: in `critic.py`, replace `split_items`' scanner with the `(?<!\\\\);` lookbehind.
+
+        A lookbehind cannot tell a backslash that ESCAPES the separator from one that is itself
+        escaped, so evidence ending in a real backslash silently swallowed the closure after it -
+        and `unreadable_closures` saw nothing to refuse. The same silence this unit exists to
+        end, one layer down."""
+        mod = _load()
+        closed = mod.closures_from_document([
+            {"finding": "alpha broke", "evidence": "the path is C:" + chr(92)},
+            {"finding": "beta broke", "evidence": "filed"},
+        ])
+        out = mod.parse_closures(closed)
+        self.assertEqual(2, len(out), "the trailing backslash swallowed the next closure")
+        self.assertEqual("the path is C:" + chr(92), out[0]["evidence"])
+
+    def test_the_module_parses_on_the_declared_python_floor(self) -> None:
+        """MUTANT: in `critic.py`, move an escape back inside an f-string expression.
+
+        A backslash inside an f-string EXPRESSION is legal only from Python 3.12 (PEP 701), and
+        this project's floor is 3.10 in six shipped places including SKILL.md's machine-readable
+        `compatibility` field. It is not a degraded feature: `import critic` raises, and the
+        conformance lane, `sprint` and `transition` all import it - so the review gate dies at
+        import on the interpreter Ubuntu 22.04 ships. CI pins 3.12, so nothing else sees it."""
+        import ast  # noqa: PLC0415 - deferred; only this test needs it
+        src = (Path(__file__).resolve().parent.parent / "critic.py").read_text(encoding="utf-8")
+        # `ast.parse(..., feature_version=(3, 10))` does NOT catch this: feature_version gates
+        # grammar, not f-string TOKENISATION, so on a 3.12+ interpreter it accepts the very
+        # syntax 3.10 rejects. A first cut used it and the mutant walked straight through.
+        # Scanning the expression source segments is what actually discriminates.
+        offenders = []
+        for node in ast.walk(ast.parse(src)):
+            if not isinstance(node, ast.FormattedValue):
+                continue
+            seg = ast.get_source_segment(src, node.value) or ""
+            if chr(92) in seg:
+                offenders.append(f"line {node.lineno}: {seg[:60]}")
+        self.assertEqual([], offenders,
+                         "a backslash inside an f-string EXPRESSION is legal only from Python "
+                         "3.12 (PEP 701); this project's floor is 3.10, and `import critic` "
+                         "raising takes the conformance lane, `sprint` and `transition` with "
+                         "it:\n  " + "\n  ".join(offenders))
+
+    def test_an_unreadable_row_is_reported_when_read(self) -> None:
+        """MUTANT: in `critic.py`, `continue` past an unreadable row without printing.
+
+        AC3 is law and says REPORTED, not merely not-raised. 67 chunks already on disk lack the
+        separator so the read path must not raise - but skipping in silence is the half of this
+        defect that made it dangerous, and a first cut kept it."""
+        mod = _load()
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            out = mod.parse_closures("a fragment with no separator")
+        self.assertEqual([], out, "the read path must not raise on what is already on disk")
+        self.assertIn("no `->` separator", err.getvalue())
+        self.assertIn("a fragment with no separator", err.getvalue(),
+                      "the warning must NAME the row, or it is the same silence louder")
+
+    def test_the_issues_channel_carries_a_semicolon_too(self) -> None:
+        """MUTANT: in `critic.py`, split `parse_findings` on a bare `;` again.
+
+        The docstring says both channels share one shape, so a fix to the repair path alone
+        leaves a verdict's findings truncating exactly as before."""
+        mod = _load()
+        found = mod.parse_findings(
+            r"[new] the guard fires on the wrong branch\; and the message names the other one; "
+            r"[pre-existing] beta")
+        self.assertEqual(2, len(found))
+        self.assertIn("and the message names the other one", found[0]["text"])
+
+    def test_a_json_closure_document_needs_no_separator_at_all(self) -> None:
+        """MUTANT: in `critic.py`, drop `closures_from_document` and read the file as prose.
+
+        The escape keeps the flag form working; THIS is the actual repair. Structured input has
+        no delimiter, so nothing a reviewer writes can be mistaken for one."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rejected(mod, root)
+            doc = root / "closed.json"
+            doc.write_text(json.dumps([
+                {"finding": "alpha broke", "evidence": "re-applied; killed; re-registered"},
+                {"finding": "beta broke", "evidence": "test now reddens"},
+            ]), encoding="utf-8")
+            # THROUGH THE SHIPPED CLI, not the library. Calling `closures_from_document`
+            # directly leaves the mutant that deletes the CLI's JSON branch alive - the wiring
+            # is the half a library test cannot see, which is LL0040.
+            rc = mod.main(["repair", "--unit", "US0017", "--author", "builder",
+                           "--closed-file", str(doc), "--root", str(root)])
+            self.assertEqual(0, rc)
+            st = mod.repair_state(root, "US0017")
+            self.assertEqual("complete", st["state"])
+            alpha = next(c for c in st["closed"] if "alpha" in c["finding"])
+            self.assertIn("re-applied; killed; re-registered", alpha["evidence"])
+
 class RepairRecordTests(unittest.TestCase):
     """US0620 / CR0506: a REJECT can be ANSWERED, beside the verdict rather than over it.
 

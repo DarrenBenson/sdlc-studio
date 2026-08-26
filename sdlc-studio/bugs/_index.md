@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 20 |
+| Open | 18 |
 | In Progress | 0 |
-| Fixed | 506 |
+| Fixed | 508 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
@@ -154,10 +154,10 @@
 | [BG0612](BG0612-three-limbs-that-survived-the-closure-of-bg0599.md) | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot | Open | Medium | 2026-08-25 | 2026-08-25 |
 | [BG0613](BG0613-sprint-breakdown-grades-an-epic-that-the-close.md) | sprint breakdown grades an epic that the close's two grooming surfaces both skip, so one run refuses to plan a batch and then closes saying that unit was not gradeable | Open | Medium | 2026-08-25 | 2026-08-25 |
 | [BG0614](BG0614-the-mutation-ledger-keeps-several-live-rows-on.md) | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last | Open | Medium | 2026-08-25 | 2026-08-25 |
-| [BG0615](BG0615-an-abandoned-guided-onboarding-marker-outranks-the-whole.md) | an abandoned guided-onboarding marker outranks the whole hint ladder forever, so an established project is told to go and onboard itself | Open | High | 2026-08-26 | 2026-08-26 |
+| [BG0615](BG0615-an-abandoned-guided-onboarding-marker-outranks-the-whole.md) | an abandoned guided-onboarding marker outranks the whole hint ladder forever, so an established project is told to go and onboard itself | Fixed | High | 2026-08-26 | 2026-08-26 |
 | [BG0616](BG0616-a-unit-closed-by-triage-can-never-be.md) | a unit CLOSED by triage can never be covered by a retro, so it owes a close-down for ever and the advisory can only be cleared by lying | Open | Medium | 2026-08-26 | 2026-08-26 |
 | [BG0617](BG0617-sprint-close-titles-the-run-s-handoff-with.md) | sprint close titles the run's handoff with the run's GOAL, so a run that missed its goal ships a handoff asserting it | Open | Medium | 2026-08-26 | 2026-08-26 |
-| [BG0618](BG0618-a-repair-s-evidence-is-split-on-a.md) | a repair's evidence is split on a bare semicolon and the remainder is SILENTLY DROPPED, so the review ledger records less than the author wrote | Open | High | 2026-08-26 | 2026-08-26 |
+| [BG0618](BG0618-a-repair-s-evidence-is-split-on-a.md) | a repair's evidence is split on a bare semicolon and the remainder is SILENTLY DROPPED, so the review ledger records less than the author wrote | Fixed | High | 2026-08-26 | 2026-08-26 |
 | [BG0619](BG0619-a-retro-and-a-handoff-can-be-created.md) | a retro and a handoff can be CREATED by the shipped creator but not FOUND by id, so every id-addressed tool refuses the artefacts the close itself mints | Open | Medium | 2026-08-26 | 2026-08-26 |
 | [BG0620](BG0620-eighteen-units-carry-a-reject-no-repair-record.md) | eighteen units carry a REJECT no repair record answers, so the fingerprint-keyed roll-up BG0607 needs cannot land until their evidence is backfilled | Superseded | Medium | 2026-08-26 | 2026-08-26 |
 | [BG0621](BG0621-the-release-bar-can-report-met-while-a.md) | the release bar can report MET while a High is open: severity is matched case-sensitively, only the literal status Open counts, and a hyphenated heading skips the file entirely | Fixed | High | 2026-08-26 | 2026-08-26 |

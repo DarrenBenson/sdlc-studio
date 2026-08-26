@@ -1,7 +1,8 @@
 # BG0615: an abandoned guided-onboarding marker outranks the whole hint ladder forever, so an established project is told to go and onboard itself
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional [[derived: criteria 3; plan rows 3; executed 3; killed 3; survived 0; not-run 0; entry point 0 of 3 criteria through the shipped CLI, 3 in-process | fp 7685bed880df ]] (three criteria over the onboarding hint, each with its own mutant executed and killed: the tree check dropped, every stage claimed done, and the supersession report emptied. FIXTURE reproductions throughout - the stale marker was moved out of this tree the day the bug was filed, so re-running against the tree as it stands would prove only that somebody tidied up)
 > **Points:** 3
 > **Depends on:** BG0621
 > **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/init.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/scripts/tests/test_init.py
@@ -26,15 +27,26 @@ Make the onboarding hint FALSIFIABLE by the tree. `first_incomplete` should skip
 ## Acceptance Criteria
 
 - [ ] **AC1** Given an onboarding marker whose pending stage has its output already on disk, when the hint is computed, then that stage is not offered and the ordinary pipeline ladder answers - a marker must be falsifiable by the tree, and today no state of the tree can dislodge it
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::OnboardingHintTests::test_a_stage_whose_output_exists_does_not_hold_the_hint
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::OnboardingHintFalsifiabilityTests::test_a_stage_whose_output_exists_does_not_hold_the_hint
+  - **Verified:** yes (2026-08-26)
 - [ ] **AC2** Given an onboarding marker whose pending stage has NO output on disk, when the hint is computed, then it still points at `init guided` - the paired control, so making the marker falsifiable does not disable guided onboarding for the projects that are genuinely mid-way through it
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::OnboardingHintTests::test_a_genuinely_incomplete_stage_still_holds_the_hint
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::OnboardingHintFalsifiabilityTests::test_a_genuinely_incomplete_stage_still_holds_the_hint
+  - **Verified:** yes (2026-08-26)
 - [ ] **AC3** Given an onboarding marker every one of whose stages has its output on disk, when the hint is computed, then the marker is reported as SUPERSEDED by name rather than silently ignored - a stale file that is quietly skipped is one nobody ever cleans up
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::OnboardingHintTests::test_a_fully_superseded_marker_is_named_not_silently_skipped
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::OnboardingHintFalsifiabilityTests::test_a_fully_superseded_marker_is_named_not_silently_skipped
+  - **Verified:** yes (2026-08-26)
 
 ## Impact
 
 `status` and `hint` are the orientation commands - AGENTS.md names `/sdlc-studio status` as step 2 of what every session runs, including after a context reset. A fresh agent in an established project is therefore told, as its first instruction, to go and re-onboard a project that has 218 epics. It is the worst possible place for an unfalsifiable claim, because it is read before the reader knows enough to doubt it.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `init.py`, drop the `stage_output_exists` check from `first_incomplete`, deciding from the marker's own `status` field alone | Given an onboarding marker whose pending stage has its output already on disk, when the hint is computed, then that stage is not offered and the ordinary pipeline ladder answers - a marker must be falsifiable by the tree, and today no state of the tree can dislodge it |
+| AC2 | in `init.py`, return True from `stage_output_exists` for every stage, so a genuinely incomplete one stops holding the hint | Given an onboarding marker whose pending stage has NO output on disk, when the hint is computed, then it still points at `init guided` - the paired control, so making the marker falsifiable does not disable guided onboarding for the projects that are genuinely mid-way through it |
+| AC3 | in `init.py`, delete the body of `superseded_stages` and return an empty list, so a stale marker is stepped over without a word | Given an onboarding marker every one of whose stages has its output on disk, when the hint is computed, then the marker is reported as SUPERSEDED by name rather than silently ignored - a stale file that is quietly skipped is one nobody ever cleans up |
 
 ## Revision History
 

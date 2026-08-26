@@ -889,6 +889,91 @@ def _match_key(text: str) -> str:
     return " ".join(stripped.split()).strip().lower()
 
 
+#: An item separator that a value can carry. A bare `;` split truncated any evidence containing
+#: one and dropped the remainder without a word - 73 characters of a two-clause closure, in the
+#: one record whose job is to prove a review finding was answered. An escaped `\;` is a literal.
+_ITEM_SPLIT = re.compile(r"(?<!\\);")
+
+#: The two-character sequence that means a literal `;`. A value ending in a real backslash would
+#: otherwise be read as escaping the separator that follows it, silently merging two items - the
+#: same silence one layer down, so the backslash is escapable too.
+_ESCAPED_SEMI = "\\;"
+_ESCAPED_BACKSLASH = "\\\\"
+
+
+def split_items(text: str) -> list[str]:
+    """Split a channel string into items on an UNESCAPED `;`, unescaping as it goes.
+
+    A SCANNER, not a lookbehind. `(?<!\\\\);` cannot tell a backslash that escapes the semicolon
+    from one that is itself escaped, so a value ending in a real backslash silently swallowed the
+    item after it - the same silence this function exists to end, one layer down.
+
+    Prose is a poor container for records and the structured file paths exist for that reason,
+    but the flag form has to keep working, so a value that needs a semicolon can escape it.
+    """
+    out, buf, i, n = [], [], 0, len(text or "")
+    while i < n:
+        ch = text[i]
+        if ch == "\\" and i + 1 < n and text[i + 1] in ";\\":
+            buf.append(text[i + 1])          # an escaped `;` or an escaped `\`
+            i += 2
+            continue
+        if ch == ";":
+            item = "".join(buf).strip()
+            if item:
+                out.append(item)
+            buf = []
+            i += 1
+            continue
+        buf.append(ch)
+        i += 1
+    item = "".join(buf).strip()
+    if item:
+        out.append(item)
+    return out
+
+
+def unreadable_closures(closed: str) -> list[str]:
+    """Items that are not `<finding> -> <evidence>`, for the WRITE path to refuse on.
+
+    Separate from `parse_closures` on purpose: a reader must tolerate what is already on disk,
+    and a writer must not add more of it.
+    """
+    bad = []
+    for item in split_items(closed):
+        finding, _, evidence = item.partition(_CLOSURE_SPLIT)
+        if not finding.strip() or not evidence.strip():
+            bad.append(item)
+    return bad
+
+
+def closures_from_document(doc) -> str:
+    """The `closed` channel string from a JSON list of `{finding, evidence}` objects.
+
+    THE POINT OF THE FILE PATH. Structured input needs no delimiter, so nothing a reviewer
+    writes can be read as one - which is the whole defect, rather than a shortcoming of the
+    escape above.
+    """
+    if not isinstance(doc, list):
+        raise ValueError("--closed-file JSON must be a LIST of {finding, evidence} objects")
+    items = []
+    for i, row in enumerate(doc, 1):
+        if not isinstance(row, dict):
+            raise ValueError(f"--closed-file item {i} is not an object")
+        finding = str(row.get("finding") or "").strip()
+        evidence = str(row.get("evidence") or "").strip()
+        if not finding or not evidence:
+            raise ValueError(f"--closed-file item {i} needs both `finding` and `evidence` - a "
+                             f"closure with no evidence is the paperwork this refuses")
+        # Bound OUTSIDE the f-string: a backslash inside an f-string EXPRESSION is only legal
+        # from Python 3.12 (PEP 701), and this project's declared floor is 3.10.
+        # Backslash FIRST, or escaping the semicolon would then escape its own escape.
+        finding_esc = finding.replace("\\", _ESCAPED_BACKSLASH).replace(";", _ESCAPED_SEMI)
+        evidence_esc = evidence.replace("\\", _ESCAPED_BACKSLASH).replace(";", _ESCAPED_SEMI)
+        items.append(f"{finding_esc} {_CLOSURE_SPLIT} {evidence_esc}")
+    return "; ".join(items)
+
+
 def parse_closures(closed: str) -> list[dict]:
     """`[{finding, evidence, disposition}]` from a repair's `closed` text.
 
@@ -900,13 +985,19 @@ def parse_closures(closed: str) -> list[dict]:
     the story closes - and what is NOT legitimate is being unable to tell them apart afterwards.
     """
     out: list[dict] = []
-    for chunk in (closed or "").split(";"):
-        item = chunk.strip()
-        if not item:
-            continue
+    for item in split_items(closed):
         finding, _, evidence = item.partition(_CLOSURE_SPLIT)
         finding, evidence = finding.strip(), evidence.strip()
         if not finding or not evidence:
+            # REPORTED, not dropped. A chunk with no separator is either an author error or a
+            # split that should not have happened, and both are worth saying out loud - but only
+            # where saying it is safe. The WRITE path REFUSES, via `unreadable_closures`; this
+            # is the READ path, where 67 chunks already on disk lack the separator and raising
+            # would crash every reader of the ledger. So it warns and carries on: silence is the
+            # half of this defect that made it dangerous, and skipping quietly keeps it.
+            print(f"warning: a closure with no `{_CLOSURE_SPLIT}` separator is being skipped - "
+                  f"{item[:70]!r}. Its evidence is NOT in the repair state computed from this "
+                  f"row", file=sys.stderr)
             continue
         if tok := _DISPOSITION_TOKEN.match(evidence):
             disposition = tok.group(1).lower()
@@ -947,6 +1038,14 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
     if not row or str(row.get("verdict") or "").upper() != REJECT:
         raise ValueError(f"{sdlc_md.norm_id(unit)} carries no live REJECT to answer - a repair "
                          f"records what was done about a rejection, so there has to be one")
+    if bad := unreadable_closures(closed):
+        raise ValueError(
+            f"{len(bad)} closure(s) are not `<finding> -> <evidence>`: "
+            f"{'; '.join(repr(b[:60]) for b in bad)}. Until BG0618 these were DROPPED silently, "
+            f"so a closure whose evidence carried a semicolon was truncated at it and the rest "
+            f"never reached the record. Escape a literal semicolon as `\\;`, or pass "
+            f"--closed-file a JSON list of {{finding, evidence}} objects, which needs no "
+            f"separator at all")
     closures = parse_closures(closed)
     if not closures:
         raise ValueError("a repair needs at least one `<finding> -> <evidence>` closure - the "
@@ -1783,10 +1882,7 @@ def parse_findings(issues: str) -> list[dict]:
     if text.lower() in _NO_FINDINGS:
         return []
     out = []
-    for chunk in text.split(";"):
-        item = chunk.strip()
-        if not item:
-            continue
+    for item in split_items(text):
         m = _ORIGIN_TAG.match(item)
         if m:
             origin = m.group(1).lower().replace(" ", "-")
@@ -3659,7 +3755,17 @@ def cmd_repair(args: argparse.Namespace) -> int:
         except OSError as exc:
             print(f"repair refused: {exc}", file=sys.stderr)
             return 2
-        closed = " ".join(raw.split())
+        # A JSON list is the shape with no delimiter, so nothing a reviewer writes can be read
+        # as one. Prose is still accepted, because every closure on disk was written that way.
+        stripped = raw.lstrip()
+        if stripped.startswith("["):
+            try:
+                closed = closures_from_document(json.loads(raw))
+            except (ValueError, TypeError) as exc:
+                print(f"repair refused: {exc}", file=sys.stderr)
+                return 2
+        else:
+            closed = " ".join(raw.split())
     if not (closed or "").strip():
         print("repair refused: --closed (or --closed-file) is required - a repair records "
               "which findings it closes and the evidence closing each, one per "

@@ -137,7 +137,7 @@ heading pattern skips 21 files whose H1 uses the hyphenated id form. None bites 
 non-terminal High currently escapes - but the status hatch becomes active inside any run that
 repairs a High, which is why it is fixed before the other three rather than alongside them.
 
-BG0621 is FIXED as of 2026-08-26, the first unit of the run opened against these. BG0607, BG0615 and BG0618 are the three findings still carried to v5.1 at High, and all four are in
+BG0621, BG0615 and BG0618 are FIXED as of 2026-08-26 by the run opened against these. **BG0607 is the last one open**, and it is the reason the bar is still not met, and all four are in
 the batch of the run now open against them. BG0607 is carried with a scope that survived two
 independent reviews rather than with the first one written down.
 
