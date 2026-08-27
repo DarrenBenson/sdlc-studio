@@ -164,15 +164,53 @@ def batch_covered_ids(text: str) -> set[str]:
     return out
 
 
+def disposition_covered_ids(text: str) -> set[str]:
+    """Every unit id a retro accounts for in a `fixed` disposition of `## Actions raised`.
+
+    A unit closed by pre-code TRIAGE - premise did not reproduce, closed WON'T FIX - is by
+    definition NOT in the run's batch, and putting it there would misstate what the run
+    delivered. So it was uncovered permanently and no future close could clear it, while the
+    retro that accounted for it sat in the same file. Epics already had an inheritance rule for
+    the same shape; triage closures had none.
+
+    `retro.dispositions_in` does the parsing and the classification, so this reads the same rows
+    the close already refuses to leave undispositioned. THREE readings are deliberately not
+    taken, and each would be a hole:
+
+      * a `filed` row names FUTURE work - the retro that RAISED a bug would discharge it;
+      * an id inside a `declined:` reason names what the decline DEFERS to, which
+        `dispositions_in`'s own docstring warns about, and 45 of 204 declined rows here carry
+        one;
+      * the `Blocked / deferred` section is free prose. It is not in `REQUIRED_SECTIONS`, no
+        check reaches it, and a real bullet in this repository reads "BG0599, BG0602 and BG0463
+        were CLOSED ... Their surviving limbs are re-filed as BG0612 and CR0557" - future work
+        in the same sentence as the units being accounted for.
+
+    A triage closure recorded only in a `declined:` row therefore still owes. That is a known
+    edge with a documented escape: record it as `fixed-in:`, which is what RETRO0109 did.
+    """
+    out: set[str] = set()
+    for row in retro.dispositions_in(text):
+        if row.get("state") != "fixed":
+            continue
+        for hit in sdlc_md.ID_SEARCH_RE.finditer(str(row.get("detail") or "")):
+            rid = sdlc_md.norm_id(hit.group(0))
+            if rid.startswith(DELIVERY_PREFIXES):
+                out.add(rid)
+    return out
+
+
 def covered_ids(root: Path) -> set[str]:
-    """Every unit id named in any retro's `Batch` - the set of closes already accounted for."""
+    """Every unit id a retro accounts for - in its `Batch`, or in a `fixed` disposition."""
     covered: set[str] = set()
     retros_dir = root / "sdlc-studio" / "retros"
     if not retros_dir.is_dir():
         return covered
     for p in sorted(retros_dir.glob("RETRO*.md")):
         # a bad retro must not crash the scan
-        covered |= batch_covered_ids(sdlc_md.read_text_safe(p))
+        text = sdlc_md.read_text_safe(p)
+        covered |= batch_covered_ids(text)
+        covered |= disposition_covered_ids(text)
     return covered
 
 

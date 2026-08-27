@@ -35,7 +35,6 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0612` | Medium | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot |
 | `BG0613` | Medium | sprint breakdown grades an epic that the close's two grooming surfaces both skip, so one run refuses to plan a batch and then closes saying that un... |
 | `BG0614` | Medium | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last |
-| `BG0616` | Medium | a unit CLOSED by triage can never be covered by a retro, so it owes a close-down for ever and the advisory can only be cleared by lying |
 | `BG0617` | Medium | sprint close titles the run's handoff with the run's GOAL, so a run that missed its goal ships a handoff asserting it |
 | `BG0619` | Medium | a retro and a handoff can be CREATED by the shipped creator but not FOUND by id, so every id-addressed tool refuses the artefacts the close itself... |
 | `BG0623` | Medium | artifact.py retitle refuses precisely the artefact that needs it, because a malformed H1 is both the defect and the thing the tool requires to work |
@@ -44,6 +43,7 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0628` | Medium | conformance reports a unit NON-CONFORMANT when it could not run the verifier at all, so the same corpus scores 304, 671 or 732 depending only on wh... |
 | `BG0630` | Medium | the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever bei... |
 | `BG0631` | Medium | a repair row names neither the rejection nor the phase it answers, so it is joined by date alone and one day's repair discharges every rejection re... |
+| `BG0632` | Medium | a retro's index carries no Title column, so `retitle` would rename the file and leave the index and its inbound link pointing at the old name with... |
 
 20 findings: 20 Medium, 0 Low.
 

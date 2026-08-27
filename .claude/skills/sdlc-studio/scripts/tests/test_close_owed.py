@@ -1226,5 +1226,93 @@ class SameDayIsNotAfterTests(unittest.TestCase):
         self.assertEqual({}, close_owed.close_repair_overrides(root, on_or_after="2026-02-01"))
 
 
+class TriageClosureCoverageTests(unittest.TestCase):
+    """BG0616: a unit closed by TRIAGE is accounted for by the retro's disposition, not its Batch.
+
+    A unit closed before the run - premise did not reproduce at HEAD - is by definition not in
+    the batch, and putting it there would misstate what the run delivered. So it owed a close
+    for ever and the advisory could only be cleared by lying, while the retro that accounted for
+    it sat in the same file.
+    """
+
+    _HEAD = "# RETRO0001: r\n\n> **Batch:** none\n\n"
+
+    def _retro(self, root: Path, *, actions="", blocked="", prose=""):
+        body = self._HEAD
+        if prose:
+            body += f"## What went well\n\n- {prose}\n\n"
+        if blocked:
+            body += f"## Blocked / deferred\n\n- {blocked}\n\n"
+        body += ("## Actions raised\n\n| Finding | Disposition |\n| --- | --- |\n"
+                 + (actions or "| a finding | declined: nothing to do |\n"))
+        _write(root / "sdlc-studio" / "retros" / "RETRO0001-r.md", body)
+
+    def _unit(self, root: Path, uid="BG0900", status="Closed"):
+        _write(root / "sdlc-studio" / "bugs" / f"{uid}-x.md",
+               f"# {uid}: x\n\n> **Status:** {status}\n> **Severity:** Medium\n")
+
+    def test_a_fixed_disposition_covers_a_triage_closure(self) -> None:
+        # AC1. The `fixed-in:` row carries a SINGLE id on purpose: with two, AC5's
+        # first-id-only mutant would kill this row as well and stop being corpus-only.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            self._retro(root, actions="| its premise did not reproduce | fixed-in: BG0900 |\n")
+            self.assertNotIn("BG0900", [u for u, _ in close_owed.owed(root)["owed"]])
+
+    def test_a_mention_in_prose_does_not_cover_a_unit(self) -> None:
+        # AC2. The fixture is a unit named in PROSE, outside any Blocked heading - not a unit
+        # named in no retro at all, which no widening could move, and not one under Blocked,
+        # which AC4's mutant would also reach.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            self._retro(root, prose="BG0900 came up and we talked about it")
+            self.assertIn("BG0900", [u for u, _ in close_owed.owed(root)["owed"]])
+
+    def test_a_filed_disposition_does_not_cover_the_unit_it_raises(self) -> None:
+        # AC3. A `filed` row names FUTURE work, so counting it would let the retro that RAISED
+        # a bug also discharge it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            self._retro(root, actions="| a thing worth doing | BG0900 |\n")
+            self.assertIn("BG0900", [u for u, _ in close_owed.owed(root)["owed"]])
+
+    def test_the_blocked_section_is_not_a_coverage_source(self) -> None:
+        # AC4. `Blocked / deferred` is free prose - not in REQUIRED_SECTIONS, reached by no
+        # check - and a real bullet in this repository names future work in the same sentence as
+        # the units it accounts for. Reading it would forgive that future work on the day it
+        # reached terminal.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            self._retro(root, blocked="BG0900 was CLOSED before the run; its limbs are BG0901")
+            self.assertIn("BG0900", [u for u, _ in close_owed.owed(root)["owed"]])
+
+    def test_the_live_corpus_covers_the_two_triage_closures_and_nothing_else(self) -> None:
+        # AC5. The corpus is where this defect is live. Asserted on the two ids, never on an
+        # empty owed set: other units are legitimately owed and this fix must not touch them.
+        root = Path(__file__).resolve().parents[5]
+        uncovered = {u for u, _ in close_owed.owed(root)["owed"]}
+        self.assertNotIn("BG0599", uncovered)
+        self.assertNotIn("BG0602", uncovered)
+        self.assertTrue(
+            close_owed.covered_ids(root) >= {"BG0599", "BG0602"},
+            "RETRO0109 names both in a fixed-in row; coverage must read it")
+
+    def test_the_detect_command_no_longer_names_the_two_triage_closures(self) -> None:
+        # AC6. Through the shipped command. `--root` is a top-level argument and precedes the
+        # subcommand. A library test cannot see `cmd_detect` ceasing to call the coverage it
+        # reads.
+        import subprocess  # noqa: PLC0415
+        script = Path(__file__).resolve().parents[1] / "close_owed.py"
+        repo = Path(__file__).resolve().parents[5]
+        r = subprocess.run([sys.executable, str(script), "--root", str(repo), "detect"],
+                           capture_output=True, text=True, timeout=600, check=False)
+        self.assertNotIn("BG0599", r.stdout + r.stderr)
+        self.assertNotIn("BG0602", r.stdout + r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
