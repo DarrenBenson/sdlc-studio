@@ -2,9 +2,9 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 2
+> **Points:** 3
 > **Depends on:** BG0616
-> **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/close_owed.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
 > **Created:** 2026-08-17
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -35,14 +35,35 @@ covered; this bug changes WHICH KEY status reads. BG0616 alone empties the curre
 while leaving the run-attributed disagreement standing, and this bug alone makes the two surfaces
 agree that BG0599 and BG0602 are owed - which is the wrong answer.
 
+## Fixture invariant
+
+Every fixture below must make `owed` and `unaccounted` DIFFER. On the real tree today they
+are equal - the same ids, with `run_attributed` and `close_time_repairs` both empty - so the
+two surfaces agree by an empty subtraction rather than by structure. A fixture built the
+obvious way reproduces that coincidence, every criterion passes on unfixed code, and no
+mutant can kill it. `blocking()` subtracts THREE limbs - run-attributed units, close-time
+repairs and recorded overrides - and a fix special-casing one satisfies a plan exercising
+only that one.
+
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit raised and delivered inside a run whose close already ran, when `status` and `close_owed detect` are both run, then neither reports a close owed for it - the two surfaces agree, which is the whole claim
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_closed_run_owes_nothing_on_either_surface
-- [ ] **AC2** Given a unit that genuinely owes a close, when both are run, then both report it - the paired control, so narrowing the key cannot be satisfied by silencing the advisory outright
+- [ ] **AC1** Given a run-attributed unit that `blocking()` accounts for, so `owed` and `unaccounted` differ, when `status`'s advisory runs, then it reports nothing owed - it reads the accounted-for set the renderer reads, not the raw one
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_run_attributed_unit_is_not_announced_as_owed
+- [ ] **AC2** Given a unit that genuinely owes a close, when both surfaces run, then both report it - the paired control, so narrowing the key cannot be satisfied by silencing the advisory outright
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_real_owed_close_is_still_reported_on_both
-- [ ] **AC3** Given a run-attributed unit that `blocking()` accounts for, when `status`'s advisory reads the report, then it reads `blocking(report)['units']` as the renderer does, not the unsplit `report['owed']` - both surfaces already call one function, and the disagreement is which key each takes from it
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_status_reads_the_blocking_key_not_the_raw_owed_set
+- [ ] **AC3** Given a unit accounted for by a CLOSE-TIME REPAIR or a RECORDED OVERRIDE rather than by run attribution, when the advisory runs, then it reports nothing owed. `blocking()` subtracts three limbs, and a fix special-casing the run-attributed one alone passes every other row here while still contradicting the exit code on a fully-overridden set
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_repaired_or_overridden_unit_is_not_announced_as_owed
+- [ ] **AC4** Given one fixture root, when `status` and `close_owed.py detect` are BOTH run as subprocesses, then their lines agree about what is owed. The bug is two commands printing contradictory sentences, so a library test cannot see it. `--root` is a global argument and precedes the subcommand
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_the_two_commands_agree_when_both_are_run
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `.claude/skills/sdlc-studio/scripts/status.py`, narrow the advisory's subtraction to the run-attributed limb alone, keeping close-time repairs and overrides in the owed set, so it agrees with the renderer for one of the three cases and not the others | Given a run-attributed unit that `blocking()` accounts for, so `owed` and `unaccounted` differ, when `status`'s advisory runs, then it reports nothing owed - it reads the accounted-for set the renderer reads, not the raw one |
+| AC2 | in `.claude/skills/sdlc-studio/scripts/status.py`, remove the close-owed advisory altogether, so the surface is silent for the real case as well as the false one | Given a unit that genuinely owes a close, when both surfaces run, then both report it - the paired control, so narrowing the key cannot be satisfied by silencing the advisory outright |
+| AC3 | in `.claude/skills/sdlc-studio/scripts/close_owed.py`, change `blocking()` to return `report['owed']`, so the renderer and the advisory move together back to the unsplit set and the disagreement is hidden rather than repaired | Given a unit accounted for by a CLOSE-TIME REPAIR or a RECORDED OVERRIDE rather than by run attribution, when the advisory runs, then it reports nothing owed. `blocking()` subtracts three limbs, and a fix special-casing the run-attributed one alone passes every other row here while still contradicting the exit code on a fully-overridden set |
+| AC4 | in `.claude/skills/sdlc-studio/scripts/status.py`, move the advisory's report read above the run-state load, so the two commands compute from the tree at different moments while both use the corrected key | Given one fixture root, when `status` and `close_owed.py detect` are BOTH run as subprocesses, then their lines agree about what is owed. The bug is two commands printing contradictory sentences, so a library test cannot see it. `--root` is a global argument and precedes the subcommand |
 
 ## Revision History
 

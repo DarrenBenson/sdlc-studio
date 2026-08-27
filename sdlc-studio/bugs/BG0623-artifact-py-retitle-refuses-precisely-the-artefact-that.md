@@ -3,7 +3,6 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Depends on:** BG0619
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
 > **Evidence:** Found during RUN-01M0YXN3 wave 1, 2026-08-26. BG0621's hardened bar reported BG0131 unparseable - the first live instance the new guard surfaced - and `retitle` then refused to repair it. The H1 was corrected by hand, which is the outcome this bug is about.
 > **Created:** 2026-08-26
@@ -34,16 +33,27 @@ Let `retitle` REPAIR an unparseable H1 rather than require a parseable one. The 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given an artefact whose H1 does not parse, when `retitle` is invoked with its id, then it REPAIRS the heading rather than refusing - the H1 is the thing the verb exists to rewrite and cannot also be its precondition
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::RetitleRepairsTests::test_an_unparseable_h1_is_repaired_not_refused
-- [ ] **AC2** Given an artefact whose H1 parses normally, when `retitle` runs, then it behaves exactly as today - the paired control
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::RetitleRepairsTests::test_a_parseable_h1_retitles_unchanged
-- [ ] **AC3** Given the repair, when it runs, then it still validates the other three surfaces before writing - a heading repair is not an escape hatch from the all-validate-then-write rule
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::RetitleRepairsTests::test_a_heading_repair_still_validates_every_surface
+- [ ] **AC1** Given an artefact whose H1 does not parse, when `artifact.py retitle` is invoked with its id as a SUBPROCESS, then it exits 0 and the repaired heading carries the FILE'S canonical id - not the whole stem, and not the id as the caller spelled it. `artifact.py`:1906 reads `extract_record_id(path.stem) or path.stem`, so the obvious repair composes the heading from the entire filename
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::RetitleRepairsTests::test_the_repaired_heading_carries_the_files_canonical_id
+- [ ] **AC2** Given an artefact whose H1 parses but spells its id in a DIFFERENT FORM from the stem - the dashed form, or lowercase - when `retitle` runs, then that form is preserved. The form mismatch is required: `_H1_RETITLE_RE` keeps its first group verbatim and substitutes only the tail, so for an ordinary matching heading an unconditional rewrite is byte-identical and a control built that way pins nothing
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::RetitleRepairsTests::test_a_differently_formed_heading_is_preserved
+- [ ] **AC3** Given an artefact whose H1 needs repair AND whose index row is missing, when `retitle` runs, then NOTHING is written - the repair is not an escape hatch from the all-or-nothing validation the other surfaces are held to
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::RetitleRepairsTests::test_a_repair_still_respects_the_all_or_nothing_validation
+- [ ] **AC4** Given an artefact whose H1 needs repair and whose other surfaces are all valid, when `retitle` runs, then the file IS written and every surface carries the new title. AC3's silence assertion is satisfied by a command that refuses outright, so without this row the repair need never happen
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::RetitleRepairsTests::test_a_valid_repair_actually_writes_every_surface
 
 ## Impact
 
 The doctrine's rule is that mechanical work goes through a tool and hand-authoring is an error. Here the tool declines exactly when hand-authoring is most dangerous: a malformed H1 makes an artefact invisible to the id-addressed readers, so the artefact that most needs a deterministic repair is the one that gets a manual one. BG0619 records the sibling shape, where a retro and a handoff cannot be addressed at all.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `.claude/skills/sdlc-studio/scripts/artifact.py`, compose the repaired heading from `path.stem` rather than from the extracted record id, which is the fallback already on that line, so the H1 carries the whole filename | Given an artefact whose H1 does not parse, when `artifact.py retitle` is invoked with its id as a SUBPROCESS, then it exits 0 and the repaired heading carries the FILE'S canonical id - not the whole stem, and not the id as the caller spelled it. `artifact.py`:1906 reads `extract_record_id(path.stem) or path.stem`, so the obvious repair composes the heading from the entire filename |
+| AC2 | in `.claude/skills/sdlc-studio/scripts/artifact.py`, replace the parse check with an unconditional rewrite of the H1 from the id and title, normalising a differently-formed heading behind the author's back | Given an artefact whose H1 parses but spells its id in a DIFFERENT FORM from the stem - the dashed form, or lowercase - when `retitle` runs, then that form is preserved. The form mismatch is required: `_H1_RETITLE_RE` keeps its first group verbatim and substitutes only the tail, so for an ordinary matching heading an unconditional rewrite is byte-identical and a control built that way pins nothing |
+| AC3 | in `.claude/skills/sdlc-studio/scripts/artifact.py`, skip the all-or-nothing validation when the H1 needs repair and write immediately | Given an artefact whose H1 needs repair AND whose index row is missing, when `retitle` runs, then NOTHING is written - the repair is not an escape hatch from the all-or-nothing validation the other surfaces are held to |
+| AC4 | in `.claude/skills/sdlc-studio/scripts/artifact.py`, detect the unparseable H1 and refuse with a clearer message instead of repairing it, which reads as the safer change and leaves the artefact untouchable by the tool that exists to touch it | Given an artefact whose H1 needs repair and whose other surfaces are all valid, when `retitle` runs, then the file IS written and every surface carries the new title. AC3's silence assertion is satisfied by a command that refuses outright, so without this row the repair need never happen |
 
 ## Revision History
 

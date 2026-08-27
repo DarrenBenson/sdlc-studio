@@ -36,7 +36,6 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0613` | Medium | sprint breakdown grades an epic that the close's two grooming surfaces both skip, so one run refuses to plan a batch and then closes saying that un... |
 | `BG0614` | Medium | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last |
 | `BG0617` | Medium | sprint close titles the run's handoff with the run's GOAL, so a run that missed its goal ships a handoff asserting it |
-| `BG0619` | Medium | a retro and a handoff can be CREATED by the shipped creator but not FOUND by id, so every id-addressed tool refuses the artefacts the close itself... |
 | `BG0623` | Medium | artifact.py retitle refuses precisely the artefact that needs it, because a malformed H1 is both the defect and the thing the tool requires to work |
 | `BG0624` | Medium | a finding at a severity in neither the barred nor the disclosed set is silently absent from BOTH the release bar and the disclosure page |
 | `BG0627` | Medium | eleven other fields-file consumers carry the same `or ""` guard, so a falsey value is reported as a missing field across five more modules |
@@ -45,7 +44,7 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0631` | Medium | a repair row names neither the rejection nor the phase it answers, so it is joined by date alone and one day's repair discharges every rejection re... |
 | `BG0632` | Medium | a retro's index carries no Title column, so `retitle` would rename the file and leave the index and its inbound link pointing at the old name with... |
 
-20 findings: 20 Medium, 0 Low.
+19 findings: 19 Medium, 0 Low.
 
 ## Not carried
 

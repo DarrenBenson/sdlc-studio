@@ -2764,5 +2764,75 @@ class SprintCharterTests(unittest.TestCase):
         self.assertEqual(sdlc_md.ARTIFACT_TYPES["charter"][1], "SC")
 
 
+class CreatorResolverAgreementTests(unittest.TestCase):
+    """BG0619: the two artefacts `sprint close` mints every run were the two it could not touch.
+
+    `artifact.py retitle --id RETRO0109` and `--id HO0063` both refused during a real close, and
+    both had to be renamed by hand across the file, the H1 and the index row, plus an inbound
+    link. RETRO is excluded here and the reason is recorded on the artefact: `retros/_index.md`
+    has no Title column, so there is no row to update - that is BG0632.
+    """
+
+    _SCRIPT = Path(__file__).resolve().parent.parent / "artifact.py"
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        for rel, rid in (("handoffs", "HO0001"), ("reviews", "RV0001")):
+            dd = root / "sdlc-studio" / rel
+            dd.mkdir(parents=True)
+            (dd / f"{rid}-old-title.md").write_text(
+                f"# {rid}: old title\n\n> **Date:** 2026-08-27\n", encoding="utf-8")
+            (dd / "_index.md").write_text(
+                f"# {rel.title()}\n\n| ID | Title | Date |\n| --- | --- | --- |\n"
+                f"| [{rid}]({rid}-old-title.md) | old title | 2026-08-27 |\n", encoding="utf-8")
+        return root
+
+    def _retitle(self, root, rid, title):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPT), "retitle", "--root", str(root),
+             "--id", rid, "--title", title],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def test_the_retitle_command_renames_a_handoff_and_a_review(self) -> None:
+        # AC3. Through the SHIPPED command: the bug's evidence is a CLI refusal, and a library
+        # test cannot see the hard `ARTIFACT_TYPES[type_]` lookups on that path raising KeyError
+        # on the type retitle has just resolved.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            for rel, rid in (("handoffs", "HO0001"), ("reviews", "RV0001")):
+                with self.subTest(rid=rid):
+                    r = self._retitle(root, rid, "a corrected title")
+                    self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                    dd = root / "sdlc-studio" / rel
+                    renamed = dd / f"{rid}-a-corrected-title.md"
+                    self.assertTrue(renamed.exists(), sorted(p.name for p in dd.iterdir()))
+                    self.assertTrue(
+                        renamed.read_text(encoding="utf-8").startswith(
+                            f"# {rid}: a corrected title"))
+                    self.assertIn("a corrected title",
+                                  (dd / "_index.md").read_text(encoding="utf-8"))
+
+    def test_the_renamed_index_row_link_resolves(self) -> None:
+        # AC4. Asserted APART from AC3 because it fails independently: `_swap` resolved the link
+        # target through `extract_record_id`, whose alternation returns None for a meta stem, so
+        # a rename could leave the H1, the slug and the title cell all correct, exit 0, and only
+        # the link dangling.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            r = self._retitle(root, "HO0001", "a corrected title")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            dd = root / "sdlc-studio" / "handoffs"
+            index = (dd / "_index.md").read_text(encoding="utf-8")
+            self.assertIn("HO0001-a-corrected-title.md", index,
+                          "the row's link target was not rewritten")
+            self.assertNotIn("HO0001-old-title.md", index, "a dangling link survived the rename")
+            import re as _re  # noqa: PLC0415
+            target = _re.search(r"\(([^)]+\.md)\)", index).group(1)
+            self.assertTrue((dd / target).exists(), f"index link {target!r} does not resolve")
+
+
 if __name__ == "__main__":
     unittest.main()

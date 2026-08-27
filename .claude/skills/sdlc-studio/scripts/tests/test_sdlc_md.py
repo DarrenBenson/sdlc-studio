@@ -1258,5 +1258,87 @@ class AliasMapResilienceTests(unittest.TestCase):
                       "the readable artefact's alias must survive its unreadable neighbour")
 
 
+class CreatorResolverAgreementTests(unittest.TestCase):
+    """BG0619: the creator mints a retro, a handoff and a review; the resolver could not find them.
+
+    `artifact.py new --type` accepts all three and `sprint close` mints two of them every run,
+    while `find_by_id` iterated `ARTIFACT_TYPES` alone. Per D0174 the meta types are resolved by
+    a direct GLOB of their own directory, NOT through the pipeline walker: that walker returns
+    immediately on a membership guard, and past it `conventions.is_artifact` rejects every retro
+    on disk and half the reviews.
+    """
+
+    def _root(self, d):
+        root = Path(d)
+        for rel in ("retros", "handoffs", "reviews", "bugs", "stories"):
+            (root / "sdlc-studio" / rel).mkdir(parents=True)
+        (root / "sdlc-studio" / "retros" / "RETRO0001-a-retro.md").write_text(
+            "# RETRO-0001: a retro\n", encoding="utf-8")
+        (root / "sdlc-studio" / "handoffs" / "HO0001-a-handoff.md").write_text(
+            "# HO0001: a handoff\n", encoding="utf-8")
+        (root / "sdlc-studio" / "reviews" / "RV0001-a-review.md").write_text(
+            "# RV0001: a review\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "BG0001-a-bug.md").write_text(
+            "# BG0001: a bug\n\n> **Status:** Open\n> **Severity:** Medium\n", encoding="utf-8")
+        (root / "sdlc-studio" / "stories" / "US0001-a-story.md").write_text(
+            "# US0001: a story\n\n> **Status:** Draft\n", encoding="utf-8")
+        # Files carrying no id in their stem must yield nothing rather than a phantom artefact.
+        (root / "sdlc-studio" / "retros" / "LATEST.md").write_text("# latest\n", encoding="utf-8")
+        return root
+
+    def test_every_creatable_type_resolves_to_its_own_type(self) -> None:
+        # AC1. The TYPE is asserted, not merely a non-None path: the two halves of this fix fail
+        # differently, and a widened map with the stem match untouched resolves nothing at all.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            for rec, want in (("RETRO0001", "retro"), ("HO0001", "handoff"),
+                              ("RV0001", "review"),
+                              ("BG0001", "bug"), ("US0001", "story")):
+                with self.subTest(rec=rec):
+                    hit = sdlc_md.find_by_id(root, rec)
+                    self.assertIsNotNone(hit, f"{rec} did not resolve")
+                    self.assertEqual(want, hit[1])
+            self.assertIsNone(sdlc_md.find_by_id(root, "RETRO9999"))
+
+    def test_the_corpus_cached_branch_resolves_a_meta_id_too(self) -> None:
+        # AC2. `find_by_id` has TWO independent loops, each with its own stem match. Patching the
+        # plain one leaves every corpus-cached consumer refusing while AC1 stays green.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            with sdlc_md.corpus_cache():
+                for rec, want in (("RETRO0001", "retro"), ("HO0001", "handoff"),
+                                  ("RV0001", "review")):
+                    with self.subTest(rec=rec):
+                        hit = sdlc_md.find_by_id(root, rec)
+                        self.assertIsNotNone(hit, f"{rec} did not resolve under the corpus cache")
+                        self.assertEqual(want, hit[1])
+
+    def test_the_any_id_reader_is_a_strict_superset_of_the_pipeline_one(self) -> None:
+        """Regression guard. `ANY_ID_SEARCH_RE` widens the id reader for the index-row match, and
+        the first version was hand-written as a numeric pattern - which silently dropped the
+        ULID-v3 form (`CR-01KXRCYNAB`, not `CR-0123`) and broke a retitle that had worked. It is
+        now built from `ID_SEARCH_RE`'s own alternation and suffix, and this asserts the property
+        rather than trusting the construction.
+        """
+        for probe in ("CR-01KXRCYNAB", "BG0615", "US0001", "RFC0054", "EP0217",
+                      "HO0063", "RETRO0109", "RV0007"):
+            with self.subTest(probe=probe):
+                if sdlc_md.ID_SEARCH_RE.search(probe):
+                    self.assertTrue(
+                        sdlc_md.ANY_ID_SEARCH_RE.search(probe),
+                        f"{probe!r} matches the pipeline reader but not the widened one")
+
+    def test_the_meta_types_stay_off_the_backlog_and_the_scope_census(self) -> None:
+        # AC3. The blast radius D0174 exists to avoid: roughly twenty scripts ITERATE
+        # `ARTIFACT_TYPES`, so a meta type added there lands on the backlogs, through the schema
+        # checks and into the derived-index machinery.
+        for name in ("retro", "handoff", "review"):
+            with self.subTest(type_=name):
+                self.assertNotIn(name, sdlc_md.ARTIFACT_TYPES)
+                self.assertIn(name, sdlc_md.META_TYPES)
+        reconcile = _load("reconcile_for_meta", "reconcile.py")
+        for name in ("retro", "handoff", "review"):
+            self.assertNotIn(name, reconcile.DEFAULT_TYPES)
+
 if __name__ == "__main__":
     unittest.main()

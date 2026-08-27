@@ -35,6 +35,14 @@ Classify against the union and REPORT the residue. A severity matching neither s
 
 The release bar and the disclosure page are the two surfaces a release is judged on, and a finding can be absent from both because somebody typed a word neither list expects. The current instance is harmless only by luck of being Fixed - the same typo on an open finding would hide it from the bar completely, which is the exact defect BG0621 was filed for.
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `tools/known_issues.py`, classify an unrecognised severity into the DISCLOSED set rather than reporting it, so it silently joins the page instead of being named as unclassifiable - the tidier-looking repair, and the one that hides the population gap | Given a finding whose Severity matches neither the barred nor the disclosed set, when the bar and the page are read, then it is REPORTED rather than absent from both |
+| AC2 | in `tools/known_issues.py`, widen the barred set to every severity that is not explicitly disclosed, so a Medium finding starts holding the release bar - the over-correction, which AC1 alone cannot catch | Given a finding at a recognised severity, when the population is read, then it is classified exactly as today - the paired control |
+| AC3 | .claude/skills/sdlc-studio/scripts/file_finding.py: remove the severity normalisation from the filer, so an unrecognised value is written to the artefact and the reporting in AC1 becomes the only line of defence | Given the filer, when a finding is written with an unrecognised severity, then it is NORMALISED or refused at the point of filing - the corpus holds `major`, and stopping the class beats catching the instance |
+
 ## Revision History
 
 | Date | Author | Change |

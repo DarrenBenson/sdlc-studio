@@ -1179,6 +1179,81 @@ ARTIFACT_TYPES: dict[str, tuple[str, str]] = {
     "charter": ("sdlc-studio/charters", "SC"),
 }
 
+
+#: The META artefacts - the ones a run RECORDS rather than delivers. Deliberately NOT in
+#: `ARTIFACT_TYPES`: roughly twenty scripts iterate that map, and a retro added there lands on
+#: the backlogs, through the schema checks and into the derived-index machinery. They carry no
+#: acceptance criteria, sit on no backlog, and are not sized.
+#:
+#: ONE object, imported by `next_id` and `reconcile` rather than copied. Three equal-but-distinct
+#: literals is the state BG0619 was filed in: the creator minted a retro and the resolver could
+#: not find it, because the two maps had drifted with nothing to notice.
+META_TYPES: dict[str, tuple[str, str]] = {
+    "review": ("sdlc-studio/reviews", "RV"),
+    "retro": ("sdlc-studio/retros", "RETRO"),
+    "handoff": ("sdlc-studio/handoffs", "HO"),
+}
+
+
+#: An id token of ANY family - the pipeline prefixes plus the meta ones. `ID_SEARCH_RE`
+#: stays the pipeline-only reader, because widening it would change what counts as an id
+#: on every surface that scans prose for one.
+#: Built FROM `ID_SEARCH_RE`'s own alternation and suffix, not hand-copied, so it is a
+#: strict superset by construction. A hand-written numeric pattern dropped the ULID-v3
+#: form and broke a retitle that had worked - the ids are `CR-01KXRCYNAB`, not `CR-0123`.
+ANY_ID_SEARCH_RE = re.compile(
+    r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|SC|RFC|CR|IS|RETRO|HO|RV)(?:"
+    + _V3_SUFFIX + r"|-?\d{4,})", re.IGNORECASE)
+
+
+def type_home(type_: str) -> tuple[str, str]:
+    """`(directory, id prefix)` for ANY artefact type - pipeline or meta.
+
+    One lookup for both families, so a caller that has just resolved a type through
+    `find_by_id` can ask where it lives without knowing which map answered. Every hard
+    `ARTIFACT_TYPES[type_]` on a path that can now see a meta type raises `KeyError` instead.
+    """
+    if type_ in ARTIFACT_TYPES:
+        return ARTIFACT_TYPES[type_]
+    return META_TYPES[type_]
+
+
+def any_record_id(stem: str) -> str | None:
+    """The id in a filename stem for ANY family - pipeline or meta.
+
+    `extract_record_id`'s `ID_RE` is a hardcoded pipeline-prefix alternation and returns None
+    for `RETRO0074-...`, `HO0001-...` and `RV0007-...`. Widening it would change what counts as
+    an id everywhere; this is the narrow reader for the paths that must accept both.
+    """
+    return extract_record_id(stem) or stem_record_id(stem)
+
+
+def _meta_files(type_: str, root: Path):
+    """`(path, record_id)` for each meta artefact of `type_` - a direct GLOB of its directory.
+
+    NOT routed through `artifact_files`. That walker returns immediately on
+    `type_ not in ARTIFACT_TYPES`, and even past the guard `conventions.is_artifact` rejects
+    every retro on disk (measured: 0 of 113) and half the reviews, because a retro carries no
+    `Status` line and its H1 uses the dashed id form. A meta artefact is not a pipeline artefact
+    and holding it to the pipeline's shape would mean changing what a retro looks like to serve
+    a lookup - D0174.
+
+    The stem match is `stem_record_id`, not `extract_record_id`, whose `ID_RE` is a hardcoded
+    pipeline-prefix alternation and returns None for every one of these. Files carrying no id in
+    their stem - `LATEST.md`, the verdict ledgers, `_index.md` - yield nothing, so the glob
+    cannot mint a phantom artefact.
+    """
+    rel, _prefix = META_TYPES[type_]
+    d = root / rel
+    if not d.is_dir():
+        return
+    for p in sorted(d.glob("*.md")):
+        if p.name == "_index.md":
+            continue
+        rec = stem_record_id(p.stem)
+        if rec:
+            yield p, rec
+
 # The two backlogs (dual-track: discovery feeds delivery). A DISCOVERY item - an RFC design
 # exploration, a CR change request, or an Issue (a raw defect report / symptom) - sits in the
 # DISCOVERY backlog: the options funnel. It records something someone wants or has observed, and
@@ -2530,6 +2605,9 @@ def find_by_id(repo_root, rec_id: str):
                     rec = extract_record_id(p.stem)
                     if rec:
                         index.setdefault(norm_id(rec), (p, type_))
+            for type_ in META_TYPES:
+                for p, rec in _meta_files(type_, root):
+                    index.setdefault(norm_id(rec), (p, type_))
         hit = index.get(norm)
         if hit is not None:
             return hit
@@ -2538,6 +2616,10 @@ def find_by_id(repo_root, rec_id: str):
             for p in artifact_files(type_, root):
                 rec = extract_record_id(p.stem)
                 if rec and norm_id(rec) == norm:
+                    return p, type_
+        for type_ in META_TYPES:
+            for p, rec in _meta_files(type_, root):
+                if norm_id(rec) == norm:
                     return p, type_
     aliased = alias_map(root).get(norm)
     if aliased and norm_id(aliased) != norm:

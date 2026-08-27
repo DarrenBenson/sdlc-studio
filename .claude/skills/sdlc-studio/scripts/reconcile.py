@@ -762,11 +762,12 @@ def detect_type(type_: str, repo_root: Path) -> dict:
 # backing file. It keys on the meta id namespace (RETRO/RV), which the pipeline id regexes
 # deliberately exclude, so it needs its own extractor rather than `index_row_ids`.
 # -----------------------------------------------------------------------------
-_META_INDEX = {  # mirrors next_id.META_TYPES; kept local to avoid a reconcile->next_id import
-    "retro": ("sdlc-studio/retros", "RETRO"),
-    "review": ("sdlc-studio/reviews", "RV"),
-    "handoff": ("sdlc-studio/handoffs", "HO"),
-}
+# THE object `sdlc_md` holds. The local literal this replaces was commented as avoiding a
+# reconcile->next_id import - an import this module already makes at module scope, and one
+# the lift makes unnecessary anyway. Three equal-but-distinct copies is the state BG0619 was
+# filed in, and two converging while a third drifts is the same defect with a smaller
+# population.
+_META_INDEX = sdlc_md.META_TYPES
 
 
 def meta_census(type_: str, repo_root: Path | str) -> dict[str, str]:
@@ -3077,7 +3078,7 @@ def retitle_index_row(repo_root: Path | str, type_: str, file_id: str, new_slug:
     with `dry_run=True` (which writes nothing) BEFORE renaming the file, so a missing row
     aborts the retitle before any surface is touched."""
     root = Path(repo_root)
-    index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+    index_path = root / sdlc_md.type_home(type_)[0] / "_index.md"
     if not index_path.exists():
         return False
     norm = _norm_id(file_id)
@@ -3096,7 +3097,9 @@ def retitle_index_row(repo_root: Path | str, type_: str, file_id: str, new_slug:
             continue
         if "id" not in cols or cols["id"] >= len(cells):
             continue
-        m = sdlc_md.ID_SEARCH_RE.search(cells[cols["id"]])
+        # ANY family. `ID_SEARCH_RE`'s alternation is the pipeline prefixes, so a meta row's
+        # id cell never matched and the caller was told there was no row to update.
+        m = sdlc_md.ANY_ID_SEARCH_RE.search(cells[cols["id"]])
         if not m or _norm_id(m.group(0)) != norm:
             continue
         found = True
@@ -3104,7 +3107,9 @@ def retitle_index_row(repo_root: Path | str, type_: str, file_id: str, new_slug:
         for ci, cell in enumerate(cells):
             def _swap(mm, _norm=norm):
                 tgt = mm.group(2)
-                rec = sdlc_md.extract_record_id(Path(tgt).stem)
+                # ANY family: the link half fails independently of the title cell, so a
+                # rename could leave every other surface correct and only this dangling.
+                rec = sdlc_md.any_record_id(Path(tgt).stem)
                 if rec and _norm_id(rec) == _norm:
                     prefix = tgt[: len(tgt) - len(Path(tgt).name)]
                     return f"{mm.group(1)}{prefix}{file_id}-{new_slug}.md{mm.group(3)}"

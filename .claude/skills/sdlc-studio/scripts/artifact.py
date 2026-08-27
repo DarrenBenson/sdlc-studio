@@ -1903,7 +1903,10 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
     if hit is None:
         raise ValueError(f"no artifact found for id {artifact_id!r}")
     path, type_ = hit
-    file_id = sdlc_md.extract_record_id(path.stem) or path.stem
+    # ANY family: a meta stem returns None from `extract_record_id`, and the old `or
+    # path.stem` fallback then handed the row writer the whole filename, which can never
+    # match an index row's id cell.
+    file_id = sdlc_md.any_record_id(path.stem) or path.stem
     text = path.read_text(encoding="utf-8")
 
     # --- surface 1: the H1 ---
@@ -1927,7 +1930,7 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
 
     # --- surface 3: the index row (validated read-only; reconcile owns the write) ---
     if not reconcile.retitle_index_row(root, type_, file_id, new_slug, new_title, dry_run=True):
-        rel = sdlc_md.ARTIFACT_TYPES[type_][0]
+        rel = sdlc_md.type_home(type_)[0]
         raise RetitleBlocked("index",
             f"{artifact_id}: no index row in {rel}/_index.md to update - the index surface "
             f"cannot be updated. Run `reconcile.py apply --scope {rel.split('/')[-1]}` to add "
@@ -1967,7 +1970,7 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
     journal = _WriteJournal()
     journal.capture(path)
     journal.capture(dest)
-    journal.capture(root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md")
+    journal.capture(root / sdlc_md.type_home(type_)[0] / "_index.md")
     for r in rewritable:
         journal.capture(Path(r["path"]))
     rewritten: list[str] = []

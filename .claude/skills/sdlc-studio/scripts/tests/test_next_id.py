@@ -398,5 +398,21 @@ class MetaIdWidthTests(unittest.TestCase):
             self.assertEqual(next_id.allocate_number("handoff", root, remote=False), 10)
 
 
+class CreatorResolverAgreementTests(unittest.TestCase):
+    """BG0619: the meta map is ONE object, not three equal literals."""
+
+    def test_the_meta_map_is_one_object_not_two_equal_ones(self) -> None:
+        # AC5. IDENTITY, not equality. Two maps holding equal contents is the state this bug was
+        # filed in - the creator minted a retro, the resolver could not find it - and an equality
+        # assertion passes on exactly that. `reconcile` kept a THIRD literal, commented as
+        # avoiding an import it already makes at module scope.
+        # Compared against the module each importer actually holds. Loading a second `sdlc_md`
+        # under its own name would build a different object and the assertion would fail for a
+        # reason that has nothing to do with the defect.
+        import reconcile  # noqa: PLC0415
+        self.assertIs(next_id.META_TYPES, next_id.sdlc_md.META_TYPES)
+        self.assertIs(reconcile._META_INDEX, reconcile.sdlc_md.META_TYPES)
+        self.assertIs(next_id.META_TYPES, reconcile._META_INDEX)
+
 if __name__ == "__main__":
     unittest.main()

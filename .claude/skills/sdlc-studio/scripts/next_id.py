@@ -30,11 +30,10 @@ from lib import sdlc_md  # noqa: E402
 # no reconcile/conformance). Kept out of sdlc_md.ARTIFACT_TYPES so the pipeline machinery ignores
 # them; the allocator resolves them here so review/retro ids are never hand-picked. (lessons LL####
 # have their own manager in lessons.py; personas are named, not numbered.)
-META_TYPES: dict[str, tuple[str, str]] = {
-    "review": ("sdlc-studio/reviews", "RV"),
-    "retro": ("sdlc-studio/retros", "RETRO"),
-    "handoff": ("sdlc-studio/handoffs", "HO"),
-}
+#: THE object `sdlc_md` holds, not a copy of it. Three equal-but-distinct literals is the
+#: state BG0619 was filed in - the creator minted a retro and the resolver could not find
+#: it, because two maps had drifted with nothing to notice.
+META_TYPES = sdlc_md.META_TYPES
 
 
 def _spec(type_: str) -> tuple[str, str]:

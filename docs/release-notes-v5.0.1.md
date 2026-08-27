@@ -142,7 +142,7 @@ could never be retired at all, because retirement demanded an approval carrying 
 own fingerprint and repairing what the reviewer rejected necessarily changes it. Forty-four of
 forty-four rejected units stood REJECTed and not one had ever been cleared.
 
-**v5.0.1 discloses 20 open defects: 20 Medium, 0 Low.** The High findings above are
+**v5.0.1 discloses 19 open defects: 19 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be
