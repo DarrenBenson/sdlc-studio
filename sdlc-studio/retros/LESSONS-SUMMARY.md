@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0383: **A test that drives the library while its mutant changes the CLI cannot fail.** This happened twice in one run - BG0618 AC5 and BG0621 AC7...**
+- **L-0382: **A gate the run is measured on must be hardened before the run is measured on it.** BG0621 shipped first for that reason, and its first...**
+- **L-0381: **When a model changes, the assumptions built on the old one become invisible rather than wrong.** `repair_state` read the single standing...**
+- **L-0380: **A criterion whose subject is the CORPUS cannot be pinned by a mutant on the CODE.** AC5 asserted nineteen units were completely answered...**
+- **L-0379: **A repair that cites, as its evidence, the very thing the fix declares invalid has made the record prettier rather than truer.** BG0607...**
 - **L-0378: A pre-code review that re-verifies premises is worth more than one that critiques a plan.**
 - **L-0377: A repair believed shipped can be withdrawn by the review that judges it, and that is the gate working - and the review that judged the...**
 - **L-0376: **Two rules agreeing is corroboration only if they are INDEPENDENT, and mine were nested.** BG0607's roll-up was keyed on the reviewer...**
