@@ -24,8 +24,12 @@ Treat an absent fingerprint as matching NOTHING, not as matching every other abs
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `_unanswered_rejects` (critic.py:528-530) retires a REJECT when a later APPROVE carries the SAME brief fingerprint.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Treat an absent fingerprint as matching NOTHING, not as matching every other absent one: `if not fp: out.append(r); continue` in `_unanswered_rejects`.
+- [ ] **AC1** Given a REJECT and a later APPROVE that BOTH carry an empty brief, when the standing verdict is read, then it is the REJECT - an absent fingerprint matches NOTHING, which is the fail-closed direction a missing provenance should cost
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_an_absent_fingerprint_matches_nothing
+- [ ] **AC2** Given a REJECT and a later APPROVE carrying the SAME non-empty brief, when the standing verdict is read, then it is the APPROVE - the paired control, so a seat can still retire its own rejection
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_a_matching_fingerprint_still_retires
+- [ ] **AC3** Given this repository's corpus, when the change lands, then the conformance lane reports ZERO non-conformant units and the same conformant count as at run-open - no row carries an empty brief today, so a correct fix moves nothing. The count is read rather than assumed: a bare exit code cannot see the ratio move, and the figure this bug was filed with (608/690) was already stale by the time the batch was planned, because refining the discovery backlog added 124 units
+  - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/conformance.py check | grep -qE '[0-9]+/[0-9]+ conformant.*, 0 not'
 
 ## Impact
 

@@ -24,8 +24,12 @@ Classify against the union and REPORT the residue. A severity matching neither s
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `BARRED` is Critical and High; `DISCLOSED` is Medium and Low.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Classify against the union and REPORT the residue.
+- [ ] **AC1** Given a finding whose Severity matches neither the barred nor the disclosed set, when the bar and the page are read, then it is REPORTED rather than absent from both
+  - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_a_severity_in_neither_set_is_reported
+- [ ] **AC2** Given a finding at a recognised severity, when the population is read, then it is classified exactly as today - the paired control
+  - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_a_recognised_severity_is_unchanged
+- [ ] **AC3** Given the filer, when a finding is written with an unrecognised severity, then it is NORMALISED or refused at the point of filing - the corpus holds `major`, and stopping the class beats catching the instance
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::SeverityVocabularyTests::test_an_unrecognised_severity_is_refused_at_filing
 
 ## Impact
 

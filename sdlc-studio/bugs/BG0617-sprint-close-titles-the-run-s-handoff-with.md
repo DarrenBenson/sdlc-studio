@@ -24,8 +24,12 @@ Title the handoff from the OUTCOME, not the ambition. The verdict is already com
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `_close_handoff` takes the handoff title straight from the run's stated goal - `title = state.get("sprint_goal") or state.get("run_id") or "sprint close"` at...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Title the handoff from the OUTCOME, not the ambition.
+- [ ] **AC1** Given a run closing PARTIAL or MISSED, when the handoff is minted, then its title states the OUTCOME and does not assert the goal the verdict just denied
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::HandoffTitleTests::test_a_missed_run_is_not_titled_with_its_goal
+- [ ] **AC2** Given a run closing GOAL-REACHED, when the handoff is minted, then it may carry the goal - the paired control, because the claim is true there and the fix is about honesty rather than about never naming a goal
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::HandoffTitleTests::test_a_goal_reached_run_may_keep_its_goal
+- [ ] **AC3** Given a run that dropped a unit or left one open, when the `Where to pick up` section is generated, then it NAMES that unit - the section currently says to plan the next batch normally whatever happened
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::HandoffTitleTests::test_the_pickup_section_names_what_did_not_land
 
 ## Impact
 

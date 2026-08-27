@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
-> **Evidence:** Adversarial review of BG0606, 2026-08-25, which found three live rows on BG0606 AC1 row 0. Widened to a full-ledger audit by the authoring session, finding 9 keys.
+> **Evidence:** Adversarial review of BG0606, 2026-08-25, which found three live rows on BG0606 AC1 row 0. Widened to a full-ledger audit by the authoring session, finding 14 keys.
 > **Created:** 2026-08-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,7 +12,7 @@
 
 ## Summary
 
-`register_mutant` appends rather than replacing, so re-registering a criterion after re-executing its mutant leaves BOTH rows live. `plan_execution` joins on `(criterion, row)` and takes the last iterated, which is correct only by accident of ordering. Audited 2026-08-25 across the whole ledger: NINE live keys carry more than one row, and four of them carry rows naming DIFFERENT tests - BG0606 AC1 row 0 has three, two of which record the kill against `test_every_reviewed_plan_is_still_in_derived_shape`, a node that no longer exists anywhere in the repository. A verdict recorded against a test that cannot be run is evidence of nothing, and it is indistinguishable from a live one at the join. `mutation.py retract` writes a `withdrawn` marker and the readers honour it, so the machinery to resolve this exists and is simply not applied to same-key re-registration.
+`register_mutant` appends rather than replacing, so re-registering a criterion after re-executing its mutant leaves BOTH rows live. `plan_execution` joins on `(criterion, row)` and takes the last iterated, which is correct only by accident of ordering. Audited 2026-08-25 across the whole ledger: FOURTEEN live keys carry more than one row, and NINE of them carry rows naming DIFFERENT tests - BG0606 AC1 row 0 has three, two of which record the kill against `test_every_reviewed_plan_is_still_in_derived_shape`, a node that no longer exists anywhere in the repository. A verdict recorded against a test that cannot be run is evidence of nothing, and it is indistinguishable from a live one at the join. `mutation.py retract` writes a `withdrawn` marker and the readers honour it, so the machinery to resolve this exists and is simply not applied to same-key re-registration.
 
 ## Steps to Reproduce
 
@@ -24,8 +24,12 @@ Make a same-key registration SUPERSEDE the row it replaces - write the `withdraw
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `register_mutant` appends rather than replacing, so re-registering a criterion after re-executing its mutant leaves BOTH rows live.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Make a same-key registration SUPERSEDE the row it replaces - write the `withdrawn` marker on the older row with `superseded by re-registration` as the reason...
+- [ ] **AC1** Given a mutant re-registered against the same unit, criterion and row, when the ledger is read, then the earlier row is marked WITHDRAWN and the join sees exactly one - the log still shows both
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_a_same_key_registration_supersedes_the_row_it_replaces
+- [ ] **AC2** Given a ledger holding a live duplicate key, when the audit runs, then it REPORTS the key and the rows - nothing does today, and the nine live duplicates were found by hand during a review
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_audit_reports_a_live_duplicate_key
+- [ ] **AC3** Given a ledger with no duplicate keys, when the audit runs, then it is silent - the paired control
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_a_clean_ledger_audits_silently
 
 ## Impact
 

@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
+> **Depends on:** BG0616
 > **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
 > **Created:** 2026-08-17
 > **Created-by:** sdlc-studio file
@@ -19,13 +20,27 @@ Observed 2026-08-17 at bfd51161. `close_owed.py detect` printed `close owed: non
 
 ## Proposed Fix
 
-Have `status.py` call the same reader `close_owed detect` uses and print what it returns, including the raised-and-delivered exemption, rather than computing its own answer from the terminal set. If status must stay cheap and cannot afford the full detection, it should say what it did NOT check rather than assert a conclusion the fuller reader contradicts. Pin it with a fixture holding one unit raised and delivered inside a closed run and assert BOTH commands agree - a test that only asserts status's own wording would pass on the defect.
+**The diagnosis this bug was filed with has already shipped, and the defect has not.** Both surfaces
+now call one reader, `close_owed.owed`. They disagree about which KEY they take from it: the
+renderer and `is_owed` read `blocking(report)["units"]`, which subtracts run-attributed units,
+close-time repairs and recorded overrides, while `status.close_owed_advisory` reads the unsplit
+`report["owed"]`. So `close_owed.py detect` can print `every one is accounted for` and exit 0 while
+`status` prints that a close is owed, about the same units, in the same tree.
+
+Have `status` read the blocking key. One line, and the two surfaces then answer one question with
+one number - which is what "call the same reader" was always trying to buy.
+
+ORDER: land BG0616 FIRST. It changes WHO is owed, by counting a triage-closure named in a retro as
+covered; this bug changes WHICH KEY status reads. BG0616 alone empties the current corpus witness
+while leaving the run-attributed disagreement standing, and this bug alone makes the two surfaces
+agree that BG0599 and BG0602 are owed - which is the wrong answer.
 
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a unit raised and delivered inside a run whose close already ran, when `status` and `close_owed detect` are both run, then neither reports a close owed for it
 - [ ] **AC2** Given a unit that genuinely owes a close, when both are run, then both report it - the fix must not silence status for the real case
-- [ ] **AC3** Given the two commands, when the owed set is computed, then it comes from one reader rather than two
+- [ ] **AC3** Given a run-attributed unit that `blocking()` accounts for, when `status`'s advisory reads the report, then it reads `blocking(report)['units']` as the renderer does, not the unsplit `report['owed']` - both surfaces already call one function, and the disagreement is which key each takes from it
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_status_reads_the_blocking_key_not_the_raw_owed_set
 
 ## Revision History
 

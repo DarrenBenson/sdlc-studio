@@ -24,8 +24,12 @@ Test for PRESENCE, not truthiness - `if f not in d` - and then coerce. A boolean
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `_seat_from_dict` (sprint.py:10150-10155) validates each seat field with `val = str(d.get(f) or "").strip()` and refuses when the result is empty.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Test for PRESENCE, not truthiness - `if f not in d` - and then coerce.
+- [ ] **AC1** Given a `--fields-file` seat verdict carrying `achievable: false` as a JSON boolean, when the goal review is recorded, then it is ACCEPTED - a recorder that takes the positive verdict and refuses the negative one biases the record toward approval
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_a_false_boolean_is_recorded_not_refused
+- [ ] **AC2** Given a seat verdict genuinely missing a required field, when it is read, then it is REFUSED naming that field - the paired control, so testing presence rather than truthiness does not admit an incomplete verdict
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_a_genuinely_missing_field_is_still_refused
+- [ ] **AC3** Given every other `--fields-file` loader in the toolchain, when a field carrying a falsey value is read, then it is accepted - the same `or ""` shape is swept for, because `str(0 or "")` is empty too
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_no_loader_reads_a_falsey_value_as_absent
 
 ## Impact
 

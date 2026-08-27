@@ -24,8 +24,12 @@ Make the resolver's type map agree with the creator's. Either add retro, handoff
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `artifact.py new --type` accepts `retro`, `handoff` and `review`, and `sprint close` mints both a retro and a handoff on every run.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Make the resolver's type map agree with the creator's.
+- [ ] **AC1** Given every `--type` the shipped creator accepts, when each is minted and then looked up by id, then it RESOLVES - the creator and the resolver state one rule between them
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::CreatorResolverAgreementTests::test_every_creatable_type_is_resolvable
+- [ ] **AC2** Given a retro and a handoff, when `artifact.py retitle` is invoked on either, then it retitles them across the H1, the slug and the index row - the two artefacts the close itself mints were the two it could not touch
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::CreatorResolverAgreementTests::test_a_retro_and_a_handoff_can_be_retitled
+- [ ] **AC3** Given the three types the creator mints and the resolver did not hold - retro, handoff and review - when each is minted and looked up, then all three resolve, per D0173. Refusing to mint them is not the available alternative, because the close itself mints two of them every run
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::CreatorResolverAgreementTests::test_retro_handoff_and_review_all_resolve
 
 ## Impact
 

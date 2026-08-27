@@ -24,7 +24,12 @@ Ask ONE predicate. `_rung_grades` is the definition BG0587 introduced for exactl
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint.breakdown` (sprint.py:2131) asks `conformance.unit_is_ungroomed` of EVERY type, epics included, while the close's two surfaces - `grooming_report` and...
+- [ ] **AC1** Given a batch holding an epic, when `sprint breakdown` grades it, then it names the SAME set as the close's two surfaces - one predicate, asked once, where three answers stood
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OneGroomingAnswerTests::test_breakdown_and_the_close_name_one_set
+- [ ] **AC2** Given a batch holding a CR or an RFC, when it is graded, then it is SKIPPED as a container, per D0172 - a request is decomposed rather than delivered, and the model already says so twice in `TSHIRT_SIZED_TYPES` and `executes_verifiers`
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OneGroomingAnswerTests::test_a_request_type_is_skipped_as_a_container
+- [ ] **AC3** Given a batch of ordinary delivery units, when it is graded, then the answer is unchanged - the paired control, so widening the predicate does not stop the census counting what it always counted
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OneGroomingAnswerTests::test_an_ordinary_batch_grades_unchanged
 
 ## Impact
 

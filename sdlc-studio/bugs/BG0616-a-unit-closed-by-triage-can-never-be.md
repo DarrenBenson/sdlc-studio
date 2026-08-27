@@ -24,8 +24,12 @@ Give a triage-closure the same treatment epics already have. The cleanest source
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `close_owed.covered_ids` (`close_owed.py`:167-176) builds the covered set from each retro's `Batch` field and nothing else.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Give a triage-closure the same treatment epics already have.
+- [ ] **AC1** Given a unit closed by TRIAGE and named in a retro's dispositioned-findings or Blocked section, when close-owed runs, then it is COVERED - a rejection answered by a decision is answered, and a Batch line is not the only way to account for a unit
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_a_triage_closure_named_in_a_retro_is_covered
+- [ ] **AC2** Given a delivered unit named in NO retro at all, when close-owed runs, then it is still owed - the paired control, so widening coverage does not retire the check that a skipped close is caught
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_an_unaccounted_delivery_is_still_owed
+- [ ] **AC3** Given this repository's own corpus, when the widened check runs, then BG0599 and BG0602 are covered by RETRO0109, which names them - the advisory that could not be cleared by correct behaviour is the instance this fix is measured on
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_the_live_corpus_no_longer_owes_a_triage_closure
 
 ## Impact
 
