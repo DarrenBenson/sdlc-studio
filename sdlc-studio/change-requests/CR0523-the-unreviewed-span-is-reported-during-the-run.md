@@ -1,6 +1,7 @@
 # CR-0523: the unreviewed span is reported DURING the run, not discovered at the close
 
 > **Status:** Proposed
+> **Decomposed-into:** EP0226
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood

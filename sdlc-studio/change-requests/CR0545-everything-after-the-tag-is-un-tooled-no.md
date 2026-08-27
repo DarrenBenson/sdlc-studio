@@ -1,6 +1,7 @@
 # CR-0545: Everything after the tag is un-tooled: no command publishes a release, so the runbook has no row for the step and the assets the install path verifies against have never been produced
 
 > **Status:** Proposed
+> **Decomposed-into:** EP0236
 > **Created:** 2026-08-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

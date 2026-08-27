@@ -1,6 +1,7 @@
 # CR-0553: The exemption reason floor counts characters, so twelve junk characters buy a blanket revert-check exemption
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0240
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

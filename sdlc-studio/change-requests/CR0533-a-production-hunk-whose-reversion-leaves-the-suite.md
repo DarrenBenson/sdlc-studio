@@ -1,6 +1,7 @@
 # CR-0533: A production hunk whose reversion leaves the suite green is uncovered: make the gate prove coverage rather than assume it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0232
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

@@ -1,6 +1,7 @@
 # CR-0558: the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0243
 > **Priority:** High
 > **Type:** enhancement
 > **Size:** M

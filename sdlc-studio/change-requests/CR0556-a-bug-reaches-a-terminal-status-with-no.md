@@ -1,6 +1,7 @@
 # CR-0556: A bug reaches a terminal status with no independent judgement of its plan OR its code - the only gate is evidence it reports about itself
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0242
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

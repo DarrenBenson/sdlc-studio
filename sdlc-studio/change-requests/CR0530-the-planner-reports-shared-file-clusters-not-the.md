@@ -1,6 +1,7 @@
 # CR-0530: the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0230
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

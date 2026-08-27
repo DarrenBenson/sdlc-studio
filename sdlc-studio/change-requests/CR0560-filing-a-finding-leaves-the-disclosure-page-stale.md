@@ -1,6 +1,7 @@
 # CR-0560: filing a finding leaves the disclosure page stale, so the tree is red until somebody separately remembers to regenerate it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0245
 > **Priority:** Medium
 > **Type:** enhancement
 > **Size:** S

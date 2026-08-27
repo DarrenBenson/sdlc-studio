@@ -1,6 +1,7 @@
 # CR-0528: the installed copy is only reconciled at a close, so a fix believed shipped is in force nowhere for the length of a run
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0228
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

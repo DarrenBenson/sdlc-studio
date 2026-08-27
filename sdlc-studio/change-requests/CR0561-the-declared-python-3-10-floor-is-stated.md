@@ -1,6 +1,7 @@
 # CR-0561: the declared Python 3.10 floor is stated in six shipped places and guarded nowhere, and one shipped script already violates it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0246
 > **Priority:** High
 > **Type:** enhancement
 > **Size:** S

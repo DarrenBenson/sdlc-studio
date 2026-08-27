@@ -1,6 +1,7 @@
 # CR-0497: The v5 upgrade grandfathers a project's history silently, so every exemption it grants is a number with no record of what it forgave or why
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0220
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5; human; v1

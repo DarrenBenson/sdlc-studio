@@ -1,6 +1,7 @@
 # CR-0503: an adversarial review can be run outside the seat ceremony, losing every standing practice, and nothing detects that it was
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0222
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

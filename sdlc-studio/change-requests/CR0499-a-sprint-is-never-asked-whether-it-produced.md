@@ -1,6 +1,7 @@
 # CR-0499: A sprint is never asked whether it produced a SHIPPABLE increment: the release definition-of-done encodes mechanism, not outcome
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0221
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

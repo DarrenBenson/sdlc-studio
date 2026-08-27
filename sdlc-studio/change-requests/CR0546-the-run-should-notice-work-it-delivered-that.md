@@ -1,6 +1,7 @@
 # CR-0546: the run should notice work it delivered that its batch never named
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0237
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

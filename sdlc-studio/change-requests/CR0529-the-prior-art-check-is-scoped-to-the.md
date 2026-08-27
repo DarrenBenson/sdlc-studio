@@ -1,6 +1,7 @@
 # CR-0529: the prior-art check is scoped to the reviewer, so an author rediscovers by being rejected what one command would have told them
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0229
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

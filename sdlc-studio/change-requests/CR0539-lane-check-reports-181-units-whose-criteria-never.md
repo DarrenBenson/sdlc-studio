@@ -1,6 +1,7 @@
 # CR-0539: lane-check reports 181 units whose criteria never enter a shipped entry point
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0235
 > **Priority:** Medium
 > **Type:** process
 > **Size:** L

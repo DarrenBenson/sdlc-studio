@@ -1,6 +1,7 @@
 # CR-0524: a review verdict separates a broken feature from evidence that cannot fail
 
 > **Status:** Proposed
+> **Decomposed-into:** EP0227
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** human

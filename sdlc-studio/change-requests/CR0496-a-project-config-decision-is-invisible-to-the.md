@@ -1,6 +1,7 @@
 # CR-0496: A project-config decision is invisible to the forward-port check, so 'in sync' reads as 'everything is mirrored' when the reasoning stayed behind
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0219
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5; human; v1

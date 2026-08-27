@@ -1,6 +1,7 @@
 # CR-0507: closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0224
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** L

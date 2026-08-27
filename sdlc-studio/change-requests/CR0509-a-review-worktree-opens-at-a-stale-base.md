@@ -1,6 +1,7 @@
 # CR-0509: A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0225
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** S

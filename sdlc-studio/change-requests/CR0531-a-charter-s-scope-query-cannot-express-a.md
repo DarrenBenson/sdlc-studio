@@ -1,6 +1,7 @@
 # CR-0531: a charter's scope query cannot express a decomposition, so the only queued charter's two scope fields disagree
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0231
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

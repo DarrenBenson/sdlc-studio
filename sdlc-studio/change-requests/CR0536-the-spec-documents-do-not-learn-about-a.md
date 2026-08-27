@@ -1,6 +1,7 @@
 # CR-0536: the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0234
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

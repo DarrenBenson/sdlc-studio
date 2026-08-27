@@ -1,6 +1,7 @@
 # CR-0554: A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0241
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

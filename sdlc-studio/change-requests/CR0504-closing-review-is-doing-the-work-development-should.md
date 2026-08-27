@@ -1,6 +1,7 @@
 # CR-0504: closing review is doing the work development should have done, and the same five defect classes recur every sprint
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0223
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** L

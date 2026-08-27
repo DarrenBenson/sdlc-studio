@@ -1,6 +1,7 @@
 # CR-0552: revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0239
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
