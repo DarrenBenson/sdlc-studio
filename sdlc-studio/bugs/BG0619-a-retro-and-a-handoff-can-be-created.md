@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/next_id.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_next_id.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
 > **Evidence:** `artifact.py retitle --id RETRO0109` and `--id HO0063` both refused during the RUN-01M0WCCG close on 2026-08-25. Confirmed 2026-08-26 by calling `find_by_id` over seven ids and printing `ARTIFACT_TYPES`. The creator's accepted `--type` list read from its own --help.
 > **Created:** 2026-08-26
 > **Created-by:** sdlc-studio file
@@ -20,7 +20,7 @@
 
 ## Proposed Fix
 
-Make the resolver's type map agree with the creator's. Either add retro, handoff and review to `ARTIFACT_TYPES` with their directories and id prefixes, or - if a retro is deliberately not a first-class addressable artefact - have `artifact.py new` refuse to mint one and say why, so the two surfaces state one rule between them. A test that asserts every `--type` choice the creator offers is resolvable by `find_by_id` would pin whichever answer is chosen, and is the piece missing today.
+Make the resolver's type map agree with the creator's. NOT by adding them to `ARTIFACT_TYPES`: ten non-test scripts ITERATE that map (`validate.py`, `integrity.py`, `init.py`, `project_upgrade.py`, `migrate_v3.py`, `schema_check.py`, `provenance.py`, `backfill_authorship.py`, `github_sync.py`, `next_id.py`), so a retro added there lands on the backlogs, in the schema checks and in the derived-index machinery. The map already exists and is deliberately separate: `next_id.META_TYPES` (`next_id.py`:33) holds exactly review/RV, retro/RETRO and handoff/HO with their directories, and its own comment says it is kept out of `ARTIFACT_TYPES` so the pipeline machinery ignores them. So: LIFT that map into `sdlc_md`, have `find_by_id` search `ARTIFACT_TYPES` and then the meta map, leave every iterating consumer reading `ARTIFACT_TYPES` untouched, and keep `next_id.META_TYPES` as an alias of the lifted map so the two cannot drift again - two maps and one resolver is the defect. Refusing to mint is not the alternative, per D0173: the close mints two of the three on every run. A test that asserts every `--type` choice the creator offers is resolvable by `find_by_id` would pin whichever answer is chosen, and is the piece missing today.
 
 ## Acceptance Criteria
 

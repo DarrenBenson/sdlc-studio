@@ -16,7 +16,7 @@
 
 ## Steps to Reproduce
 
-1. Register a mutant for a unit's criterion. 2. Re-execute it after an edit and register again with the same unit, criterion and row. 3. Read the ledger: both rows are live, neither is marked withdrawn, and nothing reports the duplication. Audited 2026-08-25: 9 live duplicate keys across the corpus, 4 of them naming different tests.
+1. Register a mutant for a unit's criterion. 2. Re-execute it after an edit and register again with the same unit, criterion and row. 3. Read the ledger: both rows are live, neither is marked withdrawn, and nothing reports the duplication. Audited 2026-08-25 and re-counted 2026-08-27: 14 live duplicate keys across the corpus, 9 of them naming different tests.
 
 ## Proposed Fix
 
@@ -26,7 +26,7 @@ Make a same-key registration SUPERSEDE the row it replaces - write the `withdraw
 
 - [ ] **AC1** Given a mutant re-registered against the same unit, criterion and row, when the ledger is read, then the earlier row is marked WITHDRAWN and the join sees exactly one - the log still shows both
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_a_same_key_registration_supersedes_the_row_it_replaces
-- [ ] **AC2** Given a ledger holding a live duplicate key, when the audit runs, then it REPORTS the key and the rows - nothing does today, and the nine live duplicates were found by hand during a review
+- [ ] **AC2** Given a ledger holding a live duplicate key, when the audit runs, then it REPORTS the key and the rows - nothing does today, and the fourteen live duplicate keys were found by hand during a review
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_audit_reports_a_live_duplicate_key
 - [ ] **AC3** Given a ledger with no duplicate keys, when the audit runs, then it is silent - the paired control
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_a_clean_ledger_audits_silently

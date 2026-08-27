@@ -20,20 +20,30 @@
 
 ## Proposed Fix
 
-Test for PRESENCE, not truthiness - `if f not in d` - and then coerce. A boolean is the natural JSON encoding of a yes-or-no field, and both of its values must reach the record. The same `or ""` shape should be swept for across the other fields-file loaders, since any of them reading a boolean or a zero has the identical hole: `str(0 or "")` is also empty.
+Test for PRESENCE, not truthiness - `if f not in d` - and then coerce. A boolean is the natural JSON encoding of a yes-or-no field, and both of its values must reach the record. Coerce, then test the COERCED value for non-emptiness - not for truthiness and not for presence alone. Presence alone is worse than the bug: `if f not in d` admits an empty string, a null and a zero, and `verdict_polarity` reads all three as `unclear`, so the guard whose job is to refuse an incomplete verdict would start passing three of them.
+
+The identical `or ""` shape sits on 11 other fields-file consumers across `ledger.py`, `decisions.py`, `handoff.py`, `validate.py` and `file_finding.py` - roughly 20 guards. That sweep is NOT this unit: it is out of this unit's declared `Affects`, so it would land unreviewed and outside the revert-check lane, and it needs a different rule for prose fields, where accepting a falsey value would store the string `False` as a rationale. It is filed separately as BG0627.
 
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a `--fields-file` seat verdict carrying `achievable: false` as a JSON boolean, when the goal review is recorded, then it is ACCEPTED - a recorder that takes the positive verdict and refuses the negative one biases the record toward approval
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_a_false_boolean_is_recorded_not_refused
-- [ ] **AC2** Given a seat verdict genuinely missing a required field, when it is read, then it is REFUSED naming that field - the paired control, so testing presence rather than truthiness does not admit an incomplete verdict
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_a_genuinely_missing_field_is_still_refused
-- [ ] **AC3** Given every other `--fields-file` loader in the toolchain, when a field carrying a falsey value is read, then it is accepted - the same `or ""` shape is swept for, because `str(0 or "")` is empty too
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_no_loader_reads_a_falsey_value_as_absent
+- [ ] **AC2** Given a seat verdict whose field is PRESENT but carries no verdict - an empty string, or a JSON null - when it is read, then it is REFUSED naming that field, while `false` and the string `no` are both ACCEPTED and both read as polarity `no`. Presence alone is the over-correction the Proposed Fix invites: `if f not in d` still refuses a missing key, so a control asserting that would survive it, while empty, null and zero all become admissible and `verdict_polarity` reads each as `unclear` - an incomplete verdict let through the guard whose whole job is to refuse one
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_a_present_but_verdictless_field_is_still_refused
+- [ ] **AC3** Given a `--fields-file` carrying `achievable: false`, when `sprint.py goal-review record --fields-file` is run as the SHIPPED COMMAND, then it exits 0 and the stored round carries a seat whose `verdict_polarity` reads `no`. The symptom is a CLI exit 2, and `_seat_from_dict` is reached only through `load_fields_file(..., allowed=("goal", "seats", "brief"))` - an in-process test of the helper passes even if that path stops calling it
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_the_shipped_command_records_a_false_boolean
 
 ## Impact
 
 The whole point of a pre-code goal review is that it can say NO - it is what makes a negative result possible, which is LL0036 in the registry. A recorder that accepts the positive verdict and refuses the negative one, through the path its own help calls recommended, biases the record toward approval and does it silently enough that an author under time pressure will flip the value rather than investigate. Found while recording a verdict that a run should not proceed as worded.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `.claude/skills/sdlc-studio/scripts/sprint.py`, rewrite `_seat_from_dict`'s guard as `if not d.get(f):` - a presence-SHAPED name over the same truthiness test. It still refuses `false`, and it survives a diff read, which is why a bare revert is not enough | Given a `--fields-file` seat verdict carrying `achievable: false` as a JSON boolean, when the goal review is recorded, then it is ACCEPTED - a recorder that takes the positive verdict and refuses the negative one biases the record toward approval |
+| AC2 | in `.claude/skills/sdlc-studio/scripts/sprint.py`, change `_seat_from_dict` to test `if f not in d`, dropping the emptiness check | Given a seat verdict whose field is PRESENT but carries no verdict - an empty string, or a JSON null - when it is read, then it is REFUSED naming that field, while `false` and the string `no` are both ACCEPTED and both read as polarity `no`. Presence alone is the over-correction the Proposed Fix invites: `if f not in d` still refuses a missing key, so a control asserting that would survive it, while empty, null and zero all become admissible and `verdict_polarity` reads each as `unclear` - an incomplete verdict let through the guard whose whole job is to refuse one |
+| AC3 | in `.claude/skills/sdlc-studio/scripts/sprint.py`, remove `_seat_from_dict` from `cmd_goal_review`'s fields-file path so the seats are stored unvalidated - the wiring a library test cannot see | Given a `--fields-file` carrying `achievable: false`, when `sprint.py goal-review record --fields-file` is run as the SHIPPED COMMAND, then it exits 0 and the stored round carries a seat whose `verdict_polarity` reads `no`. The symptom is a CLI exit 2, and `_seat_from_dict` is reached only through `load_fields_file(..., allowed=("goal", "seats", "brief"))` - an in-process test of the helper passes even if that path stops calling it |
 
 ## Revision History
 

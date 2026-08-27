@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-26
+**Last Updated:** 2026-08-27
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 22 |
 | In Progress | 0 |
-| Fixed | 509 |
+| Fixed | 511 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
 | Superseded | 3 |
-| **Total** | **625** |
+| **Total** | **631** |
 
 ## All Bugs
 
@@ -164,7 +164,13 @@
 | [BG0622](BG0622-a-goal-review-can-record-achievable-through-fields.md) | a goal review can record ACHIEVABLE through --fields-file but not NOT-ACHIEVABLE, because a JSON false is read as a missing field | Open | Medium | 2026-08-26 | 2026-08-26 |
 | [BG0623](BG0623-artifact-py-retitle-refuses-precisely-the-artefact-that.md) | artifact.py retitle refuses precisely the artefact that needs it, because a malformed H1 is both the defect and the thing the tool requires to work | Open | Medium | 2026-08-26 | 2026-08-26 |
 | [BG0624](BG0624-a-finding-at-a-severity-in-neither-the.md) | a finding at a severity in neither the barred nor the disclosed set is silently absent from BOTH the release bar and the disclosure page | Open | Medium | 2026-08-26 | 2026-08-26 |
-| [BG0625](BG0625-an-empty-brief-fingerprint-on-both-rows-lets.md) | an empty brief fingerprint on both rows lets a different seat's APPROVE retire a REJECT, which is the defect BG0607 exists to close | Open | Medium | 2026-08-26 | 2026-08-26 |
+| [BG0625](BG0625-an-empty-brief-fingerprint-on-both-rows-lets.md) | an empty brief fingerprint on both rows lets a different seat's APPROVE retire a REJECT, which is the defect BG0607 exists to close | Fixed | High | 2026-08-26 | 2026-08-26 |
+| [BG0626](BG0626-a-sprint-goal-s-own-n-numbering-is.md) | a Sprint Goal's own (n) numbering is discarded and the goal is split on every prose comma, so the close's clause panel judges fragments nobody committed to and reports UNANSWERED for ever | Open | Medium | 2026-08-27 | 2026-08-27 |
+| [BG0627](BG0627-eleven-other-fields-file-consumers-carry-the-same.md) | eleven other fields-file consumers carry the same `or ""` guard, so a falsey value is reported as a missing field across five more modules | Open | Medium | 2026-08-27 | 2026-08-27 |
+| [BG0628](BG0628-conformance-reports-a-unit-non-conformant-when-it.md) | conformance reports a unit NON-CONFORMANT when it could not run the verifier at all, so the same corpus scores 304, 671 or 732 depending only on which directories were copied | Open | Medium | 2026-08-27 | 2026-08-27 |
+| [BG0629](BG0629-a-plan-review-reject-can-never-be-retired.md) | a plan-review REJECT can never be retired, because repairing the plan changes the brief fingerprint the retirement must match - 44 of 44 stand, and a COMPLETE repair record discharges nothing | Fixed | High | 2026-08-27 | 2026-08-27 |
+| [BG0630](BG0630-the-test-plan-gate-is-skipped-on-in.md) | the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever being checked | Open | Medium | 2026-08-27 | 2026-08-27 |
+| [BG0631](BG0631-a-repair-row-names-neither-the-rejection-nor.md) | a repair row names neither the rejection nor the phase it answers, so it is joined by date alone and one day's repair discharges every rejection recorded that day | Open | Medium | 2026-08-27 | 2026-08-27 |
 
 ## Archived Releases
 

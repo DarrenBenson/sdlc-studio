@@ -20,7 +20,7 @@
 
 ## Proposed Fix
 
-Give a triage-closure the same treatment epics already have. The cleanest source is the retro itself: count a unit COVERED when a retro names it in the dispositioned-findings table or the Blocked/deferred section, not only in `Batch` - the close already refuses a retro whose findings are undispositioned, so that section is gated content rather than free prose. Failing that, let the close record a triage-closure set beside its batch. What must NOT happen is the only currently available remedy: adding a non-delivered unit to a Batch line, which would make the retro's own delivered count false and would be read by `retro accuracy` as delivery.
+Give a triage-closure the same treatment epics already have. The cleanest source is the retro itself: count a unit COVERED when a retro names it in the dispositioned-findings table or the Blocked/deferred section, not only in `Batch` - the close already refuses a retro whose findings are undispositioned, so that section is gated content rather than free prose, and `retro.dispositions_in` (`retro.py`:456) already parses it and classifies each row filed / fixed / declined / undecided - so no second parser is needed. Read ONLY the `fixed` rows and the Blocked/deferred section: a `filed` row names FUTURE work (RETRO0109 files BG0612, CR0557 and CR0556 that way) and an id inside a decline's reason names what it defers to, so counting either would forgive a unit through the retro that RAISED it. Failing that, let the close record a triage-closure set beside its batch. What must NOT happen is the only currently available remedy: adding a non-delivered unit to a Batch line, which would make the retro's own delivered count false and would be read by `retro accuracy` as delivery.
 
 ## Acceptance Criteria
 
@@ -30,6 +30,9 @@ Give a triage-closure the same treatment epics already have. The cleanest source
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_an_unaccounted_delivery_is_still_owed
 - [ ] **AC3** Given this repository's own corpus, when the widened check runs, then BG0599 and BG0602 are covered by RETRO0109, which names them - the advisory that could not be cleared by correct behaviour is the instance this fix is measured on
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_the_live_corpus_no_longer_owes_a_triage_closure
+
+- [ ] **AC4** Given a unit named ONLY in a `filed` disposition - the row that raises future work rather than accounting for delivered work - when close-owed runs, then it is still OWED. Without this, widening coverage would let the retro that FILED a bug also discharge it
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_a_filed_disposition_does_not_cover_the_unit_it_raises
 
 ## Impact
 

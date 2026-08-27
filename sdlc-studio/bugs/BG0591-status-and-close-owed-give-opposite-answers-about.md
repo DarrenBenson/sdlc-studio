@@ -37,8 +37,10 @@ agree that BG0599 and BG0602 are owed - which is the wrong answer.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit raised and delivered inside a run whose close already ran, when `status` and `close_owed detect` are both run, then neither reports a close owed for it
-- [ ] **AC2** Given a unit that genuinely owes a close, when both are run, then both report it - the fix must not silence status for the real case
+- [ ] **AC1** Given a unit raised and delivered inside a run whose close already ran, when `status` and `close_owed detect` are both run, then neither reports a close owed for it - the two surfaces agree, which is the whole claim
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_closed_run_owes_nothing_on_either_surface
+- [ ] **AC2** Given a unit that genuinely owes a close, when both are run, then both report it - the paired control, so narrowing the key cannot be satisfied by silencing the advisory outright
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_real_owed_close_is_still_reported_on_both
 - [ ] **AC3** Given a run-attributed unit that `blocking()` accounts for, when `status`'s advisory reads the report, then it reads `blocking(report)['units']` as the renderer does, not the unsplit `report['owed']` - both surfaces already call one function, and the disagreement is which key each takes from it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_status_reads_the_blocking_key_not_the_raw_owed_set
 

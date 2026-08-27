@@ -41,9 +41,13 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0622` | Medium | a goal review can record ACHIEVABLE through --fields-file but not NOT-ACHIEVABLE, because a JSON false is read as a missing field |
 | `BG0623` | Medium | artifact.py retitle refuses precisely the artefact that needs it, because a malformed H1 is both the defect and the thing the tool requires to work |
 | `BG0624` | Medium | a finding at a severity in neither the barred nor the disclosed set is silently absent from BOTH the release bar and the disclosure page |
-| `BG0625` | Medium | an empty brief fingerprint on both rows lets a different seat's APPROVE retire a REJECT, which is the defect BG0607 exists to close |
+| `BG0626` | Medium | a Sprint Goal's own (n) numbering is discarded and the goal is split on every prose comma, so the close's clause panel judges fragments nobody comm... |
+| `BG0627` | Medium | eleven other fields-file consumers carry the same `or ""` guard, so a falsey value is reported as a missing field across five more modules |
+| `BG0628` | Medium | conformance reports a unit NON-CONFORMANT when it could not run the verifier at all, so the same corpus scores 304, 671 or 732 depending only on wh... |
+| `BG0630` | Medium | the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever bei... |
+| `BG0631` | Medium | a repair row names neither the rejection nor the phase it answers, so it is joined by date alone and one day's repair discharges every rejection re... |
 
-18 findings: 18 Medium, 0 Low.
+22 findings: 22 Medium, 0 Low.
 
 ## Not carried
 

@@ -5169,5 +5169,154 @@ class AnnotateFieldsFileTests(unittest.TestCase):
                                           str(doc), "--root", str(root)]))
 
 
+
+
+class PlanReviewRepairGateTests(unittest.TestCase):
+    """BG0629: a plan-review REJECT answered by a complete repair must stop blocking.
+
+    Before this, retirement demanded a later APPROVE carrying the rejection's own brief
+    fingerprint - and the fingerprint hashes the criteria, so repairing what the reviewer
+    rejected necessarily changed it. 44 of 44 rejected units stood REJECTed and not one had
+    ever been cleared.
+
+    Every fixture here is ISOLATED. None reads the live ledger and none names this run's own
+    units: a test asserting `BG0622 no longer stands` becomes unfalsifiable the moment the
+    dispositions land, and this unit repairs the gate that was refusing its own run.
+    """
+
+    _CFG = "schema_version: 3\nreview:\n  test_plan_after: 2020-01-01\n"
+
+    _VERDICT_HEAD = (
+        "# Plan-Review Verdicts\n\n"
+        "| Unit | Verdict | Reviewer | Author | Date | Brief | Kind | Issues |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    _REPAIR_HEAD = (
+        "# Repair Record\n\n"
+        "| Unit | Verdict date | Author | Date | Closed | Outstanding |\n"
+        "| --- | --- | --- | --- | --- | --- |\n")
+
+    def _run(self, root, *args):
+        import subprocess  # noqa: PLC0415
+        scripts = Path(__file__).resolve().parents[1]
+        return subprocess.run(
+            [sys.executable, str(scripts / "transition.py"), "--root", str(root), *args],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def _proj(self, d, *, cfg=None):
+        root = Path(d)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            self._CFG if cfg is None else cfg, encoding="utf-8")
+        return root
+
+    def _bug(self, root, bid="BG0001"):
+        (root / "sdlc-studio" / "bugs" / f"{bid}-x.md").write_text(
+            f"# {bid}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Created:** 2026-08-10\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+            f"- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n\n"
+            f"## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+            f"| AC1 | delete the guard | a |\n", encoding="utf-8")
+
+    def _verdicts(self, root, rows, *, name="plan-review-verdicts.md"):
+        (root / "sdlc-studio" / "reviews" / name).write_text(
+            self._VERDICT_HEAD + "".join(rows), encoding="utf-8")
+
+    def _row(self, unit, verdict, issues, *, date="2026-08-27", brief="aaaaaaaaaaaa",
+             reviewer="qa; independent", author="engineering; session", kind="test-plan"):
+        return (f"| {unit} | {verdict} | {reviewer} | {author} | {date} | {brief} | {kind} "
+                f"| {issues} |\n")
+
+    def _repairs(self, root, rows):
+        (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
+            self._REPAIR_HEAD + "".join(rows), encoding="utf-8")
+
+    def _repair_row(self, unit, closed, *, verdict_date="2026-08-27", date="2026-08-27"):
+        return (f"| {unit} | {verdict_date} | engineering; session | {date} | {closed} "
+                f"| none |\n")
+
+    def test_a_complete_repair_clears_the_test_plan_gate(self) -> None:
+        # AC1. Fixture holds PLAN-REVIEW rows of kind test-plan only: `repair_state` filters by
+        # neither phase nor kind, while the gate's `verdict_for` filters by both, so a fixture
+        # that mixed them would not say which of the two answered.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            self._bug(root)
+            self._verdicts(root, [self._row("BG0001", "REJECT", "the oracle cannot fail")])
+            self._repairs(root, [self._repair_row(
+                "BG0001", "the oracle cannot fail -> rewritten to assert the text")])
+            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+
+    def test_a_partial_repair_still_blocks_and_names_what_is_outstanding(self) -> None:
+        # AC2. The BLOCK alone passes on pre-existing behaviour - a partial repair was refused
+        # before this change too, by the plain REJECT path. Naming the outstanding finding is
+        # computable only through the new consultation, so that is what is asserted.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            self._bug(root)
+            self._verdicts(root, [self._row(
+                "BG0001", "REJECT", "the oracle cannot fail; the control is vacuous")])
+            self._repairs(root, [self._repair_row(
+                "BG0001", "the oracle cannot fail -> rewritten to assert the text")])
+            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
+            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("the control is vacuous", r.stdout + r.stderr)
+
+    def test_the_cli_admits_a_repaired_unit_and_refuses_an_unrepaired_one(self) -> None:
+        # AC3. BOTH halves, through the shipped command. A success asserted alone goes green on
+        # a gate that never fired, and the gate stands down entirely when `test_plan_after` is
+        # unset - which is the default.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            self._bug(root, "BG0001")
+            self._bug(root, "BG0002")
+            self._verdicts(root, [
+                self._row("BG0001", "REJECT", "the oracle cannot fail"),
+                self._row("BG0002", "REJECT", "the oracle cannot fail")])
+            self._repairs(root, [self._repair_row(
+                "BG0001", "the oracle cannot fail -> rewritten to assert the text")])
+            ok = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
+            self.assertEqual(0, ok.returncode, ok.stdout + ok.stderr)
+            no = self._run(root, "set", "--id", "BG0002", "--status", "In Progress")
+            self.assertNotEqual(0, no.returncode, no.stdout + no.stderr)
+            self.assertIn("no repair is recorded", no.stdout + no.stderr)
+
+    def test_a_delivery_repair_does_not_answer_a_plan_review_rejection(self) -> None:
+        # AC4. Closures are named by TEXT, never by ordinal: an ordinal is positional, so `#1`
+        # checked against the other phase's list resolves to that list's first finding and
+        # silently answers it. That leak survives this unit and is BG0631.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            self._bug(root)
+            self._verdicts(root, [self._row("BG0001", "REJECT", "the plan oracle cannot fail")])
+            self._verdicts(root, [self._row("BG0001", "REJECT", "the code leaks a handle")],
+                           name="critic-verdicts.md")
+            self._repairs(root, [self._repair_row(
+                "BG0001", "the code leaks a handle -> closed with a context manager")])
+            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
+            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("the plan oracle cannot fail", r.stdout + r.stderr)
+
+    def test_one_repair_does_not_discharge_a_days_worth_of_rejections(self) -> None:
+        # AC5. The fixture reads COMPLETE but for the guard: two rejections on ONE date raising
+        # the SAME finding, and one repair row closing it. Without that shape `repair_state`
+        # returns `partial` on its own, the criterion passes on pre-existing behaviour and the
+        # mutant reports SURVIVED.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            self._bug(root)
+            self._verdicts(root, [
+                self._row("BG0001", "REJECT", "the oracle cannot fail",
+                          reviewer="qa; independent; r1", brief="aaaaaaaaaaaa"),
+                self._row("BG0001", "REJECT", "the oracle cannot fail",
+                          reviewer="qa; independent; r2", brief="bbbbbbbbbbbb")])
+            self._repairs(root, [self._repair_row(
+                "BG0001", "the oracle cannot fail -> rewritten to assert the text")])
+            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
+            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("must not discharge a day", r.stdout + r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

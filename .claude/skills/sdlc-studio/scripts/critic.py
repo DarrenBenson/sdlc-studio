@@ -525,12 +525,40 @@ def _unanswered_rejects(rows: list[dict]) -> list[dict]:
     for i, r in enumerate(rows):
         if not str(r.get("verdict") or "").upper().startswith(REJECT):
             continue
-        fp = str(r.get("brief") or "")
+        fp = _brief_key(r)
+        # An ABSENT fingerprint matches NOTHING. Two rows that both lack one are not two rows
+        # about the same brief - they are two rows nobody can attribute, and treating them as
+        # equal let a DIFFERENT seat's approval retire a rejection, which is the behaviour
+        # BG0607 exists to prevent. Measured on this corpus before the fix: 556 of 856 delivery
+        # rows carry the absent placeholder and nine rejections were retired that way, four of
+        # them cross-seat.
+        #
+        # Reviewer IDENTITY is deliberately NOT the fallback. It matched 0 of those 9 pairs on
+        # exact string, because this repository names seats per round and every approval carries
+        # different free text from its rejection - so it would freeze all nine, including the
+        # five a seat legitimately answered itself. That version shipped once and was withdrawn
+        # at 579/690; `test_a_seat_may_retire_its_own_reject`'s own fixture is the counterexample.
+        # What answers a rejection is a REPAIR, which is BG0629's rule and lives in the gate.
+        if not fp:
+            out.append(r)
+            continue
         if any(str(l.get("verdict") or "").upper().startswith(APPROVE)
-               and str(l.get("brief") or "") == fp for l in rows[i + 1:]):
+               and _brief_key(l) == fp for l in rows[i + 1:]):
             continue
         out.append(r)
     return out
+
+
+def _brief_key(row: dict) -> str:
+    """A verdict row's brief fingerprint, or `""` when it has none.
+
+    The ledger writes `-` for an absent brief (`_clean(brief) or '-'` at the write site), so the
+    empty string this check was originally written against is a state `record` has never
+    produced and `if not fp` never fired. `.strip(" -")` is the normalisation the panel
+    ratification check already applies to the same cell (`critic.py`:1552), so the two
+    readings of an absent brief cannot drift apart.
+    """
+    return str(row.get("brief") or "").strip(" -")
 
 
 # --- Supersession (a verdict row retired by addition) ----------------------------------
@@ -1093,11 +1121,28 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
         raise ValueError("a repair needs at least one `<finding> -> <evidence>` closure - the "
                          "evidence is the re-applied mutant, the test that now reddens, or the "
                          "artefact the residue was filed as")
-    raised = [f["text"] for f in parse_findings(row.get("issues", ""))]
+    # EVERY unanswered rejection's findings, not just the standing row's. `repair_state` counts
+    # outstanding across all of them, so resolving closures against one row alone made an earlier
+    # rejection's findings countable-but-uncloseable: the unit could be held PARTIAL for ever by
+    # a finding no command would accept a closure for. BG0629 hit this on itself.
+    #
+    # ORDINALS stay scoped to the standing verdict. `#1` is POSITIONAL, so resolving it against a
+    # pooled list would silently answer whichever finding happened to sit first - the same defect
+    # `repair_state` avoids by matching per rejection. Text identifies a finding wherever it was
+    # raised; an ordinal only means something relative to one list.
+    live = [r for r in read_verdicts(repo_root, phase)
+            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit)]
+    standing = [f["text"] for f in parse_findings(row.get("issues", ""))]
+    every: list[str] = list(standing)
+    for rejection in _unanswered_rejects(live):
+        for f in parse_findings(rejection.get("issues", "")):
+            if f["text"] not in every:
+                every.append(f["text"])
     for c in closures:
         # Resolved to EXACTLY ONE raised finding. Anything looser is a review bypass, not a
         # convenience - see `resolve_finding`.
-        resolve_finding(c["finding"], raised)
+        resolve_finding(c["finding"],
+                        standing if _names_by_ordinal(c["finding"]) else every)
     # A FILED disposition must name an artefact that RESOLVES. A reference nobody can follow
     # records the appearance of a disposition rather than one - the same failure shape as a
     # `Verify:` line naming a test that does not exist, and it is discovered on the day it
@@ -1125,6 +1170,17 @@ _MIN_QUOTE = 24
 
 class AmbiguousClosure(ValueError):
     """A closure that names more than one raised finding, or none."""
+
+
+def _names_by_ordinal(closure: str) -> bool:
+    """True when a closure names its finding POSITIONALLY (`#2`) rather than by text.
+
+    The distinction decides which list the closure may be resolved against. An ordinal means
+    nothing outside the one verdict that numbered it, so it stays scoped to the standing row;
+    text identifies a finding wherever it was raised. Shares `_match_key` with
+    `resolve_finding`, so the two cannot disagree about what an ordinal looks like.
+    """
+    return bool(re.fullmatch(r"#\s*(\d+)", _match_key(closure)))
 
 
 def resolve_finding(closure: str, raised: list[str]) -> str:
@@ -1262,6 +1318,60 @@ def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> d
             "closed": closures, "outstanding": outstanding,
             "filed": sum(1 for c in closures if c["disposition"] == "filed"),
             "fixed": sum(1 for c in closures if c["disposition"] == "fixed")}
+
+
+def plan_review_repair_clears(repo_root: Path | str, unit: str) -> tuple[bool, str]:
+    """`(cleared, why_not)` - whether a plan-review rejection has been ANSWERED by a repair.
+
+    The rule is not new. `conformance.py` has applied it to the DELIVERY phase since US0192: a
+    REJECT whose repair reads `complete` is not held against the unit. The plan-review gate is
+    the one place it was never applied, so a rejection there could never be retired - retirement
+    demanded a later APPROVE carrying the rejection's own brief fingerprint, and the fingerprint
+    hashes the criteria, so repairing what the reviewer rejected necessarily changes it. 44 of 44
+    rejected units stood REJECTed and not one had ever been cleared.
+
+    It lives HERE, called from the gate, rather than inside `verdict_for`. Both alternatives
+    recurse: `_unanswered_rejects` is called BY `repair_state`, so consulting the repair there
+    cycles unconditionally; and `verdict_for` is called by `repair_state`'s own fallback, so
+    consulting it there is recursion-reachable, broken today only by an `or` short-circuit that
+    is a data-dependent accident. Placing it in the caller also flips ONE of this function's
+    twenty-two call sites instead of all of them - the delivery lane, and the conformance
+    `critiqued` population with it, must not move on a plan-review repair.
+
+    Two guards beyond `state == complete`, each closing a way the gate could be opened by a
+    repair that answered something else:
+
+      * the PHASE is passed explicitly. `repair_state` defaults to `delivery`, and a delivery
+        repair recorded on the same date as a plan-review rejection would otherwise answer it -
+        US0671 and US0674 are live instances.
+      * the COUNT is compared per date. `repair_state` joins a repair to a rejection on the
+        verdict date at DAY granularity, and a repair-and-re-review cycle happens within one day
+        by construction, so one repair could discharge a whole day's rejections. Repairing that
+        join properly needs a ledger column and is BG0631; this is the cheap residual guard, and
+        it fails CLOSED.
+    """
+    state = repair_state(repo_root, unit, "plan-review")
+    if state["state"] != "complete":
+        if state["state"] == "none":
+            return False, "no repair is recorded against it"
+        return False, (f"its repair is PARTIAL - {len(state['outstanding'])} finding(s) still "
+                       f"outstanding: " + "; ".join(state["outstanding"][:3]))
+    live = [r for r in read_verdicts(repo_root, "plan-review")
+            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit)]
+    rejections_by_date: dict[str, int] = {}
+    for r in _unanswered_rejects(live):
+        when = str(r.get("date") or "")
+        rejections_by_date[when] = rejections_by_date.get(when, 0) + 1
+    repairs_by_date: dict[str, int] = {}
+    for r in repairs_for(repo_root, unit):
+        when = str(r.get("verdict_date") or "")
+        repairs_by_date[when] = repairs_by_date.get(when, 0) + 1
+    for when, n in sorted(rejections_by_date.items()):
+        if repairs_by_date.get(when, 0) < n:
+            return False, (f"{n} unanswered rejection(s) share the date {when} but only "
+                           f"{repairs_by_date.get(when, 0)} repair row(s) do - one repair must "
+                           f"not discharge a day's worth of them")
+    return True, ""
 
 
 def evidence_for(repo_root: Path | str, unit: str):

@@ -41,13 +41,30 @@ class RecordTests(unittest.TestCase):
             self.assertEqual(mod.verdict_for(root, "US9999"), None)
 
     def test_latest_wins_and_append_only(self) -> None:
+        # An approval retires a rejection when it ANSWERS it - same brief fingerprint, which is
+        # what identifies the seat and the round. Both rows carried no brief before BG0625, and
+        # two absent fingerprints compared equal, so this passed for the wrong reason: it was
+        # asserting the very defect that let a different seat's approval retire a rejection.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0017", "reject", author="builder", issues="bug",
+                               brief="abc123def456")
+            mod.record_verdict(root, "US0017", "approve", author="builder",
+                               brief="abc123def456")
+            self.assertEqual(len(mod.read_verdicts(root)), 2)        # append-only
+            self.assertEqual(mod.verdict_for(root, "US0017")["verdict"], "APPROVE")  # latest
+
+    def test_an_unbriefed_approval_does_not_retire_an_unbriefed_reject(self) -> None:
+        # The other half, and the reason the test above now passes a brief: with neither row
+        # carrying provenance there is nothing to say the approval answered THAT rejection.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
             mod.record_verdict(root, "US0017", "reject", author="builder", issues="bug")
             mod.record_verdict(root, "US0017", "approve", author="builder")
-            self.assertEqual(len(mod.read_verdicts(root)), 2)        # append-only
-            self.assertEqual(mod.verdict_for(root, "US0017")["verdict"], "APPROVE")  # latest
+            self.assertEqual(len(mod.read_verdicts(root)), 2)        # still append-only
+            self.assertEqual(mod.verdict_for(root, "US0017")["verdict"], "REJECT")
 
     def test_pipe_in_issues_does_not_break_row(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -5595,6 +5612,191 @@ class LedgerRollupTests(unittest.TestCase):
                       "the brief does not say why `git checkout --` is the wrong restore")
 
 
+
+
+
+class RepairPlacementTests(unittest.TestCase):
+    """BG0629: where the repair consultation LIVES, and which findings a closure may answer.
+
+    Both fixtures are isolated. Neither reads the live ledger, because this unit repairs the
+    gate that was refusing its own run and a test over the live workspace would go
+    unfalsifiable the moment the dispositions land.
+    """
+
+    _DELIVERY_HEAD = (
+        "# Critic Verdicts\n\n"
+        "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    _PLAN_HEAD = (
+        "# Plan-Review Verdicts\n\n"
+        "| Unit | Verdict | Reviewer | Author | Date | Brief | Kind | Issues |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    _REPAIR_HEAD = (
+        "# Repair Record\n\n"
+        "| Unit | Verdict date | Author | Date | Closed | Outstanding |\n"
+        "| --- | --- | --- | --- | --- | --- |\n")
+
+    def _proj(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\n", encoding="utf-8")
+        return root
+
+    def test_the_delivery_lane_still_answers_through_the_conformance_branch(self) -> None:
+        """AC6. The PLACEMENT guard, stated as a property rather than a snapshot.
+
+        A delivery REJECT whose repair is complete but whose TIER DEPTH is not covered must
+        still read REJECT from `verdict_for`, so conformance reaches its answer through the
+        repair branch rather than through `per_unit_ok`. Relocating the consultation into
+        `verdict_for` makes `per_unit_ok` true, runs `tier_covers`, and flips it.
+
+        The fixture holds a LATER independent APPROVE carrying a DIFFERENT fingerprint: without
+        one, the relocation returns the REJECT as `latest`, `per_unit_ok` stays false and the
+        mutant survives.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").write_text(
+                self._DELIVERY_HEAD
+                + ("| BG0001 | REJECT | qa; independent | eng; session | 2026-08-27 "
+                   "| aaaaaaaaaaaa | light | the oracle cannot fail |\n")
+                + ("| BG0001 | APPROVE | qa; independent | eng; session | 2026-08-27 "
+                   "| bbbbbbbbbbbb | light | none blocking |\n"),
+                encoding="utf-8")
+            (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
+                self._REPAIR_HEAD
+                + ("| BG0001 | 2026-08-27 | eng; session | 2026-08-27 "
+                   "| the oracle cannot fail -> rewritten to assert the text | none |\n"),
+                encoding="utf-8")
+            mod = _load()
+            v = mod.verdict_for(root, "BG0001")
+            self.assertEqual(
+                "REJECT", v["verdict"],
+                "verdict_for must not consult the repair - the delivery lane reaches its "
+                "answer through conformance.py's own repair branch, and moving the "
+                "consultation here subjects repair-route units to a tier-depth check they "
+                "have never been held to")
+            self.assertEqual("complete", mod.repair_state(root, "BG0001")["state"])
+
+    def test_a_closure_can_answer_an_earlier_rejection_not_only_the_standing_one(self) -> None:
+        """AC7. `repair_state` counts outstanding across EVERY unanswered rejection, so
+        resolving closures against the standing row alone made an earlier rejection's findings
+        countable and uncloseable - a unit could be held PARTIAL for ever by a finding no
+        command would accept a closure for. BG0629 hit this on itself.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            (root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md").write_text(
+                self._PLAN_HEAD
+                + ("| BG0001 | REJECT | qa; independent; r1 | eng; session | 2026-08-26 "
+                   "| aaaaaaaaaaaa | test-plan | the control is vacuous |\n")
+                + ("| BG0001 | REJECT | qa; independent; r2 | eng; session | 2026-08-27 "
+                   "| bbbbbbbbbbbb | test-plan | the oracle cannot fail |\n"),
+                encoding="utf-8")
+            mod = _load()
+            mod.record_repair(
+                root, "BG0001", "eng; session",
+                "the control is vacuous -> repointed at a case today's code does not return",
+                "plan-review")
+            self.assertIn(
+                "the control is vacuous",
+                [c["finding"] for c in mod.repair_state(
+                    root, "BG0001", "plan-review")["closed"]])
+
+
+class AbsentBriefTests(unittest.TestCase):
+    """BG0625: an ABSENT brief fingerprint must match nothing, not every other absent one.
+
+    The ledger writes `-` for an absent brief, so two rows that both lack one compared EQUAL and
+    a different seat's approval retired a rejection - the behaviour BG0607 exists to prevent.
+    Measured on this repository before the fix: 556 of 856 delivery rows carry the placeholder
+    and nine rejections had been retired that way, four of them cross-seat.
+    """
+
+    _HEAD = ("# Critic Verdicts\n\n"
+             "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
+             "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+        return root
+
+    def _rows(self, root, *rows):
+        (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").write_text(
+            self._HEAD + "".join(rows), encoding="utf-8")
+
+    def _row(self, verdict, reviewer, brief, *, unit="US0017", date="2026-08-27"):
+        return (f"| {unit} | {verdict} | {reviewer} | eng; session | {date} | {brief} "
+                f"| full | some finding |\n")
+
+    def test_a_placeholder_brief_does_not_retire_a_cross_seat_reject(self) -> None:
+        # AC1. The absent value is `-`, not the empty string: `"-"` is truthy, so the predicate
+        # this bug was FILED with never fired and its own criteria would not have caught that.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            mod = _load()
+            self._rows(root,
+                       self._row("REJECT", "qa seat (independent)", "-"),
+                       self._row("APPROVE", "engineering seat (independent)", "-"))
+            self.assertEqual("REJECT", mod.verdict_for(root, "US0017")["verdict"])
+
+    def test_a_placeholder_brief_does_not_retire_a_same_seat_reject_either(self) -> None:
+        # AC2. Identity does not retire a rejection - a repair does (BG0629). This row exists
+        # because reviewer identity WAS proposed as the fallback, measured against all nine real
+        # pairs, and falsified at 0 of 9 matching: the corpus names seats per round, so every
+        # approval carries different free text from its rejection.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            mod = _load()
+            self._rows(root,
+                       self._row("REJECT", "engineering seat (independent, worktree)", "-"),
+                       self._row("APPROVE", "engineering seat (independent, rejoinder)", "-"))
+            self.assertEqual("REJECT", mod.verdict_for(root, "US0017")["verdict"])
+
+    def test_a_real_fingerprint_still_retires_after_normalisation(self) -> None:
+        # AC3. The unchanged path: normalising the absent case must not break the matched one.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            mod = _load()
+            self._rows(root,
+                       self._row("REJECT", "qa seat (independent)", "abc123def456"),
+                       self._row("APPROVE", "qa seat (independent)", "abc123def456"))
+            self.assertEqual("APPROVE", mod.verdict_for(root, "US0017")["verdict"])
+
+    def test_the_cli_stands_an_unbriefed_cross_seat_reject(self) -> None:
+        # AC4. Through the SHIPPED command. `show`'s text branch prints a raw dict, so the
+        # oracle is the json payload rather than a substring of it.
+        import subprocess  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\nreview:\n  require_brief_provenance: false\n",
+                encoding="utf-8")
+            for verdict, seat in (("reject", "qa-seat"), ("approve", "engineering-seat")):
+                subprocess.run(
+                    [sys.executable, str(SCRIPT), "--root", str(root), "record",
+                     "--unit", "US0017", "--verdict", verdict, "--reviewer", seat,
+                     "--author", "eng; session", "--issues", "[regression] some finding"],
+                    capture_output=True, text=True, timeout=300, check=False)
+            r = subprocess.run(
+                [sys.executable, str(SCRIPT), "--root", str(root), "show",
+                 "--unit", "US0017", "--format", "json"],
+                capture_output=True, text=True, timeout=300, check=False)
+            self.assertEqual("REJECT", json.loads(r.stdout)["verdict"]["verdict"], r.stdout)
+
+    def test_every_placeholder_brief_retirement_in_the_corpus_stands(self) -> None:
+        # AC5. The corpus is where this defect is live. All NINE stand, because none carries a
+        # repair record - so none was answered. Seven of the nine are at Done, and the criterion
+        # states that consequence rather than discovering it at the close.
+        mod = _load()
+        nine = ["US0570", "US0571", "US0575", "US0576",
+                "US0569", "US0572", "US0574", "BG0442", "BG0452"]
+        standing = {u: (mod.verdict_for(REPO_ROOT, u) or {}).get("verdict") for u in nine}
+        self.assertEqual({u: "REJECT" for u in nine}, standing)
+
+
 if __name__ == "__main__":
     unittest.main()
-

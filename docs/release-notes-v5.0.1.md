@@ -134,11 +134,15 @@ heading pattern skips 21 files whose H1 uses the hyphenated id form. None bites 
 non-terminal High currently escapes - but the status hatch becomes active inside any run that
 repairs a High, which is why it is fixed before the other three rather than alongside them.
 
-BG0621, BG0615 and BG0618 are FIXED as of 2026-08-26 by the run opened against these. **BG0607 is the last one open**, and it is the reason the bar is still not met, and all four are in
-the batch of the run now open against them. BG0607 is carried with a scope that survived two
-independent reviews rather than with the first one written down.
+All four are FIXED - BG0621, BG0615 and BG0618 on 2026-08-26, BG0607 on 2026-08-27 - and the bar
+reads MET again. Two further High findings were raised and closed on 2026-08-27 by the run after
+that one: BG0625, where an absent brief fingerprint let a different seat's approval retire a
+rejection in nine live cases, four of them cross-seat; and BG0629, where a plan-review rejection
+could never be retired at all, because retirement demanded an approval carrying the rejection's
+own fingerprint and repairing what the reviewer rejected necessarily changes it. Forty-four of
+forty-four rejected units stood REJECTed and not one had ever been cleared.
 
-**v5.0.1 discloses 18 open defects: 18 Medium, 0 Low.** The High findings above are
+**v5.0.1 discloses 22 open defects: 22 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

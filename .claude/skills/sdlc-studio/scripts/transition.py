@@ -2475,6 +2475,22 @@ def _test_plan_gate(root, unit: str, text: str) -> str | None:
                 f"an unreadable bar is not a passed one")
     if v and v.get("verdict") == critic.APPROVE and critic.is_independent(v):
         return None
+    # A rejection ANSWERED by a complete repair is not held against the unit - the reading
+    # `conformance.py` already applies to the delivery phase, applied in the one place it never
+    # was. Without it a plan-review REJECT could not be retired at all: retirement wants a later
+    # APPROVE carrying the rejection's brief fingerprint, and the fingerprint hashes the criteria,
+    # so repairing what the reviewer rejected necessarily changes it.
+    if v and str(v.get("verdict") or "").upper().startswith(critic.REJECT):
+        try:
+            cleared, why_not = critic.plan_review_repair_clears(root, unit)
+        except Exception as exc:  # noqa: BLE001 - same terms as the lookup above: never swallow
+            return (f"the test-plan repair check could not be established "
+                    f"({type(exc).__name__}: {exc}) - an unreadable bar is not a passed one")
+        if cleared:
+            return None
+        return (f"{unit} has a test plan an independent seat REJECTED, and {why_not}. A "
+                f"rejection is answered by a repair that disposes of every finding it raised: "
+                f"`critic.py repair --unit {unit} --phase plan-review --closed-file <doc>`")
     why = ("no plan-review verdict of kind `test-plan` is on record"
            if not v else
            f"the plan-review verdict on record is {v.get('verdict')} by "
