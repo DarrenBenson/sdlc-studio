@@ -6,6 +6,8 @@ Run from the repo root:
 from __future__ import annotations
 
 import importlib.util
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -1005,15 +1007,14 @@ class OnboardingHintFalsifiabilityTests(unittest.TestCase):
         """Create exactly what `init`'s own stage for `stage` produces."""
         (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
         if stage == "agents":
-            (root / "AGENTS.md").write_text("# agents\n", encoding="utf-8")
+            for name in ("AGENTS.md", "CLAUDE.md"):     # the stage writes BOTH
+                (root / name).write_text(f"# {name}\n", encoding="utf-8")
         elif stage in ("prd", "trd", "tsd", "personas"):
             (root / "sdlc-studio" / f"{stage}.md").write_text(f"# {stage}\n", encoding="utf-8")
         elif stage == "decompose":
-            d = root / "sdlc-studio" / "epics"; d.mkdir(parents=True, exist_ok=True)
-            (d / "EP0001-x.md").write_text("# EP0001: x\n", encoding="utf-8")
-        elif stage == "plan":
-            d = root / "sdlc-studio" / "retros"; d.mkdir(parents=True, exist_ok=True)
-            (d / "RETRO0001-x.md").write_text("# RETRO-0001: x\n", encoding="utf-8")
+            for sub, name in (("epics", "EP0001-x.md"), ("stories", "US0001-x.md")):
+                d = root / "sdlc-studio" / sub; d.mkdir(parents=True, exist_ok=True)
+                (d / name).write_text(f"# {name}\n", encoding="utf-8")
 
     def test_a_stage_whose_output_exists_does_not_hold_the_hint(self) -> None:
         """MUTANT: in `init.py`, drop the `stage_output_exists` check from `first_incomplete`,
@@ -1041,6 +1042,31 @@ class OnboardingHintFalsifiabilityTests(unittest.TestCase):
                 (root / "sdlc-studio" / ".local" / "onboarding.json").read_text())
             self.assertEqual("prd", init.first_incomplete(state, root))
 
+    def test_a_partly_complete_stage_still_holds_the_hint(self) -> None:
+        """MUTANT: in `init.py`, test only `AGENTS.md` for the agents stage and only epics for
+        decompose, rather than every file each stage writes.
+
+        Making the marker falsifiable opened the opposite failure. `stage_agents` writes AGENTS.md
+        AND CLAUDE.md; the ordinary brownfield repo has the first and not the second, so testing
+        one declared the stage done and CLAUDE.md was never drafted. Same for `decompose`, which
+        directs `epic` THEN `story`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._marked(root, "agents", "decompose")
+            (root / "AGENTS.md").write_text("# agents\n", encoding="utf-8")   # no CLAUDE.md
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "onboarding.json").read_text())
+            self.assertEqual("agents", init.first_incomplete(state, root),
+                             "half of the agents stage's output declared the whole stage done")
+            for name in ("AGENTS.md", "CLAUDE.md"):
+                (root / name).write_text("# x\n", encoding="utf-8")
+            eps = root / "sdlc-studio" / "epics"; eps.mkdir(parents=True, exist_ok=True)
+            (eps / "EP0001-x.md").write_text("# EP0001: x\n", encoding="utf-8")  # no stories
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "onboarding.json").read_text())
+            self.assertEqual("decompose", init.first_incomplete(state, root),
+                             "epics without stories declared decompose done")
+
     def test_a_fully_superseded_marker_is_named_not_silently_skipped(self) -> None:
         """MUTANT: in `init.py`, return an empty list from `superseded_stages`.
 
@@ -1048,18 +1074,51 @@ class OnboardingHintFalsifiabilityTests(unittest.TestCase):
         twelve days across a dozen sprint closes and nothing reported it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            stages = ("agents", "prd", "trd", "tsd", "personas", "decompose", "plan")
+            # `plan` is deliberately NOT satisfiable from the tree - `sprint plan` writes the
+            # run state and `.local/` is gitignored, so it stays pending until confirmed.
+            stages = ("agents", "prd", "trd", "tsd", "personas", "decompose")
             self._marked(root, *stages)
             for s in stages:
                 self._output_for(root, s)
             state = json.loads(
                 (root / "sdlc-studio" / ".local" / "onboarding.json").read_text())
             self.assertEqual(list(stages), init.superseded_stages(root, state))
-            hint = status._onboarding_hint(root)
-            self.assertIsNotNone(hint, "a superseded marker must be REPORTED, not ignored")
-            self.assertIn("SUPERSEDED", hint["note"])
-            self.assertIn("onboarding.json", hint["note"],
-                          "the report must name the file, or nobody can act on it")
+            # THROUGH THE SHIPPED CLI. All three criteria were verified in-process on the first
+            # cut - the depth field said so, `entry point 0 of 3` - and a `{"next_command": None}`
+            # return with no `reason` key then crashed `cmd_hint` with a KeyError on exactly this
+            # input. The orientation command went from a wrong answer to a traceback, and only a
+            # test that runs the command could see it.
+            self.assertIsNone(init.first_incomplete(state, root),
+                              "every stage's output exists, so none is incomplete")
+            self.assertIsNotNone(status.superseded_marker_advisory(root),
+                                 "a stale marker must be REPORTED, not silently skipped")
+
+    def test_the_shipped_hint_command_survives_a_superseded_marker(self) -> None:
+        """MUTANT: in `status.py`, return the supersession note from `_onboarding_hint` as a dict
+        carrying no `reason` key, instead of leaving the ladder to answer.
+
+        THROUGH THE SHIPPED COMMAND. All three of this unit's first criteria were verified
+        in-process - the depth field said `entry point 0 of 3 criteria through the shipped CLI` -
+        and a return with no `reason` key then crashed `cmd_hint` with a KeyError on exactly this
+        input. The orientation command went from a wrong answer to a traceback, and every
+        advisory below the first print went with it. Only a test that runs the command sees it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            stages = ("agents", "prd", "trd", "tsd", "personas", "decompose")
+            self._marked(root, *stages)
+            for s in stages:
+                self._output_for(root, s)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = status.main(["hint", "--root", str(root)])
+            printed = out.getvalue()
+            self.assertEqual(0, rc, f"hint exited {rc}: {err.getvalue().strip()[:120]}")
+            self.assertNotIn("init guided", printed,
+                             "a fully superseded marker must not hold the hint")
+            self.assertIn("SUPERSEDED", printed,
+                          "the stale marker must be named beside the ladder's answer")
+            self.assertIn("onboarding.json", printed,
+                          "the advisory must name the file, or nobody can act on it")
 
 
 if __name__ == "__main__":

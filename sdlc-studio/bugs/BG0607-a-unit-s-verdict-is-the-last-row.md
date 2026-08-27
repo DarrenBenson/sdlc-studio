@@ -34,25 +34,25 @@ Report the panel as its members - `US0675 REJECT (qa, engineering) / APPROVE (pr
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit with a REJECT from one seat and an APPROVE from another, when the standing verdict is read, then it is the REJECT - a panel is several seats recorded one after another, and taking the last row written made the verdict a fact about the order the recorder was called in
+- [x] **AC1** Given a unit with a REJECT from one seat and an APPROVE from another, when the standing verdict is read, then it is the REJECT - a panel is several seats recorded one after another, and taking the last row written made the verdict a fact about the order the recorder was called in
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_one_seats_approve_does_not_retire_anothers_reject
   - **Verified:** yes (2026-08-26)
-- [ ] **AC2** Given a seat that REJECTED and later APPROVED the same unit, when the standing verdict is read, then it is the APPROVE - the paired control and the boundary: a seat may change its mind, and refusing that would make every REJECT permanent. The key is the BRIEF FINGERPRINT and not the reviewer string, because this repository names seats per round
+- [x] **AC2** Given a seat that REJECTED and later APPROVED the same unit, when the standing verdict is read, then it is the APPROVE - the paired control and the boundary: a seat may change its mind, and refusing that would make every REJECT permanent. The key is the BRIEF FINGERPRINT and not the reviewer string, because this repository names seats per round
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_a_seat_may_retire_its_own_reject
   - **Verified:** yes (2026-08-26)
-- [ ] **AC3** Given a unit carrying TWO unanswered rejections, when the standing verdict is read, then the LATEST is reported - the earliest reading leaves 18 units non-conformant against the latest's 19, and the unit it drops is US0671, the first one this bug's own Steps to Reproduce name as masked
+- [x] **AC3** Given a unit carrying TWO unanswered rejections, when the standing verdict is read, then the LATEST is reported - the earliest reading leaves 18 units non-conformant against the latest's 19, and the unit it drops is US0671, the first one this bug's own Steps to Reproduce name as masked
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_the_latest_unanswered_reject_is_the_one_reported
   - **Verified:** yes (2026-08-26)
-- [ ] **AC4** Given a unit carrying SEVERAL unanswered rejections, when its repair state is computed, then every one of them contributes its findings to `outstanding` - this roll-up creates multi-reject units for the first time, and deriving outstanding from the standing row alone left 118 findings invisible to this function, to the conformance lane that calls it and to every checker built on either
+- [x] **AC4** Given a unit carrying SEVERAL unanswered rejections, when its repair state is computed, then every one of them contributes its findings to `outstanding` - this roll-up creates multi-reject units for the first time, and deriving outstanding from the standing row alone left 118 findings invisible to this function, to the conformance lane that calls it and to every checker built on either
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_every_unanswered_rejection_contributes_its_findings
   - **Verified:** yes (2026-08-26)
-- [ ] **AC5** Given a repair recorded against an EARLIER rejection, when a later rejection is raised, then the earlier repair does not answer it - the paired control, and sharper than it looks: a closure may name its finding by ORDINAL, and an ordinal is positional, so pooling closures across rejections makes an ordinal silently answer another round's first finding
+- [x] **AC5** Given a repair recorded against an EARLIER rejection, when a later rejection is raised, then the earlier repair does not answer it - the paired control, and sharper than it looks: a closure may name its finding by ORDINAL, and an ordinal is positional, so pooling closures across rejections makes an ordinal silently answer another round's first finding
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureResolutionTests::test_a_repair_does_not_answer_a_LATER_rejection
   - **Verified:** yes (2026-08-26)
-- [ ] **AC6** Given the nineteen units this roll-up leaves carrying a rejection no seat ever answered, when the shipped whole-workspace conformance lane runs, then it is GREEN at 608/690 with none non-conformant - reached by a recorded WAIVER naming each unit, because those rejections cannot be closed retroactively without fabricating evidence, and a backfill attempting exactly that was rejected at review for citing the cross-seat approval this rule exists to refuse
+- [x] **AC6** Given the nineteen units this roll-up leaves carrying a rejection no seat ever answered, when the shipped whole-workspace conformance lane runs, then it is GREEN at 608/690 with none non-conformant - reached by a recorded WAIVER naming each unit, because those rejections cannot be closed retroactively without fabricating evidence, and a backfill attempting exactly that was rejected at review for citing the cross-seat approval this rule exists to refuse
   - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/conformance.py check
   - **Verified:** yes (2026-08-26)
-- [ ] **AC7** Given each of those nineteen units, when the decision log is read, then a waiver names that unit by id and states what is set aside - the historical gap and not the rule. A waiver nobody can read back to a unit is an exemption rather than a decision
+- [x] **AC7** Given each of those nineteen units, when the decision log is read, then a waiver names that unit by id and states what is set aside - the historical gap and not the rule. A waiver nobody can read back to a unit is an exemption rather than a decision
   - **Verify:** shell python3 -c "import pathlib,sys; t=pathlib.Path('sdlc-studio/decisions.md').read_text(); sys.exit(0 if all('critiqued:'+u.lower() in t for u in 'US0577 US0578 US0580 US0583 US0585 US0591 US0597 US0629 US0630 US0631 US0632 US0645 US0662 US0663 US0664 US0665 US0666 US0671 US0676'.split()) else 1)"
   - **Verified:** yes (2026-08-26)
 

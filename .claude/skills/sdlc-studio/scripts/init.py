@@ -325,14 +325,23 @@ def stage_output_exists(root: Path | str, stage: str) -> bool:
     """
     root = Path(root)
     if stage == "agents":
-        return (root / "AGENTS.md").is_file()
+        # BOTH files the stage writes. Testing AGENTS.md alone declared the stage done for the
+        # ordinary brownfield repo that has one and no CLAUDE.md, so the stage was skipped and
+        # CLAUDE.md never drafted - the fail-OPEN direction this fix opened and has to close.
+        return all((root / dst).is_file() for _src, dst in AGENT_FILES)
     if stage in _SINGLETON_STAGES:
         return (root / SDLC / f"{stage}.md").is_file()
     if stage == "decompose":
-        return any((root / SDLC / "epics").glob("EP*.md"))
+        # `epic`, THEN `story` - the stage directs both, so epics alone is half done.
+        return (any((root / SDLC / "epics").glob("EP*.md"))
+                and any((root / SDLC / "stories").glob("US*.md")))
     if stage == "plan":
-        # A planned sprint leaves a retro behind; `.local/` is gitignored, so it is not evidence.
-        return any((root / SDLC / "retros").glob("RETRO*.md"))
+        # `sprint plan` writes the RUN STATE, not a retro - a retro is minted by the close chain,
+        # so testing for one told a project that had planned but never closed to go and onboard
+        # itself, which is this bug arriving from the other side. `.local/` is gitignored and
+        # therefore not durable evidence, so this stage is deliberately NOT satisfiable from the
+        # tree: it stays pending until the operator confirms it, which is what `init guided` is.
+        return False
     return False          # an unknown stage is never assumed done - the fail-closed direction
 
 
@@ -501,7 +510,18 @@ def cmd_guided(args: argparse.Namespace) -> int:
     if getattr(args, "reset", False):
         reset_onboarding(root)
     state = start_onboarding(root)
-    cur = first_incomplete(state)
+    answering = getattr(args, "confirm", False) or getattr(args, "skip", False)
+    if not answering:
+        # RECONCILE THE MARKER TO THE TREE, but only when about to DRAFT. A stage whose output
+        # already exists is done, and leaving it `pending` makes the marker drift from the
+        # project permanently - which is the whole of BG0615, one layer down.
+        for name in superseded_stages(root, state):
+            set_stage(root, name, "done")
+        state = read_onboarding(root) or state
+    # The TREE decides what to show; the MARKER decides what a confirmation answers. An operator
+    # confirming is answering about the stage they were last shown, and reconciling underneath
+    # them would mark a stage they never saw.
+    cur = first_incomplete(state) if answering else first_incomplete(state, root)
     drafted = None
     if getattr(args, "confirm", False) and cur:
         set_stage(root, cur, "done")
@@ -510,7 +530,7 @@ def cmd_guided(args: argparse.Namespace) -> int:
     elif cur and cur in STAGE_ACTIONS:
         drafted = STAGE_ACTIONS[cur](root)     # draft the current stage for review (draft-then-confirm)
     state = read_onboarding(root)
-    cur = first_incomplete(state)
+    cur = first_incomplete(state, root)
     if getattr(args, "format", "text") == "json":
         print(json.dumps({"path": state["path"], "stages": state["stages"],
                           "current": cur, "drafted": drafted}, indent=2))

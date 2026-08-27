@@ -487,20 +487,36 @@ def _onboarding_hint(repo_root: Path) -> dict | None:
     # passing the root lets a stage whose output already exists stop holding the hint, which is
     # what makes this answer falsifiable at all.
     stage = init.first_incomplete(state, repo_root)
-    superseded = init.superseded_stages(repo_root, state)
     if not stage:
-        if superseded:
-            # Named rather than silently skipped. A stale marker nobody is told about is one
-            # nobody ever removes - this one sat for twelve days across a dozen closes.
-            return {"next_command": None,
-                    "note": (f"a guided-onboarding marker is still on disk and every stage it "
-                             f"lists is already done in this project ({', '.join(superseded)}) - "
-                             f"it is SUPERSEDED and safe to remove: "
-                             f"`rm {SDLC_DIR}/.local/onboarding.json`")}
+        # ADDITIVE, never a return. A fully superseded marker must not displace the pipeline
+        # ladder - AC1 says the ordinary ladder answers - and returning a dict with no `reason`
+        # gave `cmd_hint` a KeyError, turning the orientation command into a traceback. The
+        # advisory is attached by the caller instead, beside the real answer.
         return None
+    superseded = init.superseded_stages(repo_root, state)
     return {"next_command": "init guided",
             "reason": f"guided onboarding in progress - next stage: {stage}"
                       + (f" (superseded and skipped: {', '.join(superseded)})" if superseded else "")}
+
+
+def superseded_marker_advisory(repo_root: Path) -> str | None:
+    """One line when an onboarding marker is on disk and every stage it lists is already done.
+
+    Named rather than silently skipped: a stale marker nobody is told about is one nobody ever
+    removes, and this one sat for twelve days across a dozen closes. An ADVISORY rather than a
+    hint, because the operator's next step is whatever the pipeline ladder says - the marker is
+    just litter that used to outrank it.
+    """
+    import init  # noqa: PLC0415 - deferred sibling, as above
+    state = init.read_onboarding(repo_root)
+    if not state or init.first_incomplete(state, repo_root):
+        return None
+    superseded = init.superseded_stages(repo_root, state)
+    if not superseded:
+        return None
+    return (f"a guided-onboarding marker is on disk and every stage it lists is already done in "
+            f"this project ({', '.join(superseded)}) - it is SUPERSEDED and safe to remove: "
+            f"`rm {SDLC_DIR}/.local/onboarding.json`")
 
 
 def _compute_hint_rung(data: dict, repo_root: Path) -> dict:
@@ -565,6 +581,9 @@ def cmd_hint(args: argparse.Namespace) -> int:
         drift = installed_copy_drift_advisory(sdlc_md.resolve_root(args))
         if drift:
             print(f"advisory: {drift}")
+        stale = superseded_marker_advisory(Path(args.root))
+        if stale:
+            print(f"advisory: {stale}")
         for line in index_bloat_advisories(Path(args.root)):
             print(f"advisory: {line}")
     return 0

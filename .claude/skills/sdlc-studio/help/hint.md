@@ -22,7 +22,9 @@ Get a single actionable next step based on current pipeline state.
 
 > **Deterministic helper.** `python3 "$CLAUDE_SKILL_DIR/scripts/status.py" hint --format json`
 > returns `{next_command, reason}` from the mechanical ladder. Apply judgement only for the
-> blocker and implement-vs-plan branches it flags.
+> blocker and implement-vs-plan branches it flags. The text form adds `advisory:` lines beside
+> that answer - an abandoned guided-onboarding marker is one of them - and an advisory never
+> replaces the next step, it sits next to it.
 
 ## Usage
 

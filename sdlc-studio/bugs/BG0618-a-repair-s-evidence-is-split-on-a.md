@@ -26,28 +26,28 @@ Two changes, and the second matters more than the first. Give the channel a way 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a closure whose EVIDENCE contains a semicolon, when the repair is recorded and read back, then the evidence is stored WHOLE - every clause the author wrote reaches the record, modulo the ledger's own markdown escaping (`_` and `|`, which `_clean` applies deliberately for MD037 and table safety) - rather than being truncated at the first semicolon
+- [x] **AC1** Given a closure whose EVIDENCE contains a semicolon, when the repair is recorded and read back, then the evidence is stored WHOLE - every clause the author wrote reaches the record, modulo the ledger's own markdown escaping (`_` and `|`, which `_clean` applies deliberately for MD037 and table safety) - rather than being truncated at the first semicolon
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_evidence_carrying_a_semicolon_is_stored_whole
   - **Verified:** yes (2026-08-26)
-- [ ] **AC2** Given a closure whose evidence contains NO semicolon, when it is recorded, then it parses exactly as it does today - the paired control, so carrying a semicolon does not become the only shape the channel accepts
+- [x] **AC2** Given a closure whose evidence contains NO semicolon, when it is recorded, then it parses exactly as it does today - the paired control, so carrying a semicolon does not become the only shape the channel accepts
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_ordinary_evidence_still_parses_unchanged
   - **Verified:** yes (2026-08-26)
-- [ ] **AC3** Given a chunk the parser cannot read as `<finding> -> <evidence>`, when it is WRITTEN, then the write is REFUSED by name - and when an existing row is READ, it is REPORTED and not raised. The silence is the defect, but refusing on the read path crashes `conformance.py check` inside `repair_state`: 67 chunks already on disk across 11 units lack the separator, five of them among the units this run must backfill
+- [x] **AC3** Given a chunk the parser cannot read as `<finding> -> <evidence>`, when it is WRITTEN, then the write is REFUSED by name - and when an existing row is READ, it is REPORTED and not raised. The silence is the defect, but refusing on the read path crashes `conformance.py check` inside `repair_state`: 67 chunks already on disk across 11 units lack the separator, five of them among the units this run must backfill
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_an_unparseable_chunk_is_refused_rather_than_dropped
   - **Verified:** yes (2026-08-26)
-- [ ] **AC4** Given a `--issues` string carrying a semicolon inside one finding, when a verdict is recorded, then that finding survives whole - the channel BG0618 is about is shared, so a fix that repairs only the repair path leaves the verdict path corrupting the same way
+- [x] **AC4** Given a `--issues` string carrying a semicolon inside one finding, when a verdict is recorded, then that finding survives whole - the channel BG0618 is about is shared, so a fix that repairs only the repair path leaves the verdict path corrupting the same way
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_the_issues_channel_carries_a_semicolon_too
   - **Verified:** yes (2026-08-26)
-- [ ] **AC5** Given a `--closed-file` holding a JSON list of `{finding, evidence}` objects, when the repair is recorded, then each evidence string reaches the record whole however many semicolons it contains - structured input has NO delimiter, so nothing a reviewer writes can be read as one. The escape above keeps the flag form working; this is the repair the artefact's own Proposed Fix asks for
+- [x] **AC5** Given a `--closed-file` holding a JSON list of `{finding, evidence}` objects, when the repair is recorded, then each evidence string reaches the record whole however many semicolons it contains - structured input has NO delimiter, so nothing a reviewer writes can be read as one. The escape above keeps the flag form working; this is the repair the artefact's own Proposed Fix asks for
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_a_json_closure_document_needs_no_separator_at_all
   - **Verified:** yes (2026-08-26)
-- [ ] **AC6** Given evidence ending in a real backslash, when the closures are parsed, then the item after it is NOT swallowed - an escapable separator needs an escapable ESCAPE, or a lookbehind cannot tell a backslash that escapes the semicolon from one that is itself escaped, and nothing refuses the merge
+- [x] **AC6** Given evidence ending in a real backslash, when the closures are parsed, then the item after it is NOT swallowed - an escapable separator needs an escapable ESCAPE, or a lookbehind cannot tell a backslash that escapes the semicolon from one that is itself escaped, and nothing refuses the merge
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_a_value_ending_in_a_backslash_does_not_swallow_the_next_item
   - **Verified:** yes (2026-08-26)
-- [ ] **AC7** Given this project's declared Python floor of 3.10, when `critic.py` is parsed at that feature version, then it parses - a backslash inside an f-string EXPRESSION is legal only from 3.12, and `import critic` raising takes the conformance lane, `sprint` and `transition` with it on the interpreter Ubuntu 22.04 ships. CI pins 3.12, so nothing else looks
+- [x] **AC7** Given this project's declared Python floor of 3.10, when `critic.py` is parsed at that feature version, then it parses - a backslash inside an f-string EXPRESSION is legal only from 3.12, and `import critic` raising takes the conformance lane, `sprint` and `transition` with it on the interpreter Ubuntu 22.04 ships. CI pins 3.12, so nothing else looks
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_the_module_parses_on_the_declared_python_floor
   - **Verified:** yes (2026-08-26)
-- [ ] **AC8** Given an unreadable row already on disk, when it is READ, then it is REPORTED by name on stderr and not raised - 67 such chunks exist across 11 units so raising would crash every reader, but skipping in silence keeps the half of this defect that made it dangerous
+- [x] **AC8** Given an unreadable row already on disk, when it is READ, then it is REPORTED by name on stderr and not raised - 67 such chunks exist across 11 units so raising would crash every reader, but skipping in silence keeps the half of this defect that made it dangerous
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureChannelTests::test_an_unreadable_row_is_reported_when_read
   - **Verified:** yes (2026-08-26)
 

@@ -25,31 +25,31 @@ Normalise before comparing, and define open as NOT-TERMINAL rather than as one l
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given an open bug whose Severity is written `high` in any casing, when the release bar is read, then it is BARRED - the corpus already holds 7 such bugs, and a bar that reads a field the filer does not normalise is one whose answer depends on how somebody typed
+- [x] **AC1** Given an open bug whose Severity is written `high` in any casing, when the release bar is read, then it is BARRED - the corpus already holds 7 such bugs, and a bar that reads a field the filer does not normalise is one whose answer depends on how somebody typed
   - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_severity_is_matched_regardless_of_casing
   - **Verified:** yes (2026-08-26)
-- [ ] **AC2** Given a bug at High whose Status is any NON-TERMINAL state, when the bar is read, then it is BARRED - `In Progress` is a legitimate bug status and the resting state of every High this run will touch, and `Blocked`, which is NOT in the bug vocabulary at all, must fall OPEN too, so a typo or a project-declared status over-refuses rather than hides
+- [x] **AC2** Given a bug at High whose Status is any NON-TERMINAL state, when the bar is read, then it is BARRED - `In Progress` is a legitimate bug status and the resting state of every High this run will touch, and `Blocked`, which is NOT in the bug vocabulary at all, must fall OPEN too, so a typo or a project-declared status over-refuses rather than hides
   - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_every_non_terminal_status_counts_as_open
   - **Verified:** yes (2026-08-26)
-- [ ] **AC3** Given a bug at High whose H1 reads `# BG-0123:` with the hyphenated id form, when the bar is read, then it is BARRED - 21 files in this corpus use that form and each is currently skipped in full, taking its status and severity with it
+- [x] **AC3** Given a bug at High whose H1 reads `# BG-0123:` with the hyphenated id form, when the bar is read, then it is BARRED - 21 files in this corpus use that form and each is currently skipped in full, taking its status and severity with it
   - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_a_hyphenated_heading_is_still_read
   - **Verified:** yes (2026-08-26)
-- [ ] **AC4** Given a bug file matching NONE of the expected patterns, when the bar is read, then it is REPORTED by path rather than skipped - a finding the bar cannot parse is the one case where silence and a clean bill of health are indistinguishable, and that is what all three hatches have in common
+- [x] **AC4** Given a bug file matching NONE of the expected patterns, when the bar is read, then it is REPORTED by path rather than skipped - a finding the bar cannot parse is the one case where silence and a clean bill of health are indistinguishable, and that is what all three hatches have in common
   - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_an_unparseable_finding_is_reported_not_dropped
   - **Verified:** yes (2026-08-26)
-- [ ] **AC5** Given a corpus whose open findings are all terminal or below the barred severities, when the bar is read, then it reports MET exactly as today - the paired control, so widening the population does not turn the bar into a check that can never pass
+- [x] **AC5** Given a corpus whose open findings are all terminal or below the barred severities, when the bar is read, then it reports MET exactly as today - the paired control, so widening the population does not turn the bar into a check that can never pass
   - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_a_clean_corpus_still_reports_the_bar_met
   - **Verified:** yes (2026-08-26)
-- [ ] **AC6** Given the same three malformed findings, when the DISCLOSURE PAGE is generated, then each appears on it - the page's own population reader repeats all three guards verbatim, so repairing the bar alone would leave the defect standing in the same file it was found in
+- [x] **AC6** Given the same three malformed findings, when the DISCLOSURE PAGE is generated, then each appears on it - the page's own population reader repeats all three guards verbatim, so repairing the bar alone would leave the defect standing in the same file it was found in
   - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_the_disclosure_page_reads_the_same_population_as_the_bar
   - **Verified:** yes (2026-08-26)
-- [ ] **AC7** Given the LIVE corpus, when the unparseable set is read, then it is EMPTY - and it was not before this fix: the guard's first execution surfaced BG0131, invisible to both readers since 2026-07-14 because its H1 carried a parenthetical between the id and the colon. This criterion is deliberately about the corpus rather than a fixture, because a guard whose first run over real data finds nothing has not been shown to look
+- [x] **AC7** Given the LIVE corpus, when the unparseable set is read, then it is EMPTY - and it was not before this fix: the guard's first execution surfaced BG0131, invisible to both readers since 2026-07-14 because its H1 carried a parenthetical between the id and the colon. This criterion is deliberately about the corpus rather than a fixture, because a guard whose first run over real data finds nothing has not been shown to look
   - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_the_live_corpus_has_no_unparseable_finding
   - **Verified:** yes (2026-08-26)
-- [ ] **AC8** Given a terminal status the shipped bug vocabulary gains later, when the release bar reads it, then the two agree - `TERMINAL` here is a hand-copy of what `sdlc_md` already owns, and a hand-copy can only drift. It drifts in the safe direction, over-refusing, which is exactly why nobody would ever connect the symptom to the cause
+- [x] **AC8** Given a terminal status the shipped bug vocabulary gains later, when the release bar reads it, then the two agree - `TERMINAL` here is a hand-copy of what `sdlc_md` already owns, and a hand-copy can only drift. It drifts in the safe direction, over-refusing, which is exactly why nobody would ever connect the symptom to the cause
   - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_the_terminal_set_matches_the_shipped_bug_vocabulary
   - **Verified:** yes (2026-08-26)
-- [ ] **AC9** Given an unreadable finding, when `--check` runs - the per-commit path, not the release boundary - then it is NAMED, and `--check` still passes when the page itself agrees with the corpus. Warning only at the tag is how BG0131 sat unread from 2026-07-14
+- [x] **AC9** Given an unreadable finding, when `--check` runs - the per-commit path, not the release boundary - then it is NAMED, and `--check` still passes when the page itself agrees with the corpus. Warning only at the tag is how BG0131 sat unread from 2026-07-14
   - **Verify:** pytest tools/tests/test_known_issues.py::BarPopulationTests::test_check_and_write_also_report_an_unreadable_finding
   - **Verified:** yes (2026-08-26)
 
