@@ -10149,11 +10149,25 @@ def _seat_from_dict(d: dict) -> dict:
     required answers as the pipe-delimited form, so a fields-file seat is held to the same bar."""
     out = {"seat": str(d.get("seat") or "").strip()}
     for f in ("achievable", "done_means", "one_increment"):
-        val = str(d.get(f) or "").strip()
-        if not val:
+        # PRESENCE first, then coerce, then test the COERCED value. `str(x or "")` collapses a
+        # JSON `false` to the empty string, so the recommended --fields-file path could record
+        # that a goal IS achievable and could not record, in the same encoding, that it is NOT -
+        # a recorder biased toward approval, and the workaround (write the string `no`) is
+        # documented nowhere.
+        #
+        # Presence ALONE would be worse than the bug: `if f not in d` admits `""`, `null` and
+        # `0`, and `verdict_polarity` reads all three as `unclear`, so the guard whose job is to
+        # refuse an incomplete verdict would start passing three of them. Both halves are
+        # needed, which is why the emptiness test moved rather than being deleted.
+        if f not in d:
             raise ValueError(f"seat {out['seat'] or '(unnamed)'!r} in --fields-file is missing "
                              f"{f!r} - a verdict needs role, achievable, done_means and "
                              f"one_increment")
+        val = "" if d[f] is None else str(d[f]).strip()
+        if not val:
+            raise ValueError(f"seat {out['seat'] or '(unnamed)'!r} in --fields-file has "
+                             f"{f!r} present but carrying no verdict - a blank is not an "
+                             f"answer. `false` and `no` are both accepted and both read `no`")
         out[f] = val
     if not out["seat"]:
         raise ValueError("a seat verdict in --fields-file has no 'seat' role")

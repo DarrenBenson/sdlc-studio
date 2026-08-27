@@ -17157,5 +17157,170 @@ class OneGroomingAnswerTests(unittest.TestCase):
             self.assertIn("none outstanding", line)
 
 
+class FieldsFilePresenceTests(unittest.TestCase):
+    """BG0622: a JSON `false` was reported as a MISSING field.
+
+    `str(d.get(f) or "").strip()` collapses a boolean `false` to the empty string, so the
+    recommended `--fields-file` path could record that a goal IS achievable and could not
+    record, in the same encoding, that it is NOT. On a verdict field the bias had a direction.
+    """
+
+    def _fixture(self, d, value, *, absent=False):
+        seat = {"seat": "qa", "done_means": "x", "one_increment": "y"}
+        if not absent:
+            seat["achievable"] = value
+        (Path(d) / "doc.json").write_text(
+            json.dumps({"goal": "A goal.", "seats": [seat]}), encoding="utf-8")
+        return str(Path(d) / "doc.json")
+
+    def test_a_false_boolean_is_recorded_not_refused(self) -> None:
+        # AC1. Both values of a boolean must reach the record.
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            self.assertEqual(
+                "no",
+                mod.verdict_polarity(mod._seat_from_dict(
+                    {"seat": "qa", "achievable": False,
+                     "done_means": "x", "one_increment": "y"})["achievable"]))
+
+    def test_a_present_but_verdictless_field_is_still_refused(self) -> None:
+        # AC2. Presence ALONE is the over-correction the Proposed Fix invites: `if f not in d`
+        # still refuses a missing key, so a control asserting only that would survive it, while
+        # empty, null and zero all become admissible and `verdict_polarity` reads each as
+        # `unclear` - an incomplete verdict let through the guard whose whole job is to refuse
+        # one. The paired positives are beside it, so this cannot be satisfied by refusing more.
+        mod = _load()
+        base = {"seat": "qa", "done_means": "x", "one_increment": "y"}
+        for value in ("", None):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError) as cm:
+                    mod._seat_from_dict({**base, "achievable": value})
+                self.assertIn("achievable", str(cm.exception))
+        with self.assertRaises(ValueError):
+            mod._seat_from_dict(base)                     # genuinely absent, still refused
+        for value in (False, "no"):
+            with self.subTest(value=value):
+                self.assertEqual("no", mod.verdict_polarity(
+                    mod._seat_from_dict({**base, "achievable": value})["achievable"]))
+
+    def test_the_shipped_command_records_a_false_boolean(self) -> None:
+        # AC3. `_seat_from_dict` is reached only through `load_fields_file(..., allowed=(...))`,
+        # so an in-process test of the helper passes even if that path stops calling it. The
+        # polarity half is load-bearing: unwiring the helper leaves the CLI exiting 0 while it
+        # stores a raw `false` that reads `unclear`.
+        import subprocess  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            doc = self._fixture(d, False)
+            r = subprocess.run(
+                [sys.executable, str(SCRIPT), "goal-review", "record",
+                 "--root", d, "--fields-file", doc],
+                capture_output=True, text=True, timeout=300, check=False)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            mod = _load()
+            stored = json.loads(
+                (Path(d) / "sdlc-studio" / ".local" / "goal-review.json").read_text()
+            )["rounds"][-1]["seats"][0]["achievable"]
+            self.assertEqual("no", mod.verdict_polarity(stored), stored)
+
+
+class GoalPanelAnsweredTests(unittest.TestCase):
+    """BG0626: the close's clause panel must be ANSWERABLE.
+
+    It never had been. `_recorded_clause_verdicts` keys a seat's per-clause answers by the exact
+    clause string, and the splitter shredded a numbered goal into fragments nobody could
+    predict - so across every recorded round, no seat carried a per-clause answer at all and the
+    panel printed UNANSWERED on every close.
+    """
+
+    #: The clause strings are written out LITERALLY. Computing them by calling `goal_clauses`
+    #: would make the fixture agree with ANY splitter, so the revert mutant would survive.
+    _GOAL = ("Framing that is not a commitment. (1) All units land, with evidence, at close. "
+             "(2) The bar stays met, measured after. (3) The panel answers, not UNANSWERED.")
+    _CLAUSES = ["All units land, with evidence, at close",
+                "The bar stays met, measured after",
+                "The panel answers, not UNANSWERED"]
+
+    def _root(self, goal, clause_keys):
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (d / "sdlc-studio" / "stories").mkdir(parents=True)
+        (d / "sdlc-studio" / "stories" / "US0001-a-unit.md").write_text(
+            "# US0001: a unit\n\n> **Status:** Review\n", encoding="utf-8")
+        # `author` is supplied and matches NO recorded seat: without one the panel returns
+        # NOT RUN, which is neither verdict, and the criterion would measure nothing.
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-INERT", "batch": ["US0001"], "outcome": "running",
+            "author": "builder", "sprint_goal": goal,
+            "started_at": "2026-08-27T09:00:00Z"}), encoding="utf-8")
+        (d / "sdlc-studio" / ".local" / "goal-review.json").write_text(json.dumps({
+            "rounds": [{"goal": goal, "seats": [
+                {"seat": "qa", "achievable": "yes", "done_means": "x",
+                 "one_increment": "yes",
+                 "clauses": {k: "yes" for k in clause_keys}}]}]}), encoding="utf-8")
+        return d
+
+    @staticmethod
+    def _panel(lines):
+        """The panel's header and its OWN clause rows - the contiguous indented block that
+        follows it. The judgement emits other indented lines (the caller check, for one), so a
+        filter on indentation alone counts rows the panel never wrote."""
+        for i, line in enumerate(lines):
+            if line.startswith("goal panel:"):
+                rows = []
+                for nxt in lines[i + 1:]:
+                    if not nxt.startswith("    "):
+                        break
+                    rows.append(nxt)
+                return line, rows
+        return "", []
+
+    def _panel_line(self, root):
+        sprint = _load()
+        state = json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+        return self._panel(sprint.close_goal_judgement(root, state))
+
+    def test_a_seat_keyed_to_the_post_fix_clauses_is_read_as_answered(self) -> None:
+        # AC4. The panel never emits the word ANSWERED - its vocabulary is achieved/missed/
+        # partial over `panel['verdict'] or 'UNANSWERED'` - and `ANSWERED` is a SUBSTRING of
+        # `UNANSWERED`, so an `assertIn("ANSWERED", ...)` passes on the exact failure this
+        # criterion exists to catch. The assertion is a PREFIX of the emitted line, because the
+        # line continues past it with the seat count and the exclusion note.
+        root = self._root(self._GOAL, self._CLAUSES)
+        line, rows = self._panel_line(root)
+        self.assertTrue(
+            line.startswith("goal panel: achieved over 3 clause(s)"),
+            f"expected an achieved panel over three clauses, got {line!r}")
+        self.assertEqual(3, len(rows), rows)
+        for row in rows:
+            self.assertTrue(row.strip().startswith("achieved"), row)
+            self.assertNotIn("seat(s) silent", row)
+
+    def test_an_amended_goal_reports_its_unmatched_clauses(self) -> None:
+        # AC5. The panel splits `state["sprint_goal"]` while the keys come from the review
+        # round's own text, and this project amends a goal between the plan-time review and the
+        # close by construction. The edit this pins lives in `_recorded_clause_verdicts` -
+        # re-introducing the whole-goal FAN across every clause, which its own docstring records
+        # as deliberately removed - and NOT in the splitter, which receives the goal text and
+        # nothing else so cannot know whether a key matched.
+        amended = self._GOAL + " (4) A commitment nobody reviewed."
+        root = self._root(self._GOAL, self._CLAUSES)
+        state = json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+        state["sprint_goal"] = amended
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps(state), encoding="utf-8")
+        sprint = _load()
+        _, rows = self._panel(sprint.close_goal_judgement(root, state))
+        self.assertEqual(4, len(rows), rows)
+        unanswered = [r for r in rows if r.strip().startswith("UNANSWERED")]
+        self.assertEqual(
+            1, len(unanswered),
+            "the clause no seat was asked about must read UNANSWERED, not be counted as agreed")
+        self.assertIn("A commitment nobody reviewed", unanswered[0])
+
+
 if __name__ == "__main__":
     unittest.main()

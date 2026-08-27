@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -1040,6 +1041,82 @@ class BaseRefTests(unittest.TestCase):
             root = self._repo(d)
             self.assertEqual("", mod.base_ref(root),
                              "an unrecorded base ref returned a value rather than nothing")
+
+
+class GoalClauseEnumerationTests(unittest.TestCase):
+    """BG0626: a Sprint Goal's own `(n)` numbering decides where its clauses divide.
+
+    Before this, `goal_clauses` split on every prose comma the moment an Oxford comma appeared
+    anywhere in the text. A goal whose author had numbered five commitments came back as fifteen
+    fragments, one of them the bare string of an artefact id, and the close's clause panel
+    judged fragments nobody had committed to. Across every round this project had recorded, no
+    seat had ever answered per clause - the keys are the clause strings, and nobody could
+    predict them.
+    """
+
+    _FIXTURE = (Path(__file__).resolve().parent / "fixtures" / "stored-sprint-goals.json")
+
+    def _stored(self) -> list[str]:
+        return json.loads(self._FIXTURE.read_text(encoding="utf-8"))
+
+    def test_a_numbered_goal_splits_at_its_markers_with_markers_stripped(self) -> None:
+        # AC1. The assertion is the TEXT, not the count. A count-only criterion is satisfied by
+        # splitting immediately BEFORE each marker, which leaves every clause prefixed `(1) `
+        # and defeats the exact-string match the panel depends on.
+        goal = ("Framing that is not a commitment. (1) All units land, with evidence, at close. "
+                "(2) The bar stays met, measured after. (3) The panel answers, not UNANSWERED.")
+        self.assertEqual(
+            ["All units land, with evidence, at close",
+             "The bar stays met, measured after",
+             "The panel answers, not UNANSWERED"],
+            run_state.goal_clauses(goal))
+
+    def test_an_unnumbered_oxford_comma_goal_is_unchanged(self) -> None:
+        # AC2. The input carries exactly ONE stray marker, which is what the two-markers-to-one
+        # guard mutant moves. A goal with no marker at all cannot be moved by loosening that
+        # threshold, so a control written that way is unkillable by its own mutant.
+        self.assertEqual(
+            3, len(run_state.goal_clauses(
+                "All units land, the bar stays met, and (1) the lane is green")))
+        self.assertEqual(
+            3, len(run_state.goal_clauses(
+                "All units land, the bar stays met, and the lane is green")))
+
+    def test_out_of_order_markers_are_not_numbering(self) -> None:
+        # AC6. The rule commits IN WRITING to two or more markers in ASCENDING order, and none
+        # of the stored goals is non-ascending - so without this a careless count-only guard
+        # passes every other criterion here.
+        for goal in ("A goal. (2) second first. (1) first second.",
+                     "A goal. (1) one thing. (1) the same thing again."):
+            with self.subTest(goal=goal):
+                clauses = run_state.goal_clauses(goal)
+                self.assertNotEqual(
+                    ["second first", "first second"], clauses,
+                    "markers out of order are a coincidence of punctuation, not an enumeration")
+
+    def test_every_stored_goal_splits_at_its_own_numbering(self) -> None:
+        # AC3. Measured on a TRACKED fixture: `sdlc-studio/.local/goal-review.json` is
+        # gitignored, so a test reading it cannot run in CI or a fresh clone. The property is
+        # asserted over whatever the fixture holds rather than a hard-coded total, because the
+        # count moved from 41 to 42 while this bug was being written.
+        goals = self._stored()
+        numbered = [g for g in goals if len(re.findall(r"\((\d+)\)", g)) >= 2]
+        # NON-VACUITY, asserted rather than assumed: a property over an unrepresentative fixture
+        # is a pass that measures nothing.
+        self.assertGreaterEqual(len(goals), 40, "the vendored corpus collapsed")
+        self.assertGreaterEqual(len(numbered), 2, "no numbered goal left to measure")
+        for goal in goals:
+            with self.subTest(goal=goal[:60]):
+                clauses = run_state.goal_clauses(goal)
+                for c in clauses:
+                    self.assertIsNone(
+                        re.fullmatch(r"[A-Z]{2,6}\d{3,4}", c),
+                        f"a bare artefact id is not a commitment: {c!r}")
+        for goal in numbered:
+            with self.subTest(numbered=goal[:60]):
+                self.assertEqual(
+                    len(re.findall(r"\((\d+)\)", goal)),
+                    len(run_state.goal_clauses(goal)))
 
 
 if __name__ == "__main__":

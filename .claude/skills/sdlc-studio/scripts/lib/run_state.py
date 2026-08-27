@@ -1084,18 +1084,61 @@ _CLAUSE_LIST = re.compile(r"\s*,\s+(?:and\s+)?")
 _OXFORD = re.compile(r",\s+and\s+")
 
 
+#: An author's OWN clause numbering - `(1)`, `(2)`, ... - which outranks every punctuation
+#: heuristic below it. Two or more, in ascending order, or the text is not numbered.
+_MARKER = re.compile(r"\((\d+)\)\s*")
+
+
+def _numbered_clauses(body: str) -> list[str] | None:
+    """`body` split at its own `(n)` markers, or None when it carries no usable numbering.
+
+    Requires TWO OR MORE markers running in ASCENDING order. One marker is a parenthetical, not
+    a list, and markers out of order are a coincidence of punctuation rather than an enumeration
+    - both fall through to the heuristic, which is what the unnumbered case has always used.
+
+    The marker is STRIPPED from the clause it opens and the PREAMBLE before the first one is
+    DISCARDED. Both follow from what a clause is for: a seat records a verdict against it, and
+    the reader matches on the exact string, so a clause carrying `(1) ` is a key nobody will
+    type. A preamble is framing, and a run cannot meet framing.
+    """
+    hits = list(_MARKER.finditer(body))
+    if len(hits) < 2:
+        return None
+    numbers = [int(h.group(1)) for h in hits]
+    if any(b <= a for a, b in zip(numbers, numbers[1:])):
+        return None
+    bounds = [h.end() for h in hits] + [len(body)]
+    starts = [h.start() for h in hits][1:] + [len(body)]
+    out = [body[bounds[i]:starts[i]].strip(" .;-") for i in range(len(hits))]
+    return [c for c in out if c] or None
+
+
 def goal_clauses(goal: str | None) -> list[str]:
     """A Sprint Goal as its clauses, in order. One clause for a single-clause goal.
 
     A goal reached in two parts of three is a real and common outcome, and collapsing it to one
-    word forces the closer to overstate or understate. Splitting is deliberately conservative:
-    a goal nobody wrote as separable commitments comes back as ONE clause rather than being
-    shredded into commitments its author never made."""
+    word forces the closer to overstate or understate.
+
+    The author's OWN numbering wins where it exists. Before that, this split on every prose
+    comma the moment an Oxford comma appeared anywhere in the text, so a goal whose author had
+    numbered five commitments came back as fifteen fragments - one of them a bare artefact id -
+    and the close's clause panel judged fragments nobody had committed to. Across every round
+    this project had recorded, no seat had ever managed to answer per clause, because the keys
+    are the clause strings and nobody could predict them.
+
+    For a goal carrying no such numbering the heuristic below is UNCHANGED. That is a choice
+    between two available repairs, and the rejected one is recorded because it reads as the more
+    principled: making a bare comma stop being a boundary would be closer to what this docstring
+    promises, but it re-clauses every goal already stored and every close that reads them, for a
+    benefit nothing here can measure. Numbering-wins moved two of the forty-two stored goals.
+    """
     text = " ".join(str(goal or "").split())
     if not text:
         return []
     head, sep, tail = text.partition(": ")
     body = tail if sep and len(head) < 80 else text
+    if numbered := _numbered_clauses(body):
+        return numbered
     splitter = _CLAUSE_LIST if _OXFORD.search(body) else _CLAUSE_HARD
     parts = [p.strip(" .;-") for p in splitter.split(body) if p and p.strip(" .;-")]
     return parts if len(parts) > 1 else [text]
