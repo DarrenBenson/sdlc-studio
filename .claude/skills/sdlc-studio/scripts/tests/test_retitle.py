@@ -161,7 +161,11 @@ class AtomicRetitleTests(unittest.TestCase):
         self.assertIn("reconcile", msg)          # names the fix
         self.assertIn("Nothing was written", msg)
 
-        # missing H1 anchor: the message names the H1 surface and how to add it
+        # A missing H1 anchor no longer blocks: since BG0623 the heading is REPAIRED rather
+        # than refused, because it is the surface a hand edit routinely breaks and refusing left
+        # the artefact untouchable by the tool that exists to touch it. The refusal correctly
+        # moves to the next surface that genuinely cannot be updated, and still names it - which
+        # is what this test is for.
         root2 = Path(tempfile.mkdtemp())
         crd2 = root2 / "sdlc-studio" / "change-requests"
         bad = crd2 / "CR0001-no-heading.md"
@@ -169,8 +173,11 @@ class AtomicRetitleTests(unittest.TestCase):
         bad.write_text("no heading here\n\n> **Status:** Proposed\n", encoding="utf-8")
         with self.assertRaises(artifact.RetitleBlocked) as ctx2:
             artifact.retitle(root2, "CR-0001", "whatever new title")
-        self.assertEqual(ctx2.exception.surface, "h1")
-        self.assertIn("H1", str(ctx2.exception))
+        self.assertEqual(ctx2.exception.surface, "index")
+        self.assertIn("Nothing was written", str(ctx2.exception))
+        self.assertEqual("no heading here\n\n> **Status:** Proposed\n",
+                         bad.read_text(encoding="utf-8"),
+                         "the repair is not an escape from the other surfaces")
 
 
 if __name__ == "__main__":

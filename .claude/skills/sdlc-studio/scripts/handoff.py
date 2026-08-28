@@ -518,6 +518,19 @@ def _decisions_body(report: dict) -> str:
 def _pickup_body(report: dict) -> str:
     s = report["summary"]
     if not report["remaining"]:
+        # A DROPPED unit is terminal, so `remaining` is empty and this branch is taken - but the
+        # tail is not empty in the sense a reader needs. "Plan the next batch normally" told the
+        # next session there was nothing to pick up, on a run whose whole story was that a unit
+        # had been closed without delivery. Name them, then say the rest is clear.
+        dropped = [u for u in report.get("dropped") or [] if u.get("id")]
+        if dropped:
+            named = ", ".join(
+                f"{u['id']}" + (f" ({u['dropped']})" if isinstance(u.get("dropped"), str)
+                                and u["dropped"] not in ("", "1", "True") else "")
+                for u in dropped)
+            return (f"No unit is still open, but {len(dropped)} was closed WITHOUT delivery and "
+                    f"is not carried forward by this handoff: {named}. Decide whether it is "
+                    f"re-filed or abandoned before planning the next batch.\n")
         return ("Every unit in the batch is terminal. There is no tail: close the run and "
                 "plan the next batch normally.\n")
     lines = [

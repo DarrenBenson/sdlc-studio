@@ -17322,5 +17322,204 @@ class GoalPanelAnsweredTests(unittest.TestCase):
         self.assertIn("A commitment nobody reviewed", unanswered[0])
 
 
+class ContainerGradingTests(unittest.TestCase):
+    """BG0613: one predicate decides which types a rung can grade, asked by all three surfaces.
+
+    `breakdown` graded EVERY type while the close's two surfaces shared `_rung_grades` and
+    skipped epics, so `sprint plan` could refuse a batch for holding an ungroomed epic and the
+    close of that same batch report the epic was never gradeable - three answers to one question.
+
+    FIXTURE INVARIANT, load-bearing twice over. The epic must carry `refine`'s ungroomed token:
+    `conformance.unit_is_ungroomed` scopes its no-criteria limb to `executes_verifiers` types, so
+    an epic with no criteria at all is already skipped and reproduces nothing. And every batch
+    carries at least one ungroomed NON-container unit, because after the fix a containers-only
+    batch makes both sets empty and set equality is satisfied by naming nothing.
+    """
+
+    _UNGROOMED = "- [ ] **AC1** The behaviour described is corrected: <restates the summary>"
+
+    def _proj(self, d):
+        root = Path(d)
+        for rel in ("epics", "stories", "bugs", "change-requests", "rfcs"):
+            (root / "sdlc-studio" / rel).mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\n", encoding="utf-8")
+        return root
+
+    def _unit(self, root, rel, uid, head, extra=""):
+        # `Affects` on every unit: `breakdown` grades two questions - is this plannable, and are
+        # its criteria groomed - and only the second is what `_rung_grades` answers. An unsized
+        # container is legitimately named by `breakdown` alone, for a reason unrelated to this
+        # defect, and a fixture omitting it fails the criterion for the wrong cause.
+        (root / "sdlc-studio" / rel / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n{head}\n> **Affects:** src/a.py\n"
+            f"> **Created:** 2026-08-10\n{extra}\n"
+            f"## Acceptance Criteria\n\n{self._UNGROOMED}\n", encoding="utf-8")
+
+    def _batch(self, root):
+        # Containers AND a non-container, so the expected set is never empty.
+        self._unit(root, "epics", "EP0901", "> **Status:** Draft\n> **Size:** M")
+        self._unit(root, "change-requests", "CR0901",
+                   "> **Status:** Proposed\n> **Priority:** Medium\n> **Size:** M")
+        self._unit(root, "rfcs", "RFC0901",
+                   "> **Status:** Draft\n> **Priority:** Medium\n> **Size:** M")
+        self._unit(root, "bugs", "BG0901",
+                   "> **Status:** Open\n> **Severity:** Medium\n> **Points:** 2")
+        return ["EP0901", "CR0901", "RFC0901", "BG0901"]
+
+    def _sets(self, root, batch):
+        """`breakdown` takes RESOLVED dicts and `grooming_report` takes ids, so the worklist
+        reader builds one and the ids feed the other - the same two shapes the CLI uses."""
+        sprint = _load()
+        wl = root / "wl.txt"
+        wl.write_text("\n".join(batch) + "\n", encoding="utf-8")
+        items = sprint._worklist_units(root, wl)[0]
+        bd = sprint.breakdown(root, items)
+        close = sprint.grooming_report(root, batch)
+        # The two surfaces report differently: `breakdown` returns rows, `grooming_report`
+        # returns a COUNT under "ungroomed" and the ids under "names".
+        return (set(self._ids(bd.get("ungroomed") or [])),
+                set(self._ids(close.get("names") or [])))
+
+    @staticmethod
+    def _ids(rows):
+        """The unit ids out of either shape - a list of dicts or of bare ids."""
+        out = []
+        for r in rows:
+            out.append(r.get("id") if isinstance(r, dict) else str(r).split()[0])
+        return out
+
+    def test_breakdown_and_the_close_name_the_same_set_for_an_epic(self) -> None:
+        # AC1. One predicate, asked once, with no third answer.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            batch = self._batch(root)
+            bd, close = self._sets(root, batch)
+            self.assertEqual(close, bd, "breakdown and the close disagree about the batch")
+            self.assertNotIn("EP0901", bd)
+            self.assertTrue(bd, "the fixture must leave a non-empty set, or equality is vacuous")
+
+    def test_a_cr_and_an_rfc_are_skipped_as_containers(self) -> None:
+        # AC2. Per D0172: a request is decomposed rather than delivered.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            batch = self._batch(root)
+            bd, close = self._sets(root, batch)
+            for cid in ("CR0901", "RFC0901"):
+                with self.subTest(cid=cid):
+                    self.assertNotIn(cid, bd)
+                    self.assertNotIn(cid, close)
+
+    def test_ordinary_delivery_units_are_still_graded(self) -> None:
+        # AC3. The control against OVER-widening, and the only row that can catch an exemption
+        # applied to the whole batch: every other criterion asserts something is skipped or that
+        # two surfaces agree, and both stay true when nothing is graded at all.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            batch = self._batch(root)
+            bd, close = self._sets(root, batch)
+            self.assertIn("BG0901", bd, "an ungroomed delivery unit stopped being named")
+            self.assertIn("BG0901", close)
+
+    def test_the_third_surface_agrees_with_the_other_two(self) -> None:
+        # AC4. D0172 names THREE surfaces. A fix repairing two leaves the same divergence in a
+        # different pair, and nothing else would report it.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            batch = self._batch(root)
+            sprint = _load()
+            # `(root, state, rung)`: the third surface reads the batch off the run state, which
+            # is where a close finds it.
+            state = {"batch": batch, "rung": "design", "run_id": "RUN-INERT"}
+            blockers = sprint._rung_product_blockers(root, state, "design")
+            # The blocker this predicate governs is "did not produce its own output" - the
+            # grooming question. The OTHER blocker, "groomed but not at its terminal", is a
+            # status question and names a container for a reason unrelated to container-ness;
+            # matching on the word "groom" catches that one and misses this one.
+            grooming = " ".join(str(b.get("detail", "")) for b in blockers
+                                if "produce its own output" in str(b.get("cause", "")))
+            self.assertTrue(grooming, "the fixture produced no grooming blocker to judge")
+            for cid in ("EP0901", "CR0901", "RFC0901"):
+                with self.subTest(cid=cid):
+                    self.assertNotIn(cid, grooming,
+                                     f"{cid} is a container; the third surface graded it")
+
+    def test_the_breakdown_command_names_the_same_set(self) -> None:
+        # AC5. Through the SHIPPED command. A breakdown consulting the right predicate in a
+        # function the CLI no longer reaches passes every library row above.
+        import subprocess  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d)
+            batch = self._batch(root)
+            wl = Path(d) / "wl.txt"
+            wl.write_text("\n".join(batch) + "\n", encoding="utf-8")
+            r = subprocess.run(
+                [sys.executable, str(SCRIPT), "breakdown", "--root", str(root),
+                 "--worklist", str(wl)],
+                capture_output=True, text=True, timeout=300, check=False)
+            out = r.stdout + r.stderr
+            self.assertEqual(0, r.returncode, out[:500])
+            # The UNGROOMED section only - the command echoes the batch elsewhere, and an id
+            # appearing there says nothing about how it was graded.
+            start = out.index("ungroomed - ")
+            ung = out[start:out.index("fix each one", start)]
+            self.assertIn("BG0901", ung, ung[:400])
+            for cid in ("EP0901", "CR0901", "RFC0901"):
+                with self.subTest(cid=cid):
+                    self.assertNotIn(cid, ung, ung[:400])
+
+
+class HandoffTitleTests(unittest.TestCase):
+    """BG0617: the handoff was titled from the AMBITION, whatever the verdict said.
+
+    `_close_handoff` read `state["sprint_goal"]` unconditionally, so a run closing PARTIAL minted
+    a handoff whose H1, filename slug and index row all asserted the goal the verdict had just
+    denied. The verdict was available at title time all along - it is a plain read of the same
+    `state` dict, three lines below.
+
+    AC1 and AC4 are structurally COUPLED: one title string reaches `artifact.meta_new`, so no
+    mutant can fail the slug without failing the H1. AC4 still earns its place as an oracle over
+    two surfaces the H1 assertion never reads.
+    """
+
+    _GOAL = "Every instrument reports only what its evidence supports"
+
+    def _title_for(self, verdict):
+        """The title `_close_handoff` composes, exercised through the real module."""
+        sprint = _load()
+        state = {"sprint_goal": self._GOAL, "run_id": "RUN-INERT",
+                 "sprint_goal_verdict": {"verdict": verdict}}
+        captured = {}
+
+        def _fake_run_cli(fn, argv):
+            captured["argv"] = argv
+            return 0, ""
+
+        real = sprint._run_cli
+        sprint._run_cli = _fake_run_cli
+        try:
+            sprint._close_handoff(Path("/nonexistent"), "RETRO0001", state)
+        finally:
+            sprint._run_cli = real
+        argv = captured.get("argv") or []
+        return argv[argv.index("--title") + 1] if "--title" in argv else None
+
+    def test_a_partial_close_does_not_title_the_handoff_with_the_goal(self) -> None:
+        # AC1. The narrowing this invites is `verdict == "missed"`, four lines under the title,
+        # which would leave `partial` still borrowing the goal - and partial is the case a real
+        # run hit.
+        for verdict in ("partial", "missed"):
+            with self.subTest(verdict=verdict):
+                title = self._title_for(verdict)
+                self.assertIsNotNone(title)
+                self.assertNotIn(self._GOAL, title, f"{verdict} still asserted the goal")
+                self.assertIn(verdict, title)
+
+    def test_a_goal_reached_close_still_titles_from_the_goal(self) -> None:
+        # AC2. The paired control: the claim is true there, and the title is the one place to
+        # make it. Green at HEAD by design - the over-correction is what it catches.
+        self.assertEqual(self._GOAL, self._title_for("achieved"))
+
+
 if __name__ == "__main__":
     unittest.main()

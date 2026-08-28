@@ -410,7 +410,13 @@ class BuildTests(unittest.TestCase):
             self.assertEqual(r["summary"]["dropped"], 1)
             body = handoff.render_body(r)
             self.assertIn("## Closed without delivery (1)", body)
-            self.assertNotIn("US0002", body.split("## Closed without delivery")[0])
+            # The DELIVERED table specifically. This asserted "nowhere earlier in the
+            # document", which was a proxy for the same thing until BG0617 made the
+            # pick-up section name a dropped unit - correctly, since a run that dropped one
+            # has a tail even though nothing is still open. Narrowed to its own claim
+            # rather than relaxed: a dropped unit must not be reported as DELIVERED.
+            delivered = body.split("## Delivered")[1].split("\n\n##")[0]
+            self.assertNotIn("US0002", delivered, delivered)
 
     def test_a_failed_attempt_under_the_cap_still_shows_its_signature(self) -> None:
         """The guardrail thresholds are CLI flags. A unit that failed once has a signature
@@ -1164,6 +1170,71 @@ class HandoffBulletFollowsTheDocumentTests(unittest.TestCase):
             rp.write_text(before + tail, encoding="utf-8")
             handoff._link_from_retro(rp, "HO-0060", "HO0060-x.md", self._report())
             self.assertIn(tail.strip(), rp.read_text(encoding="utf-8"))
+
+
+class HandoffTitleTests(unittest.TestCase):
+    """BG0617, the handoff-side half: the pick-up section and the surfaces derived from the title."""
+
+    def _report(self, *, dropped=(), remaining=()):
+        units = []
+        for uid in dropped:
+            units.append({"id": uid, "title": "a dropped unit", "terminal": True,
+                          "dropped": "premise did not reproduce", "status": "Closed",
+                          "suitability": {"tag": handoff.JUDGEMENT, "why": "-"}, "pointer": "-"})
+        for uid in remaining:
+            units.append({"id": uid, "title": "an open unit", "terminal": False,
+                          "dropped": "", "status": "In Progress",
+                          "suitability": {"tag": handoff.JUDGEMENT, "why": "-"}, "pointer": "-"})
+        s = {"total": len(units), "remaining": len(remaining), "dropped": len(dropped),
+             handoff.COPILOT_TAIL: 0, handoff.JUDGEMENT: len(remaining)}
+        return {"units": units, "dropped": [u for u in units if u["dropped"]],
+                "remaining": [u for u in units if not u["terminal"]],
+                "summary": s, "worklist": "sdlc-studio/.local/handoff-worklist.txt"}
+
+    def test_the_pick_up_section_names_a_dropped_unit(self) -> None:
+        # AC3. Scoped to the PICK-UP section: `render_body` already emits a separate
+        # `Closed without delivery` heading, so an unscoped assertion is green at HEAD and
+        # pins nothing. A dropped unit is terminal, so `remaining` is empty and the
+        # unconditional "plan the next batch normally" branch is the one that fires.
+        body = handoff._pickup_body(self._report(dropped=["BG0901"]))
+        self.assertIn("BG0901", body, body)
+        self.assertNotIn("plan the next batch normally", body, body)
+
+    def test_a_clean_run_still_says_there_is_no_tail(self) -> None:
+        # The paired control: with nothing dropped and nothing remaining, the unconditional
+        # line is correct and must survive.
+        body = handoff._pickup_body(self._report())
+        self.assertIn("plan the next batch normally", body, body)
+
+    def test_the_slug_and_the_index_row_do_not_carry_the_denied_goal(self) -> None:
+        # AC4. The H1, the filename slug and the index row all derive from ONE title string, so
+        # this is an oracle over two surfaces the H1 assertion never reads. Asserted against a
+        # SLUGIFIED distinctive token that survives truncation: `slug` lowercases and hyphenates
+        # and the filename is cut short, so a raw substring test is vacuously true.
+        goal = "Every instrument reports only what its evidence supports"
+        token = sdlc_md.slug(goal).split("-")[0]
+        outcome_title = "RUN-INERT closed partial"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "handoffs").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\n", encoding="utf-8")
+            (root / "sdlc-studio" / "handoffs" / "_index.md").write_text(
+                "# Handoffs\n\n| ID | Title | Date |\n| --- | --- | --- |\n", encoding="utf-8")
+            # Driven through `handoff.generate`, NOT `artifact.meta_new` directly: the title
+            # reaches the three surfaces through generate, so a test calling meta_new bypasses
+            # exactly the wiring this criterion exists to pin.
+            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "stories" / "US0001-a.md").write_text(
+                "# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            res = handoff.generate(root, outcome_title, batch=["US0001"],
+                                   outcome=run_state.GOAL_REACHED)
+            name = Path(res["path"]).name
+            index = (root / "sdlc-studio" / "handoffs" / "_index.md").read_text(encoding="utf-8")
+            self.assertNotIn(token, name, name)
+            self.assertNotIn(goal, index, index)
+            self.assertIn("closed-partial", name, name)
 
 
 if __name__ == "__main__":

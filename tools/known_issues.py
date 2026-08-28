@@ -137,6 +137,40 @@ def unparseable(repo: Path | None = None) -> list[str]:
             if _read(p) is None]
 
 
+def unclassifiable(repo: Path | None = None) -> dict[str, str]:
+    """`{bug id: severity}` for every finding whose severity is in NEITHER recognised set.
+
+    `corpus()` keeps only DISCLOSED severities and `barred_open()` only BARRED ones, and both
+    `continue` past anything else - so a value in neither is dropped by both, silently, and a
+    finding absent from the bar reads exactly like a corpus that is clean. `unparseable()` cannot
+    catch it, because the file parses: every field is present and one of them is just a word
+    nobody recognises.
+
+    EVERY finding file, not only the open ones. Both readers test open-ness before severity, so
+    an unrecognised value on a closed unit is excluded twice over and would never be seen; the
+    corpus's only instance today is exactly that shape. It is REPORTED rather than barred - an
+    unreadable finding cannot be judged at all, while this one can be read and corrected in a
+    single edit, and making the release bar hostage to a typo is the wrong trade.
+    """
+    base = repo or REPO
+    found: dict[str, str] = {}
+    for path in sorted((base / BUGS_REL).glob("BG*.md")):
+        row = _read(path)
+        if row is None or _matches(row[2], DISCLOSED) or _matches(row[2], BARRED):
+            continue
+        found[row[0]] = row[2]
+    return found
+
+
+def _warn_unclassifiable(repo: Path | None = None) -> None:
+    """Name them, on every path that reads the corpus - the same rule `_warn_unparseable` follows."""
+    odd = unclassifiable(repo)
+    if odd:
+        named = ", ".join(f"{k} ({v})" for k, v in sorted(odd.items()))
+        print(f"warning: {len(odd)} finding(s) carry a severity in neither the barred nor the "
+              f"disclosed set, so they are absent from both - {named}", file=sys.stderr)
+
+
 def _warn_unparseable(repo: Path | None = None) -> None:
     """Say so, on any path that reads the corpus - not only at the release boundary.
 
@@ -220,6 +254,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.bar:
         root = Path(args.root).resolve()
+        # Named on this path too, and BEFORE the verdict. A severity in neither set is
+        # dropped by both readers, so it does not hold the bar - but saying nothing about
+        # it is how it stayed invisible, and this is the surface a release is judged on.
+        _warn_unclassifiable(root)
         open_barred = barred_open(root)
         # A finding neither reader can parse is NOT evidence of a clean corpus. Reported before
         # the verdict and it refuses, because the three guards this replaced each dropped such a
@@ -250,6 +288,7 @@ def main(argv: list[str] | None = None) -> int:
 
     root = Path(args.root).resolve()
     _warn_unparseable(root)   # every path that reads the corpus, not only the release boundary
+    _warn_unclassifiable(root)  # ...and the severities neither reader recognises
     want = render(root)
     page = root / PAGE_REL
 

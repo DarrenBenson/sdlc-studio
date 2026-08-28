@@ -3168,5 +3168,51 @@ class ScalarForListTests(unittest.TestCase):
                 self.assertIn("acs", str(caught.exception))
 
 
+class SeverityVocabularyTests(unittest.TestCase):
+    """BG0624: a severity outside the recognised set is REFUSED at the point of filing.
+
+    Both writers of the field carry the vocabulary. Guarding one leaves the class open through
+    the other, so "stopping the class beats catching the instance" is a claim only both together
+    can make. Refused rather than normalised: guessing what `major` meant would put a word
+    nobody chose on the record.
+    """
+
+    _SCRIPT = Path(__file__).resolve().parent.parent / "file_finding.py"
+
+    @staticmethod
+    def _ARGV(root, severity):
+        return ["file", "--root", str(root), "--type", "bug", "--title", "t",
+                "--summary", "s", "--steps", "s", "--fix", "f", "--points", "2",
+                "--affects", "a.py", "--severity", severity,
+                "--ac", "given x, when y, then z ||| shell true"]
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n", encoding="utf-8")
+        return root
+
+    def _run(self, root, severity):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPT), *self._ARGV(root, severity)],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def test_an_unrecognised_severity_is_refused_at_filing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            bad = self._run(root, "major")
+            self.assertNotEqual(0, bad.returncode, bad.stdout + bad.stderr)
+            self.assertIn("major", bad.stdout + bad.stderr)
+            # The POSITIVE control, named here rather than inherited from a neighbouring suite:
+            # a guard comparing against the wrong set, or case-sensitively, refuses both.
+            good = self._run(root, "High")
+            self.assertNotIn("invalid choice", good.stdout + good.stderr,
+                             "a recognised severity was refused")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1600,6 +1600,14 @@ def cmd_close(args: argparse.Namespace) -> int:
     return 0
 
 
+#: The severities the release bar and the disclosure page between them recognise. A value
+#: outside this set is in NEITHER, so both readers drop it and a finding absent from the
+#: bar reads exactly like a corpus that is clean. Refused at the point of filing rather
+#: than normalised: guessing what `major` meant would put a word nobody chose on the
+#: record. Both writers of this field carry it - guarding one leaves the class open
+#: through the other.
+SEVERITY_VOCAB = ("Critical", "High", "Medium", "Low")
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Deterministic artifact create + close.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -1617,7 +1625,8 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--parent", help="spawn as a child of an existing RFC/CR: the parent must resolve, and both link directions are wired at mint")
     n.add_argument("--priority")
     n.add_argument("--ctype", help="cr type")
-    n.add_argument("--severity", help="bug severity")
+    n.add_argument("--severity", choices=SEVERITY_VOCAB,
+               help="bug severity - Critical, High, Medium or Low. A value outside that set is REFUSED rather than normalised: guessing what `major` meant would put a word nobody chose on the record, and a severity in neither the barred nor the disclosed set is dropped by the release bar and the disclosure page alike, silently")
     n.add_argument("--provenance",
                    help="origin stamp for ingested content (e.g. 'external' for a GitHub "
                         "issue body) - the verify_ac shell gate refuses shell/eval/http "
@@ -1912,11 +1921,24 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
     # --- surface 1: the H1 ---
     m = _H1_RETITLE_RE.search(text)
     if m is None:
-        raise RetitleBlocked("h1",
-            f"{artifact_id}: no `# <ID>: <title>` H1 in {path.name} to rewrite - the title "
-            f"surface cannot be updated. Add the `# {file_id}: <title>` heading, then retitle. "
-            f"Nothing was written.")
-    old_title = m.group(2).strip()
+        # REPAIR rather than refuse. The H1 is the thinnest of the four surfaces and the only
+        # one a hand edit routinely breaks - a parenthetical before the colon, a dropped colon -
+        # and refusing left the artefact untouchable by the tool that exists to touch it, so the
+        # correction had to be made by hand across all four instead.
+        #
+        # The id written is the FILE'S canonical one, never `artifact_id`: `norm_id` folds case
+        # and the dash, so `--id bg0623` resolves, and composing the heading from what the caller
+        # typed would stamp a spelling the rest of the toolchain does not use. Never `path.stem`
+        # either, which is the whole filename.
+        #
+        # This is not an escape from the other three. The repair only decides what surface 1
+        # WILL be; surfaces 2 to 4 are validated below exactly as they are for a parseable H1,
+        # and a failure there still leaves nothing written.
+        repaired_h1 = f"# {file_id}: {new_title}"
+        old_title = ""
+    else:
+        repaired_h1 = None
+        old_title = m.group(2).strip()
 
     # --- surface 2: the filename slug ---
     new_slug = file_finding._slug(new_title)
@@ -1975,7 +1997,15 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
         journal.capture(Path(r["path"]))
     rewritten: list[str] = []
     try:
-        new_text = _H1_RETITLE_RE.sub(lambda mm: mm.group(1) + new_title, text, count=1)
+        if repaired_h1 is not None:
+            # The unparseable heading is REPLACED by a canonical one. Its first line is the H1
+            # by definition of the surface, so the rest of the document is untouched.
+            rest = text.split("\n", 1)
+            new_text = repaired_h1 + ("\n" + rest[1] if len(rest) > 1 else "\n")
+        else:
+            # A PARSEABLE heading keeps its own spelling of the id: group(1) is re-emitted
+            # verbatim, so a dashed or lowercase form the author chose survives the retitle.
+            new_text = _H1_RETITLE_RE.sub(lambda mm: mm.group(1) + new_title, text, count=1)
         today = date.today().isoformat()
         stamped, recorded = transition.append_revision_row(
             new_text, today, sdlc_md.authorship_name(sdlc_md.authorship_value(None, root)),

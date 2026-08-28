@@ -419,5 +419,64 @@ class DepthFieldCountsTests(unittest.TestCase):
                          "unit it describes:\n" + "\n".join(wrong))
 
 
+class UnclassifiableSeverityTests(unittest.TestCase):
+    """BG0624: a severity in NEITHER recognised set is dropped by both readers, silently.
+
+    `corpus()` keeps only DISCLOSED severities and `barred_open()` only BARRED ones, and both
+    `continue` past anything else. `unparseable()` cannot catch it, because the file parses -
+    every field is present and one of them is just a word nobody recognises. So a finding absent
+    from the release bar reads exactly like a corpus that is clean.
+    """
+
+    def _repo(self, d, rows):
+        root = Path(d)
+        (root / ki.BUGS_REL).mkdir(parents=True)
+        for bid, status, sev in rows:
+            (root / ki.BUGS_REL / f"{bid}-x.md").write_text(
+                f"# {bid}: a finding\n\n> **Status:** {status}\n> **Severity:** {sev}\n",
+                encoding="utf-8")
+        return root
+
+    def test_an_unrecognised_severity_is_named_and_not_silently_disclosed(self) -> None:
+        # AC1. BOTH halves. "Reported rather than absent" is satisfied by the id merely appearing
+        # in output, and under the classify-as-disclosed mutant it DOES appear - on the page, as a
+        # disclosed finding. The second half is what catches it.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, [("BG0001", "Open", "major"), ("BG0002", "Open", "Medium")])
+            self.assertEqual({"BG0001": "major"}, ki.unclassifiable(root))
+            self.assertNotIn("BG0001", ki.corpus(root))
+            self.assertNotIn("BG0001", ki.barred_open(root))
+
+    def test_a_recognised_severity_is_classified_exactly_as_today(self) -> None:
+        # AC2. BOTH directions. A mutant folding one reader into the other moves a recognised
+        # severity, and an assertion about one side alone survives it.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, [("BG0001", "Open", "Medium"), ("BG0002", "Open", "High")])
+            self.assertIn("BG0001", ki.corpus(root))
+            self.assertNotIn("BG0001", ki.barred_open(root))
+            self.assertIn("BG0002", ki.barred_open(root))
+            self.assertNotIn("BG0002", ki.corpus(root))
+            self.assertEqual({}, ki.unclassifiable(root))
+
+    def test_both_commands_name_an_unclassifiable_severity(self) -> None:
+        # AC5. The Impact is stated entirely in terms of these two commands, so a repair widening
+        # the population functions while `--bar` still prints `release bar met` and says nothing
+        # passes every library row above. The discriminator is the EXIT CODE as well as the text:
+        # under a widen-the-bar mutant the id also appears, in the NOT-met line.
+        import subprocess  # noqa: PLC0415
+        script = Path(__file__).resolve().parents[1] / "known_issues.py"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, [("BG0001", "Open", "major"), ("BG0002", "Open", "Medium")])
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            bar = subprocess.run(
+                [sys.executable, str(script), "--bar", "--root", str(root)],
+                capture_output=True, text=True, timeout=300, check=False)
+            both = bar.stdout + bar.stderr
+            self.assertIn("BG0001", both, both[:400])
+            self.assertIn("major", both, both[:400])
+            self.assertEqual(0, bar.returncode,
+                             "an unclassifiable severity is reported, never barring")
+
+
 if __name__ == "__main__":
     unittest.main()

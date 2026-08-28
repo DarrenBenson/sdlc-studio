@@ -2090,6 +2090,14 @@ def cmd_rebuild(args: argparse.Namespace) -> int:
     return 0
 
 
+#: The severities the release bar and the disclosure page between them recognise. A value
+#: outside this set is in NEITHER, so both readers drop it and a finding absent from the
+#: bar reads exactly like a corpus that is clean. Refused at the point of filing rather
+#: than normalised: guessing what `major` meant would put a word nobody chose on the
+#: record. Both writers of this field carry it - guarding one leaves the class open
+#: through the other.
+SEVERITY_VOCAB = ("Critical", "High", "Medium", "Low")
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Deterministic Bug/CR/RFC finding filer.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -2105,7 +2113,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "evidence and diffable. An explicit flag overrides the document")
     f.add_argument("--title", help="required unless the --fields-file document carries a title")
     f.add_argument("--summary")
-    f.add_argument("--severity", help="bug severity")
+    f.add_argument("--severity", choices=SEVERITY_VOCAB,
+               help="bug severity - Critical, High, Medium or Low. A value outside that set is REFUSED rather than normalised: guessing what `major` meant would put a word nobody chose on the record, and a severity in neither the barred nor the disclosed set is dropped by the release bar and the disclosure page alike, silently")
     f.add_argument("--priority", help="cr/rfc priority")
     f.add_argument("--ctype", help="cr type (Improvement/Feature/Bug)")
     f.add_argument("--steps", help="bug steps to reproduce")

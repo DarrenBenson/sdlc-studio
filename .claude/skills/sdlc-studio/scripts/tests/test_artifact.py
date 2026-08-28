@@ -2834,5 +2834,133 @@ class CreatorResolverAgreementTests(unittest.TestCase):
             self.assertTrue((dd / target).exists(), f"index link {target!r} does not resolve")
 
 
+class RetitleRepairsTests(unittest.TestCase):
+    """BG0623: an unparseable H1 is REPAIRED, not refused.
+
+    The H1 is the thinnest of retitle's four surfaces and the only one a hand edit routinely
+    breaks - a parenthetical before the colon, a dropped colon. Refusing left the artefact
+    untouchable by the tool that exists to touch it, so the correction had to be made by hand
+    across all four surfaces instead, which is what the tool-first rule exists to prevent.
+    """
+
+    _SCRIPT = Path(__file__).resolve().parent.parent / "artifact.py"
+
+    def _root(self, d, *, h1, name="BG0900-a-broken-heading.md", index=True):
+        root = Path(d)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / name).write_text(
+            f"{h1}\n\n> **Status:** Open\n> **Severity:** Medium\n", encoding="utf-8")
+        if index:
+            (root / "sdlc-studio" / "bugs" / "_index.md").write_text(
+                "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                f"| [BG0900]({name}) | a broken heading | Open |\n", encoding="utf-8")
+        return root
+
+    def _retitle(self, root, rid, title):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPT), "retitle", "--root", str(root),
+             "--id", rid, "--title", title],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def test_the_repaired_heading_carries_the_files_canonical_id(self) -> None:
+        # AC1. The caller spells the id NON-canonically on purpose: `norm_id` folds case and the
+        # dash, so `bg0900` resolves, and an implementation composing the heading from what the
+        # caller typed - or from the whole stem - passes any test that asks canonically.
+        for spelling in ("bg0900", "BG-0900"):
+            with self.subTest(spelling=spelling), tempfile.TemporaryDirectory() as d:
+                root = self._root(d, h1="# BG0900 (CORRECTED - the claim was WRONG): broken")
+                r = self._retitle(root, spelling, "a repaired heading")
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                out = root / "sdlc-studio" / "bugs" / "BG0900-a-repaired-heading.md"
+                self.assertTrue(out.exists(), sorted(
+                    p.name for p in (root / "sdlc-studio" / "bugs").iterdir()))
+                self.assertEqual("# BG0900: a repaired heading",
+                                 out.read_text(encoding="utf-8").splitlines()[0])
+
+    def test_a_differently_formed_heading_is_preserved(self) -> None:
+        # AC2. The form mismatch is required: `_H1_RETITLE_RE` re-emits group(1) verbatim, so for
+        # an ordinary matching heading an unconditional rewrite is byte-identical and a control
+        # built that way pins nothing. Green today, and red under the normalise mutant.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, h1="# BG-0900: broken")
+            r = self._retitle(root, "BG0900", "a repaired heading")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            out = root / "sdlc-studio" / "bugs" / "BG0900-a-repaired-heading.md"
+            self.assertEqual("# BG-0900: a repaired heading",
+                             out.read_text(encoding="utf-8").splitlines()[0])
+
+    def test_a_repair_still_respects_the_all_or_nothing_validation(self) -> None:
+        # AC3. The repair decides what surface 1 WILL be; it is not an escape from surfaces 2-4.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, h1="# BG0900 (CORRECTED): broken", index=False)
+            before = (root / "sdlc-studio" / "bugs" / "BG0900-a-broken-heading.md").read_text(
+                encoding="utf-8")
+            r = self._retitle(root, "BG0900", "a repaired heading")
+            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
+            still = root / "sdlc-studio" / "bugs" / "BG0900-a-broken-heading.md"
+            self.assertTrue(still.exists(), "the file was renamed despite a refused surface")
+            self.assertEqual(before, still.read_text(encoding="utf-8"))
+
+    def test_a_valid_repair_actually_writes_every_surface(self) -> None:
+        # AC4. The positive control AC3 needs: its silence assertion is otherwise satisfied by a
+        # command that refuses everything, which is literally what this bug is about.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, h1="# BG0900 (CORRECTED): broken")
+            r = self._retitle(root, "BG0900", "a repaired heading")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            bugs = root / "sdlc-studio" / "bugs"
+            self.assertTrue((bugs / "BG0900-a-repaired-heading.md").exists())
+            self.assertFalse((bugs / "BG0900-a-broken-heading.md").exists())
+            index = (bugs / "_index.md").read_text(encoding="utf-8")
+            self.assertIn("a repaired heading", index)
+            self.assertIn("BG0900-a-repaired-heading.md", index)
+
+
+class SeverityVocabularyTests(unittest.TestCase):
+    """BG0624: a severity outside the recognised set is REFUSED at the point of filing.
+
+    Both writers of the field carry the vocabulary. Guarding one leaves the class open through
+    the other, so "stopping the class beats catching the instance" is a claim only both together
+    can make. Refused rather than normalised: guessing what `major` meant would put a word
+    nobody chose on the record.
+    """
+
+    _SCRIPT = Path(__file__).resolve().parent.parent / "artifact.py"
+
+    @staticmethod
+    def _ARGV(root, severity):
+        return ["new", "--root", str(root), "--type", "bug", "--title", "t",
+                "--severity", severity, "--affects", "a.py"]
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n", encoding="utf-8")
+        return root
+
+    def _run(self, root, severity):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPT), *self._ARGV(root, severity)],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def test_the_creator_refuses_an_unrecognised_severity_too(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            bad = self._run(root, "major")
+            self.assertNotEqual(0, bad.returncode, bad.stdout + bad.stderr)
+            self.assertIn("major", bad.stdout + bad.stderr)
+            # The POSITIVE control, named here rather than inherited from a neighbouring suite:
+            # a guard comparing against the wrong set, or case-sensitively, refuses both.
+            good = self._run(root, "High")
+            self.assertNotIn("invalid choice", good.stdout + good.stderr,
+                             "a recognised severity was refused")
+
+
 if __name__ == "__main__":
     unittest.main()

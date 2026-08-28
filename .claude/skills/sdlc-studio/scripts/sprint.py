@@ -2128,9 +2128,13 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         # only tool-derived text, were certified GROOMED by the very census whose job is to say
         # whether a batch is worth planning. `transition` refused those same five outright.
         import conformance  # noqa: PLC0415 - deferred; one definition of "ungroomed", never a second
+        # ...and ONE definition of "can this type be graded at all", which is `_rung_grades`.
+        # Asking `unit_is_ungroomed` of every type made `breakdown` a THIRD answer to a question
+        # the close's two surfaces already share: a batch could be refused for holding an
+        # ungroomed epic and then closed reporting that same epic was never gradeable.
         ungroomed_ac, ac_why = (conformance.unit_is_ungroomed(
             it["type"], sdlc_md.read_text_safe(it["path"]))
-            if _enforced("grooming.acs") else (False, ""))
+            if _enforced("grooming.acs") and _rung_grades(it["type"]) else (False, ""))
         _AC_MISS = {
             "no-criteria": "Acceptance Criteria (none at all - a terminal status will refuse it)",
             "placeholder": "Acceptance Criteria (still the grooming placeholder)",
@@ -5235,11 +5239,21 @@ def _close_handoff(root, retro_id, state):
         _finalise_outcome(root, state)
         return True, f"already generated ({state['handoff']}) - skipped", ""
     import handoff  # noqa: PLC0415
-    title = state.get("sprint_goal") or state.get("run_id") or "sprint close"
     # The outcome is DERIVED from the recorded goal-verdict, never defaulted: only an
     # achieved goal closes as goal-reached; partial/missed close as the honest `stopped`.
     verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
     outcome = run_state.GOAL_REACHED if verdict == "achieved" else run_state.STOPPED
+    # ...and the TITLE follows the outcome, not the ambition. The goal was the title
+    # unconditionally, so a run that closed PARTIAL minted a handoff whose H1, filename slug and
+    # index row all asserted the thing the verdict had just denied - and all three derive from
+    # this one string, so getting it wrong is wrong in three places at once. A goal-reached run
+    # keeps the goal, because there the claim is true and the title is the one place to make it.
+    goal = state.get("sprint_goal")
+    # ONE decision, not two: an earlier draft branched and then repeated the goal inside the
+    # else, so a mutant deleting the first branch fell through to the same answer and the
+    # control could not see it.
+    title = (goal if outcome == run_state.GOAL_REACHED and goal
+             else f"{state.get('run_id') or 'sprint'} closed {verdict or 'without a verdict'}")
     rc, out = _run_cli(handoff.main, ["generate", "--title", title,
                                       "--outcome", outcome,
                                       "--retro", retro_id, "--root", str(root)])
@@ -6020,11 +6034,17 @@ def _disclose_delegated_signoffs(root) -> None:
 def _rung_grades(type_: str) -> bool:
     """Whether a RUNG can grade this type at all.
 
-    An epic is a container: its product is the units beneath it, not acceptance criteria of its
-    own, so grading one asks a question it has no answer to. ONE definition, because two of them
-    is the very defect this predicate closes - the report skipped epics while the pre-flight
-    blocked on them, so a single close carried two answers to one question about one batch."""
-    return (type_ or "").lower() != "epic"
+    A CONTAINER is a request or a parent: its product is the units beneath it, not acceptance
+    criteria of its own, so grading one asks a question it has no answer to. ONE definition,
+    because two of them is the very defect this predicate closes - the report skipped epics while
+    the pre-flight blocked on them, so a single close carried two answers to one question about
+    one batch.
+
+    THREE container types, not one, per D0172. `TSHIRT_SIZED_TYPES` is exactly the set the sizing
+    model already treats as containers, and `executes_verifiers` is False for all three: a CR and
+    an RFC are decomposed into units rather than delivered, the same as an epic. Naming the set
+    here rather than repeating `!= "epic"` is what stops the three surfaces drifting again."""
+    return (type_ or "").lower() not in TSHIRT_SIZED_TYPES
 
 
 def grooming_report(root, batch: list[str]) -> dict:
