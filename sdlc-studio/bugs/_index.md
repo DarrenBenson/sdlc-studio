@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-28
+**Last Updated:** 2026-08-29
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 17 |
+| Open | 18 |
 | In Progress | 0 |
 | Fixed | 519 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
 | Superseded | 3 |
-| **Total** | **634** |
+| **Total** | **635** |
 
 ## All Bugs
 
@@ -174,6 +174,7 @@
 | [BG0632](BG0632-a-retro-s-index-carries-no-title-column.md) | a retro's index carries no Title column, so `retitle` would rename the file and leave the index and its inbound link pointing at the old name with the dry-run passing | Open | Medium | 2026-08-27 | 2026-08-27 |
 | [BG0633](BG0633-transition-py-annotate-is-a-third-writer-of.md) | transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the third | Open | Medium | 2026-08-28 | 2026-08-28 |
 | [BG0634](BG0634-the-repair-record-truncates-a-finding-label-inside.md) | the repair record truncates a finding label INSIDE a code span, leaving an unbalanced backtick that fails the repo's own markdownlint and blocks the commit | Open | Medium | 2026-08-28 | 2026-08-28 |
+| [BG0635](BG0635-the-close-s-convergence-series-counts-advisory-gate.md) | the close's convergence series counts ADVISORY gate lanes as outstanding blockers, so the review-repair loop can never converge and every close eventually hits the round cap | Open | Medium | 2026-08-29 | 2026-08-29 |
 
 ## Archived Releases
 

@@ -77,3 +77,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0062](HO0062-a-unit-s-own-evidence-is-made-honest.md) | A unit's own evidence is made honest: a test that never reaches the change it claims to cover is reported rather than counted as proof, and a `Verification depth` field states only what the mutation ledger supports | 2026-08-24 |
 | [HO-0063](HO0063-twelve-of-thirteen-closed-and-bg0607-opens-the.md) | Twelve of thirteen closed, and BG0607 opens the next run | 2026-08-25 |
 | [HO-0064](HO0064-zero-open-high-for-the-first-time-since.md) | Zero open High for the first time since v5.0.1, and every unit rejected first | 2026-08-27 |
+| [HO-0065](HO0065-run-01m11mep-closed-partial.md) | RUN-01M11MEP closed partial | 2026-08-29 |

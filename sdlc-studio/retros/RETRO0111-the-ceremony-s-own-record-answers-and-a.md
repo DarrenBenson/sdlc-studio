@@ -112,6 +112,7 @@ ruling HOLDS the close, which is the point of being able to make one.
 | BG0633 | not-stop-ship | sdlc-studio (agent) | 2026-08-28 |
 | CR0562 | not-stop-ship | sdlc-studio (agent) | 2026-08-28 |
 | BG0634 | not-stop-ship | sdlc-studio (agent) | 2026-08-28 |
+| BG0635 | not-stop-ship | sdlc-studio (agent) | 2026-08-29 |
 
 ## Estimate vs actual
 
@@ -202,6 +203,7 @@ every EXAMPLE row; a row left in place is reported at the close, and a retro sti
 | Finding | Disposition |
 | --- | --- |
 | Seven Done stories (US0569-US0576) became NON-CONFORMANT during this run, up from two at the base ref, because the repaired verdict roll-up stopped masking their unanswered rejections | declined: the count moving is the fix working, not a regression. None is in this batch, each carries a real REJECT no seat answered, and closing them means re-reviewing or waiving on the record - which is next run's work, not a repair to make inside a close |
+| The close's convergence series counts ADVISORY gate lanes as outstanding, so the review-repair loop can never converge and every close is eventually stopped by the round cap while its real blocker set is empty | BG0635 |
 | `critic.py repair` truncates a finding label inside a code span, leaving an unbalanced backtick that fails the repo's own markdownlint and blocks the commit minutes later, pointing at the wrong column | BG0634 |
 | Nothing ticks a delivered unit's acceptance criteria, so the close's compulsory tick-verification row can only be answered by hand-editing every artefact - 58 boxes across ten units this close | CR0562 |
 | The AC parser's edit-verb list refused `stop tracking` and `compare` while accepting `loosen` and `change` | BG0534, BG0563 (both already open) |
@@ -230,3 +232,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: captured at close · Duration: 2026-08-27T12:47:03Z to 2026-08-28 · Critic rejects: 7 delivery REJECTs across 5 of 10 units - BG0619, BG0622, BG0629 once each, BG0623 and BG0624 twice each. Plan review: 28 passes over 10 units, 20 rejected. Every rejection is answered by a recorded repair, none by a later approval.
+
+## Handoff
+
+- [HO-0065](../handoffs/HO0065-run-01m11mep-closed-partial.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
