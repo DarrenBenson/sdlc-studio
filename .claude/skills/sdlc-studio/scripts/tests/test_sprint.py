@@ -17191,7 +17191,11 @@ class FieldsFilePresenceTests(unittest.TestCase):
         # one. The paired positives are beside it, so this cannot be satisfied by refusing more.
         mod = _load()
         base = {"seat": "qa", "done_means": "x", "one_increment": "y"}
-        for value in ("", None):
+        # EVERY degenerate shape, not just the two the criterion happened to name. `0`, `0.0`,
+        # `[]` and `{}` were refused at the base ref and a `str()`-and-strip guard admits all
+        # four, each recording polarity `unclear` - the exact over-correction this row exists to
+        # refuse, shipped once and caught by the delivery review.
+        for value in ("", None, "   ", 0, 0.0, [], {}):
             with self.subTest(value=value):
                 with self.assertRaises(ValueError) as cm:
                     mod._seat_from_dict({**base, "achievable": value})

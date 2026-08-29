@@ -39,8 +39,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0630` | Medium | the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever bei... |
 | `BG0631` | Medium | a repair row names neither the rejection nor the phase it answers, so it is joined by date alone and one day's repair discharges every rejection re... |
 | `BG0632` | Medium | a retro's index carries no Title column, so `retitle` would rename the file and leave the index and its inbound link pointing at the old name with... |
+| `BG0633` | Medium | transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the... |
+| `BG0634` | Medium | the repair record truncates a finding label INSIDE a code span, leaving an unbalanced backtick that fails the repo's own markdownlint and blocks th... |
 
-15 findings: 15 Medium, 0 Low.
+17 findings: 17 Medium, 0 Low.
 
 ## Not carried
 

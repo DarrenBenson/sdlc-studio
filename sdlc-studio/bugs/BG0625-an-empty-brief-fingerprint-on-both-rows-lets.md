@@ -49,19 +49,19 @@ because it is what makes any rejection clearable at all.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a REJECT and a later APPROVE from a DIFFERENT reviewer, both carrying the ledger's absent-brief placeholder `-`, when the standing verdict is read, then it is the REJECT. The absent value is `-`, not the empty string: that string is truthy, so the predicate this bug was filed with never fired and its own criteria would not have caught that
+- [x] **AC1** Given a REJECT and a later APPROVE from a DIFFERENT reviewer, both carrying the ledger's absent-brief placeholder `-`, when the standing verdict is read, then it is the REJECT. The absent value is `-`, not the empty string: that string is truthy, so the predicate this bug was filed with never fired and its own criteria would not have caught that
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::AbsentBriefTests::test_a_placeholder_brief_does_not_retire_a_cross_seat_reject
   - **Verified:** yes (2026-08-27)
-- [ ] **AC2** Given a REJECT and a later APPROVE from the SAME reviewer, both carrying `-`, when the standing verdict is read, then it is STILL the REJECT. Identity does not retire a rejection - a repair does, per BG0629 - and this row exists because the identity rule was proposed, measured against all nine real pairs, and falsified at 0 of 9 matching
+- [x] **AC2** Given a REJECT and a later APPROVE from the SAME reviewer, both carrying `-`, when the standing verdict is read, then it is STILL the REJECT. Identity does not retire a rejection - a repair does, per BG0629 - and this row exists because the identity rule was proposed, measured against all nine real pairs, and falsified at 0 of 9 matching
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::AbsentBriefTests::test_a_placeholder_brief_does_not_retire_a_same_seat_reject_either
   - **Verified:** yes (2026-08-27)
-- [ ] **AC3** Given a REJECT and a later APPROVE carrying the SAME real fingerprint, when the standing verdict is read, then it is the APPROVE - the unchanged path, so normalising the absent case cannot be satisfied by breaking the matched one
+- [x] **AC3** Given a REJECT and a later APPROVE carrying the SAME real fingerprint, when the standing verdict is read, then it is the APPROVE - the unchanged path, so normalising the absent case cannot be satisfied by breaking the matched one
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::AbsentBriefTests::test_a_real_fingerprint_still_retires_after_normalisation
   - **Verified:** yes (2026-08-27)
-- [ ] **AC4** Given a fixture workspace whose `.config.yaml` carries `review.require_brief_provenance: false`, when `critic.py record` writes an unbriefed REJECT from one seat and an unbriefed APPROVE from another, then `critic.py show --format json` reports `verdict.verdict` as REJECT. The bug's own Steps run through `critic.py show`, and its text branch prints a raw dict, so the oracle is the json payload rather than a substring of it
+- [x] **AC4** Given a fixture workspace whose `.config.yaml` carries `review.require_brief_provenance: false`, when `critic.py record` writes an unbriefed REJECT from one seat and an unbriefed APPROVE from another, then `critic.py show --format json` reports `verdict.verdict` as REJECT. The bug's own Steps run through `critic.py show`, and its text branch prints a raw dict, so the oracle is the json payload rather than a substring of it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::AbsentBriefTests::test_the_cli_stands_an_unbriefed_cross_seat_reject
   - **Verified:** yes (2026-08-27)
-- [ ] **AC5** Given THIS repository's verdict ledger, when the roll-up runs after the change, then all NINE placeholder-brief retirements stand as REJECT - US0570, US0571, US0575, US0576, US0569, US0572, US0574, BG0442 and BG0452 - because none of the nine carries a repair record, so none was answered. Seven of them are at Done, and the criterion states that consequence rather than discovering it at the close
+- [x] **AC5** Given THIS repository's verdict ledger, when the roll-up runs after the change, then all NINE placeholder-brief retirements stand as REJECT - US0570, US0571, US0575, US0576, US0569, US0572, US0574, BG0442 and BG0452 - because none of the nine carries a repair record, so none was answered. Seven of them are at Done, and the criterion states that consequence rather than discovering it at the close
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::AbsentBriefTests::test_every_placeholder_brief_retirement_in_the_corpus_stands
   - **Verified:** yes (2026-08-27)
 

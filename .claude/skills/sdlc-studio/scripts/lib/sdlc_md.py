@@ -1185,9 +1185,11 @@ ARTIFACT_TYPES: dict[str, tuple[str, str]] = {
 #: the backlogs, through the schema checks and into the derived-index machinery. They carry no
 #: acceptance criteria, sit on no backlog, and are not sized.
 #:
-#: ONE object, imported by `next_id` and `reconcile` rather than copied. Three equal-but-distinct
-#: literals is the state BG0619 was filed in: the creator minted a retro and the resolver could
-#: not find it, because the two maps had drifted with nothing to notice.
+#: ONE object, imported by `next_id` and `reconcile` rather than copied. BG0619's defect was
+#: not that those two had drifted - measured at the base ref they were equal - it was that
+#: `find_by_id` had NO meta map at all, so the creator minted a retro the resolver could not
+#: find. The copies are unified because a third equal literal is a drift nobody would notice,
+#: which is a different and cheaper argument than claiming one had already happened.
 META_TYPES: dict[str, tuple[str, str]] = {
     "review": ("sdlc-studio/reviews", "RV"),
     "retro": ("sdlc-studio/retros", "RETRO"),
@@ -1198,12 +1200,19 @@ META_TYPES: dict[str, tuple[str, str]] = {
 #: An id token of ANY family - the pipeline prefixes plus the meta ones. `ID_SEARCH_RE`
 #: stays the pipeline-only reader, because widening it would change what counts as an id
 #: on every surface that scans prose for one.
-#: Built FROM `ID_SEARCH_RE`'s own alternation and suffix, not hand-copied, so it is a
-#: strict superset by construction. A hand-written numeric pattern dropped the ULID-v3
-#: form and broke a retitle that had worked - the ids are `CR-01KXRCYNAB`, not `CR-0123`.
+#: Built FROM `ID_SEARCH_RE`'s own pattern by SPLICING the meta prefixes into its alternation,
+#: so the strict-superset property is a fact about the construction rather than a claim in a
+#: comment. It was the latter first: the prefixes were re-typed, a review mutated
+#: `ID_SEARCH_RE` to add one, and this pattern did not follow - which is the fourth hand-copy
+#: of the same list, in the very change filed to abolish hand-copies. A hand-written numeric
+#: pattern also dropped the ULID-v3 form once and broke a retitle that had worked: the ids are
+#: `CR-01KXRCYNAB`, not `CR-0123`.
+_META_PREFIXES = tuple(prefix for _, prefix in META_TYPES.values())
 ANY_ID_SEARCH_RE = re.compile(
-    r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|SC|RFC|CR|IS|RETRO|HO|RV)(?:"
-    + _V3_SUFFIX + r"|-?\d{4,})", re.IGNORECASE)
+    ID_SEARCH_RE.pattern.replace(
+        ")(?:" + _V3_SUFFIX,
+        "|" + "|".join(_META_PREFIXES) + ")(?:" + _V3_SUFFIX, 1),
+    ID_SEARCH_RE.flags)
 
 
 def type_home(type_: str) -> tuple[str, str]:
@@ -1243,15 +1252,28 @@ def _meta_files(type_: str, root: Path):
     their stem - `LATEST.md`, the verdict ledgers, `_index.md` - yield nothing, so the glob
     cannot mint a phantom artefact.
     """
-    rel, _prefix = META_TYPES[type_]
+    try:  # late import: conventions imports this module at load time
+        from lib import conventions
+    except ImportError:
+        import conventions  # type: ignore
+    rel, prefix = META_TYPES[type_]
+    want = prefix.upper()
     d = root / rel
     if not d.is_dir():
         return
+    suffixes = tuple(f"-{s}" for s in conventions.companion_suffixes(root))
     for p in sorted(d.glob("*.md")):
-        if p.name == "_index.md":
+        # EVERY filter the walker applies, because a direct glob that keeps what the walker
+        # drops resolves ids the rest of the toolchain does not believe in. A review found
+        # three: a pipeline id misfiled under `reviews/` resolved AS a review; a companion
+        # note beat the artefact it annotates; and a DIRECTORY named `RETRO0003-adir.md` was
+        # yielded as though it were a file, because `glob` does not filter on `is_file`.
+        if p.name == "_index.md" or not p.is_file():
+            continue
+        if suffixes and p.stem.endswith(suffixes):
             continue
         rec = stem_record_id(p.stem)
-        if rec:
+        if rec and norm_id(rec).startswith(want):
             yield p, rec
 
 # The two backlogs (dual-track: discovery feeds delivery). A DISCOVERY item - an RFC design

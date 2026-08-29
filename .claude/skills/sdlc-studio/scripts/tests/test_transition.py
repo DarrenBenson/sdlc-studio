@@ -5298,24 +5298,29 @@ class PlanReviewRepairGateTests(unittest.TestCase):
             self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
             self.assertIn("the plan oracle cannot fail", r.stdout + r.stderr)
 
-    def test_one_repair_does_not_discharge_a_days_worth_of_rejections(self) -> None:
-        # AC5. The fixture reads COMPLETE but for the guard: two rejections on ONE date raising
-        # the SAME finding, and one repair row closing it. Without that shape `repair_state`
-        # returns `partial` on its own, the criterion passes on pre-existing behaviour and the
-        # mutant reports SURVIVED.
+    def test_a_repair_does_not_discharge_a_rejection_it_did_not_answer(self) -> None:
+        # AC5. Two unanswered rejections raising DIFFERENT findings, and a repair answering only
+        # one. `repair_state` computes `outstanding` PER REJECTION, so the unanswered sibling
+        # keeps the gate closed and is named.
+        #
+        # An earlier version counted repair ROWS against rejections per date as a proxy for the
+        # same property. Once `record_repair` began dispatching each closure to the rejection it
+        # answers, that count refused a genuinely COMPLETE repair whenever one row legitimately
+        # closed two same-date rejections - the ordinary shape - so the proxy was removed and
+        # the real computation is asserted instead.
         with tempfile.TemporaryDirectory() as d:
             root = self._proj(d)
             self._bug(root)
             self._verdicts(root, [
-                self._row("BG0001", "REJECT", "the oracle cannot fail",
+                self._row("BG0001", "REJECT", "finding alpha here",
                           reviewer="qa; independent; r1", brief="aaaaaaaaaaaa"),
-                self._row("BG0001", "REJECT", "the oracle cannot fail",
+                self._row("BG0001", "REJECT", "finding beta here",
                           reviewer="qa; independent; r2", brief="bbbbbbbbbbbb")])
             self._repairs(root, [self._repair_row(
-                "BG0001", "the oracle cannot fail -> rewritten to assert the text")])
+                "BG0001", "finding alpha here -> answered")])
             r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
             self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertIn("must not discharge a day", r.stdout + r.stderr)
+            self.assertIn("finding beta here", r.stdout + r.stderr)
 
 
 if __name__ == "__main__":

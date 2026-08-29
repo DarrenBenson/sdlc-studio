@@ -27,13 +27,13 @@ The identical `or ""` shape sits on 11 other fields-file consumers across `ledge
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a `--fields-file` seat verdict carrying `achievable: false` as a JSON boolean, when the goal review is recorded, then it is ACCEPTED - a recorder that takes the positive verdict and refuses the negative one biases the record toward approval
+- [x] **AC1** Given a `--fields-file` seat verdict carrying `achievable: false` as a JSON boolean, when the goal review is recorded, then it is ACCEPTED - a recorder that takes the positive verdict and refuses the negative one biases the record toward approval
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_a_false_boolean_is_recorded_not_refused
   - **Verified:** yes (2026-08-27)
-- [ ] **AC2** Given a seat verdict whose field is PRESENT but carries no verdict - an empty string, or a JSON null - when it is read, then it is REFUSED naming that field, while `false` and the string `no` are both ACCEPTED and both read as polarity `no`. Presence alone is the over-correction the Proposed Fix invites: `if f not in d` still refuses a missing key, so a control asserting that would survive it, while empty, null and zero all become admissible and `verdict_polarity` reads each as `unclear` - an incomplete verdict let through the guard whose whole job is to refuse one
+- [x] **AC2** Given a seat verdict whose field is PRESENT but carries no verdict - an empty string, or a JSON null - when it is read, then it is REFUSED naming that field, while `false` and the string `no` are both ACCEPTED and both read as polarity `no`. Presence alone is the over-correction the Proposed Fix invites: `if f not in d` still refuses a missing key, so a control asserting that would survive it, while empty, null and zero all become admissible and `verdict_polarity` reads each as `unclear` - an incomplete verdict let through the guard whose whole job is to refuse one
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_a_present_but_verdictless_field_is_still_refused
   - **Verified:** yes (2026-08-27)
-- [ ] **AC3** Given a `--fields-file` carrying `achievable: false`, when `sprint.py goal-review record --fields-file` is run as the SHIPPED COMMAND, then it exits 0 and the stored round carries a seat whose `verdict_polarity` reads `no`. The symptom is a CLI exit 2, and `_seat_from_dict` is reached only through `load_fields_file(..., allowed=("goal", "seats", "brief"))` - an in-process test of the helper passes even if that path stops calling it
+- [x] **AC3** Given a `--fields-file` carrying `achievable: false`, when `sprint.py goal-review record --fields-file` is run as the SHIPPED COMMAND, then it exits 0 and the stored round carries a seat whose `verdict_polarity` reads `no`. The symptom is a CLI exit 2, and `_seat_from_dict` is reached only through `load_fields_file(..., allowed=("goal", "seats", "brief"))` - an in-process test of the helper passes even if that path stops calling it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FieldsFilePresenceTests::test_the_shipped_command_records_a_false_boolean
   - **Verified:** yes (2026-08-27)
 

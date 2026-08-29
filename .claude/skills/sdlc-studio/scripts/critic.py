@@ -1154,11 +1154,45 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
                     f"{rid} resolves to no artefact, so this closure points somewhere nobody "
                     f"can follow: {c['finding']!r}. Checked whatever the disposition - a "
                     f"deferral misread as a fix is exactly how an unresolvable id gets in")
-    outstanding = repair_outstanding(row.get("issues", ""), closures)
-    return _append_row(repair_path(repo_root), _REPAIR_HEADER,
-                       (sdlc_md.norm_id(unit), _clean(str(row.get("date") or "")),
-                        _clean(author), sdlc_md.now_date(), _clean(closed),
-                        _clean("; ".join(outstanding) or "-")))
+    # ONE ROW PER REJECTION the closures actually answer, each stamped with THAT rejection's
+    # own date. `repair_state` joins a repair to a rejection on `verdict_date`, so a single row
+    # stamped with the STANDING verdict's date left every closure answering an earlier rejection
+    # resolving to nothing there - accepted at write time and never counted, so a unit rejected
+    # twice across a day boundary could not reach COMPLETE by any sequence of correct actions.
+    # That is the normal multi-round shape, and it was measured on this function's own unit.
+    #
+    # An ordinal is POSITIONAL, so it belongs to the standing row that numbered it and is never
+    # dispatched elsewhere. Text closures go wherever they resolve.
+    rejections = _unanswered_rejects(live) or [row]
+    standing_date = str(row.get("date") or "")
+    by_date: dict[str, list[dict]] = {}
+    for c in closures:
+        target = standing_date
+        if not _names_by_ordinal(c["finding"]):
+            for rejection in rejections:
+                raised_here = [f["text"] for f in parse_findings(rejection.get("issues", ""))]
+                try:
+                    resolve_finding(c["finding"], raised_here)
+                except (AmbiguousClosure, ValueError):
+                    continue
+                target = str(rejection.get("date") or standing_date)
+                break
+        by_date.setdefault(target, []).append(c)
+    written = None
+    for when, group in sorted(by_date.items()):
+        raised_for = next((r.get("issues", "") for r in rejections
+                           if str(r.get("date") or "") == when), row.get("issues", ""))
+        outstanding = repair_outstanding(raised_for, group)
+        # Re-serialised through the SAME escaping the document path uses. Rebuilding the
+        # row with a bare join silently undid BG0618: an evidence clause carrying a
+        # semicolon was truncated at it and the rest never reached the record.
+        text = closures_from_document(
+            [{"finding": c["finding"], "evidence": c["evidence"]} for c in group])
+        written = _append_row(repair_path(repo_root), _REPAIR_HEADER,
+                              (sdlc_md.norm_id(unit), _clean(when),
+                               _clean(author), sdlc_md.now_date(), _clean(text),
+                               _clean("; ".join(outstanding) or "-")))
+    return written
 
 
 #: How much of a finding a closure must quote before it counts as naming that finding. Below
@@ -1344,11 +1378,13 @@ def plan_review_repair_clears(repo_root: Path | str, unit: str) -> tuple[bool, s
       * the PHASE is passed explicitly. `repair_state` defaults to `delivery`, and a delivery
         repair recorded on the same date as a plan-review rejection would otherwise answer it -
         US0671 and US0674 are live instances.
-      * the COUNT is compared per date. `repair_state` joins a repair to a rejection on the
-        verdict date at DAY granularity, and a repair-and-re-review cycle happens within one day
-        by construction, so one repair could discharge a whole day's rejections. Repairing that
-        join properly needs a ledger column and is BG0631; this is the cheap residual guard, and
-        it fails CLOSED.
+      * a repair that does not answer EVERY unanswered rejection leaves the gate closed. That
+        is `repair_state`'s own doing rather than a guard here: it computes `outstanding` per
+        rejection, so a closure set covering one rejection and not its sibling reads `partial`.
+        An earlier version counted repair ROWS against rejections per date instead, as a proxy
+        for the same thing. It was removed once `record_repair` began dispatching each closure
+        to the rejection it answers: the count then refused a genuinely complete repair whenever
+        one row legitimately closed two same-date rejections, which is the ordinary shape.
     """
     state = repair_state(repo_root, unit, "plan-review")
     if state["state"] != "complete":
@@ -1356,21 +1392,6 @@ def plan_review_repair_clears(repo_root: Path | str, unit: str) -> tuple[bool, s
             return False, "no repair is recorded against it"
         return False, (f"its repair is PARTIAL - {len(state['outstanding'])} finding(s) still "
                        f"outstanding: " + "; ".join(state["outstanding"][:3]))
-    live = [r for r in read_verdicts(repo_root, "plan-review")
-            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit)]
-    rejections_by_date: dict[str, int] = {}
-    for r in _unanswered_rejects(live):
-        when = str(r.get("date") or "")
-        rejections_by_date[when] = rejections_by_date.get(when, 0) + 1
-    repairs_by_date: dict[str, int] = {}
-    for r in repairs_for(repo_root, unit):
-        when = str(r.get("verdict_date") or "")
-        repairs_by_date[when] = repairs_by_date.get(when, 0) + 1
-    for when, n in sorted(rejections_by_date.items()):
-        if repairs_by_date.get(when, 0) < n:
-            return False, (f"{n} unanswered rejection(s) share the date {when} but only "
-                           f"{repairs_by_date.get(when, 0)} repair row(s) do - one repair must "
-                           f"not discharge a day's worth of them")
     return True, ""
 
 

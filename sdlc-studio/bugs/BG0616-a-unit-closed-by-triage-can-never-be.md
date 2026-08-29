@@ -65,22 +65,22 @@ What must NOT happen is the only currently available remedy: adding a non-delive
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit closed by TRIAGE and named in a retro's `fixed` disposition, when close-owed runs, then it is COVERED - a rejection answered by a decision is answered, and a `Batch` line is not the only way to account for a unit
+- [x] **AC1** Given a unit closed by TRIAGE and named in a retro's `fixed` disposition, when close-owed runs, then it is COVERED - a rejection answered by a decision is answered, and a `Batch` line is not the only way to account for a unit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_a_fixed_disposition_covers_a_triage_closure
   - **Verified:** yes (2026-08-27)
-- [ ] **AC2** Given a unit named in a retro's PROSE but in no disposition row at all, when close-owed runs, then it is still OWED. The fixture matters: a unit named in NO retro stays owed however widely the reading is loosened, so a control written that way survives the named-anywhere mutant it exists to catch
+- [x] **AC2** Given a unit named in a retro's PROSE but in no disposition row at all, when close-owed runs, then it is still OWED. The fixture matters: a unit named in NO retro stays owed however widely the reading is loosened, so a control written that way survives the named-anywhere mutant it exists to catch
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_a_mention_in_prose_does_not_cover_a_unit
   - **Verified:** yes (2026-08-27)
-- [ ] **AC3** Given a unit named ONLY in a `filed` disposition - the row that raises future work rather than accounting for delivered work - when close-owed runs, then it is still OWED. Without this, widening coverage lets the retro that FILED a bug discharge it
+- [x] **AC3** Given a unit named ONLY in a `filed` disposition - the row that raises future work rather than accounting for delivered work - when close-owed runs, then it is still OWED. Without this, widening coverage lets the retro that FILED a bug discharge it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_a_filed_disposition_does_not_cover_the_unit_it_raises
   - **Verified:** yes (2026-08-27)
-- [ ] **AC4** Given a unit named in a retro's `Blocked / deferred` section but in NO disposition row, when close-owed runs, then it is still OWED. That section is free prose - it is not in `REQUIRED_SECTIONS` and no check reaches it - and RETRO0109's own bullet names future work in the same sentence as the units it accounts for, so reading it would forgive BG0612 the day it reaches terminal
+- [x] **AC4** Given a unit named in a retro's `Blocked / deferred` section but in NO disposition row, when close-owed runs, then it is still OWED. That section is free prose - it is not in `REQUIRED_SECTIONS` and no check reaches it - and RETRO0109's own bullet names future work in the same sentence as the units it accounts for, so reading it would forgive BG0612 the day it reaches terminal
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_the_blocked_section_is_not_a_coverage_source
   - **Verified:** yes (2026-08-27)
-- [ ] **AC5** Given this repository's own corpus, when the widened check runs, then BG0599 and BG0602 are COVERED by RETRO0109, which names them in a multi-id `fixed-in:` row, and every OTHER owed unit is still reported. The assertion is on those two ids, never on an empty owed set: six units are owed at HEAD, four of them this run's own
+- [x] **AC5** Given this repository's own corpus, when the widened check runs, then BG0599 and BG0602 are COVERED by RETRO0109, which names them in a multi-id `fixed-in:` row, and every OTHER owed unit is still reported. The assertion is on those two ids, never on an empty owed set: six units are owed at HEAD, four of them this run's own
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_the_live_corpus_covers_the_two_triage_closures_and_nothing_else
   - **Verified:** yes (2026-08-27)
-- [ ] **AC6** Given the shipped command rather than the library, when `close_owed.py detect` runs, then it does not name BG0599 or BG0602. The advisory this bug is about is printed by `status` and named by that command, and a library test cannot see either stopping to call the coverage it reads
+- [x] **AC6** Given the shipped command rather than the library, when `close_owed.py detect` runs, then it does not name BG0599 or BG0602. The advisory this bug is about is printed by `status` and named by that command, and a library test cannot see either stopping to call the coverage it reads
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::TriageClosureCoverageTests::test_the_detect_command_no_longer_names_the_two_triage_closures
   - **Verified:** yes (2026-08-27)
 

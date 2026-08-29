@@ -3195,6 +3195,18 @@ class SeverityVocabularyTests(unittest.TestCase):
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n", encoding="utf-8")
         return root
 
+    @staticmethod
+    def _shape(root):
+        """What the run actually produced, with ids and dates normalised away."""
+        out = []
+        for f in sorted((root / "sdlc-studio").rglob("*.md")):
+            if f.name == "_index.md":
+                continue
+            sev = [ln for ln in f.read_text(encoding="utf-8").splitlines()
+                   if ln.startswith("> **Severity:**")]
+            out.append((f.parent.name, f.name.split("-")[0], tuple(sev)))
+        return out
+
     def _run(self, root, severity):
         import subprocess  # noqa: PLC0415
         return subprocess.run(
@@ -3207,11 +3219,150 @@ class SeverityVocabularyTests(unittest.TestCase):
             bad = self._run(root, "major")
             self.assertNotEqual(0, bad.returncode, bad.stdout + bad.stderr)
             self.assertIn("major", bad.stdout + bad.stderr)
+            self.assertIn("severity", (bad.stdout + bad.stderr).lower())
+            self.assertNotIn("UNGROOMED", bad.stdout + bad.stderr,
+                             "refused before the severity guard was reached")
+            # "REFUSED naming the accepted set" is the criterion's words. A message that drops
+            # the vocabulary tells the caller they are wrong without telling them what is right.
+            for word in ("Critical", "High", "Medium", "Low"):
+                self.assertIn(word, bad.stdout + bad.stderr,
+                              f"the refusal does not name {word}, so it does not name the "
+                              f"accepted set the criterion requires")
             # The POSITIVE control, named here rather than inherited from a neighbouring suite:
             # a guard comparing against the wrong set, or case-sensitively, refuses both.
-            good = self._run(root, "High")
-            self.assertNotIn("invalid choice", good.stdout + good.stderr,
-                             "a recognised severity was refused")
+            # EVERY spelling the live corpus actually holds, not just the canonical one.
+            # The readers casefold - `known_issues._matches` says so - so a case-SENSITIVE
+            # writer refuses 21 real findings the release bar classifies perfectly well.
+            for canonical in ("High", "Medium", "Low", "Critical"):
+                with self.subTest(severity=canonical):
+                    shapes = []
+                    for spelling in (canonical, canonical.lower()):
+                        with tempfile.TemporaryDirectory() as inner:
+                            r2 = self._root(inner)
+                            good = self._run(r2, spelling)
+                            self.assertEqual(0, good.returncode,
+                                             f"{spelling!r} is in the live corpus and was "
+                                             f"refused:\n" + good.stdout + good.stderr)
+                            shapes.append(self._shape(r2))
+                    self.assertEqual(shapes[0], shapes[1],
+                                     f"{canonical.lower()!r} was handled differently from "
+                                     f"{canonical!r} - the writer is case-sensitive")
+                    self.assertTrue(shapes[0], f"{canonical!r} wrote nothing at all")
+
+    def test_the_written_severity_is_the_one_requested(self) -> None:
+        """AC9. Comparing a spelling only with its own lowercase twin passes for ANY
+        input-independent value: a writer stamping a constant `Medium` on every finding
+        satisfied both halves of the accept test above, exited 0, and moved a Critical finding
+        off the release bar and onto the disclosure page - the exact harm AC1 names, arriving
+        through the writer rather than the reader. Low is exempt and stated so: it consolidates
+        into a CR that carries no `Severity` line at all.
+        """
+        for canonical in ("High", "Medium", "Critical"):
+            for spelling in (canonical, canonical.lower()):
+                with self.subTest(requested=spelling), tempfile.TemporaryDirectory() as d:
+                    root = self._root(d)
+                    r = self._run(root, spelling)
+                    self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                    written = [line for _, _, sev in self._shape(root) for line in sev]
+                    self.assertIn(f"> **Severity:** {canonical}", written,
+                                  f"{spelling!r} was requested and {written!r} was written")
+
+    def test_surrounding_whitespace_is_trimmed_at_both_ends(self) -> None:
+        """`.strip()`, not `.lstrip()`. `known_issues._matches` strips both ends, so a corpus
+        row written `High ` classifies perfectly well - and a writer trimming only the left
+        refuses it. Unpinned, that mutant survived both suites in full; it is the same argument
+        that makes the comparison case-folded, applied to the other half of the normalisation.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            # A NEWLINE is not in scope: a separate and correct guard refuses it before the
+            # vocabulary is consulted, because a value carrying a break would write lines
+            # nobody asked for. Tabs and spaces are the whitespace that can legitimately reach
+            # `normalise_severity`.
+            for spelling in (" High", "High ", "  high  ", "\tHigh\t"):
+                with self.subTest(spelling=spelling):
+                    r = self._run(root, spelling)
+                    self.assertEqual(0, r.returncode,
+                                     f"{spelling!r} differs from 'High' only in surrounding "
+                                     f"whitespace and was refused:\n{r.stdout}{r.stderr}")
+
+
+class ParentMustBeAbleToCarryTheLinkTests(unittest.TestCase):
+    """BG0619: a parent that RESOLVES but cannot hold a back-link is refused BEFORE the mint.
+
+    Widening `find_by_id` to reach retros, handoffs and reviews made resolving and being
+    linkable diverge. `--parent RETRO0109` then passed the pre-mint guard, the child was
+    written to disk, indexed, and stamped with a one-way `> **Parent:**` line, and only then
+    did `write_decomposed` raise on the meta artefact's absent Status line - so the command
+    printed "file refused" over a finding that exists. A partial write behind a refusal is
+    worse than either outcome alone, and it is the exact asymmetry the guard exists to abolish.
+    """
+
+    _SCRIPT = Path(__file__).resolve().parent.parent / "file_finding.py"
+
+    @staticmethod
+    def _workspace(d, parent_kind):
+        root = Path(d)
+        store = root / "sdlc-studio"
+        for sub in ("bugs", "retros", "change-requests"):
+            (store / sub).mkdir(parents=True)
+        (store / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        (store / "bugs" / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n", encoding="utf-8")
+        if parent_kind == "retro":
+            # A real retro's shape: it records what happened and carries no Status line.
+            (store / "retros" / "RETRO0109-x.md").write_text(
+                "# RETRO-0109: x\n\n> **Date:** 2026-08-01\n\n## Delivered\n\n- nothing\n",
+                encoding="utf-8")
+            (store / "retros" / "_index.md").write_text(
+                "# Retros\n\n| ID | Date |\n| --- | --- |\n"
+                "| [RETRO0109](RETRO0109-x.md) | 2026-08-01 |\n", encoding="utf-8")
+            return root, "RETRO0109"
+        (store / "change-requests" / "CR0900-x.md").write_text(
+            "# CR0900: x\n\n> **Status:** Open\n> **Priority:** Medium\n\n## Summary\n\ns\n",
+            encoding="utf-8")
+        (store / "change-requests" / "_index.md").write_text(
+            "# CRs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [CR0900](CR0900-x.md) | x | Open |\n", encoding="utf-8")
+        return root, "CR0900"
+
+    def _file_under(self, root, parent_id):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPT), "file", "--root", str(root),
+             "--type", "bug", "--title", "t", "--summary", "s", "--steps", "s", "--fix", "f",
+             "--points", "2", "--affects", "a.py", "--severity", "Medium",
+             "--ac", "given x, when y, then z ||| shell true", "--parent", parent_id],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    @staticmethod
+    def _minted(root):
+        store = root / "sdlc-studio" / "bugs"
+        files = [p for p in store.glob("BG*.md") if p.name != "_index.md"]
+        rows = (store / "_index.md").read_text(encoding="utf-8").count("| [BG")
+        return len(files), rows
+
+    def test_a_parent_that_cannot_carry_the_link_is_refused_with_nothing_written(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root, parent_id = self._workspace(d, "retro")
+            r = self._file_under(root, parent_id)
+            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
+            # The refusal is worth nothing if the child is already on disk. BOTH surfaces:
+            # a file with no index row, and an index row with no file, are each half of the
+            # partial write this guard exists to prevent.
+            files, rows = self._minted(root)
+            self.assertEqual((0, 0), (files, rows),
+                             f"the command refused but wrote anyway: {files} file(s), "
+                             f"{rows} index row(s)\n{r.stdout}{r.stderr}")
+            self.assertIn("Status", r.stdout + r.stderr)
+
+    def test_a_parent_that_can_carry_the_link_still_mints(self) -> None:
+        """The positive control. A guard refusing EVERY parent satisfies the row above."""
+        with tempfile.TemporaryDirectory() as d:
+            root, parent_id = self._workspace(d, "cr")
+            r = self._file_under(root, parent_id)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertEqual((1, 1), self._minted(root), r.stdout + r.stderr)
 
 
 if __name__ == "__main__":

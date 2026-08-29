@@ -5700,10 +5700,19 @@ class RepairPlacementTests(unittest.TestCase):
                 root, "BG0001", "eng; session",
                 "the control is vacuous -> repointed at a case today's code does not return",
                 "plan-review")
-            self.assertIn(
-                "the control is vacuous",
-                [c["finding"] for c in mod.repair_state(
-                    root, "BG0001", "plan-review")["closed"]])
+            # The oracle is the RESOLVED state, not the raw parsed closure list. An earlier
+            # version asserted only that the string appeared under "closed", which is true
+            # whether or not it discharges anything - a strictly weaker claim than the criterion,
+            # and it passed while the finding stayed outstanding for ever.
+            st = mod.repair_state(root, "BG0001", "plan-review")
+            self.assertNotIn("the control is vacuous", st["outstanding"], st["outstanding"])
+            # ...and the whole point: a twice-rejected unit must be able to REACH complete.
+            mod.record_repair(root, "BG0001", "eng; session",
+                              "the oracle cannot fail -> rewritten to assert the exact text",
+                              "plan-review")
+            st2 = mod.repair_state(root, "BG0001", "plan-review")
+            self.assertEqual("complete", st2["state"], st2["outstanding"])
+            self.assertEqual((True, ""), mod.plan_review_repair_clears(root, "BG0001"))
 
 
 class AbsentBriefTests(unittest.TestCase):
@@ -5786,6 +5795,16 @@ class AbsentBriefTests(unittest.TestCase):
                  "--unit", "US0017", "--format", "json"],
                 capture_output=True, text=True, timeout=300, check=False)
             self.assertEqual("REJECT", json.loads(r.stdout)["verdict"]["verdict"], r.stdout)
+            # BOTH branches. `show` has two, and only the json one was pinned - a mutant that
+            # made the TEXT branch read `rows[-1]` directly survived the whole suite, which is
+            # the same roll-up bypass this row exists to refuse, reachable by the command a
+            # reader actually types.
+            plain = subprocess.run(
+                [sys.executable, str(SCRIPT), "--root", str(root), "show", "--unit", "US0017"],
+                capture_output=True, text=True, timeout=300, check=False)
+            self.assertIn("REJECT", plain.stdout,
+                          f"the text branch bypassed the roll-up:\n{plain.stdout}")
+            self.assertNotIn("'verdict': 'APPROVE'", plain.stdout, plain.stdout)
 
     def test_every_placeholder_brief_retirement_in_the_corpus_stands(self) -> None:
         # AC5. The corpus is where this defect is live. All NINE stand, because none carries a

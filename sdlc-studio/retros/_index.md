@@ -120,3 +120,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0108](RETRO0108-the-instruments-were-measured-against-the-change-and.md) | The instruments were measured against the change, and wave 2 shipped unreviewed | 2026-08-24 | -- | -- |
 | [RETRO-0109](RETRO0109-twelve-of-thirteen-and-the-thirteenth-was-withdrawn.md) | Twelve of thirteen, and the thirteenth was withdrawn at the close by its own review | 2026-08-25 | -- | -- |
 | [RETRO-0110](RETRO0110-zero-open-high-and-a-backfill-that-made.md) | Zero open High, and a backfill that made the record prettier rather than truer | 2026-08-27 | -- | -- |
+| [RETRO-0111](RETRO0111-the-ceremony-s-own-record-answers-and-a.md) | the ceremony's own record answers, and a repair that kept moving | 2026-08-28 | -- | -- |

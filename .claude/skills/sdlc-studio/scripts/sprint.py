@@ -10183,7 +10183,21 @@ def _seat_from_dict(d: dict) -> dict:
             raise ValueError(f"seat {out['seat'] or '(unnamed)'!r} in --fields-file is missing "
                              f"{f!r} - a verdict needs role, achievable, done_means and "
                              f"one_increment")
-        val = "" if d[f] is None else str(d[f]).strip()
+        # A verdict field is a STRING or a BOOLEAN, and nothing else. Coercing whatever
+        # arrives with `str()` admitted every falsey shape except the empty string - `0`, `0.0`,
+        # `[]` and `{}` were all refused at the base ref and would have started recording as
+        # `unclear`, which is precisely the incomplete verdict this guard exists to refuse. An
+        # author writing `false` as `0` is in the same JSON-encoding family as the bug being
+        # repaired, so it is the likeliest way in.
+        raw = d[f]
+        if isinstance(raw, bool):
+            val = "yes" if raw else "no"
+        elif raw is None or isinstance(raw, str):
+            val = (raw or "").strip()
+        else:
+            raise ValueError(f"seat {out['seat'] or '(unnamed)'!r} in --fields-file gives "
+                             f"{f!r} as {type(raw).__name__}, which is neither a verdict word "
+                             f"nor a boolean - `false` and `no` both read as no")
         if not val:
             raise ValueError(f"seat {out['seat'] or '(unnamed)'!r} in --fields-file has "
                              f"{f!r} present but carrying no verdict - a blank is not an "

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-27
+**Last Updated:** 2026-08-28
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 15 |
+| Open | 17 |
 | In Progress | 0 |
 | Fixed | 519 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 8 |
 | Superseded | 3 |
-| **Total** | **632** |
+| **Total** | **634** |
 
 ## All Bugs
 
@@ -172,6 +172,8 @@
 | [BG0630](BG0630-the-test-plan-gate-is-skipped-on-in.md) | the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever being checked | Open | Medium | 2026-08-27 | 2026-08-27 |
 | [BG0631](BG0631-a-repair-row-names-neither-the-rejection-nor.md) | a repair row names neither the rejection nor the phase it answers, so it is joined by date alone and one day's repair discharges every rejection recorded that day | Open | Medium | 2026-08-27 | 2026-08-27 |
 | [BG0632](BG0632-a-retro-s-index-carries-no-title-column.md) | a retro's index carries no Title column, so `retitle` would rename the file and leave the index and its inbound link pointing at the old name with the dry-run passing | Open | Medium | 2026-08-27 | 2026-08-27 |
+| [BG0633](BG0633-transition-py-annotate-is-a-third-writer-of.md) | transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the third | Open | Medium | 2026-08-28 | 2026-08-28 |
+| [BG0634](BG0634-the-repair-record-truncates-a-finding-label-inside.md) | the repair record truncates a finding label INSIDE a code span, leaving an unbalanced backtick that fails the repo's own markdownlint and blocks the commit | Open | Medium | 2026-08-28 | 2026-08-28 |
 
 ## Archived Releases
 

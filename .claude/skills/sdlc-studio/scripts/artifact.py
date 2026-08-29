@@ -521,7 +521,7 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         # is the failure that floor cannot help with, because by then the words are gone.
         acs = _list(f, "acs")
         ac_body = ("\n## Acceptance Criteria\n\n" + "".join(f"- [ ] {a}\n" for a in acs)) if acs else ""
-        return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n" + _sizing_line("bug", f) +
+        return (head + f"> **Severity:** {normalise_severity(f.get('severity') or 'Medium')}\n" + _sizing_line("bug", f) +
                 "\n## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
                 "\n\n## Steps to Reproduce\n\n" + _text(f, "steps", "{{steps}}") +
                 "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" + ac_body + rev)
@@ -530,7 +530,7 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         # carries a T-shirt Size (the discovery estimate) and a Severity (the urgency a triager
         # prioritises on), but NO Points - it is not a delivery unit; `triage` turns it into the
         # bugs that are. It has no ACs and no fix: those belong to the bugs it produces.
-        return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n" + _sizing_line("issue", f) +
+        return (head + f"> **Severity:** {normalise_severity(f.get('severity') or 'Medium')}\n" + _sizing_line("issue", f) +
                 "\n## Report\n\n" + _text(f, "summary", "{{the raw report or symptom}}") +
                 "\n\n## Observed\n\n" + _text(f, "observed", "{{what was seen, where, environment}}") +
                 "\n" + rev)
@@ -872,7 +872,11 @@ def _refresh_epic_row(root: Path, epic_id: str) -> list[str]:
 # Meta-artifacts: tool-created, outside the status machinery (no status vocab, no
 # transition gate, no conformance stage). A handoff belongs here for the same reason a
 # retro does - it is a generated record OF a run, not a unit of work that moves through one.
-META = ("retro", "review", "handoff")
+# Derived from `sdlc_md.META_TYPES`, never re-typed. A delivery review found this literal
+# surviving as a FOURTH copy of the same three names inside the change filed to abolish
+# hand-copies - and it is the creator half of the creator/resolver pair BG0619 exists to
+# keep in step, so it is the copy that matters most.
+META = tuple(sdlc_md.META_TYPES)
 
 
 def _render_meta(type_: str, disp: str, title: str, today: str, f: dict | None = None) -> str:
@@ -1608,6 +1612,29 @@ def cmd_close(args: argparse.Namespace) -> int:
 #: through the other.
 SEVERITY_VOCAB = ("Critical", "High", "Medium", "Low")
 
+
+def normalise_severity(value: str | None) -> str:
+    """The canonical spelling of a severity, or raise `ValueError` naming the accepted set.
+
+    CASE-FOLDED, not case-sensitive. Both readers fold - `known_issues._matches` does, and its
+    own docstring says the corpus holds seven bugs written `high` - so a writer that refuses
+    them refuses 21 findings the release bar and the disclosure page classify perfectly well.
+    Folding case is not guessing at intent, which is what refusing an unrecognised word is for;
+    it is the same reading the readers already take.
+
+    Raising rather than returning a default: a severity nobody recognises is dropped by BOTH
+    readers, so it is absent from the release bar and the disclosure page at once, and absence
+    reads exactly like a clean corpus.
+    """
+    raw = (value or "").strip()
+    for known in SEVERITY_VOCAB:
+        if raw.casefold() == known.casefold():
+            return known
+    raise ValueError(
+        f"severity {raw!r} is not one of {', '.join(SEVERITY_VOCAB)}. A value outside that set "
+        f"is dropped by the release bar AND the disclosure page, so the finding is absent from "
+        f"both and the absence reads like a clean corpus.")
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Deterministic artifact create + close.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -1625,7 +1652,7 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--parent", help="spawn as a child of an existing RFC/CR: the parent must resolve, and both link directions are wired at mint")
     n.add_argument("--priority")
     n.add_argument("--ctype", help="cr type")
-    n.add_argument("--severity", choices=SEVERITY_VOCAB,
+    n.add_argument("--severity",
                help="bug severity - Critical, High, Medium or Low. A value outside that set is REFUSED rather than normalised: guessing what `major` meant would put a word nobody chose on the record, and a severity in neither the barred nor the disclosed set is dropped by the release bar and the disclosure page alike, silently")
     n.add_argument("--provenance",
                    help="origin stamp for ingested content (e.g. 'external' for a GitHub "
@@ -1819,6 +1846,71 @@ _H1_RETITLE_RE = re.compile(
     r"^(#[^\S\n]+[A-Za-z]+(?:-[0-9A-Za-z]{8,}|-?\d+):[^\S\n]*)(.+?)[^\S\n]*$", re.MULTILINE)
 
 
+#: A LEVEL-ONE ATX heading and nothing else: up to three spaces of indent, EXACTLY one hash,
+#: then whitespace or end of line. Deliberately not `#{1,6}`, and deliberately not
+#: `lstrip().startswith("#")` - three review rounds killed both. The wide patterns have nowhere
+#: safe to go in a document carrying no H1: they take the first `##` and overwrite it, and
+#: `## Summary` is on every bug artefact `_render` writes. The rule that ends this class is not
+#: a longer list of shapes, it is a NARROWER LICENCE TO OVERWRITE - see `_first_h1_line`.
+_H1_LINE_RE = re.compile(r"^ {0,3}#(?:\s|$)")
+
+#: A fence opener or closer. Both the CHARACTER and the RUN LENGTH matter: a four-backtick
+#: fence legitimately contains three-backtick fences, and a `~~~` block is not closed by
+#: ```` ``` ````. Matching a bare three-character prefix flips state on the inner fence and
+#: hands the caller a line that is inside a code block. Group 2 is the info string, which a
+#: CLOSING fence may not have.
+_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})[ \t]*(.*)$")
+
+_COMMENT_OPEN, _COMMENT_CLOSE = "<!--", "-->"
+
+
+def _front_matter_end(lines: list[str]) -> int:
+    """The index just past YAML front matter, or 0. Front matter exists only at line 1."""
+    if not lines or lines[0].strip() != "---":
+        return 0
+    for i in range(1, len(lines)):
+        if lines[i].strip() in ("---", "..."):
+            return i + 1
+    return 0        # unterminated: not front matter, so nothing is skipped
+
+
+def _first_h1_line(lines: list[str]) -> int | None:
+    """The index of the document's level-one ATX heading, or None when there is none to replace.
+
+    OUTSIDE every container that suspends markdown: a fenced code block, an HTML comment, and
+    YAML front matter. None is the SAFE answer and it is deliberately the common one - the
+    caller inserts rather than overwrites, so a shape this function does not understand costs a
+    duplicate heading and never a lost line. That asymmetry is the whole design: the expensive
+    failure is returning a wrong index, because the line is then gone and the command reports
+    success. Three rounds of review each found a new shape the previous version destroyed
+    (a fenced `#` comment, a `#hashtag`, an indented code line, `## Summary`, a `#` inside an
+    HTML comment, a `#` inside front matter); this version can only ever fail towards silence.
+    """
+    i, n = _front_matter_end(lines), len(lines)
+    fence: str | None = None
+    in_comment = False
+    while i < n:
+        line = lines[i]
+        m = _FENCE_RE.match(line)
+        if fence is not None:
+            # A closer matches the opener's character, is at least as long, and carries no
+            # info string. Anything else is content, INCLUDING a shorter run of the same char.
+            if m and m.group(1)[0] == fence[0] and len(m.group(1)) >= len(fence) \
+                    and not m.group(2).strip():
+                fence = None
+        elif in_comment:
+            if _COMMENT_CLOSE in line:
+                in_comment = False
+        elif m:
+            fence = m.group(1)
+        elif _H1_LINE_RE.match(line) and _COMMENT_OPEN not in line:
+            return i
+        elif _COMMENT_OPEN in line and _COMMENT_CLOSE not in line.split(_COMMENT_OPEN, 1)[1]:
+            in_comment = True
+        i += 1
+    return None
+
+
 class RetitleBlocked(ValueError):
     """A retitle refused because one of the four surfaces cannot be updated, naming which.
 
@@ -1998,10 +2090,31 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
     rewritten: list[str] = []
     try:
         if repaired_h1 is not None:
-            # The unparseable heading is REPLACED by a canonical one. Its first line is the H1
-            # by definition of the surface, so the rest of the document is untouched.
-            rest = text.split("\n", 1)
-            new_text = repaired_h1 + ("\n" + rest[1] if len(rest) > 1 else "\n")
+            # The unparseable heading is REPLACED by a canonical one - and finding WHICH line to
+            # replace is the whole of the care here. An earlier version assumed line 1, on the
+            # reasoning that the H1 is the first line "by definition of the surface". That is
+            # false: `_H1_RETITLE_RE.search` scans the WHOLE document, so no match proves only
+            # that no line matches, never that line 1 is the heading. Measured on three real
+            # shapes, all exiting 0: a leading blank line left the broken heading alive at line
+            # 2 under an inserted one; front matter had its opening fence destroyed; and a
+            # document with no heading at all lost its `> **Status:**` line, which
+            # `known_issues._read` requires - silently turning one defect into another.
+            #
+            # So the ONLY line ever overwritten is an unambiguous LEVEL-ONE ATX heading sitting
+            # outside every container that suspends markdown - a fence, an HTML comment, YAML
+            # front matter. Everything else, including a `##` when the document carries no H1,
+            # gets the canonical heading INSERTED instead. The cost of a shape `_first_h1_line`
+            # does not understand is then a duplicate heading a human can see, never a deleted
+            # line the command reports success over. Insertion goes AFTER any front matter,
+            # because an H1 above `---` stops it being front matter at all.
+            lines = text.split("\n")
+            idx = _first_h1_line(lines)
+            if idx is None:
+                at = _front_matter_end(lines)
+                lines[at:at] = [repaired_h1, ""]
+            else:
+                lines[idx] = repaired_h1
+            new_text = "\n".join(lines)
         else:
             # A PARSEABLE heading keeps its own spelling of the id: group(1) is re-emitted
             # verbatim, so a dashed or lowercase form the author chose survives the retitle.

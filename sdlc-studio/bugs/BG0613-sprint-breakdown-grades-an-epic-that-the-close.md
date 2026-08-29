@@ -56,19 +56,19 @@ epic must carry `refine`'s ungroomed token.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a batch holding an epic that carries the ungroomed token AND at least one ungroomed non-container unit, when `sprint breakdown` grades it, then it names the SAME set as the close's surfaces - one predicate, asked once, with no third answer. The non-container unit is required: on a containers-only batch both sets are empty after the fix and the equality is satisfied by naming nothing
+- [x] **AC1** Given a batch holding an epic that carries the ungroomed token AND at least one ungroomed non-container unit, when `sprint breakdown` grades it, then it names the SAME set as the close's surfaces - one predicate, asked once, with no third answer. The non-container unit is required: on a containers-only batch both sets are empty after the fix and the equality is satisfied by naming nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ContainerGradingTests::test_breakdown_and_the_close_name_the_same_set_for_an_epic
   - **Verified:** yes (2026-08-28)
-- [ ] **AC2** Given a batch holding a CR or an RFC, when it is graded, then it is SKIPPED as a container, per D0172 - a request is decomposed rather than delivered, so it carries no criteria of its own to grade
+- [x] **AC2** Given a batch holding a CR or an RFC, when it is graded, then it is SKIPPED as a container, per D0172 - a request is decomposed rather than delivered, so it carries no criteria of its own to grade
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ContainerGradingTests::test_a_cr_and_an_rfc_are_skipped_as_containers
   - **Verified:** yes (2026-08-28)
-- [ ] **AC3** Given a batch of ordinary delivery units carrying the ungroomed token, when it is graded, then every one is still named - the paired control against OVER-widening. It is the only row that can catch an exemption applied to the whole batch, because every other criterion here asserts either that something is skipped or that two surfaces agree, and both remain true when nothing is graded at all
+- [x] **AC3** Given a batch of ordinary delivery units carrying the ungroomed token, when it is graded, then every one is still named - the paired control against OVER-widening. It is the only row that can catch an exemption applied to the whole batch, because every other criterion here asserts either that something is skipped or that two surfaces agree, and both remain true when nothing is graded at all
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ContainerGradingTests::test_ordinary_delivery_units_are_still_graded
   - **Verified:** yes (2026-08-28)
-- [ ] **AC4** Given `_rung_product_blockers`, the THIRD surface D0172 names, when it grades the same batch, then it agrees with the other two. A fix repairing two of three leaves the same divergence in a different pair and nothing would report it
+- [x] **AC4** Given `_rung_product_blockers`, the THIRD surface D0172 names, when it grades the same batch, then it agrees with the other two. A fix repairing two of three leaves the same divergence in a different pair and nothing would report it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ContainerGradingTests::test_the_third_surface_agrees_with_the_other_two
   - **Verified:** yes (2026-08-28)
-- [ ] **AC5** Given the shipped command, when `sprint.py breakdown` runs over a fixture batch as a subprocess, then its ungroomed list matches the close's. The Impact is operator-facing, and a breakdown consulting the right predicate in a function the CLI no longer reaches passes every library row here
+- [x] **AC5** Given the shipped command, when `sprint.py breakdown` runs over a fixture batch as a subprocess, then its ungroomed list matches the close's. The Impact is operator-facing, and a breakdown consulting the right predicate in a function the CLI no longer reaches passes every library row here
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ContainerGradingTests::test_the_breakdown_command_names_the_same_set
   - **Verified:** yes (2026-08-28)
 

@@ -25,16 +25,16 @@ Title the handoff from the OUTCOME, not the ambition. The verdict is already AVA
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a run closing PARTIAL or MISSED, when the handoff is minted, then its title states the OUTCOME and does not assert the goal the verdict just denied - the title is composed at `sprint.py`:5238, which reads `sprint_goal` unconditionally while the verdict sits in the same `state` dict three lines below
+- [x] **AC1** Given a run closing PARTIAL or MISSED, when the handoff is minted, then its title states the OUTCOME and does not assert the goal the verdict just denied - the title is composed at `sprint.py`:5238, which reads `sprint_goal` unconditionally while the verdict sits in the same `state` dict three lines below
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::HandoffTitleTests::test_a_partial_close_does_not_title_the_handoff_with_the_goal
   - **Verified:** yes (2026-08-28)
-- [ ] **AC2** Given a run closing GOAL-REACHED, when the handoff is minted, then its title DOES carry the goal - not "may", which every behaviour satisfies including the over-correction this row exists to catch. The claim is true there and the title is the one place it can be made
+- [x] **AC2** Given a run closing GOAL-REACHED, when the handoff is minted, then its title DOES carry the goal - not "may", which every behaviour satisfies including the over-correction this row exists to catch. The claim is true there and the title is the one place it can be made
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::HandoffTitleTests::test_a_goal_reached_close_still_titles_from_the_goal
   - **Verified:** yes (2026-08-28)
-- [ ] **AC3** Given a run that DROPPED a unit, when the `Where to pick up` SECTION is generated, then it names that unit. The assertion is scoped to that section on purpose: `render_body` already emits a `Closed without delivery` section naming dropped units, so an unscoped test is green at HEAD and pins nothing
+- [x] **AC3** Given a run that DROPPED a unit, when the `Where to pick up` SECTION is generated, then it names that unit. The assertion is scoped to that section on purpose: `render_body` already emits a `Closed without delivery` section naming dropped units, so an unscoped test is green at HEAD and pins nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffTitleTests::test_the_pick_up_section_names_a_dropped_unit
   - **Verified:** yes (2026-08-28)
-- [ ] **AC4** Given a run closing PARTIAL, when the handoff is minted, then its filename SLUG and its `_index.md` row do NOT contain the goal string, and both carry the outcome-derived title. Asserting they match the H1 is not an oracle: `handoff.py`:662 passes ONE title to `artifact.meta_new` and all three surfaces derive from it, so they agree at HEAD and after any fix. The Impact names three lying surfaces and the slug is derived from the title through `artifact.meta_new`, so a fix that changes the rendered heading alone leaves two of the three asserting the denied goal
+- [x] **AC4** Given a run closing PARTIAL, when the handoff is minted, then its filename SLUG and its `_index.md` row do NOT contain the goal string, and both carry the outcome-derived title. Asserting they match the H1 is not an oracle: `handoff.py`:662 passes ONE title to `artifact.meta_new` and all three surfaces derive from it, so they agree at HEAD and after any fix. The Impact names three lying surfaces and the slug is derived from the title through `artifact.meta_new`, so a fix that changes the rendered heading alone leaves two of the three asserting the denied goal
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffTitleTests::test_the_slug_and_the_index_row_do_not_carry_the_denied_goal
   - **Verified:** yes (2026-08-28)
 

@@ -447,6 +447,24 @@ class UnclassifiableSeverityTests(unittest.TestCase):
             self.assertNotIn("BG0001", ki.corpus(root))
             self.assertNotIn("BG0001", ki.barred_open(root))
 
+    def test_a_closed_finding_with_an_unrecognised_severity_is_still_named(self) -> None:
+        """AC6. The reader is deliberately STATUS-BLIND, and that is the whole live case.
+
+        Both classifying readers test open-ness BEFORE severity, so an unrecognised value on a
+        closed unit is excluded twice over. Every fixture in the first cut filed at `Open` while
+        the corpus's only instance - BG0149 (major) - is Fixed, so a mutant skipping closed
+        findings passed all three rows and the defect returned in full on the real tree.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, [("BG0001", "Open", "major"), ("BG0003", "Fixed", "major"),
+                                  ("BG0004", "Closed", "bad"), ("BG0002", "Fixed", "Medium")])
+            self.assertEqual({"BG0001": "major", "BG0003": "major", "BG0004": "bad"},
+                             ki.unclassifiable(root),
+                             "a CLOSED finding's unrecognised severity went unreported - which "
+                             "is the shape the live corpus actually holds")
+            self.assertNotIn("BG0003", ki.corpus(root))
+            self.assertNotIn("BG0003", ki.barred_open(root))
+
     def test_a_recognised_severity_is_classified_exactly_as_today(self) -> None:
         # AC2. BOTH directions. A mutant folding one reader into the other moves a recognised
         # severity, and an assertion about one side alone survives it.
@@ -457,6 +475,23 @@ class UnclassifiableSeverityTests(unittest.TestCase):
             self.assertIn("BG0002", ki.barred_open(root))
             self.assertNotIn("BG0002", ki.corpus(root))
             self.assertEqual({}, ki.unclassifiable(root))
+
+    def test_the_residue_reader_folds_case_and_trims_like_the_classifiers(self) -> None:
+        """AC7. Every fixture above is canonically spelled while the live corpus holds 21
+        lowercase rows, so a case-SENSITIVE residue reader passed the whole suite and turned the
+        real report from one finding into twenty-two - naming findings that classify perfectly
+        well. The residue reader must read a severity exactly as the two classifiers do.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, [("BG0001", "open", "high"), ("BG0002", "Open", "medium"),
+                                  ("BG0003", "Open", "  High  "), ("BG0004", "Open", "LOW")])
+            self.assertEqual({}, ki.unclassifiable(root),
+                             "a lowercase or padded spelling the readers accept was reported "
+                             "as residue")
+            self.assertIn("BG0001", ki.barred_open(root))
+            self.assertIn("BG0002", ki.corpus(root))
+            self.assertIn("BG0003", ki.barred_open(root))
+            self.assertIn("BG0004", ki.corpus(root))
 
     def test_both_commands_name_an_unclassifiable_severity(self) -> None:
         # AC5. The Impact is stated entirely in terms of these two commands, so a repair widening
@@ -476,6 +511,16 @@ class UnclassifiableSeverityTests(unittest.TestCase):
             self.assertIn("major", both, both[:400])
             self.assertEqual(0, bar.returncode,
                              "an unclassifiable severity is reported, never barring")
+            # AC5 is law and says `--bar` AND `--check`. Running only `--bar` left the entire
+            # `--check`/`--write` path unpinned: deleting `_warn_unclassifiable` from it kept
+            # the whole suite green while the command said nothing. The precedent is 166 lines
+            # above - BG0621's `_warn_unparseable` analogue pins both commands for this reason.
+            check = subprocess.run(
+                [sys.executable, str(script), "--check", "--root", str(root)],
+                capture_output=True, text=True, timeout=300, check=False)
+            both_check = check.stdout + check.stderr
+            self.assertIn("BG0001", both_check, both_check[:400])
+            self.assertIn("major", both_check, both_check[:400])
 
 
 if __name__ == "__main__":

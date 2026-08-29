@@ -1287,16 +1287,66 @@ class CreatorResolverAgreementTests(unittest.TestCase):
         return root
 
     def test_every_creatable_type_resolves_to_its_own_type(self) -> None:
-        # AC1. The TYPE is asserted, not merely a non-None path: the two halves of this fix fail
-        # differently, and a widened map with the stem match untouched resolves nothing at all.
+        """AC1, over the creator's OWN list of accepted types rather than a hand-picked five.
+
+        The criterion says "every `--type` the shipped creator accepts", and the class is named
+        for the creator/resolver pair - so the set under test is read from the creator, minted
+        THROUGH it as a subprocess, and resolved back. Hand-writing five fixtures tested five
+        types and left the other eight to a claim; it also could not see a type the creator
+        gained. The TYPE is asserted, not merely a non-None path: the two halves of this fix
+        fail differently, and a widened map with the stem match untouched resolves nothing.
+        """
+        import subprocess  # noqa: PLC0415
+        creator = Path(__file__).resolve().parent.parent / "artifact.py"
+        types = sorted(set(sdlc_md.ARTIFACT_TYPES) | set(sdlc_md.META_TYPES))
+        self.assertGreaterEqual(len(types), 10, "the type census collapsed - check the maps")
         with tempfile.TemporaryDirectory() as d:
-            root = self._root(d)
-            for rec, want in (("RETRO0001", "retro"), ("HO0001", "handoff"),
-                              ("RV0001", "review"),
-                              ("BG0001", "bug"), ("US0001", "story")):
-                with self.subTest(rec=rec):
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\n", encoding="utf-8")
+            # Four types need more than a title, so they get it: minting only the easy nine
+            # would leave the other four to the same claim this test exists to replace.
+            fields = root / "charter-fields.json"
+            fields.write_text('{"goal": "g", "scope": "s"}', encoding="utf-8")
+            extra = {
+                "bug": ["--points", "2", "--affects", "a.py", "--severity", "Medium"],
+                "cr": ["--points", "2", "--affects", "a.py"],
+                "charter": ["--fields-file", str(fields)],
+            }
+
+            def mint(type_, *more):
+                r = subprocess.run(
+                    [sys.executable, str(creator), "new", "--root", str(root),
+                     "--type", type_, "--title", f"a {type_}",
+                     *extra.get(type_, []), *more],
+                    capture_output=True, text=True, timeout=300, check=False)
+                self.assertEqual(0, r.returncode,
+                                 f"the creator accepts --type {type_} but refused it here, so "
+                                 f"the pair is untested:\n{r.stdout}{r.stderr}")
+                # `any_record_id`, not `extract_record_id`: the latter is the PIPELINE reader
+                # and returns None for `HO-0001`, `RV-0001` and `RETRO-0001`. Reading the
+                # creator's own output back is exactly the creator/resolver pair this class is
+                # named for, and the first draft of this helper failed on it.
+                return sdlc_md.any_record_id(
+                    (r.stdout + r.stderr).split("created ", 1)[-1].split(" ", 1)[0])
+
+            epic_id = mint("epic")
+            minted = {epic_id: "epic"}
+            for type_ in types:
+                if type_ == "epic":
+                    continue
+                rec = mint(type_, *(["--epic", str(epic_id)] if type_ == "story" else []))
+                self.assertIsNotNone(rec, f"no id could be read back for {type_}")
+                minted[rec] = type_
+            self.assertEqual(
+                len(types), len(minted),
+                f"only {len(minted)} of {len(types)} types minted, so this proves little")
+            for rec, want in sorted(minted.items()):
+                with self.subTest(rec=rec, type_=want):
                     hit = sdlc_md.find_by_id(root, rec)
-                    self.assertIsNotNone(hit, f"{rec} did not resolve")
+                    self.assertIsNotNone(hit, f"{rec} was MINTED by the creator and the "
+                                              f"resolver cannot find it - BG0619's own defect")
                     self.assertEqual(want, hit[1])
             self.assertIsNone(sdlc_md.find_by_id(root, "RETRO9999"))
 
@@ -1314,31 +1364,121 @@ class CreatorResolverAgreementTests(unittest.TestCase):
                         self.assertEqual(want, hit[1])
 
     def test_the_any_id_reader_is_a_strict_superset_of_the_pipeline_one(self) -> None:
-        """Regression guard. `ANY_ID_SEARCH_RE` widens the id reader for the index-row match, and
-        the first version was hand-written as a numeric pattern - which silently dropped the
-        ULID-v3 form (`CR-01KXRCYNAB`, not `CR-0123`) and broke a retitle that had worked. It is
-        now built from `ID_SEARCH_RE`'s own alternation and suffix, and this asserts the property
-        rather than trusting the construction.
+        """The PROPERTY, mechanically. A probe list is not a superset proof: a review mutated
+        `ID_SEARCH_RE` to add a prefix that `ANY_ID_SEARCH_RE` did not follow, and the eight-shape
+        version of this test stayed green because no probe used the new prefix. So this asserts
+        the construction itself - the widened pattern must literally CONTAIN the pipeline
+        alternation - and then re-checks the shapes that motivated it, the ULID-v3 form included
+        (`CR-01KXRCYNAB`, not `CR-0123`), which a hand-written numeric pattern once dropped.
         """
-        for probe in ("CR-01KXRCYNAB", "BG0615", "US0001", "RFC0054", "EP0217",
-                      "HO0063", "RETRO0109", "RV0007"):
+        pipeline = sdlc_md.ID_SEARCH_RE.pattern
+        alternation = pipeline.split("(?:", 1)[1].split(")", 1)[0]
+        self.assertIn(
+            alternation, sdlc_md.ANY_ID_SEARCH_RE.pattern,
+            "the widened reader does not contain the pipeline alternation verbatim, so it is a "
+            "hand-copy again and a prefix added to one will not reach the other")
+        self.assertEqual(sdlc_md.ID_SEARCH_RE.flags, sdlc_md.ANY_ID_SEARCH_RE.flags)
+        for prefix in ("EP", "US", "PL", "BG", "TS", "WF", "SC", "RFC", "CR", "IS"):
+            for probe in (f"{prefix}0001", f"{prefix}-01KXRCYNAB"):
+                with self.subTest(probe=probe):
+                    self.assertEqual(
+                        bool(sdlc_md.ID_SEARCH_RE.search(probe)),
+                        bool(sdlc_md.ANY_ID_SEARCH_RE.search(probe)),
+                        f"{probe!r} is read differently by the two readers")
+        for probe in ("HO0063", "RETRO0109", "RV0007", "RETRO-01M13SMS"):
             with self.subTest(probe=probe):
-                if sdlc_md.ID_SEARCH_RE.search(probe):
-                    self.assertTrue(
-                        sdlc_md.ANY_ID_SEARCH_RE.search(probe),
-                        f"{probe!r} matches the pipeline reader but not the widened one")
+                self.assertTrue(sdlc_md.ANY_ID_SEARCH_RE.search(probe))
+                self.assertFalse(sdlc_md.ID_SEARCH_RE.search(probe),
+                                 f"{probe!r} leaked into the PIPELINE reader, which would change "
+                                 f"what counts as an id on every surface that scans prose")
 
     def test_the_meta_types_stay_off_the_backlog_and_the_scope_census(self) -> None:
-        # AC3. The blast radius D0174 exists to avoid: roughly twenty scripts ITERATE
-        # `ARTIFACT_TYPES`, so a meta type added there lands on the backlogs, through the schema
-        # checks and into the derived-index machinery.
+        """AC6, as an A/B over a real workspace rather than as map membership.
+
+        The blast radius D0174 exists to avoid: roughly twenty scripts ITERATE `ARTIFACT_TYPES`,
+        so a meta type added there lands on the backlogs, through the schema checks and into the
+        derived-index machinery. Asserting `"retro" not in ARTIFACT_TYPES` does not measure that
+        - a review mutated the WALKER to serve meta types and added them to `status.BACKLOG_TYPES`,
+        and the membership version of this test stayed green while the backlog counts moved. So
+        this builds a workspace, counts the backlog with the three meta artefacts absent and
+        again with them present, and requires the two counts to be identical.
+        """
         for name in ("retro", "handoff", "review"):
             with self.subTest(type_=name):
                 self.assertNotIn(name, sdlc_md.ARTIFACT_TYPES)
                 self.assertIn(name, sdlc_md.META_TYPES)
+
+        # Through the SHIPPED backlog reader, not a local census over `ARTIFACT_TYPES`. The
+        # first version of this A/B counted only the types it already knew about, so a mutant
+        # that put meta artefacts on the backlog moved a number this test never looked at.
+        status = _load("status_for_meta_census", "status.py")
+
+        def census(root):
+            return {k: sorted((v or {}).items()) if isinstance(v, dict) else v
+                    for k, v in status.backlog(root).items()}
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            store = root / "sdlc-studio"
+            (store / "bugs").mkdir(parents=True)
+            (store / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+            (store / "bugs" / "BG0900-x.md").write_text(
+                "# BG0900: x\n\n> **Status:** Open\n> **Severity:** Medium\n\n"
+                "## Summary\n\ns\n", encoding="utf-8")
+            before = census(root)
+            for type_, (rel, prefix) in sdlc_md.META_TYPES.items():
+                (root / rel).mkdir(parents=True, exist_ok=True)
+                (root / rel / f"{prefix}0001-x.md").write_text(
+                    f"# {prefix}0001: x\n\n> **Date:** 2026-08-01\n\n## Body\n\nb\n",
+                    encoding="utf-8")
+                # The artefact must be REACHABLE as a meta type, or this A/B proves only that
+                # three unreadable files were ignored.
+                self.assertIsNotNone(sdlc_md.find_by_id(root, f"{prefix}0001"),
+                                     f"{prefix}0001 was not resolvable, so the census A/B below "
+                                     f"would pass for the wrong reason")
+            self.assertEqual(before, census(root),
+                             "a meta artefact reached the delivery/discovery census - the blast "
+                             "radius D0174 was recorded to avoid")
+
         reconcile = _load("reconcile_for_meta", "reconcile.py")
         for name in ("retro", "handoff", "review"):
             self.assertNotIn(name, reconcile.DEFAULT_TYPES)
+
+    def test_the_meta_glob_keeps_only_what_the_walker_would_keep(self) -> None:
+        """A DIRECT GLOB that admits what the pipeline walker drops resolves ids the rest of the
+        toolchain does not believe in. A review found three such shapes, all resolving: a
+        pipeline id misfiled under `reviews/` came back typed as a review; a companion note beat
+        the artefact it annotates; and a DIRECTORY named `RETRO0003-adir.md` was yielded as a
+        Path because `glob` does not filter on `is_file`. Each is a phantom artefact - and the
+        docstring on `_meta_files` claimed the glob could not mint one.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for rel, _prefix in sdlc_md.META_TYPES.values():
+                (root / rel).mkdir(parents=True)
+            (root / "sdlc-studio").mkdir(exist_ok=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\n", encoding="utf-8")
+            body = "# x\n\n> **Date:** 2026-08-01\n\n## Body\n\nb\n"
+            reviews, retros = Path("sdlc-studio/reviews"), Path("sdlc-studio/retros")
+            (root / reviews / "BG9001-a-review-of-a-bug.md").write_text(body, encoding="utf-8")
+            (root / retros / "RETRO0002-real.md").write_text(body, encoding="utf-8")
+            (root / retros / "RETRO0002-aaa-consultations.md").write_text(body, encoding="utf-8")
+            (root / retros / "RETRO0003-adir.md").mkdir()
+
+            # A pipeline id filed in a meta directory is NOT a meta artefact of that type.
+            hit = sdlc_md.find_by_id(root, "BG9001")
+            self.assertNotEqual("review", (hit or (None, None))[1],
+                                "a misfiled pipeline id resolved as a review")
+            # A companion never beats the artefact it annotates - the walker excludes it.
+            hit = sdlc_md.find_by_id(root, "RETRO0002")
+            self.assertIsNotNone(hit)
+            self.assertEqual("RETRO0002-real.md", hit[0].name,
+                             "a companion note won over the real retro")
+            # A directory is not a file, however it is named.
+            hit = sdlc_md.find_by_id(root, "RETRO0003")
+            self.assertIsNone(hit, "a DIRECTORY was resolved as an artefact")
+
 
 if __name__ == "__main__":
     unittest.main()

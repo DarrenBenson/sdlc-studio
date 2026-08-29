@@ -763,10 +763,12 @@ def detect_type(type_: str, repo_root: Path) -> dict:
 # deliberately exclude, so it needs its own extractor rather than `index_row_ids`.
 # -----------------------------------------------------------------------------
 # THE object `sdlc_md` holds. The local literal this replaces was commented as avoiding a
-# reconcile->next_id import - an import this module already makes at module scope, and one
-# the lift makes unnecessary anyway. Three equal-but-distinct copies is the state BG0619 was
-# filed in, and two converging while a third drifts is the same defect with a smaller
-# population.
+# reconcile->next_id import; the lift makes that import unnecessary rather than
+# redundant, because the map now comes from a module this one already imports. (The
+# earlier wording here claimed reconcile ALREADY imported next_id at module scope. It
+# does not, and never did - `grep -c next_id reconcile.py` returned 1, which was that
+# comment quoting itself.) Equal-but-distinct copies is the state BG0619 was filed in,
+# and two converging while a third drifts is the same defect with a smaller population.
 _META_INDEX = sdlc_md.META_TYPES
 
 

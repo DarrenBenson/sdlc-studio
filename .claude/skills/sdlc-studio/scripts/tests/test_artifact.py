@@ -2879,6 +2879,120 @@ class RetitleRepairsTests(unittest.TestCase):
                 self.assertEqual("# BG0900: a repaired heading",
                                  out.read_text(encoding="utf-8").splitlines()[0])
 
+    def test_the_heading_is_found_rather_than_assumed_to_be_line_one(self) -> None:
+        """The regression the delivery review caught: `_H1_RETITLE_RE.search` scans the WHOLE
+        document, so no match proves only that no line matches - never that line 1 is the
+        heading. Assuming index 0 left the broken heading alive under an inserted one, and
+        destroyed a `> **Status:**` line when there was no heading at all.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, h1="\n# BG0900 (CORRECTED): broken")
+            r = self._retitle(root, "BG0900", "a repaired heading")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            body = (root / "sdlc-studio" / "bugs"
+                    / "BG0900-a-repaired-heading.md").read_text(encoding="utf-8")
+            self.assertEqual(1, body.count("# BG0900"), body)
+            self.assertNotIn("CORRECTED", body, body)
+
+    def test_a_document_with_no_heading_keeps_every_line_it_had(self) -> None:
+        """The data-loss half. With nothing heading-shaped the canonical H1 is INSERTED above
+        the document, never written over whatever happened to be first - `known_issues._read`
+        requires the `Status` field, so destroying it converts one defect into another."""
+        with tempfile.TemporaryDirectory() as d:
+            # A DISTINCTIVE first line that appears exactly once. `_root` appends its own
+            # `> **Status:** Open`, so using that as the first line leaves a duplicate and the
+            # destruction is invisible - the mutant survived on precisely that fixture flaw.
+            root = self._root(d, h1="> **Raised-by:** the-only-line-that-proves-this")
+            before = (root / "sdlc-studio" / "bugs"
+                      / "BG0900-a-broken-heading.md").read_text(encoding="utf-8")
+            self.assertEqual(1, before.count("the-only-line-that-proves-this"), before)
+            r = self._retitle(root, "BG0900", "a repaired heading")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            body = (root / "sdlc-studio" / "bugs"
+                    / "BG0900-a-repaired-heading.md").read_text(encoding="utf-8")
+            self.assertTrue(body.startswith("# BG0900: a repaired heading"), body)
+            for line in before.splitlines():
+                if line.strip():
+                    self.assertIn(line, body, f"{line!r} was destroyed by the repair")
+
+    def test_no_shape_loses_content_and_only_a_level_one_heading_is_overwritten(self) -> None:
+        """The INVARIANT, not a list of shapes. Three review rounds each named the shapes the
+        previous repair destroyed and each repair then destroyed the next one along - a fenced
+        `#` comment, a `#hashtag`, an indented code line, `## Summary`, a `#` inside an HTML
+        comment, a `#` inside front matter. Enumerating shapes is what failed; what holds is
+        the asymmetry: the ONLY line ever overwritten is an unambiguous level-one ATX heading
+        outside every container, and every other shape gets an INSERT. So each case below
+        asserts the same three things - the canonical H1 exists, the broken one is gone or was
+        never a heading, and the distinctive `KEEPME` marker count is UNCHANGED. A shape the
+        finder misreads costs a duplicate heading; it must never cost a line.
+        """
+        f, tl = "`" * 3, "~" * 3
+        cases = {
+            # The round-3 blockers, each executed and each a data loss at exit 0 before this.
+            "no H1, only a sub-heading":
+                "## KEEPME Summary\n\nbody\n\n> **Status:** Open\n",
+            "broken heading with no space after the hash":
+                "#BG0900: broken\n\n## KEEPME Summary\n\n> **Status:** Open\n",
+            "four-backtick fence wrapping a three-backtick one":
+                f"{f}`\n{f}\n# KEEPME comment\n{f}\n{f}`\n\n"
+                "# BG0900 (CORRECTED): broken\n\n> **Status:** Open\n",
+            "tilde fence":
+                f"{tl}\n# KEEPME comment\n{tl}\n\n"
+                "# BG0900 (CORRECTED): broken\n\n> **Status:** Open\n",
+            "HTML comment holding a hash line":
+                "<!--\n# KEEPME comment\n-->\n\n"
+                "# BG0900 (CORRECTED): broken\n\n> **Status:** Open\n",
+            "YAML front matter holding a hash line":
+                "---\n# KEEPME: front matter\ntag: x\n---\n\n"
+                "## KEEPME2 Summary\n\n> **Status:** Open\n",
+            # `first`, pinned. A finder returning the LAST heading passed every earlier fixture,
+            # because each held exactly one.
+            "two level-one headings":
+                "# BG0900 (CORRECTED): broken\n\n# KEEPME second heading\n\n"
+                "> **Status:** Open\n",
+            "seven hashes is not a heading":
+                "####### KEEPME\n\n# BG0900 (CORRECTED): broken\n\n> **Status:** Open\n",
+            # Shapes the finder deliberately declines to understand: it must INSERT, not guess.
+            "setext heading":  "KEEPME Title\n=====\n\n> **Status:** Open\n",
+            "unclosed fence":  f"{f}\n# KEEPME comment\n\n> **Status:** Open\n",
+            "leading blank line":
+                "\n# BG0900 (CORRECTED): broken\n\n> **KEEPME:** x\n> **Status:** Open\n",
+            "indented code line":
+                "    # KEEPME code\n\n# BG0900 (CORRECTED): broken\n\n> **Status:** Open\n",
+            "hashtag prose":
+                "#KEEPME not a heading\n\n# BG0900 (CORRECTED): broken\n\n> **Status:** Open\n",
+            "no heading of any kind":
+                "just prose, KEEPME\n\n> **Status:** Open\n",
+        }
+        for name, body in cases.items():
+            with self.subTest(shape=name), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+                (root / "sdlc-studio" / ".config.yaml").write_text(
+                    "schema_version: 3\n", encoding="utf-8")
+                (root / "sdlc-studio" / "bugs" / "BG0900-a-broken-heading.md").write_text(
+                    body, encoding="utf-8")
+                (root / "sdlc-studio" / "bugs" / "_index.md").write_text(
+                    "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                    "| [BG0900](BG0900-a-broken-heading.md) | a broken heading | Open |\n",
+                    encoding="utf-8")
+                r = self._retitle(root, "BG0900", "a repaired heading")
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                out = (root / "sdlc-studio" / "bugs"
+                       / "BG0900-a-repaired-heading.md").read_text(encoding="utf-8")
+                self.assertIn("# BG0900: a repaired heading", out, out)
+                self.assertNotIn("CORRECTED", out, f"{name}: broken heading survived\n{out}")
+                self.assertEqual(
+                    body.count("KEEPME"), out.count("KEEPME"),
+                    f"{name}: content was DESTROYED at exit 0\n--- before ---\n{body}"
+                    f"\n--- after ---\n{out}")
+                # An insert can preserve every marker and still break the document: an H1
+                # written ABOVE `---` stops it being front matter at all, which no count of
+                # surviving lines can see. Pinned separately for that reason.
+                if body.startswith("---"):
+                    self.assertTrue(out.startswith("---"),
+                                    f"{name}: front matter no longer opens the file\n{out}")
+
     def test_a_differently_formed_heading_is_preserved(self) -> None:
         # AC2. The form mismatch is required: `_H1_RETITLE_RE` re-emits group(1) verbatim, so for
         # an ordinary matching heading an unconditional rewrite is byte-identical and a control
@@ -2931,8 +3045,11 @@ class SeverityVocabularyTests(unittest.TestCase):
 
     @staticmethod
     def _ARGV(root, severity):
+        # --points is REQUIRED by the grooming gate. Without it the creator refuses before it
+        # ever reaches the severity guard, and the accept half of this suite then asserts
+        # nothing - which is exactly how it passed against a guard refusing every severity.
         return ["new", "--root", str(root), "--type", "bug", "--title", "t",
-                "--severity", severity, "--affects", "a.py"]
+                "--severity", severity, "--affects", "a.py", "--points", "2"]
 
     def _root(self, d):
         root = Path(d)
@@ -2942,6 +3059,18 @@ class SeverityVocabularyTests(unittest.TestCase):
         (root / "sdlc-studio" / "bugs" / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n", encoding="utf-8")
         return root
+
+    @staticmethod
+    def _shape(root):
+        """What the run actually produced, with ids and dates normalised away."""
+        out = []
+        for f in sorted((root / "sdlc-studio").rglob("*.md")):
+            if f.name == "_index.md":
+                continue
+            sev = [ln for ln in f.read_text(encoding="utf-8").splitlines()
+                   if ln.startswith("> **Severity:**")]
+            out.append((f.parent.name, f.name.split("-")[0], tuple(sev)))
+        return out
 
     def _run(self, root, severity):
         import subprocess  # noqa: PLC0415
@@ -2955,12 +3084,81 @@ class SeverityVocabularyTests(unittest.TestCase):
             bad = self._run(root, "major")
             self.assertNotEqual(0, bad.returncode, bad.stdout + bad.stderr)
             self.assertIn("major", bad.stdout + bad.stderr)
+            # The REASON, not merely the word: the grooming gate also exits non-zero and can
+            # echo the argument back, so "refused" alone does not prove the vocabulary ran.
+            self.assertIn("severity", (bad.stdout + bad.stderr).lower())
+            self.assertNotIn("UNGROOMED", bad.stdout + bad.stderr,
+                             "refused before the severity guard was reached")
+            # "REFUSED naming the accepted set" is the criterion's words. A message that drops
+            # the vocabulary tells the caller they are wrong without telling them what is right.
+            for word in ("Critical", "High", "Medium", "Low"):
+                self.assertIn(word, bad.stdout + bad.stderr,
+                              f"the refusal does not name {word}, so it does not name the "
+                              f"accepted set the criterion requires")
             # The POSITIVE control, named here rather than inherited from a neighbouring suite:
             # a guard comparing against the wrong set, or case-sensitively, refuses both.
-            good = self._run(root, "High")
-            self.assertNotIn("invalid choice", good.stdout + good.stderr,
-                             "a recognised severity was refused")
+            # EVERY spelling the live corpus actually holds, not just the canonical one.
+            # The readers casefold - `known_issues._matches` says so - so a case-SENSITIVE
+            # writer refuses 21 real findings the release bar classifies perfectly well.
+            # Each spelling in a FRESH root, and a lowercase spelling asserted to produce the
+            # SAME OUTCOME as its canonical form. That is the real claim - the readers casefold
+            # (`known_issues._matches`), so a case-SENSITIVE writer splits one severity into two.
+            # Asserting a written `> **Severity:**` line would be wrong: Low routes into a
+            # consolidation CR that carries no such line, and this suite discovered that only
+            # because the assertion was strengthened from "no error string appeared".
+            for canonical in ("High", "Medium", "Low", "Critical"):
+                with self.subTest(severity=canonical):
+                    shapes = []
+                    for spelling in (canonical, canonical.lower()):
+                        with tempfile.TemporaryDirectory() as inner:
+                            r2 = self._root(inner)
+                            good = self._run(r2, spelling)
+                            self.assertEqual(0, good.returncode,
+                                             f"{spelling!r} is in the live corpus and was "
+                                             f"refused:\n" + good.stdout + good.stderr)
+                            shapes.append(self._shape(r2))
+                    self.assertEqual(shapes[0], shapes[1],
+                                     f"{canonical.lower()!r} was handled differently from "
+                                     f"{canonical!r} - the writer is case-sensitive")
+                    self.assertTrue(shapes[0], f"{canonical!r} wrote nothing at all")
 
+    def test_the_written_severity_is_the_one_requested(self) -> None:
+        """AC9. Comparing a spelling only with its own lowercase twin passes for ANY
+        input-independent value: a writer stamping a constant `Medium` on every finding
+        satisfied both halves of the accept test above, exited 0, and moved a Critical finding
+        off the release bar and onto the disclosure page - the exact harm AC1 names, arriving
+        through the writer rather than the reader. Low is exempt and stated so: it consolidates
+        into a CR that carries no `Severity` line at all.
+        """
+        for canonical in ("High", "Medium", "Critical"):
+            for spelling in (canonical, canonical.lower()):
+                with self.subTest(requested=spelling), tempfile.TemporaryDirectory() as d:
+                    root = self._root(d)
+                    r = self._run(root, spelling)
+                    self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                    written = [line for _, _, sev in self._shape(root) for line in sev]
+                    self.assertIn(f"> **Severity:** {canonical}", written,
+                                  f"{spelling!r} was requested and {written!r} was written")
+
+    def test_surrounding_whitespace_is_trimmed_at_both_ends(self) -> None:
+        """`.strip()`, not `.lstrip()`. `known_issues._matches` strips both ends, so a corpus
+        row written `High ` classifies perfectly well - and a writer trimming only the left
+        refuses it. Unpinned, that mutant survived both suites in full; it is the same argument
+        that makes the comparison case-folded, applied to the other half of the normalisation.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            # A NEWLINE is not in scope: a separate and correct guard refuses it before the
+            # vocabulary is consulted, because a value carrying a break would write lines
+            # nobody asked for. Tabs and spaces are the whitespace that can legitimately reach
+            # `normalise_severity`.
+            for spelling in (" High", "High ", "  high  ", "\tHigh\t"):
+                with self.subTest(spelling=spelling):
+                    r = self._run(root, spelling)
+                    self.assertEqual(0, r.returncode,
+                                     f"{spelling!r} differs from 'High' only in surrounding "
+                                     f"whitespace and was refused:\n{r.stdout}{r.stderr}")
 
 if __name__ == "__main__":
     unittest.main()
+

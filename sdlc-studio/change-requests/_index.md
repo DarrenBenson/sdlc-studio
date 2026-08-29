@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-08-26
+**Last Updated:** 2026-08-28
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 8 |
+| Proposed | 9 |
 | Approved | 0 |
 | In Progress | 35 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 23 |
 | Blocked | 0 |
-| **Total** | **561** |
+| **Total** | **562** |
 
 ## All Changes
 
@@ -112,6 +112,7 @@
 | [CR-0559](CR0559-the-same-concept-is-named-three-ways-across.md) | the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal | In Progress | Medium | enhancement | 2026-08-26 | EP0244 |
 | [CR-0560](CR0560-filing-a-finding-leaves-the-disclosure-page-stale.md) | filing a finding leaves the disclosure page stale, so the tree is red until somebody separately remembers to regenerate it | In Progress | Medium | enhancement | 2026-08-26 | EP0245 |
 | [CR-0561](CR0561-the-declared-python-3-10-floor-is-stated.md) | the declared Python 3.10 floor is stated in six shipped places and guarded nowhere, and one shipped script already violates it | In Progress | High | enhancement | 2026-08-26 | EP0246 |
+| [CR-0562](CR0562-no-shipped-command-ticks-a-delivered-unit-s.md) | no shipped command ticks a delivered unit's acceptance criteria, so the close's tick-verification row can only be satisfied by hand-editing the artefact | Proposed | Medium | enhancement | 2026-08-28 | -- |
 
 ## Archived Releases
 

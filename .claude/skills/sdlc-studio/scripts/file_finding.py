@@ -1771,7 +1771,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
         # unit in the plan instead of the planner falling back to a flat floor.
         points = f"> **Points:** {f['points']}\n" if f.get("points") is not None else ""
         return (f"# {disp_id}: {title}\n\n"
-                f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
+                f"> **Status:** {status or 'Open'}\n"f"> **Severity:** {normalise_severity(f['severity'])}\n"
                 f"{points}{_affects_line(f)}{_evidence_line(f)}{_mutation_link_lines(f)}{_audit_attribution_lines(f)}{_detector_for_lens_line(f)}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
@@ -1937,6 +1937,22 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
             raise ValueError(f"--parent {parent} does not resolve to any artefact - "
                              f"a child is never minted against a missing parent")
         parent_path = found[0]
+        # RESOLVING is not the same as being able to CARRY a child, and BG0619 made the two
+        # diverge: widening `find_by_id` to reach retros, handoffs and reviews meant a
+        # `--parent RETRO0109` sailed through the guard above, the child was minted AND indexed
+        # AND stamped with a one-way `> **Parent:**` line, and only then did `write_decomposed`
+        # raise on the meta artefact's absent Status line. The command exited 1 saying "file
+        # refused" over a child that exists on disk - which is the exact asymmetry the guard
+        # was written to abolish, reintroduced one layer further in. So the guard now asks the
+        # question the write will ask: can this parent hold the link?
+        if not sdlc_md.extract_field(
+                sdlc_md.read_text_safe(parent_path), "Status"):
+            raise ValueError(
+                f"--parent {parent} resolves to {parent_path.name}, which carries no "
+                f"`> **Status:**` line to anchor a child link after - so the back-link cannot "
+                f"be written and the child would point one way at a parent that does not point "
+                f"back. A retro, handoff or review records what happened; it does not decompose "
+                f"into work. File against the RFC, CR, epic or story the work belongs to.")
         parent = sdlc_md.norm_id(parent)
     # The cheapest triage lens, run BEFORE the id is minted: does this finding overlap an artefact
     # already open? A warning attached to the result, never a refusal.
@@ -2098,6 +2114,29 @@ def cmd_rebuild(args: argparse.Namespace) -> int:
 #: through the other.
 SEVERITY_VOCAB = ("Critical", "High", "Medium", "Low")
 
+
+def normalise_severity(value: str | None) -> str:
+    """The canonical spelling of a severity, or raise `ValueError` naming the accepted set.
+
+    CASE-FOLDED, not case-sensitive. Both readers fold - `known_issues._matches` does, and its
+    own docstring says the corpus holds seven bugs written `high` - so a writer that refuses
+    them refuses 21 findings the release bar and the disclosure page classify perfectly well.
+    Folding case is not guessing at intent, which is what refusing an unrecognised word is for;
+    it is the same reading the readers already take.
+
+    Raising rather than returning a default: a severity nobody recognises is dropped by BOTH
+    readers, so it is absent from the release bar and the disclosure page at once, and absence
+    reads exactly like a clean corpus.
+    """
+    raw = (value or "").strip()
+    for known in SEVERITY_VOCAB:
+        if raw.casefold() == known.casefold():
+            return known
+    raise ValueError(
+        f"severity {raw!r} is not one of {', '.join(SEVERITY_VOCAB)}. A value outside that set "
+        f"is dropped by the release bar AND the disclosure page, so the finding is absent from "
+        f"both and the absence reads like a clean corpus.")
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Deterministic Bug/CR/RFC finding filer.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -2113,7 +2152,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "evidence and diffable. An explicit flag overrides the document")
     f.add_argument("--title", help="required unless the --fields-file document carries a title")
     f.add_argument("--summary")
-    f.add_argument("--severity", choices=SEVERITY_VOCAB,
+    f.add_argument("--severity",
                help="bug severity - Critical, High, Medium or Low. A value outside that set is REFUSED rather than normalised: guessing what `major` meant would put a word nobody chose on the record, and a severity in neither the barred nor the disclosed set is dropped by the release bar and the disclosure page alike, silently")
     f.add_argument("--priority", help="cr/rfc priority")
     f.add_argument("--ctype", help="cr type (Improvement/Feature/Bug)")
