@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0386: Verify against the INPUT SPACE, not against the criterion.**
+- **L-0385: A positive control asserting that an error string is ABSENT proves nothing, because a command that fails for an unrelated reason also omits...**
+- **L-0384: A repair that keeps moving is a scoping error, not a coding error.**
 - **L-0383: **A test that drives the library while its mutant changes the CLI cannot fail.** This happened twice in one run - BG0618 AC5 and BG0621 AC7...**
 - **L-0382: **A gate the run is measured on must be hardened before the run is measured on it.** BG0621 shipped first for that reason, and its first...**
 - **L-0381: **When a model changes, the assumptions built on the old one become invisible rather than wrong.** `repair_state` read the single standing...**

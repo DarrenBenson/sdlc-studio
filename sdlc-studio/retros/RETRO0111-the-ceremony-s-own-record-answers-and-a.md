@@ -167,9 +167,9 @@ Review passes, by phase - read from the two verdict ledgers:
 
   test-plan review: 28 pass(es) over 10 unit(s), 20 rejected
 
-  code review: 9 pass(es) over 9 unit(s), 4 rejected
+  code review: 12 pass(es) over 10 unit(s), 7 rejected
 
-  ratio: 0.32 code-review pass(es) per test-plan pass - the claim EP0207 is judged on, as a number
+  ratio: 0.43 code-review pass(es) per test-plan pass - the claim EP0207 is judged on, as a number
 Unmeasured: BG0613, BG0616, BG0617, BG0619, BG0622, BG0623, BG0624, BG0625, BG0626. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 Unforecast: BG0629. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
