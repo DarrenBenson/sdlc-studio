@@ -809,7 +809,7 @@ _EVIDENCE_COLS = ("unit", "reviewer", "author", "date", "findings")
 #: `phase` is APPENDED, so a row written before it parses with the field simply absent -
 #: which is what `_attributable_phase` then resolves from the date, or reports.
 _REPAIR_COLS = ("unit", "verdict_date", "author", "date", "closed", "outstanding",
-                "phase")
+                "phase", "rejection")
 _SIGNOFF_COLS = ("unit", "principal", "chain", "author", "date", "note", "capacity")
 #: In what CAPACITY the reviewer of record signed. A panel sign-off was distinguishable only by
 #: string-matching the `panel(...)` marker inside the free-text chain - a fact a reader can find
@@ -861,8 +861,8 @@ _REPAIR_HEADER = (
     "> A finding closed by FILING an artefact is recorded as filed, with the id - 'fixed' and\n"
     "> 'filed as a known issue' are both legitimate, and telling them apart afterwards is not\n"
     "> optional.\n\n"
-    "| Unit | Verdict date | Author | Date | Closed | Outstanding | Phase |\n"
-    "| --- | --- | --- | --- | --- | --- | --- |\n")
+    "| Unit | Verdict date | Author | Date | Closed | Outstanding | Phase | Rejection |\n"
+    "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
 
 #: How a repair names what it closed: `<the finding text> -> <the evidence closing it>`.
 #: The evidence is one of three shapes, from CR0506 - a re-applied mutant, a test that now
@@ -905,7 +905,14 @@ def _read_rows(path: Path, cols: tuple[str, ...]) -> list[dict]:
         # column and is complete for its own era. Requiring an exact width dropped such a row
         # entirely - which for the sign-off log would have silently un-signed every unit signed
         # before the Capacity column, and the two-role gate would have started refusing them.
-        if not cells or not (len(cols) - 1 <= len(cells) <= len(cols)):
+        #
+        # Short by ANY number, not by one. The bound was `len(cols) - 1`, which tolerated a
+        # single era of appends and no more: adding `phase` and `rejection` in one change made
+        # every six-cell repair row unreadable, `repairs_for` returned nothing, and the
+        # test-plan gate started refusing units whose repairs were on record. That would have
+        # hit every consuming project's ledger on upgrade, not only this one. The floor is two
+        # cells because a row must at least name a unit and one field to be a row at all.
+        if not cells or not (2 <= len(cells) <= len(cols)):
             continue
         if tuple(c.strip().lower() for c in cells) == header[:len(cells)]:
             continue
@@ -1183,8 +1190,11 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
         by_date.setdefault(target, []).append(c)
     written = None
     for when, group in sorted(by_date.items()):
-        raised_for = next((r.get("issues", "") for r in rejections
-                           if str(r.get("date") or "") == when), row.get("issues", ""))
+        # The rejection this group answers, resolved ONCE and carried into the row. Keyed on
+        # the brief fingerprint rather than the date, because two rejections share a day
+        # routinely - which is the whole of this bug.
+        rejection = next((r for r in rejections if str(r.get("date") or "") == when), row)
+        raised_for = rejection.get("issues", "") if rejection else row.get("issues", "")
         outstanding = repair_outstanding(raised_for, group)
         # Re-serialised through the SAME escaping the document path uses. Rebuilding the
         # row with a bare join silently undid BG0618: an evidence clause carrying a
@@ -1200,7 +1210,13 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
                                # plan-review rejection carrying the same finding text - which
                                # since BG0629 opens the test-plan gate rather than merely
                                # mis-reporting.
-                               _clean(str(phase or "delivery"))))
+                               _clean(str(phase or "delivery")),
+                               # THE REJECTION this repair answers, keyed on the brief
+                               # fingerprint - a content hash of the brief the seat was handed,
+                               # which BG0607 established identifies the seat AND the round
+                               # together. The date alone cannot: two rejections share a day
+                               # routinely, which is the whole of this bug.
+                               _clean(str(rejection.get("brief") or "-"))))
     return written
 
 
@@ -1350,12 +1366,18 @@ def _row_answers_phase(repo_root: Path | str, unit: str, row: dict, phase: str) 
     if not here:
         return False
     # BOTH phases rejected that day, so the DATE cannot place this row - but the row's own
-    # CLOSURES can. A closure names the finding it answers, so a legacy row whose closures
-    # resolve against this phase's rejections and not the other's is attributable on its own
-    # evidence rather than on a guess. Date-only was the first cut and it was too blunt: it
-    # made US0674 - genuinely repaired, its closures naming the release-notes finding from the
-    # delivery rejection verbatim - read as unrepaired, which is a false negative in the
-    # direction of accusing finished work.
+    # CLOSURES sometimes can. A closure names the finding it answers, so a legacy row whose
+    # closures resolve against THIS phase's rejections and not the other's is attributable on
+    # its own evidence rather than on a guess.
+    #
+    # It resolves nothing where both rejections raise the SAME finding text, which is the common
+    # shape and the whole of this bug: the closure resolves for both phases and `not any(...)`
+    # correctly concludes neither. On today's ledger that is every case - a review measured 52
+    # of 52 - so this branch places no live row, and US0674 reads `none` whether it is here or
+    # not. An earlier version of this comment claimed the branch had rescued US0674. It had not:
+    # the changelog said so correctly while the code said so falsely, and the code was wrong.
+    # It is kept for the case it does answer - two rejections on one date raising DIFFERENT
+    # findings - which is pinned by a test rather than assumed.
     return _closures_resolve_in(repo_root, unit, row, phase) and not any(
         _closures_resolve_in(repo_root, unit, row, p)
         for p in ("delivery", "plan-review") if p != phase)
@@ -1391,11 +1413,13 @@ def unattributable_repairs(repo_root: Path | str) -> list[dict]:
     out: list[dict] = []
     for row in _read_rows(repair_path(repo_root), _REPAIR_COLS):
         unit = row.get("unit", "")
-        # A row whose first cell is not an ID is the header or a separator. `_REPAIR_COLS` grew
-        # a seventh column while the ledger on disk still carries six-column rows AND a
-        # six-column header, so the header no longer matches the schema width and reaches this
-        # loop as data - reported, on the live corpus, as an unattributable repair for a unit
-        # called "Unit". Guarding on the id is what a mixed-width ledger needs during migration.
+        # A row whose first cell is not an ID is the header or a separator. `_read_rows` returns
+        # the header AS DATA - it compares lowercased column NAMES (`verdict_date`) against the
+        # markdown cells (`Verdict date`), underscore against space, so the two never match and
+        # the header row is never recognised. That is true at every column width and predates
+        # this change; an earlier version of this comment blamed the new column for it, which a
+        # review falsified by running the base ref. Without this guard the live corpus reports
+        # an unattributable repair for a unit called "Unit".
         if not sdlc_md.extract_record_id(str(unit)):
             continue
         if str(row.get("phase") or "").strip():

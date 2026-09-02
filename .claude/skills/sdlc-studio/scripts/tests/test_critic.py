@@ -5837,7 +5837,8 @@ class RepairPhaseJoinTests(unittest.TestCase):
     _P_HEAD = ("# Plan-Review Verdicts\n\n| Unit | Verdict | Reviewer | Author | Date | Brief "
                "| Kind | Issues |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n")
     _R_HEAD = ("# Repair Record\n\n| Unit | Verdict date | Author | Date | Closed | "
-               "Outstanding |\n| --- | --- | --- | --- | --- | --- |\n")
+               "Outstanding | Phase | Rejection |\n"
+               "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
 
     _FINDING = "the oracle cannot fail"
 
@@ -5861,7 +5862,7 @@ class RepairPhaseJoinTests(unittest.TestCase):
         plan = (f"| BG0001 | REJECT | qa | a | {day} | bbbbbbbbbbbb | test-plan | "
                 f"[new] {self._FINDING} |\n")
         repairs = (f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none | "
-                   f"{repair_phase} |\n")
+                   f"{repair_phase} | aaaaaaaaaaaa |\n")
         return self._proj(d, delivery=delivery, plan=plan, repairs=repairs)
 
     def test_a_delivery_repair_does_not_answer_a_same_text_plan_review_rejection(self) -> None:
@@ -5905,6 +5906,17 @@ class RepairPhaseJoinTests(unittest.TestCase):
             self.assertTrue(rows)
             self.assertEqual("delivery", str(rows[-1].get("phase") or "").strip(),
                              f"the written row does not name its phase: {rows[-1]}")
+            # THE REJECTION HALF. AC3 says the row names the phase AND the rejection it
+            # answers, and says `_REPAIR_COLS` carries NEITHER today. The first cut built only
+            # the phase and this assertion did not exist, so the criterion went green with half
+            # its text unbuilt - which a review found. The key is the brief fingerprint, which
+            # BG0607 established identifies the seat and the round together; a date cannot,
+            # because two rejections share a day routinely.
+            self.assertIn("rejection", critic._REPAIR_COLS,
+                          "the ledger carries no rejection column, so a row names only WHEN it "
+                          "answered, never WHAT")
+            self.assertEqual("aaaaaaaaaaaa", str(rows[-1].get("rejection") or "").strip(),
+                             f"the row does not name the rejection it answers: {rows[-1]}")
 
     def test_legacy_rows_are_attributed_or_named_unattributable(self) -> None:
         """AC4. A row predating the column is attributed where the date makes it unambiguous
@@ -5918,7 +5930,7 @@ class RepairPhaseJoinTests(unittest.TestCase):
             root = self._proj(d, delivery=(
                 f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
                 f"[new] {self._FINDING} |\n"),
-                repairs=f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none |\n")
+                repairs=f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none | | |\n")
             self.assertEqual("complete", critic.repair_state(root, "BG0001", "delivery")["state"],
                              "a legacy row was dropped from the phase it unambiguously answers")
         with tempfile.TemporaryDirectory() as d:
@@ -5928,6 +5940,102 @@ class RepairPhaseJoinTests(unittest.TestCase):
                 "complete", critic.repair_state(root, "BG0001", "plan-review")["state"],
                 "a legacy row with no phase was GUESSED onto a phase it cannot be known to "
                 "answer - the record made prettier rather than truer")
+
+    def test_a_ledger_written_before_both_new_columns_still_parses(self) -> None:
+        """A row short by MORE THAN ONE column is still read.
+
+        `_read_rows` bounded shortness at `len(cols) - 1`, which tolerated a single era of
+        appends. Adding `phase` and `rejection` in one change made every six-cell repair row
+        unreadable: `repairs_for` returned nothing, `repair_state` read `none`, and the
+        test-plan gate began refusing units whose repairs were on record. It would have hit
+        every consuming project's ledger on upgrade, where nobody had migrated the header - so
+        the property is asserted on the OLDEST shape, not on the one this repo happens to hold.
+        """
+        critic = _load()
+        day = "2026-09-03"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\n", encoding="utf-8")
+            (root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md").write_text(
+                self._P_HEAD + (f"| BG0001 | REJECT | qa | a | {day} | aaaaaaaaaaaa | "
+                                f"test-plan | [new] {self._FINDING} |\n"), encoding="utf-8")
+            # The PRE-COLUMN ledger: six cells, six-column header, exactly as a consuming
+            # project's file looks the moment before it upgrades.
+            (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
+                "# Repair Record\n\n"
+                "| Unit | Verdict date | Author | Date | Closed | Outstanding |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none |\n",
+                encoding="utf-8")
+            self.assertEqual(1, len(critic.repairs_for(root, "BG0001")),
+                             "a six-cell legacy row was dropped entirely by the reader")
+            self.assertEqual(
+                "complete", critic.repair_state(root, "BG0001", "plan-review")["state"],
+                "a repair on record stopped answering its rejection because the ledger "
+                "predates two appended columns - the test-plan gate would refuse this unit")
+
+    def test_a_repair_dated_to_no_rejection_at_all_is_reported(self) -> None:
+        """B3: `len(hits) != 1` also covers hits == 0 - a repair whose date matches NO rejection.
+        Changing it to `> 1` left the whole suite green, so the zero branch was untested. A row
+        answering nothing is exactly what a reader counting repairs must be able to see."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(
+                d,
+                delivery=("| BG0001 | REJECT | eng | a | 2026-09-02 | aaaaaaaaaaaa | full | "
+                          "[new] the oracle cannot fail |\n"),
+                repairs=("| BG0001 | 2026-01-01 | a | 2026-01-01 | something -> done | none | "
+                         "| |\n"))
+            rows = critic.unattributable_repairs(root)
+            self.assertEqual(1, len(rows),
+                             f"a repair dated to no rejection at all was not reported: {rows}")
+            self.assertEqual([], rows[0]["phases"], rows[0])
+
+    def test_the_written_phase_defaults_to_delivery(self) -> None:
+        """B4: `record_repair`'s default phase was unpinned - every test passed it explicitly,
+        so replacing the default with `plan-review` left the suite green. The default is what a
+        caller who says nothing gets, and it decides which gate the row can open."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(
+                d,
+                delivery=(f"| BG0001 | REJECT | eng | a | 2026-09-02 | aaaaaaaaaaaa | full | "
+                          f"[new] {self._FINDING} |\n"))
+            critic.record_repair(root, "BG0001", author="a; session",
+                                 closed=f"{self._FINDING} -> rewritten")
+            rows = critic.repairs_for(root, "BG0001")
+            self.assertEqual("delivery", str(rows[-1].get("phase") or "").strip(),
+                             f"the default phase is not delivery: {rows[-1]}")
+
+    def test_a_legacy_row_is_placed_by_its_closures_when_the_findings_differ(self) -> None:
+        """The case the closure fallback exists for, which nothing exercised.
+
+        Two rejections on ONE date raising DIFFERENT findings, and a legacy row naming only
+        one. The date cannot place it; the closure can. A review found the branch inert - it
+        could be deleted with the whole suite green and zero movement across 1,388 live
+        (unit, phase) pairs - because on today's ledger the colliding-text case is every case,
+        and there the branch correctly declines. That makes it untested, not wrong.
+        """
+        critic = _load()
+        day = "2026-09-02"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(
+                d,
+                delivery=(f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
+                          f"[new] the delivery oracle cannot fail |\n"),
+                plan=(f"| BG0001 | REJECT | qa | a | {day} | bbbbbbbbbbbb | test-plan | "
+                      f"[new] the plan mutant is unobservable |\n"),
+                repairs=(f"| BG0001 | {day} | a | {day} | the delivery oracle cannot fail -> "
+                         f"rewritten | none | | |\n"))
+            self.assertEqual(
+                "complete", critic.repair_state(root, "BG0001", "delivery")["state"],
+                "a legacy row whose closure names ONLY the delivery finding was not placed "
+                "there - the closure fallback is doing nothing")
+            self.assertNotEqual(
+                "complete", critic.repair_state(root, "BG0001", "plan-review")["state"],
+                "the same row was ALSO credited to plan-review, which its closure never names")
 
     def test_every_unit_that_moves_is_named_with_its_reason(self) -> None:
         """AC5. The rows this change CANNOT place must be reportable, with a count that moves.
@@ -5953,7 +6061,7 @@ class RepairPhaseJoinTests(unittest.TestCase):
                 d,
                 delivery=(f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
                           f"[new] {self._FINDING} |\n"),
-                repairs=f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none |\n")
+                repairs=f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none | | |\n")
             self.assertEqual([], critic.unattributable_repairs(root),
                              "a row whose phase IS unambiguous was reported unattributable")
 

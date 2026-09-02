@@ -1635,38 +1635,52 @@ class VerifierGroomingTests(unittest.TestCase):
         self.assertFalse(ungroomed, f"a declared-manual criterion was refused: {why}")
 
     def test_the_refused_population_matches_the_shipped_scan(self) -> None:
-        """AC7. A SET against the shipped scan, never a hard-coded count.
+        """AC7. The SETS are compared. The first cut asserted only that the refused set was
+        non-empty and that a string appeared in the scan's output, and a comment claimed a
+        check the code below never performed - so a mutant refusing all 391 units instead of
+        92 passed it. A count would be no better: this sprint's own closures move it.
 
-        The first draft of this unit asserted '15 bugs, 53 criteria' - a figure from a script
-        written for the occasion, which no shipped command reproduces (`corpus-scan` reports 51
-        carrying no verifier) and which this sprint's own triage closures move. Two counters
-        that disagree is the defect class this unit sits in, so the oracle is agreement with
-        the shipped scan rather than a number.
+        The relation is SUBSET, not equality, and deliberately: the predicate also refuses the
+        vacuous case (a criteria section parsing to no blocks), which `corpus-scan` counts in a
+        different bucket. So every id the predicate refuses for `no-verifier` must be one the
+        shipped scan does NOT report as verifier-bearing - that is the disagreement AC7 exists
+        to forbid, and it is checkable as a set.
         """
-        # parents: [0] tests [1] scripts [2] sdlc-studio [3] skills [4] .claude [5] repo root.
         repo = Path(__file__).resolve().parents[5]
         bugs = repo / "sdlc-studio" / "bugs"
         self.assertTrue(bugs.is_dir(), f"live corpus not found at {bugs}")
         conformance = _load()
-        refused = set()
+        import importlib.util as _il  # noqa: PLC0415
+        _s = _il.spec_from_file_location("verify_ac", SCRIPT.parent / "verify_ac.py")
+        verify_ac = _il.module_from_spec(_s)
+        sys.modules["verify_ac"] = verify_ac
+        _s.loader.exec_module(verify_ac)
+
+        refused, verifier_bearing = set(), set()
         for f in bugs.glob("BG*.md"):
             if f.name == "_index.md":
                 continue
             text = f.read_text(encoding="utf-8", errors="replace")
+            rid = f.name.split("-")[0]
             ungroomed, why = conformance.unit_is_ungroomed("bug", text)
             if ungroomed and why == "no-verifier":
-                refused.add(f.name.split("-")[0])
-        self.assertTrue(refused, "the predicate refused nothing over the live corpus, so this "
-                                 "row proves nothing about the population")
-        # Every id it refuses must be one the shipped scan also reports as verifier-less.
-        # Agreement of SETS: a count would drift the moment a unit is groomed.
-        import subprocess  # noqa: PLC0415
-        scan = subprocess.run(
-            [sys.executable, str(repo / ".claude/skills/sdlc-studio/scripts/verify_ac.py"),
-             "corpus-scan", "--root", str(repo)],
-            capture_output=True, text=True, timeout=600, check=False)
-        self.assertIn("carrying no verifier", scan.stdout + scan.stderr,
-                      "the shipped scan changed shape; this oracle must follow it")
+                refused.add(rid)
+            blocks = verify_ac.parse_story(text)
+            if blocks and any(str(getattr(b, "verifier", "") or "").strip() for b in blocks):
+                verifier_bearing.add(rid)
+
+        self.assertTrue(refused,
+                        "the predicate refused nothing over the live corpus, so this row "
+                        "proves nothing about the population")
+        self.assertTrue(verifier_bearing,
+                        "no unit in the corpus carries a verifier, so the control below is "
+                        "vacuous - check the parser, not the predicate")
+        overlap = sorted(refused & verifier_bearing)
+        self.assertEqual(
+            [], overlap,
+            f"{len(overlap)} unit(s) are refused as carrying no verifier while the parser reads "
+            f"a verifier on them: {overlap[:8]}. Two counters disagreeing about one corpus is "
+            f"the defect class this unit sits in.")
 
 
 class UnevaluableTests(unittest.TestCase):
@@ -1743,6 +1757,18 @@ class UnevaluableTests(unittest.TestCase):
             page = r.stdout + r.stderr
             self.assertIn("NOT EVALUABLE HERE", page, page)
             self.assertIn("test_absent.py", page, page)
+            # BEFORE the verdict, which is the half the criterion names and an `assertIn`
+            # cannot see. A review moved the whole block to the end of `cmd_check`, after every
+            # non-conformant line and both remedies, and the test stayed green - so the reader
+            # who took an incomplete tree for debt would still have done so.
+            page_lines = [ln for ln in page.splitlines() if ln.strip()]
+            said_at = next(i for i, ln in enumerate(page_lines) if "NOT EVALUABLE HERE" in ln)
+            verdicts = [i for i, ln in enumerate(page_lines)
+                        if "non-conformant" in ln or "missing " in ln or "remedy" in ln]
+            if verdicts:
+                self.assertLess(said_at, min(verdicts),
+                                f"the unevaluable line came AFTER a verdict, so a reader meets "
+                                f"the number before the caveat:\n{page}")
 
     def test_a_partial_tree_does_not_change_the_non_conformant_count(self) -> None:
         """AC4, the bug's own reproduction, as a PROPERTY over two trees.

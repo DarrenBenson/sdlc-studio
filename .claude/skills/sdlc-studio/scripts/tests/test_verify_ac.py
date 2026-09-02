@@ -5953,6 +5953,68 @@ class UnevaluableSelectorTests(unittest.TestCase):
                 "a file that exists and will not collect must stay unresolvable - softening it "
                 "would hide the dead stamps this check exists to find")
 
+    def test_only_stamped_criteria_are_reported(self) -> None:
+        """An UNSTAMPED criterion makes no claim, so a selector it cannot resolve is the
+        author's business at the next run, not this tree's inability. Dropping the
+        `Verified: yes` filter changed behaviour and no test could see it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            story = root / "sdlc-studio" / "stories" / "US0001-a.md"
+            story.write_text(
+                "# US0001: a\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "- [ ] **AC1** given x, when y, then z\n"
+                "  - **Verify:** pytest tests/test_absent.py::test_x\n", encoding="utf-8")
+            self.assertEqual([], verify_ac.unevaluable_stamps(story, root),
+                             "an UNSTAMPED criterion was reported - it claims nothing, so its "
+                             "selector says nothing about this tree")
+
+    def test_a_present_file_the_tree_cannot_collect_is_unevaluable_too(self) -> None:
+        """A file can be HERE while what it imports is not, and that is the same "this tree
+        cannot answer" fact as an absent file.
+
+        Checking only the selector's own path was too narrow. A review measured the consequence
+        through the shipped CLI: a checkout without `.claude/skills/sdlc-studio/` read 727/814
+        with 5 non-conformant against 731/814 with 1, because `tools/tests/test_lint_corpus.py`
+        IS present there and dies on `FileNotFoundError` for a module that is not.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "tests").mkdir()
+            # Present, and uncollectable because what it opens is not in the tree.
+            (root / "tests" / "test_needs_absent.py").write_text(
+                "open('lib/absent_module.py')\n\ndef test_x():\n    assert True\n",
+                encoding="utf-8")
+            story = root / "sdlc-studio" / "stories" / "US0001-a.md"
+            story.write_text(
+                "# US0001: a\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "- [x] **AC1** given x, when y, then z\n"
+                "  - **Verify:** pytest tests/test_needs_absent.py::test_x\n"
+                "  - **Verified:** yes (2026-09-02)\n", encoding="utf-8")
+            rows = verify_ac.unevaluable_stamps(story, root)
+            self.assertEqual(1, len(rows),
+                             f"a present-but-uncollectable file was scored as debt: {rows}")
+
+    def test_a_file_broken_on_its_own_terms_is_still_dead(self) -> None:
+        """The control, and the half that must NOT be softened. A file that fails to collect for
+        its OWN reasons is real debt - there is nothing absent to name, so it stays a dead stamp
+        and the unit stays non-conformant."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "tests").mkdir()
+            (root / "tests" / "test_broken.py").write_text(
+                "this is not python(((\n", encoding="utf-8")
+            story = root / "sdlc-studio" / "stories" / "US0001-a.md"
+            story.write_text(
+                "# US0001: a\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "- [x] **AC1** given x, when y, then z\n"
+                "  - **Verify:** pytest tests/test_broken.py::test_x\n"
+                "  - **Verified:** yes (2026-09-02)\n", encoding="utf-8")
+            self.assertEqual([], verify_ac.unevaluable_stamps(story, root),
+                             "a syntactically broken file was excused as an incomplete tree")
+
     def test_unevaluable_stamps_names_them_separately(self) -> None:
         """The reporting half conformance reads: which stamped ACs could not be judged HERE."""
         with tempfile.TemporaryDirectory() as d:

@@ -17606,39 +17606,42 @@ class LoopConvergenceTests(unittest.TestCase):
             self.assertEqual(["signoff"], rows[-1]["stages"],
                              "stages must name the holding lane's stage and no other")
 
-    def test_a_converged_run_at_the_cap_reaches_a_later_stage(self) -> None:
-        """AC3. The COMPOSITION - the recorder feeding the terminator - not either alone.
+    def test_the_cap_fires_through_the_shipped_close_only_on_a_blocked_run(self) -> None:
+        """AC3, narrowed by D0179 and driven through `sprint.py close` as a SUBPROCESS.
 
-        Driving `loop_termination` by itself proves nothing here: the bug's own Proposed Fix
-        says that function is correct and needs no change, so a test built on it passes before
-        and after (it did, on the first draft of this suite). The defect is the SERIES it is
-        handed. So this records real attempts through `_record_close_attempt` and then asks
-        `loop_termination` about the series that actually reached the run state, which is the
-        path `cmd_close` takes.
+        The original wording asked for a CONVERGED run at the cap to reach a stage past the
+        convergence check. That is not demonstrable here: the close records a FRESH attempt
+        before consulting `loop_termination`, so a converged run is one whose pre-flight is
+        genuinely clear - and clearing it needs a goal, a verdict, an anchor and a valid retro,
+        after which the checklist stage raises eighteen more prerequisites. The fixture would be
+        a complete run, reimplementing what it checks.
+
+        What IS checkable through the shipped command is the half that discriminates: the cap
+        FIRES on a run whose outstanding set never clears. A review deleted `cmd_close`'s
+        `if trend and trend.startswith("LOOP STOPPED")` branch - the decision to stop at all -
+        and an absence-only assertion stayed green. This kills that. The converged direction is
+        pinned where it is observable: AC1 and AC2 assert the recorded attempt reads zero with
+        no stages when every blocker is advisory.
         """
+        import subprocess  # noqa: PLC0415
         with tempfile.TemporaryDirectory() as d:
             root = self._root(d)
-            sprint = _load()
-            cap = 3
-            for _ in range(cap + 3):
-                rows = self._record(root, [self._advisory("gate", "constitution"),
-                                           self._advisory("gate", "disclosure")])
-            stop, why = sprint.loop_termination(rows, cap=cap)
-            self.assertFalse(
-                stop,
-                f"a run with no holding blocker was stopped after {len(rows)} attempts at "
-                f"cap {cap}: {why}. The series recorded was "
-                f"{[r['outstanding'] for r in rows]} - it must be all zeros.")
-
-        # ...and the cap STILL fires when the set never clears, or this row is satisfied by
-        # deleting the cap check outright.
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d)
-            for _ in range(6):
-                rows = self._record(root, [self._holding("signoff", "sign-off")])
-            stop_bad, why_bad = _load().loop_termination(rows, cap=3)
-            self.assertTrue(stop_bad, "the cap no longer fires on a genuinely stuck loop")
-            self.assertIn("cap", why_bad)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+            from lib import run_state  # noqa: PLC0415
+            run_state.update(root, close_attempts=[
+                {"at": "2026-09-02T00:00:00Z", "outstanding": 3, "stages": ["signoff"]}] * 8)
+            r = subprocess.run(
+                [sys.executable, str(SCRIPT), "close", "--root", str(root)],
+                capture_output=True, text=True, timeout=600, check=False)
+            page = r.stdout + r.stderr
+            # The DECISION, not the trend string. `LOOP STOPPED` is what `loop_termination`
+            # RETURNS and the close narrates; the branch at `sprint.py`:8987 is what acts on it.
+            # Asserting the returned string alone let a mutant deleting that branch survive -
+            # the narration still printed while the close no longer stopped.
+            self.assertIn("the review-repair loop is NOT converging", page,
+                          f"the close did not ACT on a stuck loop - the decision branch is "
+                          f"gone, however the trend reads:\n{page[:1200]}")
+            self.assertIn("LOOP STOPPED", page, page[:600])
 
     def test_the_project_config_pins_no_round_cap(self) -> None:
         """AC4. `review.max_rounds` is REMOVED, not set.
@@ -17700,30 +17703,45 @@ class VerifierGroomingTests(unittest.TestCase):
             "| [BG0900](BG0900-a-finding.md) | a finding | Open |\n", encoding="utf-8")
         return root
 
-    def _breakdown(self, root):
+    def _plan(self, root):
+        """`plan`, which REFUSES - not `breakdown`, which reports and exits 0.
+
+        The criterion names `sprint plan` and a refusal for a reason, and the first cut of this
+        helper ran `breakdown` anyway: a review deleted the gate at `sprint.py`:9250 and watched
+        `plan` print a full wave at rc=0 while this suite stayed green. `breakdown` cannot
+        observe a gate it never triggers, so an assertion on its wording is one level above the
+        library test the criterion was written to escape, and no closer to the claim.
+        """
         import subprocess  # noqa: PLC0415
+        wl = root / "worklist.txt"
+        wl.write_text("BG0900\n", encoding="utf-8")
         return subprocess.run(
-            [sys.executable, str(self._SCRIPT), "breakdown", "--bugs", "Open",
-             "--root", str(root)],
+            [sys.executable, str(self._SCRIPT), "plan", "--root", str(root),
+             "--worklist", str(wl)],
             capture_output=True, text=True, timeout=300, check=False)
 
     def test_plan_refuses_a_unit_whose_criteria_cannot_be_executed(self) -> None:
         # AC3. Through the shipped command, both directions.
         with tempfile.TemporaryDirectory() as d:
             root = self._workspace(d, verifier=False)
-            r = self._breakdown(root)
+            r = self._plan(root)
             both = r.stdout + r.stderr
             self.assertNotIn("Traceback", both, both)
-            self.assertIn("1 ungroomed", both,
-                          f"a unit whose criteria carry no verifier was reported plannable:"
-                          f"\n{both}")
+            # THE EXIT CODE IS THE CLAIM. `plan` refuses; a wording assertion alone passed
+            # while the gate was deleted and a full wave printed at rc=0.
+            self.assertNotEqual(0, r.returncode,
+                                f"`sprint plan` planned a unit whose criteria cannot be "
+                                f"executed:\n{both}")
+            self.assertIn("REFUSED", both, both)
+            self.assertIn("BG0900", both, both)
         with tempfile.TemporaryDirectory() as d:
             root = self._workspace(d, verifier=True)
-            r = self._breakdown(root)
+            r = self._plan(root)
             both = r.stdout + r.stderr
             self.assertNotIn("Traceback", both, both)
-            self.assertIn("0 ungroomed", both,
-                          f"a verifiable unit was refused - the control:\n{both}")
+            self.assertEqual(0, r.returncode,
+                             f"a verifiable unit was refused - the control, without which "
+                             f"refusing everything satisfies the row above:\n{both}")
 
     def test_every_ungroomed_reason_has_a_rendering(self) -> None:
         """AC4. The KeyError guard, stated as a property over the whole vocabulary.

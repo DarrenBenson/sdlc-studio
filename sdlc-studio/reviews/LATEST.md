@@ -3,70 +3,58 @@
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-> **Run of record:** RUN-01M11MEP - the ceremony's own record made to answer, or to say it cannot.
-> Ten units, 58 criteria, 76 mutants all killed. Goal judged **PARTIAL** on measurement, not on
-> impression. Release bar MET, measured after every unit reached terminal.
+> **Run of record:** RUN-01M1H09S - the criteria a unit is judged on can be EXECUTED, and the
+> instruments that judge them report one number each. Four units, 20 criteria, 22 mutants all
+> killed. Goal **achieved**, all seven clauses measured. Release bar MET.
 
-## THE HEADLINE: A REPAIR THAT MOVED THREE TIMES, AND TESTS THAT PINNED NOTHING
+## THE HEADLINE: THE FILER COULD WRITE A CRITERION BUT NOT ITS VERIFIER
 
-Seven delivery REJECTs across five of ten units. Not one was cosmetic.
+`file_finding.py file` - the command this project's doctrine names for filing every finding -
+exposed `--ac` and nothing to pair with it. There was **no route to an executable acceptance
+criterion for a bug**. `artifact.py new` appears to offer the model and does not: `--verify` is
+story-only there and is silently dropped.
 
-**BG0623 was rejected three times and the defect MOVED every time.** Round 1 assumed the H1 was
-line 1, so a document with no heading lost its `Status` line at exit 0. Round 2 took the first
-line whose `lstrip` starts with a hash - which destroyed a fenced comment, a `#hashtag` and an
-indented code line. Round 3 required a real ATX heading and tracked fences, and still overwrote
-`## Summary` whenever no H1 existed, and still destroyed a hash inside a four-backtick fence, an
-HTML comment and YAML front matter. Each repair fixed the shapes its criterion named and broke
-the next shape along.
+So the criteria the filer wrote carried no `Verify:` line; `verify_ac` reported nothing could be
+executed; and the Done gate was inert *precisely because* zero verifiers were declared. A unit
+reached a terminal status on a hand-stamped `Verification depth` with no criterion ever run.
+`unit_is_ungroomed` asked whether a criterion was WRITTEN and never whether it could be CHECKED,
+so `sprint plan` called such units plannable.
 
-What ended it was not a longer list of shapes. The licence to OVERWRITE is now narrow: only an
-unambiguous level-one ATX heading, outside every container that suspends markdown, is ever
-replaced. Everything else - including a `##` in a document with no H1 - gets an INSERT. A shape
-the finder does not understand costs a duplicate heading a human can see, never a deleted line.
-**When a defect survives two repairs, stop enumerating cases and make the dangerous operation
-harder to reach.**
+**It was found by the planning ceremony, not by a user.** A seven-unit batch was proposed for
+this slot; a plan review found all twenty-five of its criteria unexecutable and refused the batch.
 
-**A positive control asserting an error string is ABSENT pins nothing.** Both BG0624 severity
-suites passed against a guard mutated to refuse EVERY severity, because they asserted only that
-`is not one of` did not appear - equally true of a command failing for an unrelated reason.
-Strengthening them to assert success then exposed a second vacuous case: the fixture had never
-supplied `--points`, so the creator had been refusing on its grooming gate the whole time.
-
-**A regression that wrote before it refused.** BG0619 widened `find_by_id` to reach retros, which
-made resolving and being LINKABLE diverge: `file --parent RETRO0109` passed the pre-mint guard,
-wrote the child, indexed it and stamped a one-way Parent link, then exited 1 printing "file
-refused". The base ref refused before writing anything.
-
-**Reviewers ran mutants the author had not named, and thirteen survived.** Four on BG0623's
-heading finder - one of which *repaired* three live data-loss paths and was invisible to the
-suite, which is the clearest possible sign the tests pin the wrong thing. All thirteen are killed.
+`sprint plan` now reports **9 ungroomed** over the same corpus that read **0** that morning. That
+is the accepted cost, visible rather than forecast: 12 of 19 open bugs need a real verifier before
+they can be planned.
 
 ## WHAT TO READ BEFORE THE NEXT RUN
 
-**LL0053 cost this close seventeen re-executions.** Mutant registrations are keyed on target
-content, so every later edit to a shared file evicts them. BG0622 and BG0626 were BLOCKED at the
-close; BG0613, BG0617, BG0625 and BG0629 read STALE. Register after the LAST edit, then re-run
-every unit's transition dry-run - and expect to do it again if the close itself edits a target.
+**Three of the seven originally proposed units did not reproduce.** BG0634's stated cause never
+existed; BG0631's two filed shapes both passed on HEAD; BG0632's link half had been fixed by
+BG0619. Re-running every premise against HEAD before coding is what caught it. BG0631 was
+re-groomed onto the collision case that *does* reproduce rather than closed.
 
-**Two of my own mutants survived for the wrong reason.** A phase-specific relocation cannot reach
-a delivery fixture, and a partial `cmd_show` edit leaves the json branch intact. A mutant that
-survives because it was mis-specified is not evidence of coverage; check the mutant before
-believing the survival.
+**A regex run to fix three code spans rewrote 57 files.** MD038 flagged three spans in one
+artefact; the pattern was written over every code span in `bugs/` and `changelog.d/`, modifying 39
+bug artefacts and 18 changelog fragments from earlier runs. Caught immediately and fully restored,
+because all 45 were committed - git saved it, not judgement. Then the restore was *also* too wide
+and reverted this batch's own index rows, blocking the next commit on 17 rows of drift. **The same
+error twice in ten minutes: a broad action where a narrow one was called for.** When the target is
+enumerable, enumerate it.
 
-**The goal was judged PARTIAL, and both misses are countable.** Clause 1 wanted eleven units;
-nine of the original eleven landed (BG0591 and BG0614 dropped with recorded reasons, BG0629
-added). Clause 3 wanted zero non-conformant; the base ref carried 2 and this tree carries 7 -
-US0569-US0576, none of them in this batch. They are non-conformant BECAUSE the batch worked:
-BG0625 and BG0629 repaired the verdict roll-up, which stopped masking their unanswered
-rejections. **Clearing those seven is the next run's first question.**
+**`npm run lint` passed while the commit hook refused.** The strict markdown rules over `bugs/`
+run in the hook, not in `lint`. A locally green lint says nothing about the gate.
 
 ## OPEN
 
-Eight findings filed and carried, all ruled not-stop-ship: **BG0633** (a THIRD Severity writer -
-`transition.py annotate` takes `major` at exit 0, found by falsifying this batch's own "nothing
-else writes it" claim), **BG0634** (the repair ledger truncates a finding label mid-code-span,
-leaving an unbalanced backtick that blocked this very commit twice), **CR0562** (nothing ticks a
-delivered unit's criteria, so a compulsory close row can only be answered by hand - 58 boxes this
-close), plus BG0627, BG0628, BG0630, BG0631, BG0632.
+**BG0637** - `_clean` escapes underscores inside code spans, corrupting 655 identifiers across the
+three review ledgers, 442 already double-escaped. **BG0638** - five sprint-checklist rows state
+conclusions they never established, and `_ck_known_issues` fails open where its sibling reports the
+same blindness as UNANSWERED. Both were found by reviews whose rejections had stood unanswered
+since 2026-07-31.
 
-Sign-off is RECORDED for all ten units. Nothing is owed on this run.
+**US0674 is the one unit that moved the wrong way** and is reported rather than repaired: its
+legacy repair rows answer their rejection in substance but not mechanically, and attributing them
+anyway is the guessing BG0631 AC4 exists to refuse.
+
+Also open: CR0511, CR0562, BG0627, BG0630, BG0633.

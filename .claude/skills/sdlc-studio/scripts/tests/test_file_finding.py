@@ -3384,10 +3384,11 @@ class VerifierAuthoringTests(unittest.TestCase):
     `verify_ac corpus-scan` counts 51 bug files whose criteria parse but carry no verifier.
 
     A criterion nobody can execute is worse than a missing one, because it reads as specified to
-    a reviewer and to the generated seat brief. That is why AC2 requires a REFUSAL rather than a
-    written-and-reported criterion: the earlier wording asked only that the criterion be written
-    without a verifier, which is true of the command as it stands and is the absent-error-string
-    shape this project has now been bitten by twice.
+    a reviewer and to the generated seat brief. AC2 was AMENDED mid-delivery by D0178: it first
+    required the filer to REFUSE, and the blast radius - `acs` is authored across ten test
+    modules here and by every consuming project's scripts - moved the refusal to `sprint plan`.
+    What survives is the discriminating oracle: the message is asserted on its CONTENT, never on
+    the absence of an error string, which is the shape this project has been bitten by twice.
     """
 
     _SCRIPT = Path(__file__).resolve().parent.parent / "file_finding.py"

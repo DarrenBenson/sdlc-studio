@@ -933,6 +933,32 @@ def selector_near_miss(expr: str, cwd=None) -> str | None:
     return None
 
 
+def _uncollectable_because_absent(test_file: str, cwd=None) -> str:
+    """The path this tree does not hold that stops `test_file` collecting, or `""`.
+
+    Distinguishes an INCOMPLETE TREE from a BROKEN TEST, which have opposite remedies. pytest
+    reports the first missing thing it hits; when that thing is itself absent from the tree the
+    file is unevaluable here, and when the file is simply broken there is nothing absent to name
+    and it stays a dead stamp.
+    """
+    try:
+        cp = subprocess.run(["pytest", "--collect-only", "-q", test_file],
+                            capture_output=True, text=True, timeout=120,
+                            cwd=str(cwd) if cwd else None)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    blob = (cp.stdout or "") + (cp.stderr or "")
+    for m in re.finditer(r"(?:FileNotFoundError|No such file or directory)[^\n]*?"
+                         r"['\"]([^'\"\n]+\.py)['\"]", blob):
+        named = m.group(1)
+        probe = Path(named)
+        if not probe.is_absolute():
+            probe = (Path(cwd) / named) if cwd else probe
+        if not probe.exists():
+            return named
+    return ""
+
+
 def unevaluable_stamps(path: Path, cwd=None) -> list[dict]:
     """Stamped-green ACs in `path` whose verifier names a file THIS TREE DOES NOT HOLD.
 
@@ -957,9 +983,27 @@ def unevaluable_stamps(path: Path, cwd=None) -> list[dict]:
         _target, test_file = _selector_target(block.verifier, cwd)
         if not test_file:
             continue
-        if not (Path(cwd) / test_file if cwd else Path(test_file)).exists():
+        here = (Path(cwd) / test_file if cwd else Path(test_file))
+        if not here.exists():
             out.append({"ac": block.ac_id, "verifier": block.verifier, "missing": test_file,
                         "record": sdlc_md.extract_record_id(path.stem) or path.stem})
+            continue
+        # PRESENT BUT UNCOLLECTABLE BECAUSE THE TREE IS INCOMPLETE. Checking only the selector's
+        # own file was too narrow: a test file can be here while the modules it imports are not,
+        # and a review measured the consequence - a checkout without `.claude/skills/sdlc-studio/`
+        # read 727/814 with 5 non-conformant against 731/814 with 1, because
+        # `tools/tests/test_lint_corpus.py` is present and dies on
+        # `FileNotFoundError: .../scripts/tests/gitutil.py`. That is the same "this tree cannot
+        # answer" fact as an absent file, so it belongs in the same bucket.
+        #
+        # A file that fails to collect for its OWN reasons - a syntax error, a genuinely missing
+        # import - is NOT this: that is real debt and must stay a dead stamp. The two are told
+        # apart by whether the import it cannot find is itself absent from the tree.
+        if _collect_nodes(test_file, cwd) is None:
+            why = _uncollectable_because_absent(test_file, cwd)
+            if why:
+                out.append({"ac": block.ac_id, "verifier": block.verifier, "missing": why,
+                            "record": sdlc_md.extract_record_id(path.stem) or path.stem})
     return out
 
 

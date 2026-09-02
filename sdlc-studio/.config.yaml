@@ -114,18 +114,17 @@ review:
   # untouched, and the authoring-time rule that a criterion names a production change its own
   # test dies on still applies at every band - that rule is what caught round 1's defect. Only
   # the register/retract/join LEDGER around it is in scope for narrowing, by CR0550.
-  # COUNT and reporting a run as non-convergent while every rejected unit read
-  # repair=complete with zero outstanding findings - two different facts. D0146's measured
-  # basis stands as guidance on how many rounds to SPEND, and a third round is not routine:
-  # in RUN-01M11MEP it was the round that found data loss at exit 0 and a severity guard
-  # that could refuse every input, both of which a cap of 2 would have shipped.
-  # ADVISORY gate lanes as outstanding, so `loop_termination`'s converged branch is
-  # unreachable in this repository and the cap trips at whatever value it holds. This run
-  # recorded 5, 5, 4, 4, 4 with every unit signed off and zero real blockers. The cap is
-  # raised because it is the lever the close itself names, NOT because twelve rounds are
-  # acceptable; the gate refusing this run was deliberately left unrepaired (L-0344), so
-  # the wall stays visible until BG0635 lands. Put this back to 3 when it does - D0176.
-
+  #
+  # `review.max_rounds` is deliberately ABSENT. One key was read by two consumers with different
+  # defaults - `sprint.py`'s close-attempt cap (4) and `critic.py`'s review-round ceiling (3) -
+  # so no single value was correct for both: 4 loosened the review ceiling past D0175's ruling,
+  # 3 tightened the close budget below stock. With the key removed each consumer takes its own
+  # default, which is the state BG0517 also arrived at. Do not re-add it to change one of them;
+  # splitting the key is the open work.
+  #
+  # It was pinned at 12 for one run because the close could not converge - the count included
+  # lanes the same pre-flight called advisory, so the converged branch was unreachable at any
+  # cap. That is fixed (BG0635), and D0177's interim authorisation expired with it.
 engagement_floor:
   # The mechanical engagement floor is grandfathered forward-only, like conformance/provenance.
   # This repo's early bugs/CRs shipped multi-file fixes with no per-unit AC (the delivery gate

@@ -1336,11 +1336,12 @@ def report_unverifiable_criteria(fields: dict) -> str:
     if missing:
         return (
             f"warning: {len(missing)} authored criterion/criteria carry no verifier "
-            f"(AC{', AC'.join(str(m) for m in missing)}) - refused. Supply one per criterion "
+            f"(AC{', AC'.join(str(m) for m in missing)}). Supply one per criterion "
             f"with `--verify <selector>`, repeatable and paired positionally with `--ac`, or "
             f"the `verify` key in --fields-file. A criterion nobody can execute reads as "
-            f"specified to every reader, and `sprint plan` REFUSES a batch holding it - filing "
-            f"captures a finding, planning commits to it, so the refusal is at the planner.")
+            f"specified to every reader. `sprint plan` REFUSES a unit whose criteria carry NO "
+            f"verifier at all; a unit where only SOME are bare is planned, so the criteria "
+            f"below it are the ones nobody will run.")
     return ""
 
 
@@ -2003,10 +2004,9 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # ... and refuse an artefact the PLANNER would then refuse to plan: the body about to be
     # written is judged by `sprint.breakdown` itself. A preview id is enough - the grooming
     # fields the gate reads are in the metadata block, which does not depend on the id.
-    # BEFORE the id is minted and before anything is written, alongside the grooming check that
-    # already guards this point. An authored criterion carrying no verifier is refused here
-    # rather than written and reported, because a written one reads as specified to every later
-    # reader and the unit then reaches a terminal status with nothing ever executed.
+    # BEFORE the id is minted, alongside the grooming check that already guards this point.
+    # REPORTED here, REFUSED at `sprint plan`: filing captures a finding, planning commits to
+    # one, and refusing at the filer breaks capture across every consuming project's scripts.
     _unverifiable = report_unverifiable_criteria(fields)
     if _unverifiable:
         print(_unverifiable, file=sys.stderr)
@@ -2283,7 +2283,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="the executable check for the --ac in the SAME POSITION (repeatable, "
                         "paired positionally). Written verbatim - never markdown-safed, because "
                         "a backticked token in a selector is unrunnable and, under a shell verb, "
-                        "is command substitution. An authored --ac with no --verify is REFUSED")
+                        "is command substitution. An authored --ac with no --verify is REPORTED "
+                        "here and REFUSED by `sprint plan`, which is where work is committed to")
     f.add_argument("--option", action="append", help="rfc design option (repeatable)")
     f.add_argument("--recommendation", help="rfc recommendation")
     f.add_argument("--parent", help="spawn this finding as a child of an existing RFC/CR: the parent must resolve, and BOTH link directions are wired at mint")
