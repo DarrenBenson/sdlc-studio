@@ -984,7 +984,22 @@ def criteria_block(type_: str, fields: dict) -> str:
     # line byte-comparable to a clean pass. A criteria block this module writes must be
     # readable by the module that executes it.
     if authored:
-        return "\n".join(f"- [ ] **AC{n}** {a}" for n, a in enumerate(authored, 1))
+        # THE VERIFIER, paired positionally, and NEVER markdown-safed. `_md_safe` backtick-wraps
+        # underscored tokens, and a pytest node id is nothing but those - routed through it a
+        # selector becomes ``pytest .../`test_x.py`::T::`test_y` ``, which no runner resolves
+        # and which under a shell verb is command substitution. `artifact.py`:140 records the
+        # same rule for the story path. The criteria text keeps its markdown-safing; only the
+        # selector is exempt, because only the selector is executed.
+        verifiers = fields.get("verify") or []
+        if isinstance(verifiers, str):
+            verifiers = [verifiers]
+        rows = []
+        for n, a in enumerate(authored, 1):
+            rows.append(f"- [ ] **AC{n}** {a}")
+            sel = str(verifiers[n - 1]).strip() if n - 1 < len(verifiers) else ""
+            if sel:
+                rows.append(f"  - **Verify:** {sel}")
+        return "\n".join(rows)
     derived = derived_criteria(type_, fields)
     if derived:
         return "\n".join(f"- [ ] **AC{n}** {c}" for n, c in enumerate(derived, 1))
@@ -1030,6 +1045,11 @@ COMMON_FIELDS_FILE_KEYS: tuple[str, ...] = (
     "title", "summary", "severity", "priority", "ctype", "steps", "fix", "impact",
     "points", "size", "affects", "acs", "options", "recommendation", "parent", "author",
     "date",
+    # `verify` pairs positionally with `acs`. It was already in LIST_VALUED_FIELDS - the type
+    # rule anticipated it - while the key itself was absent from this tuple, so `load_fields_file`
+    # refused it as unknown and there was no route to an executable criterion through the filer
+    # at all.
+    "verify",
 )
 #: The filer's own extra keys. `evidence` is deliberately NOT in the common set: it is the finding
 #: filer's record of WHERE a defect was observed, and a key the general creator would accept and
@@ -1288,6 +1308,42 @@ def load_fields_file(path: Path | str, allowed: tuple[str, ...] = FIELDS_FILE_KE
     return {k: v for k, v in data.items() if v is not None}
 
 
+def report_unverifiable_criteria(fields: dict) -> str:
+    """The warning for an AUTHORED criterion carrying no verifier, or `""`. Never raises.
+
+    A criterion nobody can execute is worse than a missing one: it reads as specified to a
+    reviewer, to `sprint plan`'s grooming check and to the generated seat brief, and the unit
+    then walks to a terminal status on a hand-stamped `Verification depth` with nothing ever
+    run. The shipped `verify_ac corpus-scan` counts 51 bug files already in that state.
+
+    REPORTS rather than refuses - the refusal belongs at `sprint plan`, where work is
+    committed to rather than captured. Scoped to AUTHORED criteria only. `derived_criteria` writes the scaffold for a finding filed
+    with no `--ac` at all, and that path is the ordinary one - refusing it would refuse most
+    filings. The rule is "if you state a criterion, state how it is checked", not "every finding
+    must arrive with tests".
+    """
+    supplied = fields.get("acs") or []
+    if isinstance(supplied, str):
+        supplied = [supplied] if supplied.strip() else []
+    authored = [a for a in (str(x).strip() for x in supplied) if a]
+    if not authored:
+        return
+    verifiers = fields.get("verify") or []
+    if isinstance(verifiers, str):
+        verifiers = [verifiers]
+    missing = [n for n, _ in enumerate(authored, 1)
+               if n - 1 >= len(verifiers) or not str(verifiers[n - 1]).strip()]
+    if missing:
+        return (
+            f"warning: {len(missing)} authored criterion/criteria carry no verifier "
+            f"(AC{', AC'.join(str(m) for m in missing)}) - refused. Supply one per criterion "
+            f"with `--verify <selector>`, repeatable and paired positionally with `--ac`, or "
+            f"the `verify` key in --fields-file. A criterion nobody can execute reads as "
+            f"specified to every reader, and `sprint plan` REFUSES a batch holding it - filing "
+            f"captures a finding, planning commits to it, so the refusal is at the planner.")
+    return ""
+
+
 #: Fields every fields-file reader treats as a LIST. A scalar here is not a near-miss: Python
 #: iterates a string's CHARACTERS, so one Verify expression became one letter per criterion and
 #: the artefact was written, indexed and reported created. The keys are validated; the types
@@ -1400,6 +1456,28 @@ def rev_row(today: str, f: dict, change: str) -> str:
     paths share. Built through `join_row`, so a `|` in an author's name is escaped rather than
     silently opening a fourth column and swallowing the Change cell."""
     return sdlc_md.join_row([today, _rev_author(f), change])
+
+
+def _md_safe_criteria(block: str) -> str:
+    """`_md_safe` over a criteria block, EXEMPTING the `- **Verify:**` selector on each line.
+
+    The block is markdown-safed as a whole, which is right for criterion prose and fatal for a
+    selector: `_md_safe` backtick-wraps underscored tokens, and a pytest node id is nothing but
+    those, so the line came out as ``pytest .../`test_x.py`::T::`test_y` `` - a selector no
+    runner resolves and, under a shell verb, command substitution. `artifact.py`:140 records the
+    same rule for the story path.
+
+    Only the text AFTER the marker is exempt. The criterion above it still gets safed, because
+    it is prose and an unbackticked `_` there is markdown emphasis.
+    """
+    out = []
+    for line in block.split("\n"):
+        marker = "  - **Verify:** "
+        if line.startswith(marker):
+            out.append(marker + line[len(marker):])
+        else:
+            out.append(_md_safe(line))
+    return "\n".join(out)
 
 
 def _md_safe(text) -> str:
@@ -1780,7 +1858,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
                 # Derived from the evidence above, so the lane that picks this up has a contract
                 # and the engagement floor has something to read. Thin evidence is STATED here,
                 # never scaffolded - see `criteria_block`.
-                f"## Acceptance Criteria\n\n{_md_safe(criteria_block(type_, f))}\n\n"
+                f"## Acceptance Criteria\n\n{_md_safe_criteria(criteria_block(type_, f))}\n\n"
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
                 f"{rev_row(today, f, 'Filed')}\n")
     if type_ == "cr":
@@ -1925,6 +2003,13 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # ... and refuse an artefact the PLANNER would then refuse to plan: the body about to be
     # written is judged by `sprint.breakdown` itself. A preview id is enough - the grooming
     # fields the gate reads are in the metadata block, which does not depend on the id.
+    # BEFORE the id is minted and before anything is written, alongside the grooming check that
+    # already guards this point. An authored criterion carrying no verifier is refused here
+    # rather than written and reported, because a written one reads as specified to every later
+    # reader and the unit then reaches a terminal status with nothing ever executed.
+    _unverifiable = report_unverifiable_criteria(fields)
+    if _unverifiable:
+        print(_unverifiable, file=sys.stderr)
     check_groomed(root, type_, _render(type_, "PREVIEW", title, today, fields))
     # Parent link (spawning a child under an RFC/CR): the parent must RESOLVE before
     # anything is minted - a child born pointing at nothing is the asymmetry class the
@@ -2063,6 +2148,8 @@ def cmd_file(args: argparse.Namespace) -> int:
     flags = {k: v for k, v in flags.items() if v is not None}
     if args.ac:
         flags["acs"] = args.ac
+    if getattr(args, "verify", None):
+        flags["verify"] = args.verify
     if args.option:
         flags["options"] = args.option
     if args.title:
@@ -2192,6 +2279,11 @@ def build_parser() -> argparse.ArgumentParser:
                         "kept OUT of `Affects`: the evidence site is not where the fix lands, and "
                         "a footprint naming it groups the unit by a surface no code will change")
     f.add_argument("--ac", action="append", help="cr acceptance criterion (repeatable)")
+    f.add_argument("--verify", action="append",
+                   help="the executable check for the --ac in the SAME POSITION (repeatable, "
+                        "paired positionally). Written verbatim - never markdown-safed, because "
+                        "a backticked token in a selector is unrunnable and, under a shell verb, "
+                        "is command substitution. An authored --ac with no --verify is REFUSED")
     f.add_argument("--option", action="append", help="rfc design option (repeatable)")
     f.add_argument("--recommendation", help="rfc recommendation")
     f.add_argument("--parent", help="spawn this finding as a child of an existing RFC/CR: the parent must resolve, and BOTH link directions are wired at mint")

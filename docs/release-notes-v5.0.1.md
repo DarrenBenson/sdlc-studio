@@ -76,7 +76,9 @@ documented command now works, pinned to `v5.0.1` or later.
 **v5.0.1 was TAGGED with zero Critical and zero High open against it, and it is back there.**
 That was true at the tag and was not a standing claim: fourteen High findings were raised against
 this code afterwards, every one by adversarial review, by dogfooding or by measurement.
-**Zero Critical, zero High.** All fourteen are fixed and independently evidenced. The last four closed
+**Zero Critical, zero High.** All fifteen are fixed and independently evidenced - BG0636 was
+raised on 2026-09-02 while PLANNING the next run and closed inside it, which is the standing rule
+working rather than an exception to it. The last four closed
 in RUN-01M0YXN3 - BG0621, BG0615, BG0618 and BG0607 - each carrying executed mutant evidence
 against the tree as it stands rather than a claim about it, and BG0583 was raised at High and then
 closed WON'T FIX when its premise did not survive re-measurement.
@@ -142,7 +144,26 @@ could never be retired at all, because retirement demanded an approval carrying 
 own fingerprint and repairing what the reviewer rejected necessarily changes it. Forty-four of
 forty-four rejected units stood REJECTed and not one had ever been cleared.
 
-**v5.0.1 discloses 18 open defects: 18 Medium, 0 Low.** The High findings above are
+**BG0636 is the current open High, and it was found by the planning ceremony rather than by a
+user.** `file_finding.py file` - the command this project's own doctrine names for filing every
+finding - exposes `--ac` and had no `--verify`, and its fields-file schema had no verifier key,
+so there was NO route to an executable acceptance criterion for a bug. `artifact.py new` appears
+to offer one and does not: `--verify` is story-only there and is silently dropped for a bug. The
+criteria the filer wrote therefore carried no `Verify:` line, `verify_ac` reported that nothing
+could be executed, and `_done_verify_gate` was inert precisely BECAUSE zero verifiers were
+declared - so a unit could reach a terminal status on a hand-stamped `Verification depth` with no
+criterion ever run. `conformance.unit_is_ungroomed` tested three shapes and executability was not
+among them, so `sprint plan` reported such units plannable.
+
+It surfaced when a seven-unit batch was proposed for the first v5.1 run and a plan review found
+all twenty-five of its criteria unexecutable. It is FIXED: `file_finding.py file` now takes
+`--verify` paired with `--ac` and writes the selector byte-exact, and `sprint plan` refuses a
+batch whose criteria carry neither a verifier nor a manual marker. The shipped `verify_ac corpus-scan` counts 51 bug
+files in that state. Fixing it deliberately takes 12 of 19 open bugs out of the plannable backlog
+until each is groomed with a real verifier - a cost accepted on the record rather than
+discovered.
+
+**v5.0.1 discloses 15 open defects: 15 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

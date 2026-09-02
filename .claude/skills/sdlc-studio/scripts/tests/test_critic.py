@@ -5817,5 +5817,146 @@ class AbsentBriefTests(unittest.TestCase):
         self.assertEqual({u: "REJECT" for u in nine}, standing)
 
 
+class RepairPhaseJoinTests(unittest.TestCase):
+    """BG0631: a repair row was joined to a rejection by DATE alone.
+
+    `_REPAIR_COLS` carried neither the phase a repair answers nor the rejection it answers, and
+    `repairs_for` took no phase, so `repair_state` selected rows on `verdict_date` equality. The
+    two shapes originally filed both pass on HEAD - `repair_state` loops per rejection, and
+    `resolve_finding` separates rejections whose findings read differently. What still fails is
+    TEXT COLLISION, and that is the ordinary shape rather than an exotic one: a plan-review
+    finding surviving into delivery is what a review round normally produces.
+
+    It became a gate rather than a reporting nuisance when BG0629 landed, because a plan-review
+    REJECT is now retired by its repair - so a delivery repair discharging a plan-review
+    rejection opens a gate that should have stayed shut.
+    """
+
+    _D_HEAD = ("# Critic Verdicts\n\n| Unit | Verdict | Reviewer | Author | Date | Brief | "
+               "Tier | Issues |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    _P_HEAD = ("# Plan-Review Verdicts\n\n| Unit | Verdict | Reviewer | Author | Date | Brief "
+               "| Kind | Issues |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    _R_HEAD = ("# Repair Record\n\n| Unit | Verdict date | Author | Date | Closed | "
+               "Outstanding |\n| --- | --- | --- | --- | --- | --- |\n")
+
+    _FINDING = "the oracle cannot fail"
+
+    def _proj(self, d, *, delivery="", plan="", repairs=""):
+        root = Path(d)
+        (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").write_text(
+            self._D_HEAD + delivery, encoding="utf-8")
+        (root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md").write_text(
+            self._P_HEAD + plan, encoding="utf-8")
+        (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
+            self._R_HEAD + repairs, encoding="utf-8")
+        return root
+
+    def _collision(self, d, *, repair_phase="delivery"):
+        """One finding text, rejected in BOTH phases on ONE date, answered by ONE repair."""
+        day = "2026-09-02"
+        delivery = (f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
+                    f"[new] {self._FINDING} |\n")
+        plan = (f"| BG0001 | REJECT | qa | a | {day} | bbbbbbbbbbbb | test-plan | "
+                f"[new] {self._FINDING} |\n")
+        repairs = (f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none | "
+                   f"{repair_phase} |\n")
+        return self._proj(d, delivery=delivery, plan=plan, repairs=repairs)
+
+    def test_a_delivery_repair_does_not_answer_a_same_text_plan_review_rejection(self) -> None:
+        # AC1. THE defect, reproduced: identical finding text, one date, two phases.
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._collision(d, repair_phase="delivery")
+            state = critic.repair_state(root, "BG0001", "plan-review")
+            self.assertNotEqual(
+                "complete", state["state"],
+                "a DELIVERY repair discharged a PLAN-REVIEW rejection carrying the same finding "
+                "text on the same date - which since BG0629 opens the test-plan gate")
+            # `none` is the correct answer here and is what the fix produces: no repair row
+            # answers this phase. `partial` would also be correct. The assertion is that it is
+            # NOT discharged - asserting a non-empty `outstanding` would be wrong, because a
+            # state of `none` legitimately carries none.
+            self.assertIn(state["state"], ("none", "partial"), state)
+
+    def test_the_delivery_phase_still_reads_its_own_repair(self) -> None:
+        # AC2. The paired control: refusing to join a repair to anything satisfies AC1 alone,
+        # and would break every repair record in the corpus.
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._collision(d, repair_phase="delivery")
+            state = critic.repair_state(root, "BG0001", "delivery")
+            self.assertEqual("complete", state["state"],
+                             f"the delivery repair stopped answering its own rejection: {state}")
+
+    def test_a_written_row_carries_its_phase_and_rejection(self) -> None:
+        # AC3. The column exists and round-trips, or the join above has nothing to read.
+        critic = _load()
+        self.assertIn("phase", critic._REPAIR_COLS,
+                      "the repair ledger carries no phase column, so the join is date equality")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, delivery=(
+                f"| BG0001 | REJECT | eng | a | 2026-09-02 | aaaaaaaaaaaa | full | "
+                f"[new] {self._FINDING} |\n"))
+            critic.record_repair(root, "BG0001", author="a; session",
+                                 closed=f"{self._FINDING} -> rewritten", phase="delivery")
+            rows = critic.repairs_for(root, "BG0001")
+            self.assertTrue(rows)
+            self.assertEqual("delivery", str(rows[-1].get("phase") or "").strip(),
+                             f"the written row does not name its phase: {rows[-1]}")
+
+    def test_legacy_rows_are_attributed_or_named_unattributable(self) -> None:
+        """AC4. A row predating the column is attributed where the date makes it unambiguous
+        and REPORTED where it does not - never guessed. A backfill that assigns a phase it
+        cannot know is the record made prettier rather than truer, which this project refused
+        once already."""
+        critic = _load()
+        day = "2026-09-02"
+        with tempfile.TemporaryDirectory() as d:
+            # Unambiguous: only ONE phase rejected on that date, so a bare row belongs to it.
+            root = self._proj(d, delivery=(
+                f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
+                f"[new] {self._FINDING} |\n"),
+                repairs=f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none |\n")
+            self.assertEqual("complete", critic.repair_state(root, "BG0001", "delivery")["state"],
+                             "a legacy row was dropped from the phase it unambiguously answers")
+        with tempfile.TemporaryDirectory() as d:
+            # Ambiguous: BOTH phases rejected that date, so a bare row answers NEITHER.
+            root = self._collision(d, repair_phase="")
+            self.assertNotEqual(
+                "complete", critic.repair_state(root, "BG0001", "plan-review")["state"],
+                "a legacy row with no phase was GUESSED onto a phase it cannot be known to "
+                "answer - the record made prettier rather than truer")
+
+    def test_every_unit_that_moves_is_named_with_its_reason(self) -> None:
+        """AC5. The rows this change CANNOT place must be reportable, with a count that moves.
+
+        The first draft asserted only that the return was a list, which a function returning
+        `[]` unconditionally satisfies - and a mutant that silently absorbed every
+        unattributable row survived it. The oracle has to be the population itself.
+        """
+        critic = _load()
+        day = "2026-09-02"
+        with tempfile.TemporaryDirectory() as d:
+            # AMBIGUOUS: both phases rejected on one date, and a legacy row naming no phase.
+            root = self._collision(d, repair_phase="")
+            rows = critic.unattributable_repairs(root)
+            self.assertEqual(1, len(rows),
+                             f"a legacy row that answers neither phase was not reported: {rows}")
+            self.assertEqual(sorted(rows[0]["phases"]), ["delivery", "plan-review"],
+                             "the report must name WHICH phases the date collides across")
+        with tempfile.TemporaryDirectory() as d:
+            # UNAMBIGUOUS: one phase rejected that date, so the legacy row IS attributable and
+            # must not be reported. The control - reporting everything satisfies the row above.
+            root = self._proj(
+                d,
+                delivery=(f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
+                          f"[new] {self._FINDING} |\n"),
+                repairs=f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none |\n")
+            self.assertEqual([], critic.unattributable_repairs(root),
+                             "a row whose phase IS unambiguous was reported unattributable")
+
+
 if __name__ == "__main__":
     unittest.main()

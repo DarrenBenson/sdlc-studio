@@ -15061,7 +15061,14 @@ class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
     as strict as before.
     """
 
-    def _repo(self, d, *, goal="design", status="Ready", criteria="- [ ] it behaves",
+    def _repo(self, d, *, goal="design", status="Ready",
+              # A criterion the parser reads and can execute. `- [ ] it behaves` carried no
+              # `**ACn**` marker, so it parsed to no blocks, and no verifier - which from
+              # BG0636 onward is the fourth ungroomed shape. The GROOMED default has to be
+              # genuinely groomed, or the row asserting it does not block asserts nothing.
+              criteria=("- [ ] **AC1** Given a unit at Ready, when the design rung closes, "
+                        "then it does not block\n"
+                        "  - **Verify:** pytest tests/test_x.py::RungTests::test_ready_is_ok"),
               unit="US0101"):
         """A real git repo whose run window carries a commit for the unit, at a chosen rung.
 
@@ -17523,6 +17530,216 @@ class HandoffTitleTests(unittest.TestCase):
         # AC2. The paired control: the claim is true there, and the title is the one place to
         # make it. Green at HEAD by design - the over-correction is what it catches.
         self.assertEqual(self._GOAL, self._title_for("achieved"))
+
+
+
+class LoopConvergenceTests(unittest.TestCase):
+    """BG0635: the close's convergence series counted rows the same pre-flight called advisory.
+
+    `loop_termination` short-circuits to CONVERGED when the latest attempt's outstanding count is
+    zero, and its own comment says why: the cap read only the LENGTH, so a finished loop was
+    refused and raising the cap merely moved the number at which that happened. But the count
+    handed to it was `len(pre["blockers"])`, which includes every row `preflight_headline`
+    prints as `reported not blocking`. This repository always carries four of them, so the
+    series could never reach zero, the converged branch was unreachable, and RUN-01M11MEP
+    recorded 5, 5, 4, 4, 4, 4 against an empty real blocker set before being stopped by a cap
+    it could not have satisfied at any value.
+
+    `stages` is asserted BESIDE the count in AC1 because the two are written from different
+    expressions over the same list. Fixing only the count writes `outstanding: 0` next to
+    `stages: ["gate"]` - a converged attempt that still names the lane it converged past, which
+    is a row no reader can act on.
+    """
+
+    @staticmethod
+    def _pre(blockers):
+        return {"blockers": blockers}
+
+    @staticmethod
+    def _advisory(stage="gate", ident="constitution"):
+        return {"stage": stage, "id": ident, "blocking": False, "detail": "advisory"}
+
+    @staticmethod
+    def _holding(stage="signoff", ident="sign-off"):
+        return {"stage": stage, "id": ident, "blocking": True, "detail": "held"}
+
+    def _record(self, root, blockers):
+        sprint = _load()
+        sprint._record_close_attempt(root, self._pre(blockers))
+        from lib import run_state  # noqa: PLC0415
+        return (run_state.read(root) or {}).get("close_attempts") or []
+
+    @staticmethod
+    def _root(d):
+        root = Path(d)
+        (root / "sdlc-studio").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\n", encoding="utf-8")
+        return root
+
+    def test_an_all_advisory_preflight_records_zero_and_no_stages(self) -> None:
+        # AC1. BOTH cells. `outstanding` alone passes a mutant that filters the count and leaves
+        # `stages` reading from the unfiltered list, which is the row RUN-01M11MEP would have
+        # written: converged, and still naming `gate`.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            rows = self._record(root, [self._advisory("gate", "constitution"),
+                                       self._advisory("gate", "disclosure"),
+                                       self._advisory("gate", "mutation")])
+            self.assertEqual(1, len(rows))
+            self.assertEqual(0, rows[-1]["outstanding"],
+                             "an advisory row was counted as an outstanding blocker")
+            self.assertEqual([], rows[-1]["stages"],
+                             "the attempt reads converged but still names the stage it "
+                             "converged past")
+
+    def test_a_blocking_lane_is_still_counted_and_named(self) -> None:
+        # AC2. The paired control. Counting nothing, or emptying `stages` unconditionally,
+        # satisfies AC1 on its own and would make the loop detector blind.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            rows = self._record(root, [self._advisory("gate", "constitution"),
+                                       self._holding("signoff", "sign-off"),
+                                       self._advisory("gate", "disclosure")])
+            self.assertEqual(1, rows[-1]["outstanding"],
+                             "the genuinely blocking lane was not counted")
+            self.assertEqual(["signoff"], rows[-1]["stages"],
+                             "stages must name the holding lane's stage and no other")
+
+    def test_a_converged_run_at_the_cap_reaches_a_later_stage(self) -> None:
+        """AC3. The COMPOSITION - the recorder feeding the terminator - not either alone.
+
+        Driving `loop_termination` by itself proves nothing here: the bug's own Proposed Fix
+        says that function is correct and needs no change, so a test built on it passes before
+        and after (it did, on the first draft of this suite). The defect is the SERIES it is
+        handed. So this records real attempts through `_record_close_attempt` and then asks
+        `loop_termination` about the series that actually reached the run state, which is the
+        path `cmd_close` takes.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            sprint = _load()
+            cap = 3
+            for _ in range(cap + 3):
+                rows = self._record(root, [self._advisory("gate", "constitution"),
+                                           self._advisory("gate", "disclosure")])
+            stop, why = sprint.loop_termination(rows, cap=cap)
+            self.assertFalse(
+                stop,
+                f"a run with no holding blocker was stopped after {len(rows)} attempts at "
+                f"cap {cap}: {why}. The series recorded was "
+                f"{[r['outstanding'] for r in rows]} - it must be all zeros.")
+
+        # ...and the cap STILL fires when the set never clears, or this row is satisfied by
+        # deleting the cap check outright.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            for _ in range(6):
+                rows = self._record(root, [self._holding("signoff", "sign-off")])
+            stop_bad, why_bad = _load().loop_termination(rows, cap=3)
+            self.assertTrue(stop_bad, "the cap no longer fires on a genuinely stuck loop")
+            self.assertIn("cap", why_bad)
+
+    def test_the_project_config_pins_no_round_cap(self) -> None:
+        """AC4. `review.max_rounds` is REMOVED, not set.
+
+        One key, two consumers, different defaults: `sprint.py`'s close-attempt cap is 4 and
+        `critic.py`'s review-round ceiling is 3. Any single value is wrong for one of them - 4
+        loosens the review ceiling past the operator's D0175 ruling, 3 tightens the close budget
+        below stock - so the honest configuration is none at all. BG0517 set the same precedent.
+        """
+        # parents: [0] tests [1] scripts [2] sdlc-studio [3] skills [4] .claude [5] repo root.
+        # `test_backfill_audit_runs.py` records this exact off-by-one: an index of [4] pointed
+        # at `.claude`, and the two live-corpus tests that used it scanned an empty tree and
+        # passed VACUOUSLY. The first draft of this test made the same mistake, so the assertion
+        # below is not decoration - it is what turns "config not found" into a failure rather
+        # than a silent pass.
+        cfg = Path(__file__).resolve().parents[5] / "sdlc-studio" / ".config.yaml"
+        self.assertTrue(cfg.is_file(),
+                        f"the project config was not found at {cfg} - this row reads the live "
+                        f"corpus, so a missing file is a failure, never a skip")
+        for line in cfg.read_text(encoding="utf-8").splitlines():
+            bare = line.split("#", 1)[0]
+            self.assertNotIn("max_rounds:", bare,
+                             "review.max_rounds is pinned in the project config; it feeds two "
+                             "consumers whose defaults differ, so no single value is correct")
+
+
+class VerifierGroomingTests(unittest.TestCase):
+    """BG0636, the planner half: the gate must REFUSE, and must not crash doing it.
+
+    `sprint.py:2167` is a bare `_AC_MISS[ac_why]` over a three-key dict. Adding a fourth
+    ungroomed reason in `conformance` without an entry here is a `KeyError` that takes down
+    `plan` and `breakdown` for EVERY batch containing such a unit - the fix's own blast radius,
+    and the reason `sprint.py` is inside this unit's declared Affects at all. A plan review
+    found it; nothing in the suite would have.
+
+    AC3 is driven through the shipped command as a subprocess. A library test on
+    `unit_is_ungroomed` stays green when the wiring at `sprint.py`:2137 is deleted, which is
+    L-0383 and is how this project has shipped inert guards before.
+    """
+
+    _SCRIPT = Path(__file__).resolve().parent.parent / "sprint.py"
+
+    @staticmethod
+    def _workspace(d, *, verifier: bool):
+        root = Path(d)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\n", encoding="utf-8")
+        body = ("# BG0900: a finding\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                "> **Points:** 2\n> **Affects:** a.py\n\n## Summary\n\n"
+                "the close counted advisory lanes as outstanding blockers\n\n"
+                "## Acceptance Criteria\n\n- [ ] **AC1** given x, when y, then z\n")
+        if verifier:
+            body += "  - **Verify:** pytest tests/test_x.py::T::test_y\n"
+        body += "\n## Revision History\n"
+        (root / "sdlc-studio" / "bugs" / "BG0900-a-finding.md").write_text(body, encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [BG0900](BG0900-a-finding.md) | a finding | Open |\n", encoding="utf-8")
+        return root
+
+    def _breakdown(self, root):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPT), "breakdown", "--bugs", "Open",
+             "--root", str(root)],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    def test_plan_refuses_a_unit_whose_criteria_cannot_be_executed(self) -> None:
+        # AC3. Through the shipped command, both directions.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._workspace(d, verifier=False)
+            r = self._breakdown(root)
+            both = r.stdout + r.stderr
+            self.assertNotIn("Traceback", both, both)
+            self.assertIn("1 ungroomed", both,
+                          f"a unit whose criteria carry no verifier was reported plannable:"
+                          f"\n{both}")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._workspace(d, verifier=True)
+            r = self._breakdown(root)
+            both = r.stdout + r.stderr
+            self.assertNotIn("Traceback", both, both)
+            self.assertIn("0 ungroomed", both,
+                          f"a verifiable unit was refused - the control:\n{both}")
+
+    def test_every_ungroomed_reason_has_a_rendering(self) -> None:
+        """AC4. The KeyError guard, stated as a property over the whole vocabulary.
+
+        Pinning the one new string would leave the NEXT reason to crash the planner in exactly
+        the same way. So this asserts that every reason `unit_is_ungroomed` can return has an
+        entry, which is the invariant `_AC_MISS[ac_why]` actually depends on.
+        """
+        sprint = _load()
+        reasons = {"no-criteria", "placeholder", "derived-only", "no-verifier"}
+        rendered = set(sprint.ac_miss_vocabulary())
+        missing = sorted(reasons - rendered)
+        self.assertEqual([], missing,
+                         f"_AC_MISS has no rendering for {missing} - `sprint.py`'s bare "
+                         f"subscript raises KeyError, taking down plan and breakdown for every "
+                         f"batch holding such a unit")
 
 
 if __name__ == "__main__":

@@ -248,6 +248,38 @@ def unit_is_ungroomed(type_: str, text: str) -> tuple[bool, str]:
     import file_finding as _ff  # noqa: PLC0415 - the writer owns the shape it writes
     if _ff.criteria_are_all_derived(text):
         return True, "derived-only"
+    # THE FOURTH SHAPE: criteria nobody can execute. The three above ask whether a criterion was
+    # WRITTEN; none asks whether it can be CHECKED, so a unit carrying authored prose and no
+    # `- **Verify:**` line passed grooming, `sprint plan` reported it plannable, and
+    # `_done_verify_gate` was inert precisely BECAUSE zero non-manual verifiers were declared -
+    # the unit then reached a terminal status on a hand-stamped `Verification depth` with nothing
+    # ever run. The shipped `verify_ac corpus-scan` counts 51 bug files in that state.
+    #
+    # `manual` is an accepted answer. The rule is "state how this is checked", not "everything
+    # must be automatable" - a gate that refuses honest manual work is one the next operator
+    # switches off.
+    #
+    # The VACUOUS case is answered first and deliberately. A rule phrased "every criterion
+    # carries a verifier" is TRUE over an empty list, and 61 bug files have a criteria section
+    # that parses to no blocks at all - the largest sub-population, and the one a per-criterion
+    # rule waves through without ever being wrong.
+    if sdlc_md.executes_verifiers(type_):
+        try:
+            import verify_ac as _va  # noqa: PLC0415 - deferred; the module that executes them
+            blocks = _va.parse_story(text)
+        except Exception:  # noqa: BLE001 - same fail-open as the criteria leg above, and for
+            # the same reason: a guard the two ends disagree about is worse than one both miss.
+            blocks = None
+        if blocks is not None:
+            if not blocks:
+                return True, "no-verifier"
+            # `verifier`, which is what `ACBlock` actually carries. The first draft read
+            # `verify`, an attribute that does not exist, so `getattr(..., "")` returned empty
+            # for EVERY block and the predicate refused verifier-bearing units too. Both control
+            # rows caught it; neither target row could have, because a predicate that refuses
+            # everything satisfies them all.
+            if not any(str(getattr(b, "verifier", "") or "").strip() for b in blocks):
+                return True, "no-verifier"
     return False, ""
 
 
@@ -610,6 +642,9 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
     waivers = stage_waivers(root)
     units: list[dict] = []
     ok = 0
+    #: Units whose stamped verifiers name files this tree does not hold - reported in
+    #: their own bucket rather than counted as debt, because the remedies are opposite.
+    unevaluable: list[dict] = []
     for path in sdlc_md.artifact_files("story", root):
         text = path.read_text(encoding="utf-8")
         rid = sdlc_md.extract_record_id(path.stem) or path.stem
@@ -627,7 +662,21 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
             reconciled = (not _no_index) and sdlc_md.norm_id(rid) not in drift_ids
             documented = _doc_ok
         elif status == "Done":
-            dead = len(verify_ac.unresolvable_stamps(path, root)) if verify_ac else 0
+            # UNEVALUABLE is counted apart from DEAD. A stamp whose test file is not in this
+            # tree cannot be judged here; scoring it as debt made the conformance figure a
+            # function of tree completeness rather than of the corpus.
+            # UNEVALUABLE is SUBTRACTED from DEAD rather than distinguished upstream.
+            # `selector_resolves` reports both as unresolvable and must keep doing so: the write
+            # guard depends on a mistyped path being refused, and revert-check on a dead pointer
+            # being named. Conformance is the only caller that needs them apart, so the
+            # subtraction is here, where the need is.
+            unevaluable_here = verify_ac.unevaluable_stamps(path, root) if verify_ac else []
+            _absent = {u["ac"] for u in unevaluable_here}
+            dead = (len([s for s in verify_ac.unresolvable_stamps(path, root)
+                         if s["ac"] not in _absent]) if verify_ac else 0)
+            if unevaluable_here:
+                unevaluable.append({"id": rid, "acs": [u["ac"] for u in unevaluable_here],
+                                    "missing": sorted({u["missing"] for u in unevaluable_here})})
             verified, reconciled, critiqued, documented, critiqued_missing = _done_stages(
                 root, rid, verified_states, _no_index, drift_ids, _doc_ok,
                 two_role_cutoff=two_role_cutoff, critic_required=critic_required,
@@ -744,6 +793,10 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "units": units,
+        # Units this tree could not EVALUATE, kept out of the non-conformant count and named
+        # in their own bucket. Always present, like `scope`, so a reader never has to infer
+        # from the numbers whether they are looking at debt or at an incomplete checkout.
+        "unevaluable": unevaluable,
         "waivers_unattributed": waivers_unattributed,
         # Repo-wide failures, listed once. The gate counts these alongside per-unit
         # non-conformance, so attributing them once REPORTS better without enforcing less.
@@ -890,6 +943,17 @@ def cmd_check(args: argparse.Namespace) -> int:
         extra = f", {s['exempt']} exempt (pre-adoption)" if s.get("exempt") else ""
         print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not{extra}"
               " (story-scoped: a bug/CR tranche relies on the critic + gate)")
+        # BEFORE any verdict is read, and for the same reason `scope_detail` is: a figure whose
+        # meaning depends on what the tree happened to contain must say so, or the reader takes
+        # an incomplete checkout for debt. The remedies the summary goes on to suggest -
+        # backfill, a cutoff - are correct advice for debt and useless for a partial tree.
+        un = result.get("unevaluable") or []
+        if un:
+            files = sorted({m for row in un for m in row.get("missing", [])})
+            shown = ", ".join(files[:3]) + (f" (+{len(files) - 3} more)" if len(files) > 3 else "")
+            print(f"  NOT EVALUABLE HERE: {len(un)} unit(s) carry stamped criteria whose test "
+                  f"files this tree does not hold, so they are neither conformant nor debt - "
+                  f"absent: {shown}")
         # What the run narrowed itself to, said before any verdict is read - never inferred.
         sc = scope_detail(result)
         if sc:

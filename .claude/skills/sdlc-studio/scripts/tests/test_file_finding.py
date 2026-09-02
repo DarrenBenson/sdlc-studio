@@ -3005,7 +3005,14 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
                 "# BG9001: a scaffolded finding\n\n> **Status:** Open\n> **Severity:** Medium\n"
                 "> **Points:** 2\n> **Affects:** scripts/x.py\n\n## Summary\n\nA thing is "
                 "broken.\n\n## Acceptance Criteria\n\n- [ ] **AC1** Given a widget at rest, "
-                "when it is poked, then it wobbles.\n", encoding="utf-8")
+                "when it is poked, then it wobbles.\n"
+                # The verifier is part of what "properly authored" MEANS from BG0636 onward:
+                # `unit_is_ungroomed` gained a fourth shape, `no-verifier`, so a criterion
+                # nobody can execute is refused by `plan` exactly as the scaffold is. Without
+                # this line the control asserts that an unverifiable unit plans, which is the
+                # behaviour that unit was filed to end.
+                "  - **Verify:** pytest tests/test_widget.py::WobbleTests::test_it_wobbles\n",
+                encoding="utf-8")
             ok = subprocess.run(
                 [sys.executable, "-B", str(script), "plan", "--root", str(root),
                  "--worklist", str(wl)],
@@ -3184,7 +3191,7 @@ class SeverityVocabularyTests(unittest.TestCase):
         return ["file", "--root", str(root), "--type", "bug", "--title", "t",
                 "--summary", "s", "--steps", "s", "--fix", "f", "--points", "2",
                 "--affects", "a.py", "--severity", severity,
-                "--ac", "given x, when y, then z ||| shell true"]
+                "--ac", "given x, when y, then z", "--verify", "shell true"]
 
     def _root(self, d):
         root = Path(d)
@@ -3332,7 +3339,7 @@ class ParentMustBeAbleToCarryTheLinkTests(unittest.TestCase):
             [sys.executable, str(self._SCRIPT), "file", "--root", str(root),
              "--type", "bug", "--title", "t", "--summary", "s", "--steps", "s", "--fix", "f",
              "--points", "2", "--affects", "a.py", "--severity", "Medium",
-             "--ac", "given x, when y, then z ||| shell true", "--parent", parent_id],
+             "--ac", "given x, when y, then z", "--verify", "shell true", "--parent", parent_id],
             capture_output=True, text=True, timeout=300, check=False)
 
     @staticmethod
@@ -3363,6 +3370,121 @@ class ParentMustBeAbleToCarryTheLinkTests(unittest.TestCase):
             r = self._file_under(root, parent_id)
             self.assertEqual(0, r.returncode, r.stdout + r.stderr)
             self.assertEqual((1, 1), self._minted(root), r.stdout + r.stderr)
+
+
+
+class VerifierAuthoringTests(unittest.TestCase):
+    """BG0636: the filer could write a criterion but not its verifier.
+
+    `artifact.py new` exposes `--verify` - for STORIES. `_story_acs` is the only renderer that
+    emits a `- **Verify:**` sub-bullet, so `artifact.py new --type bug --ac X --verify Y`
+    silently drops it. `file_finding.py file`, the command the doctrine names for filing every
+    finding, had no `--verify` at all and no `verify` key in its fields-file schema. There was
+    therefore NO route to an executable criterion for a bug, and the corpus shows it: the shipped
+    `verify_ac corpus-scan` counts 51 bug files whose criteria parse but carry no verifier.
+
+    A criterion nobody can execute is worse than a missing one, because it reads as specified to
+    a reviewer and to the generated seat brief. That is why AC2 requires a REFUSAL rather than a
+    written-and-reported criterion: the earlier wording asked only that the criterion be written
+    without a verifier, which is true of the command as it stands and is the absent-error-string
+    shape this project has now been bitten by twice.
+    """
+
+    _SCRIPT = Path(__file__).resolve().parent.parent / "file_finding.py"
+    _SELECTOR = ("pytest .claude/skills/sdlc-studio/scripts/tests/"
+                 "test_file_finding.py::VerifierAuthoringTests::test_x")
+
+    @staticmethod
+    def _root(d):
+        root = Path(d)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n", encoding="utf-8")
+        return root
+
+    def _file(self, root, *extra):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPT), "file", "--root", str(root), "--type", "bug",
+             "--title", "t", "--points", "2", "--affects", "a.py", "--severity", "Medium",
+             *(() if any(str(x) == "--summary" for x in extra)
+               else ("--summary", "s", "--steps", "s", "--fix", "f")), *extra],
+            capture_output=True, text=True, timeout=300, check=False)
+
+    @staticmethod
+    def _written(root):
+        return "".join(p.read_text(encoding="utf-8")
+                       for p in (root / "sdlc-studio" / "bugs").glob("BG*.md")
+                       if p.name != "_index.md")
+
+    def test_the_verifier_reaches_the_artefact_byte_exact(self) -> None:
+        """AC1. BYTE-EXACT, which is the whole criterion.
+
+        `_md_safe` backtick-wraps any underscored token in free prose, and a pytest node id is
+        nothing but underscored tokens: routed through it, this selector becomes
+        ``pytest .../`test_file_finding.py`::T::`test_x` `` - which no runner resolves, and
+        which under a shell verb is command substitution. `artifact.py`:140 already records
+        that a Verify line must never be markdown-safed. BG0635's criteria carried exactly this
+        corruption before they were rewritten by hand.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            r = self._file(root, "--ac", "given x, when y, then z", "--verify", self._SELECTOR)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            out = self._written(root)
+            self.assertIn(f"  - **Verify:** {self._SELECTOR}", out,
+                          f"the verifier is absent or was markdown-safed:\n{out}")
+            self.assertNotIn("`test_file_finding.py`", out,
+                             "the selector was routed through _md_safe and is now unrunnable")
+
+    def test_a_criterion_with_no_verifier_is_reported(self) -> None:
+        """AC2, as amended by D0178: REPORTED at the filer, REFUSED at the planner.
+
+        Asserted on the message's CONTENT - the criterion it names and the flag that fixes it -
+        never on the absence of an error string, which is what QA faulted in the first draft and
+        is true of any command failing for an unrelated reason. The exit code is 0 because
+        filing captures a finding; `sprint plan` is where the work is committed to and where the
+        refusal belongs (AC3).
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            r = self._file(root, "--ac", "given x, when y, then z")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            both = r.stdout + r.stderr
+            self.assertIn("--verify", both, f"the flag that fixes it is not named:\n{both}")
+            self.assertIn("AC1", both, f"the criterion carrying no verifier is not named:\n{both}")
+            # ...and the finding IS minted: capture is not blocked.
+            self.assertIn("**AC1**", self._written(root), "the finding was not written")
+
+    def test_a_verified_criterion_reports_nothing(self) -> None:
+        """The control for the row above. A warning printed unconditionally satisfies it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            r = self._file(root, "--ac", "given x, when y, then z", "--verify", self._SELECTOR)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertNotIn("carry no verifier", r.stdout + r.stderr,
+                             "a fully verified filing still warned")
+
+    def test_a_finding_with_no_criteria_at_all_is_unaffected(self) -> None:
+        """The negative control. Most findings are filed with no `--ac`, and `derived_criteria`
+        writes the scaffold for them. Refusing those would refuse the ordinary path, so the new
+        guard must fire only where a criterion was actually authored."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            # Substantive prose, so `derived_criteria` actually derives rather than emitting the
+            # thin-evidence note. The first draft of this control used the class's one-letter
+            # fixture and asserted `**AC1**` against a finding that legitimately had none - a
+            # test wrong about its own setup, which is the shape it exists to catch elsewhere.
+            r = self._file(
+                root,
+                "--summary", "the close counted advisory lanes as outstanding blockers",
+                "--steps", "run the close twice and read the recorded attempt series",
+                "--fix", "take the convergence count from held_blockers rather than every row")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("**AC1**", self._written(root),
+                          "the ordinary no---ac path stopped deriving criteria")
 
 
 if __name__ == "__main__":

@@ -5285,7 +5285,14 @@ class PlanReviewRepairGateTests(unittest.TestCase):
     def test_a_delivery_repair_does_not_answer_a_plan_review_rejection(self) -> None:
         # AC4. Closures are named by TEXT, never by ordinal: an ordinal is positional, so `#1`
         # checked against the other phase's list resolves to that list's first finding and
-        # silently answers it. That leak survives this unit and is BG0631.
+        # silently answers it.
+        #
+        # BG0631 has since CLOSED the leak this comment used to say survived. A repair row now
+        # names the phase it answers, so a delivery repair does not enter the plan-review
+        # computation at all - the state is `none` rather than `partial`, and the gate refuses
+        # one step earlier with "no repair is recorded against it". The assertion below follows
+        # that: the refusal is what this row pins, and the finding text was only ever visible
+        # because the delivery repair was wrongly being counted as a partial answer to it.
         with tempfile.TemporaryDirectory() as d:
             root = self._proj(d)
             self._bug(root)
@@ -5295,8 +5302,13 @@ class PlanReviewRepairGateTests(unittest.TestCase):
             self._repairs(root, [self._repair_row(
                 "BG0001", "the code leaks a handle -> closed with a context manager")])
             r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
-            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertIn("the plan oracle cannot fail", r.stdout + r.stderr)
+            page = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, page)
+            self.assertIn("test plan an independent seat REJECTED", page, page)
+            self.assertIn("no repair is recorded against it", page, page)
+            # The delivery repair must not appear as an answer in any form.
+            self.assertNotIn("the code leaks a handle", page,
+                             "the DELIVERY repair was cited against a PLAN-REVIEW rejection")
 
     def test_a_repair_does_not_discharge_a_rejection_it_did_not_answer(self) -> None:
         # AC5. Two unanswered rejections raising DIFFERENT findings, and a repair answering only

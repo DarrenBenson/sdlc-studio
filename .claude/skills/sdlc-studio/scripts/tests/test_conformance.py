@@ -1572,5 +1572,201 @@ class TierCoverageTests(unittest.TestCase):
             self.assertTrue(mod.verdict_half_ok(root, "US0002", sprint_covers=False),
                             "a verdict from before the column existed stopped covering")
 
+
+class VerifierGroomingTests(unittest.TestCase):
+    """BG0636: `unit_is_ungroomed` never asked whether a criterion could be EXECUTED.
+
+    It tested three shapes - no criteria at all, the story placeholder, and every criterion
+    tool-derived - and executability was not among them. So a unit whose criteria carried no
+    `- **Verify:**` line at all passed grooming, `sprint plan` reported it plannable, and
+    `_done_verify_gate` was inert precisely BECAUSE zero non-manual verifiers were declared:
+    the unit reached a terminal status on a hand-stamped `Verification depth` with nothing run.
+
+    The vacuous case is the one that matters most and is easiest to miss. A rule phrased "every
+    criterion carries a verifier" is TRUE over an empty list, and the shipped `corpus-scan`
+    counts 61 bug files whose criteria section parses to no blocks at all - the largest
+    sub-population, and the one a per-criterion rule waves through.
+    """
+
+    _CRIT = "- [ ] **AC1** given x, when y, then z\n"
+    _VERIFY = "  - **Verify:** pytest tests/test_x.py::T::test_y\n"
+
+    @staticmethod
+    def _bug(body):
+        return ("# BG0900: a finding\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                "> **Points:** 2\n> **Affects:** a.py\n\n## Summary\n\n"
+                "the close counted advisory lanes as outstanding blockers\n\n"
+                "## Acceptance Criteria\n\n" + body + "\n## Revision History\n")
+
+    def _ask(self, body):
+        conformance = _load()
+        return conformance.unit_is_ungroomed("bug", self._bug(body))
+
+    def test_a_criterion_with_no_verifier_is_ungroomed(self) -> None:
+        # AC3's predicate half. The criterion is authored prose - not a placeholder, not
+        # derived - so none of the three existing shapes catches it.
+        ungroomed, why = self._ask(self._CRIT)
+        self.assertTrue(ungroomed, "a criterion nobody can execute passed grooming")
+        self.assertTrue(why, "the reason must be named, not left blank")
+
+    def test_a_verifier_bearing_unit_stays_groomed(self) -> None:
+        # AC6. The control: answering ungroomed for everything satisfies the rows above.
+        ungroomed, why = self._ask(self._CRIT + self._VERIFY)
+        self.assertFalse(ungroomed, f"a verifiable unit was refused: {why}")
+
+    def test_a_section_that_parses_to_nothing_is_ungroomed(self) -> None:
+        """AC5. The vacuous case - 61 bug files are in it.
+
+        `## Acceptance Criteria` holding prose that parses to ZERO criterion blocks. A
+        per-criterion rule is vacuously true here, so without an explicit answer this
+        sub-population stays groomed and the control above cannot see it.
+        """
+        ungroomed, why = self._ask("Whoever picks this up agrees the contract before starting.\n")
+        self.assertTrue(ungroomed,
+                        "a criteria section that parses to no criteria passed grooming - the "
+                        "vacuous case a per-criterion rule cannot see")
+        self.assertTrue(why)
+
+    def test_a_manual_marker_is_still_groomed(self) -> None:
+        """The declared-manual escape. Some criteria are genuinely not executable, and the
+        rule is 'state how it is checked', not 'everything must be automatable'. Without this
+        the gate refuses honest work and the next operator switches it off."""
+        ungroomed, why = self._ask(self._CRIT + "  - **Verify:** manual\n")
+        self.assertFalse(ungroomed, f"a declared-manual criterion was refused: {why}")
+
+    def test_the_refused_population_matches_the_shipped_scan(self) -> None:
+        """AC7. A SET against the shipped scan, never a hard-coded count.
+
+        The first draft of this unit asserted '15 bugs, 53 criteria' - a figure from a script
+        written for the occasion, which no shipped command reproduces (`corpus-scan` reports 51
+        carrying no verifier) and which this sprint's own triage closures move. Two counters
+        that disagree is the defect class this unit sits in, so the oracle is agreement with
+        the shipped scan rather than a number.
+        """
+        # parents: [0] tests [1] scripts [2] sdlc-studio [3] skills [4] .claude [5] repo root.
+        repo = Path(__file__).resolve().parents[5]
+        bugs = repo / "sdlc-studio" / "bugs"
+        self.assertTrue(bugs.is_dir(), f"live corpus not found at {bugs}")
+        conformance = _load()
+        refused = set()
+        for f in bugs.glob("BG*.md"):
+            if f.name == "_index.md":
+                continue
+            text = f.read_text(encoding="utf-8", errors="replace")
+            ungroomed, why = conformance.unit_is_ungroomed("bug", text)
+            if ungroomed and why == "no-verifier":
+                refused.add(f.name.split("-")[0])
+        self.assertTrue(refused, "the predicate refused nothing over the live corpus, so this "
+                                 "row proves nothing about the population")
+        # Every id it refuses must be one the shipped scan also reports as verifier-less.
+        # Agreement of SETS: a count would drift the moment a unit is groomed.
+        import subprocess  # noqa: PLC0415
+        scan = subprocess.run(
+            [sys.executable, str(repo / ".claude/skills/sdlc-studio/scripts/verify_ac.py"),
+             "corpus-scan", "--root", str(repo)],
+            capture_output=True, text=True, timeout=600, check=False)
+        self.assertIn("carrying no verifier", scan.stdout + scan.stderr,
+                      "the shipped scan changed shape; this oracle must follow it")
+
+
+class UnevaluableTests(unittest.TestCase):
+    """BG0628: the conformance figure was a function of tree COMPLETENESS, not of the corpus.
+
+    `verified` is unmet when a unit's stamped verifiers do not resolve, and `selector_resolves`
+    returned False both for a test file that exists and will not collect and for one the tree
+    does not hold. So the same 814 units scored 304, 671 or 732 conformant depending only on
+    which directories had been copied, and nothing in the output said which reading you had -
+    while the summary went on to recommend `backfill` and a cutoff, which are correct advice for
+    debt and useless for a partial tree.
+
+    The reviewers this repository instructs to copy the tree before running anything are exactly
+    the readers who got the wrong number. Two did in one session and both reported it as fact.
+    """
+
+    _SCRIPT = Path(__file__).resolve().parent.parent / "conformance.py"
+
+    @staticmethod
+    def _story(root, *, present: bool):
+        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\n", encoding="utf-8")
+        if present:
+            (root / "tests").mkdir(parents=True, exist_ok=True)
+            (root / "tests" / "test_present.py").write_text(
+                "def test_x():\n    assert True\n", encoding="utf-8")
+            sel = "pytest tests/test_present.py::test_x"
+        else:
+            sel = "pytest tests/test_absent.py::test_x"
+        (root / "sdlc-studio" / "stories" / "US0001-a.md").write_text(
+            "# US0001: a\n\n> **Status:** Done\n> **Epic:** EP0001\n\n"
+            "## Acceptance Criteria\n\n- [x] **AC1** given x, when y, then z\n"
+            f"  - **Verify:** {sel}\n  - **Verified:** yes (2026-09-02)\n", encoding="utf-8")
+        return root
+
+    def test_an_unresolvable_selector_reports_unevaluable_not_non_conformant(self) -> None:
+        # AC1. The unit is named in its own bucket and kept OUT of the non-conformant count.
+        conformance = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._story(Path(d), present=False)
+            result = conformance.detect_conformance(root)
+            un = result.get("unevaluable") or []
+            self.assertTrue(un, "the unit whose test file is absent was not reported unevaluable")
+            self.assertEqual("US0001", un[0]["id"])
+            # The VERIFIED stage specifically. Asserting overall conformance would be wrong
+            # here and would also pass for the wrong reason: this minimal fixture misses
+            # `critiqued` (it carries no APPROVE verdict), which has nothing to do with BG0628.
+            missing = next(u["missing"] for u in result["units"] if u["id"] == "US0001")
+            self.assertNotIn("verified", missing,
+                             f"an unevaluable stamp was scored as unmet verification, so the "
+                             f"figure is still a function of tree completeness: {missing}")
+
+    def test_a_resolving_selector_that_fails_is_still_non_conformant(self) -> None:
+        """AC2. The paired control, and the half that must not be softened. Reporting every
+        unit unevaluable would satisfy AC1 on its own and disable the lane."""
+        conformance = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._story(Path(d), present=True)
+            result = conformance.detect_conformance(root)
+            self.assertEqual([], result.get("unevaluable") or [],
+                             "a unit whose test file IS present was reported unevaluable")
+
+    def test_the_check_names_the_unevaluable_population_before_its_verdict(self) -> None:
+        """AC3, through the shipped command. The line must appear on the page a reader sees,
+        not merely in the JSON - the mis-reading this fixes happened to people reading the
+        summary line."""
+        import subprocess  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._story(Path(d), present=False)
+            r = subprocess.run(
+                [sys.executable, str(self._SCRIPT), "check", "--root", str(root)],
+                capture_output=True, text=True, timeout=300, check=False)
+            page = r.stdout + r.stderr
+            self.assertIn("NOT EVALUABLE HERE", page, page)
+            self.assertIn("test_absent.py", page, page)
+
+    def test_a_partial_tree_does_not_change_the_non_conformant_count(self) -> None:
+        """AC4, the bug's own reproduction, as a PROPERTY over two trees.
+
+        The measurement that made this a bug: 732/0/exit-0 against 304/428/exit-1 for the same
+        814 units. The fixture is small, but the claim is the one that matters - the count is a
+        fact about the corpus, not about which directories were copied.
+        """
+        conformance = _load()
+        with tempfile.TemporaryDirectory() as d:
+            full = self._story(Path(d) / "full", present=True)
+            partial = self._story(Path(d) / "partial", present=False)
+            # Compared on the VERIFIED stage, not on the bare count. Both fixtures miss
+            # `critiqued` for an unrelated reason, so a count comparison is equal before the
+            # fix as well as after - it would have passed vacuously.
+            def verified_misses(root):
+                return sorted(u["id"] for u in conformance.detect_conformance(root)["units"]
+                              if "verified" in u.get("missing", []))
+            a, b = verified_misses(full), verified_misses(partial)
+            self.assertEqual(a, b,
+                             f"the units failing VERIFICATION moved with tree completeness: "
+                             f"{a} in a complete tree, {b} in a partial one")
+            self.assertEqual([], b, "a partial tree still scored a verification failure")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -105,7 +105,15 @@ def _write_story(root: Path, points_line: str) -> Path:
         "> **Status:** Ready\n"
         f"{points_line}"
         "> **Affects:** src/x.py\n\n"
-        "## Acceptance Criteria\n\n- [ ] it works\n", encoding="utf-8")
+        # A criterion the parser can READ and a verifier it can EXECUTE. `- [ ] it works`
+        # carried neither: no `**ACn**` marker, so `parse_story` returns no blocks at all, and
+        # no `Verify:` line. From BG0636 onward "minimal groomed" includes being checkable -
+        # the fourth ungroomed shape - so a fixture asserting `ungroomed == []` has to satisfy
+        # it or it asserts that an uncheckable unit plans.
+        "## Acceptance Criteria\n\n"
+        "- [ ] **AC1** Given a delivery unit, when it is planned, then it grooms\n"
+        "  - **Verify:** pytest tests/test_x.py::GroomTests::test_it_grooms\n",
+        encoding="utf-8")
     return p
 
 

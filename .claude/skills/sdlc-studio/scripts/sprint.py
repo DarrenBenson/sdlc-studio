@@ -2136,10 +2136,7 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             it["type"], sdlc_md.read_text_safe(it["path"]))
             if _enforced("grooming.acs") and _rung_grades(it["type"]) else (False, ""))
         _AC_MISS = {
-            "no-criteria": "Acceptance Criteria (none at all - a terminal status will refuse it)",
-            "placeholder": "Acceptance Criteria (still the grooming placeholder)",
-            "derived-only": "Acceptance Criteria (every one tool-derived from the finding's own "
-                            "prose - restates the summary, so nothing states what passing is)",
+            **_AC_MISS_RENDERINGS,
         }
         # UNNAMEABLE MUTANTS (US0633). A criterion whose falsifying change nobody can name is a
         # legitimate state, and it must cost something to enter or every awkward criterion will
@@ -7100,6 +7097,28 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
     return {"ready": not held_blockers(blockers), "blockers": blockers, "gate_ran": gate_ran}
 
 
+#: Every reason `conformance.unit_is_ungroomed` can return, and how `breakdown` and `plan` say
+#: it. Lifted to module scope so a test can assert the vocabulary is COMPLETE: the consumer is a
+#: bare `_AC_MISS[ac_why]` subscript, so a reason with no entry here is a `KeyError` that takes
+#: down both commands for every batch holding such a unit. A plan review found that hole while
+#: reviewing the very change that adds the fourth reason.
+_AC_MISS_RENDERINGS: dict[str, str] = {
+    "no-criteria": "Acceptance Criteria (none at all - a terminal status will refuse it)",
+    "placeholder": "Acceptance Criteria (still the grooming placeholder)",
+    "derived-only": "Acceptance Criteria (every one tool-derived from the finding's own "
+                    "prose - restates the summary, so nothing states what passing is)",
+    "no-verifier": "Acceptance Criteria (authored, but none carries an executable `Verify:` "
+                   "line or a `manual` marker - so nothing can check them, and the unit would "
+                   "reach a terminal status with no criterion ever run)",
+}
+
+
+def ac_miss_vocabulary() -> tuple[str, ...]:
+    """The ungroomed reasons this module can render. Public so the suite can pin completeness
+    against `conformance`'s own vocabulary rather than against a copy of it."""
+    return tuple(_AC_MISS_RENDERINGS)
+
+
 def held_blockers(blockers: list) -> list:
     """The rows that actually HOLD the close: everything except the explicitly non-blocking.
 
@@ -7688,10 +7707,23 @@ def _record_close_attempt(root, pre: dict) -> str | None:
     whether the outstanding set shrank or grew since the previous one."""
     state = run_state.read(root) or {}
     attempts = list(state.get("close_attempts") or [])
-    n = len(pre["blockers"])
+    # THE HELD ROWS, not every row. `pre["blockers"]` carries the lanes this same pre-flight
+    # prints as `reported not blocking`, and counting those made the series unable to reach
+    # zero in any repository carrying a standing advisory - which is most of them, and all of
+    # this one. `loop_termination` short-circuits to CONVERGED on a latest count of zero
+    # precisely so a finished loop is never refused, and that branch was therefore unreachable:
+    # RUN-01M11MEP recorded 5, 5, 4, 4, 4, 4 against an empty real blocker set and was stopped
+    # by a cap no value could have satisfied. `held_blockers` already existed twenty lines
+    # above and `preflight_headline` already used it.
+    #
+    # BOTH cells come from the filtered list. They are separate expressions over the same data,
+    # so filtering only the count writes `outstanding: 0` beside `stages: ["gate"]` - an
+    # attempt that reads converged while naming the lane it converged past.
+    held = held_blockers(pre["blockers"])
+    n = len(held)
     prev = attempts[-1]["outstanding"] if attempts else None
     attempts.append({"at": sdlc_md.now_iso8601(), "outstanding": n,
-                     "stages": sorted({b["stage"] for b in pre["blockers"]})})
+                     "stages": sorted({b["stage"] for b in held})})
     run_state.update(root, close_attempts=attempts)
     # The DECISION, not just the narration below. A detector that reports divergence and lets
     # the next round start has reported nothing; this is the half that ends the loop. Wired

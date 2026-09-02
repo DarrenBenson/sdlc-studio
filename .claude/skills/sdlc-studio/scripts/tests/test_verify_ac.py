@@ -5906,5 +5906,76 @@ class UnnameableRowTests(unittest.TestCase):
         self.assertIn("edit verb", " ".join(faults))
 
 
+
+class UnevaluableSelectorTests(unittest.TestCase):
+    """BG0628: a selector naming a file THE TREE DOES NOT HOLD is not a stale selector.
+
+    `selector_resolves` returns False when `_collect_nodes` yields None, and that covers two
+    facts with opposite remedies: a file that EXISTS and will not collect (a syntax error, a
+    missing import - genuine debt, fix the test) and a file the tree does not contain at all
+    (nothing to fix, the reading is simply not available here). Conformance counted both as
+    `verified` unmet, so the same 814 units scored 304, 671 or 732 conformant depending only on
+    which directories were copied, with no line saying which reading you had.
+
+    That matters because this project's own review doctrine instructs every adversarial reviewer
+    to copy the tree before running anything - so the wrong reading is the one an independent
+    reviewer is told to produce. Two did in one session and both reported it as fact.
+    """
+
+    def test_the_shared_predicate_still_refuses_an_absent_file(self) -> None:
+        """`selector_resolves` is NOT widened, deliberately.
+
+        Three lanes read it and two of them need `False` for a file that is not there: the write
+        guard, where a mistyped path must be refused rather than laundered into "not judged
+        here", and revert-check, where a selector pointing at nothing is a dead pointer worth
+        naming. Only conformance needs the other reading, so the distinction is drawn in
+        `unevaluable_stamps` and SUBTRACTED there - never by loosening a predicate three lanes
+        depend on. The first cut of this unit did loosen it and broke both.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.assertIs(
+                False, verify_ac.selector_resolves("pytest tests/test_absent.py::T::test_x", root),
+                "the shared predicate was widened; the write guard and revert-check both "
+                "depend on this staying False")
+
+    def test_a_present_file_that_will_not_collect_is_still_false(self) -> None:
+        """The control, and the half that must NOT be softened. A file that exists and cannot be
+        collected is real debt - the stamp points at something broken."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "tests").mkdir()
+            (root / "tests" / "test_broken.py").write_text(
+                "this is not python(((\n", encoding="utf-8")
+            expr = "pytest tests/test_broken.py::T::test_x"
+            self.assertIs(
+                False, verify_ac.selector_resolves(expr, root),
+                "a file that exists and will not collect must stay unresolvable - softening it "
+                "would hide the dead stamps this check exists to find")
+
+    def test_unevaluable_stamps_names_them_separately(self) -> None:
+        """The reporting half conformance reads: which stamped ACs could not be judged HERE."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            story = root / "sdlc-studio" / "stories" / "US0001-a.md"
+            story.write_text(
+                "# US0001: a\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "- [x] **AC1** given x, when y, then z\n"
+                "  - **Verify:** pytest tests/test_absent.py::T::test_x\n"
+                "  - **Verified:** yes (2026-09-02)\n", encoding="utf-8")
+            rows = verify_ac.unevaluable_stamps(story, root)
+            self.assertEqual(1, len(rows), rows)
+            self.assertEqual("AC1", rows[0]["ac"])
+            self.assertEqual("tests/test_absent.py", rows[0]["missing"])
+            # A SUBSET of the unresolvable set, not a disjoint one: the shared predicate reports
+            # both, and conformance subtracts. Asserting disjointness would pin the design this
+            # unit abandoned when it broke the write guard and revert-check.
+            dead = {s["ac"] for s in verify_ac.unresolvable_stamps(story, root)}
+            self.assertTrue({r["ac"] for r in rows} <= dead,
+                            "unevaluable stamps must be a subset of what the shared predicate "
+                            "reports, or conformance's subtraction removes nothing")
+
+
 if __name__ == "__main__":
     unittest.main()

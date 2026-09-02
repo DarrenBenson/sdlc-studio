@@ -933,6 +933,36 @@ def selector_near_miss(expr: str, cwd=None) -> str | None:
     return None
 
 
+def unevaluable_stamps(path: Path, cwd=None) -> list[dict]:
+    """Stamped-green ACs in `path` whose verifier names a file THIS TREE DOES NOT HOLD.
+
+    The companion to `unresolvable_stamps`, and a SUBSET of it: `selector_resolves` reports both
+    as unresolvable, deliberately, because its contract serves the write guard and revert-check
+    too - where a selector naming a file that is not there IS a defect. Conformance is the one
+    caller that must tell them apart, so the distinction is drawn HERE and subtracted there,
+    rather than by widening a predicate three lanes depend on.
+
+    A stamp is dead when the thing it points at is broken, and unevaluable when this tree simply
+    does not hold it. Counting the second as the first made the conformance figure a function of
+    tree completeness rather than of the corpus, which is BG0628.
+    """
+    out: list[dict] = []
+    text = sdlc_md.read_text_safe(path)
+    for block in parse_story(text):
+        if (block.verified_state or "").strip().lower() != "yes" or not block.verifier:
+            continue
+        head = (block.verifier.split(None, 1)[0].lower() if block.verifier.split() else "")
+        if head not in _COLLECTABLE or _is_manual(block.verifier):
+            continue
+        _target, test_file = _selector_target(block.verifier, cwd)
+        if not test_file:
+            continue
+        if not (Path(cwd) / test_file if cwd else Path(test_file)).exists():
+            out.append({"ac": block.ac_id, "verifier": block.verifier, "missing": test_file,
+                        "record": sdlc_md.extract_record_id(path.stem) or path.stem})
+    return out
+
+
 def unresolvable_stamps(path: Path, cwd=None) -> list[dict]:
     """Stamped-green ACs in `path` whose verifier no longer selects anything.
 

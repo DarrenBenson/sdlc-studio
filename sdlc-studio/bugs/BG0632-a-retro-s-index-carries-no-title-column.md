@@ -1,10 +1,10 @@
 # BG0632: a retro's index carries no Title column, so `retitle` would rename the file and leave the index and its inbound link pointing at the old name with the dry-run passing
 
-> **Status:** Open
+> **Status:** Superseded
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, sdlc-studio/retros/_index.md
-> **Evidence:** Found 2026-08-27 by an independent plan review of BG0619, which measured the retitle path rather than reading it. Headers compared directly: retros are `| ID | Sprint | Date | Delivered | Blocked |`, handoffs and reviews are `| ID | Title | Date |`. `retitle_index_row` locates its cells by the `(id, title)` header pair, and `_swap` resolves the link target through `extract_record_id`, which returns None for a RETRO stem.
+> **Evidence:** Found 2026-08-27 by an independent plan review of BG0619, which measured the retitle path rather than reading it. Headers compared directly: retros are `| ID | Sprint | Date | Delivered | Blocked |`, handoffs and reviews are `| ID | Title | Date |`. `retitle_index_row`locates its cells by the`(id, title)`header pair, and`_swap`resolves the link target through`extract_record_id`, which returns None for a RETRO stem.
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,15 +12,13 @@
 
 ## Summary
 
-`artifact.py retitle` renames an artefact in three places at once: the H1, the filename slug and the index row, plus every inbound link. For a retro, two of those cannot be done and nothing says so.
-
-`retros/_index.md` has NO Title column. `reconcile.retitle_index_row` finds its cells by matching the header pair `(id, title)`, so there is no cell to update - and the row's visible text would stay stale while the file underneath it was renamed. Separately its link rewriter resolves the target through `extract_record_id`, which does not recognise a RETRO stem, so the link would not be rewritten either.
+`artifact.py retitle`renames an artefact in three places at once: the H1, the filename slug and the index row, plus every inbound link. For a retro, two of those cannot be done and nothing says so.`retros/_index.md`has NO Title column.`reconcile.retitle_index_row`finds its cells by matching the header pair`(id, title)`, so there is no cell to update - and the row's visible text would stay stale while the file underneath it was renamed. Separately its link rewriter resolves the target through `extract_record_id`, which does not recognise a RETRO stem, so the link would not be rewritten either.
 
 The failure mode is the bad one: `found=True` makes the dry-run validation pass, so the command reports success, renames the file, and leaves a dangling index link behind it. Handoffs and reviews are unaffected - both have a Title column - which is why BG0619 covers those two and excludes the retro rather than shipping a retitle that half works.
 
 ## Steps to Reproduce
 
-1. Compare the three meta indexes: `head -3` on retros, handoffs and reviews under `sdlc-studio/`. Only the retro index lacks a Title column. 2. With BG0619's resolver fix in place, run `artifact.py retitle --id RETRO0109 --title '<new>'` in a fixture. 3. The command reports success and the file is renamed. 4. The index row still shows the old title and its link still points at the old filename.
+1. Compare the three meta indexes: `head -3`on retros, handoffs and reviews under`sdlc-studio/`. Only the retro index lacks a Title column. 2. With BG0619's resolver fix in place, run `artifact.py retitle --id RETRO0109 --title '<new>'` in a fixture. 3. The command reports success and the file is renamed. 4. The index row still shows the old title and its link still points at the old filename.
 
 ## Proposed Fix
 
@@ -38,6 +36,28 @@ Whichever ships, the silent-success path must go first: a rewriter that cannot f
 ## Impact
 
 The tool-first rule exists because a title lives in three places and a hand correction means editing all of them. A retitle that renames the file and silently leaves the index and its links behind is worse than the refusal it replaced: the operator believes the mechanical route worked and does not go looking. It lands on the artefact class that records what a run did.
+
+## Resolution
+
+**FILED PREMISE SUPERSEDED, closed 2026-09-02 after re-running the Steps to Reproduce.**
+
+Re-run against a faithful copy of the live `sdlc-studio/retros/`:
+`artifact.py retitle --id RETRO0102 --title 'a brand new slug'` exits 0, renames the file, and
+**rewrites the index link correctly** to `RETRO0102-a-brand-new-slug.md`. There is no dangling
+link. This artefact's Evidence blamed `_swap`resolving through`extract_record_id`, which
+returns None for a RETRO stem - BG0619 replaced that with `any_record_id`(`reconcile.py`:3116),
+so the cited cause no longer exists.
+
+**AC1 must not be implemented as written.** It demands `retitle_index_row` return False for a
+retro, and `artifact.py`:2046 turns that into a hard `RetitleBlocked` - so retro retitle would
+stop working altogether, removing what BG0619 shipped and leaving AC4 vacuous. A criterion whose
+literal implementation is a regression is not a criterion to satisfy.
+
+**What genuinely survives is smaller and is re-filed rather than discharged here.** The retro
+index is headed `| ID | Sprint | Date | Delivered | Blocked |`while`reviews/`and`handoffs/`are both`| ID | Title | Date |`, and `retitle_index_row` finds its cell by the literal column
+name `title`. So the second cell keeps a stale sprint description beside a rewritten link, at
+exit 0. Carried as a Low finding in **CR0511**, where the question is a decision - whether that
+column is a Title at all - rather than a rename.
 
 ## Revision History
 

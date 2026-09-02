@@ -806,7 +806,10 @@ _EVIDENCE_COLS = ("unit", "reviewer", "author", "date", "findings")
 #: A REPAIR answers a REJECT. `closed` carries one `<finding> -> <evidence>` item per finding
 #: the repair closes, and `disposition` records fixed-vs-filed per item; both ride on the text
 #: for the same reason `--issues` does - the writers keep one channel in step, not two.
-_REPAIR_COLS = ("unit", "verdict_date", "author", "date", "closed", "outstanding")
+#: `phase` is APPENDED, so a row written before it parses with the field simply absent -
+#: which is what `_attributable_phase` then resolves from the date, or reports.
+_REPAIR_COLS = ("unit", "verdict_date", "author", "date", "closed", "outstanding",
+                "phase")
 _SIGNOFF_COLS = ("unit", "principal", "chain", "author", "date", "note", "capacity")
 #: In what CAPACITY the reviewer of record signed. A panel sign-off was distinguishable only by
 #: string-matching the `panel(...)` marker inside the free-text chain - a fact a reader can find
@@ -858,8 +861,8 @@ _REPAIR_HEADER = (
     "> A finding closed by FILING an artefact is recorded as filed, with the id - 'fixed' and\n"
     "> 'filed as a known issue' are both legitimate, and telling them apart afterwards is not\n"
     "> optional.\n\n"
-    "| Unit | Verdict date | Author | Date | Closed | Outstanding |\n"
-    "| --- | --- | --- | --- | --- | --- |\n")
+    "| Unit | Verdict date | Author | Date | Closed | Outstanding | Phase |\n"
+    "| --- | --- | --- | --- | --- | --- | --- |\n")
 
 #: How a repair names what it closed: `<the finding text> -> <the evidence closing it>`.
 #: The evidence is one of three shapes, from CR0506 - a re-applied mutant, a test that now
@@ -1191,7 +1194,13 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
         written = _append_row(repair_path(repo_root), _REPAIR_HEADER,
                               (sdlc_md.norm_id(unit), _clean(when),
                                _clean(author), sdlc_md.now_date(), _clean(text),
-                               _clean("; ".join(outstanding) or "-")))
+                               _clean("; ".join(outstanding) or "-"),
+                               # The PHASE this repair answers. Without it the row is joined to
+                               # a rejection by date alone, and a delivery repair discharged a
+                               # plan-review rejection carrying the same finding text - which
+                               # since BG0629 opens the test-plan gate rather than merely
+                               # mis-reporting.
+                               _clean(str(phase or "delivery"))))
     return written
 
 
@@ -1296,7 +1305,7 @@ def repair_for(repo_root: Path | str, unit: str):
     return _latest_for(_read_rows(repair_path(repo_root), _REPAIR_COLS), unit)
 
 
-def repairs_for(repo_root: Path | str, unit: str) -> list[dict]:
+def repairs_for(repo_root: Path | str, unit: str, phase: str | None = None) -> list[dict]:
     """EVERY repair row for a unit, oldest first.
 
     A repair recorded across two calls - one closing finding #1, a second closing #2 and #3 -
@@ -1305,8 +1314,98 @@ def repairs_for(repo_root: Path | str, unit: str) -> list[dict]:
     was computed from one row rather than from the unit's whole answer.
     """
     target = sdlc_md.norm_id(unit)
-    return [r for r in _read_rows(repair_path(repo_root), _REPAIR_COLS)
+    rows = [r for r in _read_rows(repair_path(repo_root), _REPAIR_COLS)
             if sdlc_md.norm_id(r.get("unit", "")) == target]
+    if phase is None:
+        return rows
+    return [r for r in rows if _row_answers_phase(repo_root, unit, r, phase)]
+
+
+def _rejection_dates(repo_root: Path | str, unit: str, phase: str) -> set[str]:
+    """The dates on which `phase` recorded a REJECT for this unit."""
+    return {str(v.get("date") or "") for v in read_verdicts(repo_root, phase)
+            if sdlc_md.norm_id(v.get("unit", "")) == sdlc_md.norm_id(unit)
+            and str(v.get("verdict") or "").upper().startswith(REJECT)}
+
+
+def _row_answers_phase(repo_root: Path | str, unit: str, row: dict, phase: str) -> bool:
+    """Whether a repair row answers `phase`.
+
+    A row that NAMES its phase is taken at its word. A row written before the column existed is
+    attributed only where the date makes it UNAMBIGUOUS - exactly one phase rejected that day.
+    Where both phases did, it answers NEITHER: a date-only join is what let a delivery repair
+    discharge a plan-review rejection carrying the same finding text, and guessing which one a
+    legacy row meant would be the record made prettier rather than truer, which this project
+    refused once already when a backfill cited cross-seat approvals as its evidence.
+    """
+    stated = str(row.get("phase") or "").strip().lower()
+    if stated:
+        return stated == str(phase).strip().lower()
+    when = str(row.get("verdict_date") or "")
+    here = when in _rejection_dates(repo_root, unit, phase)
+    other = any(when in _rejection_dates(repo_root, unit, p)
+                for p in ("delivery", "plan-review") if p != phase)
+    if here and not other:
+        return True          # only one phase rejected that day: unambiguous
+    if not here:
+        return False
+    # BOTH phases rejected that day, so the DATE cannot place this row - but the row's own
+    # CLOSURES can. A closure names the finding it answers, so a legacy row whose closures
+    # resolve against this phase's rejections and not the other's is attributable on its own
+    # evidence rather than on a guess. Date-only was the first cut and it was too blunt: it
+    # made US0674 - genuinely repaired, its closures naming the release-notes finding from the
+    # delivery rejection verbatim - read as unrepaired, which is a false negative in the
+    # direction of accusing finished work.
+    return _closures_resolve_in(repo_root, unit, row, phase) and not any(
+        _closures_resolve_in(repo_root, unit, row, p)
+        for p in ("delivery", "plan-review") if p != phase)
+
+
+def _closures_resolve_in(repo_root: Path | str, unit: str, row: dict, phase: str) -> bool:
+    """Whether this row's closures name findings raised by `phase`'s rejections for this unit."""
+    raised: list[str] = []
+    for v in read_verdicts(repo_root, phase):
+        if sdlc_md.norm_id(v.get("unit", "")) != sdlc_md.norm_id(unit):
+            continue
+        if not str(v.get("verdict") or "").upper().startswith(REJECT):
+            continue
+        raised += [f["text"] for f in parse_findings(v.get("issues", ""))]
+    if not raised:
+        return False
+    for closure in parse_closures(row.get("closed", "")):
+        try:
+            resolve_finding(closure["finding"], raised)
+            return True
+        except (AmbiguousClosure, ValueError):
+            continue
+    return False
+
+
+def unattributable_repairs(repo_root: Path | str) -> list[dict]:
+    """Every legacy repair row whose phase cannot be established from its date.
+
+    REPORTED rather than absorbed: these rows answer no phase under the rule above, so a reader
+    counting repairs must be able to see how many the change could not place. An absence here
+    would be the same silent loss the column was added to end.
+    """
+    out: list[dict] = []
+    for row in _read_rows(repair_path(repo_root), _REPAIR_COLS):
+        unit = row.get("unit", "")
+        # A row whose first cell is not an ID is the header or a separator. `_REPAIR_COLS` grew
+        # a seventh column while the ledger on disk still carries six-column rows AND a
+        # six-column header, so the header no longer matches the schema width and reaches this
+        # loop as data - reported, on the live corpus, as an unattributable repair for a unit
+        # called "Unit". Guarding on the id is what a mixed-width ledger needs during migration.
+        if not sdlc_md.extract_record_id(str(unit)):
+            continue
+        if str(row.get("phase") or "").strip():
+            continue
+        when = str(row.get("verdict_date") or "")
+        hits = [p for p in ("delivery", "plan-review")
+                if when in _rejection_dates(repo_root, unit, p)]
+        if len(hits) != 1:
+            out.append({"unit": unit, "date": when, "phases": hits})
+    return out
 
 
 def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> dict:
@@ -1317,7 +1416,7 @@ def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> d
     being opened by recording any repair at all - a worse gate than the one being replaced,
     because it would convert every REJECT into an APPROVE for the cost of one command.
     """
-    rows = repairs_for(repo_root, unit)
+    rows = repairs_for(repo_root, unit, phase)
     # EVERY unanswered rejection, not just the standing one. Before the fingerprint-keyed
     # roll-up a unit had one live REJECT by construction, so reading the standing row was the
     # same as reading them all. It is not any more: six units carry several simultaneously, and

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 15 |
 | In Progress | 0 |
-| Fixed | 519 |
+| Fixed | 523 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 8 |
-| Superseded | 3 |
-| **Total** | **635** |
+| Won't Fix | 9 |
+| Superseded | 5 |
+| **Total** | **639** |
 
 ## All Bugs
 
@@ -167,14 +167,18 @@
 | [BG0625](BG0625-an-empty-brief-fingerprint-on-both-rows-lets.md) | an empty brief fingerprint on both rows lets a different seat's APPROVE retire a REJECT, which is the defect BG0607 exists to close | Fixed | High | 2026-08-26 | 2026-08-26 |
 | [BG0626](BG0626-a-sprint-goal-s-own-n-numbering-is.md) | a Sprint Goal's own (n) numbering is discarded and the goal is split on every prose comma, so the close's clause panel judges fragments nobody committed to and reports UNANSWERED for ever | Fixed | Medium | 2026-08-27 | 2026-08-27 |
 | [BG0627](BG0627-eleven-other-fields-file-consumers-carry-the-same.md) | eleven other fields-file consumers carry the same `or ""` guard, so a falsey value is reported as a missing field across five more modules | Open | Medium | 2026-08-27 | 2026-08-27 |
-| [BG0628](BG0628-conformance-reports-a-unit-non-conformant-when-it.md) | conformance reports a unit NON-CONFORMANT when it could not run the verifier at all, so the same corpus scores 304, 671 or 732 depending only on which directories were copied | Open | Medium | 2026-08-27 | 2026-08-27 |
+| [BG0628](BG0628-conformance-reports-a-unit-non-conformant-when-it.md) | conformance reports a unit NON-CONFORMANT when it could not run the verifier at all, so the same corpus scores 304, 671 or 732 depending only on which directories were copied | Fixed | Medium | 2026-08-27 | 2026-08-27 |
 | [BG0629](BG0629-a-plan-review-reject-can-never-be-retired.md) | a plan-review REJECT can never be retired, because repairing the plan changes the brief fingerprint the retirement must match - 44 of 44 stand, and a COMPLETE repair record discharges nothing | Fixed | High | 2026-08-27 | 2026-08-27 |
 | [BG0630](BG0630-the-test-plan-gate-is-skipped-on-in.md) | the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever being checked | Open | Medium | 2026-08-27 | 2026-08-27 |
-| [BG0631](BG0631-a-repair-row-names-neither-the-rejection-nor.md) | a repair row names neither the rejection nor the phase it answers, so it is joined by date alone and one day's repair discharges every rejection recorded that day | Open | Medium | 2026-08-27 | 2026-08-27 |
-| [BG0632](BG0632-a-retro-s-index-carries-no-title-column.md) | a retro's index carries no Title column, so `retitle` would rename the file and leave the index and its inbound link pointing at the old name with the dry-run passing | Open | Medium | 2026-08-27 | 2026-08-27 |
+| [BG0631](BG0631-a-repair-row-names-neither-the-rejection-nor.md) | a repair row names neither the rejection nor the phase it answers, so it is joined by date alone and one day's repair discharges every rejection recorded that day | Fixed | Medium | 2026-08-27 | 2026-08-27 |
+| [BG0632](BG0632-a-retro-s-index-carries-no-title-column.md) | a retro's index carries no Title column, so `retitle` would rename the file and leave the index and its inbound link pointing at the old name with the dry-run passing | Superseded | Medium | 2026-08-27 | 2026-08-27 |
 | [BG0633](BG0633-transition-py-annotate-is-a-third-writer-of.md) | transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the third | Open | Medium | 2026-08-28 | 2026-08-28 |
-| [BG0634](BG0634-the-repair-record-truncates-a-finding-label-inside.md) | the repair record truncates a finding label INSIDE a code span, leaving an unbalanced backtick that fails the repo's own markdownlint and blocks the commit | Open | Medium | 2026-08-28 | 2026-08-28 |
-| [BG0635](BG0635-the-close-s-convergence-series-counts-advisory-gate.md) | the close's convergence series counts ADVISORY gate lanes as outstanding blockers, so the review-repair loop can never converge and every close eventually hits the round cap | Open | Medium | 2026-08-29 | 2026-08-29 |
+| [BG0634](BG0634-the-repair-record-truncates-a-finding-label-inside.md) | the repair record truncates a finding label INSIDE a code span, leaving an unbalanced backtick that fails the repo's own markdownlint and blocks the commit | Won't Fix | Medium | 2026-08-28 | 2026-08-28 |
+| [BG0635](BG0635-the-close-s-convergence-series-counts-advisory-gate.md) | the close's convergence series counts ADVISORY gate lanes as outstanding blockers, so the review-repair loop can never converge and every close eventually hits the round cap | Fixed | Medium | 2026-08-29 | 2026-08-29 |
+| [BG0636](BG0636-file-finding-py-has-no-verify-so-every.md) | file_finding.py has no --verify, so every bug it files is born with acceptance criteria nothing can execute, and grooming reports them groomed | Fixed | High | 2026-09-02 | -- |
+| [BG0637](BG0637-critic-clean-escapes-underscores-inside-code-spans-corrupting.md) | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick | Open | Medium | 2026-09-02 | -- |
+| [BG0638](BG0638-five-sprint-checklist-rows-state-a-conclusion-they.md) | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindness as UNANSWERED | Open | Medium | 2026-09-02 | -- |
+| [BG0639](BG0639-cycle-drift-s-guard-asserts-two-of-its.md) | cycle_drift's guard asserts two of its three buckets, so the unverifiable bucket is already non-empty on the shipped tree while the guard reports green | Superseded | Medium | 2026-09-02 | -- |
 
 ## Archived Releases
 
