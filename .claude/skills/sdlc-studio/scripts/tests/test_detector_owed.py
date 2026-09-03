@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import loader  # noqa: E402
+import quiet
 
 audit = loader.load_script("readiness")
 cost = loader.load_script("audit_cost")
@@ -288,7 +289,8 @@ class DetectorOwedFilingTests(unittest.TestCase):
         res = audit.detector_owed(self.root)
         self.assertEqual(1, len(res["owed"]), "precondition: the lens must be owed")
 
-        first = audit.file_owed_detectors(self.root, res)
+        with quiet.diagnostics():
+            first = audit.file_owed_detectors(self.root, res)
         self.assertEqual(1, len(first))
         self.assertTrue(first[0]["created"], f"nothing was filed: {first}")
         filed_id = first[0]["id"]

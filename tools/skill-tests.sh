@@ -128,6 +128,16 @@ fi
 # was letting `repo_map.py stats` print its whole summary to the console while asserting
 # only the exit code; capturing it retires two lines and gives the test something to say.
 # Lowered to match rather than raised to accommodate, as the entries above.
-TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-119}"
+# 119 -> 106 (BG0631/BG0636 wave): two shipped warnings started firing from inside library
+# calls that most fixtures make in passing - the unverifiable-criteria report in
+# `file_finding.file_finding()` and the unreadable-closure report in `critic.repair_state()`.
+# They leaked 37 lines across 24 uncaptured call sites in ten modules, took a full run to 145,
+# and turned CI red on main. Every one of the commits that added them passed this gate, because
+# the hook runs a SELECTED subset and the check is an absolute `count <= baseline` - filed as
+# BG0644, and the reason a leak now reaches main before anyone sees it. The sites are captured
+# through the new `tests/quiet.py`, which yields the buffer rather than dropping it so a test
+# that wants to assert on the diagnostic still can. Measured at 106 with the captures in place.
+# Lowered to match rather than raised to accommodate, as every entry above.
+TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-106}"
 
 printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --baseline "$TEST_NOISE_BASELINE"

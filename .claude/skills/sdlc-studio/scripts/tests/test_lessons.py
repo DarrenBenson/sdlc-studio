@@ -19,6 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
 import gitutil  # noqa: E402
+import quiet
 
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "lessons.py"
 _spec = importlib.util.spec_from_file_location("lessons", SCRIPT_PATH)
@@ -1741,7 +1742,8 @@ class ProposalTests(CarriedSetBase):
         self.assertTrue(all(u in prop["evidence"] for u in prop["units"]), prop["evidence"])
         # the operator accepts it, and only THEN is an artefact created
         self.assertEqual(self._filed(), [])
-        res = lessons.accept_proposal(self.root, "L-0001", affects="scripts/guard.py", size="M")
+        with quiet.diagnostics():
+            res = lessons.accept_proposal(self.root, "L-0001", affects="scripts/guard.py", size="M")
         body = Path(res["path"]).read_text(encoding="utf-8")
         self.assertIn("L-0001", body)
         self.assertIn("US0500", body)

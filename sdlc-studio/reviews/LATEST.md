@@ -62,12 +62,22 @@ Fix BG0643 before grooming twelve units by hand.
   the three review ledgers, 442 already double-escaped.
 - **BG0638** - five sprint-checklist rows state conclusions they never established, and
   `_ck_known_issues` fails open where its sibling reports the same blindness as UNANSWERED.
+- **BG0644** - the test-noise ratchet compares a SELECTED subset against a whole-suite
+  baseline, so a commit that adds leaks passes the gate that is supposed to fail it. This
+  run demonstrated it: 37 new leaks passed every commit and turned CI red on main.
 - **BG0640** - the revert-check lane reports a clean pass when it examined nothing.
 - **BG0641** - there is no `pre-push` hook, so `release-rehearsal` and `revert-check` bind at a
   boundary with nothing behind it, though AGENTS.md says they bind at push and release.
 - **BG0642** - the required status check never reports at push time, so every push to main
   bypasses branch protection. Main was red for two days on 2026-09-01 and nobody read it.
 - Carried: CR0511, CR0562, BG0627, BG0630, BG0633.
+
+**CI was RED on main and the fix is in this commit.** The two warnings BG0636 and BG0631 shipped
+fire from inside library calls that most fixtures make in passing, leaking 37 diagnostic lines
+into a green suite. `tools/skill-tests.sh` fails a passing run that printed anything, so the full
+run in CI refused at 142 against a baseline of 119 - while every commit that added the leaks
+passed, because the hook checks an absolute count over a selected subset. The 24 sites now capture
+through `tests/quiet.py`, the full suite measures 106, and the ratchet is lowered to match.
 
 **Conformance is 732/814 with ZERO non-conformant**, reached on truth rather than a waiver: the
 seven US0569-US0576 stories and US0674 each carry a recorded resolution, closing what was

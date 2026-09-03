@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 20 |
 | In Progress | 0 |
 | Fixed | 523 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 5 |
-| **Total** | **643** |
+| **Total** | **644** |
 
 ## All Bugs
 
@@ -183,6 +183,7 @@
 | [BG0641](BG0641-there-is-no-pre-push-hook-so-the.md) | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere | Open | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0642](BG0642-the-required-status-check-never-reports-at-push.md) | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread | Open | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0643](BG0643-the-verify-flag-bg0636-shipped-is-refused-for.md) | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet | Open | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0644](BG0644-the-test-noise-ratchet-compares-a-selected-subset.md) | the test-noise ratchet compares a selected subset against a whole-suite baseline | Open | Medium | 2026-09-03 | 2026-09-03 |
 
 ## Archived Releases
 

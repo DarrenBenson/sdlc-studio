@@ -163,7 +163,7 @@ files in that state. Fixing it deliberately takes 12 of 19 open bugs out of the 
 until each is groomed with a real verifier - a cost accepted on the record rather than
 discovered.
 
-**v5.0.1 discloses 19 open defects: 19 Medium, 0 Low.** The High findings above are
+**v5.0.1 discloses 20 open defects: 20 Medium, 0 Low.** The High findings above are
 listed separately because they sit ABOVE the disclosure bar rather than under it. Listed by id in
 [docs/known-issues.md](known-issues.md) and triaged to v5.1. The page is generated from the bug
 corpus and guarded in both directions, so a finding filed after it was written cannot silently be

@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the 
 from lib import sdlc_md  # noqa: E402
 import validate  # noqa: E402
 import reconcile  # noqa: E402
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 
 def _load():
@@ -2455,8 +2456,9 @@ class SuppliedContentLandsTests(unittest.TestCase):
                 if build == "artifact":
                     path = Path(artifact.new(repo, "bug", "a defect", dict(fields))["path"])
                 else:
-                    path = Path(file_finding.file_finding(repo, "bug", "a defect", dict(fields))
-                                ["path"])
+                    with quiet.diagnostics():
+                        path = Path(file_finding.file_finding(repo, "bug", "a defect", dict(fields))
+                                    ["path"])
                 counts.append(sdlc_md.count_acs(path.read_text()))
         self.assertEqual(counts[0], counts[1])
         self.assertEqual(counts[0], len(self.CRITERIA))

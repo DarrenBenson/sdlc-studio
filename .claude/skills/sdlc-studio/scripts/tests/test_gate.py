@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
 import gitutil  # noqa: E402 - confined git for the fixture repos below
 import workspace  # noqa: E402 - the shared "am I in the dev repo?" check
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 SCRIPT = Path(__file__).resolve().parent.parent / "gate.py"
 REPO = Path(__file__).resolve().parents[5]  # repo root (holds sdlc-studio/ artifacts)
@@ -186,7 +187,8 @@ class GateRealWrapperTests(unittest.TestCase):
                 "dev-repo-only: the real gate run needs an sdlc-studio/ workspace at the "
                 "expected root (running from an installed copy)")
         if cls._real_report is None:
-            cls._real_report = gate.run_gate(str(REPO))
+            with quiet.diagnostics():
+                cls._real_report = gate.run_gate(str(REPO))
         return cls._real_report
 
     def test_the_real_gate_runs_once_per_class(self) -> None:

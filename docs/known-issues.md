@@ -43,8 +43,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0641` | Medium | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere |
 | `BG0642` | Medium | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread |
 | `BG0643` | Medium | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet |
+| `BG0644` | Medium | the test-noise ratchet compares a selected subset against a whole-suite baseline |
 
-19 findings: 19 Medium, 0 Low.
+20 findings: 20 Medium, 0 Low.
 
 ## Not carried
 

@@ -11,6 +11,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lib import sdlc_md  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for quiet
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 SCRIPT = Path(__file__).resolve().parent.parent / "rfc.py"
 
@@ -211,11 +213,12 @@ class ParentMintTests(unittest.TestCase):
             self._fixture_rfc(root)
             (root / "src").mkdir()
             (root / "src" / "x.py").write_text("", encoding="utf-8")
-            res = ff.file_finding(root, "cr", "child of the rfc",
-                                  {"priority": "Medium", "ctype": "Improvement",
-                                   "summary": "s", "impact": "i", "size": "S",
-                                   "affects": "src/x.py",
-                                   "acs": ["a criterion"], "parent": "RFC0001"})
+            with quiet.diagnostics():
+                res = ff.file_finding(root, "cr", "child of the rfc",
+                                      {"priority": "Medium", "ctype": "Improvement",
+                                       "summary": "s", "impact": "i", "size": "S",
+                                       "affects": "src/x.py",
+                                       "acs": ["a criterion"], "parent": "RFC0001"})
             child = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("> **Parent:** RFC0001", child)
             rfc_text = sdlc_md.find_by_id(root, "RFC0001")[0].read_text(encoding="utf-8")
@@ -233,11 +236,12 @@ class ParentMintTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             with self.assertRaises(ValueError):
-                ff.file_finding(root, "cr", "orphan",
-                                {"priority": "Medium", "ctype": "Improvement",
-                                 "summary": "s", "impact": "i", "size": "S",
-                                 "affects": "src/x.py",
-                                 "acs": ["a"], "parent": "RFC0999"})
+                with quiet.diagnostics():
+                    ff.file_finding(root, "cr", "orphan",
+                                    {"priority": "Medium", "ctype": "Improvement",
+                                     "summary": "s", "impact": "i", "size": "S",
+                                     "affects": "src/x.py",
+                                     "acs": ["a"], "parent": "RFC0999"})
             crs = root / "sdlc-studio" / "change-requests"
             self.assertFalse(crs.is_dir() and list(crs.glob("CR*.md")))
 

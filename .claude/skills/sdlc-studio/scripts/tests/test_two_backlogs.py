@@ -37,6 +37,8 @@ def _load(name: str, filename: str):
 # lib/ is importable as `from lib import sdlc_md` from the scripts dir.
 sys.path.insert(0, str(_SCRIPTS))
 from lib import sdlc_md  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for quiet
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 reconcile = _load("reconcile", "reconcile.py")
 transition = _load("transition", "transition.py")
 status = _load("status", "status.py")
@@ -558,10 +560,11 @@ class CreatorAgreementTests(unittest.TestCase):
             _write(root / "src" / "y.py", "")
             a = artifact.new(root, "cr", "via new",
                              {"affects": "src/x.py", "size": "L", "impact": "x"})
-            b = file_finding.file_finding(
-                root, "cr", "via filer",
-                {"affects": "src/y.py", "size": "L", "impact": "y", "priority": "Medium",
-                 "ctype": "Improvement", "summary": "s", "acs": ["a"]})
+            with quiet.diagnostics():
+                b = file_finding.file_finding(
+                    root, "cr", "via filer",
+                    {"affects": "src/y.py", "size": "L", "impact": "y", "priority": "Medium",
+                     "ctype": "Improvement", "summary": "s", "acs": ["a"]})
             self.assertEqual(sdlc_md.read_size(Path(a["path"]).read_text()), "L")
             self.assertEqual(sdlc_md.read_size(Path(b["path"]).read_text()), "L")
 

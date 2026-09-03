@@ -18,6 +18,7 @@ import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for gitutil
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 try:
     import yaml  # noqa: F401
@@ -111,11 +112,12 @@ class FileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             idx = _seed_index(root, "cr")
-            res = ff.file_finding(root, "cr", "Tighten the gate",
-                                  {"priority": "High", "ctype": "Improvement",
-                                   "summary": "It is loose.", "acs": ["it is tight", "tested"],
-                                   "impact": "the gate lets bad units through", "size": "M",
-                                   "affects": "src/gate.py", "date": "2026-06-20"})
+            with quiet.diagnostics():
+                res = ff.file_finding(root, "cr", "Tighten the gate",
+                                      {"priority": "High", "ctype": "Improvement",
+                                       "summary": "It is loose.", "acs": ["it is tight", "tested"],
+                                       "impact": "the gate lets bad units through", "size": "M",
+                                       "affects": "src/gate.py", "date": "2026-06-20"})
             self.assertEqual(res["id"], "CR-0001")
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("# CR-0001: Tighten the gate", body)
@@ -132,13 +134,14 @@ class FileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "cr")
-            res = ff.file_finding(root, "cr", "t",
-                                  {"priority": "Low", "ctype": "Improvement",
-                                   "summary": "s",
-                                   "acs": ["- [ ] already boxed", "-[x] ticked variant",
-                                           "bare text"],
-                                   "impact": "i", "size": "M", "affects": "src/x.py",
-                                   "date": "2026-07-04"})
+            with quiet.diagnostics():
+                res = ff.file_finding(root, "cr", "t",
+                                      {"priority": "Low", "ctype": "Improvement",
+                                       "summary": "s",
+                                       "acs": ["- [ ] already boxed", "-[x] ticked variant",
+                                               "bare text"],
+                                       "impact": "i", "size": "M", "affects": "src/x.py",
+                                       "date": "2026-07-04"})
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("- [ ] already boxed", body)
             self.assertNotIn("- [ ] - [ ]", body)
@@ -189,10 +192,11 @@ class FileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "cr")
-            ff.file_finding(root, "cr", "a clean finding",
-                            {"priority": "High", "ctype": "Improvement",
-                             "summary": "s", "acs": ["x"], "impact": "i", "size": "M",
-                             "affects": "src/x.py", "date": "2026-06-20"})
+            with quiet.diagnostics():
+                ff.file_finding(root, "cr", "a clean finding",
+                                {"priority": "High", "ctype": "Improvement",
+                                 "summary": "s", "acs": ["x"], "impact": "i", "size": "M",
+                                 "affects": "src/x.py", "date": "2026-06-20"})
             drift = rc.detect_type("cr", root)["drift"]
             self.assertEqual(drift, [], f"expected 0 drift, got {drift}")
 
@@ -206,10 +210,11 @@ class FileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "cr")
-            res = ff.file_finding(root, "cr", "handle `a | b` inputs",
-                                  {"priority": "Low", "ctype": "Bug", "summary": "s",
-                                   "acs": ["y"], "impact": "i", "size": "M",
-                                   "affects": "src/x.py", "date": "2026-06-20"})
+            with quiet.diagnostics():
+                res = ff.file_finding(root, "cr", "handle `a | b` inputs",
+                                      {"priority": "Low", "ctype": "Bug", "summary": "s",
+                                       "acs": ["y"], "impact": "i", "size": "M",
+                                       "affects": "src/x.py", "date": "2026-06-20"})
             self.assertEqual(res["indexed"], True)
             self.assertEqual(rc.detect_type("cr", root)["drift"], [])  # escaped, parses
 
@@ -224,10 +229,11 @@ class FileTests(unittest.TestCase):
                 "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
                 "| Proposed | 0 |\n| **Total** | **0** |\n", encoding="utf-8")
             _affect(root, "src/x.py")
-            res = ff.file_finding(root, "cr", "x", {"priority": "Low", "ctype": "Bug",
-                                                    "summary": "s", "acs": ["y"],
-                                                    "impact": "i", "size": "M",
-                                                    "affects": "src/x.py"})
+            with quiet.diagnostics():
+                res = ff.file_finding(root, "cr", "x", {"priority": "Low", "ctype": "Bug",
+                                                        "summary": "s", "acs": ["y"],
+                                                        "impact": "i", "size": "M",
+                                                        "affects": "src/x.py"})
             self.assertFalse(res["indexed"])  # no data table -> not appended
             self.assertNotIn("[CR-0001]", (cd / "_index.md").read_text(encoding="utf-8"))
 
@@ -445,8 +451,9 @@ class RevisionAuthorTests(unittest.TestCase):
 
     def _file(self, root: Path, type_: str, **extra) -> str:
         _seed_index(root, type_)
-        res = ff.file_finding(root, type_, "a finding",
-                              {**self.FIELDS[type_], "date": "2026-07-13", **extra})
+        with quiet.diagnostics():
+            res = ff.file_finding(root, type_, "a finding",
+                                  {**self.FIELDS[type_], "date": "2026-07-13", **extra})
         return Path(res["path"]).read_text(encoding="utf-8")
 
     def test_named_author_reaches_the_revision_history(self) -> None:
@@ -1481,10 +1488,11 @@ class FiledCriteriaTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "cr")
-            res = ff.file_finding(root, "cr", "t",
-                                  {"priority": "Low", "ctype": "Improvement", "summary": "s",
-                                   "acs": ["the operator's own criterion"], "impact": "i",
-                                   "size": "M", "affects": "src/x.py"})
+            with quiet.diagnostics():
+                res = ff.file_finding(root, "cr", "t",
+                                      {"priority": "Low", "ctype": "Improvement", "summary": "s",
+                                       "acs": ["the operator's own criterion"], "impact": "i",
+                                       "size": "M", "affects": "src/x.py"})
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("- [ ] the operator's own criterion", body)
             self.assertEqual(sdlc_md.count_acs(body), 1, body)
@@ -2011,7 +2019,7 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
         return root
 
     def _file(self, root):
-        with contextlib.redirect_stdout(io.StringIO()):
+        with contextlib.redirect_stdout(io.StringIO()), quiet.diagnostics():
             f = dict(self.FIELDS)
             res = ff.file_finding(root, "bug", f.pop("title"), f)
         return Path(res["path"]).read_text(encoding="utf-8")
@@ -2339,8 +2347,9 @@ class AuditAttributionUnheldInvariantsTests(unittest.TestCase):
                          "affects": "src/thing.py", "date": "2026-07-30"}
                         if type_ == "cr" else
                         {"summary": "weigh it", "options": ["do X", "status quo"]})
-                res = ff.file_finding(root, type_, f"an attributed {type_}",
-                                      {**spec, "lens": LIVE_LENS, "audit_run": rid})
+                with quiet.diagnostics():
+                    res = ff.file_finding(root, type_, f"an attributed {type_}",
+                                          {**spec, "lens": LIVE_LENS, "audit_run": rid})
                 body = Path(res["path"]).read_text(encoding="utf-8")
                 self.assertEqual(LIVE_LENS, sdlc_md.extract_field(body, "Audit-lens"),
                                  f"the {type_} template does not render the attribution")

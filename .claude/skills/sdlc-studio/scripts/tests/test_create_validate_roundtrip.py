@@ -30,6 +30,8 @@ sys.path.insert(0, str(SCR))
 from lib import sdlc_md  # noqa: E402
 import file_finding  # noqa: E402
 import validate  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for quiet
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 
 def _load():
@@ -220,7 +222,8 @@ class ContentRoundTripTests(unittest.TestCase):
             fields = dict(CONTENT[type_])
             # The CR filer sizes a CR by its T-shirt `Size` (a CR is a request, decomposed before
             # delivery), not by story points - CONTENT["cr"] carries that Size directly (BG0148).
-            res = file_finding.file_finding(root, type_, f"a {type_}", fields)
+            with quiet.diagnostics():
+                res = file_finding.file_finding(root, type_, f"a {type_}", fields)
             errs = _errors(root, Path(res["path"]), type_)
             self.assertEqual(errs, [], f"file/{type_}/{era}: {_fmt(errs)}")
             self._assert_content_landed(Path(res["path"]), fields, f"file/{type_}/{era}")

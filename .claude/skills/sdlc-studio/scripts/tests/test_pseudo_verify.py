@@ -20,6 +20,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for quiet
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 
@@ -119,7 +121,8 @@ class FilerRefusalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_cr_index(root)
-            res = ff.file_finding(root, "cr", "sizing", {**CR_FIELDS, "acs": [HONEST]})
+            with quiet.diagnostics():
+                res = ff.file_finding(root, "cr", "sizing", {**CR_FIELDS, "acs": [HONEST]})
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("- [ ] sprint.py reads the CR Effort field", body)
 
@@ -129,10 +132,11 @@ class FilerRefusalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_cr_index(root)
-            res = ff.file_finding(root, "cr", "banner",
-                                  {**CR_FIELDS,
-                                   "acs": ["Verify the operator sees the banner",
-                                           "Verify: the run refuses and names the file"]})
+            with quiet.diagnostics():
+                res = ff.file_finding(root, "cr", "banner",
+                                      {**CR_FIELDS,
+                                       "acs": ["Verify the operator sees the banner",
+                                               "Verify: the run refuses and names the file"]})
             self.assertTrue(Path(res["path"]).exists())
 
     def test_refuses_a_bug_criterion_too(self) -> None:
@@ -140,9 +144,10 @@ class FilerRefusalTests(unittest.TestCase):
             root = Path(d)
             (root / "sdlc-studio" / "bugs").mkdir(parents=True)
             with self.assertRaises(ValueError):
-                ff.file_finding(root, "bug", "a defect",
-                                {"severity": "High", "summary": "s", "steps": "r", "fix": "f",
-                                 "acs": [FALSE_RED]})
+                with quiet.diagnostics():
+                    ff.file_finding(root, "bug", "a defect",
+                                    {"severity": "High", "summary": "s", "steps": "r", "fix": "f",
+                                     "acs": [FALSE_RED]})
 
 
 class CreatorRefusalTests(unittest.TestCase):

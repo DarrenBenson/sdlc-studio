@@ -16,6 +16,8 @@ SCRIPT = Path(__file__).resolve().parent.parent / "critic.py"
 REPO_ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(SCRIPT.parent))
 from lib.sdlc_md import norm_id as sdlc_md_norm  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/, for quiet
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 
 def _load():
@@ -4840,7 +4842,8 @@ class ClosureChannelTests(unittest.TestCase):
             self.assertIn("a fragment with no separator", str(caught.exception),
                           "the refusal must NAME the chunk, or it is the same silence louder")
             # READ tolerates it: this is what is already on disk.
-            self.assertEqual([], mod.parse_closures("a fragment with no separator"))
+            with quiet.diagnostics():
+                self.assertEqual([], mod.parse_closures("a fragment with no separator"))
 
     def test_a_value_ending_in_a_backslash_does_not_swallow_the_next_item(self) -> None:
         """MUTANT: in `critic.py`, replace `split_items`' scanner with the `(?<!\\\\);` lookbehind.
