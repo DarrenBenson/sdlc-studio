@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0390: **The vacuous case is where a per-item rule fails, and it is the largest population.** "Every criterion carries a verifier" is TRUE over an...**
+- **L-0389: **A schema-widening test built on the shape YOUR repo holds cannot see the shape everyone else holds.** Two ledger columns were appended at...**
+- **L-0388: **A tool that cannot author its evidence produces units nobody can check.** `file_finding.py` could write an acceptance criterion but not...**
+- **L-0387: **Narrow the licence, not the pattern.** A lint error in three code spans was fixed by a regex over every code span in two directories...**
 - **L-0386: Verify against the INPUT SPACE, not against the criterion.**
 - **L-0385: A positive control asserting that an error string is ABSENT proves nothing, because a command that fails for an unrelated reason also omits...**
 - **L-0384: A repair that keeps moving is a scoping error, not a coding error.**
