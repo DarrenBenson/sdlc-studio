@@ -45,6 +45,34 @@ enumerable, enumerate it.
 **`npm run lint` passed while the commit hook refused.** The strict markdown rules over `bugs/`
 run in the hook, not in `lint`. A locally green lint says nothing about the gate.
 
+## WHAT THE NEXT RUN PICKS UP
+
+**First question: the 12 of 19 open bugs that now need a real verifier before they can be
+planned.** `sprint plan` refuses them - that is BG0636 working and the cost the operator accepted
+on 2026-09-02. Grooming them is unestimated work sitting between this run and the next delivery
+batch, and **BG0643 is why it will hurt**: the `--verify` flag this run shipped is refused for a
+selector naming a test that does not exist yet, which is every bug filed before its fix. Three
+findings filed after BG0636 landed had to be filed without the flag and hand-edited afterwards.
+Fix BG0643 before grooming twelve units by hand.
+
+**Then the newly filed set**, all ruled not-stop-ship:
+
+- **BG0643** - `--verify` unusable for the case it exists for. Blocks the grooming above.
+- **BG0637** - `_clean` escapes underscores inside code spans: 655 corrupted identifiers across
+  the three review ledgers, 442 already double-escaped.
+- **BG0638** - five sprint-checklist rows state conclusions they never established, and
+  `_ck_known_issues` fails open where its sibling reports the same blindness as UNANSWERED.
+- **BG0640** - the revert-check lane reports a clean pass when it examined nothing.
+- **BG0641** - there is no `pre-push` hook, so `release-rehearsal` and `revert-check` bind at a
+  boundary with nothing behind it, though AGENTS.md says they bind at push and release.
+- **BG0642** - the required status check never reports at push time, so every push to main
+  bypasses branch protection. Main was red for two days on 2026-09-01 and nobody read it.
+- Carried: CR0511, CR0562, BG0627, BG0630, BG0633.
+
+**Conformance is 732/814 with ZERO non-conformant**, reached on truth rather than a waiver: the
+seven US0569-US0576 stories and US0674 each carry a recorded resolution, closing what was
+verified at HEAD and carrying the residue to BG0640 and CR0552.
+
 ## OPEN
 
 **BG0637** - `_clean` escapes underscores inside code spans, corrupting 655 identifiers across the

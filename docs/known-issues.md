@@ -39,8 +39,12 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0633` | Medium | transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the... |
 | `BG0637` | Medium | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick |
 | `BG0638` | Medium | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindn... |
+| `BG0640` | Medium | the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result |
+| `BG0641` | Medium | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere |
+| `BG0642` | Medium | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread |
+| `BG0643` | Medium | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet |
 
-15 findings: 15 Medium, 0 Low.
+19 findings: 19 Medium, 0 Low.
 
 ## Not carried
 

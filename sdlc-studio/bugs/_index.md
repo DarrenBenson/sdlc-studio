@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-08-29
+**Last Updated:** 2026-09-03
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 15 |
+| Open | 19 |
 | In Progress | 0 |
 | Fixed | 523 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 5 |
-| **Total** | **639** |
+| **Total** | **643** |
 
 ## All Bugs
 
@@ -179,6 +179,10 @@
 | [BG0637](BG0637-critic-clean-escapes-underscores-inside-code-spans-corrupting.md) | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick | Open | Medium | 2026-09-02 | -- |
 | [BG0638](BG0638-five-sprint-checklist-rows-state-a-conclusion-they.md) | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindness as UNANSWERED | Open | Medium | 2026-09-02 | -- |
 | [BG0639](BG0639-cycle-drift-s-guard-asserts-two-of-its.md) | cycle_drift's guard asserts two of its three buckets, so the unverifiable bucket is already non-empty on the shipped tree while the guard reports green | Superseded | Medium | 2026-09-02 | -- |
+| [BG0640](BG0640-the-revert-check-lane-reports-a-clean-pass.md) | the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result | Open | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0641](BG0641-there-is-no-pre-push-hook-so-the.md) | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere | Open | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0642](BG0642-the-required-status-check-never-reports-at-push.md) | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread | Open | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0643](BG0643-the-verify-flag-bg0636-shipped-is-refused-for.md) | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet | Open | Medium | 2026-09-03 | 2026-09-03 |
 
 ## Archived Releases
 
