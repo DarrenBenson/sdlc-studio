@@ -54,6 +54,14 @@ These block. Everything else in this file is guidance.
 Emergency bypass is `git commit --no-verify` for a commit and `git push --no-verify` for a push, and
 nothing else.
 
+**Pushes go straight to main and a red main is read before the next push (D0181).** The pre-push
+hook asks the forge for the latest push-triggered Lint run on main before it runs the gate; on any
+conclusion but success it refuses until that run's id is acknowledged once per clone with
+`SDLC_PUSH_ACK_RED=<run id> git push`. An unreadable or empty answer is named and never read as
+green, and it does not block an offline push. The required status check a direct push can never
+satisfy is the operator's to remove from branch protection under the same ruling, and stays owed
+until the protection read-back shows none.
+
 The pre-commit lanes, recorded here because a review once found the repo's own account of its
 gates incomplete, and a guard nobody has written down is one nobody notices losing. The hook
 prints each lane's rule and fix on failure, so this is the roster, not the manual:

@@ -25,6 +25,32 @@ ENABLE = REPO / "tools" / "enable-hooks.sh"
 GATE_TIMING = REPO / "tools" / "gate_timing.py"
 AGENTS = REPO / "AGENTS.md"
 
+STUB_GH = textwrap.dedent('''
+    #!/usr/bin/env python3
+    import json, os, sys
+    from pathlib import Path
+    Path(os.environ["STUB_GH_ARGV"]).open("a").write(" ".join(sys.argv[1:]) + "\\n")
+    mode = os.environ.get("STUB_GH_MODE", "empty")
+    if mode == "fail":
+        sys.stderr.write("gh: not logged in\\n"); raise SystemExit(4)
+    args = sys.argv[1:]
+    red = {"databaseId": 33731466380, "conclusion": "failure", "url": "https://example.test/runs/33731466380"}
+    timed = {"databaseId": 33731466381, "conclusion": "timed_out", "url": "https://example.test/runs/33731466381"}
+    green = {"databaseId": 33746859034, "conclusion": "success", "url": "https://example.test/runs/33746859034"}
+    newer_other = {"databaseId": 33746859999, "conclusion": "success", "url": "https://example.test/runs/dependabot"}
+    if "--workflow" not in args:            # without the filter the NEWER green Dependabot run wins
+        print(json.dumps([newer_other]) if mode != "empty" else "[]"); raise SystemExit(0)
+    if mode == "garbage":
+        print("<html>rate limited</html>"); raise SystemExit(0)
+    if mode == "number":
+        print("42"); raise SystemExit(0)
+    cancelled = {"databaseId": 33731466382, "conclusion": "cancelled", "url": "https://example.test/runs/33731466382"}
+    noid = {"conclusion": "failure", "url": "https://example.test/runs/unknown"}
+    answer = {"red": [red], "timed_out": [timed], "cancelled": [cancelled], "noid": [noid],
+              "green": [green], "empty": []}[mode]
+    print(json.dumps(answer))
+''').lstrip()
+
 STUB_GATE = textwrap.dedent('''
     import os, sys
     from pathlib import Path
@@ -50,6 +76,7 @@ def _git(cwd: Path, *args: str, check: bool = True, env: dict | None = None) -> 
             "GIT_COMMITTER_EMAIL": "t@t"}
     for k in _GIT_ENV_VARS:
         base.pop(k, None)
+    base.pop("SDLC_PUSH_ACK_RED", None)      # a profile-exported acknowledgement is the caller's, never the fixture's
     if env:
         base.update(env)
     return subprocess.run(["git", "-C", str(cwd), *args], check=check, capture_output=True,
@@ -89,15 +116,48 @@ class _Clone:
         _git(self.clone, "commit", "-q", "-m", "seed")
         self.argv = self.tmp / "gate-argv.txt"
 
-    def push(self, *refspec: str, rc: int = 0) -> subprocess.CompletedProcess:
-        return _git(self.clone, "push", "-q", "origin", *(refspec or ("main",)), check=False,
-                    env={"STUB_ARGV": str(self.argv), "STUB_RC": str(rc)})
+    def stub_path(self, gh_mode: str = "empty") -> Path:
+        """A PATH holding ONLY a `gh` stub plus symlinks to the real git, bash and python3, so
+        no fixture can reach the live forge and the hook can still exec. `gh_mode` selects the
+        stub's answer: red, timed_out, green, empty, fail."""
+        d = self.tmp / "path"
+        if not d.exists():
+            d.mkdir()
+            for tool in ("git", "bash", "python3"):
+                real = shutil.which(tool)
+                assert real, tool
+                (d / tool).symlink_to(real)
+            (d / "gh").write_text(STUB_GH, encoding="utf-8")
+            (d / "gh").chmod(0o755)
+        self.gh_mode = gh_mode
+        return d
+
+    def push(self, *refspec: str, rc: int = 0, gh_mode: str | None = None,
+             ack: str | None = None) -> subprocess.CompletedProcess:
+        path = self.stub_path(gh_mode or getattr(self, "gh_mode", "empty"))
+        env = {"STUB_ARGV": str(self.argv), "STUB_RC": str(rc), "PATH": str(path),
+               "STUB_GH_MODE": self.gh_mode, "STUB_GH_ARGV": str(self.tmp / "gh-argv.txt")}
+        if ack is not None:
+            env["SDLC_PUSH_ACK_RED"] = ack
+        return _git(self.clone, "push", "-q", "origin", *(refspec or ("main",)), check=False, env=env)
+
+    def gh_calls(self) -> list[str]:
+        f = self.tmp / "gh-argv.txt"
+        return f.read_text(encoding="utf-8").splitlines() if f.exists() else []
+
+    def ack_file(self) -> Path:
+        return self.clone / "sdlc-studio" / ".local" / "push-ack.json"
+
+    def remote_count(self) -> int:
+        return int(_git(self.remote, "rev-list", "--all", "--count", check=False).stdout.strip() or 0)
 
     def hook_direct(self, rows: str, rc: int = 0) -> subprocess.CompletedProcess:
         """Run the hook itself with hand-written stdin rows, in the order WRITTEN: git always hands
         the branch row before the tag row, so only a direct call can reach the tag-first order."""
-        base = {k: v for k, v in os.environ.items() if k not in _GIT_ENV_VARS}
-        base.update({"STUB_ARGV": str(self.argv), "STUB_RC": str(rc)})
+        base = {k: v for k, v in os.environ.items() if k not in _GIT_ENV_VARS and k != "SDLC_PUSH_ACK_RED"}
+        path = self.stub_path(getattr(self, "gh_mode", "empty"))     # never the caller's PATH: no fixture reaches the live forge
+        base.update({"STUB_ARGV": str(self.argv), "STUB_RC": str(rc), "PATH": str(path),
+                     "STUB_GH_MODE": self.gh_mode, "STUB_GH_ARGV": str(self.tmp / "gh-argv.txt")})
         return subprocess.run(["bash", ".githooks/pre-push", "origin", str(self.remote)], cwd=self.clone,
                               input=rows, capture_output=True, text=True, env=base, timeout=300)
 
@@ -105,7 +165,8 @@ class _Clone:
         return self.argv.read_text(encoding="utf-8").splitlines() if self.argv.exists() else []
 
     def commit_more(self) -> None:
-        (self.clone / "more.md").write_text("more\n", encoding="utf-8")
+        with (self.clone / "more.md").open("a", encoding="utf-8") as f:
+            f.write("more\n")                          # appended, so every call has something to commit
         _git(self.clone, "add", "-A")
         _git(self.clone, "commit", "-q", "-m", "more")
 
@@ -241,6 +302,126 @@ class ThePushBoundaryHasAHookTests(unittest.TestCase):
                           "the bypass was not named before the gate ran")
         finally:
             bare.cleanup()
+
+
+class ARedMainIsReadBeforeTheNextPushTests(unittest.TestCase):
+    """BG0642 AC1-AC4: the hook reads the latest push-triggered Lint run on main BEFORE the gate."""
+
+    def test_a_failed_run_on_main_refuses_the_push_and_names_it(self) -> None:
+        """AC1. MUTANTS: (1) drop the comparison on the run's `conclusion` field; (2) drop the
+        `--workflow Lint` filter so the newer green Dependabot run is read; (3) invoke the gate
+        before reading CI."""
+        fx = _Clone()
+        try:
+            r = fx.push(gh_mode="red", rc=0)
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, "a red Lint run on main did not refuse the push:\n" + out)
+            self.assertIn("33731466380", out); self.assertIn("failure", out); self.assertIn("https://example.test/runs/33731466380", out)
+            self.assertIn("SDLC_PUSH_ACK_RED=33731466380 git push", out, "the acknowledgement command was not printed verbatim:\n" + out)
+            self.assertNotIn("--no-verify", out, "the CI refusal must never name the bypass - it names the acknowledgement:\n" + out)
+            self.assertEqual([], fx.gate_calls(), "the gate ran before CI was read")
+            self.assertEqual(1, len(fx.gh_calls()))
+            for flag in ("--workflow Lint", "--branch main", "--event push", "--status completed"):
+                self.assertIn(flag, fx.gh_calls()[0], fx.gh_calls())
+            self.assertEqual(0, fx.remote_count())
+            # the read is of MAIN whatever ref is pushed: a tag pushed from a TOPIC checkout still reads main
+            _git(fx.clone, "checkout", "-q", "-b", "topic")
+            _git(fx.clone, "tag", "v9.9.9")
+            tag = fx.push("v9.9.9", gh_mode="red", rc=0)
+            self.assertNotEqual(0, tag.returncode, "a tag push over a red main was not refused:\n" + tag.stderr)
+            self.assertIn("--branch main", fx.gh_calls()[-1], "a tag push did not read main:\n" + str(fx.gh_calls()))
+            self.assertNotIn("v9.9.9", _git(fx.remote, "tag", "-l").stdout)
+        finally:
+            fx.cleanup()
+
+    def test_a_non_success_conclusion_refuses_not_only_failure(self) -> None:
+        """AC2. MUTANTS: (1) compare `conclusion == "failure"` so `timed_out` reads as green; (2) an
+        enumerated `failure || timed_out` list, so `cancelled` reads as green."""
+        fx = _Clone()
+        try:
+            for word in ("timed_out", "cancelled"):
+                r = fx.push(gh_mode=word, rc=0)
+                self.assertNotEqual(0, r.returncode, f"{word} did not refuse:\n" + r.stdout + r.stderr)
+                self.assertIn(word, r.stdout + r.stderr)
+        finally:
+            fx.cleanup()
+
+    def test_an_acknowledged_red_is_remembered_a_stale_ack_refuses_and_a_green_run_proceeds(self) -> None:
+        """AC3. MUTANTS: (1) test `[ -n "$SDLC_PUSH_ACK_RED" ]` instead of comparing it to the run
+        id - the wrong-id step survives; (2) proceed whenever `push-ack.json` exists without
+        comparing its id - the stale-file step survives; (3) honour the variable and record
+        nothing - the later push over the same run is refused; (4) invert the conclusion test so
+        `success` refuses."""
+        fx = _Clone(no_timings_file=True)     # no .local at all: the hook creates it (AC3)
+        try:
+            self.assertFalse(fx.ack_file().parent.exists(), "the fixture must start with no .local, so the hook is what creates it")
+            for wrong_id in ("1", "3373146638", "133731466380"):      # a profile-exported 1, a prefix, a superstring
+                wrong = fx.push(gh_mode="red", rc=0, ack=wrong_id)
+                self.assertNotEqual(0, wrong.returncode, f"the WRONG acknowledgement id {wrong_id!r} let the push through")
+                self.assertNotIn("--no-verify", wrong.stderr, "the CI refusal must never name the bypass")
+                self.assertFalse(fx.ack_file().exists(), f"the wrong acknowledgement {wrong_id!r} was recorded")
+            acked = fx.push(gh_mode="red", rc=0, ack="33731466380")
+            self.assertEqual(0, acked.returncode, acked.stdout + acked.stderr)
+            self.assertEqual(1, fx.remote_count())
+            self.assertIn("33731466380", fx.ack_file().read_text(encoding="utf-8"))
+            fx.commit_more()
+            again = fx.push(gh_mode="red", rc=0)          # variable unset, file remembers it
+            self.assertEqual(0, again.returncode, "the remembered acknowledgement was not honoured:\n" + again.stdout + again.stderr)
+            self.assertEqual(2, fx.remote_count())
+            fx.ack_file().write_text('{"acknowledged": "12345"}', encoding="utf-8")   # stale
+            fx.commit_more()
+            stale = fx.push(gh_mode="red", rc=0)
+            self.assertNotEqual(0, stale.returncode, "a stale acknowledgement let the push through")
+            fx.ack_file().unlink()
+            # a record that cannot be written is a refusal that says so, never "remembered"
+            fx.ack_file().unlink(missing_ok=True)
+            fx.ack_file().mkdir()                      # a directory where the file must go
+            blocked = fx.push(gh_mode="red", rc=0, ack="33731466380")
+            self.assertNotEqual(0, blocked.returncode, "an unwritable record let the push through:\n" + blocked.stderr)
+            self.assertIn("could not be written", blocked.stderr)
+            self.assertNotIn("remembered", blocked.stderr, "the hook claimed to remember what it could not write")
+            fx.ack_file().rmdir()
+            green = fx.push(gh_mode="green", rc=0)
+            self.assertEqual(0, green.returncode, green.stdout + green.stderr)
+            self.assertEqual(3, fx.remote_count())
+            # a red run with NO id is unread, never "already acknowledged" by an empty id matching an empty record
+            fx.commit_more()
+            noid = fx.push(gh_mode="noid", rc=0)
+            self.assertEqual(0, noid.returncode, noid.stderr)
+            self.assertIn("CI state UNREAD", noid.stderr, "a run with no id was not named unread:\n" + noid.stderr)
+            self.assertNotIn("acknowledged", noid.stderr, "an empty id matched an empty record:\n" + noid.stderr)
+        finally:
+            fx.cleanup()
+
+    def test_an_unreadable_ci_state_is_named_unread_not_green(self) -> None:
+        """AC4. MUTANTS: (1) treat a failed `gh` invocation as an empty run list and print
+        nothing; (2) refuse when `gh` fails; (3) proceed silently on an empty list."""
+        fx = _Clone()
+        try:
+            unread = fx.push(gh_mode="fail", rc=0)
+            out = unread.stdout + unread.stderr
+            self.assertEqual(0, unread.returncode, out)
+            self.assertIn("CI state UNREAD: could not read the latest Lint run on main", out)
+            self.assertEqual(1, fx.remote_count())
+            fx.commit_more()
+            empty = fx.push(gh_mode="empty", rc=0)
+            out2 = empty.stdout + empty.stderr
+            self.assertEqual(0, empty.returncode, out2)
+            self.assertIn("no completed Lint run on main to read", out2)
+            self.assertEqual(2, fx.remote_count())
+            fx.commit_more()
+            red = fx.push(gh_mode="red", rc=0)
+            refusal = red.stdout + red.stderr
+            self.assertNotEqual(0, red.returncode)
+            self.assertNotIn("CI state UNREAD", refusal); self.assertNotIn("no completed Lint run", refusal)
+            for mode in ("garbage", "number", "noid"):   # non-JSON, a JSON number, and a run with no id
+                fx.commit_more()                       # something to push, or git never invokes the hook
+                odd = fx.push(gh_mode=mode, rc=0)
+                self.assertEqual(0, odd.returncode, f"{mode}: an unreadable answer blocked the push:\n" + odd.stderr)
+                self.assertIn("CI state UNREAD", odd.stderr, f"{mode}: the answer was not named unread:\n" + odd.stderr)
+                self.assertNotIn("already acknowledged", odd.stderr, f"{mode}: an empty id matched an empty record")
+        finally:
+            fx.cleanup()
 
 
 class EnableHooksNamesEveryHookTests(unittest.TestCase):

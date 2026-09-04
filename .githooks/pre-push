@@ -11,7 +11,8 @@
 # The cost is announced BEFORE it is paid: the boundary gate runs the full suite plus the two
 # lanes, minutes rather than seconds, and a guard whose cost arrives unannounced is one that
 # gets killed and then bypassed (D0180 records the ruling to pay it on every push). The bypass
-# is git's own, `git push --no-verify`, and it is named in every refusal this hook makes.
+# is git's own, `git push --no-verify`, and every GATE refusal this hook makes names it. The
+# red-CI refusal below (BG0642) deliberately does not: its route is the acknowledgement by run id.
 set -uo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
@@ -27,6 +28,71 @@ while read -r _local_ref local_sha remote_ref _remote_sha; do
   esac
 done
 [ -z "$boundary" ] && exit 0
+
+# --- read the latest push-triggered Lint run on main BEFORE the gate (BG0642, D0181) -------
+# A red main must be READ before the next push, not discovered two days later in a tab. The
+# hook asks the forge for the latest COMPLETED push-triggered Lint run on main - never a
+# scheduled corpus run, never Dependabot's - and refuses on any conclusion but success until
+# that run's id is acknowledged, once, per clone. An unreadable or empty answer is named as
+# such and never rendered as green; it does not block an offline push. Written against bash
+# builtins, git, python3 and gh only, because the fixture PATH holds nothing else.
+ack_file="sdlc-studio/.local/push-ack.json"
+ci_json="$(gh run list --workflow Lint --branch main --event push --status completed --limit 1 --json databaseId,conclusion,url 2>/dev/null)"
+ci_rc=$?
+if [ "$ci_rc" -ne 0 ]; then
+  echo "pre-push: CI state UNREAD: could not read the latest Lint run on main" >&2
+else
+  ci_read="$(python3 - "$ci_json" <<'PY' 2>/dev/null || echo "UNREAD"
+import json, sys
+try:
+    runs = json.loads(sys.argv[1] or "[]") or []
+except ValueError:
+    print("UNREAD"); raise SystemExit(0)
+if not isinstance(runs, list):
+    print("UNREAD"); raise SystemExit(0)      # a number or an object is not a run list
+if not runs:
+    print("EMPTY"); raise SystemExit(0)
+r = runs[0] if isinstance(runs[0], dict) else {}
+if not str(r.get("databaseId", "")).strip():
+    print("UNREAD"); raise SystemExit(0)      # no id to acknowledge against: never "already acknowledged" by an empty match
+print("\t".join(str(r.get(k, "")) for k in ("databaseId", "conclusion", "url")))
+PY
+)"
+  case "$ci_read" in
+    EMPTY)  echo "pre-push: no completed Lint run on main to read" >&2 ;;
+    UNREAD) echo "pre-push: CI state UNREAD: could not read the latest Lint run on main" >&2 ;;
+    *)
+      run_id="${ci_read%%	*}"; rest="${ci_read#*	}"; conclusion="${rest%%	*}"; run_url="${rest#*	}"
+      if [ "$conclusion" != "success" ]; then
+        acked="$(python3 - "$ack_file" <<'PY' 2>/dev/null
+import json, os, sys
+p = sys.argv[1]
+print(json.load(open(p)).get("acknowledged", "") if os.path.exists(p) else "")
+PY
+)"
+        if [ -n "${SDLC_PUSH_ACK_RED:-}" ] && [ "$SDLC_PUSH_ACK_RED" = "$run_id" ]; then
+          if python3 - "$ack_file" "$run_id" <<'PY' 2>/dev/null
+import json, os, sys
+p = sys.argv[1]
+os.makedirs(os.path.dirname(p), exist_ok=True)
+json.dump({"acknowledged": sys.argv[2]}, open(p, "w"))
+PY
+          then
+            echo "pre-push: red Lint run $run_id acknowledged and remembered for this clone" >&2
+          else
+            echo "pre-push: red Lint run $run_id acknowledged but the record could not be written at $ack_file - fix the path and push again" >&2
+            exit 1
+          fi
+        elif [ "$acked" = "$run_id" ]; then
+          echo "pre-push: red Lint run $run_id already acknowledged for this clone" >&2
+        else
+          echo "pre-push: the latest push-triggered Lint run on main concluded $conclusion and has not been read: run $run_id ($run_url)" >&2
+          echo "  read it, then acknowledge it by id: SDLC_PUSH_ACK_RED=$run_id git push" >&2
+          exit 1
+        fi
+      fi ;;
+  esac
+fi
 
 # --- announce the cost, then pay it -------------------------------------------------------
 cost="$(python3 tools/gate_timing.py estimate --suite "boundary-$boundary" --warn-seconds 0 2>/dev/null || true)"
