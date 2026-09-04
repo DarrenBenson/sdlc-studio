@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# SDLC Studio pre-push gate: the two boundary lanes (release-rehearsal, revert-check) bind here.
+#
+# git hands this hook one line per ref on stdin - `<local ref> <local sha> <remote ref> <remote
+# sha>`. A tag ref is the RELEASE boundary, a branch ref is the PUSH boundary, and a deletion
+# (all-zero local sha) runs no gate at all. `release` binds the same two lanes as `push`, so a
+# push carrying both a branch and a tag runs the gate ONCE, at `release`. One literal invocation
+# per boundary below, so `tools/boundary_roster.py` can read which boundaries this hook binds
+# without resolving a variable.
+#
+# The cost is announced BEFORE it is paid: the boundary gate runs the full suite plus the two
+# lanes, minutes rather than seconds, and a guard whose cost arrives unannounced is one that
+# gets killed and then bypassed (D0180 records the ruling to pay it on every push). The bypass
+# is git's own, `git push --no-verify`, and it is named in every refusal this hook makes.
+set -uo pipefail
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+skill=".claude/skills/sdlc-studio/scripts"
+zero="0000000000000000000000000000000000000000"
+boundary=""
+while read -r _local_ref local_sha remote_ref _remote_sha; do
+  [ -z "${local_sha:-}" ] && continue
+  [ "$local_sha" = "$zero" ] && continue           # a deletion pushes nothing to gate
+  case "$remote_ref" in
+    refs/tags/*) boundary="release" ;;
+    *) [ "$boundary" = "release" ] || boundary="push" ;;
+  esac
+done
+[ -z "$boundary" ] && exit 0
+
+# --- announce the cost, then pay it -------------------------------------------------------
+cost="$(python3 tools/gate_timing.py estimate --suite "boundary-$boundary" --warn-seconds 0 2>/dev/null || true)"
+if [ -z "$cost" ]; then
+  # No run recorded for this boundary yet (the first push is the one this hook exists for): the
+  # floor is the full suite's own recorded figure, and a literal when even that is absent.
+  suite="$(python3 tools/gate_timing.py estimate --suite skill-tests --warn-seconds 0 2>/dev/null || true)"
+  if [ -n "$suite" ]; then
+    cost="boundary-$boundary: no run recorded yet - expect at least the full suite (${suite#skill-tests: expect }) plus release-rehearsal and revert-check"
+  else
+    cost="boundary-$boundary: no run recorded yet - expect about ten minutes (the full suite plus release-rehearsal and revert-check)"
+  fi
+fi
+echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2
+
+# Scrubbed exactly as the commit hooks scrub their suite lanes, and for the same reason: git
+# hands a pre-push hook the pushing repository's locations, and the gate's rehearsal lane builds
+# git repositories of its own - unscrubbed, every one of them is steered at this clone. The
+# scrub is written out on each invocation so the list is pinned where it is used. The gate's
+# stdout is sent to stderr: git shows a pusher the hook's stderr, and the refusal below says
+# "see the lane named above", so the lane name has to be on the stream the refusal is on.
+t0=$SECONDS
+if [ "$boundary" = "release" ]; then
+  /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
+     -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
+     -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
+     -u GIT_PREFIX python3 "$skill/gate.py" --boundary release 1>&2
+  rc=$?
+else
+  /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
+     -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
+     -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
+     -u GIT_PREFIX python3 "$skill/gate.py" --boundary push 1>&2
+  rc=$?
+fi
+python3 tools/gate_timing.py record --suite "boundary-$boundary" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
+if [ "$rc" -ne 0 ]; then
+  echo "pre-push: the $boundary boundary gate refused this push - see the lane named above." >&2
+  echo "  re-run: python3 $skill/gate.py --boundary $boundary" >&2
+  echo "  bypass once (emergency only): git push --no-verify" >&2
+  exit "$rc"
+fi
+exit 0

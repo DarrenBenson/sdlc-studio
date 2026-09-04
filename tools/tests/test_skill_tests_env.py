@@ -36,10 +36,11 @@ REPO_LOCATING = (
 MUST_SURVIVE = ("GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME",
                 "GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")
 
-#: The tracked hooks, which carry no file extension and so cannot be found by suffix. Both
-#: are swept: the expensive lanes (and their scrub) live in `commit-msg` since US0372, and
-#: `pre-commit` still hands the selection over to it.
-HOOK_NAMES = ("pre-commit", "commit-msg")
+#: The tracked hooks, which carry no file extension and so cannot be found by suffix. All
+#: three are swept: the expensive lanes (and their scrub) live in `commit-msg` since US0372,
+#: `pre-commit` still hands the selection over to it, and `pre-push` (BG0641) runs the boundary
+#: gate, which builds git fixtures of its own, behind the same scrub.
+HOOK_NAMES = ("pre-commit", "commit-msg", "pre-push")
 
 
 def _scrub_prelude() -> str:
@@ -125,6 +126,12 @@ SCRUB_SITES: dict[str, str] = {
         "commit-message check; the scrub moved with it, unchanged.",
     "tools/tests/test_precommit_budget_recording.py":
         "pinned by test_the_hook_fixture_module_scrubs_the_same_variables",
+    ".githooks/pre-push":
+        "pinned by test_the_pre_push_hook_scrubs_the_same_variables. It invokes the boundary "
+        "gate, whose release-rehearsal lane builds git repositories of its own, from an "
+        "environment git has just filled with the pushing repository's locations (BG0641).",
+    "tools/tests/test_pre_push_hook.py":
+        "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_precommit_window_guard.py":
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_precommit_floor_pending.py":
@@ -226,6 +233,17 @@ class ScrubListsAgreeTests(unittest.TestCase):
 
     def test_the_hook_lane_scrubs_the_same_variables_as_the_script(self) -> None:
         self.assertEqual(sorted(self._hook_scrub_list()), sorted(REPO_LOCATING))
+
+    def test_the_pre_push_hook_scrubs_the_same_variables(self) -> None:
+        """The push boundary runs the gate from the environment git hands a pre-push hook, and
+        the gate's rehearsal lane builds git repositories: unscrubbed, every one of them is
+        steered at the pushing clone. Parsed from the hook's own `-u` flags (BG0641)."""
+        import re
+        text = (REPO / ".githooks" / "pre-push").read_text(encoding="utf-8")
+        found = re.findall(r"/usr/bin/env((?:\s*\\?\s*-u\s+\w+)+)", text)
+        self.assertEqual(2, len(found), "the pre-push hook must scrub BOTH boundary invocations")
+        for block in found:
+            self.assertEqual(sorted(re.findall(r"-u\s+(\w+)", block)), sorted(REPO_LOCATING))
 
     def test_the_hook_fixture_module_scrubs_the_same_variables(self) -> None:
         self.assertEqual(

@@ -41,6 +41,7 @@ These block. Everything else in this file is guidance.
 | Gate | Refuses |
 | --- | --- |
 | pre-commit + commit-msg hooks | any guard failure; a multi-id subject with no `Refs:` trailer; a collapsed test suite |
+| pre-push hook | a red boundary gate (`gate.py --boundary push`, or `release` for a tag): the full suite plus the two boundary lanes, minutes per push - until a boundary run is recorded the floor is the full suite's own recorded figure, else about ten minutes, and `python3 tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0` prints the current figure |
 | `sprint plan` | a batch whose units lack `Affects:` or `Points:`, or exceed the split threshold |
 | `transition -> Done` | a story whose executable ACs have not passed, or that is past `review.two_role_after` without both review halves |
 | `transition -> Fixed` | a bug with no parseable `Verification depth` |
@@ -48,8 +49,10 @@ These block. Everything else in this file is guidance.
 | `critic record` | a verdict carrying no brief provenance (`--brief`), unless stood down by a recorded config decision |
 | `critic signoff` | a principal the authoring session controls |
 
-**Enable the hooks once per clone: `bash tools/enable-hooks.sh`.** Without them you are
-running with the gates off. Emergency bypass is `git commit --no-verify` and nothing else.
+**Enable the hooks once per clone: `bash tools/enable-hooks.sh`.** It installs the three tracked hooks
+(pre-commit, commit-msg, pre-push) and names each. Without them you are running with the gates off.
+Emergency bypass is `git commit --no-verify` for a commit and `git push --no-verify` for a push, and
+nothing else.
 
 The pre-commit lanes, recorded here because a review once found the repo's own account of its
 gates incomplete, and a guard nobody has written down is one nobody notices losing. The hook
@@ -65,7 +68,9 @@ working tree in `pre-commit` at the moment the suites are selected, and refuses 
 if running them modified a tracked file, created an untracked one, or touched gitignored
 `sdlc-studio/.local/`. It costs two directory reads and never a second suite run.
 One lane is deliberately NOT per-commit: `release-rehearsal` binds at the **push and release
-boundaries only** (`gate.py --boundary push|release`). It drives `tools/rehearse-release.sh` -
+boundaries only** (`gate.py --boundary push|release`, invoked by `.githooks/pre-push`: a branch ref
+is the push boundary, a tag ref the release boundary, and `tools/boundary_roster.py` refuses a
+boundary named here that no hook invokes). It drives `tools/rehearse-release.sh` -
 greenfield `init` to a written sprint plan, and a v4-era workspace through `migrate --apply` to a
 gate matching `tools/release-rehearsal-baseline.txt`. Those are the two situations this repository
 cannot occupy, and walking them by hand once found three consumer-facing defects the whole suite
