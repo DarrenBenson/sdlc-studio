@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 19 |
-| In Progress | 3 |
-| Fixed | 525 |
+| In Progress | 0 |
+| Fixed | 530 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 5 |
-| **Total** | **648** |
+| **Total** | **650** |
 
 ## All Bugs
 
@@ -179,15 +179,17 @@
 | [BG0637](BG0637-critic-clean-escapes-underscores-inside-code-spans-corrupting.md) | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick | Open | Medium | 2026-09-02 | -- |
 | [BG0638](BG0638-five-sprint-checklist-rows-state-a-conclusion-they.md) | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindness as UNANSWERED | Open | Medium | 2026-09-02 | -- |
 | [BG0639](BG0639-cycle-drift-s-guard-asserts-two-of-its.md) | cycle_drift's guard asserts two of its three buckets, so the unverifiable bucket is already non-empty on the shipped tree while the guard reports green | Superseded | Medium | 2026-09-02 | -- |
-| [BG0640](BG0640-the-revert-check-lane-reports-a-clean-pass.md) | the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result | In Progress | Medium | 2026-09-03 | 2026-09-03 |
-| [BG0641](BG0641-there-is-no-pre-push-hook-so-the.md) | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere | Open | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0640](BG0640-the-revert-check-lane-reports-a-clean-pass.md) | the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result | Fixed | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0641](BG0641-there-is-no-pre-push-hook-so-the.md) | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere | Fixed | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0642](BG0642-the-required-status-check-never-reports-at-push.md) | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread | Open | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0643](BG0643-the-verify-flag-bg0636-shipped-is-refused-for.md) | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet | Fixed | Medium | 2026-09-03 | 2026-09-03 |
-| [BG0644](BG0644-the-test-noise-ratchet-compares-a-selected-subset.md) | the test-noise ratchet compares a selected subset against a whole-suite baseline | In Progress | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0644](BG0644-the-test-noise-ratchet-compares-a-selected-subset.md) | the test-noise ratchet compares a selected subset against a whole-suite baseline | Fixed | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0645](BG0645-critic-py-brief-rejoinder-ignores-phase-plan-review.md) | critic.py brief --rejoinder ignores --phase plan-review and renders the delivery brief, so a re-review of a rejected test plan is briefed with a diff scope that does not exist | Open | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0646](BG0646-status-py-takes-113-seconds-on-this-corpus.md) | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default | Open | Medium | 2026-09-04 | 2026-09-04 |
-| [BG0647](BG0647-test-config-s-status-integration-test-gathers-status.md) | test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state | In Progress | Medium | 2026-09-04 | 2026-09-04 |
+| [BG0647](BG0647-test-config-s-status-integration-test-gathers-status.md) | test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state | Fixed | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0648](BG0648-a-criterion-written-outside-the-acceptance-criteria-section.md) | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and the sprint report | Open | Medium | 2026-09-04 | 2026-09-04 |
+| [BG0649](BG0649-test-critic-is-red-when-run-alone-unittest.md) | test_critic is red when run alone: unittest.mock is used at line 5131 without an import | Open | Medium | 2026-09-04 | 2026-09-04 |
+| [BG0650](BG0650-the-depth-count-census-reads-the-entry-point.md) | The depth-count census reads the entry-point denominator, so an artefact with a manual criterion fails it | Fixed | Medium | 2026-09-04 | 2026-09-04 |
 
 ## Archived Releases
 

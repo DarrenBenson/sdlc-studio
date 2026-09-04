@@ -1,6 +1,6 @@
 # BG0644: the test-noise ratchet compares a selected subset against a whole-suite baseline
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 5

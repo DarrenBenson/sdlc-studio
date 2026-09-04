@@ -1,6 +1,6 @@
 # BG0640: the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
