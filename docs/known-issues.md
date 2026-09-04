@@ -44,8 +44,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0642` | Medium | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread |
 | `BG0643` | Medium | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet |
 | `BG0644` | Medium | the test-noise ratchet compares a selected subset against a whole-suite baseline |
+| `BG0645` | Medium | critic.py brief --rejoinder ignores --phase plan-review and renders the delivery brief, so a re-review of a rejected test plan is briefed with a di... |
+| `BG0646` | Medium | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default |
 
-20 findings: 20 Medium, 0 Low.
+22 findings: 22 Medium, 0 Low.
 
 ## Not carried
 
