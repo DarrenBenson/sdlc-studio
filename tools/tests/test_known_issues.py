@@ -391,6 +391,44 @@ class DepthFieldCountsTests(unittest.TestCase):
     WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
              "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12}
 
+    @classmethod
+    def _stated_count(cls, field: str) -> int | None:
+        """The criterion count a depth field states, or None when it states none.
+
+        The deriver writes the TOTAL as `criteria 9` (count after the word) and, later in the
+        same field, the entry-point figure as `6 of 8 criteria through the shipped CLI` - a
+        count of criteria whose verifier could be LOCATED, which a manual criterion is never
+        part of. Reading the
+        first `<n> criteria` in the field took that denominator for the total and reported a
+        contradiction the artefact did not contain (BG0650). The total is read first, and the
+        hand-written `<n> criteria` form only when no derived total is present."""
+        derived = re.search(r"\[\[derived: criteria (\d+)\b", field)
+        if derived:
+            return int(derived.group(1))
+        stated = re.search(r"\b(\w+) criteri(?:on|a)\b", field)
+        if not stated:
+            return None
+        word = stated.group(1).lower()
+        return cls.WORDS.get(word) or (int(word) if word.isdigit() else None)
+
+    def test_the_census_reads_the_derived_total_not_the_entry_point_denominator(self) -> None:
+        """BG0650. MUTANTS: (1) read the first `<n> criteria` match again; (2) return the
+        entry-point denominator; (3) return None for a derived field, silencing the census."""
+        derived = ("functional [[derived: criteria 9; plan rows 27; NOT RUN 27 (AC1 row 0); "
+                   "entry point 6 of 8 criteria through the shipped CLI, 2 in-process | fp f1fad5d7cb89 ]]")
+        self.assertEqual(9, self._stated_count(derived))
+        self.assertEqual(4, self._stated_count("functional [[derived: criteria 4; entry point 4 of 4 criteria through the shipped CLI ]]"))
+        # a two-digit total, and a total that a plain word-boundary read would clip to one digit
+        self.assertEqual(12, self._stated_count("functional [[derived: criteria 12; plan rows 30; entry point 9 of 11 criteria through the shipped CLI ]]"))
+        # only the derived span's own total counts: prose naming "criteria 3" elsewhere is not a total
+        self.assertEqual(5, self._stated_count("functional (covers criteria 3 to 5) [[derived: criteria 5; entry point 5 of 5 criteria through the shipped CLI ]]"))
+        # a field whose total disagrees with the artefact is still a contradiction the census sees
+        self.assertEqual(7, self._stated_count("functional [[derived: criteria 7; entry point 6 of 8 criteria through the shipped CLI ]]"))
+        # the hand-written form, with no derived total, still reads
+        self.assertEqual(3, self._stated_count("functional - three criteria executed by hand"))
+        self.assertEqual(12, self._stated_count("functional (12 criteria)"))
+        self.assertIsNone(self._stated_count("functional"))
+
     def test_no_depth_field_states_a_criterion_count_the_artefact_contradicts(self) -> None:
         repo = Path(__file__).resolve().parents[2]
         units = sorted((repo / "sdlc-studio" / "bugs").glob("*.md"))
@@ -403,11 +441,7 @@ class DepthFieldCountsTests(unittest.TestCase):
             m = re.search(r"^> \*\*Verification depth:\*\* (.*)$", text, re.M)
             if not m:
                 continue
-            stated = re.search(r"\b(\w+) criteri(?:on|a)\b", m.group(1))
-            if not stated:
-                continue
-            word = stated.group(1).lower()
-            n = self.WORDS.get(word) or (int(word) if word.isdigit() else None)
+            n = self._stated_count(m.group(1))
             if n is None:
                 continue
             actual = len(re.findall(r"^- \[[x ]\] \*\*AC\d+\*\*", text, re.M))
