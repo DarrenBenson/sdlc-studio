@@ -508,7 +508,26 @@ _PROSE_VERBS = {"grep", "file"}
 #: Statuses at which a criterion is still being AUTHORED. Past these the story has
 #: shipped and a retrospective refusal helps nobody - it is the writing moment this
 #: guard exists to interrupt.
-_AUTHORING_STATUSES = {"draft", "ready"}
+# The lint's "still being authored" test used to be an ENUMERATED set, {"draft", "ready"}, so a
+# bug - which sits at Open for its whole delivery and never passes through either - was never
+# linted at all, and a story at In Progress or Blocked slipped past the same way. The rule is
+# derived from the status vocabulary instead: an artefact is being authored until it reaches a
+# terminal status for its type, and the terminal sets live in one place (`sdlc_md.TERMINAL_STATUS`).
+def _still_authoring(artefact_id: str, raw_status: str | None) -> bool:
+    """True while the artefact's status is NON-TERMINAL for its type - the window in which a
+    criterion is written and a stacked or markdown-only verifier can still be repaired.
+
+    The type comes from the id prefix (`US` story, `BG` bug), the status is canonicalised
+    through the type's vocabulary so a decorated line (`Done (v5.0.1)`) still reads as terminal,
+    and an unrecognised status counts as authoring: refusing a stacked verifier on an artefact
+    whose status nobody can read is the safer error."""
+    type_ = {"US": "story", "BG": "bug"}.get(artefact_id[:2].upper())
+    if type_ is None:
+        return True
+    canon = sdlc_md.canonical_status(raw_status, sdlc_md.STATUS_VOCAB.get(type_, []))
+    if canon is None:
+        return True
+    return not sdlc_md.is_terminal_status(type_, canon)
 
 
 def _verifier_targets(expr: str) -> list[str]:
@@ -3187,11 +3206,13 @@ def cmd_lint(args: argparse.Namespace) -> int:
     mis-written runner invocation. Catches the AC↔test drift at author time
     instead of discovering it 0/7 at verify time.
 
-    Advisory EXCEPT for the markdown-evidence refusal, which exits non-zero: that class
-    has already shipped four false passes past a human review, so an advisory it can be
-    walked past is what already failed. The refusal applies only while the story is still
-    being authored (Draft/Ready) - past that the criterion has shipped and refusing it
-    retrospectively blocks a lint run over history without helping anyone."""
+    Advisory EXCEPT for the markdown-evidence and stacked-verifier refusals, which exit
+    non-zero: that class has already shipped four false passes past a human review, so an
+    advisory it can be walked past is what already failed. The refusals apply while the
+    artefact is still being authored - any NON-TERMINAL status for its type, so an Open bug and
+    an In Progress story are linted, not only Draft and Ready - past that the criterion has
+    shipped and refusing it retrospectively blocks a lint run over history without helping
+    anyone."""
     repo_root = resolve_root(args)
     paths = [Path(args.story)] if args.story else list(walk_stories(under_root(repo_root, args.dir)))
     if getattr(args, "bugs", False) and not args.story:
@@ -3207,8 +3228,8 @@ def cmd_lint(args: argparse.Namespace) -> int:
         if not p.exists():
             continue
         text = sdlc_md.read_text_safe(p)
-        status = (sdlc_md.extract_field(text, "Status") or "").strip().lower()
-        authoring = status in _AUTHORING_STATUSES
+        raw_status = (sdlc_md.extract_field(text, "Status") or "").strip()
+        authoring = _still_authoring(p.name, raw_status)
         for block in parse_story(text):
             stacked = lint_stacked_verifiers(block) if authoring else None
             if stacked:

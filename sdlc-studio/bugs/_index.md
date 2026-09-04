@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
-| In Progress | 0 |
+| Open | 22 |
+| In Progress | 1 |
 | Fixed | 524 |
 | Verified | 0 |
 | Closed | 87 |
@@ -142,7 +142,7 @@
 | [BG0600](BG0600-the-unnameable-test-plan-exemption-is-still-held.md) | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written | Fixed | Medium | 2026-08-19 | 2026-08-19 |
 | [BG0601](BG0601-the-dry-run-class-sweep-compares-only-the.md) | The dry-run class sweep compares only the first two probes of each pair | Open | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0602](BG0602-the-close-checklist-enumerates-its-checks-by-ck.md) | The close checklist enumerates its checks by `_ck_` name prefix | Closed | Medium | 2026-08-21 | 2026-08-21 |
-| [BG0603](BG0603-stacked-verify-lines-are-refused-at-draft-and.md) | Stacked Verify lines are refused at Draft and Ready but not on an Open bug | Open | Medium | 2026-08-21 | 2026-08-21 |
+| [BG0603](BG0603-stacked-verify-lines-are-refused-at-draft-and.md) | Stacked Verify lines are refused at Draft and Ready but not on an Open bug | In Progress | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0604](BG0604-the-oracle-procedure-tells-a-reviewer-to-revert.md) | The oracle procedure tells a reviewer to revert files by hand with no restore obligation, and it destroyed uncommitted work in the main tree | Fixed | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0605](BG0605-the-repair-ledger-computes-outstanding-findings-per-record.md) | The repair ledger computes outstanding findings per RECORD, so two partial repairs that together close everything both read as PARTIAL | Fixed | Medium | 2026-08-24 | 2026-08-24 |
 | [BG0606](BG0606-six-test-plan-rows-across-us0671-us0674-and.md) | Six test-plan rows across US0671, US0674 and US0676 declare mutants their own criterion's verifier cannot die on | Fixed | High | 2026-08-24 | 2026-08-24 |

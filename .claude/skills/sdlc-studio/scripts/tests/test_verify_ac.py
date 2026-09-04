@@ -3088,6 +3088,132 @@ class StackedVerifierTests(unittest.TestCase):
         finally:
             root.cleanup()
 
+    # ---- BG0603: the lint refuses at every NON-TERMINAL status, through the pre-commit invocation
+    _SCRIPTS = Path(__file__).resolve().parents[1]
+
+    @staticmethod
+    def _bg0603_tree(d: str, statuses: dict) -> Path:
+        """A fixture tree the pre-commit invocation can walk: an EMPTY dup-ratchet baseline (the
+        criteria are linted regardless, but without it the ratchet returns 1 afterwards, so no
+        control could exit 0), one artefact per (id, status), every selector distinct so no
+        duplicate group forms. Shapes: `stacked` (two Verify lines under one criterion), `single`
+        (one each, one a code-backed grep), `prose` (one grep over a markdown file)."""
+        import json  # noqa: PLC0415
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / ".verify-lint-baseline.json").write_text(
+            json.dumps({"groups": {}}), encoding="utf-8")
+        (root / "src").mkdir(); (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
+        n = 0
+        for uid, (status, shape) in statuses.items():
+            n += 1
+            sub = "stories" if uid.startswith("US") else "bugs"
+            if shape == "stacked":
+                acs = (f"### AC1: two checks\n\n- **Verify:** pytest a/b.py::C::t_{n}_one\n"
+                       f"- **Verify:** pytest a/b.py::C::t_{n}_two\n")
+            elif shape == "prose":
+                acs = f"### AC1: prose evidence\n\n- **Verify:** grep x sdlc-studio/{sub}/{uid}-fixture.md\n"
+            else:
+                acs = (f"### AC1: one check\n\n- **Verify:** pytest a/b.py::C::t_{n}_one\n\n"
+                       f"### AC2: code-backed evidence\n\n- **Verify:** grep x src/thing.py\n")
+            (root / "sdlc-studio" / sub / f"{uid}-fixture.md").write_text(
+                f"# {uid}: fixture\n\n> **Status:** {status}\n\n## Acceptance Criteria\n\n{acs}",
+                encoding="utf-8")
+        return root
+
+    def _bg0603_lint(self, root: Path):
+        """The invocation `.githooks/pre-commit` makes, as a subprocess."""
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPTS / "verify_ac.py"), "lint", "--ratchet", "--bugs",
+             "--root", str(root)],
+            capture_output=True, text=True, timeout=900, check=False)
+
+    def test_stacked_verifiers_are_refused_at_open(self) -> None:
+        """BG0603 AC1. MUTANTS: (1) reintroduce the enumerated `{"draft", "ready"}` set in place
+        of the terminal check - today's code - so an Open bug is never linted; (2) reintroduce an
+        enumerated set naming `Open` capitalised while comparing the lowercased status, so it never
+        matches; (3) enumerate `open` and leave `in progress` out - the In Progress bug's line goes
+        missing."""
+        import tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bg0603_tree(d, {"BG0001": ("Open", "stacked"),
+                                         "BG0002": ("In Progress", "stacked")})
+            r = self._bg0603_lint(root)
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, out)
+            for name in ("BG0001-fixture.md AC1: REFUSED: 1 further",
+                         "BG0002-fixture.md AC1: REFUSED: 1 further"):
+                self.assertIn(name, out, f"the criterion was not refused by name:\n{out}")
+
+    def test_ready_still_refuses(self) -> None:
+        """BG0603 AC2. MUTANT: make the window `{"open"}` alone, so widening to Open moved the
+        rule off Ready."""
+        import tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            # Two STORIES: Ready is not a bug status, and a bug at Ready would reach the
+            # unrecognised-status branch rather than the window (the review caught that).
+            root = self._bg0603_tree(d, {"US0001": ("Ready", "stacked"), "US0002": ("Ready", "stacked")})
+            r = self._bg0603_lint(root)
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, out)
+            self.assertIn("US0001-fixture.md AC1: REFUSED: 1 further", out)
+            self.assertIn("US0002-fixture.md AC1: REFUSED: 1 further", out)
+
+    def test_a_single_verifier_at_open_passes(self) -> None:
+        """BG0603 AC3, the paired control. MUTANTS: (1) `lint_stacked_verifiers` refuses every
+        block - the Open bug's exit 0 dies; (2) `lint_markdown_evidence` refuses every `grep` -
+        the code-backed grep dies; (3) `_still_authoring` returns True unconditionally - the FIXED bug's
+        stacked lines are refused, the terminal edge of "non-terminal"."""
+        import tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bg0603_tree(d, {"BG0001": ("Open", "single"),
+                                         "BG0002": ("Fixed", "stacked")})
+            r = self._bg0603_lint(root)
+            out = r.stdout + r.stderr
+            self.assertEqual(0, r.returncode, out)
+            self.assertNotIn("REFUSED", out, out)
+
+    def test_the_markdown_only_refusal_shares_the_window(self) -> None:
+        """BG0603 AC4. MUTANT: gate `lint_markdown_evidence` on the old `{"draft", "ready"}`
+        window while the stacked lint uses the new one - the Open bug's prose grep is no longer
+        refused."""
+        import tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bg0603_tree(d, {"BG0001": ("Open", "prose")})
+            r = self._bg0603_lint(root)
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, out)
+            self.assertIn("BG0001-fixture.md", out)
+            self.assertRegex(out, r"-> REFUSED: .*prose", out)
+
+    def test_a_decorated_terminal_status_is_exempt_and_an_unreadable_one_fails_closed(self) -> None:
+        """BG0603 AC5. MUTANTS: (1) pass the raw status to `is_terminal_status` without
+        canonicalising it - `Done (v5.0.1)` reads as non-terminal and the Done story is refused;
+        (2) return False for an unknown id prefix - the XX file is skipped; (3) return False for
+        an unrecognised status - the `Bananas` story is skipped."""
+        import subprocess, tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bg0603_tree(d, {"US0001": ("Done (v5.0.1)", "stacked"),
+                                         "US0002": ("Bananas", "stacked")})
+            (root / "sdlc-studio" / "stories" / "XX0001-fixture.md").write_text(
+                (root / "sdlc-studio" / "stories" / "US0002-fixture.md").read_text(encoding="utf-8")
+                .replace("US0002", "XX0001").replace("t_2_", "t_9_"), encoding="utf-8")
+            r = self._bg0603_lint(root)
+            out = r.stdout + r.stderr
+            self.assertNotIn("US0001-fixture.md AC1: REFUSED", out,
+                             "a decorated terminal status was read as non-terminal:\n" + out)
+            self.assertIn("US0002-fixture.md AC1: REFUSED: 1 further", out,
+                          "an unrecognised status did not fail closed:\n" + out)
+            # the unknown prefix is reachable only through --story (the walk yields US/BG alone)
+            xx = subprocess.run(
+                [sys.executable, str(self._SCRIPTS / "verify_ac.py"), "lint", "--root", str(root),
+                 "--story", str(root / "sdlc-studio" / "stories" / "XX0001-fixture.md")],
+                capture_output=True, text=True, timeout=900, check=False)
+            self.assertIn("XX0001-fixture.md AC1: REFUSED: 1 further", xx.stdout + xx.stderr,
+                          "an unknown id prefix did not fail closed:\n" + xx.stdout + xx.stderr)
+
     def test_the_parser_records_the_dropped_verifiers_rather_than_discarding_them(self) -> None:
         blocks = verify_ac.parse_story(
             "### AC1: x\n\n- **Verify:** pytest a::t1\n- **Verify:** pytest a::t2\n"
