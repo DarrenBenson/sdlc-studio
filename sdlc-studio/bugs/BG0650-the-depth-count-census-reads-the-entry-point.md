@@ -27,7 +27,7 @@ Read the deriver's own total (`criteria (\d+)`) first and fall back to the hand-
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a derived depth field whose total says nine criteria and whose entry-point figure says eight, on an artefact with nine ACs one of which is manual, when the census runs, then it reads the total and reports no contradiction; and a field whose total disagrees with the artefact is still reported.
+- [x] **AC1** Given a derived depth field whose total says nine criteria and whose entry-point figure says eight, on an artefact with nine ACs one of which is manual, when the census runs, then it reads the total and reports no contradiction; and a field whose total disagrees with the artefact is still reported.
   - **Verify:** pytest tools/tests/test_known_issues.py::DepthFieldCountsTests::test_the_census_reads_the_derived_total_not_the_entry_point_denominator
   - **Verified:** yes (2026-09-04)
 

@@ -24,13 +24,13 @@ Point the test at a fixture workspace that carries a config-defaults.yaml (the c
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fixture workspace with no config of its own (its directories are inert - `status` reads the defaults for any root), when `test_status_reads_config` runs, then it gathers that fixture with its console captured, reads `schema_version` 2 from the defaults, sees NO open run (this clone has one, so the pin is timing-independent), reads an override of 3 back from a fixture that carries one (so the config is consumed, not defaulted by accident), and completes in under two seconds - never this repository
+- [x] **AC1** Given a fixture workspace with no config of its own (its directories are inert - `status` reads the defaults for any root), when `test_status_reads_config` runs, then it gathers that fixture with its console captured, reads `schema_version` 2 from the defaults, sees NO open run (this clone has one, so the pin is timing-independent), reads an override of 3 back from a fixture that carries one (so the config is consumed, not defaulted by accident), and completes in under two seconds - never this repository
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::IntegrationTests::test_status_gathers_a_fixture_never_this_repository
   - **Verified:** yes (2026-09-04)
-- [ ] **AC2** Given the same fixture, when status gathers it, then nothing reaches stdout or stderr - the module's noise count no longer depends on the state of the repository the suite runs in
+- [x] **AC2** Given the same fixture, when status gathers it, then nothing reaches stdout or stderr - the module's noise count no longer depends on the state of the repository the suite runs in
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::IntegrationTests::test_the_status_gather_prints_nothing_for_a_fixture
   - **Verified:** yes (2026-09-04)
-- [ ] **AC3** Given a fixture whose `.config.yaml` cannot be honoured, when status gathers it, then the warning it prints is in the captured text and nothing reaches the runner's console - "captured" pinned separately from "silent". Added at plan review on 2026-09-04
+- [x] **AC3** Given a fixture whose `.config.yaml` cannot be honoured, when status gathers it, then the warning it prints is in the captured text and nothing reaches the runner's console - "captured" pinned separately from "silent". Added at plan review on 2026-09-04
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::IntegrationTests::test_a_noisy_fixture_is_captured_and_never_reaches_the_console
   - **Verified:** yes (2026-09-04)
 

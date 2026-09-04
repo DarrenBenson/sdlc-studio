@@ -122,3 +122,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0110](RETRO0110-zero-open-high-and-a-backfill-that-made.md) | Zero open High, and a backfill that made the record prettier rather than truer | 2026-08-27 | -- | -- |
 | [RETRO-0111](RETRO0111-the-ceremony-s-own-record-answers-and-a.md) | the ceremony's own record answers, and a repair that kept moving | 2026-08-28 | -- | -- |
 | [RETRO-0112](RETRO0112-the-criteria-can-be-executed-and-a-regex.md) | the criteria can be executed, and a regex that rewrote 57 files to fix three spans | 2026-09-02 | -- | -- |
+| [RETRO-0113](RETRO0113-run-01m1ns3c-six-gates-that-hold-in-the.md) | RUN-01M1NS3C: six gates that hold in the command people run | 2026-09-04 | -- | -- |
