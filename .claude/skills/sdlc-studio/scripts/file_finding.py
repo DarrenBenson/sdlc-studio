@@ -462,8 +462,12 @@ def _classify_selector(verify_ac, root: Path, expr: str) -> tuple[bool, str]:
     That predicate answers False for four distinct facts and the guard may only refuse the two
     that are mistakes an author fixes by reading a file:
 
-      the file listed its nodes, this node is not among them  -> TYPO. Refuse. The recurring
-          shape: real file, real method, wrong class.
+      the file listed its nodes, this node is not among them  -> TYPO only when the node is a
+          NEAR MISS of one that exists: the method exists under another class (the recurring
+          shape: real file, real method, wrong class), or a method of the named class is a
+          close match. Refuse, naming it. Otherwise NOT YET WRITTEN. Accept: a bug is filed
+          before its fix, so its test does not exist yet, and the flag exists for that ordering.
+          The first `verify_ac run` reports the criterion RED, which is the net.
       the file does not exist, but its basename exists elsewhere -> a mistyped PATH. Refuse, and
           NAME THE PATH, which is the whole value of having looked. The same two-way split
           `fictional_affects` draws for a declared path.
@@ -490,7 +494,17 @@ def _classify_selector(verify_ac, root: Path, expr: str) -> tuple[bool, str]:
             # exception rather than on a decision.
             return (True, "")
         if verify_ac.selector_collected(expr, cwd=root):
-            return (True, "")                 # nodes were listed and this one is absent: TYPO
+            # Nodes were listed and this one is absent. The licence to accept covers the NODE
+            # case only: a `-k` pattern that selects nothing, or a bare file that collects
+            # nothing, is refused exactly as before - a pattern names no test to write later.
+            node_target, _file = verify_ac._selector_target(expr, cwd=root)
+            if not node_target or "::" not in node_target:
+                return (True, "")
+            # A TYPO only when the guard can name what the author meant; the near-miss reader
+            # is scoped to the named class, so a class the file does not collect - the
+            # not-yet-written test - has no candidates and files.
+            hint = verify_ac.selector_near_miss(expr, cwd=root)
+            return (True, hint) if hint else (False, "")
         if (root / target).exists():
             return (False, f"{target} exists but will not collect here")
         matches = basename_matches(root, target)

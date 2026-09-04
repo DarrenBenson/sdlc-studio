@@ -21,7 +21,9 @@
 ### AC1
 
 - **Given** a writer minting an artefact whose `Verify:` line names a REAL test file and a REAL
-  method but the WRONG class - the exact shape that recurred twice on 2026-07-30
+  method but the WRONG class - the exact shape that recurred twice on 2026-07-30. Narrowed by
+  BG0643 on 2026-09-04: only a near miss of a collected test refuses; a node no collected test
+  resembles is the test not yet written and files, RED on its first run
 - **When** the artefact is written through `file_finding.file` and through `artifact.py new`
 - **Then** BOTH refuse, nothing is allocated and nothing is written, and the refusal names the
   selector and the near miss it can find.
@@ -65,3 +67,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-11 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-04 | sdlc-studio | AC1 narrowed by BG0643: only a near miss of a collected test refuses; a not-yet-written node files and runs RED first |

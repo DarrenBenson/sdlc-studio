@@ -6039,5 +6039,46 @@ class UnevaluableSelectorTests(unittest.TestCase):
                             "reports, or conformance's subtraction removes nothing")
 
 
+class NearMissScopingTests(unittest.TestCase):
+    """BG0643 AC3: the close-match branch of `selector_near_miss` is scoped to the named class.
+
+    MUTANT: gather candidates at that depth from every class (the pre-BG0643 code) - the
+    cross-class assertion dies, because `test_alpha_thingy` is a 0.97 match to
+    `ExistingA::test_alpha_thing` and the selector names `ExistingB`.
+    """
+
+    _SUITE = (
+        "import unittest\n\n\n"
+        "class ExistingA(unittest.TestCase):\n"
+        "    def test_alpha_thing(self):\n        pass\n\n"
+        "    def test_beta(self):\n        pass\n\n\n"
+        "class ExistingB(unittest.TestCase):\n"
+        "    def test_gamma_ray(self):\n        pass\n"
+    )
+
+    def test_a_close_match_in_another_class_is_not_a_near_miss(self) -> None:
+        import tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "tests").mkdir()
+            (Path(d) / "tests" / "test_probe.py").write_text(self._SUITE, encoding="utf-8")
+            sel = "pytest tests/test_probe.py::"
+            # cross-class: the only close match lives in ExistingA - no hint, so the writer files
+            self.assertIsNone(verify_ac.selector_near_miss(sel + "ExistingB::test_alpha_thingy", cwd=d))
+            # in-class: the same method name under its own class IS a near miss
+            hint = verify_ac.selector_near_miss(sel + "ExistingA::test_alpha_thingy", cwd=d)
+            self.assertIsNotNone(hint)
+            self.assertIn("did you mean `test_alpha_thing`", hint,
+                          "the backticked close match, not the echoed selector")
+            self.assertIn("ExistingA", hint, "the hint does not say which class it searched")
+            # a node hanging below a collected test names the test it hangs off
+            below = verify_ac.selector_near_miss(sel + "ExistingA::test_alpha_thing::extra", cwd=d)
+            self.assertEqual("did you mean tests/test_probe.py::ExistingA::test_alpha_thing", below)
+            # same-leaf: unchanged, names the class the author meant
+            hint = verify_ac.selector_near_miss(sel + "WrongClass::test_alpha_thing", cwd=d)
+            self.assertIsNotNone(hint)
+            self.assertIn("ExistingA::test_alpha_thing", hint)
+            # a class the file does not collect has no candidates at all
+            self.assertIsNone(verify_ac.selector_near_miss(sel + "NewClass::test_alpha_thingy", cwd=d))
+
 if __name__ == "__main__":
     unittest.main()

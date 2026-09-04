@@ -2634,6 +2634,183 @@ class WriterMatchesParserTests(unittest.TestCase):
                         f"the DERIVED criteria block is unreadable:\n{block}")
 
 
+def _collected_node(root: Path, target: str) -> tuple[str, str]:
+    """`(class, method)` of the first node pytest collects from `target` under `root`.
+
+    BG0643 narrowed the write guard to NEAR MISSES of a collected test, so a fixture that wants
+    the typo shape must name a REAL method under the WRONG class - a method that exists nowhere is
+    now the not-yet-written test and files. Read off the file, never typed as it ought to be."""
+    import subprocess  # noqa: PLC0415
+    collected = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:cacheprovider", target],
+        capture_output=True, text=True, timeout=900, check=False, cwd=str(root))
+    node = next((ln.strip() for ln in collected.stdout.splitlines()
+                 if "::" in ln and not ln.startswith(" ")), None)
+    assert node, f"could not collect a node from {target}:\n{collected.stdout}{collected.stderr}"
+    return node.split("::")[1], node.split("::")[-1]
+
+
+_PROBE_SUITE = """import unittest
+
+
+class ExistingA(unittest.TestCase):
+    def test_alpha_thing(self):
+        pass
+
+    def test_beta(self):
+        pass
+
+
+class ExistingB(unittest.TestCase):
+    def test_gamma_ray(self):
+        pass
+"""
+
+
+class NotYetWrittenSelectorTests(unittest.TestCase):
+    """BG0643: the filer accepts a criterion whose test is not written yet, and still refuses a typo.
+
+    A bug is filed BEFORE its fix, so the test its criterion names does not exist yet. The guard
+    refused every selector whose file collected but whose node was absent, so the flag was usable
+    only after the work it exists to precede. The split is on what the guard can NAME: a near miss
+    of a collected test is a typo; a node no collected test resembles is the test not yet written.
+    """
+
+    _SCRIPTS = Path(__file__).resolve().parents[1]
+    _REPO = Path(__file__).resolve().parents[5]
+    _TARGET = "tests/test_probe.py"
+
+    def _fixture(self, d: str) -> Path:
+        root = Path(d)
+        _seed_index(root, "bug")
+        (root / "tests").mkdir()
+        (root / self._TARGET).write_text(_PROBE_SUITE, encoding="utf-8")
+        return root
+
+    def _file(self, root: Path, *selectors: str):
+        """Drive the SHIPPED filer as a subprocess with `--root`, one criterion per selector."""
+        import subprocess  # noqa: PLC0415
+        argv = [sys.executable, str(self._SCRIPTS / "file_finding.py"), "file", "--root", str(root),
+                "--type", "bug", "--title", "a probe", "--summary", "s", "--severity", "Low",
+                "--steps", "1. probe", "--fix", "f", "--affects", self._TARGET, "--points", "1"]
+        for i, sel in enumerate(selectors, 1):
+            argv += ["--ac", f"criterion {i}", "--verify", sel]
+        return subprocess.run(argv, capture_output=True, text=True, timeout=900, check=False)
+
+    def _run(self, root: Path, uid: str):
+        """`verify_ac.py run` as a subprocess, scoped to the bug - plain `run` walks stories."""
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, str(self._SCRIPTS / "verify_ac.py"), "run", "--root", str(root),
+             "--dir", "sdlc-studio/bugs", "--id", uid],
+            capture_output=True, text=True, timeout=900, check=False)
+
+    def test_a_new_class_in_an_existing_file_is_filed_and_runs_red(self) -> None:
+        """AC1. MUTANTS: (1) keep `return (True, "")` for the collected case, so a class the file
+        does not collect is refused - the exit-0 assertion dies; (2) consult the near-miss reader
+        FILE-WIDE before the class-collected check - the second selector, whose method resembles
+        `ExistingA::test_alpha_thing`, is refused; (3) route the accepted selector through
+        `_md_safe` - the byte-exact assertion dies on a backtick-wrapped node id."""
+        repo_report = self._REPO / "sdlc-studio" / ".local" / "verify-report.json"
+        before = repo_report.stat().st_mtime_ns if repo_report.exists() else None
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            fresh = f"pytest {self._TARGET}::NewClassTests::test_zebra_quux"
+            resembles = f"pytest {self._TARGET}::NewClassTests::test_alpha_thingy"
+            r = self._file(root, fresh, resembles)
+            self.assertEqual(0, r.returncode, "a not-yet-written test was refused at filing:\n"
+                             + r.stdout + r.stderr)
+            m = re.search(r"filed (BG\d+) -> (.+)$", r.stdout, re.M)
+            self.assertIsNotNone(m, r.stdout + r.stderr)
+            uid, path = m.group(1), Path(m.group(2).strip())
+            body = path.read_text(encoding="utf-8")
+            self.assertIn(f"- **Verify:** {fresh}\n", body, "the selector was not written byte-exact")
+            self.assertIn(f"- **Verify:** {resembles}\n", body, "the selector was not written byte-exact")
+            run = self._run(root, uid)
+            self.assertNotEqual(0, run.returncode, run.stdout + run.stderr)
+            self.assertIn("FAIL AC1", run.stdout, run.stdout + run.stderr)
+            self.assertIn("FAIL AC2", run.stdout, run.stdout + run.stderr)
+            self.assertTrue((root / "sdlc-studio" / ".local" / "verify-report.json").exists(),
+                            "the run wrote its report somewhere other than the fixture root")
+        # The OTHER writer shares the seam (`artifact.py` calls `check_verify_selectors`): the
+        # not-yet-written class must file there too, or the guard has a documented side door.
+        import subprocess  # noqa: PLC0415
+        target = ".claude/skills/sdlc-studio/scripts/tests/test_validate.py"
+        n = subprocess.run(
+            [sys.executable, str(self._SCRIPTS / "artifact.py"), "--root", str(self._REPO), "new",
+             "--type", "story", "--epic", "EP0215", "--title", "probe", "--points", "1", "--dry-run",
+             "--ac", "it works", "--verify", f"pytest {target}::BrandNewClassTests::test_zebra_quux"],
+            capture_output=True, text=True, timeout=900, check=False)
+        self.assertEqual(0, n.returncode, "artifact.py new refused a not-yet-written class:\n"
+                         + n.stdout + n.stderr)
+        after = repo_report.stat().st_mtime_ns if repo_report.exists() else None
+        self.assertEqual(before, after, "the fixture run touched this repository's own .local")
+
+    def test_a_method_that_exists_under_another_class_is_still_refused(self) -> None:
+        """AC2. MUTANTS: (1) return `(False, "")` for every collected-file case without consulting
+        the near-miss reader - the refusal assertion dies; (2) in `check_verify_selectors`, refuse
+        but skip the near-miss hint on a refusal - the class-name assertion dies."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            r = self._file(root, f"pytest {self._TARGET}::WrongClass::test_alpha_thing")
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, "the same-leaf typo was accepted:\n" + out)
+            self.assertIn("names no test that exists", out)
+            self.assertIn("did you mean", out)
+            self.assertIn("ExistingA", out, "the refusal did not name the class the author meant:\n" + out)
+            self.assertFalse(list((root / "sdlc-studio" / "bugs").glob("BG*.md")),
+                             "a refused filing still wrote an artefact")
+
+    def test_a_pattern_a_bare_file_and_a_node_below_a_leaf_are_still_refused(self) -> None:
+        """AC6. The licence covers the NODE case only. MUTANTS: (1) drop the `"::" not in target`
+        guard in `_classify_selector`, so a `-k` pattern selecting nothing and a bare file that
+        collects nothing file silently; (2) in `verify_ac.py` `selector_near_miss`, drop the
+        below-a-leaf branch, so `ExistingA::test_alpha_thing::extra` files."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            (root / "tests" / "test_empty.py").write_text("import unittest\n", encoding="utf-8")
+            for shape in (f"pytest {self._TARGET} -k NoSuchPatternXyz",
+                          "pytest tests/test_empty.py",
+                          f"pytest {self._TARGET}::ExistingA::test_alpha_thing::extra"):
+                with self.subTest(shape=shape):
+                    r = self._file(root, shape)
+                    self.assertNotEqual(0, r.returncode, "accepted where the base ref refused:\n"
+                                        + r.stdout + r.stderr)
+                    self.assertIn("names no test that exists", r.stdout + r.stderr)
+            # the control: a pattern that DOES select something files
+            ok = self._file(root, f"pytest {self._TARGET} -k alpha_thing")
+            self.assertEqual(0, ok.returncode, ok.stdout + ok.stderr)
+
+    def test_a_new_method_on_an_existing_class_files_and_a_near_miss_does_not(self) -> None:
+        """AC3, three halves in one test. MUTANTS: (1) accept whenever the class is collected,
+        skipping the method match - the in-class near-miss half dies; (2) refuse whenever the class
+        exists and the method is absent - the new-method half dies; (3) in `verify_ac.py`
+        `selector_near_miss`, gather close-match candidates from every class at that depth rather
+        than from the named class - the cross-class half dies, because `test_alpha_thingy` is a
+        0.97 match to `ExistingA::test_alpha_thing` and `ExistingB` holds nothing close."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            new_method = self._file(root, f"pytest {self._TARGET}::ExistingA::test_zebra_quux")
+            self.assertEqual(0, new_method.returncode,
+                             "a new method on an existing class was refused:\n"
+                             + new_method.stdout + new_method.stderr)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            near = self._file(root, f"pytest {self._TARGET}::ExistingA::test_alpha_thingy")
+            out = near.stdout + near.stderr
+            self.assertNotEqual(0, near.returncode, "an in-class near miss was accepted:\n" + out)
+            # The backticked hint, not a bare substring: the echoed selector
+            # `ExistingA::test_alpha_thingy` contains `test_alpha_thing` on its own.
+            self.assertIn("did you mean `test_alpha_thing`", out,
+                          "the refusal did not name the near miss:\n" + out)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            cross = self._file(root, f"pytest {self._TARGET}::ExistingB::test_alpha_thingy")
+            self.assertEqual(0, cross.returncode,
+                             "a match in ANOTHER class refused a new method:\n"
+                             + cross.stdout + cross.stderr)
+
+
 class VerifySelectorWriteGuardTests(unittest.TestCase):
     """US0667/US0668 (CR0508): a `Verify:` selector naming no test is refused where it is WRITTEN.
 
@@ -2676,8 +2853,11 @@ class VerifySelectorWriteGuardTests(unittest.TestCase):
         # this shipped stamped `Verified: yes` while `artifact.py new` wrote the dead selector
         # through: the two writers hold `verify` in different shapes, so a reader that saw one
         # shape was a guard with a documented side door.
-        dead = ("pytest .claude/skills/sdlc-studio/scripts/tests/"
-                "test_validate.py::NoSuchClassHere::test_nope")
+        # BG0643 narrowed the guard to near misses of a COLLECTED test, so the method must be
+        # real: a method that exists nowhere is now the not-yet-written test and files.
+        target = ".claude/skills/sdlc-studio/scripts/tests/test_validate.py"
+        _cls, meth = _collected_node(self._ROOT, target)
+        dead = f"pytest {target}::NoSuchClassHere::{meth}"
         r = self._file(f"it works. **Verify:** {dead}")
         self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertIn("names no test that exists", r.stdout + r.stderr)
@@ -2689,19 +2869,22 @@ class VerifySelectorWriteGuardTests(unittest.TestCase):
         self.assertIn("names no test that exists", n.stdout + n.stderr)
 
     def test_a_node_absent_from_an_existing_file_is_still_refused(self) -> None:
-        """BG0570 AC1: the narrowing must not DISARM the guard.
+        """BG0570 AC1, narrowed by BG0643: the narrowing must not DISARM the guard.
 
         A distinct claim from US0667 AC1, which asserts both writers refuse. This one asserts the
-        one case that survived the narrowing: the file listed its nodes and this node is not among
-        them. Every other False verdict is now accepted, so a guard that had lost this case would
-        pass every other test in this class while refusing nothing at all.
+        case that survives BOTH narrowings: the file listed its nodes, this node is not among them,
+        and it is a NEAR MISS of one that is - a real method under a class the file does not hold.
+        A node no collected test resembles is now the not-yet-written test and files (BG0643); a
+        guard that had lost the near-miss case would pass every other test in this class while
+        refusing nothing at all.
         """
         target = ".claude/skills/sdlc-studio/scripts/tests/test_validate.py"
+        _cls, meth = _collected_node(self._ROOT, target)
         for writer, run in (("file_finding.file",
                              lambda s: self._file(f"it works. **Verify:** {s}")),
                             ("artifact.py new", self._new)):
             with self.subTest(writer=writer):
-                r = run(f"pytest {target}::ThisClassIsNotInThatFile::test_x")
+                r = run(f"pytest {target}::ThisClassIsNotInThatFile::{meth}")
                 self.assertNotEqual(0, r.returncode,
                                     f"{writer} accepted a node absent from a file that EXISTS "
                                     f"and collects:\n{r.stdout}{r.stderr}")
@@ -2780,7 +2963,13 @@ class VerifySelectorWriteGuardTests(unittest.TestCase):
         sys.path.insert(0, str(self._SCRIPTS))
         import file_finding as ff, verify_ac  # noqa: PLC0415
         real_target, real_coll = verify_ac.selector_target_file, verify_ac.selector_collected
-        dead = "pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::Nope::test_x"
+        # A same-leaf selector (BG0643): the second half forces `selector_collected` True and
+        # expects a refusal, which under the split only a near miss of a collected node earns -
+        # so the refusal there now comes from the unpatched near-miss reader over the real file,
+        # and "replacing the helper must move the writer's verdict" is carried by the first half.
+        target = ".claude/skills/sdlc-studio/scripts/tests/test_validate.py"
+        _cls, meth = _collected_node(self._ROOT, target)
+        dead = f"pytest {target}::Nope::{meth}"
         try:
             # Force the helper to report a target that exists nowhere, with no basename match.
             # Point the helper at a path that does NOT exist but whose BASENAME does. Following
@@ -2854,9 +3043,10 @@ class VerifySelectorWriteGuardTests(unittest.TestCase):
 
     def test_a_judgeable_unresolvable_selector_is_still_refused(self) -> None:
         # The control for the control: "accept what cannot be judged" is otherwise satisfied by
-        # accepting everything.
-        r = self._file("it works. **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/"
-                       "test_validate.py::AlsoNotAClass::test_nope")
+        # accepting everything. A REAL method under the wrong class - the typo shape BG0643 keeps.
+        target = ".claude/skills/sdlc-studio/scripts/tests/test_validate.py"
+        _cls, meth = _collected_node(self._ROOT, target)
+        r = self._file(f"it works. **Verify:** pytest {target}::AlsoNotAClass::{meth}")
         self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
 
 

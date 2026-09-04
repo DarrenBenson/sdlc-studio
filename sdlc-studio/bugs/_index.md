@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
-| In Progress | 0 |
+| Open | 21 |
+| In Progress | 1 |
 | Fixed | 523 |
 | Verified | 0 |
 | Closed | 87 |
@@ -182,7 +182,7 @@
 | [BG0640](BG0640-the-revert-check-lane-reports-a-clean-pass.md) | the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result | Open | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0641](BG0641-there-is-no-pre-push-hook-so-the.md) | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere | Open | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0642](BG0642-the-required-status-check-never-reports-at-push.md) | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread | Open | Medium | 2026-09-03 | 2026-09-03 |
-| [BG0643](BG0643-the-verify-flag-bg0636-shipped-is-refused-for.md) | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet | Open | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0643](BG0643-the-verify-flag-bg0636-shipped-is-refused-for.md) | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet | In Progress | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0644](BG0644-the-test-noise-ratchet-compares-a-selected-subset.md) | the test-noise ratchet compares a selected subset against a whole-suite baseline | Open | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0645](BG0645-critic-py-brief-rejoinder-ignores-phase-plan-review.md) | critic.py brief --rejoinder ignores --phase plan-review and renders the delivery brief, so a re-review of a rejected test plan is briefed with a diff scope that does not exist | Open | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0646](BG0646-status-py-takes-113-seconds-on-this-corpus.md) | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default | Open | Medium | 2026-09-04 | 2026-09-04 |

@@ -26,8 +26,11 @@ Separate the two facts before deciding. A helper on `verify_ac` - the module tha
 
 ### AC1: a typo is still refused
 
-- **Given** a `Verify:` selector naming a node absent from a test file that EXISTS on disk - the
-  recurring shape CR0508 was filed about: real file, real method, wrong class
+- **Given** a `Verify:` selector naming a node that is a NEAR MISS of one collected from a test
+  file that EXISTS on disk - the recurring shape CR0508 was filed about: real file, real method,
+  wrong class. Narrowed by BG0643 on 2026-09-04: a node no collected test resembles (a class the
+  file does not collect, or a method no method of the named class is close to) is the test not
+  yet written and FILES, reported RED on its first run; the typo shapes still refuse
 - **When** the artefact is written through `file_finding.file` or through `artifact.py new`
 - **Then** BOTH still REFUSE, so the fix narrows the guard without disarming it.
 
@@ -114,3 +117,4 @@ Who: every greenfield project, and any author who writes a story before its test
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-11 | sdlc-studio | Filed |
+| 2026-09-04 | sdlc-studio | AC1 narrowed by BG0643: only a near miss of a collected test refuses; a not-yet-written node files and runs RED first |

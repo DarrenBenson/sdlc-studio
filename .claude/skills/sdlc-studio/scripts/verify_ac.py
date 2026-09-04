@@ -923,13 +923,28 @@ def selector_near_miss(expr: str, cwd=None) -> str | None:
     same_leaf = [n for n in nodes if n.rsplit("::", 1)[-1] == leaf and n != target]
     if same_leaf:
         return f"did you mean {same_leaf[0]}"
-    # Otherwise the closest name among the segments actually collected at that depth.
+    # A node hanging BELOW a collected test (`file::Class::test_x::extra`) names nothing pytest
+    # can select; the test it hangs off is what was meant.
+    below = "::".join([test_file, *parts[:-1]])
+    if len(parts) > 1 and below in nodes:
+        return f"did you mean {below}"
+    # Otherwise the closest name among the segments collected UNDER THE SAME PREFIX - the
+    # methods of the named class, or the module-level names for a module-level selector.
+    # This branch used to gather candidates from every class at that depth, which made a
+    # NEW method on an existing class a "near miss" of any method anywhere in the file that
+    # happened to resemble it - measured over one 360-node module, all three of a sibling unit's
+    # own selectors would have been refused. A class the file does not collect has no prefix here and
+    # therefore no candidates, which is what lets a not-yet-written class file (see
+    # `file_finding._classify_selector`).
     import difflib  # noqa: PLC0415 - local: only reached on a refusal path
     depth = len(parts) - 1
-    candidates = {seg[depth] for seg in (n.split("::")[1:] for n in nodes) if len(seg) > depth}
+    prefix = parts[:-1]
+    candidates = {seg[depth] for seg in (n.split("::")[1:] for n in nodes)
+                  if len(seg) > depth and seg[:depth] == prefix}
     close = difflib.get_close_matches(parts[-1], sorted(candidates), n=1, cutoff=0.6)
     if close:
-        return f"no `{parts[-1]}` in {test_file}; did you mean `{close[0]}`"
+        where = "::".join([test_file, *prefix]) if prefix else test_file
+        return f"no `{parts[-1]}` in {where}; did you mean `{close[0]}`"
     return None
 
 
