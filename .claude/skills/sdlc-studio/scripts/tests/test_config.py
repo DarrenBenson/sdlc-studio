@@ -132,6 +132,12 @@ class IntegrationTests(unittest.TestCase):
         # AC3: "captured" pinned separately from "silent". A workspace whose .config.yaml cannot
         # be honoured makes the gather WARN; the warning must land in the captured text and
         # nowhere else, or the module's noise count would once again read the tree's state.
+        # The gather warns at TWO sites - config.py's loader (once per module instance, behind
+        # a flag an earlier test may already have tripped) and sdlc_md's "not applied" line -
+        # so the loader module is re-imported fresh and BOTH warnings are asserted in the
+        # captured text: one assertion per site, or routing either past the redirect would
+        # leak a line to the console with the test green (delivery review, engineering seat).
+        sys.modules.pop("config", None)
         status = self._status()
         with tempfile.TemporaryDirectory() as d:
             root = self._workspace(d)
@@ -139,7 +145,10 @@ class IntegrationTests(unittest.TestCase):
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
                 status.gather(root)
-        self.assertIn("was not applied", out.getvalue() + err.getvalue(),
+        captured = out.getvalue() + err.getvalue()
+        self.assertIn("could not load", captured,
+                      "the loader's warning was not captured - it went to the console")
+        self.assertIn("was not applied", captured,
                       "the fixture's config warning was not captured - it went to the console")
 
 

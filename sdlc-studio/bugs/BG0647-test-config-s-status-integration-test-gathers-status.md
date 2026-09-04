@@ -1,6 +1,6 @@
 # BG0647: test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
@@ -42,9 +42,12 @@ Point the test at a fixture workspace that carries a config-defaults.yaml (the c
 | AC1 | in `.claude/skills/sdlc-studio/scripts/status.py`, return None for `schema_version` so the defaults are never consulted - the row the plan review asked for in place of an equivalent one | Given a fixture workspace with no config of its own (its directories are inert - `status` reads the defaults for any root), when `test_status_reads_config` runs, then it gathers that fixture with its console captured, reads `schema_version` 2 from the defaults, sees NO open run (this clone has one, so the pin is timing-independent), reads an override of 3 back from a fixture that carries one (so the config is consumed, not defaulted by accident), and completes in under two seconds - never this repository |
 | AC2 | in `.claude/skills/sdlc-studio/scripts/status.py`, print a line at the top of `gather` so a fixture gather reaches the console | Given the same fixture, when status gathers it, then nothing reaches stdout or stderr - the module's noise count no longer depends on the state of the repository the suite runs in |
 | AC3 | in `.claude/skills/sdlc-studio/scripts/tests/test_config.py`, remove the stdout and stderr redirect around the noisy gather, so the warning reaches the runner's console and the captured text is empty | Given a fixture whose `.config.yaml` cannot be honoured, when status gathers it, then the warning it prints is in the captured text and nothing reaches the runner's console - "captured" pinned separately from "silent". Added at plan review on 2026-09-04 |
+| AC3 | in `.claude/skills/sdlc-studio/scripts/config.py`, route the loader's `could not load` warning to `sys.__stderr__` past any redirect, so one of the two warning sites leaks to the runner's console while the other is captured (delivery review, engineering seat) | Given a fixture whose `.config.yaml` cannot be honoured, when status gathers it, then the warning it prints is in the captured text and nothing reaches the runner's console - "captured" pinned separately from "silent". Added at plan review on 2026-09-04 |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-04 | sdlc-studio | Filed |
+| 2026-09-04 | sdlc | Plan review (two rounds, 2026-09-04): AC3 added to pin 'captured' separately from 'silent'; AC1 row 2 replaced with the run-is-None pin after a timing-only assertion was rejected |
+| 2026-09-04 | sdlc | Delivery review r1 (engineering REJECT): AC3's test now re-imports the loader and asserts BOTH warning sites in the captured text; the seat's mutant (route the loader warning to `sys.__stderr__`) added as an AC3 plan row and killed; five mutants re-measured in one pass after the edit |
