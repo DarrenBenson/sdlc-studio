@@ -42,12 +42,13 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0640` | Medium | the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result |
 | `BG0641` | Medium | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere |
 | `BG0642` | Medium | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread |
-| `BG0643` | Medium | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet |
 | `BG0644` | Medium | the test-noise ratchet compares a selected subset against a whole-suite baseline |
 | `BG0645` | Medium | critic.py brief --rejoinder ignores --phase plan-review and renders the delivery brief, so a re-review of a rejected test plan is briefed with a di... |
 | `BG0646` | Medium | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default |
+| `BG0647` | Medium | test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state |
+| `BG0648` | Medium | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and... |
 
-22 findings: 22 Medium, 0 Low.
+23 findings: 23 Medium, 0 Low.
 
 ## Not carried
 

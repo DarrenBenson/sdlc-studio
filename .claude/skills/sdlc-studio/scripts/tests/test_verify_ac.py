@@ -6053,7 +6053,8 @@ class NearMissScopingTests(unittest.TestCase):
         "    def test_alpha_thing(self):\n        pass\n\n"
         "    def test_beta(self):\n        pass\n\n\n"
         "class ExistingB(unittest.TestCase):\n"
-        "    def test_gamma_ray(self):\n        pass\n"
+        "    def test_gamma_ray(self):\n        pass\n\n\n"
+        "def test_module_level():\n    pass\n"
     )
 
     def test_a_close_match_in_another_class_is_not_a_near_miss(self) -> None:
@@ -6073,12 +6074,17 @@ class NearMissScopingTests(unittest.TestCase):
             # a node hanging below a collected test names the test it hangs off
             below = verify_ac.selector_near_miss(sel + "ExistingA::test_alpha_thing::extra", cwd=d)
             self.assertEqual("did you mean tests/test_probe.py::ExistingA::test_alpha_thing", below)
+            # ... and for a MODULE-LEVEL test, where the prefix is one segment deep: a
+            # `len(parts) > 2` shortcut would let `file::test_func::extra` file at exit 0.
+            below_fn = verify_ac.selector_near_miss(sel + "test_module_level::extra", cwd=d)
+            self.assertEqual("did you mean tests/test_probe.py::test_module_level", below_fn)
             # same-leaf: unchanged, names the class the author meant
             hint = verify_ac.selector_near_miss(sel + "WrongClass::test_alpha_thing", cwd=d)
             self.assertIsNotNone(hint)
             self.assertIn("ExistingA::test_alpha_thing", hint)
             # a class the file does not collect has no candidates at all
             self.assertIsNone(verify_ac.selector_near_miss(sel + "NewClass::test_alpha_thingy", cwd=d))
+
 
 if __name__ == "__main__":
     unittest.main()

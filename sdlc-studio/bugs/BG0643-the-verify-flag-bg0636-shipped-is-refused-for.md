@@ -1,6 +1,6 @@
 # BG0643: the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 5
@@ -30,7 +30,7 @@ Groomed 2026-09-04 against `_classify_selector` at HEAD, which already splits fo
 
 Plan review round 1 (2026-09-04) changed the plan in three places. (a) `selector_near_miss` gathers its difflib candidates FILE-WIDE at the node's depth, not from the named class: measured over `test_verify_ac.py`'s 360 nodes, two of BG0603's own selectors and this unit's AC1 selector are 0.6-or-better matches to methods in other classes, so an implementer reusing it unchanged would refuse the batch's own paperwork. The matcher is scoped to the named class, which is why `verify_ac.py` carries a row. (b) Precedence: a typo shape wins over the not-yet-written shape. (c) FOUR existing tests file the shape this accepts, not one, and US0667 AC1 pins the same rule as BG0570 AC1; both are re-worded, not merely noted. Pre-existing and out of scope: `verify_ac.py run` renders an unknown node as `FAIL` with a vacuity note that says the run "exited 0" for an exit-4 run and tells the author to re-point the selector - filed into CR0511, the consolidated low-severity set, by the filer's own routing.
 
-Plan review round 2 (2026-09-04): AC1's second row was unkillable by its own fixture (a method matching nothing in the file gives a file-wide consult nothing to find), so AC1 now files a second selector whose method resembles one in another class, and states that shape's verdict. `test_one_reader_answers_which_file_a_selector_targets` is dropped from the re-author list: it monkeypatches the mistyped-path branch and never reaches the node. Both writers share the seam (`artifact.py` calls `check_verify_selectors`); the delivery adds one subTest on `artifact.py new --verify` under AC1 as a control, without a criterion of its own. `test_verify_ac.py` is in Affects because the delivery adds a direct in-class scoping test for `selector_near_miss` there, beside the existing near-miss tests; the criterion that pins the scoping is AC3, through the filer.
+Plan review round 2 (2026-09-04): AC1's second row was unkillable by its own fixture (a method matching nothing in the file gives a file-wide consult nothing to find), so AC1 now files a second selector whose method resembles one in another class, and states that shape's verdict. `test_one_reader_answers_which_file_a_selector_targets` is dropped from the re-author list: it monkeypatches the mistyped-path branch and never reaches the node. Both writers share the seam (`artifact.py` calls `check_verify_selectors`); the delivery adds one control call on `artifact.py new --verify --dry-run` under AC1's test, without a criterion of its own. `test_verify_ac.py` is in Affects because the delivery adds a direct in-class scoping test for `selector_near_miss` there, beside the existing near-miss tests; the criterion that pins the scoping is AC3, through the filer.
 
 ## Acceptance Criteria
 
@@ -49,14 +49,13 @@ Plan review round 2 (2026-09-04): AC1's second row was unkillable by its own fix
 - [ ] **AC5** Given the THREE tests in `VerifySelectorWriteGuardTests` whose fixtures reach the node branch with the shape AC1 now accepts - `test_a_verify_selector_naming_no_test_is_refused_at_write`, `test_a_node_absent_from_an_existing_file_is_still_refused`, `test_a_judgeable_unresolvable_selector_is_still_refused` - when the split lands, then each is re-authored under its own name to a shape that stays refused (the same-leaf typo), and the class passes; `test_the_refusal_names_the_near_miss` reddens on this row as well, so five reds are expected on it, not three. `test_one_reader_answers_which_file_a_selector_targets` keeps its shape and purpose (the guard follows the helper, never its own parser): its FIRST half forces the mistyped-path branch untouched, and its SECOND half - which forces `selector_collected` True and expects a refusal - now uses a same-leaf selector, because under the split a collected file with no near miss files (amended at delivery on 2026-09-04: the plan said untouched, and the second half was reached). BG0570 AC1 and US0667 AC1 are re-worded to the narrowed rule with a revision row each in the same commit - documentary, checked by the delivery review reading both rows back, because no executable verifier can see an artefact row
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::VerifySelectorWriteGuardTests
   - **Verified:** yes (2026-09-04)
+- [ ] **AC6** Given a collected test file and a selector that names NO node - a `-k` pattern that selects nothing, or a bare file that collects nothing - or a node hanging BELOW a collected test (`file::Class::test_x::extra`), when filed, then it is refused exactly as at the base ref: the licence to accept covers the node case only, and a pattern names no test to write later; a `-k` pattern that does select something files - the control. Added at delivery on 2026-09-04: the delivery review found the split accepted every target without `::` because the near-miss reader answers None for them
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::NotYetWrittenSelectorTests::test_a_pattern_a_bare_file_and_a_node_below_a_leaf_are_still_refused
+  - **Verified:** yes (2026-09-04)
 
 ## Impact
 
 The flag is the whole of BG0636's authoring half, and the grooming gate BG0636 also shipped now REFUSES a batch holding a unit whose criteria carry no verifier. So a filer hits a refusal at filing, hand-edits the artefact to get past it, and the doctrine's no-hand-rolling rule is broken by the tool that exists to uphold it. Three of the four findings filed after BG0636 landed took exactly that route.
-
-- [ ] **AC6** Given a collected test file and a selector that names NO node - a `-k` pattern that selects nothing, or a bare file that collects nothing - or a node hanging BELOW a collected test (`file::Class::test_x::extra`), when filed, then it is refused exactly as at the base ref: the licence to accept covers the node case only, and a pattern names no test to write later; a `-k` pattern that does select something files - the control. Added at delivery on 2026-09-04: the delivery review found the split accepted every target without `::` because the near-miss reader answers None for them
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::NotYetWrittenSelectorTests::test_a_pattern_a_bare_file_and_a_node_below_a_leaf_are_still_refused
-  - **Verified:** yes (2026-09-04)
 
 ## Test Plan
 
@@ -86,3 +85,4 @@ The flag is the whole of BG0636's authoring half, and the grooming gate BG0636 a
 | 2026-09-04 | sdlc-studio | Plan review round 3 (three seats): delivery notes folded into the criteria; BG0642 AC3 gains the wrong-acknowledgement step |
 | 2026-09-04 | sdlc-studio | Delivery amendment to AC5: the one-reader test's second half forces a collected file and is reached by the split, so it uses a same-leaf selector; plan said untouched |
 | 2026-09-04 | sdlc-studio | Delivery review r1: AC6 added for the -k, bare-file and below-a-leaf shapes the split had widened; near-miss assertions made backticked; second-writer control added; count corrected |
+| 2026-09-04 | sdlc-studio | Delivery review r2: AC6 moved from under Impact into the Acceptance Criteria section, where the brief renderer and the section readers see it |
