@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
-| In Progress | 1 |
-| Fixed | 524 |
+| Open | 19 |
+| In Progress | 3 |
+| Fixed | 525 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
@@ -142,7 +142,7 @@
 | [BG0600](BG0600-the-unnameable-test-plan-exemption-is-still-held.md) | the `unnameable` test-plan exemption is still held to the four mutant rules, so a well-formed declared exemption cannot be written | Fixed | Medium | 2026-08-19 | 2026-08-19 |
 | [BG0601](BG0601-the-dry-run-class-sweep-compares-only-the.md) | The dry-run class sweep compares only the first two probes of each pair | Open | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0602](BG0602-the-close-checklist-enumerates-its-checks-by-ck.md) | The close checklist enumerates its checks by `_ck_` name prefix | Closed | Medium | 2026-08-21 | 2026-08-21 |
-| [BG0603](BG0603-stacked-verify-lines-are-refused-at-draft-and.md) | Stacked Verify lines are refused at Draft and Ready but not on an Open bug | In Progress | Medium | 2026-08-21 | 2026-08-21 |
+| [BG0603](BG0603-stacked-verify-lines-are-refused-at-draft-and.md) | Stacked Verify lines are refused at Draft and Ready but not on an Open bug | Fixed | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0604](BG0604-the-oracle-procedure-tells-a-reviewer-to-revert.md) | The oracle procedure tells a reviewer to revert files by hand with no restore obligation, and it destroyed uncommitted work in the main tree | Fixed | Medium | 2026-08-21 | 2026-08-21 |
 | [BG0605](BG0605-the-repair-ledger-computes-outstanding-findings-per-record.md) | The repair ledger computes outstanding findings per RECORD, so two partial repairs that together close everything both read as PARTIAL | Fixed | Medium | 2026-08-24 | 2026-08-24 |
 | [BG0606](BG0606-six-test-plan-rows-across-us0671-us0674-and.md) | Six test-plan rows across US0671, US0674 and US0676 declare mutants their own criterion's verifier cannot die on | Fixed | High | 2026-08-24 | 2026-08-24 |
@@ -179,14 +179,14 @@
 | [BG0637](BG0637-critic-clean-escapes-underscores-inside-code-spans-corrupting.md) | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick | Open | Medium | 2026-09-02 | -- |
 | [BG0638](BG0638-five-sprint-checklist-rows-state-a-conclusion-they.md) | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindness as UNANSWERED | Open | Medium | 2026-09-02 | -- |
 | [BG0639](BG0639-cycle-drift-s-guard-asserts-two-of-its.md) | cycle_drift's guard asserts two of its three buckets, so the unverifiable bucket is already non-empty on the shipped tree while the guard reports green | Superseded | Medium | 2026-09-02 | -- |
-| [BG0640](BG0640-the-revert-check-lane-reports-a-clean-pass.md) | the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result | Open | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0640](BG0640-the-revert-check-lane-reports-a-clean-pass.md) | the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result | In Progress | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0641](BG0641-there-is-no-pre-push-hook-so-the.md) | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere | Open | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0642](BG0642-the-required-status-check-never-reports-at-push.md) | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread | Open | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0643](BG0643-the-verify-flag-bg0636-shipped-is-refused-for.md) | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet | Fixed | Medium | 2026-09-03 | 2026-09-03 |
-| [BG0644](BG0644-the-test-noise-ratchet-compares-a-selected-subset.md) | the test-noise ratchet compares a selected subset against a whole-suite baseline | Open | Medium | 2026-09-03 | 2026-09-03 |
+| [BG0644](BG0644-the-test-noise-ratchet-compares-a-selected-subset.md) | the test-noise ratchet compares a selected subset against a whole-suite baseline | In Progress | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0645](BG0645-critic-py-brief-rejoinder-ignores-phase-plan-review.md) | critic.py brief --rejoinder ignores --phase plan-review and renders the delivery brief, so a re-review of a rejected test plan is briefed with a diff scope that does not exist | Open | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0646](BG0646-status-py-takes-113-seconds-on-this-corpus.md) | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default | Open | Medium | 2026-09-04 | 2026-09-04 |
-| [BG0647](BG0647-test-config-s-status-integration-test-gathers-status.md) | test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state | Open | Medium | 2026-09-04 | 2026-09-04 |
+| [BG0647](BG0647-test-config-s-status-integration-test-gathers-status.md) | test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state | In Progress | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0648](BG0648-a-criterion-written-outside-the-acceptance-criteria-section.md) | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and the sprint report | Open | Medium | 2026-09-04 | 2026-09-04 |
 
 ## Archived Releases

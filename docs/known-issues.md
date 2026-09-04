@@ -30,7 +30,6 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0578` | Medium | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner |
 | `BG0591` | Medium | status and close_owed give opposite answers about the same units |
 | `BG0601` | Medium | The dry-run class sweep compares only the first two probes of each pair |
-| `BG0603` | Medium | Stacked Verify lines are refused at Draft and Ready but not on an Open bug |
 | `BG0608` | Medium | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits i... |
 | `BG0612` | Medium | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot |
 | `BG0614` | Medium | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last |
@@ -48,7 +47,7 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0647` | Medium | test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state |
 | `BG0648` | Medium | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and... |
 
-23 findings: 23 Medium, 0 Low.
+22 findings: 22 Medium, 0 Low.
 
 ## Not carried
 

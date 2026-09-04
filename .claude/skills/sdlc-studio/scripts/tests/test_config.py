@@ -62,16 +62,85 @@ class LoadTests(unittest.TestCase):
 
 @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
 class IntegrationTests(unittest.TestCase):
-    def test_status_reads_config(self) -> None:
-        # AC1: a core script (status.py) actually consumes config-defaults.yaml.
+    @staticmethod
+    def _status():
         spec = importlib.util.spec_from_file_location(
             "status", SCRIPT.parent / "status.py")
         status = importlib.util.module_from_spec(spec)
         sys.modules["status"] = status
         spec.loader.exec_module(status)
-        data = status.gather(Path("."))
+        return status
+
+    @staticmethod
+    def _workspace(d: str) -> Path:
+        """A fixture workspace (four inert directories) with no config of its own, so the defaults are what
+        `status` reads. BG0647: this test used to gather THIS repository - 72 to 113 seconds
+        over the live corpus, and whatever this clone's ledgers printed landed in the green-run
+        noise count, so a full local run read above its baseline while nothing in the diff
+        leaked. The claim is that status consumes config-defaults.yaml; a fixture proves it."""
+        root = Path(d)
+        for sub in ("stories", "bugs", "epics", "reviews"):
+            (root / "sdlc-studio" / sub).mkdir(parents=True)
+        return root
+
+    def test_status_reads_config(self) -> None:
+        # US0015 AC4: a core script (status.py) actually consumes config-defaults.yaml - over a
+        # FIXTURE since BG0647, never this repository.
+        status = self._status()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._workspace(d)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                data = status.gather(root)
         self.assertIsNotNone(data["config"])
         self.assertEqual(data["config"]["schema_version"], 2)
+
+    def test_status_gathers_a_fixture_never_this_repository(self) -> None:
+        # BG0647 AC1: the gather reaches the fixture and nothing else - pinned three ways.
+        import time  # noqa: PLC0415
+        status = self._status()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._workspace(d)
+            out, err = io.StringIO(), io.StringIO()
+            t0 = time.monotonic()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                data = status.gather(root)
+            elapsed = time.monotonic() - t0
+        self.assertEqual(data["config"]["schema_version"], 2)
+        # Timing-independent pin that the gather never reached THIS repository: the fixture
+        # holds no run, this clone may (RUN-01M1NS3C was open when the bug was found).
+        self.assertIsNone(data["run"], f"the gather reached a tree with a run open: {data['run']!r}")
+        self.assertLess(elapsed, 2.0, f"gathering the fixture took {elapsed:.1f}s")
+        # ... and the config IS consumed, not defaulted by accident: an override reads back.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._workspace(d)
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(status.gather(root)["config"]["schema_version"], 3)
+
+    def test_the_status_gather_prints_nothing_for_a_fixture(self) -> None:
+        # AC2: nothing the gather prints for a fixture reaches the console, so the noise count
+        # of this module no longer depends on the state of whatever repository the suite runs in.
+        status = self._status()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._workspace(d)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                status.gather(root)
+        self.assertEqual("", out.getvalue() + err.getvalue())
+
+    def test_a_noisy_fixture_is_captured_and_never_reaches_the_console(self) -> None:
+        # AC3: "captured" pinned separately from "silent". A workspace whose .config.yaml cannot
+        # be honoured makes the gather WARN; the warning must land in the captured text and
+        # nowhere else, or the module's noise count would once again read the tree's state.
+        status = self._status()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._workspace(d)
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: [unclosed\n", encoding="utf-8")
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                status.gather(root)
+        self.assertIn("was not applied", out.getvalue() + err.getvalue(),
+                      "the fixture's config warning was not captured - it went to the console")
 
 
 class DocTests(unittest.TestCase):

@@ -1,6 +1,7 @@
 # BG0647: test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state
 
-> **Status:** Open
+> **Status:** In Progress
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_config.py
@@ -23,8 +24,24 @@ Point the test at a fixture workspace that carries a config-defaults.yaml (the c
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given the suite runs in this repository, when `test_status_reads_config` runs, then it gathers a fixture workspace, completes in under two seconds and prints nothing
-  - **Verify:** manual - the executable verifier is authored when this is groomed; the test it re-authors is the one named
+- [ ] **AC1** Given a fixture workspace with no config of its own (its directories are inert - `status` reads the defaults for any root), when `test_status_reads_config` runs, then it gathers that fixture with its console captured, reads `schema_version` 2 from the defaults, sees NO open run (this clone has one, so the pin is timing-independent), reads an override of 3 back from a fixture that carries one (so the config is consumed, not defaulted by accident), and completes in under two seconds - never this repository
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::IntegrationTests::test_status_gathers_a_fixture_never_this_repository
+  - **Verified:** yes (2026-09-04)
+- [ ] **AC2** Given the same fixture, when status gathers it, then nothing reaches stdout or stderr - the module's noise count no longer depends on the state of the repository the suite runs in
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::IntegrationTests::test_the_status_gather_prints_nothing_for_a_fixture
+  - **Verified:** yes (2026-09-04)
+- [ ] **AC3** Given a fixture whose `.config.yaml` cannot be honoured, when status gathers it, then the warning it prints is in the captured text and nothing reaches the runner's console - "captured" pinned separately from "silent". Added at plan review on 2026-09-04
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::IntegrationTests::test_a_noisy_fixture_is_captured_and_never_reaches_the_console
+  - **Verified:** yes (2026-09-04)
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `.claude/skills/sdlc-studio/scripts/tests/test_config.py`, gather `Path(".")` again - today's code - so the test reads this repository and takes over two seconds | Given a fixture workspace with no config of its own (its directories are inert - `status` reads the defaults for any root), when `test_status_reads_config` runs, then it gathers that fixture with its console captured, reads `schema_version` 2 from the defaults, sees NO open run (this clone has one, so the pin is timing-independent), reads an override of 3 back from a fixture that carries one (so the config is consumed, not defaulted by accident), and completes in under two seconds - never this repository |
+| AC1 | in `.claude/skills/sdlc-studio/scripts/status.py`, return None for `schema_version` so the defaults are never consulted - the row the plan review asked for in place of an equivalent one | Given a fixture workspace with no config of its own (its directories are inert - `status` reads the defaults for any root), when `test_status_reads_config` runs, then it gathers that fixture with its console captured, reads `schema_version` 2 from the defaults, sees NO open run (this clone has one, so the pin is timing-independent), reads an override of 3 back from a fixture that carries one (so the config is consumed, not defaulted by accident), and completes in under two seconds - never this repository |
+| AC2 | in `.claude/skills/sdlc-studio/scripts/status.py`, print a line at the top of `gather` so a fixture gather reaches the console | Given the same fixture, when status gathers it, then nothing reaches stdout or stderr - the module's noise count no longer depends on the state of the repository the suite runs in |
+| AC3 | in `.claude/skills/sdlc-studio/scripts/tests/test_config.py`, remove the stdout and stderr redirect around the noisy gather, so the warning reaches the runner's console and the captured text is empty | Given a fixture whose `.config.yaml` cannot be honoured, when status gathers it, then the warning it prints is in the captured text and nothing reaches the runner's console - "captured" pinned separately from "silent". Added at plan review on 2026-09-04 |
 
 ## Revision History
 
