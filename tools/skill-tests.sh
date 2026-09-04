@@ -65,8 +65,15 @@ shift 2>/dev/null || true
 # paths: `unittest` refuses a path ("Empty module name"), and running from inside the tests
 # directory instead would change the cwd every fixture resolves its relative paths against.
 #
-# The noise ratchet below is a `count <= baseline` check, so a subset that leaks fewer lines
-# than the full suite passes it. It is never made stricter by selecting less.
+# The noise ratchet below holds a SELECTED run to the sum of the selected modules' budgets
+# and a full run to the recorded total, so selecting less never loosens it (BG0644).
+#
+# The budget is read and its shrink-only rule checked BEFORE the suite: a raised entry refuses
+# the commit before a test runs, and a budget file that is named but missing or unreadable
+# refuses loudly - there is no fall-back to an absolute number.
+budget="${TEST_NOISE_BUDGET_FILE:-$(dirname "$0")/test-noise-baseline.json}"
+python3 "$(dirname "$0")/test_noise.py" --budget-check "$budget" || exit 1
+
 if [ "$#" -gt 0 ]; then
   mods=""
   for f in "$@"; do
@@ -94,10 +101,23 @@ fi
 # leaks this suite actually produces, which are lowercase `error:`, `warning:`, `usage:`
 # and tool-prefixed messages.
 #
-# TEST_NOISE_BASELINE is a RATCHET over declared debt, not an amnesty. The suite leaks 134
-# lines today; demanding zero before the gate may run is why it ran nowhere. Frozen here,
-# the gate fails the moment a change adds one. Lower it as leaks are captured - never
-# raise it to make a red gate green.
+# The budget file (tools/test-noise-baseline.json) is a RATCHET over declared debt, not an
+# amnesty: one entry per test module, measured alone, plus `_total` for the discovery run. A
+# SELECTED run is held to the SUM of its modules' entries and a full run to `_total`, so the
+# guarantee the selected path gives is: a commit whose selection leaks more than its modules'
+# recorded debt is refused - the absolute-count check this replaced could not say that, because
+# a subset almost always printed fewer lines than the whole suite whatever it added. What the
+# sum cannot see is one module's overrun masked by a sibling's slack within the same selection;
+# that bound is stated rather than hidden. Lower an entry as leaks are captured - `budget-check`
+# refuses a raised one against the committed file.
+#
+# `_total` is the discovery run's measured figure and the entries need not sum to it: modules
+# measured alone print their import-time leaks once each (at most a couple of lines here), and
+# one entry, test_config, is held at its state-independent figure because the test gathers status
+# over the REAL tree and prints whatever this clone's ledger prints - twelve lines while a run is
+# open, none on CI. That was BG0647; since it re-pointed the test at a fixture the entry is the module's own line,
+# and the figure here is kept state-independent on the same rule for any future entry. The history below is the scalar ratchet's,
+# kept because each line records a leak captured.
 #
 # 233 -> 134 (US0266). Adding the gate briefing to the plan pushed the count over, and the
 # rule above forbids raising the number to accommodate it - so the leaks were captured
@@ -137,7 +157,11 @@ fi
 # BG0644, and the reason a leak now reaches main before anyone sees it. The sites are captured
 # through the new `tests/quiet.py`, which yields the buffer rather than dropping it so a test
 # that wants to assert on the diagnostic still can. Measured at 106 with the captures in place.
-# Lowered to match rather than raised to accommodate, as every entry above.
-TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-106}"
-
-printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --baseline "$TEST_NOISE_BASELINE"
+# Lowered to match rather than raised to accommodate, as every entry above. 106 is now the
+# `_total` entry of the budget file; the scalar is no longer passed.
+if [ -n "${mods:-}" ]; then
+  # shellcheck disable=SC2086
+  printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --budget "$budget" --select $mods
+else
+  printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --budget "$budget"
+fi

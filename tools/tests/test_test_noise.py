@@ -10,6 +10,7 @@ tool-prefixed messages.
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -150,6 +151,188 @@ class NoiseBaselineTests(unittest.TestCase):
         """A project adopting the gate clean must not inherit a silent allowance."""
         self.assertFalse(tn.within_baseline(1, None))
         self.assertTrue(tn.within_baseline(0, None))
+
+# ---- BG0644: the ratchet holds a selection to the SUM of its modules' budgets ----------------
+
+REPO = Path(__file__).resolve().parents[2]
+SKILL_TESTS = REPO / "tools" / "skill-tests.sh"
+
+
+def _leaky_module(n_leaks: int) -> str:
+    """A passing test module whose tests print `n_leaks` warning-shaped lines to stderr."""
+    body = ["import sys, unittest", "", "", "class Leaky(unittest.TestCase):"]
+    for i in range(max(n_leaks, 1)):
+        body += [f"    def test_{i}(self):",
+                 f"        {'sys.stderr.write(\"warning: fixture leak\\n\")' if i < n_leaks else 'pass'}",
+                 ""]
+    return "\n".join(body) + "\n"
+
+
+def _git(cwd: Path, *args: str) -> None:
+    import subprocess
+    subprocess.run(["git", "-C", str(cwd), *args], check=True, capture_output=True, text=True,
+                   env={**os.environ, "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null",
+                        "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+                        "GIT_COMMITTER_EMAIL": "t@t"})
+
+
+class _BudgetFixture:
+    """A throwaway skill tree with leaky test modules and a COMMITTED budget file in its own repo."""
+
+    def __init__(self, leaks: dict[str, int], budget: dict[str, int]) -> None:
+        import json, tempfile
+        self.tmp = Path(tempfile.mkdtemp(prefix="noise_budget_"))
+        self.skill = self.tmp / "skill"
+        (self.skill / "tests").mkdir(parents=True)
+        for mod, n in leaks.items():
+            (self.skill / "tests" / f"{mod}.py").write_text(_leaky_module(n), encoding="utf-8")
+        self.repo = self.tmp / "repo"
+        self.repo.mkdir()
+        _git(self.repo, "init", "-q", "-b", "main")
+        self.budget = self.repo / "test-noise-baseline.json"
+        self.budget.write_text(json.dumps(budget), encoding="utf-8")
+        _git(self.repo, "add", "-A"); _git(self.repo, "commit", "-q", "-m", "budget")
+
+    def run_script(self, *mods: str, budget_path=None):
+        import subprocess
+        env = {**os.environ, "TEST_NOISE_BUDGET_FILE": str(budget_path or self.budget)}
+        return subprocess.run(["bash", str(SKILL_TESTS), str(self.skill), *mods],
+                              capture_output=True, text=True, env=env, cwd=str(REPO), timeout=600)
+
+    def cleanup(self) -> None:
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+
+class SelectionBudgetTests(unittest.TestCase):
+    """BG0644 AC1-AC3, through `tools/skill-tests.sh` over a fixture suite."""
+
+    def test_a_selection_over_its_summed_budget_refuses_through_the_script(self) -> None:
+        """AC1. MUTANTS: (1) hold the selection to `_total` - today's absolute check in the new
+        file's clothing (8 leaks under a total of 20 passes); (2) hold the selection to the
+        LARGEST selected entry (the printed figure names 3, not 6); (3) print the count and
+        budget without the leaked lines."""
+        fx = _BudgetFixture({"test_a": 4, "test_b": 4}, {"_total": 20, "test_a": 3, "test_b": 3})
+        try:
+            r = fx.run_script("test_a.py", "test_b.py")
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, out)
+            self.assertIn("summed budget of 6", out, out)
+            self.assertIn("test_a=3", out); self.assertIn("test_b=3", out)
+            self.assertIn("printed 8 diagnostic line(s)", out, out)
+            # The script echoes the suite's own output BEFORE the noise report, so the leaked
+            # line is asserted inside the report, not anywhere in the combined output.
+            report = out.split("test-noise: a PASSING run printed", 1)[1]
+            self.assertIn("warning: fixture leak", report, "the leaked lines were not listed in the report:\n" + out)
+            self.assertIn("recorded in", report, "the refusal does not name the budget file:\n" + out)
+        finally:
+            fx.cleanup()
+
+    def test_a_full_run_over_the_total_still_refuses(self) -> None:
+        """AC2. MUTANT: apply no ceiling when no selection is given."""
+        fx = _BudgetFixture({"test_a": 4, "test_b": 4}, {"_total": 5, "test_a": 9, "test_b": 9})
+        try:
+            r = fx.run_script()
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, out)
+            self.assertIn("full-run total of 5", out, out)
+        finally:
+            fx.cleanup()
+
+    def test_a_run_within_budget_passes_and_an_unrecorded_module_contributes_zero(self) -> None:
+        """AC3. MUTANTS: (1) refuse whenever the count is above zero (the within-budget run dies);
+        (2) default an unrecorded module's budget to the largest recorded entry (test_c, with 2
+        leaks against a largest entry of 3, would pass). The within-budget count (4) sits strictly
+        between the largest selected entry (3) and the sum (6), so AC1's largest-entry mutant also
+        dies here on a VERDICT."""
+        fx = _BudgetFixture({"test_a": 2, "test_b": 2, "test_c": 2},
+                            {"_total": 20, "test_a": 3, "test_b": 3})
+        try:
+            ok = fx.run_script("test_a.py", "test_b.py")
+            self.assertEqual(0, ok.returncode, ok.stdout + ok.stderr)
+            self.assertIn("declared debt, not a new leak", ok.stdout + ok.stderr)
+            alone = fx.run_script("test_c.py")
+            out = alone.stdout + alone.stderr
+            self.assertNotEqual(0, alone.returncode, out)
+            self.assertIn("no entry, contributing zero: test_c", out, out)
+        finally:
+            fx.cleanup()
+
+
+class BudgetShrinksOnlyTests(unittest.TestCase):
+    """BG0644 AC4-AC5: `budget-check` against the committed file, and its callers."""
+
+    def _check(self, path) -> tuple[int, str]:
+        import subprocess
+        r = subprocess.run([sys.executable, str(SCRIPT), "--budget-check", str(path)],
+                           capture_output=True, text=True)
+        return r.returncode, r.stdout + r.stderr
+
+    def test_a_raised_or_new_module_budget_is_refused_and_a_shrink_is_accepted(self) -> None:
+        """AC4. MUTANTS: (1) compare the committed and working sets of entry NAMES only (a raised
+        count passes); (2) refuse every difference from the committed file (a lowered entry is
+        refused too)."""
+        import json
+        fx = _BudgetFixture({"test_a": 1}, {"_total": 10, "test_a": 3, "test_b": 2})
+        try:
+            def write(d):
+                fx.budget.write_text(json.dumps(d), encoding="utf-8")
+            write({"_total": 10, "test_a": 4, "test_b": 2})
+            rc, out = self._check(fx.budget); self.assertEqual(1, rc, out); self.assertIn("test_a raised 3 -> 4", out)
+            write({"_total": 11, "test_a": 3, "test_b": 2})
+            rc, out = self._check(fx.budget); self.assertEqual(1, rc, out); self.assertIn("_total raised 10 -> 11", out)
+            write({"_total": 10, "test_a": 3, "test_b": 2, "test_c": 3})
+            rc, out = self._check(fx.budget); self.assertEqual(1, rc, out); self.assertIn("new entry test_c=3", out)
+            for accepted in ({"_total": 9, "test_a": 2, "test_b": 2},      # lowered
+                             {"_total": 10, "test_a": 3},                   # vanished
+                             {"_total": 10, "test_a": 3, "test_b": 2, "test_c": 0}):  # new at zero
+                write(accepted)
+                rc, out = self._check(fx.budget); self.assertEqual(0, rc, out)
+            fresh = fx.tmp / "fresh"; fresh.mkdir(); _git(fresh, "init", "-q", "-b", "main")
+            (fresh / "b.json").write_text(json.dumps({"_total": 1, "x": 1}), encoding="utf-8")
+            rc, out = self._check(fresh / "b.json"); self.assertEqual(0, rc, "an introduced file was refused:\n" + out)
+            bare = fx.tmp / "bare"; bare.mkdir()
+            (bare / "b.json").write_text(json.dumps({"_total": 1}), encoding="utf-8")
+            rc, out = self._check(bare / "b.json"); self.assertEqual(1, rc, out); self.assertIn("not inside a git work tree", out)
+            # a committed version that is not a budget is refused by name, never read as absent
+            corrupt = fx.tmp / "corrupt"; corrupt.mkdir(); _git(corrupt, "init", "-q", "-b", "main")
+            (corrupt / "b.json").write_text("[1, 2]", encoding="utf-8")
+            _git(corrupt, "add", "-A"); _git(corrupt, "commit", "-q", "-m", "bad")
+            (corrupt / "b.json").write_text(json.dumps({"_total": 1}), encoding="utf-8")
+            rc, out = self._check(corrupt / "b.json"); self.assertEqual(1, rc, out); self.assertIn("not a budget", out)
+            (corrupt / "b.json").write_text("{not json", encoding="utf-8"); _git(corrupt, "add", "-A"); _git(corrupt, "commit", "-q", "-m", "worse")
+            (corrupt / "b.json").write_text(json.dumps({"_total": 1}), encoding="utf-8")
+            rc, out = self._check(corrupt / "b.json"); self.assertEqual(1, rc, out); self.assertIn("is not JSON", out)
+            # a note key is allowed and ignored by the arithmetic
+            write({"_note": "why", "_total": 10, "test_a": 3, "test_b": 2})
+            rc, out = self._check(fx.budget); self.assertEqual(0, rc, out)
+        finally:
+            fx.cleanup()
+
+    def test_the_script_and_this_tree_both_run_budget_check(self) -> None:
+        """AC5. MUTANTS: (1) remove the `budget-check` invocation from the script; (2) move it after
+        the suite (a `Ran N tests` line precedes the refusal); (3) fall back to the scalar when the
+        budget file is unreadable (an absent path runs the suite instead of refusing)."""
+        import json
+        fx = _BudgetFixture({"test_a": 1}, {"_total": 10, "test_a": 3})
+        try:
+            fx.budget.write_text(json.dumps({"_total": 10, "test_a": 4}), encoding="utf-8")
+            r = fx.run_script("test_a.py")
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, out)
+            self.assertIn("test_a raised 3 -> 4", out, out)
+            self.assertNotIn("Ran ", out, "the suite ran before the budget was checked:\n" + out)
+            absent = fx.run_script("test_a.py", budget_path=fx.tmp / "no-such-budget.json")
+            out = absent.stdout + absent.stderr
+            self.assertNotEqual(0, absent.returncode, out)
+            self.assertIn("cannot be read", out, out)
+            rc, out = self._check(fx.tmp / "no-such-budget.json")
+            self.assertEqual(2, rc, "an unreadable budget file must exit 2 by the tool's own contract:\n" + out)
+            self.assertNotIn("Ran ", out, "an unreadable budget fell back to running the suite:\n" + out)
+        finally:
+            fx.cleanup()
+        rc, out = self._check(REPO / "tools" / "test-noise-baseline.json")
+        self.assertEqual(0, rc, "this tree's budget file has grown against HEAD:\n" + out)
 
 
 if __name__ == "__main__":

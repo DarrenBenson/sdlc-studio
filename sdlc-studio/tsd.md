@@ -213,8 +213,8 @@ so it is unit-tested against the shapes the suite really emits: lowercase `error
 `warning:`, `usage:`, and tool-prefixed messages, judged after unittest's progress dots
 are stripped, since an escaped print usually shares a line with them.
 
-Those 233 lines are a recorded baseline, not a clean bill: the gate fails on an increase
-and the number is held in `TEST_NOISE_BASELINE`. Demanding zero before the leg could run
+Those lines are a recorded baseline, not a clean bill: the gate fails on an increase
+and the numbers are held in `tools/test-noise-baseline.json`, one per test module plus `_total`. Demanding zero before the leg could run
 at all is precisely why it ran nowhere. Lower it as leaks are captured; never raise it to
 turn a red gate green.
 
