@@ -1159,7 +1159,8 @@ def _revert_check(root: str) -> dict:
         return {"count": 0, "blocking": False,
                 "detail": "N/A (no open run with a base ref and a batch to examine)"}
     examined, refused, named, crashed = 0, [], [], []
-    for uid in batch:
+    skipped = {"reported": 0, "error": 0}   # units the check could not MEASURE - counted, so an
+    for uid in batch:                        # absence can say why rather than merely that
         try:
             res = _va.revert_check(root, uid, base)
         except Exception as exc:  # noqa: BLE001 - an advisory lane never breaks the gate
@@ -1172,22 +1173,30 @@ def _revert_check(root: str) -> dict:
             crashed.append(f"{uid}: {exc}")
             continue
         if res.get("status") in ("error", "reported"):
+            skipped[res["status"]] += 1
             continue  # not a measurement of this unit's evidence; `revert-check` reports it
         examined += 1
         if res.get("status") == "refused":
             refused.append(uid)
             named.append(f"{uid}: green after the revert - {', '.join(res.get('green') or [])}")
     _record_revert_yield(root, examined, len(refused))
+    # An ABSENCE is never rendered as a property of the empty set. "0 unit(s) examined, none
+    # stayed green" and "0 examined and clean" are both literally true over nothing and both
+    # read as a clean bill; the lane says what happened instead - that it measured nothing,
+    # and why - and a crash still leads, on the crashed branch's own reasoning.
+    absence = (f"no unit was examined, so this lane measured nothing "
+               f"({skipped['reported']} reported, {skipped['error']} in error)")
     if not refused:
         if crashed:
-            # The failure leads. Appending it after "none stayed green without its change"
-            # still lets a reader skim the reassuring half of a sentence about a run that
-            # measured nothing.
+            # The failure leads. Appending it after the reassuring half of a sentence still
+            # lets a reader skim past a run that measured nothing.
+            tail = f"{examined} examined and clean" if examined else absence
             detail = (f"{len(crashed)} unit(s) could not be examined at all - "
-                      + _first_three(crashed)
-                      + f"; {examined} examined and clean")
-        else:
+                      + _first_three(crashed) + f"; {tail}")
+        elif examined:
             detail = f"{examined} unit(s) examined, none stayed green without its change"
+        else:
+            detail = absence
         return {"count": 0, "blocking": False, "detail": detail}
     detail = (f"{examined} examined, {len(refused)} would be refused - "
               + _first_three(named))

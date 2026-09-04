@@ -6456,6 +6456,89 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
 
 
 
+class RevertCheckReportingTests(unittest.TestCase):
+    """BG0640: the revert-check lane that examined nothing SAYS so, and never renders a property
+    of the empty set. "0 unit(s) examined, none stayed green" and "0 examined and clean" are
+    both literally true over nothing and both read as a clean bill.
+    """
+
+    def _root(self):
+        # The lane class registers its cleanup on ITS instance, which never runs here, so the
+        # fixture is released on this case - four orphaned repos per run otherwise (review).
+        import shutil as _shutil  # noqa: PLC0415
+        lane = RevertCheckLaneTests("test_a_reported_unit_is_not_counted_as_examined")
+        root = lane._fixture_root(green_after_revert=True)
+        self.addCleanup(_shutil.rmtree, root, True)
+        return root
+
+    def _run(self, side_effect):
+        import gate as gate_mod  # noqa: PLC0415 - local: the tests import by path
+        import verify_ac as _va  # noqa: PLC0415 - the lane imports it deferred
+        from unittest import mock as _mock  # noqa: PLC0415
+        root = self._root()
+        with _mock.patch.object(_va, "revert_check", side_effect=side_effect), \
+             _mock.patch.object(gate_mod, "_record_revert_yield"):
+            return gate_mod._revert_check(str(root))
+
+    def test_zero_examined_leads_with_the_absence(self) -> None:
+        """AC1. MUTANTS: (1) delete the zero-examined branch so `examined == 0` falls through to
+        `f"{examined} unit(s) examined, none stayed green without its change"` - today's code;
+        (2) render the absence without the reported and error counts."""
+        # The fixture batch holds one unit, so the two reasons are asserted NUMERICALLY across
+        # two runs: a row that omits the counts survives a lead that names the words alone.
+        for answer, pair in (({"status": "reported", "errors": ["nothing to revert"]}, "1 reported, 0 in error"),
+                             ({"status": "error", "errors": ["no base"]}, "0 reported, 1 in error")):
+            with self.subTest(status=answer["status"]):
+                res = self._run(lambda *_a, **_k: answer)
+                detail = res["detail"]
+                self.assertTrue(detail.startswith("no unit was examined"), detail)
+                self.assertIn(pair, detail, detail)
+                self.assertNotIn("stayed green", detail)
+                self.assertNotIn("examined and clean", detail)
+                self.assertEqual(0, res["count"])
+
+    def test_a_run_that_examined_units_reports_as_before(self) -> None:
+        """AC2, the control. MUTANT: render the absence sentence unconditionally, dropping the
+        examined count and outcome for `examined > 0`."""
+        res = self._run(lambda *_a, **_k: {"status": "ok", "green": []})
+        self.assertRegex(res["detail"], r"^1 unit\(s\) examined, none stayed green without its change")
+        self.assertNotIn("no unit was examined", res["detail"])
+
+    def test_zero_examined_with_crashes_never_reads_clean(self) -> None:
+        """AC3. MUTANTS: (1) keep `; {examined} examined and clean` on the crashed branch;
+        (2) append the crash count after the absence sentence instead of leading with it."""
+        res = self._run(RuntimeError("the check exploded"))
+        detail = res["detail"]
+        self.assertLess(detail.index("could not be examined"), detail.index("no unit was examined"),
+                        detail)
+        self.assertNotIn("examined and clean", detail)
+        self.assertIn("the check exploded", detail)
+
+    def test_a_crash_beside_an_examined_unit_still_reports_the_examined_count(self) -> None:
+        """AC3's other arm, the control the review asked for. MUTANT: `tail = absence`
+        unconditionally on the crashed branch, so a run that DID examine a unit announces an
+        absence beside its crash."""
+        import gate as gate_mod  # noqa: PLC0415
+        import verify_ac as _va  # noqa: PLC0415
+        from unittest import mock as _mock  # noqa: PLC0415
+        root = self._root()
+        answers = iter([{"status": "ok", "green": []}, RuntimeError("the check exploded")])
+        def one_then_crash(*_a, **_k):
+            nxt = next(answers)
+            if isinstance(nxt, Exception):
+                raise nxt
+            return nxt
+        from lib import run_state as _rs  # noqa: PLC0415 - the lane reads its batch through it
+        real = _rs.read(str(root)) or {}
+        two = {**real, "batch": [*(real.get("batch") or ["US0001"]), "US0002"]}
+        with _mock.patch.object(_va, "revert_check", side_effect=one_then_crash), \
+             _mock.patch.object(gate_mod, "_record_revert_yield"), \
+             _mock.patch.object(_rs, "read", return_value=two):
+            res = gate_mod._revert_check(str(root))
+        self.assertIn("1 examined and clean", res["detail"], res)
+        self.assertNotIn("no unit was examined", res["detail"], res)
+
+
 class RevertCheckLaneTests(unittest.TestCase):
     """US0674: the revert-check lane binds at the boundary, reports, and records its yield.
 
@@ -6604,12 +6687,18 @@ class RevertCheckLaneTests(unittest.TestCase):
         from unittest import mock as _mock  # noqa: PLC0415
         root = self._fixture_root(green_after_revert=True)
         with _mock.patch.object(_va, "revert_check",
-                                return_value={"status": "reported", "errors": ["nothing to revert"]}):
+                                return_value={"status": "reported", "errors": ["nothing to revert"]}), \
+             _mock.patch.object(gate_mod, "_record_revert_yield") as recorder:
             res = gate_mod._revert_check(str(root))
-        self.assertIn("0 unit(s) examined", res["detail"],
-                      f"a REPORTED unit was counted as examined, so the yield pair the blocking "
-                      f"decision rests on is inflated: {res}")
+        # BG0640 re-authored this assertion: the lead is the ABSENCE, never a count of the
+        # empty set, and the yield pair it exists to pin is asserted on the recorder itself.
+        self.assertTrue(res["detail"].startswith("no unit was examined"),
+                        f"a REPORTED unit was counted as examined, so the yield pair the blocking "
+                        f"decision rests on is inflated: {res}")
         self.assertEqual(0, res["count"], res)
+        recorder.assert_called_once()
+        self.assertEqual(0, recorder.call_args.args[1],
+                         f"the recorder was handed a non-zero examined count: {recorder.call_args}")
 
     def test_the_lane_itself_says_how_many_findings_it_dropped(self) -> None:
         """MUTANT: in `gate._revert_check`, call `"; ".join(named[:3])` at the truncation site
