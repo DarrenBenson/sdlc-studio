@@ -6,7 +6,8 @@
 > **Run of record:** RUN-01M1NS3C - six gates that hold in the command people run, not only on
 > the page that describes them. Eight units, 36 criteria, 150 mutants registered killed and two
 > ruled equivalent (the two operator rulings). Goal **achieved**, every clause measured on main
-> at 14a9d4d6. Sign-off is the operator's; the branch-protection edit is owed.
+> at 14a9d4d6. Sign-off recorded on 2026-09-06 with the operator as principal, delegated in
+> session; the branch-protection edit is done and read back as none.
 
 ## THE HEADLINE: A PUSH FROM THIS CLONE NOW PAYS THE GATE, AND READS MAIN FIRST
 
@@ -46,9 +47,11 @@ an inherited PATH; a red tag push unpinned; a noisy-fixture test asserting one o
 sites. Escalations recorded by `critic record` for the operator: BG0643, BG0603 (split panel),
 BG0644, BG0647, BG0641 (split, then three REJECTs), BG0642 (split, then two REJECTs).
 
-## WHAT IS OWED
+## WHAT WAS OWED, AND WHAT REMAINS
 
-- **The reviewer-of-record sign-off** on all eight units - the operator's, or a named delegate outside this session: `sprint.py close --retro RETRO0113 --apply-signoff --principal <who>`.
-- **The branch-protection edit** (BG0642 AC5, D0181): remove the `ci` required status check from main. Read back at close it still carries the check, so AC5 stays unticked and the AGENTS.md paragraph says owed.
-- **LL0053 bit four units in one day**: the mutation ledger drops a target's rows on any byte change, and BG0642's edit to the hook emptied BG0641's thirty rows silently until the close dry-run. A ratchet that re-checks every earlier unit's evidence when a later unit touches its target is not filed yet; file it before the next batch.
-- **Read next:** BG0649 (test_critic red alone), BG0645, BG0646, BG0648 (Medium, disclosed), CR0511's three new Lows (a refused push's duration seeding the estimate, hand-written depth counts, the unbounded `gh` read).
+- **Sign-off**: recorded on all eight units on 2026-09-06, the operator as principal by delegation in session ("Run the close as principal for me"), over the seat record and the batch review.
+- **The branch-protection edit** (BG0642 AC5, D0181): done on 2026-09-06 by delegation; the `ci` required check is removed, enforce_admins and review requirements untouched, the read-back prints none, AC5 ticked.
+- **LL0053 bit four units in one day**: filed as BG0651 (Medium, 3 points), shape ruled by the operator - refuse the commit and name the unit, never re-measure silently.
+- **The next batch is groomed and recorded as D0182**: BG0649, BG0645, BG0646, BG0648 and BG0651 - 14 executable criteria, 23 planned mutants, readiness 5 of 5, every premise re-run against HEAD on 2026-09-06 (the plan-review rejoinder still renders a diff scope; status.py took 112 s; a criterion under the wrong heading is executed, unbriefed and unreported). Plan review before code, as this run's did.
+- **The first real push through the new hook is the operator's**: ten to fifteen minutes, reading main's CI first.
+- **Read next:** BG0649, BG0645, BG0646, BG0648 (Medium, disclosed), CR0511's four new Lows (a refused push's duration seeding the estimate, hand-written depth counts, the unbounded `gh` read, the round-count lane reading the batch-review count).

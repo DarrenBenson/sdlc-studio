@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0395: The disclosure page is derived from statuses: regenerate it once, after the last transition, or every commit in between is refused by its...**
+- **L-0394: A test fixture that inherits the caller's environment is a defect even when green: an unscrubbed enable-hooks fixture wrote...**
+- **L-0393: Register mutation evidence after the LAST edit to a target, and re-check every earlier unit whose target a later unit touches: BG0641's...**
+- **L-0392: A depth field carries two counts, the total after the word and the entry-point denominator before it; a census that takes the first `<n>...**
+- **L-0391: A hook's stdout never reaches the pusher: git shows a pre-push hook's stderr only, so a refusal that says "see the lane named above" must...**
 - **L-0390: **The vacuous case is where a per-item rule fails, and it is the largest population.** "Every criterion carries a verifier" is TRUE over an...**
 - **L-0389: **A schema-widening test built on the shape YOUR repo holds cannot see the shape everyone else holds.** Two ledger columns were appended at...**
 - **L-0388: **A tool that cannot author its evidence produces units nobody can check.** `file_finding.py` could write an acceptance criterion but not...**
