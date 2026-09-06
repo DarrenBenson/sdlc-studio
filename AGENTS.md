@@ -59,8 +59,8 @@ hook asks the forge for the latest push-triggered Lint run on main before it run
 conclusion but success it refuses until that run's id is acknowledged once per clone with
 `SDLC_PUSH_ACK_RED=<run id> git push`. An unreadable or empty answer is named and never read as
 green, and it does not block an offline push. The required status check a direct push can never
-satisfy is the operator's to remove from branch protection under the same ruling, and stays owed
-until the protection read-back shows none.
+satisfy was removed from branch protection under the same ruling on 2026-09-06, and the
+protection read-back shows none.
 
 The pre-commit lanes, recorded here because a review once found the repo's own account of its
 gates incomplete, and a guard nobody has written down is one nobody notices losing. The hook
