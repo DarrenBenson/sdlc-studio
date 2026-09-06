@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-04
+**Last Updated:** 2026-09-06
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 19 |
 | In Progress | 0 |
 | Fixed | 531 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 5 |
-| **Total** | **650** |
+| **Total** | **651** |
 
 ## All Bugs
 
@@ -190,6 +190,7 @@
 | [BG0648](BG0648-a-criterion-written-outside-the-acceptance-criteria-section.md) | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and the sprint report | Open | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0649](BG0649-test-critic-is-red-when-run-alone-unittest.md) | test_critic is red when run alone: unittest.mock is used at line 5131 without an import | Open | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0650](BG0650-the-depth-count-census-reads-the-entry-point.md) | The depth-count census reads the entry-point denominator, so an artefact with a manual criterion fails it | Fixed | Medium | 2026-09-04 | 2026-09-04 |
+| [BG0651](BG0651-a-later-commit-that-changes-a-target-file.md) | A later commit that changes a target file empties an earlier unit's mutation evidence silently, and nothing refuses until the close dry-run | Open | Medium | 2026-09-06 | 2026-09-06 |
 
 ## Archived Releases
 
