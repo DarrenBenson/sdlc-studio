@@ -1,5 +1,6 @@
 <!-- close-status:begin -->
-> **RUN-01M1WPNV closing.** 5 unit(s) in the batch. Sign-off recorded; the close stamps this block.
+> **RUN-01M1WPNV closed goal-reached.** 5 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
+> Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
 > **Run of record:** RUN-01M1WPNV - five instruments answer for what they measured, not for what

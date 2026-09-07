@@ -171,7 +171,9 @@ sprints fits noise.
 
 **0 of 5 unit(s) measured; 5 of 5 forecast at plan time.**
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Sprint tokens/point: 280,881** (6,460,265 tokens over 23 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity: 1.58 points/elapsed-hour** (23 points ACCEPTED over 14.517h, run-state - a CALENDAR SPAN with no idle deducted, since the run recorded no gap; it is not working time, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
@@ -248,3 +250,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: captured at close from the harness delta · Duration: 01:01Z to close, one session · Critic rejects: 13 of 30 seat verdicts (BG0651 3, BG0646 2, BG0649 5, BG0645 2, BG0648 1), every one repaired
+
+## Handoff
+
+- [HO-0068](../handoffs/HO0068-five-instruments-answer-for-what-they-measured-not.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
