@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-08-27
+**Last Updated:** 2026-09-07
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 35 |
+| Draft | 38 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 211 |
-| **Total** | **246** |
+| **Total** | **249** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -92,6 +92,9 @@
 | [EP0244](EP0244-one-concept-one-name-across-every-verb-and.md) | One concept, one name, across every verb and every document key | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0245](EP0245-filing-a-finding-leaves-the-disclosure-true.md) | Filing a finding leaves the disclosure true | Draft | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0246](EP0246-the-declared-python-floor-is-a-gate-not.md) | The declared Python floor is a gate, not a sentence in six documents | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
+| [EP0247](EP0247-a-unit-s-own-verifiers-must-execute-every.md) | A unit's own verifiers must execute every line it adds, or the gate says which they missed | Draft | 2 | -- | 2026-09-07 | 2026-09-07 |
+| [EP0248](EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Draft | 1 | -- | 2026-09-07 | 2026-09-07 |
+| [EP0249](EP0249-mutation-py-register-replaces-a-live-row-on.md) | mutation.py register replaces a live row on the same key instead of appending a duplicate | Draft | 1 | -- | 2026-09-07 | 2026-09-07 |
 
 ## Archived Releases
 

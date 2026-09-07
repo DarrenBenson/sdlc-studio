@@ -29,8 +29,16 @@ Run `cmd_hint`'s advisories inside one `corpus_cache()` sweep as `cmd_pillars` d
 - [ ] **AC1** Given the fixture corpus BG0646's tests generate, when `status.py hint` runs as a SUBPROCESS over it, then it exits 0 inside 15 s and its advisories are entered inside the same sweep as its census, asserted in-process by identity as BG0646 AC2 does for the dashboard.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::HintPerformanceTests::test_the_hint_command_answers_the_corpus_shaped_fixture_inside_the_bound
 
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/status.py, move `close_owed_advisory` and the other advisories in `cmd_hint` back outside the `corpus_cache()` sweep (today's code): measured at plan time over `_corpus_shaped_fixture`, `status.py hint` takes 22.9 s at today's code against 0.7 s for the dashboard, so the 15 s bound dies on it with a 1.5x margin | Given the fixture corpus BG0646's tests generate, when `status.py hint` runs as a SUBPROCESS over it, then it exits 0 inside 15 s and its advisories are entered inside the same sweep as its census, asserted in-process by identity as BG0646 AC2 does for the dashboard. |
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-07 | sdlc-studio | Filed |
+| 2026-09-07 | Claude Fable 5.1 | Goal review round 3 (all seats yes): Test Plan titles re-synced to the criteria |
+| 2026-09-07 | Claude Fable 5.1 | Test Plan rows rewritten as edits led by a verb and the Mutant sentences moved out of the criteria, so `testplan derive` reads the plan as its own shape |

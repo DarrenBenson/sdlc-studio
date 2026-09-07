@@ -39,8 +39,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0637` | Medium | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick |
 | `BG0638` | Medium | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindn... |
 | `BG0652` | Medium | status.py hint takes 56 seconds on this corpus: its close-owed advisory runs outside any corpus sweep |
+| `BG0653` | Medium | A test rename at a close commit orphaned a stamped selector, and the scheduled corpus lane that saw it has been red for three weeks unread |
 
-15 findings: 15 Medium, 0 Low.
+16 findings: 16 Medium, 0 Low.
 
 ## Not carried
 

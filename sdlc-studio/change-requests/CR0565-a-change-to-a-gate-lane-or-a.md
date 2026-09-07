@@ -1,6 +1,7 @@
 # CR-0565: A change to a gate lane or a hook cannot reach Fixed without a recorded self-run on the repository
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0248
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** S

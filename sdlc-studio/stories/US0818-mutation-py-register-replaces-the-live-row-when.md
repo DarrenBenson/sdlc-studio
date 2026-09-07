@@ -1,0 +1,47 @@
+# US0818: mutation.py register replaces the live row when unit, criterion, row, target, hash, verdict and test all match, refuses a disagreeing verdict or test naming retract, and says so
+
+> **Status:** Ready
+> **Delivers:** CR0568
+> **Created:** 2026-09-07
+> **Created-by:** sdlc-studio new
+> **Raised-by:** sdlc-studio; agent; v1
+> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
+> **Epic:** EP0249
+> **Points:** 2
+> **Persona:** Maya Okafor
+
+## User Story
+
+**As a** Maya Okafor
+**I want** mutation.py register replaces the live row when unit, criterion, row, target, hash, verdict and test all match, refuses a disagreeing verdict or test naming retract, and says so
+**So that** the ledger's count is true - Maya Okafor's re-registration neither inflates the executed count nor buys a way out of a survivor
+
+## Acceptance Criteria
+
+- [ ] **AC1** Given a live ledger row on (unit, criterion, row, target, hash) with a verdict and a test, when a registration with the SAME key, verdict and test is made again, then the ledger holds ONE live row for the key and the command prints `replaced` naming the key - the idempotent re-run of a registration runner, CR0568's case; a registration for a different row of the same criterion still appends, and a registration on the same row against a DIFFERENT TARGET PATH appends and is then named by BG0614's audit - the paired controls (a different hash of the same target is not a control: `register_mutant` drops the unit's own rows on the old hash before it appends, so that case leaves one row by construction).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterReplacesTests::test_a_same_key_registration_replaces_the_live_row_and_a_new_row_appends
+- [ ] **AC2** Given a live row whose verdict or test DIFFERS from the new registration's on the same key, when it is registered, then the registration is REFUSED with exit code 2 naming `mutation.py retract --reason` as the route and the live row is untouched - worst-verdict-wins stands, because a genuine correction and an author registering out of a survivor are byte-identical, the rule `register_mutant`'s own comment and BG0614 both record as implemented and reverted; AC1's same-key replace is this refusal's positive control.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterReplacesTests::test_a_disagreeing_verdict_or_test_is_refused_naming_retract
+- [ ] **AC3** Given the shipped `mutation.py register` run twice as a SUBPROCESS with the same key, verdict and test, when the second run exits, then its stdout carries the `replaced` line naming the key and `plan_execution` reads one executed row for the key - the wiring a library test cannot see.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterReplacesTests::test_the_cli_path_replaces_and_reports_through_the_shipped_command
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/mutation.py `register_mutant`, delete the lookup over `entry['mutants']` for an existing record and keep the unconditional `append` | Given a live ledger row on (unit, criterion, row, target, hash) with a verdict and a test, when a registration with the SAME key, verdict and test is made again, then the ledger holds ONE live row for the key and the command prints `replaced` naming the key - the idempotent re-run of a registration runner, CR0568's case; a registration for a different row of the same criterion still appends, and a registration on the same row against a DIFFERENT TARGET PATH appends and is then named by BG0614's audit - the paired controls (a different hash of the same target is not a control: `register_mutant` drops the unit's own rows on the old hash before it appends, so that case leaves one row by construction). |
+| AC2 | in .claude/skills/sdlc-studio/scripts/mutation.py `register_mutant`, delete the `raise` for a verdict or test mismatch and fall through to the replace | Given a live row whose verdict or test DIFFERS from the new registration's on the same key, when it is registered, then the registration is REFUSED with exit code 2 naming `mutation.py retract --reason` as the route and the live row is untouched - worst-verdict-wins stands, because a genuine correction and an author registering out of a survivor are byte-identical, the rule `register_mutant`'s own comment and BG0614 both record as implemented and reverted; AC1's same-key replace is this refusal's positive control. |
+| AC3 | in .claude/skills/sdlc-studio/scripts/mutation.py, delete the `replaced` line from `cmd_register`'s stdout; second, make `cmd_register` append the record a second time after `register_mutant` returns | Given the shipped `mutation.py register` run twice as a SUBPROCESS with the same key, verdict and test, when the second run exits, then its stdout carries the `replaced` line naming the key and `plan_execution` reads one executed row for the key - the wiring a library test cannot see. |
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-09-07 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-07 | sdlc-studio | Draft -> Ready |
+| 2026-09-07 | Claude Fable 5.1 | Groomed: criteria authored with a named mutant each, one selector per criterion |
+| 2026-09-07 | Claude Fable 5.1 | Goal review round 1 (engineering, product, qa all partial): AC2 inverted: a disagreeing verdict or test is REFUSED naming retract, never superseded (three seats, blocking); AC1 gains the different-hash control |
+| 2026-09-07 | Claude Fable 5.1 | Goal review round 2: title and I-want line inverted with AC2 (product, engineering); the file is retitled through `artifact.py retitle` |
+| 2026-09-07 | Claude Fable 5.1 | Goal review round 3 (all seats yes): Test Plan rows name the file, titles re-synced |
+| 2026-09-07 | Claude Fable 5.1 | Test Plan rows rewritten as edits led by a verb and the Mutant sentences moved out of the criteria, so `testplan derive` reads the plan as its own shape |
+| 2026-09-07 | Claude Fable 5.1 | Plan review round 1: engineering REJECT answered - AC1's third control is a different target path, AC2 names its exit code and its control, AC3's mutants are edits that exist after the fix |
