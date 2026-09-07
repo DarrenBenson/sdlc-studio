@@ -7146,5 +7146,172 @@ class EvidenceDriftTests(unittest.TestCase):
         self.assertIn("neither at HEAD nor on disk", out)
 
 
+class ModuleAloneLaneTests(unittest.TestCase):
+    """The module-alone lane: every skill test module alone, under unittest, in a fresh
+    interpreter, from --root with the hook's relative PYTHONPATH, in parallel with the
+    serial_only partition after. MUTANTS: run the modules under one interpreter in discovery
+    order; read the module list from a hard-coded tuple; bind the lane per commit; name the
+    failing module without its failure line; run each module from the tests directory instead
+    of --root; run the modules serially; ignore the serial_only marker; read the marker by a
+    source scan; drop the no-output fallback; name the LAST failure line; read a failed collect
+    as an empty partition; export an absolute PYTHONPATH."""
+
+    def _gate(self, *extra, root):
+        import subprocess  # noqa: PLC0415
+        scripts = pathlib.Path(__file__).resolve().parents[1]
+        return subprocess.run([sys.executable, str(scripts / "gate.py"), "--root", str(root), *extra],
+                              capture_output=True, text=True, timeout=600, check=False)
+
+    def _fixture(self) -> pathlib.Path:
+        root = pathlib.Path(tempfile.mkdtemp(prefix="module_alone_")); self.addCleanup(_shutil.rmtree, root, True)
+        tests = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        tests.mkdir(parents=True)
+        (root / "sdlc-studio").mkdir()
+        (root / "root-marker.txt").write_text("here\n", encoding="utf-8")
+        log = "import pathlib, time\n"
+        # a module that passes only after a sibling imported the name - the BG0649 defect itself,
+        # with TWO failing tests so the FIRST failure line is distinguishable from the last
+        (tests / "test_a_importer.py").write_text(
+            "import unittest\nimport unittest.mock\n\nclass T(unittest.TestCase):\n"
+            "    def test_ok(self):\n        self.assertTrue(True)\n", encoding="utf-8")
+        (tests / "test_b_borrower.py").write_text(
+            "import unittest\n\nclass T(unittest.TestCase):\n"
+            "    def test_1_uses_mock(self):\n        unittest.mock.patch.object(unittest, 'x', create=True)\n"
+            "    def test_2_uses_mock(self):\n        unittest.mock.patch.object(unittest, 'y', create=True)\n",
+            encoding="utf-8")
+        # a module that passes only from the repository root with the hook's RELATIVE tests path
+        (tests / "test_c_cwd.py").write_text(
+            "import os, unittest, pathlib\n\nclass T(unittest.TestCase):\n    def test_from_root(self):\n"
+            "        self.assertTrue(pathlib.Path('root-marker.txt').is_file(), 'not run from --root')\n"
+            "    def test_relative_pythonpath(self):\n"
+            "        first = os.environ.get('PYTHONPATH', '').split(os.pathsep)[0]\n"
+            "        self.assertFalse(os.path.isabs(first), 'the tests path is absolute: ' + first)\n",
+            encoding="utf-8")
+        # a DECOY: the marker's name in a comment, on a module that is NOT marked - a source scan
+        # would put it in the serial phase
+        (tests / "test_d_decoy.py").write_text(
+            "import unittest\n# this module is not serial_only; the words are a decoy for a source scan\n\n"
+            "class T(unittest.TestCase):\n    def test_ok(self):\n        self.assertTrue(True)\n",
+            encoding="utf-8")
+        # a module unittest discover's `test*.py` pattern finds that a `test_*.py` glob would not
+        (tests / "testextra_ok.py").write_text(
+            "import unittest\n\nclass T(unittest.TestCase):\n    def test_ok(self):\n        pass\n", encoding="utf-8")
+        # a module that dies with NO output and no FAIL/ERROR header - inside a test, so the
+        # collector that reads the marker can still import it
+        (tests / "test_e_crash.py").write_text(
+            "import os, unittest\n\nclass T(unittest.TestCase):\n    def test_dies(self):\n        os._exit(3)\n",
+            encoding="utf-8")
+        # one sleeper per core, capped at sixteen and floored at four: a lane on this machine's
+        # cores finishes them inside three seconds, a half-size pool needs a second wave, a
+        # serial one takes as many seconds as there are sleepers
+        self.n_sleepers = min(16, max(4, os.cpu_count() or 1))
+        for i in range(1, self.n_sleepers + 1):
+            (tests / f"test_s{i}_sleeper.py").write_text(
+                log + "import unittest\n\nclass T(unittest.TestCase):\n    def test_sleep(self):\n"
+                f"        pathlib.Path('phase.log').open('a').write('s{i}-start %f\\n' % time.monotonic())\n"
+                "        time.sleep(1)\n"
+                f"        pathlib.Path('phase.log').open('a').write('s{i} %f\\n' % time.monotonic())\n",
+                encoding="utf-8")
+        # the marked module: serial_only, so it must run AFTER every parallel module - and RED,
+        # so the phase label it is reported under is visible
+        (tests / "test_z_serial.py").write_text(
+            log + "import unittest\nimport pytest\n\n@pytest.mark.serial_only\nclass T(unittest.TestCase):\n"
+            "    def test_alone(self):\n"
+            "        pathlib.Path('phase.log').open('a').write('z %f\\n' % time.monotonic())\n"
+            "        self.fail('red in the serial phase')\n",
+            encoding="utf-8")
+        return root
+
+    def test_the_push_boundary_runs_every_module_alone_and_names_the_one_that_fails(self) -> None:
+        root = self._fixture()
+        tests = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        # per-commit: the lane is not registered, so selecting it is refused as unknown
+        off = self._gate("--only", "module-alone", root=root)
+        self.assertNotEqual(0, off.returncode)
+        self.assertIn("unknown check name(s): module-alone", off.stdout + off.stderr,
+                      "the module-alone lane is registered on the per-commit gate")
+        for boundary in ("push", "release"):
+            (root / "phase.log").unlink(missing_ok=True)
+            r = self._gate("--boundary", boundary, "--only", "module-alone", root=root)
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, out)
+            m = re.search(r"^\s+\[FAIL\] module-alone \[([0-9.]+)s\]: (.*)$", out, re.M)
+            self.assertTrue(m, "no FAIL line for module-alone at the %s boundary:\n%s" % (boundary, out))
+            secs, detail = float(m.group(1)), m.group(2)
+            # the borrower is named with its FIRST failure header and the exception line; the
+            # silent crash is named by the fallback; the importer, the cwd module, the decoy and
+            # the sleepers are not
+            self.assertIn("3 module(s) red when run alone", detail)
+            self.assertIn("test_z_serial [serial]: FAIL: test_alone", detail, "the serial module is not reported under its phase")
+            self.assertIn(f"{7 + self.n_sleepers} module(s) alone under unittest from {root}: {6 + self.n_sleepers} in the parallel phase on {os.cpu_count()} workers", detail,
+                          "the module and parallel counts are not the fixture's - the discover pattern or the partition is off")
+            self.assertIn("test_b_borrower [parallel]: ERROR: test_1_uses_mock", detail)
+            self.assertIn("AttributeError: module 'unittest' has no attribute 'mock'", detail,
+                          "the exception line is missing - the header alone never says why")
+            self.assertNotIn("test_2_uses_mock", detail, "the LAST failure was named, not the first")
+            self.assertIn("test_e_crash [parallel]: exited non-zero with no output", detail)
+            for clean in ("test_a_importer", "test_c_cwd", "test_d_decoy", "test_s1_sleeper", "testextra_ok"):
+                self.assertNotIn(clean + " [", detail, f"{clean} was reported red: {detail}")
+            # parallel: one-second sleepers, one per core, inside three seconds of lane time
+            self.assertLess(secs, 3.0, f"the lane took {secs}s over {self.n_sleepers} one-second modules - serial, or a pool smaller than the cores?")
+            # the serial phase: ONLY the marked module, after every other, and the lane says so
+            self.assertIn("1 in the serial phase after it (test_z_serial)", detail)
+            rows = [ln.split() for ln in (root / "phase.log").read_text(encoding="utf-8").splitlines()]
+            when = {name: float(t) for name, t in rows if not name.endswith("-start")}
+            self.assertEqual(self.n_sleepers + 1, len(when), rows)
+            # the pool's size is measured, not read back from a string: with the machine's cores
+            # every sleeper is asleep at once, so their intervals all overlap - a pool of a
+            # quarter of the cores runs them in waves, however the detail line was worded
+            starts = {n[:-6]: float(t) for n, t in rows if n.endswith("-start")}
+            overlap = max(sum(1 for m in starts if starts[m] <= starts[n] < when[m]) for n in starts)
+            self.assertGreaterEqual(overlap, self.n_sleepers,
+                                    f"only {overlap} of {self.n_sleepers} sleepers were asleep at once - the pool is smaller than the cores")
+            self.assertGreater(when["z"], max(v for k, v in when.items() if k != "z"),
+                               "the serial_only module did not run after every parallel module")
+        # the control: with the borrower importing its own name and the crash gone, the lane is green
+        (tests / "test_b_borrower.py").write_text(
+            "import unittest\nimport unittest.mock\n\nclass T(unittest.TestCase):\n    def test_uses_mock(self):\n"
+            "        unittest.mock.patch.object(unittest, 'x', create=True)\n", encoding="utf-8")
+        (tests / "test_e_crash.py").unlink()
+        (tests / "test_z_serial.py").write_text(
+            "import unittest\nimport pytest\n\n@pytest.mark.serial_only\nclass T(unittest.TestCase):\n    def test_alone(self):\n        pass\n",
+            encoding="utf-8")
+        g = self._gate("--boundary", "push", "--only", "module-alone", root=root)
+        self.assertEqual(0, g.returncode, g.stdout + g.stderr)
+        self.assertRegex(g.stdout, r"\[PASS\] module-alone \[[0-9.]+s\]: %d module\(s\) alone under unittest from " % (6 + self.n_sleepers))
+        # the refusal's reason is clipped at a word past 300 characters, never mid-path
+        import gate as _gate  # noqa: PLC0415
+        long = " ".join(f"/path/number{i}/segment" for i in range(60))
+        clipped = _gate._clip_reason(long)
+        prefix = clipped[:-4]
+        self.assertTrue(clipped.endswith(" ..."), clipped)
+        self.assertLessEqual(len(prefix), 300)
+        self.assertTrue(long.startswith(prefix) and long[len(prefix)] == " ",
+                        "the reason was cut mid-path: " + clipped[-60:])
+        self.assertEqual("short reason", _gate._clip_reason("  short reason  "))
+        # a partition that cannot be read is REFUSED, never read as empty
+        (tests / "conftest.py").write_text("raise RuntimeError('broken conftest')\n", encoding="utf-8")
+        c = self._gate("--boundary", "push", "--only", "module-alone", root=root)
+        self.assertNotEqual(0, c.returncode)
+        self.assertIn("could not read the serial_only partition", c.stdout + c.stderr)
+        self.assertIn("the modules were NOT run", c.stdout + c.stderr)
+        (tests / "conftest.py").unlink()
+        # a module that hangs is named with the timeout, never a hung push
+        hang = pathlib.Path(tempfile.mkdtemp(prefix="module_alone_hang_")); self.addCleanup(_shutil.rmtree, hang, True)
+        ht = hang / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"; ht.mkdir(parents=True); (hang / "sdlc-studio").mkdir()
+        (ht / "test_ok.py").write_text("import unittest\n\nclass T(unittest.TestCase):\n    def test_ok(self):\n        pass\n", encoding="utf-8")
+        (ht / "test_hang.py").write_text("import time\ntime.sleep(30)\n", encoding="utf-8")
+        import os as _os, subprocess as _sp  # noqa: PLC0415
+        scripts = pathlib.Path(__file__).resolve().parents[1]
+        h = _sp.run([sys.executable, str(scripts / "gate.py"), "--root", str(hang), "--boundary", "push", "--only", "module-alone"],
+                    capture_output=True, text=True, timeout=600, check=False, env={**_os.environ, "SDLC_MODULE_ALONE_TIMEOUT": "2"})
+        self.assertNotEqual(0, h.returncode)
+        self.assertIn("test_hang [parallel]: timed out after 2 s", h.stdout + h.stderr)
+        # and a root with no skill tests directory reports N/A rather than a vacuous pass
+        bare = pathlib.Path(tempfile.mkdtemp(prefix="module_alone_bare_")); self.addCleanup(_shutil.rmtree, bare, True)
+        (bare / "sdlc-studio").mkdir()
+        n = self._gate("--boundary", "push", "--only", "module-alone", root=bare)
+        self.assertIn("N/A (no skill tests directory under --root)", n.stdout + n.stderr)
+
 if __name__ == "__main__":
     unittest.main()

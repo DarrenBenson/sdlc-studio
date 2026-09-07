@@ -41,7 +41,7 @@ These block. Everything else in this file is guidance.
 | Gate | Refuses |
 | --- | --- |
 | pre-commit + commit-msg hooks | any guard failure; a multi-id subject with no `Refs:` trailer; a collapsed test suite |
-| pre-push hook | a red boundary gate (`gate.py --boundary push`, or `release` for a tag): the full suite plus the two boundary lanes, minutes per push - until a boundary run is recorded the floor is the full suite's own recorded figure, else about ten minutes, and `python3 tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0` prints the current figure |
+| pre-push hook | a red boundary gate (`gate.py --boundary push`, or `release` for a tag): the full suite plus the three boundary lanes, minutes per push - until a boundary run is recorded the floor is the full suite's own recorded figure, else about ten minutes, and `python3 tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0` prints the current figure |
 | `sprint plan` | a batch whose units lack `Affects:` or `Points:`, or exceed the split threshold |
 | `transition -> Done` | a story whose executable ACs have not passed, or that is past `review.two_role_after` without both review halves |
 | `transition -> Fixed` | a bug with no parseable `Verification depth` |
@@ -94,6 +94,18 @@ revert is the finding - a test that passes without the change never reached it. 
 never blocks while its yield is measured, accumulated in `sdlc-studio/.local/revert-check-yield.json`.
 It is off the per-commit path for `release-rehearsal`'s reason: a revert-and-run per unit is
 minutes against a gate already at its ceiling.
+
+A THIRD lane binds at the push and release boundaries only, and it BLOCKS there: `module-alone`
+(`gate.py --boundary push|release`) runs every skill test module alone under the unittest runner,
+one fresh interpreter per module from the repository root, in parallel with the `serial_only`
+partition after. The discovery run is green while a module passes only because a sibling
+imported a name first, and pytest imports the missing name itself, so only this shape sees it
+(`test_critic` was red alone for a month). Its cost is the lane's wall clock, four to five
+minutes on this machine - the slowest module, `test_gate`, near four of them, then the serial
+phase - against a serial sum of fifteen to seventeen minutes; paid at the boundary beside
+D0180's full suite and never per commit. It reads the marker through pytest, so a clone
+without pytest is refused at the boundary with the reason named rather than run without the
+partition.
 
 One lane is ADVISORY and cannot fail a commit: `claim-drift`, which reports where a diff's
 code and the diff's own prose disagree. It ships advisory while its yield is measured,

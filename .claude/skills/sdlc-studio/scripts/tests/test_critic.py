@@ -10,6 +10,7 @@ import sys
 import tempfile
 import shutil
 import unittest
+import unittest.mock
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "critic.py"

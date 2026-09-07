@@ -825,7 +825,7 @@ BLOCKING_ON_ERROR = {
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
     "engagement-floor", "review-current", "close-owed", "window",
-    "changelog-fragments", "derived-depth", "evidence-drift",
+    "changelog-fragments", "derived-depth", "evidence-drift", "module-alone",
 }
 
 def _changelog(root: str) -> dict:
@@ -1137,6 +1137,120 @@ def _derived_depth(root: str) -> dict:
     return {"count": len(faults), "blocking": True,
             "detail": "; ".join(f["why"] for f in faults[:3])
                       + (f" (+{len(faults) - 3} more)" if len(faults) > 3 else "")}
+
+
+def _clip_reason(text: str, limit: int = 300) -> str:
+    """A refusal's reason line, clipped at a WORD boundary past `limit` - never mid-path, since a
+    path cut in half sends the reader to a file that does not exist."""
+    text = text.strip()
+    if len(text) <= limit:
+        return text
+    head = text[:limit]
+    return (head.rsplit(" ", 1)[0] if " " in head else head) + " ..."
+
+
+def _module_alone(root: str) -> dict:
+    """BOUNDARY lane: every skill test module run ALONE, under the unittest runner, in a fresh
+    interpreter, from the repository root.
+
+    The suite runs green as one discovery pass and hides a module that only passes because a
+    sibling imported a name first: `test_critic` used `unittest.mock` without importing it, and
+    the name was there because an earlier module had imported it. pytest imports the missing
+    name itself and passes the broken module, so the runner here is `unittest`, the hook's own,
+    and each module is one fresh interpreter. The working directory is `--root`, the hook's,
+    because that alone decides which modules are red: two modules read config under the
+    working directory and are red only from the tests directory.
+
+    PARALLEL across the cores, so the wall-clock is the slowest module (`test_gate`, about four
+    minutes on this machine) rather than the serial sum (about seventeen minutes measured at
+    delivery); the `serial_only` partition is read the runner's way - the marker,
+    through `pytest --collect-only -m serial_only`, never a source scan - and those modules run
+    in a serial phase after the parallel one, as the suite's runner partitions them. Bound at the
+    push and release boundaries only, on `release-rehearsal`'s precedent: minutes per run is a
+    cost the per-commit gate cannot carry, and a guard whose cost is paid on every commit gets
+    switched off.
+    """
+    import os  # noqa: PLC0415
+    import subprocess  # noqa: PLC0415 - local: only this lane spawns interpreters
+    import time  # noqa: PLC0415
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+    root = Path(root)
+    tests_dir = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+    if not tests_dir.is_dir():
+        return {"count": 0, "blocking": False, "detail": "N/A (no skill tests directory under --root)"}
+    modules = sorted(p.stem for p in tests_dir.glob("test*.py") if p.is_file())   # unittest discover's own pattern
+    if not modules:
+        return {"count": 0, "blocking": False, "detail": "N/A (no test modules under the skill tests directory)"}
+    # the serial partition, read the way the suite's own runner reads it: the marker, collected
+    collect = subprocess.run(
+        [sys.executable, "-B", "-m", "pytest", "--collect-only", "-q", "-m", "serial_only",
+         "-p", "no:cacheprovider", str(tests_dir)],
+        cwd=root, capture_output=True, text=True, check=False)
+    if collect.returncode not in (0, 5):     # 5: pytest collected nothing at all - a valid empty partition
+        why = _clip_reason(next((ln for ln in (collect.stdout + collect.stderr).splitlines() if ln.strip()), "no output"))
+        return {"count": 1, "blocking": True,
+                "detail": f"could not read the serial_only partition (pytest --collect-only -m serial_only "
+                          f"exited {collect.returncode}: {why}) - the modules were NOT run, "
+                          f"because a partition read as empty would run the marked modules beside the others"}
+    serial = {Path(ln.split("::", 1)[0]).stem for ln in collect.stdout.splitlines() if "::" in ln}
+    serial &= set(modules)
+    # EXACTLY the hook's environment: `tools/skill-tests.sh` exports the tests directory as a
+    # path RELATIVE to the root it runs from, and one module (`test_repo_hygiene`) is green under
+    # that form and red under an absolute one - the first cut of this lane refused every push
+    # from this clone on that difference alone.
+    env = dict(os.environ)
+    env["PYTHONPATH"] = (str(tests_dir.relative_to(root))
+                         + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else ""))
+    env.pop("PYTEST_CURRENT_TEST", None)
+
+    # A hung module must name itself, never hang the push: half an hour per module by default,
+    # an operator knob for a slower machine
+    try:
+        limit = float(os.environ.get("SDLC_MODULE_ALONE_TIMEOUT") or 1800)
+    except ValueError:
+        limit = 1800.0
+
+    def run(mod: str) -> tuple:
+        t0 = time.monotonic()
+        try:
+            cp = subprocess.run([sys.executable, "-B", "-m", "unittest", mod], cwd=root, env=env,
+                                capture_output=True, text=True, check=False, timeout=limit)
+        except subprocess.TimeoutExpired:
+            return mod, 124, f"timed out after {limit:g} s", time.monotonic() - t0
+        return mod, cp.returncode, cp.stdout + cp.stderr, time.monotonic() - t0
+
+    parallel = [m for m in modules if m not in serial]
+    phase = {m: "parallel" for m in parallel}
+    results: list = []
+    with ThreadPoolExecutor(max_workers=max(1, os.cpu_count() or 1)) as pool:
+        workers = pool._max_workers          # the figure the summary prints IS the pool's size
+        results.extend(pool.map(run, parallel))
+    for m in sorted(serial):                     # AFTER the parallel phase, never beside it
+        results.append(run(m)); phase[m] = "serial"
+    failed = []
+    for mod, rc, out, _secs in results:
+        if rc == 0:
+            continue
+        lines = out.splitlines()
+        idx = next((i for i, ln in enumerate(lines) if ln.startswith(("FAIL:", "ERROR:"))), None)
+        if idx is None:
+            first = next((ln for ln in reversed(lines) if ln.strip()), "exited non-zero with no output")
+        else:
+            # the header names the test; the exception line says WHY - `test_critic`'s own
+            # defect is an AttributeError the header never mentions
+            exc = next((ln for ln in lines[idx + 1:]
+                        if re.match(r"^[A-Za-z_][\w.]*(Error|Exception|Exit|Warning)\b", ln)), None)
+            first = lines[idx] + (f" - {exc.strip()}" if exc else "")
+        failed.append(f"{mod} [{phase[mod]}]: {first.strip()}")
+    summary = (f"{len(modules)} module(s) alone under unittest from {root}: {len(parallel)} in the "
+               f"parallel phase on {workers} workers, {len(serial)} in the serial phase after it"
+               f" ({', '.join(sorted(serial))})" if serial else
+               f"{len(modules)} module(s) alone under unittest from {root}: {len(parallel)} in the "
+               f"parallel phase on {workers} workers, none marked serial_only")
+    if failed:
+        return {"count": len(failed), "blocking": True,
+                "detail": f"{len(failed)} module(s) red when run alone - {'; '.join(failed)} - {summary}"}
+    return {"count": 0, "blocking": True, "detail": summary}
 
 
 def _evidence_drift(root: str) -> dict:
@@ -2330,6 +2444,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         # unusable for anything narrower than the whole gate.
         registry["release-rehearsal"] = _release_rehearsal
         registry["revert-check"] = _revert_check
+        registry["module-alone"] = _module_alone
         # REGISTERED, not BOUND. Binding it refused every `--boundary push --only <lane>` run,
         # which the base ref supported for every other lane - a scoped boundary run is a caller
         # deliberately narrowing, and the refusal named mode flags they had not passed. The same

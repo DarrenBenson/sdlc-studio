@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# SDLC Studio pre-push gate: the two boundary lanes (release-rehearsal, revert-check) bind here.
+# SDLC Studio pre-push gate: the boundary lanes (release-rehearsal, revert-check, module-alone) bind here.
 #
 # git hands this hook one line per ref on stdin - `<local ref> <local sha> <remote ref> <remote
 # sha>`. A tag ref is the RELEASE boundary, a branch ref is the PUSH boundary, and a deletion
-# (all-zero local sha) runs no gate at all. `release` binds the same two lanes as `push`, so a
+# (all-zero local sha) runs no gate at all. `release` binds the same lanes as `push`, so a
 # push carrying both a branch and a tag runs the gate ONCE, at `release`. One literal invocation
 # per boundary below, so `tools/boundary_roster.py` can read which boundaries this hook binds
 # without resolving a variable.
 #
-# The cost is announced BEFORE it is paid: the boundary gate runs the full suite plus the two
-# lanes, minutes rather than seconds, and a guard whose cost arrives unannounced is one that
+# The cost is announced BEFORE it is paid: the boundary gate runs the full suite plus the
+# boundary lanes, minutes rather than seconds, and a guard whose cost arrives unannounced is one that
 # gets killed and then bypassed (D0180 records the ruling to pay it on every push). The bypass
 # is git's own, `git push --no-verify`, and every GATE refusal this hook makes names it. The
 # red-CI refusal below (BG0642) deliberately does not: its route is the acknowledgement by run id.
@@ -101,9 +101,9 @@ if [ -z "$cost" ]; then
   # floor is the full suite's own recorded figure, and a literal when even that is absent.
   suite="$(python3 tools/gate_timing.py estimate --suite skill-tests --warn-seconds 0 2>/dev/null || true)"
   if [ -n "$suite" ]; then
-    cost="boundary-$boundary: no run recorded yet - expect at least the full suite (${suite#skill-tests: expect }) plus release-rehearsal and revert-check"
+    cost="boundary-$boundary: no run recorded yet - expect at least the full suite (${suite#skill-tests: expect }) plus release-rehearsal, revert-check and module-alone"
   else
-    cost="boundary-$boundary: no run recorded yet - expect about ten minutes (the full suite plus release-rehearsal and revert-check)"
+    cost="boundary-$boundary: no run recorded yet - expect about ten minutes (the full suite plus release-rehearsal, revert-check and module-alone)"
   fi
 fi
 echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2

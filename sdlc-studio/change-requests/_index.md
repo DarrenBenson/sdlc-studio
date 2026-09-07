@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-04
+**Last Updated:** 2026-09-07
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 10 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 35 |
 | Complete | 494 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 23 |
 | Blocked | 0 |
-| **Total** | **563** |
+| **Total** | **568** |
 
 ## All Changes
 
@@ -114,6 +114,11 @@
 | [CR-0561](CR0561-the-declared-python-3-10-floor-is-stated.md) | the declared Python 3.10 floor is stated in six shipped places and guarded nowhere, and one shipped script already violates it | In Progress | High | enhancement | 2026-08-26 | EP0246 |
 | [CR-0562](CR0562-no-shipped-command-ticks-a-delivered-unit-s.md) | no shipped command ticks a delivered unit's acceptance criteria, so the close's tick-verification row can only be satisfied by hand-editing the artefact | Proposed | Medium | enhancement | 2026-08-28 | -- |
 | [CR-0563](CR0563-verify-ac-run-prints-the-near-miss-hint.md) | verify_ac run prints the near-miss hint when a collected file's node is absent, so the RED first run of a mistyped selector names what was meant | Proposed | Medium | Improvement | 2026-09-04 | -- |
+| [CR-0564](CR0564-verify-ac-run-coverage-refuses-a-unit-whose.md) | verify_ac run --coverage refuses a unit whose new lines its own verifiers never execute | Proposed | High | Improvement | 2026-09-07 | -- |
+| [CR-0565](CR0565-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook cannot reach Fixed without a recorded self-run on the repository | Proposed | High | Improvement | 2026-09-07 | -- |
+| [CR-0566](CR0566-claim-drift-flags-a-numeric-claim-in-a.md) | claim-drift flags a numeric claim in a diff's prose that no measurement backs | Proposed | Medium | Improvement | 2026-09-07 | -- |
+| [CR-0567](CR0567-the-done-gate-demands-a-generated-mutation-run.md) | The done-gate demands a generated mutation run over the unit's Affects beside its self-reported rows | Proposed | Medium | Improvement | 2026-09-07 | -- |
+| [CR-0568](CR0568-mutation-py-register-replaces-a-live-row-with.md) | mutation.py register replaces a live row with the same unit, criterion, row, target and hash instead of appending a duplicate | Proposed | Medium | Improvement | 2026-09-07 | -- |
 
 ## Archived Releases
 

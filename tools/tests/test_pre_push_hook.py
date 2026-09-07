@@ -294,7 +294,7 @@ class ThePushBoundaryHasAHookTests(unittest.TestCase):
             r = bare.push(rc=1)
             out = r.stderr
             self.assertIn("about ten minutes", out, "with no history the floor literal was not printed:\n" + out)
-            self.assertIn("release-rehearsal and revert-check", out, "the literal does not name the two lanes:\n" + out)
+            self.assertIn("release-rehearsal, revert-check and module-alone", out, "the literal does not name the three lanes:\n" + out)
             self.assertNotIn("at least the full suite", out, "a suite figure was printed with no suite series:\n" + out)
             self.assertLess(out.index("about ten minutes"), out.index("release-rehearsal STUBBED"),
                             "the literal did not precede the gate's own output:\n" + out)

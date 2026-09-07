@@ -209,6 +209,28 @@ class GateLaneTests(unittest.TestCase):
         self.assertIn("BLOCKING", para, "the roster names the lane but not that it BLOCKS")
         self.assertIn("mutation", para.lower(), "the roster does not say what the lane guards")
 
+    def test_the_lane_roster_names_module_alone_as_boundary_bound(self) -> None:
+        """BG0649. A third boundary-bound lane, invisible to the hook-derived sweep for the same
+        reason as the two above (LL0013). MUTANTS: leave the roster without the lane; name it
+        without saying it binds at the boundaries only."""
+        repo = Path(__file__).resolve().parents[2]
+        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("module-alone", agents, "AGENTS.md's roster does not name the module-alone lane")
+        para = next((b for b in agents.split("\n\n") if "`module-alone`" in b), "")
+        self.assertTrue(para, "no paragraph in AGENTS.md names `module-alone`")
+        self.assertIn("push and release boundaries only", para,
+                      "the roster does not say the lane binds at BOTH boundaries and nowhere else")
+        self.assertIn("never per commit", para, "the roster does not say the lane is off the per-commit path")
+        # the COST, not only the decision it is stated beside: a false figure shipped once
+        # because this pin read "D0180" alone, and deleting the whole cost sentence passed it
+        # the figure is stated IN MINUTES immediately, so a false "about 45 s" cannot borrow
+        # the word from a later clause of the same sentence
+        self.assertRegex(para, r"(?s)Its cost is the lane's wall clock, (?:\w+ to \w+|about \w+)\s+minutes.{0,200}D0180",
+                         "the roster does not state the lane's wall-clock cost in minutes beside D0180's")
+        self.assertIn("test_gate", para, "the roster does not name the slowest module the cost is made of")
+        gate = (repo / ".claude" / "skills" / "sdlc-studio" / "scripts" / "gate.py").read_text(encoding="utf-8")
+        self.assertIn('"module-alone"', gate, "AGENTS.md names a lane the gate does not register")
+
     def test_the_lane_roster_names_the_release_rehearsal(self) -> None:
         """US0666: a lane bound at a BOUNDARY is invisible to the hook-derived sweep above, which
         reads the pre-commit hook - so the one lane that deliberately does not run per commit is

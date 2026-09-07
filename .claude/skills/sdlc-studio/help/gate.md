@@ -83,6 +83,14 @@ reach.
 | A **release** | everything | a tag is a claim other people rely on |
 | A sprint **close** | everything | the close is the moment the batch is declared done |
 
+Three lanes bind at the push and release boundaries and nowhere else, because each costs
+minutes: `release-rehearsal` drives a greenfield init and a v4 upgrade end to end;
+`revert-check` (advisory) re-runs each batch unit's verifiers with its change reverted;
+`module-alone` runs every skill test module alone under `unittest` in a fresh interpreter from
+the repository root, in parallel, with the `serial_only` partition after - the run that sees a
+module passing only because a sibling imported a name first. A hung module is named after
+`SDLC_MODULE_ALONE_TIMEOUT` seconds (1800 by default).
+
 ```bash
 python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision                  # what a commit owes
 python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision --boundary push  # what a push owes
