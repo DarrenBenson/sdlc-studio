@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0400: When the build departs from the plan-reviewed design, amend the criterion before the brief renders, or the seat judges the code against a...**
+- **L-0399: A structural pin beats a string: the worker count printed from the pool survived; the sleepers' own overlap did not.**
+- **L-0398: Mutants come from the delivered code's branches, not only from the plan table: every survivor a seat found sat on a branch the unit's own...**
+- **L-0397: A number in prose needs the command that produced it beside it; a figure copied from a budget constant or an old bug report shipped twice...**
+- **L-0396: Fixture-green is not real-target-green: a gate lane, a hook or a command must be run where the hook runs it, on this repository, before a...**
 - **L-0395: The disclosure page is derived from statuses: regenerate it once, after the last transition, or every commit in between is refused by its...**
 - **L-0394: A test fixture that inherits the caller's environment is a defect even when green: an unscrubbed enable-hooks fixture wrote...**
 - **L-0393: Register mutation evidence after the LAST edit to a target, and re-check every earlier unit whose target a later unit touches: BG0641's...**
