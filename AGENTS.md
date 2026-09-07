@@ -68,7 +68,10 @@ prints each lane's rule and fix on failure, so this is the roster, not the manua
 `lint-style.sh`, `check_links.py`, `check_budgets.py`, `check_versions.py`,
 `check_spec_claims.py`, `check_script_tests.py`, `check_neutrality.py`,
 `check_action_pins.sh`, `validate_skill.py`, `verify_ac.py`, `readiness.py`, `runbook.py`,
-`validate.py` (the warning ratchet), plus `gate.py`'s
+`validate.py` (the warning ratchet), `stamps-staged` (`verify_ac.py stamps --staged`, which refuses a
+commit that stages a rename or deletion of a test node a stamped `Verify:` selector names, judging
+the staged blobs by AST - the write-time guard cannot see a rename, and the scheduled corpus lane that
+can was red three weeks unread, BG0653), plus `gate.py`'s
 own block (conformance, reconcile, validate, integrity, duplicate-id, docs,
 derived-depth, evidence-drift) and markdownlint.
 One of those, `evidence-drift`, is BLOCKING and guards the mutation ledger: a commit whose staged

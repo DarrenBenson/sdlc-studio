@@ -40,7 +40,7 @@ Strip a leading `ACn` token in `is_derived_criterion` before matching, in the sa
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DerivedDetectorSeesItsOwnWriterTests::test_sprint_plan_refuses_the_numbered_scaffold
   - **Verified:** yes (2026-08-18)
 - [x] **AC6** Given the corpus, when the census is recomputed with the fix, then the four bugs two seats measured independently (BG0537, BG0547, BG0578, BG0581) read `derived-only`, the total stays under a ceiling, and NO story does. The count is bounded rather than exact because filing a bug with tool-derived criteria legitimately adds one and grooming it takes it away again: BG0595, filed in this same line of work, made the census read 18 until it was groomed, and 17 after. A review measured the 18 and was right at the moment it looked. That is exactly why this criterion asserts a CEILING and the four named ids rather than a single number - the population moves whenever anybody files or grooms, which is the same property that made the corpus red-criteria figure move five times - two seats measured this independently, and any other number means the fix over- or under-reaches.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DerivedDetectorSeesItsOwnWriterTests::test_the_corpus_census_moves_by_exactly_four
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DerivedDetectorSeesItsOwnWriterTests::test_the_corpus_census_stays_within_its_measured_bounds
   - **Verified:** yes (2026-08-18)
 
 ## Test Plan
@@ -60,3 +60,4 @@ Strip a leading `ACn` token in `is_derived_criterion` before matching, in the sa
 | --- | --- | --- |
 | 2026-08-16 | sdlc-studio | Filed |
 | 2026-08-18 | sdlc-studio | Round 1 REJECT repaired. The code fix was found correct; the EVIDENCE was not. AC3's control was case-mismatched and its mutant survived 6603 tests; AC6's test resolved the repo root to `.claude/` so it measured nothing, and asserted no count; AC6's declared mutant was inert; AC5 named `plan` and ran `breakdown`, asserting no refusal. Boundary cases (`AC power`, `ACL check`, `ACCEPT:`) and a positive control added |
+| 2026-09-07 | Claude Fable 5.1 | AC6's selector repointed at the node 245513c9 renamed; the stamp had been dead since 19 August and the scheduled corpus lane red (BG0653) |

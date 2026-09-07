@@ -1100,3 +1100,21 @@ class DoctrineTests(unittest.TestCase):
                       "the lesson does not cite the doctrine passage")
         self.assertIn("transition.py", lessons,
                       "the lesson does not name the verb that enforces it")
+
+
+class StampsStagedRosterTests(unittest.TestCase):
+    """BG0653 AC4: the roster and the hook name the `stamps-staged` lane by LITERAL. The derived
+    sweep in `GateLaneTests` captures a `$skill`-quoted lane with its trailing quote and skips
+    it (a Low under CR0511), so this pin does not rely on it."""
+
+    def test_the_lane_roster_names_stamps_staged(self) -> None:
+        """MUTANT: remove `stamps-staged` from AGENTS.md's pre-commit lane roster paragraph."""
+        repo = Path(__file__).resolve().parents[2]
+        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
+        start = agents.index("The pre-commit lanes, recorded here")
+        paragraph = agents[start:start + 2500]
+        self.assertIn("`stamps-staged`", paragraph, "the roster must name the lane")
+        self.assertIn("stamps --staged", paragraph, "and the command that runs it")
+        hook = (repo / ".githooks" / "pre-commit").read_text(encoding="utf-8")
+        self.assertIn('run "stamps-staged"', hook, "the hook must wire the lane by that name")
+        self.assertIn("stamps --staged", hook)

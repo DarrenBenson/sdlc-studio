@@ -250,6 +250,11 @@ run "verify-ratchet" \
   "split the selector so each criterion discriminates, or record the group with a reason in sdlc-studio/.verify-lint-baseline.json - the tolerated set may only shrink" \
   -- python3 .claude/skills/sdlc-studio/scripts/verify_ac.py lint --ratchet --bugs
 
+run "stamps-staged" \
+  "a staged test rename or deletion does not orphan a stamped Verify selector" \
+  "repoint the selector named above at the renamed node, or restore the test - the write-time guard cannot see a rename, and the scheduled corpus lane that can was red three weeks unread (BG0653)" \
+  -- python3 "$skill/verify_ac.py" stamps --staged
+
 run "warning-ratchet" \
   "no NEW Affects/Verify warning instance: the tolerated set may only shrink" \
   "repair the instance named above, or record it with a reason in sdlc-studio/.validate-warning-baseline.json (validate.py warning-ratchet --stamp --reason ...) - a repaired entry is reported stale and removable, never re-spendable" \

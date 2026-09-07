@@ -56,7 +56,8 @@ _GIT_ENV_VARS = (
 #: saying so here. A derived version of this would assert only that the hook agrees with
 #: itself.
 EXPECTED_LANES = (
-    "style", "links", "skill-spec", "versions", "verify-ratchet", "warning-ratchet", "runbook",
+    "style", "links", "skill-spec", "versions", "verify-ratchet",
+    "stamps-staged", "warning-ratchet", "runbook",
     "lens-signatures",
     "spec-claims",
     "script-tests", "budgets",
@@ -687,6 +688,52 @@ class WarningRatchetLaneTests(unittest.TestCase):
                          f"the ratchet lane refused a recorded instance:\n{text}")
 
 
+class StampsStagedLaneTests(_GateFixture):
+    """The `stamps-staged` lane, driven through the shipped hook pair by subprocess: a commit
+    that stages a rename orphaning a stamped `Verify:` selector is refused, and the refusal
+    names the lane and the selector. Hosted on this fixture because it already carries the
+    REAL `verify_ac.py` (through the module's template copy of the skill scripts, a copy and
+    never the source tree) and derives every other stub from the hook.
+    """
+
+    TEST = "tools/tests/test_probe.py"
+    KEPT = "class Probe:\n    def test_it(self):\n        assert True\n"
+
+    def _seed(self) -> None:
+        """A stamped criterion naming a test node, committed past the hooks as the baseline."""
+        (self.root / self.TEST).write_text(self.KEPT, encoding="utf-8")
+        story = self.root / "sdlc-studio" / "stories" / "US9001-stamped.md"
+        story.write_text(
+            "# US9001: a stamped criterion\n\n> **Status:** Done\n"
+            f"> **Affects:** {self.TEST}\n\n"
+            "## Acceptance Criteria\n\n### AC1: it holds\n\n"
+            f"- **Verify:** pytest {self.TEST}::Probe::test_it\n- **Verified:** yes (2026-07-20)\n",
+            encoding="utf-8")
+        _git(self.root, "add", "-A")
+        _git(self.root, "commit", "-q", "--no-verify", "-m", "fixture: stamped selector")
+
+    def test_the_hook_refuses_an_orphaning_rename_naming_the_lane(self) -> None:
+        """MUTANT: delete the `run "stamps-staged"` block from `.githooks/pre-commit` - the
+        lane is unwired and the hook accepts the orphaning commit; a library test of
+        `stamps --staged` stays green under it. The assertion is the `FAIL stamps-staged` line
+        beside the selector, because the pass path prints `ok stamps-staged`."""
+        self._seed()
+        (self.root / self.TEST).write_text(self.KEPT.replace("def test_it(", "def test_moved("),
+                                           encoding="utf-8")
+        _git(self.root, "add", "-A")
+        rc, out, _ = self._commit("test: rename the probe")
+        self.assertNotEqual(rc, 0, out)
+        fail_lines = [ln for ln in out.splitlines() if "FAIL" in ln and "stamps-staged" in ln]
+        self.assertTrue(fail_lines, f"no `FAIL stamps-staged` line:\n{out}")
+        self.assertIn(f"{self.TEST}::Probe::test_it", out, "the selector must be named")
+        self.assertNotIn("test: rename the probe", self._subjects(), "the commit must not land")
+        # The paired control: a staged edit that keeps the node passes the lane.
+        (self.root / self.TEST).write_text(self.KEPT.replace("assert True", "assert 1 == 1"),
+                                           encoding="utf-8")
+        _git(self.root, "add", "-A")
+        rc, out, _ = self._commit("test: keep the probe")
+        self.assertEqual(rc, 0, out)
+        self.assertFalse([ln for ln in out.splitlines() if "FAIL" in ln and "stamps-staged" in ln], out)
 
 if __name__ == "__main__":
     unittest.main()

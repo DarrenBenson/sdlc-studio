@@ -6315,5 +6315,168 @@ class CriteriaSectionTests(unittest.TestCase):
         self.assertNotIn("BG0004-variant.md AC1", out, "the variant heading was not read as the section")
 
 
+class StagedStampsTests(unittest.TestCase):
+    """BG0653: a staged rename or deletion of a test node a stamped selector names is refused
+    at commit time, judged against the INDEX blob by AST - never HEAD, never the working tree,
+    never pytest collection."""
+
+    TEST = "tools/tests/test_probe.py"
+    KEPT = "def test_top():\n    assert True\n\n\nclass Probe:\n    def test_it(self):\n        assert True\n\n    def test_other(self):\n        assert True\n"
+
+    def _repo(self, tmp: Path, *, selector: str) -> Path:
+        root = tmp / "r"
+        (root / "tools" / "tests").mkdir(parents=True)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / self.TEST).write_text(self.KEPT, encoding="utf-8")
+        (root / "sdlc-studio" / "stories" / "US9001-stamped.md").write_text(
+            "# US9001: a stamped criterion\n\n> **Status:** Done\n\n"
+            "## Acceptance Criteria\n\n### AC1: it holds\n\n"
+            f"- **Verify:** {selector}\n- **Verified:** yes (2026-07-20)\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "BG9002-stamped.md").write_text(
+            "# BG9002: a stamped bug criterion\n\n> **Status:** Fixed\n\n"
+            "## Acceptance Criteria\n\n- [x] **AC2** Given it, when it, then it.\n"
+            f"  - **Verify:** pytest {self.TEST}::Probe::test_other\n"
+            "  - **Verified:** yes (2026-07-20)\n", encoding="utf-8")
+        gitutil.git(["init", "-q"], root)
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-q", "--no-verify", "-m", "fixture"], root)
+        return root
+
+    def _stamps(self, root: Path) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = verify_ac.main(["stamps", "--staged", "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _stage(self, root: Path, rel: str, body: str) -> None:
+        (root / rel).write_text(body, encoding="utf-8")
+        gitutil.git(["add", rel], root)
+
+    # -- AC1 -------------------------------------------------------------------------
+    def test_a_staged_rename_that_orphans_a_stamped_selector_is_refused_and_a_kept_node_passes(self) -> None:
+        """MUTANTS: resolve against HEAD's bytes (the staged rename reads live); resolve against
+        the working tree (the index-unchanged control reads dead); drop the `ast.ClassDef`
+        descent (the kept METHOD reads dead, the renamed one live).
+
+        Three-state fixture: HEAD holds `Probe::test_it`, the INDEX holds it renamed, and the
+        working tree holds a third body, so only a reader of the index blob answers right."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), selector=f"pytest {self.TEST}::Probe::test_it")
+            self._stage(root, self.TEST, self.KEPT.replace("def test_it(", "def test_moved("))
+            (root / self.TEST).write_text(self.KEPT, encoding="utf-8")   # working tree: original again
+            rc, out, err = self._stamps(root)
+            self.assertEqual(rc, 1, out + err)
+            self.assertIn("US9001 AC1", out, "the artefact and criterion must be named")
+            self.assertIn(f"{self.TEST}::Probe::test_it", out, "the selector must be named")
+            self.assertNotIn("BG9002", out, "the kept method `test_other` must still resolve")
+            self.assertIn("orphaned by this commit", err)
+        with tempfile.TemporaryDirectory() as d:
+            # Control one: a staged edit that keeps the METHOD node passes - a resolver walking
+            # module-level defs alone reads it as dead.
+            root = self._repo(Path(d), selector=f"pytest {self.TEST}::Probe::test_it")
+            self._stage(root, self.TEST, self.KEPT.replace("assert True", "assert 1 == 1"))
+            rc, out, err = self._stamps(root)
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("every one still resolves", out)
+        with tempfile.TemporaryDirectory() as d:
+            # Control two: the rename exists ONLY in the working tree; the index still holds the
+            # node, so the commit carries it and the lane passes.
+            root = self._repo(Path(d), selector=f"pytest {self.TEST}::Probe::test_it")
+            self._stage(root, self.TEST, self.KEPT.replace("assert True", "assert 2 == 2"))
+            (root / self.TEST).write_text(self.KEPT.replace("def test_it(", "def test_moved("),
+                                          encoding="utf-8")
+            rc, out, err = self._stamps(root)
+            self.assertEqual(rc, 0, out + err)
+        with tempfile.TemporaryDirectory() as d:
+            # The other two selector shapes: a module-level function, and a bare path.
+            root = self._repo(Path(d), selector=f"pytest {self.TEST}::test_top")
+            self._stage(root, self.TEST, self.KEPT.replace("def test_top(", "def test_apex("))
+            rc, out, _ = self._stamps(root)
+            self.assertEqual(rc, 1, out)
+            self.assertIn("US9001 AC1", out)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), selector=f"pytest {self.TEST}")
+            self._stage(root, self.TEST, self.KEPT.replace("def test_top(", "def test_apex("))
+            rc, out, _ = self._stamps(root)
+            self.assertEqual(rc, 0, out)   # the file is still in the index
+
+    # -- AC2 -------------------------------------------------------------------------
+    def test_a_commit_staging_no_test_file_is_answered_without_a_sweep(self) -> None:
+        """MUTANT: remove the short-circuit, so `--staged` walks every story and bug body when no
+        test file is staged. The fixture stages a REAL non-test file, so a short-circuit on an
+        empty index would pass for the wrong reason."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), selector=f"pytest {self.TEST}::Probe::test_it")
+            self._stage(root, "sdlc-studio/notes.md", "a markdown artefact\n")
+            reads = []
+            walks = []
+            real_read = verify_ac.sdlc_md.read_text_safe
+            real_walk = verify_ac.walk_stories
+
+            def spy_read(path, default=""):
+                reads.append(str(path)); return real_read(path, default)
+
+            def spy_walk(*a, **k):
+                walks.append(a); return real_walk(*a, **k)
+            with unittest.mock.patch.object(verify_ac.sdlc_md, "read_text_safe", spy_read), \
+                 unittest.mock.patch.object(verify_ac, "walk_stories", spy_walk):
+                rc, out, err = self._stamps(root)
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("no test file staged", out)
+            corpus = [r for r in reads if "sdlc-studio/stories" in r or "sdlc-studio/bugs" in r]
+            self.assertEqual(corpus, [], "no story or bug body may be read")
+            self.assertEqual(walks, [], "the corpus must not be walked")
+
+    # -- AC5 -------------------------------------------------------------------------
+    @unittest.skipUnless((Path(__file__).resolve().parents[5] / "sdlc-studio" / "bugs").is_dir(),
+                         "corpus-scoped: needs this repository's bug corpus")
+    def test_bg0585_ac6_rests_on_a_live_selector(self) -> None:
+        """MUTANT: revert BG0585 AC6's selector to `test_the_corpus_census_moves_by_exactly_four`,
+        the node 245513c9 renamed; `stamps --story` on that file must report one dead stamp."""
+        repo = Path(__file__).resolve().parents[5]
+        matches = sorted((repo / "sdlc-studio" / "bugs").glob("BG0585-*.md"))
+        self.assertEqual(len(matches), 1, matches)
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = verify_ac.main(["stamps", "--story", str(matches[0]), "--root", str(repo)])
+        self.assertEqual(rc, 0, out.getvalue() + err.getvalue())
+        self.assertIn("every stamped verifier still resolves", out.getvalue())
+
+    # -- AC6 -------------------------------------------------------------------------
+    def test_a_failed_git_call_is_refused_not_read_as_nothing_staged(self) -> None:
+        """MUTANTS: treat a failed `git diff --cached` as an empty staged set; treat a blob that
+        fails to parse as resolved."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "nogit"
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            rc, out, err = self._stamps(root)
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn("git could not answer", err)
+            self.assertNotIn("no test file staged", out)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), selector=f"pytest {self.TEST}::Probe::test_it")
+            self._stage(root, self.TEST, "def test_it(:\n    broken\n")
+            rc, out, err = self._stamps(root)
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn(self.TEST, err)
+            self.assertIn("does not parse", err)
+            self.assertNotIn("still resolves", out)
+
+    # -- AC7 -------------------------------------------------------------------------
+    def test_a_staged_deletion_of_a_named_file_is_refused_naming_the_artefact_and_criterion(self) -> None:
+        """MUTANT: add a `continue` for a `D` entry of `git diff --cached --name-status`, so the
+        deletion is passed over silently. The deletion is classified BEFORE any `git show`, so its
+        wording is `deleted`, never AC6's git refusal."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), selector=f"pytest {self.TEST}::Probe::test_it")
+            gitutil.git(["rm", "-q", self.TEST], root)
+            rc, out, err = self._stamps(root)
+            self.assertEqual(rc, 1, out + err)
+            self.assertIn("US9001 AC1", out)
+            self.assertIn("BG9002 AC2", out)
+            self.assertIn("deleted in the index", out)
+            self.assertNotIn("git could not answer", err)
+
 if __name__ == "__main__":
     unittest.main()

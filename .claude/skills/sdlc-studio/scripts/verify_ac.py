@@ -35,6 +35,7 @@ Trust boundary (verifiers run against possibly-untrusted content):
 from __future__ import annotations
 
 import argparse
+import ast
 import glob
 import json
 import os
@@ -3400,6 +3401,143 @@ def _stamp_dup_baseline(repo_root, paths) -> int:
     return 0
 
 
+class StagedGitError(RuntimeError):
+    """`stamps --staged` could not get an answer it can judge: git failed, or a staged blob
+    does not parse. Refused, never read as nothing staged or as resolved."""
+
+
+#: A Python test file, by name: the shapes this repository's selectors point at. `conftest.py`
+#: is deliberately outside it - a selector never names one.
+_TEST_FILE_RE = re.compile(r"(^|/)test[^/]*\.py$")
+
+
+def _staged_test_files(root) -> dict:
+    """`{relpath: status}` for every staged Python test file, read from the INDEX.
+
+    A rename (`R`) contributes its OLD path as `D` and its new path as `A`, because the old name
+    is what a stamped selector still points at. Classified here, BEFORE any `git show`, so a
+    deletion is judged as a deletion rather than as a blob git cannot show.
+    """
+    try:
+        cp = subprocess.run(["git", "diff", "--cached", "--name-status", "-M"], cwd=str(root),
+                            capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise StagedGitError(f"git could not answer `git diff --cached --name-status`: {exc}") from exc
+    if cp.returncode != 0:
+        raise StagedGitError("git could not answer `git diff --cached --name-status` "
+                             f"(rc {cp.returncode}): {cp.stderr.strip() or 'no output'}")
+    out: dict = {}
+    for line in cp.stdout.splitlines():
+        parts = line.split("\t")
+        if not parts or not parts[0]:
+            continue
+        status = parts[0][0]
+        if status == "R" and len(parts) >= 3:
+            old, new = parts[1], parts[2]
+            if _TEST_FILE_RE.search(old):
+                out[old] = "D"
+            if _TEST_FILE_RE.search(new):
+                out[new] = "A"
+        elif len(parts) >= 2 and _TEST_FILE_RE.search(parts[-1]):
+            out[parts[-1]] = status
+    return out
+
+
+def _index_blob(root, rel: str) -> str:
+    """The STAGED bytes of `rel` - `git show :<path>` - never HEAD's and never the working tree's."""
+    try:
+        cp = subprocess.run(["git", "show", f":{rel}"], cwd=str(root),
+                            capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise StagedGitError(f"git could not answer `git show :{rel}`: {exc}") from exc
+    if cp.returncode != 0:
+        raise StagedGitError(f"git could not answer `git show :{rel}` (rc {cp.returncode}): "
+                             f"{cp.stderr.strip() or 'no output'}")
+    return cp.stdout
+
+
+def _ast_nodes(text: str):
+    """Every selector-addressable node in a test module's source, by AST: `name` for a
+    module-level function or class, `Class::method` for a method. None when the text does not
+    parse. Parsing rather than collecting, because collection needs the module's imports and a
+    blob at a flat path has none of them."""
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+    names: set = set()
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            names.add(node.name)
+        elif isinstance(node, ast.ClassDef):
+            names.add(node.name)
+            for sub in node.body:
+                if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    names.add(f"{node.name}::{sub.name}")
+    return names
+
+
+def staged_stamps(root) -> tuple:
+    """`(exit code, output lines)` for `stamps --staged`: every stamped criterion whose selector
+    names a STAGED test file, judged against the index blob.
+
+    Nothing is read from the corpus until a staged test file is known to exist, so a commit that
+    stages no test costs no sweep. With one staged, each stamped selector naming it is
+    resolved by AST over the staged bytes: a bare path resolves while the file is in the index,
+    `path::name` while a module-level function or class of that name is, `path::Class::test`
+    while the method is inside that class. A staged deletion makes every selector naming the
+    file dead, named as such.
+    """
+    root = Path(root)
+    statuses = _staged_test_files(root)
+    if not statuses:
+        return 0, ["verify-stamps: staged: no test file staged - 0 stamped selector(s) checked, "
+                   "no artefact read"]
+    nodes: dict = {}
+    for rel, status in statuses.items():
+        if status == "D":
+            continue
+        parsed = _ast_nodes(_index_blob(root, rel))
+        if parsed is None:
+            raise StagedGitError(f"the staged blob of {rel} does not parse as Python, so no "
+                                 "selector naming it can be judged - fix the file before "
+                                 "committing it")
+        nodes[rel] = parsed
+    paths = list(walk_stories(under_root(root, "sdlc-studio/stories")))
+    bugs = under_root(root, "sdlc-studio/bugs")
+    if bugs.is_dir():
+        paths += sorted(p for p in bugs.glob("*.md") if not p.name.startswith("_"))
+    lines: list = []
+    dead = checked = 0
+    for p in paths:
+        text = sdlc_md.read_text_safe(p)
+        rec = sdlc_md.extract_record_id(p.stem) or p.stem
+        for block in criteria_blocks(text):
+            if (block.verified_state or "").strip().lower() != "yes" or not block.verifier:
+                continue
+            target, test_file = _selector_target(block.verifier, root)
+            if test_file is None or test_file not in statuses:
+                continue
+            checked += 1
+            if statuses[test_file] == "D":
+                dead += 1
+                lines.append(f"{rec} {block.ac_id}: stamped verified, but its test file "
+                             f"{test_file} is deleted in the index\n    {block.verifier}")
+                continue
+            if "::" in target and target.split("::", 1)[1] not in nodes[test_file]:
+                dead += 1
+                lines.append(f"{rec} {block.ac_id}: stamped verified, but its verifier selects "
+                             f"nothing in the staged {test_file}\n    {block.verifier}")
+    if dead:
+        lines.append(f"verify-stamps: staged: {dead} stamped selector(s) orphaned by this commit "
+                     f"over {len(statuses)} staged test file(s) - repoint each at the renamed "
+                     "node, or restore the test")
+        return 1, lines
+    lines.append(f"verify-stamps: staged: {checked} stamped selector(s) over {len(statuses)} "
+                 "staged test file(s), every one still resolves")
+    return 0, lines
+
+
 def cmd_stamps(args: argparse.Namespace) -> int:
     """Report stamped-green ACs whose verifier no longer selects anything.
 
@@ -3409,6 +3547,16 @@ def cmd_stamps(args: argparse.Namespace) -> int:
     Exits non-zero so it can gate rather than inform.
     """
     repo_root = resolve_root(args)
+    if getattr(args, "staged", False):
+        try:
+            rc, lines = staged_stamps(repo_root)
+        except StagedGitError as exc:
+            print(f"verify-stamps: staged: refused - {exc}", file=sys.stderr)
+            return 2
+        for line in lines[:-1]:
+            print(line)
+        print(lines[-1], file=sys.stderr if rc else sys.stdout)
+        return rc
     paths = ([Path(args.story)] if args.story
              else list(walk_stories(under_root(repo_root, args.dir))))
     if args.bugs:
@@ -4372,6 +4520,10 @@ def build_parser() -> argparse.ArgumentParser:
     st.add_argument("--story", "--file", dest="story", help="Single story or bug file")
     st.add_argument("--bugs", action="store_true",
                     help="also check sdlc-studio/bugs, which walk_stories does not reach")
+    st.add_argument("--staged", action="store_true",
+                    help="judge only the stamped selectors naming a STAGED test file, against "
+                         "the index blob by AST - the pre-commit lane; a commit staging no test "
+                         "file reads nothing")
     st.set_defaults(func=cmd_stamps)
 
     ln = sub.add_parser("lint", help="Advisory: flag non-DSL / mis-written Verify lines")
