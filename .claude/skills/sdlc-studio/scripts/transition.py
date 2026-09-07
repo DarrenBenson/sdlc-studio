@@ -117,6 +117,27 @@ def _story_has_executable_acs(text: str) -> bool:
     return False
 
 
+def _misplaced_criteria_block(text: str) -> str | None:
+    """Block reason when a criterion sits OUTSIDE `## Acceptance Criteria`, else None.
+
+    The runner never executes such a block and the brief never shows it, so it must not pass
+    this gate by being ignored either: it is refused by NAME, as `validate check` refuses it,
+    until it is moved into the section. Its own channel, not the evidence gate's error slot -
+    that slot means "the criteria could not be read", and a well-understood placement defect
+    told as broken tooling sends the actor to repair the wrong thing."""
+    try:
+        import verify_ac  # noqa: PLC0415 - sibling; imports only sdlc_md, no cycle
+        misplaced = verify_ac.misplaced_criteria(text)
+    except Exception:  # noqa: BLE001 - the evidence gate reports a broken parser on its own terms
+        return None
+    if not misplaced:
+        return None
+    named = ", ".join(f"{ac_id} under `## {heading or '(no heading)'}`" for ac_id, heading in misplaced)
+    return (f"criteria outside `## Acceptance Criteria`: {named} - the runner never executes them "
+            f"and the brief never shows them; move them into the section (`validate.py check` "
+            f"names them)")
+
+
 def _acs_missing_evidence(text: str) -> tuple[list[str], list[str], str | None]:
     """The ACs no deterministic verifier can speak for, split by WHY, and carrying no recorded
     passing human verdict: (declared manual, no `Verify:` line at all, error).
@@ -141,7 +162,7 @@ def _acs_missing_evidence(text: str) -> tuple[list[str], list[str], str | None]:
     """
     try:
         import verify_ac  # noqa: PLC0415 - sibling; imports only sdlc_md, no cycle
-        blocks = verify_ac.parse_story(text)
+        blocks = verify_ac.criteria_blocks(text)
     except Exception as exc:  # noqa: BLE001 - report it, never swallow it
         # Fail LOUD. The previous `return []` was indistinguishable from a clean bill of health,
         # so the one condition under which the gate was least able to judge - broken tooling or
@@ -284,6 +305,9 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     with no discount for saying nothing: waving it through made omission strictly cheaper than
     honest declaration, and it disagreed with the release lane, which refuses an unspecified AC -
     so a story closed Done all sprint failed only at tag time."""
+    placement = _misplaced_criteria_block(text)
+    if placement is not None:
+        return placement
     bare_manual, bare_unspecified, evidence_error = _acs_missing_evidence(text)
     if evidence_error is not None:
         # Broken tooling is not a passed gate. Refuse and name the failure, so the actor repairs
@@ -361,7 +385,7 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     if reported_acs is not None:
         try:
             import verify_ac  # sibling; imports only sdlc_md, no cycle
-            current_acs = len(verify_ac.parse_story(text))
+            current_acs = len(verify_ac.criteria_blocks(text))
         except Exception:  # noqa: BLE001 - a parse hiccup must not mask the gate; skip this leg
             current_acs = None
         if current_acs is not None and current_acs != reported_acs:

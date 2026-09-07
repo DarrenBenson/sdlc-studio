@@ -428,7 +428,12 @@ class NewTests(unittest.TestCase):
             r = artifact.new(repo, "story", "has an executable AC", {"epic": "EP0001"})
             p = Path(r["path"])
             # An executable AC with no verify-report entry: `transition -> Done` blocks on it.
-            p.write_text(p.read_text() + "\n### AC1: it works\n\n- **Verify:** shell true\n",
+            # Written INSIDE `## Acceptance Criteria` in place of the scaffold's placeholder: a
+            # criterion appended after Revision History is refused for its placement (BG0648),
+            # which is a different refusal from the one this test discriminates on.
+            text = p.read_text(encoding="utf-8")
+            a = text.index("### AC1: {{define}}"); b = text.index("## Revision History")
+            p.write_text(text[:a] + "### AC1: it works\n\n- **Verify:** shell true\n\n" + text[b:],
                          encoding="utf-8")
             before = p.read_text()
 

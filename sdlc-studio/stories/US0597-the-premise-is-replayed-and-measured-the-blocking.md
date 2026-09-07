@@ -15,6 +15,8 @@
 **I want** the premise it rests on measured rather than asserted
 **So that** a mechanism is not shipped on a claim nobody checked
 
+## Acceptance Criteria
+
 ### AC1: the lane names the prose-drift finding, and claims neither of the other two
 
 - **Given** the real commit `67fc683f` and the tree as it stood at that point, where `changelog.d/BG0413.md` asserted the collapse signal exits 2 while the hunk moved the code to 3
@@ -52,3 +54,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-01 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-07 | sdlc-studio | BG0648 (2026-09-07): the three criteria sat under User Story with no Acceptance Criteria section; the section heading is added above them, nothing else moves |

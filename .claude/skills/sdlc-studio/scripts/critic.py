@@ -3226,6 +3226,28 @@ def _withdrawn_block(root: Path, unit: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _criteria_from_whole_file(text: str) -> str:
+    """The criteria of an artefact with NO `## Acceptance Criteria` section, as the runner reads
+    them: every block, wherever it sits. The brief rendered nothing for such an artefact while
+    `verify_ac run` executed all of it, so the two readers disagreed by construction; the shape
+    itself is refused by `validate check`, and until it is moved the seat sees what runs."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import verify_ac  # noqa: PLC0415 - sibling; the parser is the runner's own
+    blocks = verify_ac.parse_story(text)
+    if not blocks:
+        return ""
+    lines = text.splitlines()
+    out = []
+    for i, b in enumerate(blocks):
+        end = blocks[i + 1].heading_line if i + 1 < len(blocks) else len(lines)
+        for j in range(b.heading_line + 1, end):
+            if lines[j].startswith("## "):
+                end = j
+                break
+        out.append("\n".join(lines[b.heading_line:end]).rstrip())
+    return "\n\n".join(out)
+
+
 def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full",
           phase: str = "delivery") -> str:
     """The seat-review prompt, assembled deterministically.
@@ -3245,9 +3267,10 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full",
     if not card.is_file():
         available = ", ".join(sorted(p.stem for p in seats_dir.glob("*.md"))) or "none"
         raise ValueError(f"no seat card at {card} - available seats: {available}")
-    m = re.search(r"^## Acceptance Criteria\n(.*?)(?=^## |\Z)", text, re.M | re.S)
-    acs = (m.group(1).strip() if m else "(no Acceptance Criteria section - judge the diff "
-                                        "against the unit's stated intent)")
+    # the SAME heading rule as the runner's `criteria_blocks`: case-insensitive, more words allowed
+    m = re.search(r"(?mi)^##\s+acceptance criteria\b[^\n]*\n(.*?)(?=^## |\Z)", text, re.S)
+    acs = (m.group(1).strip() if m else _criteria_from_whole_file(text)
+           or "(no Acceptance Criteria section - judge the diff against the unit's stated intent)")
     affects = sdlc_md.affects_files(text)
     scope = (", ".join(affects) if affects
              else "(no Affects declared - derive the scope from git status)")
@@ -3644,13 +3667,13 @@ def caller_resolves(index: dict, declaration: str) -> bool:
 
 
 def _ac_blocks_with_bodies(text: str) -> list[tuple[str, list[str]]]:
-    """`(AC id, body lines)` per criterion, using `verify_ac.parse_story` for the block
-    boundaries - the SAME parser the verifier executes, so a criterion shape the runner
+    """`(AC id, body lines)` per criterion, using `verify_ac.criteria_blocks` for the block
+    boundaries - the SAME reader the verifier executes, so a criterion shape the runner
     recognises is a criterion this check reads. A second AC parser here would let a unit be
     judged against criteria the runner cannot see."""
     import verify_ac  # noqa: PLC0415 - sibling; imported lazily so a record never pays for it
     lines = text.splitlines()
-    blocks = verify_ac.parse_story(text)
+    blocks = verify_ac.criteria_blocks(text)
     out: list[tuple[str, list[str]]] = []
     for i, b in enumerate(blocks):
         end = blocks[i + 1].heading_line if i + 1 < len(blocks) else len(lines)

@@ -5335,5 +5335,34 @@ class PlanReviewRepairGateTests(unittest.TestCase):
             self.assertIn("finding beta here", r.stdout + r.stderr)
 
 
+class MisplacedCriterionGateTests(unittest.TestCase):
+    """BG0648: the Done gate refuses a criterion outside `## Acceptance Criteria` by name. The
+    runner stopped executing such a block, so without this a story whose stray criterion has a
+    RED verifier went Done clean where it used to block on the red. MUTANT: drop the misplaced
+    refusal from `_acs_missing_evidence`, so the stray block is simply ignored."""
+
+    def test_a_story_with_a_misplaced_red_criterion_is_refused_by_name(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            sp = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            sp.write_text("# US0001: s\n\n> **Status:** Ready\n> **Epic:** [EP0001: e](../epics/EP0001-e.md)\n\n"
+                          "## Acceptance Criteria\n\n### AC1\n- **Verify:** shell echo ok\n\n"
+                          "## Notes\n\n### AC2\n- **Verify:** shell false\n\n### AC3\n- **Then** a bare one\n", encoding="utf-8")
+            with self.assertRaises(ValueError) as ctx:
+                _quiet(tr.transition, root, "US0001", "Done", dry_run=True)
+            self.assertIn("outside `## Acceptance Criteria`", str(ctx.exception))
+            self.assertIn("AC2 under `## Notes`", str(ctx.exception))
+            self.assertIn("AC3 under `## Notes`", str(ctx.exception), "a misplaced criterion with no Verify line went unnamed")
+            self.assertNotIn("could not run", str(ctx.exception), "a placement defect was told as broken tooling")
+            # the control: the same criterion INSIDE the section is refused for its red verifier,
+            # never for its placement
+            sp.write_text("# US0001: s\n\n> **Status:** Ready\n> **Epic:** [EP0001: e](../epics/EP0001-e.md)\n\n"
+                          "## Acceptance Criteria\n\n### AC1\n- **Verify:** shell echo ok\n\n"
+                          "### AC2\n- **Verify:** shell false\n", encoding="utf-8")
+            with self.assertRaises(ValueError) as ctx2:
+                _quiet(tr.transition, root, "US0001", "Done", dry_run=True)
+            self.assertNotIn("outside", str(ctx2.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

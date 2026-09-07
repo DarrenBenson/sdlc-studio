@@ -368,6 +368,29 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None,
                 f"under a `## Resolved Questions` heading, or file it as a follow-up artefact "
                 f"and cite the id")
 
+    if type_ in ("bug", "story"):
+        # A retro or handoff that happens to carry an `ACn` shape is out of scope here: the
+        # rule guards the two artefact types the runner verifies and the seat brief judges.
+        import verify_ac  # noqa: PLC0415 - deferred: validate must run without the runner
+        if verify_ac.has_criteria_section(text):
+            for ac_id, heading in verify_ac.misplaced_criteria(text):
+                key = f"{sdlc_md.norm_id(rec)}:{ac_id}" if rec else None
+                known = bool(key) and key in _read_baseline(repo_root, _CRITERIA_BASELINE)
+                add(SEVERITY_WARNING if known else SEVERITY_ERROR, "criterion-outside-section",
+                    f"{ac_id} sits under `## {heading or '(no heading)'}`, outside `## Acceptance "
+                    f"Criteria` - the runner skips it, the seat brief never shows it and the Done gate "
+                    f"refuses it; move it into the section"
+                    + (" [recorded in the criteria baseline as known debt]" if known else ""),
+                    baseline_key=key)
+        elif verify_ac.parse_story(text):
+            key = f"{sdlc_md.norm_id(rec)}:section" if rec else None
+            known = bool(key) and key in _read_baseline(repo_root, _CRITERIA_BASELINE)
+            add(SEVERITY_WARNING if known else SEVERITY_ERROR, "criterion-outside-section",
+                f"{len(verify_ac.parse_story(text))} criteria and no `## Acceptance Criteria` "
+                f"section - create the section and move them into it, so the brief and the "
+                f"runner read the same criteria"
+                + (" [recorded in the criteria baseline as known debt]" if known else ""),
+                baseline_key=key)
     if type_ == "bug" and _terminal and not _has_criteria(text):
         key = sdlc_md.norm_id(rec) if rec else None
         known = bool(key) and key in _read_baseline(repo_root, _CRITERIA_BASELINE)

@@ -4126,9 +4126,9 @@ class TestPlanDeriveTests(unittest.TestCase):
     # --- AC1 -------------------------------------------------------------------------------
 
     def test_every_criterion_gets_exactly_one_row(self) -> None:
-        """The count is ENFORCED, and by two independent readers - `parse_story` reads the whole
-        file for `### ACn`, `sdlc_md.count_acs` reads only the AC section and also counts bare
-        `- [ ]` items. Counting criteria from the row list would make the equality tautological
+        """The count is ENFORCED, and by two independent readers - `criteria_blocks` reads the
+        section's `### ACn` blocks (the whole file only when there is no section), and
+        `sdlc_md.count_acs` reads the section and also counts bare `- [ ]` items. Counting criteria from the row list would make the equality tautological
         and the mutant that deletes it would survive every fixture, which is why the design
         constraint sits on the criterion rather than in the implementation.
 
@@ -4156,9 +4156,6 @@ class TestPlanDeriveTests(unittest.TestCase):
             "a duplicate heading id, with the counts agreeing": (
                 "## Acceptance Criteria\n\n### AC1: one\n\n- **Then** a\n\n"
                 "### AC1: also one\n\n- **Then** b\n"),
-            "a criterion outside the AC section": (
-                "## Acceptance Criteria\n\n### AC1: one\n\n- **Then** a\n\n"
-                "## Notes\n\n### AC7: stray\n\n- **Then** c\n"),
         }
         for why, body in cases.items():
             with self.subTest(why=why), tempfile.TemporaryDirectory() as d:
@@ -4171,6 +4168,18 @@ class TestPlanDeriveTests(unittest.TestCase):
                 self.assertIn("AC1", joined, "the refusal does not name what it covered")
                 self.assertEqual(f.read_bytes(), before,
                                  "a refused derive wrote to the unit anyway")
+        # A criterion OUTSIDE the section is no longer a disagreement between the two readers:
+        # both read the section alone (BG0648), so the plan covers AC1 and never the stray AC7,
+        # which `validate check` refuses by name instead of the deriver refusing by count.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            f = self._unit(root, "## Acceptance Criteria\n\n### AC1: one\n\n- **Then** a\n\n"
+                                 "## Notes\n\n### AC7: stray\n\n- **Then** c\n")
+            res = self._derive(root)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((res["rows"], res["criteria"]), (1, 1))
+            self.assertNotIn("AC7", f.read_text(encoding="utf-8")[f.read_text(encoding="utf-8").index("## Test Plan"):],
+                             "the stray criterion reached the plan")
 
     # --- AC2 -------------------------------------------------------------------------------
 
@@ -6210,6 +6219,100 @@ class NearMissScopingTests(unittest.TestCase):
             self.assertIn("ExistingA::test_alpha_thing", hint)
             # a class the file does not collect has no candidates at all
             self.assertIsNone(verify_ac.selector_near_miss(sel + "NewClass::test_alpha_thingy", cwd=d))
+
+
+class CriteriaSectionTests(unittest.TestCase):
+    """BG0648 AC2 and AC3: what the runner runs is what the brief judged. MUTANTS: keep
+    executing every `**ACn**` block wherever it sits; widen the brief to every block; narrow
+    the no-section artefact to zero criteria in the runner; keep the brief at zero criteria for
+    the no-section artefact; skip misplaced blocks silently in lint."""
+
+    _SCRIPTS = Path(__file__).resolve().parents[1]
+
+    def _fixture(self) -> Path:
+        root = Path(tempfile.mkdtemp(prefix="criteria_section_")); self.addCleanup(shutil.rmtree, root, True)
+        for sub in ("bugs", "stories", "personas/seats"):
+            (root / "sdlc-studio" / sub).mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        (root / "sdlc-studio" / "personas" / "seats" / "qa.md").write_text("# Sam - QA amigo\n\nthe charter\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "BG0001-two-shapes.md").write_text(
+            "# BG0001: two shapes\n\n> **Status:** Open\n> **Affects:** src/x.py\n\n## Acceptance Criteria\n\n"
+            "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n## Impact\n\n"
+            "- [ ] **AC2** Given x, when y, then z - a verifier that FAILS, so execution shows\n  - **Verify:** shell false\n\n"
+            "### AC3: the heading shape, also misplaced\n\n- **Verify:** shell false\n\n"
+            "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n| AC1 | drop the guard | Given a, when b, then c |\n", encoding="utf-8")
+        (root / "sdlc-studio" / "stories" / "US0002-nosection.md").write_text(
+            "# US0002: nosection\n\n> **Status:** Ready\n> **Affects:** src/y.py\n\n## User Story\n\n"
+            "### AC1: it works\n\n- **Verify:** shell true\n\n### AC2: it also works\n\n- **Verify:** shell true\n", encoding="utf-8")
+        # a `## ` line INSIDE a fence is an illustration, never a section change: AC2 after it is still in
+        (root / "sdlc-studio" / "bugs" / "BG0005-fenced.md").write_text(
+            "# BG0005: fenced\n\n> **Status:** Open\n> **Affects:** src/f.py\n\n## Acceptance Criteria\n\n"
+            "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n```\n## Notes (inside a fence)\n```\n\n"
+            "- [ ] **AC2** Given d, when e, then f\n  - **Verify:** shell true\n", encoding="utf-8")
+        # a heading in another case carrying more words is STILL the section, for every reader
+        (root / "sdlc-studio" / "bugs" / "BG0004-variant.md").write_text(
+            "# BG0004: variant\n\n> **Status:** Open\n> **Affects:** src/v.py\n\n## acceptance criteria (revised)\n\n"
+            "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n## Notes\n\n"
+            "- [ ] **AC2** Given x, when y, then z\n  - **Verify:** shell false\n", encoding="utf-8")
+        (root / "sdlc-studio" / "stories" / "US0003-story-misplaced.md").write_text(
+            "# US0003: story misplaced\n\n> **Status:** Ready\n> **Affects:** src/s.py\n\n## Acceptance Criteria\n\n"
+            "### AC1: in\n\n- **Verify:** shell true\n\n## Notes\n\n### AC2: out\n\n- **Verify:** shell false\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "BG0003-clean.md").write_text(
+            "# BG0003: clean\n\n> **Status:** Open\n> **Affects:** src/z.py\n\n## Acceptance Criteria\n\n"
+            "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n## Impact\n\nnone\n", encoding="utf-8")
+        return root
+
+    def _run(self, script, *args, root):
+        return subprocess.run([sys.executable, "-B", str(self._SCRIPTS / script), *args, "--root", str(root)],
+                              capture_output=True, text=True, check=False, timeout=600)
+
+    def test_verify_ac_and_the_brief_count_the_same_criteria(self) -> None:
+        root = self._fixture()
+        # the misplaced blocks carry FAILING verifiers: a run that stays green never executed them
+        r = self._run("verify_ac.py", "run", "--id", "BG0001", root=root)
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertIn("ac=1 pass=1 fail=0", out, "the run did not count the section's one criterion alone: " + out)
+        self.assertNotIn("AC2", out); self.assertNotIn("AC3", out)
+        b = self._run("critic.py", "brief", "--unit", "BG0001", "--seat", "qa", root=root)
+        self.assertEqual(0, b.returncode, b.stderr)
+        acs = b.stdout[b.stdout.index("Acceptance criteria (canonical"):b.stdout.index("Review depth:")]
+        self.assertIn("**AC1**", acs); self.assertNotIn("**AC2**", acs); self.assertNotIn("AC3", acs)
+        # the fallback: NO section keeps the whole-file read in BOTH readers, so they agree at two
+        r2 = self._run("verify_ac.py", "run", "--id", "US0002", root=root)
+        self.assertIn("ac=2 pass=2 fail=0", r2.stdout + r2.stderr, r2.stdout + r2.stderr)
+        b2 = self._run("critic.py", "brief", "--unit", "US0002", "--seat", "qa", root=root)
+        acs2 = b2.stdout[b2.stdout.index("Acceptance criteria (canonical"):b2.stdout.index("Review depth:")]
+        self.assertIn("### AC1: it works", acs2); self.assertIn("### AC2: it also works", acs2)
+        self.assertNotIn("no Acceptance Criteria section", acs2, "the brief still renders zero criteria for the no-section artefact")
+        # the heading variant: one rule for the runner, the brief, the depth deriver and the fingerprint
+        r3 = self._run("verify_ac.py", "run", "--id", "BG0004", root=root)
+        self.assertIn("ac=1 pass=1 fail=0", r3.stdout + r3.stderr, r3.stdout + r3.stderr)
+        b3 = self._run("critic.py", "brief", "--unit", "BG0004", "--seat", "qa", root=root)
+        acs3 = b3.stdout[b3.stdout.index("Acceptance criteria (canonical"):b3.stdout.index("Review depth:")]
+        self.assertIn("**AC1**", acs3); self.assertNotIn("**AC2**", acs3, "the brief's heading rule differs from the runner's")
+        r5 = self._run("verify_ac.py", "run", "--id", "BG0005", root=root)
+        self.assertIn("ac=2 pass=2 fail=0", r5.stdout + r5.stderr, "a heading inside a fence moved the section: " + r5.stdout + r5.stderr)
+        text = (root / "sdlc-studio" / "bugs" / "BG0001-two-shapes.md").read_text(encoding="utf-8")
+        # the depth deriver's entry-point split locates the section's one criterion, never the two
+        # misplaced shell verifiers beside it
+        split = verify_ac._entry_point_split(root, text)
+        self.assertEqual(1, sum(v for v in split.values() if isinstance(v, int)) - split.get("located", 0),
+                         f"the depth deriver's entry-point split counts the misplaced criteria: {split}")
+        self.assertEqual(verify_ac.ac_fingerprint(text), verify_ac.ac_fingerprint(text.replace("shell false", "shell true")),
+                         "editing a misplaced criterion's verifier changed the fingerprint of what the run judged")
+        self.assertNotEqual(verify_ac.ac_fingerprint(text), verify_ac.ac_fingerprint(text.replace("shell true\n", "shell echo 1\n", 1)))
+
+    def test_lint_names_a_misplaced_criterion_with_its_section(self) -> None:
+        root = self._fixture()
+        r = self._run("verify_ac.py", "lint", "--bugs", root=root)
+        out = r.stdout + r.stderr
+        self.assertIn("BG0001-two-shapes.md AC2: unreviewable - sits under `## Impact`, outside `## Acceptance Criteria`", out, out)
+        self.assertIn("BG0001-two-shapes.md AC3: unreviewable - sits under `## Impact`", out, out)
+        self.assertNotIn("BG0003-clean.md AC1: unreviewable", out, "the clean artefact was named: " + out)
+        self.assertIn("BG0004-variant.md AC2: unreviewable", out, "the heading variant's misplaced criterion was not named")
+        self.assertIn("US0003-story-misplaced.md AC2: unreviewable", out, "a story's misplaced criterion was not named - the lint reads bugs only")
+        self.assertNotIn("BG0004-variant.md AC1", out, "the variant heading was not read as the section")
 
 
 if __name__ == "__main__":

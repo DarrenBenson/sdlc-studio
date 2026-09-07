@@ -33,7 +33,7 @@ validate = importlib.util.module_from_spec(_spec)
 sys.modules["validate"] = validate
 _spec.loader.exec_module(validate)
 
-GOOD_STORY = "# Login\n\n> **Status:** Done\n\n### AC1: Happy\n- **Verify:** file a.py\n"
+GOOD_STORY = "# Login\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n### AC1: Happy\n- **Verify:** file a.py\n"
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -1748,7 +1748,7 @@ class AcceptedRfcOpenDecisionTests(unittest.TestCase):
             self.assertEqual(hits[0]["severity"], "warning")
 
 
-_BAD_STATUS_STORY = ("# Bad\n\n> **Status:** Bananas\n\n### AC1: x\n"
+_BAD_STATUS_STORY = ("# Bad\n\n> **Status:** Bananas\n\n## Acceptance Criteria\n\n### AC1: x\n"
                      "- **Verify:** file a.py\n")
 
 
@@ -2060,6 +2060,52 @@ class BugCriteriaTests(unittest.TestCase):
         (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / validate._CRITERIA_BASELINE.split("/")[-1]).write_text(
             "\n".join(entries) + "\n", encoding="utf-8")
+
+    def test_a_criterion_outside_its_section_in_either_shape_is_an_error_naming_the_heading(self):
+        """BG0648 AC1. MUTANTS: detect the `**ACn**` bullet shape only; report a WARNING instead
+        of an ERROR; name the artefact and the id but not the heading; treat an artefact with
+        criteria and no section as clean."""
+        import subprocess, tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".config.yaml").parent.mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+            # the bullet shape under another heading (a bug), and the heading shape (a story)
+            _write(root, "sdlc-studio/bugs/BG0001-bullet.md",
+                   "# BG0001: bullet\n\n> **Status:** Open\n\n## Acceptance Criteria\n\n"
+                   "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n## Impact\n\n"
+                   "- [ ] **AC2** Given x, when y, then z\n  - **Verify:** shell false\n")
+            _write(root, "sdlc-studio/stories/US0001-heading.md",
+                   "# US0001: heading\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n### AC1: it works\n\n"
+                   "- **Verify:** shell true\n\n## Notes\n\n### AC2: it also works\n\n- **Verify:** shell false\n")
+            # criteria with NO section at all, and the control with every criterion in place
+            _write(root, "sdlc-studio/stories/US0002-nosection.md",
+                   "# US0002: nosection\n\n> **Status:** Ready\n\n## User Story\n\n### AC1: it works\n\n"
+                   "- **Verify:** shell true\n")
+            _write(root, "sdlc-studio/epics/EP0001-shape.md",
+                   "# EP0001: shape\n\n> **Status:** In Progress\n\n## Story Breakdown\n\n- [ ] US0001\n\n## Notes\n\n"
+                   "- [ ] **AC1** an epic carrying the shape is out of this rule's scope\n")
+            _write(root, "sdlc-studio/bugs/BG0004-variant.md",
+                   "# BG0004: variant\n\n> **Status:** Open\n\n## acceptance criteria (revised)\n\n"
+                   "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n## Impact\n\nnone\n")
+            _write(root, "sdlc-studio/bugs/BG0003-clean.md",
+                   "# BG0003: clean\n\n> **Status:** Open\n\n## Acceptance Criteria\n\n"
+                   "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n## Impact\n\nnone\n")
+            scripts = Path(__file__).resolve().parents[1]
+            r = subprocess.run([sys.executable, "-B", str(scripts / "validate.py"), "check", "--root", str(root)],
+                               capture_output=True, text=True, check=False)
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, out)
+            errs = [ln for ln in out.splitlines() if "[criterion-outside-section]" in ln]
+            self.assertEqual(3, len(errs), out)
+            for ln in errs:
+                self.assertTrue(ln.lstrip().upper().startswith("ERROR"), "not an ERROR: " + ln)
+            self.assertTrue(any("BG0001-bullet.md" in ln and "AC2" in ln and "`## Impact`" in ln for ln in errs), out)
+            self.assertTrue(any("US0001-heading.md" in ln and "AC2" in ln and "`## Notes`" in ln for ln in errs), out)
+            self.assertTrue(any("US0002-nosection.md" in ln and "no `## Acceptance Criteria` section" in ln for ln in errs), out)
+            self.assertFalse(any("BG0003-clean.md" in ln for ln in errs), "the clean artefact was reported: " + out)
+            self.assertFalse(any("BG0004-variant.md" in ln for ln in errs), "a heading in another case with more words was read as no section: " + out)
+            self.assertFalse(any("EP0001-shape.md" in ln for ln in errs), "the rule reached an epic - bugs and stories only: " + out)
 
     # --- US0514 ---------------------------------------------------------------------------
     def test_a_terminal_bug_with_no_criteria_is_refused(self):

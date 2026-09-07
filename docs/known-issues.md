@@ -38,10 +38,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0633` | Medium | transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the... |
 | `BG0637` | Medium | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick |
 | `BG0638` | Medium | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindn... |
-| `BG0648` | Medium | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and... |
 | `BG0652` | Medium | status.py hint takes 56 seconds on this corpus: its close-owed advisory runs outside any corpus sweep |
 
-16 findings: 16 Medium, 0 Low.
+15 findings: 15 Medium, 0 Low.
 
 ## Not carried
 

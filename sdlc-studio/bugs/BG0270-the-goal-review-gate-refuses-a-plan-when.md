@@ -67,16 +67,17 @@ names only achievability while being triggered by either field.
 - **Then** it reports the batch as THEMED (not one atomic increment) as advice the operator can read, so separating the two answers loses no information
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ThemedBatchNotAnObjectionTests::test_the_themed_batch_note_is_reported
 
-## Revision History
-
-| Date | Author | Change |
-| --- | --- | --- |
-| 2026-07-23 | sdlc-studio | Filed |
-
 ### AC4: the refusal never reports a verdict the seats did not give
 
 - **Given** seats answering achievable=yes and one_increment=no
 - **When** the goal review is recorded and rendered
 - **Then** no output states that a seat judged the goal NOT achievable, because none did
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ThemedBatchNotAnObjectionTests::test_the_refusal_message_never_misreports_achievability
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-07-23 | sdlc-studio | Filed |
 | 2026-07-24 | sdlc-studio | Fixed and mutation-proven |
+| 2026-09-07 | sdlc-studio | BG0648 (2026-09-07): AC4 sat under Revision History and is moved into the Acceptance Criteria section, the revision row that travelled with it returned to this table; a criterion outside its section is now an error the runner skips and the brief hides |

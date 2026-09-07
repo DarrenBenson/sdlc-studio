@@ -86,6 +86,10 @@ class ACBlock:
     #: verifiers were found sitting unexecuted in one workspace, four of them on stories
     #: already marked Done and two counted inside a published claim of verified criteria.
     extra_verifiers: list[str] = field(default_factory=list)
+    #: The `## ` heading this block sits under, or "" above the first one. A criterion written
+    #: under `## Impact` or `## Revision History` parses like any other, and the runner used to
+    #: execute it while the seat brief, which reads the section alone, never showed it.
+    section: str = ""
 
 
 def ac_fingerprint(text: str) -> str:
@@ -103,7 +107,7 @@ def ac_fingerprint(text: str) -> str:
     import hashlib
     parts = [
         f"{b.ac_id}\x1f{b.title.strip()}\x1f{(b.verifier or '').strip()}"
-        for b in parse_story(text)
+        for b in criteria_blocks(text)     # what the run judged, never a block it skipped
     ]
     return hashlib.sha256("\x1e".join(parts).encode("utf-8")).hexdigest()
 
@@ -120,6 +124,7 @@ def parse_story(text: str) -> list[ACBlock]:
             blocks.append(current)
 
     fence = None          # (char, length) of the OPEN fence, or None
+    section = ""
     for i, line in enumerate(lines):
         stripped = line.lstrip()
         # A fenced code block inside an AC is an ILLUSTRATION, not a directive: a
@@ -131,6 +136,8 @@ def parse_story(text: str) -> list[ACBlock]:
         fence, is_fence_line = sdlc_md.fence_step(stripped, fence)
         if is_fence_line or fence is not None:
             continue
+        if line.startswith("## "):
+            section = line[3:].strip()
 
         m = AC_HEADING_RE.match(line)
         if m:
@@ -139,6 +146,7 @@ def parse_story(text: str) -> list[ACBlock]:
                 heading_line=i,
                 ac_id=m.group(1),
                 title=(m.group(2) or "").strip(),
+                section=section,
             )
             continue
 
@@ -152,6 +160,7 @@ def parse_story(text: str) -> list[ACBlock]:
                 heading_line=i,
                 ac_id=bm.group(1),
                 title=(bm.group(2) or "").strip(),
+                section=section,
             )
             continue
 
@@ -186,6 +195,46 @@ def parse_story(text: str) -> list[ACBlock]:
 
     flush()
     return blocks
+
+
+# Case-insensitive, and a heading that carries more words after the name (`## Acceptance
+# Criteria (revised)`) is still the section, as `sdlc_md.count_acs` accepts it. The name must
+# LEAD the heading here: a heading about the criteria (`## Notes on Acceptance Criteria`) is
+# not the section, where count_acs would take it as one - no corpus heading holds that shape
+_SECTION_RE = re.compile(r"(?mi)^##\s+acceptance criteria\b")
+
+
+def has_criteria_section(text: str) -> bool:
+    """Whether the artefact carries a `## Acceptance Criteria` heading at all."""
+    return _SECTION_RE.search(text) is not None
+
+
+def _in_section(block: ACBlock) -> bool:
+    return block.section.strip().lower().startswith("acceptance criteria")
+
+
+def criteria_blocks(text: str) -> list[ACBlock]:
+    """The criteria a reader may act on: the blocks INSIDE `## Acceptance Criteria` when the
+    section exists, and every block in the file when it does not.
+
+    One answer for the runner, the lint, the plan deriver and the seat brief. The runner used
+    to execute every `**ACn**` block wherever it sat while the brief read the section alone,
+    so a criterion under `## Impact` was verified and never judged. An artefact with NO section
+    keeps the whole-file read in both readers - narrowing the runner there turned fifteen tests
+    red - and `validate check` refuses that shape instead."""
+    blocks = parse_story(text)
+    if not has_criteria_section(text):
+        return blocks
+    return [b for b in blocks if _in_section(b)]
+
+
+def misplaced_criteria(text: str) -> list[tuple[str, str]]:
+    """`(ac_id, heading)` for each criterion sitting OUTSIDE `## Acceptance Criteria` in an
+    artefact that has the section. Empty when the section is absent: that shape is refused as
+    a whole by `validate check`, not block by block."""
+    if not has_criteria_section(text):
+        return []
+    return [(b.ac_id, b.section) for b in parse_story(text) if not _in_section(b)]
 
 
 # -----------------------------------------------------------------------------
@@ -1008,7 +1057,7 @@ def unevaluable_stamps(path: Path, cwd=None) -> list[dict]:
     """
     out: list[dict] = []
     text = sdlc_md.read_text_safe(path)
-    for block in parse_story(text):
+    for block in criteria_blocks(text):
         if (block.verified_state or "").strip().lower() != "yes" or not block.verifier:
             continue
         head = (block.verifier.split(None, 1)[0].lower() if block.verifier.split() else "")
@@ -1049,7 +1098,7 @@ def unresolvable_stamps(path: Path, cwd=None) -> list[dict]:
     """
     out: list[dict] = []
     text = sdlc_md.read_text_safe(path)
-    for block in parse_story(text):
+    for block in criteria_blocks(text):
         if (block.verified_state or "").strip().lower() != "yes" or not block.verifier:
             continue
         if selector_resolves(block.verifier, cwd) is False:
@@ -1183,7 +1232,7 @@ def lane_check(root, unit_paths) -> list[dict]:
         # entry point. That is exactly US0577 - `brief_fingerprint` had a passing acceptance
         # test computing it in-process while no command called it at all.
         checked, entered, first = [], False, None
-        for block in parse_story(text):
+        for block in criteria_blocks(text):
             expr = (block.verifier or "").strip()
             if not expr or expr.lower().startswith("manual"):
                 continue
@@ -1234,7 +1283,7 @@ def duplicate_verifiers(paths) -> list[dict]:
             continue
         text = sdlc_md.read_text_safe(p)  # a corrupt story must not abort the duplicate scan
         rec = sdlc_md.extract_record_id(p.stem) or p.stem
-        for block in parse_story(text):
+        for block in criteria_blocks(text):
             if not block.verifier:
                 continue
             expr = dup_group_key(block.verifier)
@@ -1563,7 +1612,7 @@ def pytest_verifier_files(paths: list[Path]) -> list[str]:
     """
     files: dict[str, None] = {}
     for path in paths:
-        for block in parse_story(_read_body(path)):
+        for block in criteria_blocks(_read_body(path)):
             head, _, tail = (block.verifier or "").strip().partition(" ")
             if head.lower() != "pytest" or not tail:
                 continue
@@ -1742,7 +1791,7 @@ def verify_story(
     shell just because a workflow copied it into a story."""
     text = _read_body(story_path)
     lines = text.splitlines()
-    blocks = parse_story(text)
+    blocks = criteria_blocks(text)
     report = StoryReport(path=str(story_path), ac_count=len(blocks),
                          ac_fingerprint=ac_fingerprint(text))
     story_allow_shell = shell_allowed_for(text, allow_shell=allow_shell,
@@ -2239,7 +2288,7 @@ def corpus_scan(repo_root, kind: str = "bugs") -> dict:
         if "## Acceptance Criteria" not in text:
             out["no_section"] += 1
             continue
-        blocks = parse_story(text)
+        blocks = criteria_blocks(text)
         if not blocks:
             out["unreadable"] += 1
         elif not any(b.verifier for b in blocks):
@@ -2420,7 +2469,7 @@ def scaffold_ac_matrix(repo_root: Path | str, epic_id: str) -> str:
             sdlc_md.join_row(["---"] * len(header))]
     for story in epic_stories(repo_root, epic_id):
         story_id = sdlc_md.extract_record_id(story.stem) or story.stem
-        for block in parse_story(sdlc_md.read_text_safe(story)):
+        for block in criteria_blocks(sdlc_md.read_text_safe(story)):
             rows.append(sdlc_md.join_row([story_id, block.ac_id, block.title, "", ""]))
     return "### AC Coverage Matrix\n\n" + "\n".join(rows) + "\n"
 
@@ -2708,7 +2757,7 @@ def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
         return {"ok": False, "errors": [f"{unit}: no artefact with that id"]}
     path, _type = found
     text = sdlc_md.read_text_safe(path)
-    blocks = parse_story(text)
+    blocks = criteria_blocks(text)
     declared = sdlc_md.count_acs(text)
     ids = [b.ac_id for b in blocks]
 
@@ -3230,7 +3279,11 @@ def cmd_lint(args: argparse.Namespace) -> int:
         text = sdlc_md.read_text_safe(p)
         raw_status = (sdlc_md.extract_field(text, "Status") or "").strip()
         authoring = _still_authoring(p.name, raw_status)
-        for block in parse_story(text):
+        for ac_id, heading in misplaced_criteria(text):
+            print(f"{p.name} {ac_id}: unreviewable - sits under `## {heading or '(no heading)'}`, outside "
+                  f"`## Acceptance Criteria`: the runner skips it, the brief never shows it and the Done "
+                  f"gate refuses it - move it into the section")
+        for block in criteria_blocks(text):
             stacked = lint_stacked_verifiers(block) if authoring else None
             if stacked:
                 refused += 1
@@ -3768,7 +3821,7 @@ def revert_check(root, unit: str, base_ref: str | None = None, *,
     story_allow_shell = shell_allowed_for(text, allow_shell=allow_shell)
     criteria: list[dict] = []
     to_run: list[tuple] = []
-    for block in parse_story(text):
+    for block in criteria_blocks(text):
         ac = (block.ac_id or "").upper()
         expr = (block.verifier or "").strip()
         if ac in exempt:
@@ -4007,7 +4060,7 @@ def _entry_point_split(root, text: str) -> dict:
     """
     root = Path(root)
     through = in_process = undetermined = unlocatable = 0
-    for block in parse_story(text):
+    for block in criteria_blocks(text):
         expr = (block.verifier or "").strip()
         if not expr or _is_manual(expr):
             continue
