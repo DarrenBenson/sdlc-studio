@@ -39,9 +39,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0637` | Medium | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick |
 | `BG0638` | Medium | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindn... |
 | `BG0645` | Medium | critic.py brief --rejoinder ignores --phase plan-review and renders the delivery brief, so a re-review of a rejected test plan is briefed with a di... |
-| `BG0646` | Medium | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default |
 | `BG0648` | Medium | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and... |
 | `BG0649` | Medium | test_critic is red when run alone: unittest.mock is used at line 5131 without an import |
+| `BG0652` | Medium | status.py hint takes 56 seconds on this corpus: its close-owed advisory runs outside any corpus sweep |
 
 18 findings: 18 Medium, 0 Low.
 

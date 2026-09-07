@@ -142,6 +142,17 @@ def read_text_safe(path, default: str = "") -> str:
 
     The default is also RECORDED in any open `degradation_log`, so a caller deciding something
     can tell "the file said nothing" from "I could not read the file"."""
+    # inside a `corpus_cache` sweep the walk has already read every artefact once, so a
+    # consumer asking for the same file is served from the sweep rather than the disk. The memo
+    # is the SWEEP's - opened and closed by the `with`, never a cache that outlives it - so a
+    # read outside any sweep still hits the disk and `children_of` with no sweep still walks.
+    # The sweep's contract applies to this text too: it cannot see a write, so a file WRITTEN
+    # while a sweep is open reads stale from it until the sweep closes. Both live sweep sites
+    # are read-only, and the docstring above refuses holding one open across a write.
+    if _CORPUS_CACHE is not None:
+        key = ("text", os.path.abspath(str(path)))
+        if key in _CORPUS_CACHE:
+            return _CORPUS_CACHE[key]
     try:
         return Path(path).read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
@@ -1784,6 +1795,11 @@ def iter_artifact_files(type_: str, repo_root: Path, trust_names=frozenset()):
     rows = _CORPUS_CACHE.get(key)
     if rows is None:
         rows = _CORPUS_CACHE[key] = list(_walk_artifact_files(type_, repo_root, frozenset()))
+        # the walk read each file once - hand that text to `read_text_safe` for the rest
+        # of the sweep, so a census followed by an advisory reads the corpus once, not twice
+        for p, text in rows:
+            if text is not None:
+                _CORPUS_CACHE.setdefault(("text", os.path.abspath(str(p))), text)
     yield from rows
 
 

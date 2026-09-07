@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-06
+**Last Updated:** 2026-09-07
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 18 |
 | In Progress | 0 |
-| Fixed | 531 |
+| Fixed | 533 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 5 |
-| **Total** | **651** |
+| **Total** | **652** |
 
 ## All Bugs
 
@@ -185,12 +185,13 @@
 | [BG0643](BG0643-the-verify-flag-bg0636-shipped-is-refused-for.md) | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet | Fixed | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0644](BG0644-the-test-noise-ratchet-compares-a-selected-subset.md) | the test-noise ratchet compares a selected subset against a whole-suite baseline | Fixed | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0645](BG0645-critic-py-brief-rejoinder-ignores-phase-plan-review.md) | critic.py brief --rejoinder ignores --phase plan-review and renders the delivery brief, so a re-review of a rejected test plan is briefed with a diff scope that does not exist | Open | Medium | 2026-09-04 | 2026-09-04 |
-| [BG0646](BG0646-status-py-takes-113-seconds-on-this-corpus.md) | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default | Open | Medium | 2026-09-04 | 2026-09-04 |
+| [BG0646](BG0646-status-py-takes-113-seconds-on-this-corpus.md) | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default | Fixed | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0647](BG0647-test-config-s-status-integration-test-gathers-status.md) | test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state | Fixed | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0648](BG0648-a-criterion-written-outside-the-acceptance-criteria-section.md) | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and the sprint report | Open | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0649](BG0649-test-critic-is-red-when-run-alone-unittest.md) | test_critic is red when run alone: unittest.mock is used at line 5131 without an import | Open | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0650](BG0650-the-depth-count-census-reads-the-entry-point.md) | The depth-count census reads the entry-point denominator, so an artefact with a manual criterion fails it | Fixed | Medium | 2026-09-04 | 2026-09-04 |
-| [BG0651](BG0651-a-later-commit-that-changes-a-target-file.md) | A later commit that changes a target file empties an earlier unit's mutation evidence silently, and nothing refuses until the close dry-run | Open | Medium | 2026-09-06 | 2026-09-06 |
+| [BG0651](BG0651-a-later-commit-that-changes-a-target-file.md) | A later commit that changes a target file empties an earlier unit's mutation evidence silently, and nothing refuses until the close dry-run | Fixed | Medium | 2026-09-06 | 2026-09-06 |
+| [BG0652](BG0652-status-py-hint-takes-56-seconds-on-this.md) | status.py hint takes 56 seconds on this corpus: its close-owed advisory runs outside any corpus sweep | Open | Medium | 2026-09-07 | 2026-09-07 |
 
 ## Archived Releases
 

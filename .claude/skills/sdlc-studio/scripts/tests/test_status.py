@@ -8,6 +8,7 @@ from __future__ import annotations
 import importlib.util
 import contextlib
 import io
+import shutil
 import json
 import sys
 import tempfile
@@ -1119,6 +1120,150 @@ class OnboardingHintFalsifiabilityTests(unittest.TestCase):
                           "the stale marker must be named beside the ladder's answer")
             self.assertIn("onboarding.json", printed,
                           "the advisory must name the file, or nobody can act on it")
+
+
+def _corpus_shaped_fixture(root: Path, *, epics: int = 190, discovery: int = 45, total: int = 2340,
+                           run_units: int = 5) -> None:
+    """A corpus in THIS repository's shape (BG0646): `total` artefacts across stories, bugs,
+    epics, CRs and reviews, of which `epics` are terminal epics with children and NO retro
+    covering them (so the close-owed advisory enters `_breakdown_child_ids` per epic), `discovery`
+    open CRs, a run open over `run_units` of the bugs, and a close-owed history."""
+    import json as _json  # noqa: PLC0415
+    base = root / "sdlc-studio"
+    for sub in ("stories", "bugs", "epics", "change-requests", "reviews", "retros", ".local", "retros/evidence"):
+        (base / sub).mkdir(parents=True, exist_ok=True)
+    (base / ".config.yaml").write_text("schema_version: 2\n", encoding="utf-8")
+    n_ep = epics; n_cr = discovery; n_review = 26
+    n_story = (total - n_ep - n_cr - n_review) * 2 // 3; n_bug = total - n_ep - n_cr - n_review - n_story
+    for i in range(1, n_review + 1):
+        (base / "reviews" / f"RV{i:04d}-fixture-review.md").write_text(
+            f"# RV{i:04d}: fixture review {i}\n\n> **Status:** Closed\n\n## Summary\n\nfixture\n", encoding="utf-8")
+    for i in range(1, n_ep + 1):
+        (base / "epics" / f"EP{i:04d}-fixture-epic.md").write_text(
+            f"# EP{i:04d}: fixture epic {i}\n\n> **Status:** Done\n> **Priority:** Medium\n\n## Summary\n\nfixture\n\n"
+            f"## Story Breakdown\n\n- [x] US{i:04d}: child\n", encoding="utf-8")
+    for i in range(1, n_story + 1):
+        ep = ((i - 1) % n_ep) + 1
+        (base / "stories" / f"US{i:04d}-fixture-story.md").write_text(
+            f"# US{i:04d}: fixture story {i}\n\n> **Status:** {'Done' if i % 3 else 'Ready'}\n> **Epic:** EP{ep:04d}\n> **Points:** 1\n\n"
+            f"## Acceptance Criteria\n\n- [x] **AC1** Given a, when b, then c\n  - **Verify:** manual - fixture\n", encoding="utf-8")
+    for i in range(1, n_bug + 1):
+        (base / "bugs" / f"BG{i:04d}-fixture-bug.md").write_text(
+            f"# BG{i:04d}: fixture bug {i}\n\n> **Status:** {'Fixed' if i % 4 else 'Open'}\n> **Severity:** Medium\n> **Points:** 1\n> **Affects:** src/x.py\n\n"
+            f"## Acceptance Criteria\n\n- [x] **AC1** Given a, when b, then c\n  - **Verify:** manual - fixture\n", encoding="utf-8")
+    for i in range(1, n_cr + 1):
+        (base / "change-requests" / f"CR{i:04d}-fixture-request.md").write_text(
+            f"# CR{i:04d}: fixture request {i}\n\n> **Status:** Proposed\n> **Priority:** Medium\n> **Size:** S\n\n## Summary\n\nfixture\n", encoding="utf-8")
+    hist = base / "retros" / "evidence" / "actuals-2026-01-01.jsonl"
+    hist.write_text("".join(_json.dumps({"id": f"BG{i:04d}", "type": "bug", "project": "fx"}) + "\n" for i in range(1, 201)), encoding="utf-8")
+    (base / "retros" / "VELOCITY.md").write_text("# Velocity\n\n| Sprint | Points | Tokens |\n| --- | --- | --- |\n| RETRO0001 | 10 | 1000 |\n", encoding="utf-8")
+    # stamped, so `close_owed.owed` passes its unbaselined early return and READS the history
+    (base / ".close-owed-baseline.json").write_text(_json.dumps({"grandfathered": [], "stamped": "2025-12-01"}), encoding="utf-8")
+    # The run's batch exercises EVERY branch of handoff's predicate, so the run line's count is
+    # a real join and not a number two copies of the rule agree on by luck: BG0001 Fixed with a
+    # RED verify report (remaining, unproven), BG0002/BG0003 Fixed and proven (delivered),
+    # BG0004 Open (remaining), BG0005 closed without delivery (dropped), BG9999 in the batch
+    # with no file (remaining), and BG0008 quarantined by the loop OUTSIDE the batch (remaining).
+    # remaining = 4 by hand: BG0001, BG0004, BG9999, BG0008.
+    assert run_units == 5, "the branch layout below is written for a five-unit batch"
+    (base / "bugs" / "BG0005-fixture-bug.md").write_text(
+        "# BG0005: fixture bug 5\n\n> **Status:** Won't Fix\n> **Severity:** Medium\n> **Points:** 1\n> **Affects:** src/x.py\n\n"
+        "## Acceptance Criteria\n\n- [ ] **AC1** Given a, when b, then c\n  - **Verify:** manual - fixture\n", encoding="utf-8")
+    (base / ".local" / "verify-report.json").write_text(_json.dumps({"stories": {
+        "BG0001-fixture-bug": {"passed": 0, "failed": 1, "stale": 0},
+        "BG0002-fixture-bug": {"passed": 1, "failed": 0, "stale": 0},
+        "BG0003-fixture-bug": {"passed": 1, "failed": 0, "stale": 0}}}), encoding="utf-8")
+    (base / ".local" / "loop-state.json").write_text(_json.dumps({"units": {
+        "BG0008": {"attempts": 2, "signatures": ["test_a::x", "test_a::x"]}}}), encoding="utf-8")
+    (base / ".local" / "run-state.json").write_text(_json.dumps({
+        "schema": "1", "run_id": "RUN-FIXTURE", "started_at": "2026-01-01T00:00:00Z", "ended_at": None,
+        "outcome": "running", "goal": "done", "batch": [f"BG{i:04d}" for i in range(1, run_units + 1)] + ["BG9999"],
+        "sprint_goal": "fixture", "base_ref": "0" * 40}), encoding="utf-8")
+
+
+class GatherPerformanceTests(unittest.TestCase):
+    """BG0646. MUTANTS (AC1): print the `Run:` headline only after the full gather returns; keep
+    `children_of` walking the corpus on every call; print the advisories before the headline;
+    print the headline without flushing; keep deriving the run line's remaining count through
+    `handoff.build`. The bounds are the consumer's: a piped `status` shows its first line inside
+    3 s and exits inside 15 s on a corpus this repository's shape."""
+
+    def _fixture(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="status_perf_")); self.addCleanup(shutil.rmtree, d, True)
+        _corpus_shaped_fixture(d)
+        return d
+
+    def test_the_shipped_command_answers_a_corpus_shaped_fixture_with_the_headline_first(self) -> None:
+        import subprocess, time  # noqa: PLC0415
+        root = self._fixture()
+        t0 = time.monotonic()
+        proc = subprocess.Popen([sys.executable, "-B", str(SCRIPT_PATH), "--root", str(root)],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        first = proc.stdout.readline()
+        t_first = time.monotonic() - t0
+        out, err = proc.communicate(timeout=120)
+        t_exit = time.monotonic() - t0
+        self.assertEqual(0, proc.returncode, err)
+        self.assertTrue(first.startswith("Run:"), f"the first line through the pipe is not the run line: {first!r}")
+        self.assertIn("RUN-FIXTURE", first); self.assertIn("remaining=4)", first)
+        self.assertLess(t_first, 3.0, f"the headline reached the pipe after {t_first:.1f}s")
+        self.assertLess(t_exit, 15.0, f"the command took {t_exit:.1f}s over a corpus this repository's shape")
+        lines = (first + out).splitlines()
+        self.assertTrue(lines[0].startswith("Run:") and lines[1].startswith("Requirements:"), lines[:3])
+
+    def test_the_headline_is_in_the_buffer_and_flushed_before_gather_is_entered(self) -> None:
+        # the structural pin: a cached gather finishes inside any clock, so the ORDER is asserted
+        # in-process - when `gather` is entered, stdout already holds the flushed `Run:` line
+        root = self._fixture()
+        mod = status
+        seen = {}
+        real_gather = mod.gather
+        real_flush = sys.stdout.flush
+
+        class _Out(io.StringIO):
+            def flush(self_inner):
+                seen["flushed_at"] = len(self_inner.getvalue()); super().flush()
+
+        def spy_gather(r, **kw):
+            seen["buffer_at_gather"] = out.getvalue(); seen["flushed_before_gather"] = seen.get("flushed_at")
+            return real_gather(r, **kw)
+
+        import handoff  # noqa: PLC0415 - the sibling the run line borrows its predicate from
+        real_build = handoff.build
+
+        def spy_build(*a, **k):
+            seen["build_called"] = True
+            return real_build(*a, **k)
+
+        real_open_run = mod.open_run
+
+        def spy_open_run(r):
+            seen["open_run_calls"] = seen.get("open_run_calls", 0) + 1
+            return real_open_run(r)
+
+        out = _Out()
+        with contextlib.redirect_stdout(out), unittest.mock.patch.object(mod, "gather", spy_gather), \
+             unittest.mock.patch.object(handoff, "build", spy_build), \
+             unittest.mock.patch.object(mod, "open_run", spy_open_run):
+            rc = mod.main(["--root", str(root)])
+        self.assertEqual(0, rc)
+        # the run is read ONCE: the headline's read is handed to gather, never repeated inside it
+        self.assertEqual(1, seen.get("open_run_calls"), "open_run ran more than once per invocation")
+        # the remaining count comes from handoff's cheap predicate, never from `build` and its
+        # conformance pass - 62 s on this repository with a run open, a cost the fixture cannot see
+        self.assertNotIn("build_called", seen, "the run line's remaining count went through handoff.build")
+        # and it is the SAME count `build` derives, over a batch that exercises every branch of
+        # the predicate (delivered, red evidence, open, dropped, missing, quarantined outside the
+        # batch - 4 remain by hand). Asserted on the CLOSED token: `remaining=1` is a prefix of
+        # `remaining=10)`, and a count that grew a digit passed the first cut of this pin.
+        self.assertEqual(4, real_build(root)["summary"]["remaining"], "the fixture's batch layout drifted")
+        self.assertIn("remaining=4)", seen["buffer_at_gather"],
+                      "the run line's remaining count is not the count handoff.build derives: " + seen["buffer_at_gather"][:120])
+        self.assertIn("batch=6,", seen["buffer_at_gather"])
+        self.assertTrue(seen.get("buffer_at_gather", "").startswith("Run:"),
+                        "the run line was not in the buffer when gather was entered: " + repr(seen.get("buffer_at_gather", ""))[:80])
+        self.assertIsNotNone(seen.get("flushed_before_gather"), "stdout was not flushed before gather was entered")
+        self.assertGreater(seen["flushed_before_gather"], 0)
 
 
 if __name__ == "__main__":

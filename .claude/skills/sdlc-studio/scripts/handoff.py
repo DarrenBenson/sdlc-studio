@@ -312,37 +312,70 @@ def _estimate(root: Path, path: Path) -> tuple[str | None, str]:
         return None, "low"
 
 
+def _classify(root: Path, rid: str, verify_report: dict) -> dict:
+    """THE terminal-versus-dropped predicate, in one place. `build` reads it for every row of
+    the join and the dashboard's `Run:` line reads it through `remaining_count`, so the two
+    cannot answer "how many remain" differently (a second copy of it was found once, and a
+    review found the copy's uncovered branches).
+
+    Four outcomes. A unit with no file on disk is REMAINING (`found` False). A terminal
+    status outside `DELIVERED_STATUSES` (Won't Implement / Rejected / Withdrawn / Superseded)
+    is DROPPED - not remaining work, and not a success either. A terminal status whose verify
+    report carries no red or stale criterion is DELIVERED. Everything else - open, or terminal
+    with evidence that contradicts the status - is REMAINING, with `unproven` saying why."""
+    found = sdlc_md.find_by_id(root, rid)
+    if found is None:
+        return {"found": False, "rec": sdlc_md.norm_id(rid), "path": None, "type": None,
+                "text": "", "status": "missing", "verify": None, "terminal": False,
+                "dropped": False, "delivered": False, "unproven": None}
+    path, type_ = found
+    # `read_text_safe`, not `Path.read_text`: inside a `corpus_cache` sweep the walk has already
+    # read this file and serves it, so the dashboard's census and its run line read each unit
+    # once. An unreadable file classifies as Unknown status - remaining - and is recorded in the
+    # degradation log, where the base ref raised out of the whole join.
+    text = sdlc_md.read_text_safe(path)
+    status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
+                                      sdlc_md.status_vocab(type_, root)) or "Unknown"
+    rec = sdlc_md.extract_record_id(path.stem) or rid
+    verify = _verify_entry(verify_report, rec)
+    terminal = status in sdlc_md.terminal_statuses(type_)
+    base = {"found": True, "rec": rec, "path": path, "type": type_, "text": text,
+            "status": status, "verify": verify}
+    if terminal and status not in DELIVERED_STATUSES:
+        return {**base, "terminal": True, "dropped": True, "delivered": False, "unproven": None}
+    unproven = _unproven(verify) if terminal else None
+    if terminal and not unproven:
+        return {**base, "terminal": True, "dropped": False, "delivered": True, "unproven": None}
+    return {**base, "terminal": False, "dropped": False, "delivered": False,
+            "unproven": unproven}
+
+
 def _unit(root: Path, rid: str, ctx: dict) -> dict:
     """One unit's row in the join: delivered or remaining, with its evidence or its
     pointers. A unit with no file on disk is a REMAINING item whose first problem is that
-    nobody can find it."""
-    found = sdlc_md.find_by_id(root, rid)
-    if found is None:
-        return {"id": sdlc_md.norm_id(rid), "type": None, "status": "missing", "path": None,
+    nobody can find it. The verdict itself is `_classify`'s; this adds the evidence or the
+    pointers the row carries."""
+    c = _classify(root, rid, ctx["verify"])
+    if not c["found"]:
+        return {"id": c["rec"], "type": None, "status": "missing", "path": None,
                 "delivered": False, "dropped": False, "terminal": False,
                 "pointers": [{"kind": "issue", "ref": "not-found",
                               "detail": f"no artefact file for {rid} - it was in the batch "
                                         f"and is not on disk"}],
                 "suitability": _suitability(None, "low", [], [], None, found=False)}
-    path, type_ = found
-    text = path.read_text(encoding="utf-8")
-    status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
-                                      sdlc_md.status_vocab(type_, root)) or "Unknown"
-    rec = sdlc_md.extract_record_id(path.stem) or rid
-    verify = _verify_entry(ctx["verify"], rec)
-    terminal = status in sdlc_md.terminal_statuses(type_)
-    if terminal and status not in DELIVERED_STATUSES:
-        # Closed, but not delivered (Won't Implement / Rejected / Withdrawn / Superseded).
-        # Not remaining work, and not a success either - it gets its own bucket rather than
-        # a row under "Delivered" claiming an outcome the run never reached.
+    path, type_, text, status, rec, verify = (c["path"], c["type"], c["text"], c["status"],
+                                              c["rec"], c["verify"])
+    if c["dropped"]:
+        # Closed, but not delivered. Its own bucket rather than a row under "Delivered"
+        # claiming an outcome the run never reached.
         return {"id": rec, "type": type_, "status": status, "path": _rel(root, path),
                 "delivered": False, "dropped": True, "terminal": True,
                 "evidence": _delivery_evidence(root, rec, ctx["verify"])}
-    unproven = _unproven(verify) if terminal else None
-    if terminal and not unproven:
+    if c["delivered"]:
         return {"id": rec, "type": type_, "status": status, "path": _rel(root, path),
                 "delivered": True, "dropped": False, "terminal": True,
                 "evidence": _delivery_evidence(root, rec, ctx["verify"])}
+    unproven = c["unproven"]
     # ...everything else is REMAINING - including a unit whose status says Done while its
     # evidence says otherwise. Its failing verifier is the pointer the next person needs.
     try:
@@ -415,6 +448,21 @@ def _appetite(root: Path, state: dict, ids: list[str], delivered: int) -> dict |
         "delivered": delivered,
         "token_forecast": forecast,
     }
+
+
+def remaining_count(repo_root: Path | str, batch: list[str] | None = None) -> int:
+    """How many of the batch's units remain, by `_classify` - the SAME predicate `build` reads
+    - and nothing else of `build`'s weight. `build` also asks conformance for the
+    stage each unit stalled at and readiness for its pointers - 62 seconds on this corpus -
+    which the dashboard's `Run:` line never shows. The batch is read the way `build` reads
+    it, including a unit the loop quarantined outside it."""
+    root = Path(repo_root)
+    ids, _source = _batch_source(root, batch)
+    loop = _loop_state(root)
+    verify = _verify_report(root)
+    seen = {sdlc_md.norm_id(i) for i in ids}
+    extra = sorted(u for u in (loop.get("units") or {}) if sdlc_md.norm_id(u) not in seen)
+    return sum(1 for rid in list(ids) + extra if not _classify(root, rid, verify)["terminal"])
 
 
 def build(repo_root: Path | str, batch: list[str] | None = None,

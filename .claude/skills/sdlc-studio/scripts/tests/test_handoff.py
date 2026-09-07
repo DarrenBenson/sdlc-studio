@@ -1237,5 +1237,34 @@ class HandoffTitleTests(unittest.TestCase):
             self.assertIn("closed-partial", name, name)
 
 
+class ClassifyUnreadableTests(unittest.TestCase):
+    """BG0646: `_classify` reads a unit through `read_text_safe`, so the dashboard's
+    `remaining_count` classifies an unreadable batch file as Unknown and REMAINING - recorded in
+    the degradation log - rather than raising out of the run line. `build` still raises on the
+    same file from `_open_decisions`, its own `Path.read_text`, as at the base ref: the change
+    reaches the count and not the join. MUTANT: read the file in `_classify` with
+    `Path.read_text` again, so `remaining_count` raises PermissionError."""
+
+    def test_an_unreadable_batch_file_counts_as_remaining_in_the_run_line(self) -> None:
+        import os  # noqa: PLC0415
+        if hasattr(os, "geteuid") and os.geteuid() == 0:
+            self.skipTest("root reads every file; the permission bit cannot make one unreadable")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+            p = root / "sdlc-studio" / "stories" / "US0001-a.md"
+            p.write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            p.chmod(0)
+            try:
+                self.assertEqual(1, handoff.remaining_count(root, ["US0001"]))
+                c = handoff._classify(root, "US0001", {})
+                self.assertEqual(("Unknown", False), (c["status"], c["terminal"]))
+                with self.assertRaises(PermissionError):   # the join's own reader, unchanged
+                    handoff.build(root, batch=["US0001"])
+            finally:
+                p.chmod(0o644)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,7 @@ the retro, not omitting the work.
 """
 import contextlib
 import io
+import shutil
 import sys
 import tempfile
 import unittest
@@ -1312,6 +1313,75 @@ class TriageClosureCoverageTests(unittest.TestCase):
                            capture_output=True, text=True, timeout=600, check=False)
         self.assertNotIn("BG0599", r.stdout + r.stderr)
         self.assertNotIn("BG0602", r.stdout + r.stderr)
+
+
+class AdvisoryCostTests(unittest.TestCase):
+    """BG0646 AC2: across `gather` and then `close_owed_advisory` in ONE process, each ledger
+    and artefact is read at most once - the advisory reuses the census the gather took.
+    MUTANTS: walk the corpus again for the advisory instead of taking the gather's census;
+    memoise `children_of` at the read layer so the advisory passes without a census; hand the
+    advisory no census so it takes its own walk."""
+
+    def test_gather_and_advisory_read_each_file_at_most_once_between_them(self) -> None:
+        import importlib.util, collections  # noqa: PLC0415
+        from unittest import mock  # noqa: PLC0415
+        SCRIPT = Path(__file__).resolve().parent.parent / "close_owed.py"
+        sys.path.insert(0, str(SCRIPT.parent)); self.addCleanup(sys.path.remove, str(SCRIPT.parent))
+        from tests.test_status import _corpus_shaped_fixture  # noqa: PLC0415
+        root = Path(tempfile.mkdtemp(prefix="advisory_cost_")); self.addCleanup(shutil.rmtree, root, True)
+        _corpus_shaped_fixture(root)          # THE SAME fixture AC1 defines, at full scale
+        spec = importlib.util.spec_from_file_location("status", SCRIPT.parent / "status.py")
+        status = importlib.util.module_from_spec(spec)
+        prev = sys.modules.get("status")
+        self.addCleanup(lambda: sys.modules.__setitem__("status", prev) if prev is not None else sys.modules.pop("status", None))
+        sys.modules["status"] = status; spec.loader.exec_module(status)
+        from lib import sdlc_md  # noqa: PLC0415
+        reads = collections.Counter()
+        real = Path.read_text
+
+        def spy(self, *a, **k):
+            if str(self).startswith(str(root / "sdlc-studio")) and self.suffix in (".md", ".jsonl"):
+                reads[str(self)] += 1
+            return real(self, *a, **k)
+
+        with mock.patch.object(Path, "read_text", spy), \
+             contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()), \
+             sdlc_md.corpus_cache():
+            status.gather(root)
+            status.close_owed_advisory(root)
+        twice = {p: n for p, n in reads.items() if n > 1}
+        self.assertEqual({}, twice, f"{len(twice)} file(s) read more than once across gather and advisory, e.g. {list(twice.items())[:3]}")
+        self.assertGreater(len(reads), 2000, "the spy saw too few reads to be measuring the corpus")
+        self.assertTrue(any(p.endswith("VELOCITY.md") for p in reads), "the velocity record was never read - the baseline stamp is not taking effect")
+        # the control: with no census `children_of` still walks - a second call outside any
+        # sweep reads the corpus again. A memo at the read layer would answer it from memory
+        reads.clear()
+        with mock.patch.object(Path, "read_text", spy):
+            sdlc_md.children_of(root, "EP0001")
+            first = sum(reads.values())
+            sdlc_md.children_of(root, "EP0001")
+        self.assertGreater(first, 300, "the first no-census children_of call did not walk the corpus")
+        self.assertGreater(sum(reads.values()), first + 300,
+                           "with no census the second children_of call did not re-read - a read-layer memo is serving it")
+        # the wiring: the SHIPPED command hands the advisory the census the gather took - the
+        # advisory is entered inside the same open sweep, never after it closed or in one of its own
+        seen = {}
+        real_gather, real_adv = status.gather, status.close_owed_advisory
+
+        def spy_gather(r, **kw):
+            seen["gather_sweep"] = id(sdlc_md._CORPUS_CACHE) if sdlc_md.corpus_cache_active() else None
+            return real_gather(r, **kw)
+
+        def spy_adv(r):
+            seen["advisory_sweep"] = id(sdlc_md._CORPUS_CACHE) if sdlc_md.corpus_cache_active() else None
+            return real_adv(r)
+
+        with mock.patch.object(status, "gather", spy_gather), mock.patch.object(status, "close_owed_advisory", spy_adv), \
+             contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(0, status.main(["--root", str(root)]))
+        self.assertIsNotNone(seen.get("gather_sweep"), "the shipped command ran gather outside any sweep")
+        self.assertIsNotNone(seen.get("advisory_sweep"), "the shipped command ran the close-owed advisory outside any sweep - its own walk")
+        self.assertEqual(seen["gather_sweep"], seen["advisory_sweep"], "the advisory ran in a different sweep from the gather - a second census")
 
 
 if __name__ == "__main__":

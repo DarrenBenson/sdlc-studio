@@ -259,10 +259,12 @@ def open_run(repo_root: Path | str) -> dict | None:
     run-state file exists and does not parse. Reporting the second as the first orphans the very
     run it failed to read, so they are kept apart all the way to the renderer.
 
-    Nothing here defines what `remaining` means. `handoff.build` owns that predicate - terminal
-    via `sdlc_md.terminal_statuses`, with terminal-but-not-delivered counted as dropped rather
-    than remaining - and this asks it, so the dashboard and the handoff cannot answer the same
-    question differently. The rung/Sprint-Goal labelling is `sprint.run_opened_line`'s
+    Nothing here defines what `remaining` means. `handoff._classify` owns that predicate -
+    terminal via `sdlc_md.terminal_statuses`, with terminal-but-not-delivered counted as dropped
+    rather than remaining - and this asks it through `handoff.remaining_count`, the entry point
+    that reads the predicate without `build`'s conformance and readiness passes, so the
+    dashboard and the handoff cannot answer the same question differently. The
+    rung/Sprint-Goal labelling is `sprint.run_opened_line`'s
     convention, which exists precisely because a bare `goal=` read as either.
     """
     from lib import run_state   # THE shared reader; this must not be a second one
@@ -293,7 +295,9 @@ def open_run(repo_root: Path | str) -> dict | None:
     }
     try:
         import handoff   # local: the dashboard borrows the handoff's predicate, not its weight
-        out["remaining"] = handoff.build(root)["summary"]["remaining"]
+        # the predicate, without `build`'s conformance and readiness passes - 62 s on
+        # this corpus for a number the run line prints as one integer.
+        out["remaining"] = handoff.remaining_count(root)
     except Exception:  # noqa: BLE001 - an unreportable remaining count is not a missing run
         out["remaining"] = None
     return out
@@ -316,8 +320,13 @@ def render_run_line(run: dict | None) -> str:
     return (f"Run:          {run['run_id']} (rung={run['rung']}, {goal}, "
             f"batch={batch}, remaining={remaining})")
 
-def gather(repo_root: Path) -> dict:
-    """Compute all four pillars from the artifact files and review state."""
+_UNSET = object()
+
+
+def gather(repo_root: Path, *, run=_UNSET) -> dict:
+    """Compute all four pillars from the artifact files and review state. A caller that has
+    already read the open run (the text dashboard prints it before the census) passes it as
+    `run`, so the batch is classified once per invocation rather than twice."""
     base = repo_root / "sdlc-studio"
     epics = count_by_status("epic", repo_root)
     stories = count_by_status("story", repo_root)
@@ -333,7 +342,7 @@ def gather(repo_root: Path) -> dict:
         "config": _config_summary(repo_root),
         # Explicitly null rather than omitted when no run is open, so a consumer can tell an
         # absent run from an older schema that never carried the key.
-        "run": open_run(repo_root),
+        "run": open_run(repo_root) if run is _UNSET else run,
         "requirements": {
             "prd": (base / "prd.md").exists(),
             "personas": (base / "personas.md").exists(),
@@ -368,64 +377,74 @@ def gather(repo_root: Path) -> dict:
 
 def cmd_pillars(args: argparse.Namespace) -> int:
     """Print the four-pillar census."""
-    data = gather(Path(args.root).resolve())
+    root = Path(args.root).resolve()
     if args.format == "json":
-        print(json.dumps(data, indent=2))
+        with sdlc_md.corpus_cache():
+            print(json.dumps(gather(root), indent=2))
         return 0
-    # FIRST, above the census. The reader arriving after a context reset needs to know which
-    # run they are standing in before they need any of the counts below it.
-    print(render_run_line(data["run"]))
-    req = data["requirements"]
-    print(f"Requirements: PRD={'yes' if req['prd'] else 'no'} "
-          f"personas={'yes' if req['personas'] else 'no'} "
-          f"epics={req['epics']['total']} ({req['epics_ready_pct']}% ready+) "
-          f"stories={req['stories']['total']} ({req['stories_done_pct']}% done)")
-    print(f"Code:         TRD={'yes' if data['code']['trd'] else 'no'}")
-    print(f"Tests:        TSD={'yes' if data['tests']['tsd'] else 'no'} "
-          f"test-specs={data['tests']['test_specs']['total']}")
-    print(f"Bugs:         open={data['bugs']['by_status'].get('Open', 0)} "
-          f"fixed={data['bugs']['by_status'].get('Fixed', 0)} total={data['bugs']['total']}")
-    print(f"Workflows:    total={data['workflows']['total']}")
-    print(f"Reviews:      files={data['reviews']['review_files']} "
-          f"latest={'yes' if data['reviews']['latest'] else 'no'}")
-    bl = data["backlogs"]
-    disc, deliv = bl["discovery"], bl["delivery"]
-    awaiting = bl["awaiting"]["count"]
-    disc_types = f" ({', '.join(disc['types'])})" if disc["types"] else ""
-    deliv_types = f" ({', '.join(deliv['types'])})" if deliv["types"] else ""
-    print(f"Backlogs:     Discovery={disc['count']}{disc_types}"
-          f"{f', {awaiting} awaiting refine/triage' if awaiting else ''} · "
-          f"Delivery={deliv['count']}{deliv_types}")
-    adv = workspace_advisory(Path(args.root))
-    if adv:
-        print(f"advisory: {adv}")
-    import persona_gen  # lazy sibling: a provisional label nobody surfaces is never cleared
-    prov = persona_gen.provisional_seats(Path(args.root))
-    if prov:
-        print(f"advisory: {len(prov)} generated persona card(s) still provisional-unverified "
-              f"({', '.join(prov[:3])}{'...' if len(prov) > 3 else ''}) - review and accept "
-              f"them: persona_gen.py accept (or `persona review`)")
-    offer = team_offer_advisory(Path(args.root))
-    if offer:
-        print(f"advisory: {offer}")
-    import gate  # lazy sibling: one shared hook-gap message, so the two surfaces cannot drift
-    gap = gate.hook_enablement_gap(args.root)
-    if gap:
-        print(f"advisory: {gap}")
-    owed = close_owed_advisory(Path(args.root))
-    if owed:
-        print(f"advisory: {owed}")
-    tri = backlog_triage_advisory(Path(args.root))
-    if tri:
-        print(f"advisory: {tri}")
-    drift = installed_copy_drift_advisory(sdlc_md.resolve_root(args))
-    if drift:
-        print(f"advisory: {drift}")
-    age = ageing_advisory(Path(args.root))
-    if age:
-        print(f"advisory: {age}")
-    _print_update_notice(args.root)
-    return 0
+    # FIRST, above the census, and BEFORE it: the reader arriving after a context reset needs
+    # to know which run they are standing in before the corpus is walked, and a piped consumer
+    # (an agent harness under a tool timeout) sees nothing until the line is flushed. The run
+    # line is read from the run record and the batch's statuses, never from the census.
+    run = open_run(root)
+    print(render_run_line(run))
+    sys.stdout.flush()
+    # ONE sweep over the corpus for the census and every advisory beneath it: `children_of`
+    # walked and read all 2,340 files on each of its 45 gather calls and 189 advisory calls,
+    # 53 to 115 seconds where the fixture now takes seconds.
+    with sdlc_md.corpus_cache():
+        data = gather(root, run=run)
+        req = data["requirements"]
+        print(f"Requirements: PRD={'yes' if req['prd'] else 'no'} "
+              f"personas={'yes' if req['personas'] else 'no'} "
+              f"epics={req['epics']['total']} ({req['epics_ready_pct']}% ready+) "
+              f"stories={req['stories']['total']} ({req['stories_done_pct']}% done)")
+        print(f"Code:         TRD={'yes' if data['code']['trd'] else 'no'}")
+        print(f"Tests:        TSD={'yes' if data['tests']['tsd'] else 'no'} "
+              f"test-specs={data['tests']['test_specs']['total']}")
+        print(f"Bugs:         open={data['bugs']['by_status'].get('Open', 0)} "
+              f"fixed={data['bugs']['by_status'].get('Fixed', 0)} total={data['bugs']['total']}")
+        print(f"Workflows:    total={data['workflows']['total']}")
+        print(f"Reviews:      files={data['reviews']['review_files']} "
+              f"latest={'yes' if data['reviews']['latest'] else 'no'}")
+        bl = data["backlogs"]
+        disc, deliv = bl["discovery"], bl["delivery"]
+        awaiting = bl["awaiting"]["count"]
+        disc_types = f" ({', '.join(disc['types'])})" if disc["types"] else ""
+        deliv_types = f" ({', '.join(deliv['types'])})" if deliv["types"] else ""
+        print(f"Backlogs:     Discovery={disc['count']}{disc_types}"
+              f"{f', {awaiting} awaiting refine/triage' if awaiting else ''} · "
+              f"Delivery={deliv['count']}{deliv_types}")
+        adv = workspace_advisory(Path(args.root))
+        if adv:
+            print(f"advisory: {adv}")
+        import persona_gen  # lazy sibling: a provisional label nobody surfaces is never cleared
+        prov = persona_gen.provisional_seats(Path(args.root))
+        if prov:
+            print(f"advisory: {len(prov)} generated persona card(s) still provisional-unverified "
+                  f"({', '.join(prov[:3])}{'...' if len(prov) > 3 else ''}) - review and accept "
+                  f"them: persona_gen.py accept (or `persona review`)")
+        offer = team_offer_advisory(Path(args.root))
+        if offer:
+            print(f"advisory: {offer}")
+        import gate  # lazy sibling: one shared hook-gap message, so the two surfaces cannot drift
+        gap = gate.hook_enablement_gap(args.root)
+        if gap:
+            print(f"advisory: {gap}")
+        owed = close_owed_advisory(Path(args.root))
+        if owed:
+            print(f"advisory: {owed}")
+        tri = backlog_triage_advisory(Path(args.root))
+        if tri:
+            print(f"advisory: {tri}")
+        drift = installed_copy_drift_advisory(sdlc_md.resolve_root(args))
+        if drift:
+            print(f"advisory: {drift}")
+        age = ageing_advisory(Path(args.root))
+        if age:
+            print(f"advisory: {age}")
+        _print_update_notice(args.root)
+        return 0
 
 
 def ageing_advisory(repo_root: Path | str, *, today=None) -> str | None:
