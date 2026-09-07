@@ -109,9 +109,24 @@ _FINGERPRINT_LEN = 12
 _FINGERPRINT_RE = re.compile(r"[0-9a-f]{%d}" % _FINGERPRINT_LEN)
 
 
+_REJOINDER_MARK = "\n\n--- RE-REVIEW (rejoinder) ---"
+
+
+def rejoinder_fingerprint(text: str, phase: str = "delivery") -> str:
+    """The fingerprint a rejoinder brief carries: its BASE brief plus its phase, never the prior
+    verdict quoted beneath. The base is what identifies the seat and the unit's state at this
+    round; the quoted prior is the seat's own earlier words, which the ledger holds as fields
+    and no reader could re-render byte for byte - so a fingerprint over the whole text would be
+    one `record --brief` could never recognise, and every honest re-review would carry the
+    unrecognised-brief note that marks a fabricated one."""
+    base = text.split(_REJOINDER_MARK, 1)[0]
+    return brief_fingerprint(base + f"\n<rejoinder:{phase}>")
+
+
 def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str,
                                phase: str = "delivery"):
-    """Seats whose CURRENT brief for `unit` fingerprints to `fingerprint`.
+    """Seats whose CURRENT brief for `unit` - first-round or rejoinder - fingerprints to
+    `fingerprint`.
 
     Returns None when the question cannot be asked at all - no unit, no seat cards, an
     unreadable tree. None means UNKNOWN and must not be read as "no match", because reporting
@@ -125,18 +140,29 @@ def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str,
     if not seats:
         return None
     matched, asked = [], False
+    # the tiers a delivery brief could have been rendered at: the default and the derived one
+    tiers = ["full"]
+    try:
+        derived = tier_for(repo_root, unit)
+        if derived not in tiers:
+            tiers.append(derived)
+    except Exception:  # noqa: BLE001 - an underivable tier narrows the search, never ends it
+        pass
     for seat in seats:
-        try:
-            # THE PHASE THE VERDICT IS BEING RECORDED FOR. Asking for a delivery brief
-            # while checking a plan-review fingerprint can never match, so every honest plan
-            # verdict carried the same suspicion note as a fabricated one - which is how the
-            # note stops being read at all.
-            text = brief(repo_root, unit, seat, phase=phase)
-        except (OSError, ValueError):
-            continue
-        asked = True
-        if brief_fingerprint(text) == fingerprint:
-            matched.append(seat)
+        for tier in tiers:
+            try:
+                # THE PHASE THE VERDICT IS BEING RECORDED FOR. Asking for a delivery brief
+                # while checking a plan-review fingerprint can never match, so every honest plan
+                # verdict carried the same suspicion note as a fabricated one - which is how the
+                # note stops being read at all. And the REJOINDER's identity beside the first
+                # round's: a re-review's footer used to print a value nothing could reproduce.
+                text = brief(repo_root, unit, seat, tier, phase=phase)
+            except (OSError, ValueError):
+                continue
+            asked = True
+            if fingerprint in (brief_fingerprint(text), rejoinder_fingerprint(text, phase)):
+                if seat not in matched:
+                    matched.append(seat)
     return matched if asked else None
 
 
@@ -3118,6 +3144,12 @@ def tier_for(repo_root: Path | str, unit: str) -> str:
     return BAND_TIER.get(band or "", UNKNOWN_BAND_TIER)
 
 
+_PLAN_RETURN_CONTRACT = """Return EXACTLY:
+VERDICT: APPROVE or REJECT
+ISSUES: <semicolon-separated, each naming the criterion it is about, or 'none'>
+BLOCKING: <the subset that must change before code is written, or 'none'>"""
+
+
 def _plan_review_brief(root, card, seat, unit_id, title, path, text, acs) -> str:
     """The PRE-CODE brief: the criteria as law and the test plan as the object of review.
 
@@ -3167,10 +3199,7 @@ Ask of each row, in this order:
 5. **Is a positive control named** beside each refusal? A guard tested only by what it
    refuses passes for the wrong reason when it refuses everything.
 
-Return EXACTLY:
-VERDICT: APPROVE or REJECT
-ISSUES: <semicolon-separated, each naming the criterion it is about, or 'none'>
-BLOCKING: <the subset that must change before code is written, or 'none'>"""
+{_PLAN_RETURN_CONTRACT}"""
 
 
 def _withdrawn_block(root: Path, unit: str) -> str:
@@ -3270,16 +3299,35 @@ Review depth: {depth}
 
 
 def rejoinder_brief(repo_root: Path | str, unit: str, seat: str,
-                    prior_verdict_text: str, tier: str = "full") -> str:
+                    prior_verdict_text: str, tier: str = "full",
+                    phase: str = "delivery") -> str:
     """The re-review brief after a REJECT's repairs: the prior VERDICT/ISSUES/BLOCKING
-    quoted verbatim, the diff scope refreshed (via the standard brief), the structural
-    demand to RE-EXECUTE the previously named probes and mutants, and the same return
-    contract. A malformed prior-verdict block is refused loudly - a rejoinder against
-    a verdict that cannot be parsed would re-review against a paraphrase. Validation
-    is well-formedness only: an APPROVE prior verdict is accepted too (a legitimate
-    post-approval re-review), not just the REJECT-repair loop this exists for."""
+    quoted verbatim, the base brief refreshed IN THE SAME PHASE (via the standard brief),
+    the structural demand to re-examine what the prior verdict named, and that phase's own
+    return contract. A plan-review rejoinder keeps the plan-review shape - no diff scope,
+    the current Test Plan table, the plan contract - because there is still no diff, and a
+    rejoinder that rendered the delivery brief handed the seat a scope that did not exist
+    and no footer at all, so its verdict could only be recorded by hand. A malformed prior-verdict
+    block is refused loudly - a rejoinder against a verdict that cannot be parsed would
+    re-review against a paraphrase. Validation is well-formedness only: an APPROVE prior
+    verdict is accepted too (a legitimate post-approval re-review)."""
     parse_verdict_block(prior_verdict_text)  # validation only; ValueError on malformed
-    base = brief(repo_root, unit, seat, tier)
+    base = brief(repo_root, unit, seat, tier, phase=phase)
+    if phase == "plan-review":
+        demand = """The author's repairs summary (if any) accompanies this brief separately. It is a CLAIM,
+not evidence: before you may approve, re-read the CURRENT Test Plan table above against each
+finding your prior verdict named, and rule each one CLOSED, OVER-CLAIMED or MOVED. A row
+re-worded is not a row repaired: ask again whether the named mutant would be killed by the
+test the row describes, and whether the fixture as written can reach it. There is still no
+diff to read."""
+        contract = _PLAN_RETURN_CONTRACT
+    else:
+        demand = """The author's repairs summary (if any) accompanies this brief separately. It is a CLAIM,
+not evidence: before you may approve, RE-EXECUTE the probes and mutants your prior
+verdict named - re-apply each mutant and watch its killing test FAIL, re-run each live
+probe - and confirm the tree is byte-identical after your mutations. A repair whose
+killing test cannot fail is vacuous; two such tests have shipped before."""
+        contract = _RETURN_CONTRACT
     return f"""{base}
 
 --- RE-REVIEW (rejoinder) ---
@@ -3288,15 +3336,11 @@ This is a RE-REVIEW after repairs to your prior verdict. Your prior verdict, ver
 
 {prior_verdict_text.strip()}
 
-The author's repairs summary (if any) accompanies this brief separately. It is a CLAIM,
-not evidence: before you may approve, RE-EXECUTE the probes and mutants your prior
-verdict named - re-apply each mutant and watch its killing test FAIL, re-run each live
-probe - and confirm the tree is byte-identical after your mutations. A repair whose
-killing test cannot fail is vacuous; two such tests have shipped before.
+{demand}
 
 Then return the SAME contract as before:
 
-{_RETURN_CONTRACT}"""
+{contract}"""
 
 
 _VERDICT_LINE = re.compile(r"^\s*VERDICT:\s*(\S+)\s*$", re.M | re.I)
@@ -3763,14 +3807,55 @@ def cmd_caller_check(args: argparse.Namespace) -> int:
     return 1 if findings else 0
 
 
+_TIER_ON_PLAN = ("brief refused: --tier is the DELIVERY review's depth and has no meaning on a plan "
+                 "review, which judges an artefact rather than a diff.")
+
+
+def _print_plan_footer(unit: str, fp: str) -> None:
+    """The plan-review footer, on stderr: the fingerprint `record --brief` consumes and the record
+    command that runs as printed. One function for the first-round brief and the rejoinder - the
+    two paths drifted once, which is the whole of BG0645."""
+    print(f"\nreview phase: plan-review (no tier - a plan review judges an "
+          f"artefact, not a diff)\n"
+          f"brief fingerprint: {fp}\n"
+          f"  record the verdict with:  critic.py record --unit "
+          f"{sdlc_md.norm_id(unit)} --phase plan-review --kind test-plan "
+          f"--verdict <APPROVE|REJECT> --brief {fp} "
+          f"--reviewer <seat> --author <who>",
+          file=sys.stderr)
+
+
 def cmd_brief(args: argparse.Namespace) -> int:
     try:
         if getattr(args, "rejoinder", None):
             src = args.rejoinder
             prior = (sys.stdin.read() if src == "-"
                      else Path(src).read_text(encoding="utf-8"))
-            print(rejoinder_brief(args.root, args.unit, args.seat, prior,
-                                  args.tier or tier_for(args.root, args.unit)))
+            phase = getattr(args, "phase", "delivery")
+            explicit = args.tier is not None
+            if phase == "plan-review":
+                if explicit:
+                    print(_TIER_ON_PLAN, file=sys.stderr)
+                    return 2
+                text = rejoinder_brief(args.root, args.unit, args.seat, prior, phase=phase)
+                print(text)
+                # the PLAN-REVIEW footer, the same one the plain plan brief prints, so the
+                # re-review's verdict is recorded into the plan ledger and never the delivery one
+                _print_plan_footer(args.unit, rejoinder_fingerprint(text, phase))
+                return 0
+            tier = args.tier or tier_for(args.root, args.unit)
+            text = rejoinder_brief(args.root, args.unit, args.seat, prior, tier)
+            print(text)
+            # the footer the delivery rejoinder never printed: a re-review's verdict needs the
+            # same provenance as the first one, and a fingerprint the matcher can reproduce
+            fp = rejoinder_fingerprint(text, "delivery")
+            how = "chosen" if explicit else "derived from the unit's risk band"
+            print(f"\nreview tier: {tier} ({how})\n"
+                  f"brief fingerprint: {fp}\n"
+                  f"  record the verdict with:  critic.py record --unit "
+                  f"{sdlc_md.norm_id(args.unit)} --verdict <APPROVE|REJECT> "
+                  f"--brief {fp} --tier {tier}"
+                  f"{' --tier-explicit' if explicit else ''} ...", file=sys.stderr)
         else:
             # DERIVED unless the operator named one. `--tier` no longer defaults to `full`
             # in the parser: a default there is indistinguishable from a choice, and the
@@ -3782,9 +3867,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
                 # and `record_verdict` refuses a tier on this phase. Naming one here would
                 # promise a depth the ledger cannot record.
                 if explicit:
-                    print("brief refused: --tier is the DELIVERY review's depth and has no "
-                          "meaning on a plan review, which judges an artefact rather than a "
-                          "diff.", file=sys.stderr)
+                    print(_TIER_ON_PLAN, file=sys.stderr)
                     return 2
                 text = brief(args.root, args.unit, args.seat, phase=phase)
                 print(text)
@@ -3792,13 +3875,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
                 # this block meant `record --phase plan-review` demanded a fingerprint the
                 # shipped command had never printed - verbatim the scar AGENTS.md cites, in
                 # the phase added to prevent it.
-                print(f"\nreview phase: plan-review (no tier - a plan review judges an "
-                      f"artefact, not a diff)\n"
-                      f"brief fingerprint: {brief_fingerprint(text)}\n"
-                      f"  record the verdict with:  critic.py record --unit "
-                      f"{sdlc_md.norm_id(args.unit)} --phase plan-review --kind test-plan "
-                      f"--verdict <APPROVE|REJECT> --brief {brief_fingerprint(text)}",
-                      file=sys.stderr)
+                _print_plan_footer(args.unit, brief_fingerprint(text))
                 return 0
             tier = args.tier or tier_for(args.root, args.unit)
             text = brief(args.root, args.unit, args.seat, tier)
@@ -4408,8 +4485,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "to wait for code")
     b.add_argument("--rejoinder", metavar="FILE|-", default=None,
                    help="emit the RE-REVIEW brief from the prior verdict file (or stdin "
-                        "with -): prior verdict quoted verbatim, re-execute-your-probes "
-                        "demand, same return contract; a malformed block is refused")
+                        "with -), in --phase's shape: delivery re-renders the diff scope, "
+                        "demands the named probes and mutants be re-executed and closes with "
+                        "the delivery contract; plan-review re-renders the plan brief - no "
+                        "diff scope, the CURRENT Test Plan table - asks for each finding to be "
+                        "ruled against it and closes with the plan contract (--tier refused). "
+                        "The prior verdict is quoted verbatim, a fingerprint footer is printed "
+                        "on stderr in both phases; a malformed block is refused")
     b.add_argument("--root", default=".")
     b.set_defaults(func=cmd_brief)
     cc = sub.add_parser("caller-check",

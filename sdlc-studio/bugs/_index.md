@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 17 |
+| Open | 16 |
 | In Progress | 0 |
-| Fixed | 534 |
+| Fixed | 535 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
@@ -184,7 +184,7 @@
 | [BG0642](BG0642-the-required-status-check-never-reports-at-push.md) | the required status check never reports at push time, so every push to main bypasses branch protection and CI failures go unread | Fixed | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0643](BG0643-the-verify-flag-bg0636-shipped-is-refused-for.md) | the --verify flag BG0636 shipped is refused for the one case it exists for: a criterion whose test is not written yet | Fixed | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0644](BG0644-the-test-noise-ratchet-compares-a-selected-subset.md) | the test-noise ratchet compares a selected subset against a whole-suite baseline | Fixed | Medium | 2026-09-03 | 2026-09-03 |
-| [BG0645](BG0645-critic-py-brief-rejoinder-ignores-phase-plan-review.md) | critic.py brief --rejoinder ignores --phase plan-review and renders the delivery brief, so a re-review of a rejected test plan is briefed with a diff scope that does not exist | Open | Medium | 2026-09-04 | 2026-09-04 |
+| [BG0645](BG0645-critic-py-brief-rejoinder-ignores-phase-plan-review.md) | critic.py brief --rejoinder ignores --phase plan-review and renders the delivery brief, so a re-review of a rejected test plan is briefed with a diff scope that does not exist | Fixed | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0646](BG0646-status-py-takes-113-seconds-on-this-corpus.md) | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default | Fixed | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0647](BG0647-test-config-s-status-integration-test-gathers-status.md) | test_config's status integration test gathers status over the REAL repository, so the suite's duration and its noise count depend on this tree's state | Fixed | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0648](BG0648-a-criterion-written-outside-the-acceptance-criteria-section.md) | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and the sprint report | Open | Medium | 2026-09-04 | 2026-09-04 |

@@ -271,6 +271,118 @@ class PlanReviewBriefTests(unittest.TestCase):
                 mod._seats_whose_brief_matches(root, "US0001", deliv_fp, "plan-review"), [],
                 "a delivery fingerprint was accepted as provenance for a plan review")
 
+    def _record_prior(self, root: Path, phase: str) -> Path:
+        """Brief the seat through the CLI, record a REJECT against that brief's fingerprint in
+        the given phase, and return the prior-verdict file the rejoinder takes."""
+        import subprocess  # noqa: PLC0415
+        args = ["--phase", "plan-review"] if phase == "plan-review" else []
+        b = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001",
+                            "--seat", "qa", "--root", str(root), *args],
+                           capture_output=True, text=True, check=False)
+        self.assertEqual(0, b.returncode, b.stderr)
+        fp = re.search(r"brief fingerprint: ([0-9a-f]+)", b.stderr).group(1)
+        prior = root / "prior.txt"
+        # a delivery verdict's findings carry origin tags, which the delivery ledger demands
+        tag = "" if phase == "plan-review" else "[new] "
+        prior.write_text(f"VERDICT: REJECT\nISSUES: {tag}AC1 the row's mutant is not reached by its fixture\n"
+                         f"BLOCKING: {tag}AC1 the row's mutant is not reached by its fixture\n", encoding="utf-8")
+        kind = ["--phase", "plan-review", "--kind", "test-plan"] if phase == "plan-review" else ["--tier", "full"]
+        r = subprocess.run([sys.executable, "-B", str(SCRIPT), "record", "--unit", "US0001",
+                            "--from-verdict", str(prior), "--brief", fp, "--reviewer", "qa seat",
+                            "--author", "author", "--root", str(root), *kind],
+                           capture_output=True, text=True, check=False)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        return prior
+
+    def test_a_plan_review_rejoinder_keeps_the_plan_review_shape_through_the_cli(self) -> None:
+        """BG0645. MUTANTS: resolve the phase from the rejoinder flag (delivery whenever a
+        rejoinder is given); keep the `Diff scope (` block under the plan charter; drop the Test
+        Plan table; print no footer; copy the delivery footer; append the delivery return block."""
+        import subprocess  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            prior = self._record_prior(root, "plan-review")
+            r = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001",
+                                "--seat", "qa", "--phase", "plan-review", "--rejoinder", str(prior),
+                                "--root", str(root)], capture_output=True, text=True, check=False)
+            self.assertEqual(0, r.returncode, r.stderr)
+            out = r.stdout
+            self.assertIn("There is NO diff scope", out, "the plan-review charter is missing")
+            self.assertFalse(re.search(r"^Diff scope \(", out, re.M), "a diff-scope block header on a plan re-review")
+            self.assertIn("### AC1: it refuses an empty batch", out, "the criteria as law are missing")
+            self.assertIn("| AC1 | in thing.py, delete the emptiness guard | it refuses |", out,
+                          "the CURRENT Test Plan table is missing - the object a plan re-review judges")
+            self.assertIn("--- RE-REVIEW (rejoinder) ---", out)
+            self.assertIn(prior.read_text(encoding="utf-8").strip(), out, "the prior verdict is not quoted verbatim - all three lines")
+            # the plan re-review asks for a ruling against the table, never for mutants to re-run
+            re_review = out[out.index("--- RE-REVIEW (rejoinder) ---"):]
+            self.assertIn("rule each one CLOSED, OVER-CLAIMED or MOVED", re_review)
+            self.assertNotIn("RE-EXECUTE", re_review, "the delivery demand on a plan re-review")
+            # it CLOSES with the plan-review contract, never the delivery block
+            tail = out[out.index("--- RE-REVIEW (rejoinder) ---"):]
+            self.assertIn("BLOCKING: <the subset that must change before code is written, or 'none'>", tail)
+            self.assertNotIn("[regression]", tail, "the delivery return block, with its origin tags, closes a plan re-review")
+            self.assertNotIn("git log -S", tail)
+            self.assertTrue(out.rstrip().endswith("or 'none'>"), "the plan contract is not the last thing the seat reads")
+            # and the footer records into the PLAN ledger
+            self.assertRegex(r.stderr, r"brief fingerprint: [0-9a-f]+")
+            self.assertIn("record --unit US0001 --phase plan-review --kind test-plan", r.stderr)
+            self.assertNotIn("--tier", r.stderr, "the plan footer names a tier the plan ledger refuses")
+            self.assertIn("--reviewer <seat> --author <who>", r.stderr, "the printed record command does not run as printed - record needs both")
+            # the flag's own help describes the shape it now renders
+            h = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--help"], capture_output=True, text=True, check=False)
+            self.assertIn("plan-review re-renders the plan brief", h.stdout, "brief --help still describes the delivery shape only")
+            # and `record --brief` CONSUMES that fingerprint into the plan ledger - the same value
+            # on both lines of the footer, and RECOGNISED, never the unrecognised-brief note
+            fp = re.search(r"brief fingerprint: ([0-9a-f]+)", r.stderr).group(1)
+            self.assertEqual(fp, re.search(r"--brief ([0-9a-f]+)", r.stderr).group(1), "the footer's two fingerprints differ")
+            rec = subprocess.run([sys.executable, "-B", str(SCRIPT), "record", "--unit", "US0001",
+                                  "--phase", "plan-review", "--kind", "test-plan", "--verdict", "APPROVE",
+                                  "--reviewer", "qa seat", "--author", "author", "--brief", fp, "--root", str(root)],
+                                 capture_output=True, text=True, check=False)
+            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+            self.assertIn("[plan-review]", rec.stdout + rec.stderr, "the re-review's verdict did not land in the plan ledger")
+            self.assertNotIn("matches no brief", rec.stdout + rec.stderr,
+                             "an honest re-review's fingerprint was reported as unrecognised - the matcher cannot reproduce it")
+            # a tier on the plan-review rejoinder is refused, as on the plain plan brief
+            t = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001",
+                                "--seat", "qa", "--phase", "plan-review", "--rejoinder", str(prior),
+                                "--tier", "full", "--root", str(root)], capture_output=True, text=True, check=False)
+            self.assertEqual(2, t.returncode)
+            self.assertIn("--tier is the DELIVERY review's depth", t.stderr)
+
+    def test_a_delivery_rejoinder_still_carries_the_diff_scope_and_a_footer(self) -> None:
+        """BG0645 AC2, the control. MUTANTS: drop the `Diff scope (` block from every rejoinder
+        whatever the phase; print the footer on the plan-review rejoinder only."""
+        import subprocess  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            prior = self._record_prior(root, "delivery")
+            r = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001",
+                                "--seat", "qa", "--rejoinder", str(prior), "--root", str(root)],
+                               capture_output=True, text=True, check=False)
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertTrue(re.search(r"^Diff scope \(", r.stdout, re.M), "the delivery rejoinder lost its diff scope")
+            self.assertIn("--- RE-REVIEW (rejoinder) ---", r.stdout)
+            self.assertIn("ISSUES: [new] AC1 the row's mutant is not reached by its fixture", r.stdout)
+            self.assertIn("[regression]", r.stdout[r.stdout.index("--- RE-REVIEW"):], "the delivery contract does not close the delivery re-review")
+            self.assertRegex(r.stderr, r"brief fingerprint: [0-9a-f]+")
+            self.assertIn("--tier full", r.stderr, "the delivery footer carries no tier")
+            self.assertNotIn("--phase plan-review", r.stderr)
+            # the fingerprint records WITHOUT the unrecognised-brief note, and a chosen tier is
+            # carried as such
+            fp = re.search(r"brief fingerprint: ([0-9a-f]+)", r.stderr).group(1)
+            rec = subprocess.run([sys.executable, "-B", str(SCRIPT), "record", "--unit", "US0001", "--verdict", "APPROVE",
+                                  "--brief", fp, "--tier", "full", "--reviewer", "qa seat", "--author", "author", "--root", str(root)],
+                                 capture_output=True, text=True, check=False)
+            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+            self.assertNotIn("matches no brief", rec.stdout + rec.stderr, "the delivery rejoinder's fingerprint was not recognised")
+            t = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001", "--seat", "qa",
+                                "--rejoinder", str(prior), "--tier", "full", "--root", str(root)], capture_output=True, text=True, check=False)
+            self.assertIn("--tier-explicit", t.stderr, "a chosen tier is not carried into the record command")
+
     def test_the_plan_brief_refuses_a_tier(self) -> None:
         """`record_verdict` refuses a tier on this phase, so a brief that accepted one would
         promise a depth the ledger cannot record. Mutant: accept and ignore it - the two halves
