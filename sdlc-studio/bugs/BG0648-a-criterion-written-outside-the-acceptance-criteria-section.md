@@ -1,10 +1,10 @@
 # BG0648: a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and the sprint report
 
 > **Status:** Open
-> **Verification depth:** functional [[derived: criteria 3; plan rows 5; EVIDENCE ABSENT - the mutation ledger holds no entry for this unit, which is not the same fact as nought killed; NOT RUN 5 (AC1 row 0, AC1 row 1, AC2 row 0, AC2 row 1, AC3 row 0); entry point 0 of 3 criteria through the shipped CLI, 0 in-process; 3 undetermined (the named node could not be isolated) | fp 668f33b08f6c ]]
+> **Verification depth:** functional [[derived: criteria 4; plan rows 6; EVIDENCE ABSENT - the mutation ledger holds no entry for this unit, which is not the same fact as nought killed; NOT RUN 6 (AC1 row 0, AC1 row 1, AC2 row 0, AC2 row 1, AC3 row 0, AC4 row 0); entry point 0 of 4 criteria through the shipped CLI, 0 in-process; 4 undetermined (the named node could not be isolated) | fp 2677deebbb6d ]]
 > **Severity:** Medium
-> **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Points:** 5
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, sdlc-studio/stories/US0597-the-premise-is-replayed-and-measured-the-blocking.md, sdlc-studio/stories/US0629-a-test-plan-is-derived-from-the-unit.md, sdlc-studio/bugs/BG0270-the-goal-review-gate-refuses-a-plan-when.md
 > **Created:** 2026-09-04
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -30,6 +30,9 @@ One reader: `parse_story` and the brief renderer read the criteria through `sdlc
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::CriteriaSectionTests::test_verify_ac_and_the_brief_count_the_same_criteria
 - [ ] **AC3** Given the same artefact, when `verify_ac.py lint --bugs` runs, then the misplaced criterion is named as unreviewable with the section it belongs in, so the author is told where to move it rather than left with a green run and a silent brief
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::CriteriaSectionTests::test_lint_names_a_misplaced_criterion_with_its_section
+- [ ] **AC4** Given this corpus, when the new ERROR lands, then the three artefacts that already offend (US0597 with its criteria under `## User Story`, US0629 with `### AC1 -` headings under Test Plan, BG0270 with AC4 under Revision History) are moved into their sections with their derived depth fields regenerated in the same commit, so `validate.py check` over this tree is green at the commit that ships the lane and the gate never refuses itself
+  - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/validate.py check
+  - **Verified:** yes (2026-09-07)
 
 ## Test Plan
 
@@ -40,6 +43,7 @@ One reader: `parse_story` and the brief renderer read the criteria through `sdlc
 | AC2 | in `verify_ac.py`, keep executing every `**ACn**` block wherever it sits - today's code | Given the same artefact, when `verify_ac.py run` and `critic.py brief` read it, then both report the same criterion count, the count of the section's criteria, and the misplaced block is neither executed nor briefed - today `verify_ac` executes it and the brief omits it, so a verifier passes that no reviewer ever judged |
 | AC2 | in `critic.py` `brief`, read every `**ACn**` block in the file so the brief agrees with today's verify_ac by widening rather than narrowing | Given the same artefact, when `verify_ac.py run` and `critic.py brief` read it, then both report the same criterion count, the count of the section's criteria, and the misplaced block is neither executed nor briefed - today `verify_ac` executes it and the brief omits it, so a verifier passes that no reviewer ever judged |
 | AC3 | in `verify_ac.py` `lint`, skip blocks outside the section silently | Given the same artefact, when `verify_ac.py lint --bugs` runs, then the misplaced criterion is named as unreviewable with the section it belongs in, so the author is told where to move it rather than left with a green run and a silent brief |
+| AC4 | leave US0597's criteria under `## User Story`, so the lane refuses this tree at its own commit | Given this corpus, when the new ERROR lands, then the three artefacts that already offend (US0597 with its criteria under `## User Story`, US0629 with `### AC1 -` headings under Test Plan, BG0270 with AC4 under Revision History) are moved into their sections with their derived depth fields regenerated in the same commit, so `validate.py check` over this tree is green at the commit that ships the lane and the gate never refuses itself |
 
 ## Revision History
 
