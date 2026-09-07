@@ -42,9 +42,8 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0646` | Medium | status.py takes 113 seconds on this corpus, so the command every session is ordered to run first times out under a two-minute tool default |
 | `BG0648` | Medium | a criterion written outside the Acceptance Criteria section is executed by verify_ac and invisible to the brief, the transition gate, validate and... |
 | `BG0649` | Medium | test_critic is red when run alone: unittest.mock is used at line 5131 without an import |
-| `BG0651` | Medium | A later commit that changes a target file empties an earlier unit's mutation evidence silently, and nothing refuses until the close dry-run |
 
-19 findings: 19 Medium, 0 Low.
+18 findings: 18 Medium, 0 Low.
 
 ## Not carried
 

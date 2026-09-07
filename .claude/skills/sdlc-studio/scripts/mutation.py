@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import json
 import re
 import subprocess
@@ -1912,6 +1913,46 @@ def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> 
             "dropped_total": state["dropped"], "written": True}
 
 
+def _blob_sha256(root: Path, rel: str, spec: str) -> str | None:
+    """sha256 of the bytes git holds for `rel` at `spec` (`HEAD:` or `:` for the index), or
+    None when git has no such blob. The ledger keys evidence on a content hash, so the
+    question "did this commit change the bytes the evidence was about" is answered by hashing
+    the same way on both sides rather than by comparing git's own blob ids."""
+    import subprocess  # noqa: PLC0415
+    try:
+        out = subprocess.run(["git", "-C", str(root), "show", f"{spec}{rel}"],
+                             capture_output=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return hashlib.sha256(out.stdout).hexdigest()
+
+
+def entry_staleness(root: Path | str, entry: dict) -> str:
+    """One meaning of STALE for every reader of the ledger.
+
+    `live`: the recorded hash matches the working file. `head`: it matches HEAD's blob but not
+    the working file - an uncommitted edit, the commit lane's business. `stale`: it matches
+    neither, so the evidence is about bytes that exist nowhere - `plan_execution` reads such a
+    row as not-run. `missing`: the target exists neither on disk nor at HEAD, which is stale by
+    construction and never a crash.
+    """
+    root = Path(root)
+    rel = str(entry.get("target") or "")
+    recorded = entry.get("hash")
+    fp = root / rel
+    working = hashlib.sha256(fp.read_bytes()).hexdigest() if fp.is_file() else None
+    head = _blob_sha256(root, rel, "HEAD:")
+    if working is None and head is None:
+        return "missing"
+    if recorded and recorded == working:
+        return "live"
+    if recorded and recorded == head:
+        return "head"
+    return "stale"
+
+
 def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: str,
                     reason: str | None = None, run: str | None = None,
                     unit: str | None = None, criterion: str | None = None,
@@ -2062,8 +2103,32 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
              if e.get("target") == rel
              and entry_provenance(e) == PROVENANCE_REGISTERED
              and e is not entry]
-    dropped_mutants = sum(len(e.get("mutants") or []) for e in stale)
-    entries = [e for e in entries if e not in stale]
+    # Only THIS unit's own stale rows are replaced. Another unit's rows on the old bytes
+    # are KEPT and marked stale with this unit named, because deleting them here emptied a
+    # Fixed unit's evidence before any commit - the path every later unit takes over a shared
+    # file - and left the commit-time lane nothing to refuse. A stale row reads as not-run to
+    # every reader (`entry_staleness`), so the earlier unit cannot reach Fixed on it; it is
+    # named, and its remedy is the same re-register.
+    me = sdlc_md.norm_id(unit) if unit else None
+    def _own(m):
+        return not isinstance(m, dict) or not m.get("unit") or m.get("unit") == me
+    dropped_mutants = 0
+    kept: list[dict] = []
+    mine: list[dict] = []
+    for e in stale:
+        own = [m for m in (e.get("mutants") or []) if _own(m)]
+        others = [m for m in (e.get("mutants") or []) if not _own(m)]
+        dropped_mutants += len(own)
+        if others:
+            # a shared entry gives up only this unit's own rows; the other units' rows stay
+            e["mutants"] = others
+            e["stale"] = {"at": record["at"], "by": me, "hash_now": digest}
+            kept.append(e)
+        else:
+            mine.append(e)
+    kept_units = sorted({str(m.get("unit")) for e in kept for m in e["mutants"]
+                         if isinstance(m, dict) and m.get("unit") and not m.get("withdrawn")})
+    entries = [e for e in entries if e not in mine]
     if entry is None:
         entry = {"target": rel, "hash": digest, "provenance": PROVENANCE_REGISTERED,
                  "git_rev": _git_rev(root), "generated_at": record["at"], "test_cmd": None,
@@ -2100,7 +2165,10 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
             # How many earlier registrations this call discarded because the target's bytes
             # changed. Zero on the ordinary path; non-zero means evidence just disappeared and
             # the caller must say so rather than print a reassuring count.
-            "dropped_stale": dropped_mutants}
+            "dropped_stale": dropped_mutants,
+            # The OTHER units whose rows on this target's old bytes were kept and
+            # marked stale by this registration, so the caller can name them out loud.
+            "kept_stale_units": kept_units}
 
 
 def select_files(repo_root: Path | str, files=None, since: str | None = None,
@@ -2580,6 +2648,16 @@ def plan_execution(root: Path | str, unit: str) -> dict:
     for entry in state.get("entries", []):
         if not isinstance(entry, dict):
             continue
+        # A STALE entry's rows are evidence about bytes that exist nowhere. They read
+        # as NOT-RUN here - the one join `--from-plan`, the done-gate and the depth deriver all
+        # consume - so a unit whose rows went stale (marked at a later register, or drifted
+        # by a commit) cannot reach Fixed on them whether or not the commit lane ran.
+        if any(isinstance(m, dict) and m.get("unit") == uid for m in entry.get("mutants", []) or []):
+            # The `stale` mark a later register leaves is a RECORD of who and when; the rule is
+            # the computed comparison, so a file restored to the recorded bytes reads live again
+            # and the mark never contradicts the definition (one meaning, AC4).
+            if entry_staleness(root, entry) in ("stale", "missing"):
+                continue
         for m in entry.get("mutants", []) or []:
             if not isinstance(m, dict) or m.get("unit") != uid or not m.get("criterion"):
                 continue
@@ -2873,6 +2951,14 @@ def cmd_register(args: argparse.Namespace) -> int:
               f"file's bytes changed since they were recorded, so they were evidence about code "
               f"that no longer exists. If those mutants still matter, re-apply and re-register "
               f"them against the current content - register AFTER the last edit, not before")
+    if res.get("kept_stale_units"):
+        # Said out loud and NAMED. The rows are kept, not deleted, and they now read
+        # as not-run to every reader of the ledger until their unit re-registers them.
+        print(f"  STALE: {', '.join(res['kept_stale_units'])} hold registered rows on this "
+              f"target's earlier bytes. They are kept and marked stale, and read as NOT-RUN "
+              f"until re-registered - re-apply each row's mutant with the working copy equal "
+              f"to what is staged and `mutation.py register` it, then check with "
+              f"`mutation.py run --story <id> --from-plan`")
     if res["verdict"] == "survived":
         print(f"  FINDING: the mutant SURVIVED, so {args.test} does not pin the behaviour it "
               f"was applied to. The gate's coverage lane counts this - fix the test or file it")

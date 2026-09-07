@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
 import functools
 import os
@@ -824,7 +825,7 @@ BLOCKING_ON_ERROR = {
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
     "engagement-floor", "review-current", "close-owed", "window",
-    "changelog-fragments", "derived-depth",
+    "changelog-fragments", "derived-depth", "evidence-drift",
 }
 
 def _changelog(root: str) -> dict:
@@ -1138,6 +1139,107 @@ def _derived_depth(root: str) -> dict:
                       + (f" (+{len(faults) - 3} more)" if len(faults) > 3 else "")}
 
 
+def _evidence_drift(root: str) -> dict:
+    """BLOCKING lane: a commit that rewrites a file a delivered-terminal unit's registered
+    mutant rows still target is refused, with the unit, the file, the rows and the remedy named.
+
+    The mutation ledger keys evidence on a content hash, and for a whole run nothing compared
+    that hash with the bytes a commit was about to make: BG0642's edit to the hook emptied
+    BG0641's thirty rows, BG0603's edit to verify_ac.py two of BG0643's, found hours later at
+    the close dry-run. Refused here are rows the COMMIT drifts - HEAD's blob
+    still matched the recorded hash and the staged blob differs. Rows already stale at HEAD, a
+    target that exists neither at HEAD nor on disk, and rows of a unit not yet delivered are
+    REPORTED by unit with the same remedy and never refused, so the lane names earlier drift
+    without refusing the commit that ships it.
+    """
+    import mutation as _mu  # noqa: PLC0415 - deferred; it owns the ledger
+    root = Path(root)
+    state, _reset = _mu._load_ledger(_mu.ledger_path(root))
+    registered = [e for e in state.get("entries", []) or []
+                  if isinstance(e, dict) and _mu.entry_provenance(e) == _mu.PROVENANCE_REGISTERED]
+    if not registered:
+        # No registered evidence to guard - a workspace with no ledger, or one holding only
+        # measured runs - so there is nothing this lane can drift, whatever git says.
+        return {"count": 0, "blocking": True, "detail": "no registered mutant rows in the ledger - nothing to drift"}
+    staged = _window_staged(str(root))
+    if staged is None:
+        return {"count": 1, "blocking": True,
+                "detail": "git could not be asked which paths are staged while the ledger holds "
+                          "registered rows - refused rather than passed blind, like the repo-writes lane"}
+    staged_set = {str(p) for p in staged}
+    refused: list[str] = []
+    reported: list[str] = []
+    seen = 0
+    remedy = ("re-apply each row's mutant with the working copy equal to the staged bytes and "
+              "`mutation.py register` it, then check with `mutation.py run --story <id> --from-plan`")
+
+    def _unit_rows(entry):
+        rows: dict[str, list[str]] = {}
+        for m in entry.get("mutants") or []:
+            if not isinstance(m, dict) or not m.get("unit") or m.get("withdrawn"):
+                continue
+            rows.setdefault(str(m["unit"]), []).append(
+                f"{m.get('criterion') or '?'} r{int(m.get('row') or 0)}")
+        return rows
+
+    def _delivered(uid: str) -> bool | None:
+        found = sdlc_md.find_by_id(root, uid)
+        if not found:
+            return None
+        text = sdlc_md.read_text_safe(found[0])
+        status = (sdlc_md.extract_field(text, "Status") or "").strip()
+        return sdlc_md.is_delivered_terminal(found[1], status)
+
+    for entry in registered:
+        rel = str(entry.get("target") or "")
+        rows = _unit_rows(entry)
+        if not rows:
+            continue
+        staleness = _mu.entry_staleness(root, entry)
+        if rel not in staged_set and staleness not in ("stale", "missing"):
+            continue
+        seen += 1
+        head = _mu._blob_sha256(root, rel, "HEAD:")
+        staged_hash = _mu._blob_sha256(root, rel, ":")
+        commit_drifts = (rel in staged_set and head is not None
+                         and entry.get("hash") == head and staged_hash != head)
+        # `register` hashes the WORKING file. Rows registered against a working copy that is
+        # not what is staged are evidence about bytes this commit will not carry - said so,
+        # by unit, so the author stages what was measured or re-registers against the stage.
+        fp = root / rel
+        working_hash = (hashlib.sha256(fp.read_bytes()).hexdigest() if fp.is_file() else None)
+        registered_off_stage = (rel in staged_set and staged_hash is not None
+                                and entry.get("hash") == working_hash and working_hash != staged_hash)
+        for uid, ids in sorted(rows.items()):
+            line = f"{uid}: {rel} rows [{', '.join(ids)}]"
+            delivered = _delivered(uid)
+            if delivered is None:
+                reported.append(f"{line} (no artefact on disk for {uid} - reported, not refused)")
+            elif registered_off_stage and delivered:
+                refused.append(f"{line} (registered against the WORKING copy, which differs from "
+                               f"the staged blob - stage the file as measured, or re-register "
+                               f"against what is staged)")
+            elif commit_drifts and delivered:
+                refused.append(line)
+            elif commit_drifts or registered_off_stage:
+                reported.append(f"{line} (not yet delivered - reported, not refused)")
+            elif staleness == "missing":
+                reported.append(f"{line} (target exists neither at HEAD nor on disk - already stale)")
+            elif staleness == "stale":
+                reported.append(f"{line} (already stale before this commit)")
+    if refused:
+        return {"count": len(refused), "blocking": True,
+                "detail": "this commit drifts a delivered unit's registered mutant evidence - "
+                          + "; ".join(refused) + f" - {remedy}"
+                          + (f"; also reported, not refused: {'; '.join(reported)}" if reported else "")}
+    if reported:
+        return {"count": 0, "blocking": True,
+                "detail": f"no delivered unit's evidence is drifted by this commit; reported: "
+                          + "; ".join(reported) + f" - {remedy}"}
+    return {"count": 0, "blocking": True,
+            "detail": f"{seen} registered target(s) examined, none drifted by this commit"}
+
+
 def _revert_check(root: str) -> dict:
     """ADVISORY boundary lane: units whose own verifiers stay green with the change reverted.
 
@@ -1255,6 +1357,7 @@ DEFAULT_CHECKS = {
     # gate too; --release swaps in the superset that also refuses a stray fragment at the cut.
     "changelog-fragments": _changelog,
     "derived-depth": _derived_depth,
+    "evidence-drift": _evidence_drift,
 }
 
 

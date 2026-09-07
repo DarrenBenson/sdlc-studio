@@ -5007,5 +5007,112 @@ class RowKeyedJoinTests(unittest.TestCase):
                           f"the success line does not state both figures:\n{buf.getvalue()}")
 
 
+class RegisterKeepsOtherUnitsRowsTests(unittest.TestCase):
+    """BG0651 AC4: a later unit's `register` on a file with different bytes KEEPS the earlier
+    unit's rows, marks them stale and names the earlier unit; the plan join reads a stale row
+    as not-run; a same-unit re-register replaces as before.
+
+    MUTANTS: keep deleting another unit's rows on a changed file (today's code); keep the rows
+    but name no unit; keep another unit's rows even when the SAME unit re-registers; keep the
+    `--from-plan` join hash-blind so a stale row still reads killed.
+    """
+
+    def _root(self):
+        import shutil  # noqa: PLC0415
+        d = Path(tempfile.mkdtemp(prefix="reg_keep_")); self.addCleanup(shutil.rmtree, d, True)
+        (d / "src").mkdir(); (d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (d / "sdlc-studio" / ".local").mkdir()
+        # the planned-mutant gate is opt-in behind a dated cutoff, as in this repository
+        (d / "sdlc-studio" / ".config.yaml").write_text("schema_version: 2\nreview:\n  test_plan_after: \"2026-01-01\"\n", encoding="utf-8")
+        for uid in ("BG0001", "BG0002"):
+            (d / "sdlc-studio" / "bugs" / f"{uid}-f.md").write_text(
+                f"# {uid}: f\n\n> **Status:** In Progress\n> **Verification depth:** functional\n> **Created:** 2026-06-01\n\n## Acceptance Criteria\n\n- [ ] **AC1** Given a, when b, then c\n"
+                f"  - **Verify:** pytest t\n\n## Test Plan\n\n| Criterion | Mutant - the production change this test must fail on | Title |\n"
+                f"| --- | --- | --- |\n| AC1 | flip it | Given a, when b, then c |\n", encoding="utf-8")
+        return d
+
+    def test_a_later_unit_register_marks_the_earlier_rows_stale_and_names_it(self) -> None:
+        mut = _load()
+        import shutil  # noqa: PLC0415
+        root = self._root(); fp = root / "src" / "x.py"
+        fp.write_text("x = 1\n", encoding="utf-8")
+        mut.register_mutant(root, fp, "flip it", "pytest t", "killed", unit="BG0001", criterion="AC1", line=1, anchor="x = 1", row=0)
+        before = mut.plan_execution(root, "BG0001")
+        self.assertTrue(before["ok"], before)
+        fp.write_text("x = 2\n", encoding="utf-8")
+        res = mut.register_mutant(root, fp, "flip it again", "pytest t", "killed", unit="BG0002", criterion="AC1", line=1, anchor="x = 2", row=0)
+        self.assertEqual(["BG0001"], res.get("kept_stale_units"), res)
+        self.assertEqual(0, res.get("dropped_stale"), "another unit's rows were dropped, not kept")
+        state, _ = mut._load_ledger(mut.ledger_path(root))
+        kept = [e for e in state["entries"] if any(m.get("unit") == "BG0001" for m in e.get("mutants", []))]
+        self.assertEqual(1, len(kept), "BG0001's rows were deleted by BG0002's register")
+        self.assertEqual("BG0002", kept[0]["stale"]["by"])
+        # the stale row reads as NOT-RUN to the plan join, so BG0001 cannot reach Fixed on it -
+        # and to the DONE-GATE that consumes the join, with no commit lane involved at all
+        # (hooks off, --no-verify): the transition itself is what refuses
+        after = mut.plan_execution(root, "BG0001")
+        self.assertFalse(after["ok"], "a stale row still read as killed:\n" + str(after))
+        import subprocess, json as _json  # noqa: PLC0415
+        # the planned-mutant requirement is judged for the OPEN run's batch, so the fixture opens one
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(_json.dumps({
+            "schema": "1", "run_id": "RUN-FIXTURE", "started_at": "2026-01-01T00:00:00Z", "ended_at": None,
+            "outcome": "running", "goal": "done", "batch": ["BG0001", "BG0002"], "sprint_goal": "fixture",
+            "base_ref": "0" * 40}), encoding="utf-8")
+        gate = subprocess.run([sys.executable, str(SCRIPT.parent / "transition.py"), "--root", str(root),
+                               "set", "BG0001", "Fixed", "--dry-run"], capture_output=True, text=True, timeout=120)
+        self.assertIn("never executed", gate.stdout + gate.stderr,
+                      "the done-gate passed a unit whose rows went stale:\n" + gate.stdout + gate.stderr)
+        # the same unit re-registering its own rows replaces them, as before
+        fp.write_text("x = 3\n", encoding="utf-8")
+        res2 = mut.register_mutant(root, fp, "flip it once more", "pytest t", "killed", unit="BG0002", criterion="AC1", line=1, anchor="x = 3", row=0)
+        self.assertEqual(1, res2.get("dropped_stale"), res2)
+        # BG0001's rows are still stale and are named again - a stale row stays named until its
+        # unit re-registers it, and only the registering unit's own rows are replaced
+        self.assertEqual(["BG0001"], res2.get("kept_stale_units"), res2)
+        # a row whose hash matches HEAD's blob but not the working file (an unstaged edit) is
+        # the commit lane's business, not the join's: it still reads as executed
+        import subprocess  # noqa: PLC0415
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        env.update({"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"})
+        subprocess.run(["git", "-C", str(root), "init", "-q", "-b", "main"], check=True, env=env)
+        subprocess.run(["git", "-C", str(root), "add", "-A"], check=True, env=env)
+        subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "seed"], check=True, env=env)
+        head = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True, text=True, env=env).stdout.strip()
+        fp.write_text("x = 3 # unstaged\n", encoding="utf-8")
+        self.assertTrue(mut.plan_execution(root, "BG0002")["ok"], "a row matching HEAD but not the working file read as not-run")
+        fp.write_text("x = 3\n", encoding="utf-8")
+        # a drift that arrives through a COMMIT, with no register and so no mark, reads not-run
+        # too: the rule is the hash comparison, whichever way the bytes moved (the hooks-off,
+        # --no-verify half of AC4)
+        fp.write_text("x = 9 # committed drift\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(root), "commit", "-q", "-am", "drift"], check=True, env=env)
+        self.assertFalse(mut.plan_execution(root, "BG0002")["ok"], "a committed drift with no register mark still read as killed")
+        # and the mark is a record, not a rule: a file restored to the recorded bytes reads live
+        fp.write_text("x = 1\n", encoding="utf-8")
+        self.assertTrue(mut.plan_execution(root, "BG0001")["ok"], "rows restored to their recorded bytes still read as stale from the mark")
+        fp.write_text("x = 3\n", encoding="utf-8")
+        # a SHARED entry (two units registered on the same bytes) gives up only the registering
+        # unit's own rows: the other unit's rows stay on it, marked stale
+        fp.write_text("x = 7\n", encoding="utf-8")
+        mut.register_mutant(root, fp, "shared a", "pytest t", "killed", unit="BG0001", criterion="AC1", line=1, anchor="x = 7", row=0)
+        mut.register_mutant(root, fp, "shared b", "pytest t", "killed", unit="BG0002", criterion="AC1", line=1, anchor="x = 7", row=0)
+        fp.write_text("x = 8\n", encoding="utf-8")
+        res3 = mut.register_mutant(root, fp, "after b", "pytest t", "killed", unit="BG0002", criterion="AC1", line=1, anchor="x = 8", row=0)
+        self.assertEqual(["BG0001"], res3.get("kept_stale_units"), res3)
+        state, _ = mut._load_ledger(mut.ledger_path(root))
+        shared = [e for e in state["entries"] if e.get("stale") and any(m.get("mutant") == "shared a" for m in e["mutants"])]
+        self.assertEqual(1, len(shared), "the shared entry's other-unit row was not kept")
+        self.assertEqual({"BG0001"}, {m["unit"] for m in shared[0]["mutants"]}, "the registering unit's own row stayed on the shared entry")
+        fp.write_text("x = 3\n", encoding="utf-8")
+        # and the CLI names the earlier unit and the remedy
+        import io, contextlib  # noqa: PLC0415
+        fp.write_text("x = 4\n", encoding="utf-8")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            mut.main(["--root", str(root), "register", "--unit", "BG0001", "--criterion", "AC1", "--row", "0",
+                           "--target", "src/x.py", "--line", "1", "--anchor", "x = 4", "--mutant", "flip", "--test", "pytest t", "--verdict", "killed"])
+        self.assertIn("STALE: BG0002", buf.getvalue()); self.assertIn("mutation.py register", buf.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

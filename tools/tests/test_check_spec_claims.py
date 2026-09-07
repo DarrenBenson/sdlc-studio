@@ -197,6 +197,18 @@ class GateLaneTests(unittest.TestCase):
                               f"the lane returned blocking=True when it {label}, while "
                               f"AGENTS.md's roster calls it ADVISORY")
 
+    def test_the_lane_roster_names_evidence_drift_and_its_blocking_status(self) -> None:
+        """BG0651. The lane that refuses a commit drifting a delivered unit's mutation evidence
+        is named in the roster with its status, the way the revert-check row is. MUTANT: leave
+        the roster without the lane."""
+        repo = Path(__file__).resolve().parents[2]
+        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("evidence-drift", agents, "AGENTS.md's roster does not name the evidence-drift lane")
+        para = next((b for b in agents.split("\n\n") if "`evidence-drift`" in b), "")
+        self.assertTrue(para, "no paragraph in AGENTS.md names `evidence-drift`")
+        self.assertIn("BLOCKING", para, "the roster names the lane but not that it BLOCKS")
+        self.assertIn("mutation", para.lower(), "the roster does not say what the lane guards")
+
     def test_the_lane_roster_names_the_release_rehearsal(self) -> None:
         """US0666: a lane bound at a BOUNDARY is invisible to the hook-derived sweep above, which
         reads the pre-commit hook - so the one lane that deliberately does not run per commit is

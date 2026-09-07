@@ -292,7 +292,7 @@ class GateRealWrapperTests(unittest.TestCase):
                           "integrity", "duplicate-id", "provenance", "doc-coverage", "doc-surface",
                           "engagement-floor",
                           "disclosure", "doc-freshness", "mutation", "window", "hook-enabled",
-                          "batch-size", "changelog-fragments", "derived-depth"})
+                          "batch-size", "changelog-fragments", "derived-depth", "evidence-drift"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
@@ -301,7 +301,7 @@ class GateRealWrapperTests(unittest.TestCase):
         # dev-repo guard rather than repeating it (BG0237).
         r = self._report()
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 19)   # +doc-surface advisory, +derived-depth blocking
+        self.assertEqual(len(r["checks"]), 20)   # +doc-surface advisory, +derived-depth, +evidence-drift blocking
         for c in r["checks"]:
             # `seconds` is part of the row shape: the cost report derives the dominant lane
             # from it, and a lane with no share of the total cannot be named as the cause.
@@ -7003,6 +7003,148 @@ class DerivedDepthLaneTests(unittest.TestCase):
                                  f"a second derived span {where} was not refused: {res}")
                 self.assertIn("derived halves", res["detail"])
         self.unit.write_text(original, encoding="utf-8")
+
+
+class EvidenceDriftTests(unittest.TestCase):
+    """BG0651: a commit that rewrites a file a delivered unit's registered mutant rows still
+    target is refused with the unit, the file, the rows and the remedy named; drift that
+    predates the commit, a missing target, and a unit not yet delivered are reported.
+
+    MUTANTS (AC1): compare against the working tree instead of the staged blob; name the unit
+    but not the rows or the remedy; name the unit and rows but not the file; refuse on any row
+    ignoring whether the staged hash differs; decide terminal by the literal `Fixed`; decide
+    terminal by `terminal_statuses` (the Won't Fix bug refuses); refuse rows already stale at
+    HEAD; crash on a target missing from HEAD and disk. (AC2): refuse an In Progress unit's
+    rows; never re-hash the staged blob; skip non-terminal units silently.
+    """
+
+    def _git(self, cwd, *args):
+        import subprocess  # noqa: PLC0415
+        # the shipped fixture helper's scrub, so this class declares no repo-locating list of its own
+        env = gitutil.git_env(GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t",
+                              GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@t")
+        return subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, text=True,
+                              env=env, check=True, timeout=120)
+
+    def _artefact(self, root, sub, name, status):
+        d = root / "sdlc-studio" / sub; d.mkdir(parents=True, exist_ok=True)
+        (d / f"{name}-fixture.md").write_text(
+            f"# {name}: fixture\n\n> **Status:** {status}\n> **Severity:** Medium\n"
+            f"> **Points:** 1\n> **Affects:** src/x.py\n\n## Acceptance Criteria\n\n"
+            f"- [ ] **AC1** Given a, when b, then c\n  - **Verify:** pytest tests/test_x.py::T::test_c\n\n"
+            f"## Test Plan\n\n| Criterion | Mutant - the production change this test must fail on | Title |\n"
+            f"| --- | --- | --- |\n| AC1 | flip it | Given a, when b, then c |\n", encoding="utf-8")
+
+    def _fixture(self):
+        import tempfile  # noqa: PLC0415
+        import mutation as _mut  # noqa: PLC0415
+        tmp = pathlib.Path(tempfile.mkdtemp(prefix="evidence_drift_"))
+        self.addCleanup(_shutil.rmtree, tmp, True)
+        self._git(tmp, "init", "-q", "-b", "main", str(tmp))
+        (tmp / "src").mkdir(); (tmp / "src" / "x.py").write_text("x = 1\n", encoding="utf-8")
+        (tmp / "src" / "gone.py").write_text("g = 1\n", encoding="utf-8")
+        self._artefact(tmp, "bugs", "BG0001", "Fixed")
+        self._artefact(tmp, "stories", "US0001", "Done")
+        self._artefact(tmp, "bugs", "BG0002", "Won't Fix")
+        self._artefact(tmp, "bugs", "BG0003", "In Progress")
+        (tmp / "sdlc-studio" / ".local").mkdir()
+        (tmp / ".gitignore").write_text("sdlc-studio/.local/\n", encoding="utf-8")
+        self._git(tmp, "add", "-A"); self._git(tmp, "commit", "-q", "-m", "seed")
+        # every unit registers a row on src/x.py at HEAD's bytes; BG0001 also on a file that
+        # will exist neither at HEAD nor on disk
+        for uid in ("BG0001", "US0001", "BG0002", "BG0003"):
+            _mut.register_mutant(tmp, tmp / "src" / "x.py", f"flip it for {uid}", "pytest t",
+                                     "killed", unit=uid, criterion="AC1", line=1, anchor="x = 1", row=0)
+        _mut.register_mutant(tmp, tmp / "src" / "gone.py", "drop g", "pytest t", "killed",
+                                 unit="BG0001", criterion="AC1", line=1, anchor="g = 1", row=1)
+        (tmp / "src" / "gone.py").unlink(); self._git(tmp, "rm", "-q", "src/gone.py")
+        # and a file whose rows are ALREADY stale at HEAD: registered on bytes a later commit replaced
+        (tmp / "src" / "y.py").write_text("y = 1\n", encoding="utf-8")
+        _mut.register_mutant(tmp, tmp / "src" / "y.py", "flip y", "pytest t", "killed",
+                             unit="BG0001", criterion="AC1", line=1, anchor="y = 1", row=2)
+        (tmp / "src" / "y.py").write_text("y = 2\n", encoding="utf-8")
+        self._git(tmp, "add", "-A"); self._git(tmp, "commit", "-q", "-m", "gone and y")
+        return tmp
+
+    def _lane(self, root):
+        import subprocess  # noqa: PLC0415
+        scripts = pathlib.Path(__file__).resolve().parents[1]
+        r = subprocess.run([sys.executable, str(scripts / "gate.py"), "--root", str(root),
+                            "--only", "evidence-drift"], capture_output=True, text=True, timeout=300)
+        return r.returncode, r.stdout + r.stderr
+
+    def test_a_commit_that_rewrites_a_registered_target_is_refused_with_the_unit_named(self) -> None:
+        import mutation as _mut  # noqa: PLC0415
+        fx = self._fixture()
+        # the control first: nothing staged, the missing target is REPORTED, nothing refused
+        rc, out = self._lane(fx)
+        self.assertEqual(0, rc, out)
+        self.assertIn("neither at HEAD nor on disk", out, out)
+        # an UNSTAGED edit to the registered target passes: staged is what the commit is about
+        (fx / "src" / "x.py").write_text("x = 2\n", encoding="utf-8")
+        rc, out = self._lane(fx)
+        self.assertEqual(0, rc, "an unstaged edit was refused:\n" + out)
+        # the same edit STAGED drifts every unit's rows: the delivered ones refuse, the rest report;
+        # the file whose rows were ALREADY stale at HEAD is staged too, and only REPORTED
+        (fx / "src" / "y.py").write_text("y = 3\n", encoding="utf-8")
+        self._git(fx, "add", "src/x.py", "src/y.py")
+        rc, out = self._lane(fx)
+        self.assertNotEqual(0, rc, "a staged rewrite of a registered target passed:\n" + out)
+        refusal = out.split("reported, not refused")[0] if "reported, not refused" in out else out
+        self.assertNotIn("src/y.py", refusal, "rows already stale at HEAD were REFUSED, not reported:\n" + out)
+        self.assertIn("src/y.py", out, "the already-stale rows on the staged file were not reported:\n" + out)
+        self.assertIn("already stale before this commit", out)
+        for uid in ("BG0001", "US0001"):
+            self.assertIn(uid, refusal, f"{uid} (delivered) is not named in the refusal:\n{out}")
+        self.assertIn("src/x.py", out); self.assertIn("AC1 r0", out)
+        self.assertIn("mutation.py register", out, "the remedy is not named:\n" + out)
+        self.assertIn("--from-plan", out, "the check after the remedy is not named:\n" + out)
+        self.assertNotIn("BG0002", refusal, "a Won't Fix unit's rows were REFUSED, not reported:\n" + out)
+        self.assertIn("BG0002", out, "the Won't Fix unit's rows were not reported at all:\n" + out)
+        self.assertIn("BG0003", out); self.assertNotIn("BG0003", refusal)
+        # the lane compares the STAGED blob, never the working file: rows re-registered against
+        # a working copy that differs from what is staged are named as such, not read as live
+        (fx / "src" / "x.py").write_text("x = 6\n", encoding="utf-8")
+        _mut.register_mutant(fx, fx / "src" / "x.py", "flip it for BG0001 off stage", "pytest t", "killed",
+                             unit="BG0001", criterion="AC1", line=1, anchor="x = 6", row=0)
+        rc, out = self._lane(fx)
+        self.assertNotEqual(0, rc, out)
+        self.assertIn("registered against the WORKING copy", out.split("reported, not refused")[0],
+                      "rows measured against the working copy, not the stage, were not named:\n" + out)
+
+    def test_re_registered_rows_pass_and_a_non_terminal_unit_is_reported_not_refused(self) -> None:
+        import mutation as _mut  # noqa: PLC0415
+        fx = self._fixture()
+        (fx / "src" / "x.py").write_text("x = 2\n", encoding="utf-8")
+        self._git(fx, "add", "src/x.py")
+        # the delivered units re-register against the staged bytes; the In Progress one does not
+        for uid in ("BG0001", "US0001", "BG0002"):
+            _mut.register_mutant(fx, fx / "src" / "x.py", f"flip it for {uid}", "pytest t",
+                                     "killed", unit=uid, criterion="AC1", line=1, anchor="x = 2", row=0)
+        rc, out = self._lane(fx)
+        self.assertEqual(0, rc, "re-registered rows still refused:\n" + out)
+        self.assertIn("BG0003", out, "the In Progress unit's drifted rows were not reported:\n" + out)
+        self.assertIn("not yet delivered", out)
+        # rows registered against a WORKING copy that differs from the staged blob are named:
+        # the evidence is about bytes this commit will not carry
+        (fx / "src" / "x.py").write_text("x = 5\n", encoding="utf-8")       # working differs from the stage (x = 2)
+        _mut.register_mutant(fx, fx / "src" / "x.py", "flip it for BG0001 again", "pytest t", "killed",
+                             unit="BG0001", criterion="AC1", line=1, anchor="x = 5", row=0)
+        rc, out = self._lane(fx)
+        self.assertNotEqual(0, rc, "a delivered unit's rows measured off the stage did not refuse:\n" + out)
+        self.assertIn("registered against the WORKING copy", out.split("reported, not refused")[0], out)
+        self.assertIn("BG0001", out.split("registered against the WORKING copy")[0], out)
+        # a WITHDRAWN row is never named, and a unit with no artefact on disk is reported
+        _mut.register_mutant(fx, fx / "src" / "x.py", "ghost", "pytest t", "killed",
+                             unit="BG0099", criterion="AC1", line=1, anchor="x = 5", row=0)
+        _mut.retract_mutant(fx, fx / "src" / "x.py", unit="BG0001", criterion="AC1", line=1,
+                            mutant="flip it for BG0001 again", verdict="killed", reason="withdrawn in the fixture")
+        rc, out = self._lane(fx)
+        self.assertNotIn("BG0001: src/x.py", out, "a withdrawn row was still named:\n" + out)
+        self.assertIn("no artefact on disk for BG0099", out, out)
+        # and the rows already stale at HEAD (the missing target) stay reported, never refused
+        self.assertIn("neither at HEAD nor on disk", out)
+
 
 if __name__ == "__main__":
     unittest.main()

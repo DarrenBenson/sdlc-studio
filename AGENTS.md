@@ -70,7 +70,10 @@ prints each lane's rule and fix on failure, so this is the roster, not the manua
 `check_action_pins.sh`, `validate_skill.py`, `verify_ac.py`, `readiness.py`, `runbook.py`,
 `validate.py` (the warning ratchet), plus `gate.py`'s
 own block (conformance, reconcile, validate, integrity, duplicate-id, docs,
-derived-depth) and markdownlint.
+derived-depth, evidence-drift) and markdownlint.
+One of those, `evidence-drift`, is BLOCKING and guards the mutation ledger: a commit whose staged
+file drifts a delivered unit's registered mutant rows is refused with the unit, the file, the rows
+and the re-register remedy named, and drift that predates the commit is reported, never refused.
 One lane spans BOTH hooks: `repo-writes` (`tools/repo_writes.py`) snapshots the
 working tree in `pre-commit` at the moment the suites are selected, and refuses in `commit-msg`
 if running them modified a tracked file, created an untracked one, or touched gitignored
