@@ -703,3 +703,8 @@
 | BG0644 | Darren Benson | - | delivery session (Claude, author of every diff) | 2026-09-06 | Reviewer-of-record sign-off delegated by the operator in session on 2026-09-06 ('Run the close as principal for me'), over the three-seat adversarial record in reviews/critic-verdicts.md (36 verdicts, 12 REJECTs all repaired and re-reviewed to APPROVE) and the batch review in reviews/sprint-review-record.md | human |
 | BG0647 | Darren Benson | - | delivery session (Claude, author of every diff) | 2026-09-06 | Reviewer-of-record sign-off delegated by the operator in session on 2026-09-06 ('Run the close as principal for me'), over the three-seat adversarial record in reviews/critic-verdicts.md (36 verdicts, 12 REJECTs all repaired and re-reviewed to APPROVE) and the batch review in reviews/sprint-review-record.md | human |
 | BG0650 | Darren Benson | - | delivery session (Claude, author of every diff) | 2026-09-06 | Reviewer-of-record sign-off delegated by the operator in session on 2026-09-06 ('Run the close as principal for me'), over the three-seat adversarial record in reviews/critic-verdicts.md (36 verdicts, 12 REJECTs all repaired and re-reviewed to APPROVE) and the batch review in reviews/sprint-review-record.md | human |
+| BG0645 | Darren Benson | - | delivery session (Claude, author of every diff) | 2026-09-07 | - | human |
+| BG0646 | Darren Benson | - | delivery session (Claude, author of every diff) | 2026-09-07 | - | human |
+| BG0648 | Darren Benson | - | delivery session (Claude, author of every diff) | 2026-09-07 | - | human |
+| BG0649 | Darren Benson | - | delivery session (Claude, author of every diff) | 2026-09-07 | - | human |
+| BG0651 | Darren Benson | - | delivery session (Claude, author of every diff) | 2026-09-07 | - | human |

@@ -167,7 +167,7 @@ sprints fits noise.
 | BG0649 | 1 | 32,357 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
 | BG0645 | 2 | 64,714 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
 | BG0648 | 3 | 97,071 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
-| **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | - | **-** | - |
+| **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
 **0 of 5 unit(s) measured; 5 of 5 forecast at plan time.**
 
