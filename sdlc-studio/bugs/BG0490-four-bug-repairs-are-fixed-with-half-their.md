@@ -5,7 +5,7 @@
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/bugs, tools/check_links.py, .claude/skills/sdlc-studio/templates/audit-profiles/code.md, tools/check_versions.py, .githooks/pre-commit, tools/tests/test_check_links.py, tools/tests/test_check_versions.py
+> **Affects:** tools/check_links.py, tools/tests/test_check_links.py, tools/check_versions.py, tools/tests/test_check_versions.py, .claude/skills/sdlc-studio/templates/audit-profiles/code.md
 > **Severity:** Medium
 > **Points:** 5
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
@@ -51,12 +51,31 @@ blast radius across every loading-guide cell, and that is engineering rather tha
 > is a regression pin, and it goes green the moment its test exists rather than when a fix
 > lands.
 
-- [ ] **AC1** Given `templates/audit-profiles/code.md`, when its one real row is read, then the path resolves - the BG0434 half this bug carried, re-measured 2026-08-15 as ALREADY LAPSED and pinned so it cannot regress unnoticed.
+- [ ] **AC1** Given `templates/audit-profiles/code.md`, when its signature rows are read, then AT LEAST ONE names a script and every script so named is on disk. The existence half is not decoration: a later edit turning that row to `manual - ...` leaves zero script-naming rows, and a test asserting only that the named ones resolve then passes on nothing. The BG0434 half, re-measured 2026-08-15 as ALREADY LAPSED and pinned here so it cannot regress unnoticed
   - **Verify:** pytest tools/tests/test_check_links.py::AuditProfilePathsTests::test_the_one_real_row_resolves
-- [ ] **AC2** Given a broken path shaped like an invocation (`scripts/rg-wrapper-DOES-NOT-EXIST.py`) or carrying an unlisted extension (`notes/X.txt`, `tools/X.toml`), when the link classifier reads it, then it is REPORTED rather than skipped - the BG0435 half, which still reproduces.
-  - **Verify:** pytest tools/tests/test_check_links.py::AuditProfilePathsTests::test_invocation_and_prose_shapes_are_not_skipped
-- [ ] **AC3** Given `check_versions.py`'s docstring claim that the version is read 'never by repo-wide grep', when the module is read, then the claim matches the code - it falls back to `root.rglob('*.md')`, so today the docstring overstates.
+  - **Verified:** no
+- [ ] **AC2** Given a guide cell naming a path whose extension is outside the six the classifier allows - `notes/X.txt`, `tools/X.toml` - when the cells are classified, then a MISSING one is reported and an EXISTING one is not. Today both fall through to `prose`, so an unlisted extension is a silent exemption rather than a decision
+  - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideExemptionTests::test_an_unlisted_extension_is_resolved_rather_than_exempted
+  - **Verified:** no
+- [ ] **AC3** Given a cell that is an INVOCATION, when it is classified, then its kind is still `invocation` - the explicit-exemption contract the shipped classification test pins is unchanged - and the script path inside it is separately resolved, so a command naming a script that does not exist is reported while one naming a script that does is not. The shipped exemption test's empty-result assertion runs on a fixture whose command names a script that is not on disk, so resolving invocation scripts reddens it: that fixture is amended in the same change to name a script that exists, and its kind assertion is kept. Ruled here rather than discovered at the gate
+  - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideExemptionTests::test_an_invocation_keeps_its_kind_and_its_script_is_resolved
+  - **Verified:** no
+- [ ] **AC4** Given an INVOCATION cell whose script IS on disk, and a prose cell naming no path at all, when the check runs, then neither is reported. This is the positive control the two rows above cannot supply between them: a classifier reporting every command it sees satisfies AC3 without resolving anything. The templated cell is deliberately not the control: measured, deleting the templated branch only moves the cell to `prose` and a braced path fails the path pattern either way, so that observable cannot move
+  - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideExemptionTests::test_templated_and_prose_cells_are_still_exempt
+  - **Verified:** no
+- [ ] **AC5** Given `check_versions.py`, when its module docstring is read beside its code, then it does not claim the version is read 'never by repo-wide grep' while an `rglob` fallback stands. Today it does, so the docstring overstates the guarantee a reader relies on
   - **Verify:** pytest tools/tests/test_check_versions.py::DocstringMatchesTheCodeTests::test_the_never_by_grep_claim_is_true
+  - **Verified:** no
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/templates/audit-profiles/code.md, replace the ac-drift signature's command with a `manual - ...` note | Given `templates/audit-profiles/code.md`, when its signature rows are read, then AT LEAST ONE names a script and every script so named is on disk. The existence half is not decoration: a later edit turning that row to `manual - ...` leaves zero script-naming rows, and a test asserting only that the named ones resolve then passes on nothing. The BG0434 half, re-measured 2026-08-15 as ALREADY LAPSED and pinned here so it cannot regress unnoticed |
+| AC2 | in tools/check_links.py, narrow the `_PATH_CELL` extension alternation back to the six shipped suffixes | Given a guide cell naming a path whose extension is outside the six the classifier allows - `notes/X.txt`, `tools/X.toml` - when the cells are classified, then a MISSING one is reported and an EXISTING one is not. Today both fall through to `prose`, so an unlisted extension is a silent exemption rather than a decision |
+| AC3 | in tools/check_links.py, delete the `_INVOCATION` branch's script-token extraction and `continue` past the cell | Given a cell that is an INVOCATION, when it is classified, then its kind is still `invocation` - the explicit-exemption contract the shipped classification test pins is unchanged - and the script path inside it is separately resolved, so a command naming a script that does not exist is reported while one naming a script that does is not. The shipped exemption test's empty-result assertion runs on a fixture whose command names a script that is not on disk, so resolving invocation scripts reddens it: that fixture is amended in the same change to name a script that exists, and its kind assertion is kept. Ruled here rather than discovered at the gate |
+| AC4 | in tools/check_links.py, emit a finding for every `_INVOCATION` cell without testing whether its script is on disk | Given an INVOCATION cell whose script IS on disk, and a prose cell naming no path at all, when the check runs, then neither is reported. This is the positive control the two rows above cannot supply between them: a classifier reporting every command it sees satisfies AC3 without resolving anything. The templated cell is deliberately not the control: measured, deleting the templated branch only moves the cell to `prose` and a braced path fails the path pattern either way, so that observable cannot move |
+| AC5 | in tools/check_versions.py, reinsert the absolute phrasing into the module docstring while `root.rglob` stays in the resolver | Given `check_versions.py`, when its module docstring is read beside its code, then it does not claim the version is read 'never by repo-wide grep' while an `rglob` fallback stands. Today it does, so the docstring overstates the guarantee a reader relies on |
 
 ## Steps to Reproduce
 
@@ -79,14 +98,6 @@ For each: either deliver the remaining half, or narrow the bug explicitly and fi
 ## Impact
 
 Four false Fixed records. The cost is not the individual defects - it is that a Fixed status stops meaning the title is no longer true, and every later reader who trusts the ledger inherits the error. The repo's close ceremony reads these statuses.
-
-## Test Plan
-
-| Criterion | Mutant - the production change this test must fail on | Title |
-| --- | --- | --- |
-| AC1 | in .claude/skills/sdlc-studio/templates/audit-profiles/code.md, append a full stop to the row's path so it resolves nowhere | Given `templates/audit-profiles/code.md`, when its one real row is read, then the path resolves - the BG0434 half this bug carried, re-measured 2026-08-15 as ALREADY LAPSED and pinned so it cannot regress unnoticed. |
-| AC2 | in tools/check_links.py, change the classifier so an invocation-shaped path is read as prose and escapes the check | Given a broken path shaped like an invocation (`scripts/rg-wrapper-DOES-NOT-EXIST.py`) or carrying an unlisted extension (`notes/X.txt`, `tools/X.toml`), when the link classifier reads it, then it is REPORTED rather than skipped - the BG0435 half, which still reproduces. |
-| AC3 | in tools/check_versions.py, revert to the removed docstring clause | Given `check_versions.py`'s docstring claim that the version is read 'never by repo-wide grep', when the module is read, then the claim matches the code - it falls back to `root.rglob('*.md')`, so today the docstring overstates. |
 
 ## Revision History
 

@@ -2,9 +2,9 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
+> **Points:** 5
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
-> **Affects:** tools/test_census.py, tools/tests/test_test_census.py
+> **Affects:** tools/test_census.py, tools/tests/test_test_census.py, .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py
 > **Evidence:** RUN-01KZQ03V, 2026-08-14, while delivering BG0556 - the full suite went red on an attribution change caused by adding an inventory of script names to a test module.
 > **Created:** 2026-08-14
 > **Created-by:** sdlc-studio file
@@ -25,23 +25,23 @@ Attribution should prefer a DECLARED owner over a counted one: a unit's `Affects
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a test file carrying a module-level subject marker, when `test_census.attribute` places it, then it returns the declared subject regardless of which sibling module the file names most often
+- [ ] **AC1** Given a test file carrying a module-level subject marker, when `test_census.attribute` places it, then it returns the declared subject whatever the mention counts say, and BEFORE the by-name route as well. Measured over the two test trees, 95 of 204 files are placed by that route and only 73 by counting, so a marker consulted after it would be ignored on most of the corpus
   - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_a_module_level_subject_marker_decides_the_owner
   - **Verified:** no
-- [ ] **AC2** Given a test file with no marker whose unit declares it in `Affects` alongside exactly one script, when attribute places it, then it returns that script - the declared owner is read from the artefact before any counting happens
-  - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_a_declaring_unit_in_affects_decides_when_no_marker_exists
+- [ ] **AC2** Given a test file with no marker whose declaring unit names exactly ONE script in `Affects`, when attribute places it, then it returns that script; and given one whose declaring units name several between them, the declaration does not decide, counting continues, and the result says which route answered. Most files here are declared by several units naming many scripts, so a rule that only handles the single-script case decides almost nothing
+  - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_a_single_script_declaration_decides_and_a_multi_script_one_defers
   - **Verified:** no
-- [ ] **AC3** Given a test file with neither a marker nor a declaring unit, and one sibling module named more often than any other, when attribute places it, then it returns that module - counting survives as the fallback, not as the rule
+- [ ] **AC3** Given a test file with neither a marker nor a deciding declaration, and one sibling module named more often than any other, when attribute places it, then it returns that module - counting survives as the fallback, not as the rule
   - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_counting_is_the_fallback_and_says_so
   - **Verified:** no
-- [ ] **AC4** Given a test file whose two most-mentioned siblings tie, when attribute places it, then it names the tied candidates in its result rather than reporting the file as unattributed
-  - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_one_more_mention_cannot_move_a_file_between_owners
+- [ ] **AC4** Given a test file whose two most-mentioned siblings TIE and which carries a marker or a single-script declaration, when attribute places it, then it is ATTRIBUTED by that route rather than reported unattributed. A tie already names its tied candidates today, so asserting the wording alone passes on unmodified code; what is false at HEAD is that the file gets an owner
+  - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_a_tie_with_a_declared_owner_is_attributed_not_unattributed
   - **Verified:** no
-- [ ] **AC5** Given `test_cli_grammar.py` as it stands on disk, when a mention of any sibling module is added to it and attribution is re-run, then the owner is unchanged - the exact edit that moved it to unattributed on 2026-08-14
-  - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_the_regression_edit_of_2026_08_14_is_pinned
+- [ ] **AC5** Given `.claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py` as it stands - unattributed today on a tie between two sibling modules - when one more mention of any sibling is added to a copy of it and attribution is re-run, then the owner is unchanged. The copy is made into a temp tree carrying the SIBLING MODULE DIRECTORY with it: a copy beside the original is an untracked file the repo-writes lane refuses, and a copy alone answers that no source module sits beside it
+  - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_one_more_mention_cannot_move_the_grammar_module
   - **Verified:** no
-- [ ] **AC6** Given the attribution ratchet driven through its shipped entry point over the real corpus, when a prose-only edit is made to a test file, then the ratchet count does not move
-  - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_the_ratchet_runs_over_the_real_corpus_through_its_entry_point
+- [ ] **AC6** Given the attribution map taken over the real corpus through the shipped entry point, when a prose-only mention is added to a copied test file and the map is retaken, then NO file's owner changes. The ratchet counts unattributed files, so an owner flip from one module to another leaves its number untouched - the count cannot observe the defect in this bug's own title, and the map can. The entry point requires a junit report, so the criterion is satisfied with one generated over the copied tree rather than with the corpus's own
+  - **Verify:** pytest tools/tests/test_test_census.py::AttributionTests::test_the_owner_map_is_stable_under_a_prose_only_edit
   - **Verified:** no
 
 ## Impact
@@ -52,12 +52,12 @@ The ratchet is the guard on test attribution and it fires on edits that change n
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in tools/test_census.py, revert the owner rule to the highest name-frequency count over the file body | Given a test file carrying a module-level subject marker, when `test_census.attribute` places it, then it returns the declared subject regardless of which sibling module the file names most often |
-| AC2 | in tools/test_census.py, omit the declaring unit's Affects from the lookup so a marker-less file falls to counting | Given a test file with no marker whose unit declares it in `Affects` alongside exactly one script, when attribute places it, then it returns that script - the declared owner is read from the artefact before any counting happens |
-| AC3 | in tools/test_census.py, delete the counting fallback so a file with no declared subject is dropped | Given a test file with neither a marker nor a declaring unit, and one sibling module named more often than any other, when attribute places it, then it returns that module - counting survives as the fallback, not as the rule |
-| AC4 | in tools/test_census.py, revert to `max(counts.values())` as the decisive rule | Given a test file whose two most-mentioned siblings tie, when attribute places it, then it names the tied candidates in its result rather than reporting the file as unattributed |
-| AC5 | in tools/test_census.py, re-apply the August edit that moved the attribution to frequency | Given `test_cli_grammar.py` as it stands on disk, when a mention of any sibling module is added to it and attribution is re-run, then the owner is unchanged - the exact edit that moved it to unattributed on 2026-08-14 |
-| AC6 | in tools/tests/test_test_census.py, swap the ratchet's target to a fixture tree | Given the attribution ratchet driven through its shipped entry point over the real corpus, when a prose-only edit is made to a test file, then the ratchet count does not move |
+| AC1 | in tools/test_census.py, delete the marker lookup from `attribute` | Given a test file carrying a module-level subject marker, when `test_census.attribute` places it, then it returns the declared subject whatever the mention counts say, and BEFORE the by-name route as well. Measured over the two test trees, 95 of 204 files are placed by that route and only 73 by counting, so a marker consulted after it would be ignored on most of the corpus |
+| AC2 | in tools/test_census.py, widen the declaration route to take the first script of a multi-script declaration | Given a test file with no marker whose declaring unit names exactly ONE script in `Affects`, when attribute places it, then it returns that script; and given one whose declaring units name several between them, the declaration does not decide, counting continues, and the result says which route answered. Most files here are declared by several units naming many scripts, so a rule that only handles the single-script case decides almost nothing |
+| AC3 | in tools/test_census.py, delete the counting fallback so a file with no declared subject is dropped | Given a test file with neither a marker nor a deciding declaration, and one sibling module named more often than any other, when attribute places it, then it returns that module - counting survives as the fallback, not as the rule |
+| AC4 | in tools/test_census.py, return the unattributed result whenever the counts tie, before the declared routes are consulted | Given a test file whose two most-mentioned siblings TIE and which carries a marker or a single-script declaration, when attribute places it, then it is ATTRIBUTED by that route rather than reported unattributed. A tie already names its tied candidates today, so asserting the wording alone passes on unmodified code; what is false at HEAD is that the file gets an owner |
+| AC5 | in tools/test_census.py, remove the marker branch so mention frequency decides `test_cli_grammar.py` again | Given `.claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py` as it stands - unattributed today on a tie between two sibling modules - when one more mention of any sibling is added to a copy of it and attribution is re-run, then the owner is unchanged. The copy is made into a temp tree carrying the SIBLING MODULE DIRECTORY with it: a copy beside the original is an untracked file the repo-writes lane refuses, and a copy alone answers that no source module sits beside it |
+| AC6 | in tools/test_census.py, drop the per-file owner from the entry point's payload, emitting only the tally | Given the attribution map taken over the real corpus through the shipped entry point, when a prose-only mention is added to a copied test file and the map is retaken, then NO file's owner changes. The ratchet counts unattributed files, so an owner flip from one module to another leaves its number untouched - the count cannot observe the defect in this bug's own title, and the map can. The entry point requires a junit report, so the criterion is satisfied with one generated over the copied tree rather than with the corpus's own |
 
 ## Revision History
 

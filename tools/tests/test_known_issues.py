@@ -573,11 +573,29 @@ class DisclosurePageTests(unittest.TestCase):
                 encoding="utf-8")
         return root
 
+    @staticmethod
+    def _version_of(rel: str) -> tuple:
+        """The version a `release-notes-vX.Y[.Z].md` path names, as a comparable tuple."""
+        m = re.search(r"release-notes-v([\d.]+)\.md$", rel)
+        assert m, f"{rel} is not a release-notes path"
+        return tuple(int(n) for n in m.group(1).split("."))
+
     def test_the_guard_reads_the_release_being_cut_not_a_published_one(self) -> None:
-        """MUTANT: point `NOTES_REL` back at the published v5.0.1 notes."""
-        self.assertEqual(ki.NOTES_REL, "docs/release-notes-v5.1.md")
+        """MUTANT: point `NOTES_REL` back at the published v5.0.1 notes.
+
+        Asserted as the RULE rather than as today's literal: the guard reads the HIGHEST
+        release-notes file in the tree, which is the one being cut. A test pinning the string
+        would have to be hand-edited at v5.2 for a change that is correct, and a guard whose
+        test must be edited to stay true teaches the editor to edit it."""
         notes = (self.ROOT / ki.NOTES_REL)
         self.assertTrue(notes.is_file(), f"{ki.NOTES_REL} must exist for the guard to read")
+        present = sorted((self.ROOT / "docs").glob("release-notes-v*.md"))
+        self.assertTrue(present, "the repository ships release notes; none were found")
+        newest = max(present, key=lambda p: self._version_of(p.name))
+        self.assertEqual(
+            self._version_of(ki.NOTES_REL), self._version_of(newest.name),
+            f"NOTES_REL names {ki.NOTES_REL} while the newest notes in the tree are "
+            f"{newest.name} - the guard must track the release being cut, not a published one")
         published = (self.ROOT / "docs" / "release-notes-v5.0.1.md").read_text(encoding="utf-8")
         self.assertIn("discloses 15 open defects", published,
                       "a released version's disclosed count states what THAT version shipped "

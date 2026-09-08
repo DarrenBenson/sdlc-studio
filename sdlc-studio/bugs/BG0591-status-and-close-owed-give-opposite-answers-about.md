@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
+> **Points:** 5
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Depends on:** BG0616
 > **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/close_owed.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
@@ -38,41 +38,56 @@ agree that BG0599 and BG0602 are owed - which is the wrong answer.
 
 ## Fixture invariant
 
-Every fixture below must make `owed` and `unaccounted` DIFFER. On the real tree today they
-are equal - the same ids, with `run_attributed` and `close_time_repairs` both empty - so the
-two surfaces agree by an empty subtraction rather than by structure. A fixture built the
-obvious way reproduces that coincidence, every criterion passes on unfixed code, and no
-mutant can kill it. `blocking()` subtracts THREE limbs - run-attributed units, close-time
-repairs and recorded overrides - and a fix special-casing one satisfies a plan exercising
-only that one.
+Most fixtures below must make `owed` and the accounted-for set DIFFER. On the real tree
+today they are equal - the same ids, with `run_attributed` and `close_time_repairs` both
+empty - so the two surfaces agree by an empty subtraction rather than by structure. A fixture
+built the obvious way reproduces that coincidence, the criterion passes on unfixed code, and
+no mutant can kill it.
 
-So the invariant is stated PER ROW, not once. AC1's fixture carries a run-attributed unit
-and no repair or override; AC3's carries a repair and an override and NO run-attributed
-unit; AC4's carries BOTH - at least one genuinely unaccounted terminal unit, so the
-corrected advisory has a line to lose, AND at least one accounted-for unit, so the two
-surfaces contradict each other at HEAD. Built from one shared fixture, AC1 and AC3 would be
-the same test twice; built without the second half, AC4's two surfaces agree BY SILENCE and
-deleting the printed line changes nothing.
+`blocking()` subtracts TWO limbs, not three: `unaccounted` is `owed` minus the
+run-attributed units minus the close-time repairs, and a recorded override is a LABEL on a
+unit already inside the repairs limb rather than a limb of its own. So AC3's two fixtures are
+both built through the repairs path, one with an override recorded against it and one
+without, and a fix special-casing either alone fails the other.
+
+The invariant is stated PER ROW. AC1's fixture carries a run-attributed unit and no repair or
+override. AC3's carry a repair, one of them overridden, and no run-attributed unit. AC5's
+carries BOTH an accounted-for unit and at least one genuinely unaccounted terminal unit, so
+the two surfaces contradict each other at HEAD and the id sets can be compared rather than
+found equally empty.
+
+AC4 is the deliberate exception and must NOT satisfy the rule above: its fixture has an EMPTY
+units limb and an outstanding velocity row, which is the only shape where `is_owed` is true
+on the velocity limb alone. An advisory narrowed to the units key goes silent there while the
+command exits 1, and no fixture obeying the difference rule can show it.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fixture carrying a run-attributed unit and NO repair or override, so `owed` and `unaccounted` differ on that limb alone, when `status`'s advisory runs, then it reports nothing owed - it reads the accounted-for set the renderer reads, not the raw one
+- [ ] **AC1** Given a fixture carrying a run-attributed unit and no repair or override, so the raw owed list and the accounted-for set differ on that limb alone, when `status`'s close advisory runs, then it announces nothing owed - it reads the accounted-for set the renderer and the exit code read, not the raw one
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_run_attributed_unit_is_not_announced_as_owed
-- [ ] **AC2** Given a unit that genuinely owes a close, when both surfaces run, then both report it - the paired control, so narrowing the key cannot be satisfied by silencing the advisory outright
+  - **Verified:** no
+- [ ] **AC2** Given a unit that genuinely owes a close, when both surfaces run, then both report it - the paired control, so narrowing the advisory's key cannot be satisfied by silencing it outright
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_real_owed_close_is_still_reported_on_both
-- [ ] **AC3** Given a fixture carrying a close-time REPAIR and a recorded OVERRIDE and NO run-attributed unit, when the advisory runs, then it reports nothing owed. `blocking()` subtracts three limbs, and a fix special-casing the run-attributed one alone passes every other row here while still contradicting the exit code on a fully-overridden set
+  - **Verified:** no
+- [ ] **AC3** Given a fixture carrying a close-time REPAIR, and a second carrying a repair the retro OVERRIDES by id, when the advisory runs on each, then neither announces anything owed. An override is a label on a unit already inside the repairs limb rather than a limb of its own, so both fixtures must be built through the repairs path or the criterion tests one thing twice
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_repaired_or_overridden_unit_is_not_announced_as_owed
-- [ ] **AC4** Given one fixture root, when `status` and `close_owed.py detect` are BOTH run as subprocesses, then the ID SET each claims is owed is the SAME. A boolean - both say a close is owed - is green at HEAD on this fixture, because both surfaces are non-silent there, so it pins nothing; and no advisory line at all counts as DISAGREEMENT, not as agreement. At HEAD the two sets differ, after the fix they match, and under the mutant `status` names nothing while `detect` names one. The bug is two commands printing contradictory sentences, so a library test cannot see it. the two commands spell it differently - `close_owed.py --root X detect`, but `status.py hint --root X`, because `status`'s parser attaches `--root` to each subparser
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_the_two_commands_agree_when_both_are_run
+  - **Verified:** no
+- [ ] **AC4** Given a fixture whose ONLY outstanding item is a retro with no velocity row, when the advisory runs, then it still announces a close is owed. `is_owed` returns true on the velocity limb alone, so an advisory narrowed to the units limb goes silent on exactly the fixture where the command exits 1 - the same two-surfaces-disagree defect this bug is about, moved rather than fixed
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_velocity_only_fixture_still_announces_a_close
+  - **Verified:** no
+- [ ] **AC5** Given one fixture root, when `status` and `close_owed.py detect` are BOTH run as subprocesses, then the id set each NAMES as holding the close is the same set. `detect` enumerates only the raw owed list today, so there is nothing to compare against and the comparison must be made possible before it can be made
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_the_two_commands_name_the_same_blocking_set
+  - **Verified:** no
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in `.claude/skills/sdlc-studio/scripts/status.py`, revert the advisory to reading `report['owed']` - the unsplit set the renderer never used, which is the defect itself and the only edit AC1's run-attributed fixture can see | Given a fixture carrying a run-attributed unit and NO repair or override, so `owed` and `unaccounted` differ on that limb alone, when `status`'s advisory runs, then it reports nothing owed - it reads the accounted-for set the renderer reads, not the raw one |
-| AC2 | in `.claude/skills/sdlc-studio/scripts/status.py`, remove the close-owed advisory altogether, so the surface is silent for the real case as well as the false one | Given a unit that genuinely owes a close, when both surfaces run, then both report it - the paired control, so narrowing the key cannot be satisfied by silencing the advisory outright |
-| AC3 | in `.claude/skills/sdlc-studio/scripts/status.py`, re-implement the subtraction in the advisory and subtract `run_attributed` ALONE, leaving repairs and overrides in the owed set - the careless implementer's actual error, which AC1's fixture cannot see because it carries no repair or override | Given a fixture carrying a close-time REPAIR and a recorded OVERRIDE and NO run-attributed unit, when the advisory runs, then it reports nothing owed. `blocking()` subtracts three limbs, and a fix special-casing the run-attributed one alone passes every other row here while still contradicting the exit code on a fully-overridden set |
-| AC4 | in `.claude/skills/sdlc-studio/scripts/status.py`, remove the advisory line from what `cmd_hint` and `cmd_status` PRINT while leaving `close_owed_advisory` correct - the lane mutant a library row cannot see, since every in-process criterion calls the helper directly | Given one fixture root, when `status` and `close_owed.py detect` are BOTH run as subprocesses, then the ID SET each claims is owed is the SAME. A boolean - both say a close is owed - is green at HEAD on this fixture, because both surfaces are non-silent there, so it pins nothing; and no advisory line at all counts as DISAGREEMENT, not as agreement. At HEAD the two sets differ, after the fix they match, and under the mutant `status` names nothing while `detect` names one. The bug is two commands printing contradictory sentences, so a library test cannot see it. the two commands spell it differently - `close_owed.py --root X detect`, but `status.py hint --root X`, because `status`'s parser attaches `--root` to each subparser |
+| AC1 | in .claude/skills/sdlc-studio/scripts/status.py, revert the advisory's source to `report["owed"]` | Given a fixture carrying a run-attributed unit and no repair or override, so the raw owed list and the accounted-for set differ on that limb alone, when `status`'s close advisory runs, then it announces nothing owed - it reads the accounted-for set the renderer and the exit code read, not the raw one |
+| AC2 | in .claude/skills/sdlc-studio/scripts/status.py, delete the advisory's emit so nothing is ever announced | Given a unit that genuinely owes a close, when both surfaces run, then both report it - the paired control, so narrowing the advisory's key cannot be satisfied by silencing it outright |
+| AC3 | in .claude/skills/sdlc-studio/scripts/close_owed.py, drop the `close_time_repairs` subtraction from `blocking`, returning the raw owed list as `units` | Given a fixture carrying a close-time REPAIR, and a second carrying a repair the retro OVERRIDES by id, when the advisory runs on each, then neither announces anything owed. An override is a label on a unit already inside the repairs limb rather than a limb of its own, so both fixtures must be built through the repairs path or the criterion tests one thing twice |
+| AC4 | in .claude/skills/sdlc-studio/scripts/status.py, narrow the advisory's predicate to the `units` key of `blocking`, dropping the velocity limb | Given a fixture whose ONLY outstanding item is a retro with no velocity row, when the advisory runs, then it still announces a close is owed. `is_owed` returns true on the velocity limb alone, so an advisory narrowed to the units limb goes silent on exactly the fixture where the command exits 1 - the same two-surfaces-disagree defect this bug is about, moved rather than fixed |
+| AC5 | in .claude/skills/sdlc-studio/scripts/close_owed.py, delete the line that names the blocking set, leaving only the raw owed enumeration | Given one fixture root, when `status` and `close_owed.py detect` are BOTH run as subprocesses, then the id set each NAMES as holding the close is the same set. `detect` enumerates only the raw owed list today, so there is nothing to compare against and the comparison must be made possible before it can be made |
 
 ## Revision History
 

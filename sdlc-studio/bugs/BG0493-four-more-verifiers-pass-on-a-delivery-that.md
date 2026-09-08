@@ -5,9 +5,9 @@
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/tests/conftest.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/best_practice_rules.py, tools/tests/test_best_practice_rules.py, tools/tests/test_conftest_guard.py, tools/tests/test_precommit_lane_order.py, tools/tests/test_test_census.py
+> **Affects:** tools/tests/conftest.py, tools/tests/test_conftest_guard.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/best_practice_rules.py, tools/tests/test_best_practice_rules.py, tools/tests/test_precommit_lane_order.py, tools/tests/test_test_census.py
 > **Severity:** Medium
-> **Points:** 3
+> **Points:** 5
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery)
 
 ## Summary
@@ -41,22 +41,21 @@ verifiers named here would still pass over a delivery that had been made inert.
 
 ## Acceptance Criteria
 
-> **What these criteria are.** They are the DELIVERY CONTRACT for the halves that still
-> reproduce, not a claim that this run built them. The operator's ruling stands: these bugs
-> are triaged, not built. What the design rung produced is criteria that fail RED now, so
-> whoever delivers the fix inherits a falsifiable target instead of a summary. The one
-> exception is called out where it sits: a criterion pinning a half that has already LAPSED
-> is a regression pin, and it goes green the moment its test exists rather than when a fix
-> lands.
-
-- [ ] **AC1** Given `tools/tests/conftest.py` with its `sys.path.insert` call DELETED, when BG0476's AC1 verifier runs, then it FAILS - today the file's own docstring mentions `sys.path.insert` at line 8, so the assertion is satisfied with the call gone.
+- [ ] **AC1** Given `tools/tests/conftest.py` with its `sys.path.insert` CALL deleted, when BG0476's AC1 verifier runs, then it FAILS. The file's own docstring names `sys.path.insert` at line 8, so today the assertion is satisfied with the call gone and the guard reads its own prose. The existing verifier hard-codes the tracked path, so the new node drives a COPY with the call removed rather than the file itself
   - **Verify:** pytest tools/tests/test_conftest_guard.py::TheGuardSeesTheCallNotTheDocstringTests::test_deleting_the_call_reddens_ac1
-- [ ] **AC2** Given US0606's `lane-check` slice, when its `|| true` assertion runs, then it reads the LANE's own pipeline rather than an unrelated one - today the slice lands inside a comment block.
+  - **Verified:** no
+- [ ] **AC2** Given US0606's `lane-check` assertion, when it runs, then it is anchored on the guard's own call site. Measured, the 600-character window ends on the id-gathering pipeline at relative offset 556, because the comment carrying the literal sits above the lane's own code; moving the hook block alone leaves that window in place, so the anchor is what the fix has to change
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::TheSliceReadsTheLaneTests::test_the_slice_is_not_a_comment_block
-- [ ] **AC3** Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it refuses rather than returning 0 - an exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent.
+  - **Verified:** no
+- [ ] **AC3** Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it REFUSES rather than returning zero findings. An exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent
   - **Verify:** pytest tools/tests/test_best_practice_rules.py::AnAbsentPracticeFileRefusesTests::test_a_missing_file_is_not_an_exemption
-- [ ] **AC4** Given the shipped gate, when its lanes are enumerated, then `best_practice_rules.py` is wired into one - it is referenced by nothing in `.githooks/` or `package.json`, so it guards nothing today.
-  - **Verify:** pytest tools/tests/test_best_practice_rules.py::AnAbsentPracticeFileRefusesTests::test_the_checker_is_wired_into_a_lane
+  - **Verified:** no
+- [ ] **AC4** Given the shipped gate, when its lanes are enumerated, then one of them NAMES `best_practice_rules.py`. It is referenced by nothing in `.githooks/` or `package.json` today, so it guards nothing
+  - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_checker_is_named_by_a_lane
+  - **Verified:** no
+- [ ] **AC5** Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing
+  - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_lane_runs_the_checker_and_carries_its_exit
+  - **Verified:** no
 
 ## Steps to Reproduce
 
@@ -74,10 +73,11 @@ Four more criteria that cannot fail. Individually small; together they are why f
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in tools/tests/test_test_census.py, change BG0476's assertion to read the file's text rather than the imported module | Given `tools/tests/conftest.py` with its `sys.path.insert` call DELETED, when BG0476's AC1 verifier runs, then it FAILS - today the file's own docstring mentions `sys.path.insert` at line 8, so the assertion is satisfied with the call gone. |
-| AC2 | in .claude/skills/sdlc-studio/scripts/tests/test_gate.py, truncate the lane-check slice bound to 600 characters again | Given US0606's `lane-check` slice, when its ``or-true`` assertion runs, then it reads the LANE's own pipeline rather than an unrelated one - today the slice lands inside a comment block. |
-| AC3 | in tools/best_practice_rules.py, return 0 findings when the practice file is absent rather than refusing | Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it refuses rather than returning 0 - an exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent. |
-| AC4 | in tools/best_practice_rules.py, remove the entry point the gate lane calls, so the module is referenced by nothing the gate runs | Given the shipped gate, when its lanes are enumerated, then `best_practice_rules.py` is wired into one - it is referenced by nothing in `.githooks/` or `package.json`, so it guards nothing today. |
+| AC1 | in tools/tests/test_test_census.py, change BG0476's assertion to read the file's text rather than the imported module | Given `tools/tests/conftest.py` with its `sys.path.insert` CALL deleted, when BG0476's AC1 verifier runs, then it FAILS. The file's own docstring names `sys.path.insert` at line 8, so today the assertion is satisfied with the call gone and the guard reads its own prose. The existing verifier hard-codes the tracked path, so the new node drives a COPY with the call removed rather than the file itself |
+| AC2 | in .claude/skills/sdlc-studio/scripts/tests/test_gate.py, revert `LaneCheckLaneTests` to slicing the first 600 characters after the keyword | Given US0606's `lane-check` assertion, when it runs, then it is anchored on the guard's own call site. Measured, the 600-character window ends on the id-gathering pipeline at relative offset 556, because the comment carrying the literal sits above the lane's own code; moving the hook block alone leaves that window in place, so the anchor is what the fix has to change |
+| AC3 | in tools/best_practice_rules.py, return 0 from `main()` on the missing-file path instead of refusing | Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it REFUSES rather than returning zero findings. An exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent |
+| AC4 | in .githooks/pre-commit, delete the block that invokes the practice-rules module | Given the shipped gate, when its lanes are enumerated, then one of them NAMES `best_practice_rules.py`. It is referenced by nothing in `.githooks/` or `package.json` today, so it guards nothing |
+| AC5 | in .githooks/pre-commit, swap the lane body for a bare `echo` mentioning the module path | Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing |
 
 ## Revision History
 

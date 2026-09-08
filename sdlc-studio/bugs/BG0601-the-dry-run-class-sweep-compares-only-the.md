@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 2
+> **Points:** 3
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-08-21
@@ -24,20 +24,23 @@ Compare the probes in full, or state a bounded reason for the horizon in the tes
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a probe whose scratch and read-root results agree on their first two entries and DIFFER at the third, when the dry-run parity sweep runs, then it FAILS and names that probe - today the `[:2]` slice reports it as agreeing
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_a_divergence_past_the_second_entry_is_caught
-- [ ] **AC2** Given every one of the 22 probe classes against an unmodified tree, when the sweep runs, then it PASSES - the paired control, because a sweep that fails on correct output is one that gets deleted rather than fixed
+- [ ] **AC1** Given a SYNTHETIC `_ck_` probe registered on the module for the duration of the test, whose real-tree and preview answers agree on `state` and `value` and differ in `detail`, when the dry-run parity sweep runs, then it FAILS and names that probe. Measured, no shipped probe diverges that way today - the full-width sweep reports zero differing across all of them - so the case has to be constructed rather than found, and constructing it is what shows the sweep can see the third field. Every `_ck_` resolver returns `(state, value, detail)`, so today's `[:2]` compares `(state, value)` while the fixture's own comment says it compares `(state, detail)` - a probe that reads the scratch and differs only in WHY is read as agreeing
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_a_difference_in_the_detail_field_is_caught
+  - **Verified:** no
+- [ ] **AC2** Given every `_ck_` probe against an unmodified tree, when the sweep runs, then it PASSES - the paired control, because a sweep that fails on correct output is one that gets deleted rather than fixed
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_the_sweep_passes_on_an_unmodified_tree
-- [ ] **AC3** Given a probe whose results are equal as sets but differently ordered, when the sweep runs, then it is decided by a rule STATED in the test's own docstring rather than by truncation - a bounded comparison is defensible, a silent horizon is not
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_ordering_is_decided_by_a_stated_rule
+  - **Verified:** no
+- [ ] **AC3** Given a `_ck_` resolver added to the module after the sweep's code was written, when the sweep runs, then it is swept too, because the roster is resolved from the module at run time rather than listed. An enumerated roster exempts whichever probe is added next, which is the shape this repository keeps meeting, and the sensitivity control cannot serve as the third row: measured, the blind scratch already differs from the real tree at the `state` field, so narrowing that control leaves it discriminating
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_the_sensitivity_control_compares_what_the_sweep_compares
+  - **Verified:** no
 
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, revert to the `[:2]` slice so a probe differing only at its third entry passes | Given a probe whose scratch and read-root results agree on their first two entries and DIFFER at the third, when the dry-run parity sweep runs, then it FAILS and names that probe - today the `[:2]` slice reports it as agreeing |
-| AC2 | in test_sprint.py, narrow the sweep to a single probe class so a divergence in any other class is invisible | Given every one of the 22 probe classes against an unmodified tree, when the sweep runs, then it PASSES - the paired control, because a sweep that fails on correct output is one that gets deleted rather than fixed |
-| AC3 | in .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, delete the docstring clause stating the ordering rule the sweep applies | Given a probe whose results are equal as sets but differently ordered, when the sweep runs, then it is decided by a rule STATED in the test's own docstring rather than by truncation - a bounded comparison is defensible, a silent horizon is not |
+| AC1 | in .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, narrow the swept comparison back to `fn(real)[:2]` against `fn(copy)[:2]`, dropping the detail field | Given a SYNTHETIC `_ck_` probe registered on the module for the duration of the test, whose real-tree and preview answers agree on `state` and `value` and differ in `detail`, when the dry-run parity sweep runs, then it FAILS and names that probe. Measured, no shipped probe diverges that way today - the full-width sweep reports zero differing across all of them - so the case has to be constructed rather than found, and constructing it is what shows the sweep can see the third field. Every `_ck_` resolver returns `(state, value, detail)`, so today's `[:2]` compares `(state, value)` while the fixture's own comment says it compares `(state, detail)` - a probe that reads the scratch and differs only in WHY is read as agreeing |
+| AC2 | in .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, swap the sweep's preview side for the BLIND scratch, so every probe reading outside `sdlc-studio/` differs and the sweep fails on a correct tree | Given every `_ck_` probe against an unmodified tree, when the sweep runs, then it PASSES - the paired control, because a sweep that fails on correct output is one that gets deleted rather than fixed |
+| AC3 | in .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, hard-code the probe roster as a literal tuple instead of reading it off the module | Given a `_ck_` resolver added to the module after the sweep's code was written, when the sweep runs, then it is swept too, because the roster is resolved from the module at run time rather than listed. An enumerated roster exempts whichever probe is added next, which is the shape this repository keeps meeting, and the sensitivity control cannot serve as the third row: measured, the blind scratch already differs from the real tree at the `state` field, so narrowing that control leaves it discriminating |
 
 ## Revision History
 

@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
+> **Points:** 5
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Evidence:** Found 2026-08-27 by an independent plan review of BG0629, which corrected that bug's own wrong claim that a direct Ready-to-Done escapes the gate - it does not. Condition quoted from transition.py:1046-1049 against `_IMPL_TARGETS` at :791. Population measured from the plan-review ledger: 44 units have ever carried a REJECT and 41 are at Done or Fixed.
@@ -29,17 +29,30 @@ Decide what the gate means, then make it mean that at both ends. Re-firing on th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit that entered In Progress before its plan-review REJECT was recorded, when it is transitioned to Done, then it is REFUSED - the verdict is consulted at the transition that makes the work permanent, not only at the one that starts it
+> **Re-measured 2026-09-08 after plan review.** The earlier figures came from
+> `critic-verdicts.md`, the DELIVERY ledger, which this gate never reads. On the plan-review
+> ledger at kind `test-plan`: 77 units ever rejected and 63 of them terminal. The walled
+> population is the one the GATE would compute, standing rejection AND no repair clearing it,
+> which is **16 bugs at Fixed**: BG0516, BG0521, BG0524, BG0530, BG0533, BG0541, BG0560,
+> BG0568, BG0593, BG0594, BG0595, BG0596, BG0597, BG0598, BG0614, BG0653. A first count of 12
+> read the standing verdict alone and was wrong in both directions - five of its twelve have
+> answered their rejections and cannot reach the refusal, and nine others it never named are
+> walled. AC5's fixture is built on one of the sixteen.
+
+- [ ] **AC1** Given a unit that entered In Progress before its plan-review REJECT was recorded, when it is transitioned to a TERMINAL status - `Done` for a story, `Fixed` for a bug - then it is REFUSED. The verdict is consulted at the transition that makes the work permanent, not only at the one that starts it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_the_gate_applies_on_the_in_progress_to_terminal_route
   - **Verified:** no
-- [ ] **AC2** Given a unit whose plan review carries an independent APPROVE, when it moves from In Progress to a terminal status, then it passes - the positive control, because a gate that now fires on the ordinary route must still let a properly reviewed unit through, and an implementation that refuses every such transition would satisfy every other criterion here
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_an_approved_plan_review_passes_on_the_in_progress_route
+- [ ] **AC2** Given the same unit taken DIRECTLY to a terminal status without passing through In Progress, then it is refused too. Measured on a fixture with a standing rejection on record: `Open -> In Progress` is refused today while BOTH `In Progress -> Fixed` and a direct `Open -> Fixed` exit 0, so a fix that adds only the first route leaves the second wide open and every unit this bug is about is a bug
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_a_direct_route_to_a_terminal_status_is_refused_too
   - **Verified:** no
-- [ ] **AC3** Given a workspace where `review.test_plan_after` is unset, when any unit reaches Done, then the gate does not fire at all - the new firing sits INSIDE the adoption cutoff, per RETRO0098, because a gate that refuses a whole backlog is switched off rather than satisfied
+- [ ] **AC3** Given a unit whose plan review carries an independent APPROVE, when it moves to a terminal status by either route, then it passes - the positive control, because a gate that now fires on the ordinary route must still let a properly reviewed unit through, and both routes are green at HEAD so each discriminates only through its mutant
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_an_approved_plan_review_passes_on_both_routes
+  - **Verified:** no
+- [ ] **AC4** Given a workspace where `review.test_plan_after` is unset, when any unit reaches a terminal status, then the gate does not fire at all. The new firing sits INSIDE the dated adoption cutoff, per RETRO0098, because a gate that refuses a whole backlog is switched off rather than satisfied
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_the_new_firing_sits_inside_the_dated_cutoff
   - **Verified:** no
-- [ ] **AC4** Given a Fixed bug that is re-opened and re-fixed, when it reaches Fixed again, then the behaviour is whatever this bug's fix decides and a test says which - 16 of the corpus's Fixed bugs carry a standing rejection, so leaving it undecided is how this ships a surprise
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_units_already_fixed_are_ruled_rather_than_reopened
+- [ ] **AC5** Given one of the 16 bugs already at Fixed the gate would refuse, when nothing is done to it, then this change does not reopen it - the gate fires on a transition, never retrospectively; and when such a bug IS reopened and re-fixed, that transition is REFUSED until the rejection is answered. The behaviour is decided here rather than deferred to whatever the implementation happens to do
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_a_reopened_and_refixed_bug_must_answer_its_rejection_first
   - **Verified:** no
 
 ## Impact
@@ -50,10 +63,11 @@ The gate is enforced by accident of ordering. A unit rejected before it starts i
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in .claude/skills/sdlc-studio/scripts/transition.py, add `from_canon not in _IMPL_TARGETS` back to the test-plan gate's guard | Given a unit that entered In Progress before its plan-review REJECT was recorded, when it is transitioned to Done, then it is REFUSED - the verdict is consulted at the transition that makes the work permanent, not only at the one that starts it |
-| AC2 | in .claude/skills/sdlc-studio/scripts/transition.py, invert the gate so an approved plan review is refused too | Given a unit whose plan review carries an independent APPROVE, when it moves from In Progress to a terminal status, then it passes - the positive control, because a gate that now fires on the ordinary route must still let a properly reviewed unit through, and an implementation that refuses every such transition would satisfy every other criterion here |
-| AC3 | in .claude/skills/sdlc-studio/scripts/transition.py, delete the cutoff test so the gate fires in a workspace that never adopted it | Given a workspace where `review.test_plan_after` is unset, when any unit reaches Done, then the gate does not fire at all - the new firing sits INSIDE the adoption cutoff, per RETRO0098, because a gate that refuses a whole backlog is switched off rather than satisfied |
-| AC4 | in transition.py, omit the re-opened-and-re-fixed case so a second pass through Fixed is unjudged | Given a Fixed bug that is re-opened and re-fixed, when it reaches Fixed again, then the behaviour is whatever this bug's fix decides and a test says which - 16 of the corpus's Fixed bugs carry a standing rejection, so leaving it undecided is how this ships a surprise |
+| AC1 | in .claude/skills/sdlc-studio/scripts/transition.py, reinstate the `from_canon not in _IMPL_TARGETS` early return at the gate's second call site | Given a unit that entered In Progress before its plan-review REJECT was recorded, when it is transitioned to a TERMINAL status - `Done` for a story, `Fixed` for a bug - then it is REFUSED. The verdict is consulted at the transition that makes the work permanent, not only at the one that starts it |
+| AC2 | in .claude/skills/sdlc-studio/scripts/transition.py, narrow the new firing to transitions whose source status is In Progress | Given the same unit taken DIRECTLY to a terminal status without passing through In Progress, then it is refused too. Measured on a fixture with a standing rejection on record: `Open -> In Progress` is refused today while BOTH `In Progress -> Fixed` and a direct `Open -> Fixed` exit 0, so a fix that adds only the first route leaves the second wide open and every unit this bug is about is a bug |
+| AC3 | in .claude/skills/sdlc-studio/scripts/transition.py, delete the `critic.is_independent` branch at the terminal-route site | Given a unit whose plan review carries an independent APPROVE, when it moves to a terminal status by either route, then it passes - the positive control, because a gate that now fires on the ordinary route must still let a properly reviewed unit through, and both routes are green at HEAD so each discriminates only through its mutant |
+| AC4 | in .claude/skills/sdlc-studio/scripts/transition.py, delete the `_plan_gate_active` call at the terminal-route site, leaving the gate unconditional | Given a workspace where `review.test_plan_after` is unset, when any unit reaches a terminal status, then the gate does not fire at all. The new firing sits INSIDE the dated adoption cutoff, per RETRO0098, because a gate that refuses a whole backlog is switched off rather than satisfied |
+| AC5 | in .claude/skills/sdlc-studio/scripts/transition.py, skip the gate for any unit whose artefact already records a terminal status in its revision history | Given one of the 16 bugs already at Fixed the gate would refuse, when nothing is done to it, then this change does not reopen it - the gate fires on a transition, never retrospectively; and when such a bug IS reopened and re-fixed, that transition is REFUSED until the rejection is answered. The behaviour is decided here rather than deferred to whatever the implementation happens to do |
 
 ## Revision History
 
