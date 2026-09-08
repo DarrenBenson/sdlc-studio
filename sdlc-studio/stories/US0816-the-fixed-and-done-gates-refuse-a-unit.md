@@ -1,6 +1,6 @@
 # US0816: The Fixed and Done gates refuse a unit with uncovered added lines unless each is ruled equivalent with a reason, and the ruling is in the depth field
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0564
 > **Created:** 2026-09-07
 > **Created-by:** sdlc-studio new

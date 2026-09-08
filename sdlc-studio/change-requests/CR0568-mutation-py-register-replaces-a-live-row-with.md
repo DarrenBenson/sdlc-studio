@@ -1,6 +1,6 @@
 # CR-0568: mutation.py register replaces a live row with the same unit, criterion, row, target and hash instead of appending a duplicate
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0249
 > **Priority:** Medium
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # CR-0564: verify_ac run --coverage refuses a unit whose new lines its own verifiers never execute
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0247
 > **Priority:** High
 > **Type:** Improvement

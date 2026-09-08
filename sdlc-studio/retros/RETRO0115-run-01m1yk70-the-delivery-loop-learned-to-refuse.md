@@ -46,9 +46,9 @@
   US0815 and US0816 before either was briefed. On US0815 it named thirteen unexecuted added lines
   and a new file measured as zero statements, which produced six mutants and a real fix; on
   US0816 it named one line, an unused branch of the test's own fixture, removed rather than ruled.
-- **Every rejection was repaired inside the run.** Eight of thirty-three delivery verdicts were
-  REJECT, each on a branch a fixture could not reach, and each closed by execution in the next
-  round rather than by argument.
+- **Every rejection was repaired inside the run.** Nineteen of the thirty-one verdicts recorded
+  on these units were REJECT, each on a branch a fixture could not reach, and each closed by
+  execution and disposed of on the repair record rather than by argument.
 - **The mutation ledger held under 87 live rows across six units** on shared files, with the rows
   of ten earlier units re-measured after every edit that drifted them. `mutation.py audit`, built
   in this batch, is what made the duplicate keys visible at all.
@@ -200,7 +200,9 @@ sprints fits noise.
 
 **0 of 6 unit(s) measured; 6 of 6 forecast at plan time.**
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Sprint tokens/point: 276,886** (7,475,923 tokens over 27 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity: 1.59 points/elapsed-hour** (27 points ACCEPTED over 16.993h, run-state - a CALENDAR SPAN with no idle deducted, since the run recorded no gap; it is not working time, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
@@ -208,9 +210,9 @@ Review passes, by phase - read from the two verdict ledgers:
 
   test-plan review: 29 pass(es) over 6 unit(s), 11 rejected
 
-  code review: 24 pass(es) over 5 unit(s), 12 rejected
+  code review: 31 pass(es) over 6 unit(s), 19 rejected
 
-  ratio: 0.83 code-review pass(es) per test-plan pass - the claim EP0207 is judged on, as a number
+  ratio: 1.07 code-review pass(es) per test-plan pass - the claim EP0207 is judged on, as a number
 Unmeasured: BG0653, BG0652, BG0614, US0818, US0815, US0816. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
@@ -271,4 +273,8 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Metrics
 
-- Tokens: captured at the close from the harness meter · Duration: one session, 2026-09-07 to 2026-09-08 · Critic rejects: 8 of 33 delivery verdicts, plus 12 plan-review rejections before any code
+- Tokens: captured at the close from the harness meter · Duration: one session, 2026-09-07 to 2026-09-08 · Critic rejects: 19 of 31 recorded verdicts on these six units, every rejection repaired and disposed of on the repair record, plus 12 plan-review rejections before any code
+
+## Handoff
+
+- [HO-0069](../handoffs/HO0069-the-delivery-loop-refuses-before-the-seats-do.md) - 3 remaining item(s): 0 copilot-tail, 3 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

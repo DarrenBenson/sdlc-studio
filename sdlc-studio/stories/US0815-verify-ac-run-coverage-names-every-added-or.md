@@ -1,6 +1,6 @@
 # US0815: verify_ac run --coverage names every added or changed line of a unit's Affects that its own verifiers never executed
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0564
 > **Created:** 2026-09-07
 > **Created-by:** sdlc-studio new

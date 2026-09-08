@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-07
+**Last Updated:** 2026-09-08
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 14 |
+| Open | 15 |
 | In Progress | 0 |
 | Fixed | 539 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 5 |
-| **Total** | **654** |
+| **Total** | **655** |
 
 ## All Bugs
 
@@ -194,6 +194,7 @@
 | [BG0652](BG0652-status-py-hint-takes-56-seconds-on-this.md) | status.py hint takes 56 seconds on this corpus: its close-owed advisory runs outside any corpus sweep | Fixed | Medium | 2026-09-07 | 2026-09-07 |
 | [BG0653](BG0653-a-test-rename-at-a-close-commit-orphaned.md) | A test rename at a close commit orphaned a stamped selector, and the scheduled corpus lane that saw it has been red for three weeks unread | Fixed | Medium | 2026-09-07 | 2026-09-07 |
 | [BG0654](BG0654-a-push-whose-pre-push-gate-outlives-the.md) | A push whose pre-push gate outlives the SSH connection git opened before the hook dies with exit 141 after the gate reports PASS, and nothing names the cause | Open | Medium | 2026-09-07 | 2026-09-07 |
+| [BG0655](BG0655-a-mutant-survives-at-claude-skills-sdlc-studio.md) | the survivor filer reads a WITHDRAWN row as a live survivor, so a close files a High bug for a mutant the ledger says is dead | Open | Medium | 2026-09-08 | 2026-09-08 |
 
 ## Archived Releases
 

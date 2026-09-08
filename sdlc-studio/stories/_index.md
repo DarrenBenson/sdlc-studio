@@ -11,8 +11,8 @@
 | Ready | 20 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 3 |
-| Done | 653 |
+| Review | 0 |
+| Done | 656 |
 | Won't Implement | 2 |
 | Deferred | 0 |
 | Superseded | 2 |
@@ -254,10 +254,10 @@
 | [US0812](US0812-the-floor-lane-is-silent-when-every-script.md) | The floor lane is silent when every script parses, so it is not a check that always fires | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
 | [US0813](US0813-sprint-report-py-is-repaired-so-the-lane.md) | sprint_report.py is repaired, so the lane's first run over the real tree has something to find | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
 | [US0814](US0814-the-floor-lane-is-bound-into-the-pre.md) | The floor lane is bound into the pre-commit gate, so it runs in the command people actually run | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
-| [US0815](US0815-verify-ac-run-coverage-names-every-added-or.md) | verify_ac run --coverage names every added or changed line of a unit's Affects that its own verifiers never executed | Review | EP0247 | 2026-09-07 | 2026-09-07 |
-| [US0816](US0816-the-fixed-and-done-gates-refuse-a-unit.md) | The Fixed and Done gates refuse a unit with uncovered added lines unless each is ruled equivalent with a reason, and the ruling is in the depth field | Review | EP0247 | 2026-09-07 | 2026-09-07 |
+| [US0815](US0815-verify-ac-run-coverage-names-every-added-or.md) | verify_ac run --coverage names every added or changed line of a unit's Affects that its own verifiers never executed | Done | EP0247 | 2026-09-07 | 2026-09-07 |
+| [US0816](US0816-the-fixed-and-done-gates-refuse-a-unit.md) | The Fixed and Done gates refuse a unit with uncovered added lines unless each is ruled equivalent with a reason, and the ruling is in the depth field | Done | EP0247 | 2026-09-07 | 2026-09-07 |
 | [US0817](US0817-a-unit-whose-affects-names-a-gate-lane.md) | A unit whose Affects names a gate lane, a hook or the suite runner cannot reach Fixed or Done without a recorded green self-run of the affected lane on this repository | Ready | EP0248 | 2026-09-07 | 2026-09-07 |
-| [US0818](US0818-mutation-py-register-replaces-the-live-row-when.md) | mutation.py register replaces the live row when unit, criterion, row, target, hash, verdict and test all match, refuses a disagreeing verdict or test naming retract, and says so | Review | EP0249 | 2026-09-07 | 2026-09-07 |
+| [US0818](US0818-mutation-py-register-replaces-the-live-row-when.md) | mutation.py register replaces the live row when unit, criterion, row, target, hash, verdict and test all match, refuses a disagreeing verdict or test naming retract, and says so | Done | EP0249 | 2026-09-07 | 2026-09-07 |
 
 ## Archived Releases
 

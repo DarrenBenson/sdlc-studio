@@ -38,8 +38,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0637` | Medium | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick |
 | `BG0638` | Medium | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindn... |
 | `BG0654` | Medium | A push whose pre-push gate outlives the SSH connection git opened before the hook dies with exit 141 after the gate reports PASS, and nothing names... |
+| `BG0655` | Medium | the survivor filer reads a WITHDRAWN row as a live survivor, so a close files a High bug for a mutant the ledger says is dead |
 
-14 findings: 14 Medium, 0 Low.
+15 findings: 15 Medium, 0 Low.
 
 ## Not carried
 

@@ -1,6 +1,6 @@
 # US0818: mutation.py register replaces the live row when unit, criterion, row, target, hash, verdict and test all match, refuses a disagreeing verdict or test naming retract, and says so
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0568
 > **Created:** 2026-09-07
 > **Created-by:** sdlc-studio new
