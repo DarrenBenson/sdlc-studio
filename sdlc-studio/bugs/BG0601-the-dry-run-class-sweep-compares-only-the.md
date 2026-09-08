@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
+> **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio file
@@ -29,6 +30,14 @@ Compare the probes in full, or state a bounded reason for the horizon in the tes
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_the_sweep_passes_on_an_unmodified_tree
 - [ ] **AC3** Given a probe whose results are equal as sets but differently ordered, when the sweep runs, then it is decided by a rule STATED in the test's own docstring rather than by truncation - a bounded comparison is defensible, a silent horizon is not
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_ordering_is_decided_by_a_stated_rule
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, revert to the `[:2]` slice so a probe differing only at its third entry passes | Given a probe whose scratch and read-root results agree on their first two entries and DIFFER at the third, when the dry-run parity sweep runs, then it FAILS and names that probe - today the `[:2]` slice reports it as agreeing |
+| AC2 | in test_sprint.py, narrow the sweep to a single probe class so a divergence in any other class is invisible | Given every one of the 22 probe classes against an unmodified tree, when the sweep runs, then it PASSES - the paired control, because a sweep that fails on correct output is one that gets deleted rather than fixed |
+| AC3 | in .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, delete the docstring clause stating the ordering rule the sweep applies | Given a probe whose results are equal as sets but differently ordered, when the sweep runs, then it is decided by a rule STATED in the test's own docstring rather than by truncation - a bounded comparison is defensible, a silent horizon is not |
 
 ## Revision History
 

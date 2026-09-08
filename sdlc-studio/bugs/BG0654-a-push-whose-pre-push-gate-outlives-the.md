@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
+> **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** tools/enable-hooks.sh, .githooks/pre-push, tools/tests/test_pre_push_hook.py, AGENTS.md
 > **Evidence:** 2026-09-07 22:23-22:31Z, `git push origin main` of 28 commits from this clone: the pre-push gate printed `gate: PASS` after 471 s (module-alone 391 s) and the hook exited 0, git exited 141 (SIGPIPE) with no message, origin/main unchanged. The retry with `GIT_SSH_COMMAND='ssh -o ServerAliveInterval=20 -o ServerAliveCountMax=60'` ran the same gate green and landed. Transcript in the session scratchpad, push-out-attempt1.txt.
 > **Created:** 2026-09-07
@@ -31,6 +32,13 @@ git opens the transport to the remote BEFORE it runs `pre-push`, and only writes
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::KeepaliveTests::test_enable_hooks_sets_the_keepalive_ssh_command_and_leaves_an_existing_one
 - [ ] **AC2** Given the shipped `.githooks/pre-push` driven by subprocess in the existing hook fixture, when it prints its opening estimate, then the line names the keepalive the connection needs across the gate and the command that sets it, on stderr, where the pusher reads it.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::KeepaliveTests::test_the_hook_names_the_keepalive_the_gate_needs
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in tools/enable-hooks.sh, delete the `core.sshCommand` write so a fresh clone gets no keepalive | Given a clone with no `core.sshCommand`, when `bash tools/enable-hooks.sh` runs, then the clone's `core.sshCommand` names an ssh with `ServerAliveInterval` and `ServerAliveCountMax` set and the script prints the setting; a clone that already sets `core.sshCommand` is left untouched and told so - the paired control. |
+| AC2 | in tools/enable-hooks.sh, omit the keepalive from the line that announces what it configured | Given the shipped `.githooks/pre-push` driven by subprocess in the existing hook fixture, when it prints its opening estimate, then the line names the keepalive the connection needs across the gate and the command that sets it, on stderr, where the pusher reads it. |
 
 ## Revision History
 

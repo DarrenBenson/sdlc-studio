@@ -39,7 +39,7 @@ BARRED = ("Critical", "High")
 #: Pointed at v5.0.0 until v5.0.1 shipped, which made the guard demand that a HISTORICAL record
 #: be rewritten every time a bug closed. A released version's notes state what THAT version
 #: shipped with and must not move; only the current one tracks the corpus.
-NOTES_REL = "docs/release-notes-v5.0.1.md"
+NOTES_REL = "docs/release-notes-v5.1.md"
 
 #: Titles are the finding's own H1. Long ones are elided rather than wrapped, because a table
 #: cell that wraps to five lines is a table nobody reads to the bottom of.
@@ -53,13 +53,38 @@ _SEVERITY = re.compile(r"^> \*\*Severity:\*\* *(.+)$", re.M)
 _HEADING = re.compile(r"^# (BG-?\d+): (.+)$", re.M)
 _ROW = re.compile(r"^\| `(BG\d+)` \| (\w+) \|", re.M)
 
-HEAD = """# Known issues
+#: The page's prose is DERIVED from the count it sits above, because a sentence that is true of
+#: fifteen findings is false of none: "they ship open, listed here by id" describes an empty
+#: table as a list of findings, and "each id below is a file" promises files nobody can open.
+#: The bar named is the one the release being cut is held to; the previous release's bar stays
+#: below it as history, because a reader needs to know which bar the list in front of them serves.
+def _head(count: int) -> str:
+    if count:
+        body = (
+            "**Medium and Low findings ship open, listed here by id, triaged to v5.1.** Each is a real\n"
+            "defect with a reproduction and, in most cases, a proposed fix. None of them stops the\n"
+            "lifecycle running. They are listed rather than closed, because closing a bug to make a\n"
+            "release look clean is the practice this tool exists to prevent.\n\n"
+            "Each id below is a file in `sdlc-studio/bugs/` in the source repository, carrying the\n"
+            "evidence, the reproduction and the proposed fix in full.\n")
+    else:
+        body = (
+            "**No Medium or Low finding is open.** The corpus carries none at this commit, so the\n"
+            "table below is empty rather than omitted: an absent section and an empty one say\n"
+            "different things, and only one of them is checkable.\n")
+    return f"""# Known issues
 
 The defects SDLC Studio knows about and has chosen to ship. This page is the disclosure
 half of the release bar: a project that hides its open findings is asking to be trusted
 rather than read.
 
-## The bar v5.0.0 was held to
+## The bar v5.1 is held to
+
+**Zero open High-severity bugs at the tag, and every Medium disposed of or ruled.** A
+finding either reaches a terminal status with its own verifiers passing, or it stays open
+carrying a dated ruling that says why it ships.
+
+## The bar v5.0.0 was held to, kept as history
 
 **Zero open High-severity bugs at the tag.** Every High finding raised against v5 was
 fixed and closed before the tag was cut. The bar was originally zero open bugs of any
@@ -67,17 +92,11 @@ severity; it moved on 2026-08-11, because holding a release for findings that ar
 but not release-blocking had cost a month and was buying nothing a disclosure could not
 buy honestly.
 
-**Medium and Low findings ship open, listed here by id, triaged to v5.1.** Each is a real
-defect with a reproduction and, in most cases, a proposed fix. None of them stops the
-lifecycle running. They are listed rather than closed, because closing a bug to make a
-release look clean is the practice this tool exists to prevent.
-
-Each id below is a file in `sdlc-studio/bugs/` in the source repository, carrying the
-evidence, the reproduction and the proposed fix in full.
-
+{body}
 ## Triaged to v5.1
 
 """
+
 
 TAIL = """
 ## Not carried
@@ -236,7 +255,7 @@ def render(repo: Path | None = None) -> str:
     mediums = sum(1 for _, (s, _t) in rows if s == "Medium")
     lows = sum(1 for _, (s, _t) in rows if s == "Low")
     lines += ["", f"{len(rows)} findings: {mediums} Medium, {lows} Low."]
-    return HEAD + "\n".join(lines) + "\n" + TAIL
+    return _head(len(rows)) + "\n".join(lines) + "\n" + TAIL
 
 
 def main(argv: list[str] | None = None) -> int:

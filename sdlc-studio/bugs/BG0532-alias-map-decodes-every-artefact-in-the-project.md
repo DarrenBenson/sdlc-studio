@@ -38,7 +38,7 @@ Pin it with a test that puts a non-UTF-8 file beside a real one and asserts `fin
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in lib/sdlc_md.py `alias_map`, restore the bare p.read_text(encoding='utf-8') so one unreadable file raises | Given one unreadable or non-UTF-8 artefact anywhere in the project, when `alias_map` builds, then it still returns a map - a single bad file must cost its own aliases, not every id lookup in the project. |
+| AC1 | in lib/sdlc_md.py `alias_map`, revert to the bare p.read_text(encoding='utf-8') so one unreadable file raises | Given one unreadable or non-UTF-8 artefact anywhere in the project, when `alias_map` builds, then it still returns a map - a single bad file must cost its own aliases, not every id lookup in the project. |
 
 ## Revision History
 

@@ -557,5 +557,57 @@ class UnclassifiableSeverityTests(unittest.TestCase):
             self.assertIn("major", both_check, both_check[:400])
 
 
+class DisclosurePageTests(unittest.TestCase):
+    """BG0656: the guard reads the release BEING CUT, and the page's prose is derived from its
+    own row count. Bound to a released version, every disposal walked a published claim: closing
+    one finding demanded that v5.0.1's notes be rewritten to a count that version never shipped
+    with. And the prose was fixed text that described a list of findings over an empty table."""
+
+    ROOT = Path(__file__).resolve().parents[2]
+
+    def _corpus(self, tmp: Path, bugs: list) -> Path:
+        root = tmp / "r"; (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        for i, (bid, sev) in enumerate(bugs, 1):
+            (root / "sdlc-studio" / "bugs" / f"{bid}-x.md").write_text(
+                f"# {bid}: finding number {i}\n\n> **Status:** Open\n> **Severity:** {sev}\n",
+                encoding="utf-8")
+        return root
+
+    def test_the_guard_reads_the_release_being_cut_not_a_published_one(self) -> None:
+        """MUTANT: point `NOTES_REL` back at the published v5.0.1 notes."""
+        self.assertEqual(ki.NOTES_REL, "docs/release-notes-v5.1.md")
+        notes = (self.ROOT / ki.NOTES_REL)
+        self.assertTrue(notes.is_file(), f"{ki.NOTES_REL} must exist for the guard to read")
+        published = (self.ROOT / "docs" / "release-notes-v5.0.1.md").read_text(encoding="utf-8")
+        self.assertIn("discloses 15 open defects", published,
+                      "a released version's disclosed count states what THAT version shipped "
+                      "with and must never be walked by a later disposal")
+
+    def test_the_prose_is_true_at_a_count_and_at_zero(self) -> None:
+        """MUTANT: hard-code the prose so it reads the same at any row count."""
+        with tempfile.TemporaryDirectory() as d:
+            some = ki.render(self._corpus(Path(d) / "a", [("BG9001", "Medium"), ("BG9002", "Low")]))
+            self.assertIn("ship open, listed here by id", some)
+            self.assertIn("Each id below is a file", some)
+            self.assertIn("2 findings: 1 Medium, 1 Low.", some)
+        with tempfile.TemporaryDirectory() as d:
+            none = ki.render(self._corpus(Path(d) / "b", []))
+            self.assertIn("No Medium or Low finding is open", none)
+            self.assertNotIn("Each id below is a file", none,
+                             "an empty table cannot promise a file per id")
+            self.assertNotIn("ship open, listed here by id", none)
+            self.assertIn("0 findings: 0 Medium, 0 Low.", none)
+
+    def test_the_heading_names_the_bar_of_the_release_being_cut(self) -> None:
+        """MUTANT: revert the heading constant to naming only the previous release's bar."""
+        with tempfile.TemporaryDirectory() as d:
+            page = ki.render(self._corpus(Path(d), [("BG9001", "Medium")]))
+        self.assertIn("## The bar v5.1 is held to", page)
+        self.assertIn("## The bar v5.0.0 was held to, kept as history", page)
+        self.assertLess(page.index("The bar v5.1 is held to"),
+                        page.index("The bar v5.0.0 was held to"),
+                        "the bar in force comes first; the previous one is history below it")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -67,7 +67,7 @@ Each fix was confirmed by executing its mutant, and the guards were driven direc
 | --- | --- | --- |
 | AC1 | in test_adr011_agreement.py, drop the fail-safe negation check | Given the fail-safe rule rewritten to say the opposite - a goal outside the ladder never blocks, the escape opens - when the guard reads it, then it is NOT returned as the rule, though it carries every required term. |
 | AC2 | in test_token_premise.py, use the bare `_LOWER_BOUND` pattern again | Given a passage stating it is NOT a lower bound, when the guard reads it, then it does not count as stating the claim - the bare pattern matched it, which made the guard inverted rather than merely weak. |
-| AC3 | in test_trd_surface_derivation.py, restore the lowercase-backticks-only name reader | Given a name in bold or capitalised inside backticks, when the stray-name check reads the passage, then the name is seen - markup is house style, the name is the claim. |
+| AC3 | in test_trd_surface_derivation.py, revert to the lowercase-backticks-only name reader | Given a name in bold or capitalised inside backticks, when the stray-name check reads the passage, then the name is seen - markup is house style, the name is the claim. |
 | AC4 | in test_trd_surface_derivation.py, narrow `_NAME` to backticks only | Given an enumeration one of whose members is bold, when the run pattern reads it, then it is still recognised as an enumeration. |
 
 ## Revision History

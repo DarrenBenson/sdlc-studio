@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 15 |
+| Open | 16 |
 | In Progress | 0 |
 | Fixed | 539 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
-| Superseded | 5 |
-| **Total** | **655** |
+| Superseded | 6 |
+| **Total** | **657** |
 
 ## All Bugs
 
@@ -177,7 +177,7 @@
 | [BG0635](BG0635-the-close-s-convergence-series-counts-advisory-gate.md) | the close's convergence series counts ADVISORY gate lanes as outstanding blockers, so the review-repair loop can never converge and every close eventually hits the round cap | Fixed | Medium | 2026-08-29 | 2026-08-29 |
 | [BG0636](BG0636-file-finding-py-has-no-verify-so-every.md) | file_finding.py has no --verify, so every bug it files is born with acceptance criteria nothing can execute, and grooming reports them groomed | Fixed | High | 2026-09-02 | -- |
 | [BG0637](BG0637-critic-clean-escapes-underscores-inside-code-spans-corrupting.md) | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick | Open | Medium | 2026-09-02 | -- |
-| [BG0638](BG0638-five-sprint-checklist-rows-state-a-conclusion-they.md) | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindness as UNANSWERED | Open | Medium | 2026-09-02 | -- |
+| [BG0638](BG0638-five-sprint-checklist-rows-state-a-conclusion-they.md) | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindness as UNANSWERED | Superseded | Medium | 2026-09-02 | -- |
 | [BG0639](BG0639-cycle-drift-s-guard-asserts-two-of-its.md) | cycle_drift's guard asserts two of its three buckets, so the unverifiable bucket is already non-empty on the shipped tree while the guard reports green | Superseded | Medium | 2026-09-02 | -- |
 | [BG0640](BG0640-the-revert-check-lane-reports-a-clean-pass.md) | the revert-check lane reports a clean pass when it examined nothing, so an absence reads as a result | Fixed | Medium | 2026-09-03 | 2026-09-03 |
 | [BG0641](BG0641-there-is-no-pre-push-hook-so-the.md) | there is no pre-push hook, so the two lanes AGENTS.md says bind at the push boundary bind nowhere | Fixed | Medium | 2026-09-03 | 2026-09-03 |
@@ -195,6 +195,8 @@
 | [BG0653](BG0653-a-test-rename-at-a-close-commit-orphaned.md) | A test rename at a close commit orphaned a stamped selector, and the scheduled corpus lane that saw it has been red for three weeks unread | Fixed | Medium | 2026-09-07 | 2026-09-07 |
 | [BG0654](BG0654-a-push-whose-pre-push-gate-outlives-the.md) | A push whose pre-push gate outlives the SSH connection git opened before the hook dies with exit 141 after the gate reports PASS, and nothing names the cause | Open | Medium | 2026-09-07 | 2026-09-07 |
 | [BG0655](BG0655-a-mutant-survives-at-claude-skills-sdlc-studio.md) | the survivor filer reads a WITHDRAWN row as a live survivor, so a close files a High bug for a mutant the ledger says is dead | Open | Medium | 2026-09-08 | 2026-09-08 |
+| [BG0656](BG0656-the-disclosure-page-s-prose-and-its-guard.md) | The disclosure page's prose and its guard are bound to a RELEASED version's notes, so every disposition walks a published claim and the page lies at a low count | Open | Medium | 2026-09-08 | 2026-09-08 |
+| [BG0657](BG0657-the-scheduled-corpus-lane-is-red-at-23.md) | The scheduled corpus lane is red at 23 against a baseline of 20, and the baseline records only a COUNT, so no reader can tell which three are new | Open | Medium | 2026-09-08 | 2026-09-08 |
 
 ## Archived Releases
 

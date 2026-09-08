@@ -5,9 +5,10 @@
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/tests/conftest.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/best_practice_rules.py, tools/tests/test_best_practice_rules.py, tools/tests/test_conftest_guard.py, tools/tests/test_precommit_lane_order.py
+> **Affects:** tools/tests/conftest.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/best_practice_rules.py, tools/tests/test_best_practice_rules.py, tools/tests/test_conftest_guard.py, tools/tests/test_precommit_lane_order.py, tools/tests/test_test_census.py
 > **Severity:** Medium
 > **Points:** 3
+> **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery)
 
 ## Summary
 
@@ -68,6 +69,15 @@ Point each verifier at the behaviour: run the hook, run the command, or parse th
 ## Impact
 
 Four more criteria that cannot fail. Individually small; together they are why five review passes returned 27 rejections against a batch whose every declared verifier was green.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in tools/tests/test_test_census.py, change BG0476's assertion to read the file's text rather than the imported module | Given `tools/tests/conftest.py` with its `sys.path.insert` call DELETED, when BG0476's AC1 verifier runs, then it FAILS - today the file's own docstring mentions `sys.path.insert` at line 8, so the assertion is satisfied with the call gone. |
+| AC2 | in .claude/skills/sdlc-studio/scripts/tests/test_gate.py, truncate the lane-check slice bound to 600 characters again | Given US0606's `lane-check` slice, when its ``or-true`` assertion runs, then it reads the LANE's own pipeline rather than an unrelated one - today the slice lands inside a comment block. |
+| AC3 | in tools/best_practice_rules.py, return 0 findings when the practice file is absent rather than refusing | Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it refuses rather than returning 0 - an exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent. |
+| AC4 | in tools/best_practice_rules.py, remove the entry point the gate lane calls, so the module is referenced by nothing the gate runs | Given the shipped gate, when its lanes are enumerated, then `best_practice_rules.py` is wired into one - it is referenced by nothing in `.githooks/` or `package.json`, so it guards nothing today. |
 
 ## Revision History
 

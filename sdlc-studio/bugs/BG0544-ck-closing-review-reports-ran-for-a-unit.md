@@ -38,7 +38,7 @@ A unit that is uncovered belongs in one of the two open buckets whatever its ver
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in sprint_report.py `_ck_closing_review`, restore `unreviewed = [u for u in open_units if not latest.get(u)]` so the approve residue falls through | Given a unit the shared coverage reading calls UNCOVERED whose latest verdict is an APPROVE, when the closing-review row renders, then it is counted outstanding - an APPROVE against a unit no independent pass covers is a verdict with nothing behind it. |
+| AC1 | in sprint_report.py `_ck_closing_review`, revert to `unreviewed = [u for u in open_units if not latest.get(u)]` so the approve residue falls through | Given a unit the shared coverage reading calls UNCOVERED whose latest verdict is an APPROVE, when the closing-review row renders, then it is counted outstanding - an APPROVE against a unit no independent pass covers is a verdict with nothing behind it. |
 | AC2 | in sprint_report.py `_ck_closing_review`, widen open_units to every unit so a covered approved unit stops reporting ran | Given a unit that IS covered and approved, when the same row renders, then it still reports `ran` - the fold must not swallow a genuinely reviewed unit. |
 
 ## Revision History

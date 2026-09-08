@@ -4,7 +4,13 @@ The defects SDLC Studio knows about and has chosen to ship. This page is the dis
 half of the release bar: a project that hides its open findings is asking to be trusted
 rather than read.
 
-## The bar v5.0.0 was held to
+## The bar v5.1 is held to
+
+**Zero open High-severity bugs at the tag, and every Medium disposed of or ruled.** A
+finding either reaches a terminal status with its own verifiers passing, or it stays open
+carrying a dated ruling that says why it ships.
+
+## The bar v5.0.0 was held to, kept as history
 
 **Zero open High-severity bugs at the tag.** Every High finding raised against v5 was
 fixed and closed before the tag was cut. The bar was originally zero open bugs of any
@@ -36,11 +42,12 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0630` | Medium | the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever bei... |
 | `BG0633` | Medium | transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the... |
 | `BG0637` | Medium | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick |
-| `BG0638` | Medium | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindn... |
 | `BG0654` | Medium | A push whose pre-push gate outlives the SSH connection git opened before the hook dies with exit 141 after the gate reports PASS, and nothing names... |
 | `BG0655` | Medium | the survivor filer reads a WITHDRAWN row as a live survivor, so a close files a High bug for a mutant the ledger says is dead |
+| `BG0656` | Medium | The disclosure page's prose and its guard are bound to a RELEASED version's notes, so every disposition walks a published claim and the page lies a... |
+| `BG0657` | Medium | The scheduled corpus lane is red at 23 against a baseline of 20, and the baseline records only a COUNT, so no reader can tell which three are new |
 
-15 findings: 15 Medium, 0 Low.
+16 findings: 16 Medium, 0 Low.
 
 ## Not carried
 

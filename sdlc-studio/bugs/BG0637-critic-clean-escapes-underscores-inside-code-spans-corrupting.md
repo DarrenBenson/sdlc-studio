@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
+> **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Created:** 2026-09-02
 > **Created-by:** sdlc-studio file
@@ -26,15 +27,27 @@ Escape for the CONTEXT rather than for the string. Split the value on code-span 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `_clean`is`value.replace('|','/').replace('\n',' ').strip().replace('_', r'\_')`.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Escape for the CONTEXT rather than for the string.
+- [ ] **AC1** Given free text carrying an underscored identifier inside a code span - `` `_read_rows` `` - when a critic verdict, an evidence row or a repair closure is recorded, then the text inside the span reaches the ledger unescaped, because a backslash inside a code span is literal and markdownlint MD038 reads the escape as content. Outside a span the escape is unchanged, so an underscore in prose still cannot pair into emphasis.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_an_underscore_inside_a_code_span_is_not_escaped
+  - **Verified:** no
+- [ ] **AC2** Given free text carrying an ODD number of backticks, when it is recorded, then the row's spans are balanced before it is written - an unbalanced span turns the rest of the row into code and markdownlint refuses the file, so the writer must not be able to produce one.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_unbalanced_backticks_are_balanced_before_the_row_is_written
+  - **Verified:** no
 
 ## Impact
 
 Every identifier a reviewer names in a finding is written wrong, in the three files this project uses as its record of what review found. It is invisible in the terminal and visible in every rendered view, and it compounds: 442 rows are already double-escaped. The backtick half additionally blocks commits - it did so twice during RUN-01M11MEP's close, each time reporting a column hundreds of characters away from the real stray.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/critic.py, revert `_clean` to substituting every underscore in the whole string before any span is parsed | Given free text carrying an underscored identifier inside a code span - `` `_read_rows` `` - when a critic verdict, an evidence row or a repair closure is recorded, then the text inside the span reaches the ledger unescaped, because a backslash inside a code span is literal and markdownlint MD038 reads the escape as content. Outside a span the escape is unchanged, so an underscore in prose still cannot pair into emphasis. |
+| AC2 | in critic.py, drop the backtick-parity repair so an odd count reaches the ledger | Given free text carrying an ODD number of backticks, when it is recorded, then the row's spans are balanced before it is written - an unbalanced span turns the rest of the row into code and markdownlint refuses the file, so the writer must not be able to produce one. |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-02 | sdlc-studio | Filed |
+| 2026-09-08 | Claude Fable 5.1 | Figures re-measured at the goal review, where the engineering seat found them stale by two to five times. On this tree today: `repair-record.md` carries 571 code spans holding an escaped underscore and 943 double escapes; `critic-verdicts.md` 494 spans and ZERO doubles; `plan-review-verdicts.md` 512 spans and zero doubles. The corruption is 1,577 spans across three ledgers, and the double-escape half is confined to one file - the count in the Summary was taken on 2026-08-28 and the ledgers have grown since |

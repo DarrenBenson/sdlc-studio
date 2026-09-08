@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
+> **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Evidence:** Both parent filings were re-verified against source by an independent goal review on 2026-08-25 before any code was written, and closed with the source lines that settle them recorded on each artefact. This unit carries only the limbs that survived that verification.
 > **Created:** 2026-08-25
@@ -25,9 +26,26 @@ Add the two missing verbs and a test that fails on their absence. Pin the CHECKL
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a mutant cell phrased with `restore` or `keep` as its edit verb, when `testplan derive` runs, then it is accepted - and given a cell with no edit verb at all, it is still refused, so the vocabulary is widened rather than disabled
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::ThreeLimbsTests::test_restore_and_keep_are_accepted_and_a_verbless_cell_is_still_refused
+  - **Verified:** no
 - [ ] **AC2** Given the close checklist roster, when its test runs, then it asserts the exact names and the exact count, so removing an entry fails rather than shrinking the report
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::ThreeLimbsTests::test_the_checklist_roster_asserts_its_exact_names_and_count
+  - **Verified:** no
 - [ ] **AC3** Given a checklist entry naming a resolver nobody defined, when `sprint_report` is imported, then it refuses there - not when the close runs, which is the point at which a missing check is least recoverable
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::ThreeLimbsTests::test_an_undefined_resolver_refuses_at_import
+  - **Verified:** no
 - [ ] **AC4** Given a roster with every entry defined, when the module is imported, then it loads normally - the paired control, so the import check is shown to discriminate
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::ThreeLimbsTests::test_a_fully_defined_roster_imports_normally
+  - **Verified:** no
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, drop the three new entries from the `_EDIT_VERBS` tuple | Given a mutant cell phrased with `restore` or `keep` as its edit verb, when `testplan derive` runs, then it is accepted - and given a cell with no edit verb at all, it is still refused, so the vocabulary is widened rather than disabled |
+| AC2 | in .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, derive the expected roster from CHECKLIST itself and drop the count assertion | Given the close checklist roster, when its test runs, then it asserts the exact names and the exact count, so removing an entry fails rather than shrinking the report |
+| AC3 | in .claude/skills/sdlc-studio/scripts/sprint_report.py, delete the import-time resolver check so a missing resolver surfaces only when the close runs | Given a checklist entry naming a resolver nobody defined, when `sprint_report` is imported, then it refuses there - not when the close runs, which is the point at which a missing check is least recoverable |
+| AC4 | in sprint_report.py, invert the import-time check so a fully defined roster refuses at import | Given a roster with every entry defined, when the module is imported, then it loads normally - the paired control, so the import check is shown to discriminate |
 
 ## Revision History
 

@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 5
+> **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** .claude/skills/sdlc-studio/scripts/ledger.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_ledger.py, .claude/skills/sdlc-studio/scripts/tests/test_decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
 > **Evidence:** Enumerated 2026-08-27 by an independent plan review of BG0622, which was asked to list the set rather than assert one: 12 non-test call sites across 10 modules, of which 5 modules carry the identical `str(x.get(k) or "").strip()` guard - ledger.py:86, decisions.py:468, handoff.py:764, validate.py:1063, and roughly 16 field validators in file_finding.py between lines 1442 and 1932. `verdict_polarity` behaviour confirmed by execution: "True" reads yes, "False" reads no, while "", "None" and "0" all read unclear.
 > **Created:** 2026-08-27
@@ -32,13 +33,30 @@ Split the guard by field type rather than sweeping one rule across all of them. 
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a TYPED field carrying a JSON `false` or `0` in each of the five named modules' fields-file loaders, when the document is read, then the value is ACCEPTED and reaches the record - one criterion per module would be five near-identical rows, so this is asserted over the named set with the module named in each failure
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileFalseyTests::test_a_typed_false_or_zero_is_accepted_by_all_five_loaders
+  - **Verified:** no
 - [ ] **AC2** Given a PROSE field carrying `false`, an empty string or a null, when the document is read, then it is REFUSED naming that field - the paired control, and the reason this is not one blanket rule: storing the string `False` as a rationale is worse than the bug being fixed
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileFalseyTests::test_a_prose_field_carrying_an_empty_value_is_refused_naming_it
+  - **Verified:** no
 - [ ] **AC3** Given a NEW `or ""` guard added to a fields-file consumer, when the repository's own check runs, then it REFUSES - the enumeration in this bug is a lower bound and the check is what makes it a boundary, per LL0043
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileFalseyTests::test_a_new_or_empty_guard_is_refused_by_the_repository_check
+  - **Verified:** no
 - [ ] **AC4** Given each of the five modules' shipped COMMANDS rather than their loaders, when a typed field carries `false`, then the command exits 0 - the symptom is a CLI refusal, and a library test cannot see a command that stops calling the loader
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileFalseyTests::test_the_five_shipped_commands_exit_zero_on_a_typed_false
+  - **Verified:** no
 
 ## Impact
 
 Every one of these loaders is on the recommended `--fields-file` path, which exists precisely so prose carrying shell metacharacters is stored verbatim. An operator who takes the recommended path and writes a boolean gets an error naming a field their file contains, and the workaround - write the string - is documented nowhere. On a verdict field the bias has a direction: the positive value records and the negative one refuses.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/ledger.py, re-add the coalesce so a typed false reads as absent | Given a TYPED field carrying a JSON `false` or `0` in each of the five named modules' fields-file loaders, when the document is read, then the value is ACCEPTED and reaches the record - one criterion per module would be five near-identical rows, so this is asserted over the named set with the module named in each failure |
+| AC2 | in .claude/skills/sdlc-studio/scripts/ledger.py, delete the prose-field emptiness check so a blank rationale is accepted | Given a PROSE field carrying `false`, an empty string or a null, when the document is read, then it is REFUSED naming that field - the paired control, and the reason this is not one blanket rule: storing the string `False` as a rationale is worse than the bug being fixed |
+| AC3 | in .claude/skills/sdlc-studio/scripts/tests/test_ledger.py, drop the boundary sweep so a new `or ""` guard is accepted | Given a NEW `or ""` guard added to a fields-file consumer, when the repository's own check runs, then it REFUSES - the enumeration in this bug is a lower bound and the check is what makes it a boundary, per LL0043 |
+| AC4 | in .claude/skills/sdlc-studio/scripts/file_finding.py, re-add the coalesce on the command path | Given each of the five modules' shipped COMMANDS rather than their loaders, when a typed field carries `false`, then the command exits 0 - the symptom is a CLI refusal, and a library test cannot see a command that stops calling the loader |
 
 ## Revision History
 

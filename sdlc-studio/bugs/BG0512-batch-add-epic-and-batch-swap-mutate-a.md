@@ -41,7 +41,7 @@ A run can acquire work that cannot reach a terminal status, and the first honest
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
 | AC1 | in sprint.py `_cmd_batch_add_epic`, delete the breakdown census call so an ungroomed unit is added | Given an ungroomed unit, when `batch add-epic` runs, then it refuses on the same census `sprint plan` refuses on and adds NOTHING - a unit the plan gate rejected must not enter through an in-flight verb. |
-| AC2 | in sprint.py `_cmd_batch_add_epic`, restore `_refuse_ungroomed` so the refusal names sprint plan | Given the refusal, when it prints, then it names `batch add-epic` rather than `sprint plan` - a message naming the wrong command sends the reader to the wrong place. |
+| AC2 | in sprint.py `_cmd_batch_add_epic`, revert to `_refuse_ungroomed` so the refusal names sprint plan | Given the refusal, when it prints, then it names `batch add-epic` rather than `sprint plan` - a message naming the wrong command sends the reader to the wrong place. |
 
 ## Revision History
 

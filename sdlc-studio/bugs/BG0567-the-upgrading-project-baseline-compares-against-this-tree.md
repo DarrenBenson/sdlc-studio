@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
+> **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Evidence:** Round-3 delivery review of RUN-01KZM49Y, 2026-08-10. US0663 AC2 originally demanded a baseline captured from the base ref before the epic's branch existed. `_capture_with_softening_disabled` clones the CURRENT skill tree and disables one branch, so every other change the epic made is present on both sides of the comparison. The seat also noted the baseline fixture holds 0 retros while the case under test holds 3, so it is not literally the same fixture either. The criterion was narrowed to describe what is built rather than left overstating it.
 > **Created:** 2026-08-10
@@ -29,8 +30,22 @@ Capture from the BASE REF: `git worktree add` a throwaway checkout of the run's 
 ## Acceptance Criteria
 
 - [ ] **AC1** The upgrading-project baseline is captured from the run's base ref in a throwaway worktree, not from the current tree with a branch disabled
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::UpgradeBaselineTests::test_the_baseline_compares_against_the_base_ref
+  - **Verified:** no
 - [ ] **AC2** Both sides run the SAME fixture shape, so a difference in the fixture cannot be read as a difference in behaviour
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::UpgradeBaselineTests::test_both_sides_run_the_same_fixture_shape
+  - **Verified:** no
 - [ ] **AC3** A deliberate unrelated change on the epic's side makes the comparison fail, proving it can see more than the one branch it disables
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::UpgradeBaselineTests::test_a_regression_outside_the_branch_is_reported
+  - **Verified:** no
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/tests/test_transition.py, swap the rehearsal's comparison target back to the working tree with the branch stripped | The upgrading-project baseline is captured from the run's base ref in a throwaway worktree, not from the current tree with a branch disabled |
+| AC2 | in .claude/skills/sdlc-studio/scripts/tests/test_transition.py, change one side's fixture shape so the two sides no longer run the same one | Both sides run the SAME fixture shape, so a difference in the fixture cannot be read as a difference in behaviour |
+| AC3 | in .claude/skills/sdlc-studio/scripts/tests/test_transition.py, narrow the comparison to the disabled branch | A deliberate unrelated change on the epic's side makes the comparison fail, proving it can see more than the one branch it disables |
 
 ## Revision History
 

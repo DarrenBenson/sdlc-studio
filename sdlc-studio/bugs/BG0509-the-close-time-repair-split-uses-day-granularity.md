@@ -55,7 +55,7 @@ Verification note, recorded because it nearly went the other way: the first CLI 
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in close_owed.py `close_time_repairs`, restore the `>=` day comparison | Given a unit terminal on the SAME DAY as the retro with nothing recorded, when the split runs, then it is unaccounted rather than a close-time repair - the two sides carry only days, so same-day is unknowable and may not be excused on an inference. |
+| AC1 | in close_owed.py `close_time_repairs`, revert to the `>=` day comparison | Given a unit terminal on the SAME DAY as the retro with nothing recorded, when the split runs, then it is unaccounted rather than a close-time repair - the two sides carry only days, so same-day is unknowable and may not be excused on an inference. |
 | AC2 | in close_owed.py `close_time_repairs`, ignore the stated same-day override | Given the same day with a reasoned `Close-repair-override` in that retro, then it IS a close-time repair - a genuine ceremony-time fix survives, moved from inferred to stated. |
 | AC3 | in close_owed.py `close_repair_overrides`, drop the `on_or_after` scoping filter | Given an override recorded in one retro, when a LATER close is judged, then it does not forgive that unit - a decision about one close is not a standing exemption. |
 | AC4 | in close_owed.py `close_time_repairs`, require same-day for a repair so a later day is unaccounted | Given a unit terminal on a later day than the retro, when the split runs, then it is still a close-time repair - the ordinary case is untouched. |

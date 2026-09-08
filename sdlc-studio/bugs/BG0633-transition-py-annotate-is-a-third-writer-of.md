@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
+> **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Created:** 2026-08-28
 > **Created-by:** sdlc-studio file
@@ -26,8 +27,19 @@ Route `annotate`'s Severity writes through the same `normalise_severity` the oth
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a bug fixture whose Severity is Medium, when `transition.py annotate --field Severity --value major` is run as a SUBPROCESS, then it is REFUSED naming the accepted set and the file is unchanged ||| pytest .claude/skills/sdlc-studio/scripts/tests/`test_transition.py`::AnnotateSeverityVocabularyTests::`test_an_unrecognised_severity_is_refused`
+- [ ] **AC1** Given a bug fixture whose Severity is Medium, when `transition.py annotate --id <the fixture> --field Severity --value major` is run as a SUBPROCESS - the runnable form, since without `--id` argparse exits 2 and the file is unchanged for a reason that has nothing to do with the vocabulary, then it is REFUSED naming the accepted set and the file is unchanged ||| pytest .claude/skills/sdlc-studio/scripts/tests/`test_transition.py`::AnnotateSeverityVocabularyTests::`test_an_unrecognised_severity_is_refused`
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::AnnotateSeverityTests::test_an_off_vocabulary_severity_is_refused_through_the_shipped_command
+  - **Verified:** no
 - [ ] **AC2** Given the same fixture, when a RECOGNISED severity is annotated in any case - `high`, `High` - then it is accepted and written in its canonical spelling. The positive control: a guard refusing every severity satisfies the row above ||| pytest .claude/skills/sdlc-studio/scripts/tests/`test_transition.py`::AnnotateSeverityVocabularyTests::`test_a_recognised_severity_is_written_canonically`
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::AnnotateSeverityTests::test_a_differently_cased_severity_is_normalised
+  - **Verified:** no
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/transition.py, unset the vocabulary guard on annotate's write path | Given a bug fixture whose Severity is Medium, when `transition.py annotate --id <the fixture> --field Severity --value major` is run as a SUBPROCESS - the runnable form, since without `--id` argparse exits 2 and the file is unchanged for a reason that has nothing to do with the vocabulary, then it is REFUSED naming the accepted set and the file is unchanged / pytest .claude/skills/sdlc-studio/scripts/tests/`test_transition.py`::AnnotateSeverityVocabularyTests::`test_an_unrecognised_severity_is_refused` |
+| AC2 | in transition.py, replace the normalisation with an exact-match test so `medium` is refused rather than canonicalised | Given the same fixture, when a RECOGNISED severity is annotated in any case - `high`, `High` - then it is accepted and written in its canonical spelling. The positive control: a guard refusing every severity satisfies the row above / pytest .claude/skills/sdlc-studio/scripts/tests/`test_transition.py`::AnnotateSeverityVocabularyTests::`test_a_recognised_severity_is_written_canonically` |
 
 ## Revision History
 

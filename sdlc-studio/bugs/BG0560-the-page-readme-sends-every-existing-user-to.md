@@ -104,7 +104,7 @@ Rewrite docs/existing-users.md as the v5 page and keep the v4 content only where
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
 | AC1 | in `test_existing_users_page.py`, hardcode the command sequence instead of parsing it from `docs/existing-users.md` | |
-| AC2 | in `README.md`, restore the drop-in wording on ONE of the three routes | |
+| AC2 | in `README.md`, revert to the drop-in wording on ONE of the three routes | |
 | AC3 | in `docs/existing-users.md`, change one row's stated default to the opposite value | |
 | AC4 | in `reference-upgrade.md`, delete the hand-off paragraph | |
 

@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
+> **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Evidence:** Found 2026-08-27 by an independent plan review of BG0629, which corrected that bug's own wrong claim that a direct Ready-to-Done escapes the gate - it does not. Condition quoted from transition.py:1046-1049 against `_IMPL_TARGETS` at :791. Population measured from the plan-review ledger: 44 units have ever carried a REJECT and 41 are at Done or Fixed.
 > **Created:** 2026-08-27
@@ -29,16 +30,34 @@ Decide what the gate means, then make it mean that at both ends. Re-firing on th
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a unit that entered In Progress before its plan-review REJECT was recorded, when it is transitioned to Done, then it is REFUSED - the verdict is consulted at the transition that makes the work permanent, not only at the one that starts it
-- [ ] **AC2** Given a unit whose plan review is clean, when it walks Ready to In Progress to Review to Done, then no step is refused and the gate is not re-litigated at each - the paired control, preserving the idempotency the skip exists for
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_the_gate_applies_on_the_in_progress_to_terminal_route
+  - **Verified:** no
+- [ ] **AC2** Given a unit whose plan review carries an independent APPROVE, when it moves from In Progress to a terminal status, then it passes - the positive control, because a gate that now fires on the ordinary route must still let a properly reviewed unit through, and an implementation that refuses every such transition would satisfy every other criterion here
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_an_approved_plan_review_passes_on_the_in_progress_route
+  - **Verified:** no
 - [ ] **AC3** Given a workspace where `review.test_plan_after` is unset, when any unit reaches Done, then the gate does not fire at all - the new firing sits INSIDE the adoption cutoff, per RETRO0098, because a gate that refuses a whole backlog is switched off rather than satisfied
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_the_new_firing_sits_inside_the_dated_cutoff
+  - **Verified:** no
 - [ ] **AC4** Given a Fixed bug that is re-opened and re-fixed, when it reaches Fixed again, then the behaviour is whatever this bug's fix decides and a test says which - 16 of the corpus's Fixed bugs carry a standing rejection, so leaving it undecided is how this ships a surprise
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_units_already_fixed_are_ruled_rather_than_reopened
+  - **Verified:** no
 
 ## Impact
 
 The gate is enforced by accident of ordering. A unit rejected before it starts is held to it; a unit rejected after it starts is not, and nothing reports the difference. That makes the recorded verdict decorative for most of the corpus, and it means the cheapest possible finding - a plan review that catches a defect before code - has no effect at all on the units most likely to receive one, which are the ones already being worked.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/transition.py, add `from_canon not in _IMPL_TARGETS` back to the test-plan gate's guard | Given a unit that entered In Progress before its plan-review REJECT was recorded, when it is transitioned to Done, then it is REFUSED - the verdict is consulted at the transition that makes the work permanent, not only at the one that starts it |
+| AC2 | in .claude/skills/sdlc-studio/scripts/transition.py, invert the gate so an approved plan review is refused too | Given a unit whose plan review carries an independent APPROVE, when it moves from In Progress to a terminal status, then it passes - the positive control, because a gate that now fires on the ordinary route must still let a properly reviewed unit through, and an implementation that refuses every such transition would satisfy every other criterion here |
+| AC3 | in .claude/skills/sdlc-studio/scripts/transition.py, delete the cutoff test so the gate fires in a workspace that never adopted it | Given a workspace where `review.test_plan_after` is unset, when any unit reaches Done, then the gate does not fire at all - the new firing sits INSIDE the adoption cutoff, per RETRO0098, because a gate that refuses a whole backlog is switched off rather than satisfied |
+| AC4 | in transition.py, omit the re-opened-and-re-fixed case so a second pass through Fixed is unjudged | Given a Fixed bug that is re-opened and re-fixed, when it reaches Fixed again, then the behaviour is whatever this bug's fix decides and a test says which - 16 of the corpus's Fixed bugs carry a standing rejection, so leaving it undecided is how this ships a surprise |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Filed |
+| 2026-09-08 | Claude Fable 5.1 | Blast radius re-measured at the goal review, where the engineering seat found the figure stale by half. On this ledger today: 167 units have ever carried a REJECT and 155 of them are terminal, against the 44 and 41 recorded when this was filed on 2026-08-27 - the ledger has roughly quadrupled since. The repair's migration cost scales with that number, which is why this unit is ordered LAST in its batch: its fix changes when the test-plan gate fires and would otherwise wall its own batch-mates while they are In Progress carrying a standing rejection |
