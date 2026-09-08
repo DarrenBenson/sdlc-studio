@@ -2374,8 +2374,17 @@ def print_coverage(rep: dict) -> None:
 COVERAGE_RULINGS_HEADING = "## Coverage Rulings"
 _RULINGS_HEADER = ("| File | Line | Hash | Reason | Author | Date |\n"
                    "| --- | --- | --- | --- | --- | --- |\n")
+#: The reason and author cells accept a BACKSLASH-ESCAPED pipe, because a reason naming code
+#: often carries one and the writer escapes it; `_uncell` puts it back. Without this the writer
+#: reported success and the parser read no row at all - a waiver counted by nothing.
 _RULING_ROW_RE = re.compile(r"^\|\s*(?P<file>[^|]+?)\s*\|\s*(?P<line>\d+)\s*\|\s*(?P<hash>[0-9a-f]{12,64})\s*\|"
-                            r"\s*(?P<reason>[^|]*?)\s*\|\s*(?P<author>[^|]*?)\s*\|\s*(?P<date>[^|]*?)\s*\|\s*$")
+                            r"\s*(?P<reason>(?:[^|\\]|\\.)*?)\s*\|\s*(?P<author>(?:[^|\\]|\\.)*?)\s*\|"
+                            r"\s*(?P<date>[^|]*?)\s*\|\s*$")
+
+
+def _uncell(value: str) -> str:
+    """A markdown cell's escaped pipe, read back as the character the author wrote."""
+    return (value or "").replace("\\|", "|")
 
 
 def coverage_rulings(text: str) -> list:
@@ -2386,9 +2395,13 @@ def coverage_rulings(text: str) -> list:
     out = []
     for line in m.group(1).splitlines():
         r = _RULING_ROW_RE.match(line.strip())
-        if r and r.group("file").lower() != "file" and not r.group("file").startswith("-"):
+        # A WITHDRAWN row stays in the table - the withdrawal is the audit trail, exactly as
+        # `mutation.py retract` leaves its row - and counts for nothing from here on.
+        if (r and r.group("file").lower() != "file" and not r.group("file").startswith("-")
+                and not r.group("reason").strip().lower().startswith("withdrawn ")):
             out.append({"file": r.group("file"), "line": int(r.group("line")), "hash": r.group("hash"),
-                        "reason": r.group("reason"), "author": r.group("author"), "date": r.group("date")})
+                        "reason": _uncell(r.group("reason")), "author": _uncell(r.group("author")),
+                        "date": r.group("date")})
     return out
 
 
@@ -2409,7 +2422,9 @@ def add_coverage_ruling(root, unit_path: Path, rel: str, line: int, reason: str,
                         author: str = "sdlc-studio") -> dict:
     """Write one ruling into the artefact, refusing a reason below the floor `retract` holds."""
     import mutation as _mut  # noqa: PLC0415 - the floor is its constant, shared on purpose
-    floor = getattr(_mut, "_RETRACT_REASON_MIN", 20)
+    # attribute access, never getattr with a default: a default silently reverts to a literal
+    # the day the constant is renamed, and the criterion says the SAME floor, not a copy of it
+    floor = _mut._RETRACT_REASON_MIN
     if len((reason or "").strip()) < floor:
         raise ValueError(f"coverage rule refused: a reason of {len((reason or '').strip())} "
                          f"character(s) is below the floor of {floor} that `mutation.py retract` "
@@ -2418,8 +2433,19 @@ def add_coverage_ruling(root, unit_path: Path, rel: str, line: int, reason: str,
     digest = _file_hash(root, rel)
     if not digest:
         raise ValueError(f"coverage rule refused: {rel} is not a readable file under the root")
+    for r in coverage_rulings(text if (text := sdlc_md.read_text_safe(unit_path)) else ""):
+        if r["file"] == rel and int(r["line"]) == int(line) and r["hash"] == digest[:len(r["hash"])]:
+            raise ValueError(f"coverage rule refused: {rel}:{line} already carries a live ruling on "
+                             f"these bytes - a second row for one line inflates `lines ruled` and "
+                             f"says nothing the first does not")
     text = sdlc_md.read_text_safe(unit_path)
-    row = f"| {rel} | {int(line)} | {digest[:16]} | {reason.strip()} | {author} | {sdlc_md.now_iso8601()[:10]} |\n"
+    # A markdown cell cannot hold a raw `|` or a newline: interpolated, the first splits the row
+    # into more cells than the header has and the second splits it across two lines, and the row
+    # the reader writes is then one the parser cannot read - reported as success, counted by
+    # nothing. Escape the pipe and fold the whitespace, so what is written is what is read back.
+    reason_cell = " ".join(str(reason).split()).replace("|", "\\|")
+    author_cell = " ".join(str(author).split()).replace("|", "\\|") or "sdlc-studio"
+    row = f"| {rel} | {int(line)} | {digest[:16]} | {reason_cell} | {author_cell} | {sdlc_md.now_iso8601()[:10]} |\n"
     if COVERAGE_RULINGS_HEADING in text:
         m = re.search(r"(?ms)^## Coverage Rulings\s*\n.*?(?=^## |\Z)", text)
         block = text[m.start():m.end()].rstrip("\n") + "\n" + row + "\n"
@@ -2450,6 +2476,37 @@ def apply_rulings(root, text: str, rep: dict) -> dict:
     return rep
 
 
+def withdraw_coverage_ruling(root, unit_path: Path, rel: str, line: int, reason: str,
+                             author: str = "sdlc-studio") -> dict:
+    """Mark one ruling WITHDRAWN in place, on the record, with a reason.
+
+    The row is not deleted: a table that quietly loses a row cannot be audited, and the reason
+    a waiver was withdrawn is the part a reviewer reads. `coverage_rulings` skips a withdrawn
+    row, so it counts for nothing afterwards - live or stale.
+    """
+    import mutation as _mut  # noqa: PLC0415 - one floor, shared with retract
+    floor = _mut._RETRACT_REASON_MIN
+    if len((reason or "").strip()) < floor:
+        raise ValueError(f"coverage withdraw refused: a reason of {len((reason or '').strip())} "
+                         f"character(s) is below the floor of {floor} - a withdrawal is recorded, "
+                         f"never silent")
+    text = sdlc_md.read_text_safe(unit_path)
+    hit = None
+    for r in coverage_rulings(text):
+        if r["file"] == rel and int(r["line"]) == int(line):
+            hit = r
+            break
+    if hit is None:
+        raise ValueError(f"coverage withdraw refused: no live ruling names {rel}:{line} - a "
+                         f"withdrawal that matches nothing has done nothing")
+    old = f"| {hit['reason']} | {hit['author']} |"
+    said = " ".join(str(reason).split()).replace("|", "\\|")
+    new = f"| withdrawn {sdlc_md.now_iso8601()[:10]}: {said} (was: {hit['reason']}) | {author} |"
+    assert text.count(old) >= 1
+    sdlc_md.atomic_write(unit_path, text.replace(old, new, 1))
+    return {"file": rel, "line": int(line), "withdrawn": True}
+
+
 def cmd_coverage(args: argparse.Namespace) -> int:
     root = resolve_root(args)
     fields = {"file": args.file, "line": args.line, "reason": args.reason,
@@ -2476,12 +2533,17 @@ def cmd_coverage(args: argparse.Namespace) -> int:
     if not found:
         print(f"coverage rule refused: no artefact with id {args.id}", file=sys.stderr)
         return 2
+    writer = withdraw_coverage_ruling if args.action == "withdraw" else add_coverage_ruling
     try:
-        res = add_coverage_ruling(root, found[0], str(fields["file"]), int(fields["line"]),
-                                  str(fields["reason"]), author=fields.get("author") or "sdlc-studio")
+        res = writer(root, found[0], str(fields["file"]), int(fields["line"]),
+                     str(fields["reason"]), author=fields.get("author") or "sdlc-studio")
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 2
+    if res.get("withdrawn"):
+        print(f"coverage withdraw: {sdlc_md.norm_id(args.id)} {res['file']}:{res['line']} WITHDRAWN "
+              f"- the row stays in the table with its reason, and counts for nothing from here")
+        return 0
     print(f"coverage rule: {sdlc_md.norm_id(args.id)} {res['file']}:{res['line']} ruled equivalent "
           f"on hash {res['hash']} - counted in the depth field, void when the file's bytes change")
     return 0
@@ -4994,15 +5056,17 @@ def build_parser() -> argparse.ArgumentParser:
     r.set_defaults(func=cmd_run)
 
     cv = sub.add_parser("coverage", help="Coverage rulings: `rule` marks one uncovered added "
-                                         "line equivalent, inside the artefact")
-    cv.add_argument("action", choices=["rule"])
+                                         "line equivalent, inside the artefact; `withdraw` "
+                                         "retracts a ruling on the record")
+    cv.add_argument("action", choices=["rule", "withdraw"])
     cv.add_argument("--id", required=True, help="the unit whose line is ruled")
     cv.add_argument("--fields-file", dest="fields_file", metavar="RULING.json",
                     help="THE RECOMMENDED PATH: a JSON object with file, line, reason and author, "
                          "read off disk (or stdin with `-`) so the reason never crosses a shell")
     cv.add_argument("--file", help="the Affects file, repo-relative")
     cv.add_argument("--line", type=int, help="the line number at its current bytes")
-    cv.add_argument("--reason", help="why no test can execute it (floor: the same length "
+    cv.add_argument("--reason", help="why no test can execute it, or for `withdraw` why the "
+                                     "ruling no longer holds (floor: the same length "
                                      "`mutation.py retract` demands)")
     cv.add_argument("--author", default=None)
     cv.add_argument("--root", default=".")

@@ -974,15 +974,25 @@ def line_coverage_lane(root, unit: str, text: str, type_: str, path, *,
     if not_measured:
         problems.append("Python file(s) with added lines and no traced verifier, which is not "
                         "covered: " + "; ".join(not_measured))
+    stale_note = ""
     if stale:
-        problems.append("stale coverage ruling(s) on bytes the file no longer has: "
-                        + ", ".join(stale) + " - rule again on the current bytes")
+        # A stale ruling was made on bytes the file no longer has, so it asserts nothing about
+        # the tree in front of us: whatever it once excused is either executed now (and needs
+        # no waiver) or still uncovered (and is counted above, on its own). Blocking on the
+        # staleness ITSELF refused a unit the measurement calls clean, and the only remedy
+        # printed was to re-assert the waiver - a claim the tool's own reading contradicts.
+        stale_note = ("stale coverage ruling(s) on bytes the file no longer has, satisfying "
+                      "nothing: " + ", ".join(stale) + f" - withdraw each with `verify_ac.py "
+                      f"coverage withdraw --id {uid} --file <path> --line <n> --reason <why>`, "
+                      "or rule the line again if it is still uncovered")
     if problems:
+        joined = " | ".join(problems + ([stale_note] if stale_note else []))
         if mode == "block":
-            out["blocks"].append(f"{uid}: " + " | ".join(problems))
+            out["blocks"].append(f"{uid}: " + joined)
         else:
-            notes.append(f"coverage: {rep['uncovered_total']} uncovered added line(s) - "
-                         + " | ".join(problems))
+            notes.append("coverage: " + joined)
+    elif stale_note:
+        notes.append("coverage: " + stale_note)
     if notes:
         out["warning"] = " | ".join(notes)
     return out
@@ -1911,6 +1921,9 @@ def cmd_set(args: argparse.Namespace) -> int:
     # preview judging an un-stamped file and refusing what the identical real command accepts.
     pending = {"Verification depth": args.depth} if getattr(args, "depth", None) else None
     pre_writes = bool(pending) or bool(reviewer)
+    # built ONCE, so the pre-flight ladder and the real transition are given the same options
+    coverage_opts = {"base": getattr(args, "base", None),
+                     "report": getattr(args, "coverage_report", None)}
     for aid in ids:
         try:
             if getattr(args, "depth", None):
@@ -1927,9 +1940,13 @@ def cmd_set(args: argparse.Namespace) -> int:
                 # persistent APPROVE for a close that never happened. Run the WHOLE ladder as a
                 # dry-run first, against the text the real run will see; a refusal raises here,
                 # before anything is written.
+                # The coverage options travel with the pre-flight, or `--depth` (the canonical
+                # one-call close) silently drops `--base` and `--coverage-report`: the ladder
+                # refused for want of a base ref the caller had given, and the collection ran
+                # twice when it did not.
                 transition(args.root, aid, args.status, dry_run=True, force=args.force,
                            triaged_by=args.triaged_by, triage_severity=args.triage_severity,
-                           pending_fields=pending)
+                           pending_fields=pending, coverage_opts=coverage_opts)
             if getattr(args, "depth", None) and not args.dry_run:
                 annotate(args.root, aid, "Verification depth", args.depth)
             if reviewer and not args.dry_run:
@@ -1945,8 +1962,7 @@ def cmd_set(args: argparse.Namespace) -> int:
                              force=args.force, metrics=metrics,
                              triaged_by=args.triaged_by, triage_severity=args.triage_severity,
                              pending_fields=pending,
-                             coverage_opts={"base": getattr(args, "base", None),
-                                            "report": getattr(args, "coverage_report", None)})
+                             coverage_opts=coverage_opts)
             results.append(res)
             if args.format != "json":
                 _print_result(res, args.dry_run)

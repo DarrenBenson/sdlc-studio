@@ -145,9 +145,13 @@ python3 <skill>/scripts/verify_ac.py coverage rule --id US0042 --file src/thing.
 The ruling is a row in the unit's own `## Coverage Rulings` table - file, line, the file's
 content hash, reason, author, date - tracked with the artefact, never in `.local/`. A reason
 shorter than the floor `mutation.py retract` holds a withdrawal to is refused. The terminal
-transition subtracts live rulings from the uncovered lines and counts them in the derived half
-of `Verification depth` as `lines ruled N`; a ruling made on bytes the file no longer has is
-stale, refused under `review.line_coverage: block` and counted by nothing.
+transition subtracts live rulings from the uncovered lines; `verify_ac.py depth --write` is what
+writes `lines ruled N` into the derived half of `Verification depth`, and the transition never
+writes that field itself. A ruling made on bytes the file no longer has is STALE: it asserts
+nothing about the tree in front of you, so it is reported in every mode and blocks nothing -
+whatever it once excused is either executed now or still uncovered and counted as such.
+`coverage withdraw --id <unit> --file <path> --line <n> --reason <why>` retracts one on the
+record: the row stays in the table, carrying both reasons, and counts for nothing after.
 
 ### report
 

@@ -102,9 +102,11 @@ review:
   # that number decides whether this process is pointed at the remaining unplanned backlog.
   test_plan_after: "2026-08-01"
   # D0183/US0816 (2026-09-07): the line-coverage gate is ON here from the day the batch that
-  # built it was planned, so that batch is judged by it rather than exempted - the exemption
-  # D0131's cutoff granted its own builders. The four units Fixed before the gate landed carry
-  # a hand-collected `verify_ac run --coverage` figure in their revision rows instead.
+  # built it was planned, so the three stories created that day - US0815, US0816, US0818 - are
+  # judged by it rather than exempted, the exemption D0131's cutoff granted its own builders.
+  # The three bugs the batch fixed (BG0614, BG0652, BG0653) were created earlier and are exempt
+  # under the cutoff below; each carries a hand-run `verify_ac run --coverage` figure in its
+  # revision rows instead.
   line_coverage: block
   line_coverage_after: "2026-09-07"
   # D0146 (2026-08-21) CUTS this from 6 to 2, superseding D0132's raise, and the reason is a

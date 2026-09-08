@@ -327,5 +327,70 @@ class BareArtefactReadSweepTests(unittest.TestCase):
         self.assertEqual(bad, [], "`# bare-read-ok:` with no usable reason:\n" + "\n".join(bad))
 
 
+class SubmoduleImportTests(unittest.TestCase):
+    """A test module that uses `unittest.mock` must BIND it where it uses it. `import unittest`
+    alone does not: the attribute exists only once something imports the submodule, and under
+    pytest something always has. Under the plain unittest runner - which `gate.py`'s
+    `module-alone` boundary lane uses, and which CI runs - the module is red with
+    `AttributeError`, every assertion in it goes unexecuted, and the discovery suite stays green
+    because a sibling imported the submodule first. A local import inside ANOTHER function does
+    not help: it binds only if that test happens to run first."""
+
+    ROOT = Path(__file__).resolve().parents[5]
+
+    @staticmethod
+    def _binds(node) -> bool:
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Import) and any(a.name == "unittest.mock" for a in sub.names):
+                return True
+            if isinstance(sub, ast.ImportFrom) and (
+                    (sub.module == "unittest" and any(a.name == "mock" for a in sub.names))
+                    or sub.module == "unittest.mock"):
+                return True
+        return False
+
+    @classmethod
+    def _unbound_uses(cls, src: str, name: str) -> list:
+        """Every `unittest.mock` use in `src` that nothing binds where it is used."""
+        if "unittest.mock" not in src:
+            return []
+        tree = ast.parse(src)
+        if cls._binds(ast.Module(body=[n for n in tree.body
+                                       if isinstance(n, (ast.Import, ast.ImportFrom))],
+                                 type_ignores=[])):
+            return []
+        out = []
+        for fn in [n for n in ast.walk(tree)
+                   if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
+            uses = [n for n in ast.walk(fn)
+                    if isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name)
+                    and n.value.id == "unittest" and n.attr == "mock"]
+            if uses and not cls._binds(fn):
+                out.append(f"{name}:{uses[0].lineno} in {fn.name}()")
+        return out
+
+    def test_every_use_of_unittest_mock_is_bound_where_it_is_used(self) -> None:
+        """MUTANT: delete the module-scope `import unittest.mock` from a module whose uses sit in
+        functions that do not import it - this sweep names it, where pytest cannot, because
+        pytest imports the submodule itself."""
+        # the reader itself, on a module shaped like the failure: an import in ANOTHER function
+        # does not bind this one, and the sweep must say so rather than pass on its presence
+        shaped = ("import unittest\n\n\nclass T(unittest.TestCase):\n"
+                  "    def test_elsewhere(self):\n        import unittest.mock\n"
+                  "        return unittest.mock.patch\n\n"
+                  "    def test_here(self):\n        return unittest.mock.patch\n")
+        self.assertEqual(self._unbound_uses(shaped, "shaped.py"), ["shaped.py:10 in test_here()"])
+        self.assertEqual(self._unbound_uses("import unittest.mock\n" + shaped, "bound.py"), [],
+                         "a module-scope import binds every use in the module")
+        offenders = []
+        for d in (".claude/skills/sdlc-studio/scripts/tests", "tools/tests"):
+            for path in sorted((self.ROOT / d).glob("test_*.py")):
+                offenders.extend(self._unbound_uses(
+                    path.read_text(encoding="utf-8", errors="replace"), path.name))
+        self.assertEqual(offenders, [], "each of these uses `unittest.mock` where nothing binds the "
+                                        "submodule - red under the plain unittest runner the "
+                                        "boundary lane and CI use:\n" + "\n".join(offenders))
+
+
 if __name__ == "__main__":
     unittest.main()

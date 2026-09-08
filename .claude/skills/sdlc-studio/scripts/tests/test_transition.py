@@ -16,6 +16,8 @@ import re
 import io
 import tempfile
 import unittest
+import unittest.mock  # a SUBMODULE: bare `import unittest` does not bind it, and only
+# pytest imports it for you - the module-alone lane runs this file under the unittest runner
 from pathlib import Path
 
 DIR = Path(__file__).resolve().parent.parent
@@ -5503,8 +5505,40 @@ class CoverageGateTests(unittest.TestCase):
             (root / self.PROD).write_text((root / self.PROD).read_text(encoding="utf-8") + "\n# drift\n", encoding="utf-8")
             _git_commit(root, f"fix({self.UNIT}): drift")
             rc, out, err = self._set(root)
+            # the line it excused is uncovered again, so the unit is refused on that count, and
+            # the stale row is named beside it as satisfying nothing
             self.assertNotEqual(rc, 0, out + err); self.assertIn("stale coverage ruling", out + err)
+            self.assertIn("1 uncovered added line(s)", out + err)
             self.assertIn("> **Status:** Open", self._status(root))
+            # A stale ruling on a line the unit's verifiers NOW execute blocks nothing: the
+            # staleness itself is not a defect, and refusing on it told the author to re-assert
+            # a waiver the measurement contradicts.
+            (root / self.PROD).write_text(self.BASE_PROD + "\n\ndef added_used():\n    return 3\n", encoding="utf-8")
+            (root / self.TEST).write_text((root / self.TEST).read_text(encoding="utf-8")
+                                          + "\n    def test_b(self):\n        assert thing.added_used() == 3\n", encoding="utf-8")
+            self._bug(root, created="2026-09-08", verifiers=[f"pytest {self.TEST}::TestT::test_a", f"pytest {self.TEST}::TestT::test_b"])
+            ok2 = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--line", "6", "--reason", "a dormant arm no fixture can reach without faking the OS", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(ok2.returncode, 0, ok2.stderr)
+            (root / self.PROD).write_text(self.BASE_PROD + "\n\ndef added_used():\n    return 3\n\n\n# drift\n", encoding="utf-8")
+            _git_commit(root, f"fix({self.UNIT}): every added line reached, the ruling now stale")
+            rc, out, err = self._set(root)
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("stale coverage ruling", out + err)
+            self.assertNotIn("uncovered added line(s)", out + err)
+            # and the withdrawal takes the row out of every count, on the record
+            wd = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "withdraw", "--id", self.UNIT, "--file", self.PROD, "--line", "6", "--reason", "the arm is reached by a test now, so the waiver asserts nothing", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(wd.returncode, 0, wd.stderr)
+            body = self._status(root)
+            self.assertIn("withdrawn ", body); self.assertIn("(was: a dormant arm", body)
+            # both refusals of the withdrawal: a reason below the floor, and one that names no row
+            thin = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "withdraw", "--id", self.UNIT, "--file", self.PROD, "--line", "6", "--reason", "changed", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(thin.returncode, 2, thin.stdout + thin.stderr)
+            self.assertIn("below the floor", thin.stderr)
+            gone = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "withdraw", "--id", self.UNIT, "--file", self.PROD, "--line", "99", "--reason", "there is no ruling on this line to withdraw at all", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(gone.returncode, 2, gone.stdout + gone.stderr)
+            self.assertIn("matches nothing has done nothing", gone.stderr)
+            import verify_ac  # noqa: PLC0415
+            self.assertEqual(verify_ac.coverage_rulings(body), [], "a withdrawn row counts for nothing")
 
     # -- AC4 -------------------------------------------------------------------------
     def test_the_mode_decides_refusal_report_or_silence(self) -> None:
@@ -5515,6 +5549,22 @@ class CoverageGateTests(unittest.TestCase):
             root = self._repo(Path(d), mode="report")
             rc, out, err = self._set(root)
             self.assertEqual(rc, 0, out + err); self.assertIn("coverage: 1 uncovered added line(s)", out + err)
+            self.assertEqual((out + err).count("uncovered added line(s)"), 1, "the report line states the count ONCE: " + out + err)
+            # a second ruling on the same live line is refused rather than counted twice
+            again = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--line", "4", "--reason", "the first ruling covers this line on these bytes", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(again.returncode, 0, again.stderr)
+            dup = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--line", "4", "--reason", "a second row for the same line on the same bytes", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(dup.returncode, 2, dup.stdout + dup.stderr)
+            self.assertIn("already carries a live ruling on these bytes", dup.stderr)
+            # a reason carrying a `|` or a newline must not write a row the parser cannot read:
+            # reported as ruled, counted by nothing, inside a tracked artefact
+            import verify_ac  # noqa: PLC0415
+            hostile = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--line", "5", "--reason", "the arm | the OS decides,\nand no fixture can reach it", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(hostile.returncode, 0, hostile.stdout + hostile.stderr)
+            body = self._status(root)
+            ruled = [r for r in verify_ac.coverage_rulings(body) if r["line"] == 5]
+            self.assertEqual(len(ruled), 1, "the row a successful ruling writes must be one the parser reads back: " + body)
+            self.assertIn("the OS decides, and no fixture", ruled[0]["reason"])
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(Path(d), mode="off")     # the bare YAML word, which parses to False
             calls = []
@@ -5544,6 +5594,11 @@ class CoverageGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(Path(d), created=None, after="2026-09-07")
             rc, out, err = self._set(root); self.assertNotEqual(rc, 0, "no Created date is judged, never exempted")
+        with tempfile.TemporaryDirectory() as d:
+            # an UNPARSEABLE date is judged too: dropping the length check would read `1999` as
+            # earlier than the cutoff and exempt it, which is a waiver granted by a typo
+            root = self._repo(Path(d), created="1999", after="2026-09-07")
+            rc, out, err = self._set(root); self.assertNotEqual(rc, 0, "an unparseable Created date is judged, never exempted: " + out + err)
 
     # -- AC6 -------------------------------------------------------------------------
     def test_a_missing_coverage_module_never_reads_as_covered(self) -> None:
@@ -5603,6 +5658,21 @@ class CoverageGateTests(unittest.TestCase):
             root = self._repo(Path(d), mode="report", uncovered=False, batch=["BG0099"])
             rc, out, err = self._set(root)
             self.assertEqual(rc, 0, out + err); self.assertIn("coverage: not measured - no base ref", out + err)
+        with tempfile.TemporaryDirectory() as d:
+            # `--base` given with no run state at all: the silence for a project that never
+            # opened a run must not swallow a base the caller HAS given - it is measured.
+            root = self._repo(Path(d), mode="report", batch=["BG0099"])
+            (root / "sdlc-studio" / ".local" / "run-state.json").unlink()
+            rc, out, err = self._set(root, "--base", "HEAD~1")
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("uncovered added line(s)", out + err, "an explicit --base is measured even with no run state: " + out + err)
+        with tempfile.TemporaryDirectory() as d:
+            # the canonical one-call close (`--depth`) carries the coverage options into its
+            # own pre-flight ladder: dropping them refused for want of a base ref the caller gave
+            root = self._repo(Path(d), uncovered=False, batch=["BG0099"])
+            rc, out, err = self._set(root, "--base", "HEAD~1", "--depth", "functional")
+            self.assertEqual(rc, 0, out + err)
+            self.assertNotIn("--base <ref>", out + err, "the pre-flight was given the same options as the transition: " + out + err)
         with tempfile.TemporaryDirectory() as d:
             # an UNREADABLE run state names no unit: block refuses naming --base rather than
             # crashing or inventing a ref, and --base still answers
