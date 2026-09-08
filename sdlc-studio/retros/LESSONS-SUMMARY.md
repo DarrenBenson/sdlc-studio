@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0404: **Re-measure by target, not by unit.** Before porting a patch, list every delivered unit with live rows on each file it touches and chain...**
+- **L-0403: **A tool failing between two calls is not an absence of findings.** Coverage's own `combine` and `json` verbs failing read as no data and...**
+- **L-0402: **A message that claims to be runnable must be RUN by its test.** The refusal US0818 ships printed a `retract` command that a shell...**
+- **L-0401: **A criterion that says "X, or Y" needs a fixture for both.** Six of the eight rejections were one clause of a criterion with no case...**
 - **L-0400: When the build departs from the plan-reviewed design, amend the criterion before the brief renders, or the seat judges the code against a...**
 - **L-0399: A structural pin beats a string: the worker count printed from the pool survived; the sleepers' own overlap did not.**
 - **L-0398: Mutants come from the delivered code's branches, not only from the plan table: every survivor a seat found sat on a branch the unit's own...**

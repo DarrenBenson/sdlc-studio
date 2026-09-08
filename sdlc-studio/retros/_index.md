@@ -124,3 +124,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0112](RETRO0112-the-criteria-can-be-executed-and-a-regex.md) | the criteria can be executed, and a regex that rewrote 57 files to fix three spans | 2026-09-02 | -- | -- |
 | [RETRO-0113](RETRO0113-run-01m1ns3c-six-gates-that-hold-in-the.md) | RUN-01M1NS3C: six gates that hold in the command people run | 2026-09-04 | -- | -- |
 | [RETRO-0114](RETRO0114-run-01m1wpnv-five-instruments-answer-for-what-they.md) | RUN-01M1WPNV: five instruments answer for what they measured | 2026-09-07 | -- | -- |
+| [RETRO-0115](RETRO0115-run-01m1yk70-the-delivery-loop-learned-to-refuse.md) | RUN-01M1YK70: the delivery loop learned to refuse, and the seats still found the branches the fixtures could not reach | 2026-09-08 | -- | -- |
