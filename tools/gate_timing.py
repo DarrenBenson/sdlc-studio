@@ -294,45 +294,18 @@ def budget_report(root: Path) -> dict | None:
     own_series = (series == "full") and not fallback
     baseline = block.get("full_baseline_seconds" if own_series else "baseline_seconds")
     when = block.get("full_baseline_date" if own_series else "baseline_date")
-    detail = f"{measured:.0f}s of a {budget:.0f}s budget"
-    # THE PER-TEST RATE, beside the total. The total is selection width times this, and width
-    # varies continuously - 1,418 to 5,573 tests across the recorded window - so one scalar
-    # cannot describe the population. The rate is what stays comparable: a wide commit is not a
-    # regression, and a narrower run whose rate ROSE is one.
+    # THE VERDICT LEADS, and the seconds follow it. The line used to open with a total against
+    # a seconds budget and append the rate verdict last, so the figure a reader took away was
+    # the one the tool does not judge on: a total is selection width times cost-per-test, and
+    # width varies continuously here. Order is not presentation - the first clause is what gets
+    # quoted into a commit message and remembered.
     tests = latest(root, "total.selected.tests" if series == "selected" else "total.tests")
     rate = (measured / tests) if tests else None
-    if rate is not None:
-        detail += f", {rate:.3f}s/test over {tests:.0f} tests"
-    if series == "selected":
-        # Named, because a selected total is not comparable with the full-run baseline below
-        # and a reader must not take the drift figure for a like-for-like one.
-        detail += " [selected run]"
-    elif fallback:
-        detail += (" [FULL run judged against the per-commit ceiling - declare "
-                   "`gate_budget.full_seconds` to judge it on its own terms]")
-    if baseline is not None and when:
-        # The TREND, not just the instantaneous value. Reporting only "under budget" is how
-        # test_gate.py grew 28% in two days without anyone noticing: it was under every ceiling
-        # the whole time.
-        try:
-            drift = (measured - float(baseline)) / float(baseline) * 100.0
-            detail += (f" (baseline {float(baseline):.0f}s on {when}, "
-                       f"{drift:+.0f}% since)")
-        except (TypeError, ValueError):
-            detail += f" (baseline {baseline}s on {when})"
-    # THE VERDICT IS ON THE RATE, not on the total, whenever a rate can be computed. The total is
-    # selection width times cost-per-test, and width varies continuously - 1,418 to 5,573 tests
-    # across the recorded window - so `measured > budget` reports a wide commit as a regression
-    # and a narrow one as headroom while neither has changed cost. The declared ceiling is
-    # converted to a rate against the SAME baseline width, and the comparison is made there.
-    #
-    # Where no test count is recorded there is no rate, and the raw comparison stands rather than
-    # a fabricated one: an unmeasured width is not a width of zero.
-    # DECLARED AS A RATE, never derived from the run's own width. Dividing the seconds ceiling by
-    # the CURRENT run's test count gives every run its own ceiling, so the comparison is
-    # tautological and two runs at identical cost still disagree - the first cut did exactly that
-    # and its own test caught it. The rate is the quantity being budgeted, so it is the quantity
-    # declared.
+    # DECLARED AS A RATE, never derived from the run's own width. Dividing the seconds ceiling
+    # by the CURRENT run's test count gives every run its own ceiling, so the comparison is
+    # tautological and two runs at identical cost still disagree - the first cut did exactly
+    # that and its own test caught it. The rate is the quantity being budgeted, so it is the
+    # quantity declared.
     try:
         ceiling_rate = float(block.get("rate_seconds_per_test"))
     except (TypeError, ValueError):
@@ -342,21 +315,65 @@ def budget_report(root: Path) -> dict | None:
     if rate is not None and ceiling_rate:
         over = rate > ceiling_rate
         rate_verdict = {"rate": rate, "ceiling_rate": ceiling_rate}
-        detail += f" [rate verdict: {rate:.3f} vs {ceiling_rate:.3f}s/test ceiling]"
+        detail = (f"rate {rate:.3f}s/test vs a {ceiling_rate:.3f} ceiling - "
+                  f"{'OVER' if over else 'under'}")
         if over:
             detail += " - REGRESSION: the per-test cost rose, whatever the total did"
-    elif rate is not None:
-        # No declared rate ceiling: the raw total still decides, and the line SAYS the verdict is
-        # width-sensitive rather than leaving a reader to take it for a like-for-like one.
-        detail += (" [no `gate_budget.rate_seconds_per_test` declared - this verdict is on the "
-                   "raw total and moves with selection width]")
-    elif ceiling_rate:
-        # A rate ceiling IS declared and no test count was recorded, so the rate cannot be
-        # computed and the raw total decides after all. Labelled on the same terms as the state
-        # above: the neighbouring case disclosed its fallback and this one did not, which is the
-        # inconsistency an unlabelled mis-comparison always turns out to be.
-        detail += (" [a rate ceiling is declared but this run recorded no test count, so the "
-                   "verdict falls back to the raw total and moves with selection width]")
+        detail += f"; {measured:.0f}s of a {budget:.0f}s budget over {tests:.0f} tests"
+    else:
+        detail = f"{measured:.0f}s of a {budget:.0f}s budget"
+        if rate is not None:
+            # No declared rate ceiling: the raw total still decides, and the line SAYS the
+            # verdict is width-sensitive rather than leaving a reader to take it for a
+            # like-for-like one.
+            detail += (f", {rate:.3f}s/test over {tests:.0f} tests [no "
+                       f"`gate_budget.rate_seconds_per_test` declared - this verdict is on the "
+                       f"raw total and moves with selection width]")
+        else:
+            # NO TEST COUNT AT ALL, and this is the line a reader cannot calibrate. Every other
+            # branch carries its width; this one carried a bare total, so the one figure with
+            # no denominator was the only one that never said so.
+            detail += " over a selection width this run did not record"
+            if ceiling_rate:
+                # A rate ceiling IS declared and the rate cannot be computed, so the raw total
+                # decides after all. Labelled on the same terms as its neighbour: the
+                # inconsistency an unlabelled mis-comparison always turns out to be.
+                detail += (" [a rate ceiling is declared but this run recorded no test count, "
+                           "so the verdict falls back to the raw total and moves with "
+                           "selection width]")
+    if series == "selected":
+        # Named, because a selected total is not comparable with the full-run baseline below
+        # and a reader must not take the drift figure for a like-for-like one.
+        detail += " [selected run]"
+    elif fallback:
+        detail += (" [FULL run judged against the per-commit ceiling - declare "
+                   "`gate_budget.full_seconds` to judge it on its own terms]")
+    if baseline is not None and when:
+        # THE TREND, and only where a trend can honestly be computed. Reporting only "under
+        # budget" is how a module grew 28% in two days without anyone noticing: it was under
+        # every ceiling the whole time. But a PERCENTAGE between two totals measured at
+        # different selection widths is a number about the widths, not about the cost - and the
+        # baseline recorded here carries no width at all, so on a SELECTED run - whose width
+        # moves commit to commit - the clause was stating a change nobody had measured. The
+        # percentage is withheld exactly there: a full run against a full-series baseline is
+        # like-for-like even with the count unrecorded, and the fallback path says in the same
+        # line that it is not judging on its own series.
+        base_tests = block.get("full_baseline_tests" if own_series else "baseline_tests")
+        try:
+            base_s = float(baseline)
+        except (TypeError, ValueError):
+            base_s = None
+        if base_s is None:
+            detail += f" (baseline {baseline}s on {when})"
+        elif base_tests or series != "selected":
+            drift = (measured - base_s) / base_s * 100.0
+            width = (f" over {float(base_tests):.0f} tests" if base_tests else "")
+            detail += (f" (baseline {base_s:.0f}s on {when}{width}, {drift:+.0f}% since)")
+        else:
+            here = f"{tests:.0f}" if tests else "an unrecorded number of"
+            detail += (f" (baseline {base_s:.0f}s on {when} over an unrecorded width, against "
+                       f"{here} tests here - no percentage is stated, because a change between "
+                       f"two widths is a number about the widths)")
     return {"measured": measured, "budget": budget, "baseline": baseline,
             "baseline_date": when, "over": over, "detail": detail,
             "rate": rate, "rate_verdict": rate_verdict}

@@ -37,6 +37,10 @@ Route `annotate`'s Severity writes through the same `normalise_severity` the oth
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::AnnotateSeverityTests::test_the_guard_is_keyed_on_the_normalised_field_name
   - **Verified:** yes (2026-09-08)
 
+- [ ] **AC4** Given a vocabulary field annotated in any case, when the command reports what it did, then the text line names the field and value AS WRITTEN, and agrees with the same command's JSON output. Canonicalising inside the function left the text line printing the argv pair, so one command's two output formats disagreed about one write - and nothing in the corpus asserted that line
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::AnnotateSeverityTests::test_the_success_line_reports_what_was_written
+  - **Verified:** yes (2026-09-08)
+
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
@@ -44,6 +48,7 @@ Route `annotate`'s Severity writes through the same `normalise_severity` the oth
 | AC1 | in .claude/skills/sdlc-studio/scripts/transition.py, delete the vocabulary block from `annotate` so any value reaches `_upsert_field` | Given a bug fixture whose Severity is Medium, when `transition.py annotate --id <the fixture> --field Severity --value major` is run as a SUBPROCESS - the runnable form, since without `--id` argparse exits 2 and the file is unchanged for a reason that has nothing to do with the vocabulary - then it is REFUSED naming the accepted set and the file is unchanged |
 | AC2 | in .claude/skills/sdlc-studio/scripts/transition.py, replace the normalisation call with an exact-match `value in SEVERITY_VOCAB` test, so `high` is refused rather than written as `High` | Given the same fixture, when a RECOGNISED severity is annotated in either case - `high` or `High` - then both are accepted and the file reads the canonical spelling `High`. The positive control: a guard refusing every severity satisfies AC1 on its own |
 | AC3 | in .claude/skills/sdlc-studio/scripts/transition.py, delete the `_ANNOTATE_VOCABULARY` lookup that rewrites the argument before `_upsert_field` sees it | Given the same fixture, when the FIELD NAME is spelled in another case - `--field severity --value banana` - then the guard fires just as it does for `Severity`, and the file gains no second severity line beside the canonical one. `annotate` lowercases the field for its denylist check alone and passes the raw spelling to the writer, so today this exits 0 and inserts a duplicate; a guard keyed on the literal `Severity` passes AC1 and AC2 with the defect live |
+| AC4 | in .claude/skills/sdlc-studio/scripts/transition.py, print the argv pair in the success line instead of the record `annotate` returns | Given a vocabulary field annotated in any case, when the command reports what it did, then the text line names the field and value AS WRITTEN, and agrees with the same command's JSON output. Canonicalising inside the function left the text line printing the argv pair, so one command's two output formats disagreed about one write - and nothing in the corpus asserted that line |
 
 ## Revision History
 
@@ -51,3 +56,4 @@ Route `annotate`'s Severity writes through the same `normalise_severity` the oth
 | --- | --- | --- |
 | 2026-08-28 | sdlc-studio | Filed |
 | 2026-09-08 | Claude Fable 5.1 | Delivered. Two plan rows were corrected at delivery, both found by working the mutant rather than by reading it. AC1's named `cmd_annotate`, and the guard belongs in `annotate`, which `artifact.py` also calls directly - a guard in the CLI wrapper would leave that caller unguarded. AC3's named keying the guard on the raw field argument, and worked through, that mutant kills AC1 and leaves AC3 green: `severity` IS the dictionary key, so the lowercase spelling still matches while `Severity` no longer does. The row now drops the canonical-name assignment instead, which is the edit AC3's own second half dies on |
+| 2026-09-08 | Claude Fable 5.1 | Delivery review, round one: engineering APPROVE, product and QA REJECT on the same two findings, both introduced by this diff. The command canonicalises the field and value inside `annotate` and the text success line still printed the argv pair, so it said `SEVERITY = hIgH` while writing `Severity: High` - and the same command's JSON output said the other thing. Nothing in the corpus asserted that line, which is why it went unnoticed; it is AC4 now, with its own mutant. Second, AC3's test docstring still declared the mutant this artefact had already recorded as wrong, so the one surface the correction had not reached was the one a reviewer reads first |

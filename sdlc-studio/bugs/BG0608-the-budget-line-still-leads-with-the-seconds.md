@@ -27,16 +27,16 @@ Lead with the rate verdict and demote the seconds figure to context, or drop the
 
 - [ ] **AC1** Given a run for which a per-test rate and a declared rate ceiling both exist, when `gate_timing.py budget` composes its line, then the FIRST clause is the rate verdict and it reads `under` for a run inside the ceiling. Today the line opens with a seconds total against a seconds budget and the rate verdict is appended last, so the figure a reader takes away is the one the tool does not judge on
   - **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLineTests::test_the_line_leads_with_the_rate_verdict
-  - **Verified:** no
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC2** Given a run whose per-test rate EXCEEDS the declared ceiling, when the same command runs, then that same leading clause reads `over` - the paired control against a clause hard-coded to reassure. Both halves are false at HEAD, because at HEAD neither run leads with a rate clause at all
   - **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLineTests::test_an_over_rate_run_reads_over_in_the_same_leading_clause
-  - **Verified:** no
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC3** Given a SELECTED run and a baseline recorded at a different selection width, when the line is composed, then the drift clause either names both widths or is withheld, and never reports a bare percentage against a baseline taken at another width. This is the half that is false at HEAD: the baseline-and-drift clause is appended to a selected run with no width on either figure
   - **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLineTests::test_a_cross_width_drift_clause_names_both_widths_or_is_withheld
-  - **Verified:** no
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC4** Given a run for which no test count is recorded AND no rate ceiling is declared, when the line is composed, then the seconds total it still prints says the width is unrecorded rather than standing bare. The narrower Given is the measured one: with a ceiling declared, HEAD already says a run recorded no test count from the limb below, so the wider wording passed before any code was written
   - **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLineTests::test_an_unmeasured_width_is_named_beside_its_total
-  - **Verified:** no
+  - **Verified:** yes (2026-09-08)
 
 ## Test Plan
 

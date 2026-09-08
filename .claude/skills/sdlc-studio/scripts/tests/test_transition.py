@@ -5800,8 +5800,29 @@ class AnnotateSeverityTests(unittest.TestCase):
                 self.assertEqual(1, body.count("Severity:"),
                                  "the canonical line is updated in place, never duplicated")
 
+    def test_the_success_line_reports_what_was_written(self) -> None:
+        """MUTANT: print the argv pair again instead of the record `annotate` returns.
+
+        The command canonicalises a vocabulary field's name and value before writing, so the
+        text line and the same command's `--format json` were saying different things about
+        one write. Nothing in the corpus asserted that line, which is why it went unnoticed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._bug(root)
+            rc, out = _cli(root, "annotate", "--id", "BG0001",
+                           "--field", "SEVERITY", "--value", "hIgH")
+            self.assertEqual(0, rc, out)
+            self.assertIn("> **Severity:** High", p.read_text(encoding="utf-8"))
+            self.assertIn("Severity = High", out,
+                          f"the success line reports the request rather than the write:\n{out}")
+            self.assertNotIn("hIgH", out)
+
     def test_the_guard_is_keyed_on_the_normalised_field_name(self) -> None:
-        """MUTANT: key the guard on the raw `field` argument rather than the folded `key`.
+        """MUTANT: delete the `_ANNOTATE_VOCABULARY` lookup that rewrites the argument.
+
+        Keying the guard on the raw `field` was the plan's first proposal and it does NOT kill
+        this node: `severity` IS the dictionary key, so the lowercase spelling still matches
+        while `Severity` no longer does - it kills AC1 and AC2 instead. Measured, not reasoned.
 
         Measured before the fix: `--field severity --value banana` exited 0 and INSERTED a
         second metadata line beside the untouched canonical one, because the denylist folds

@@ -2057,8 +2057,12 @@ def cmd_annotate(args: argparse.Namespace) -> int:
     except (FileNotFoundError, ValueError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    # The RESULT, not the request. `annotate` canonicalises a vocabulary field's name and value
+    # before writing, so printing the argv pair told the reader `severity = low` while the file
+    # gained `Severity: Low` - and the same command's `--format json` said the other thing. Two
+    # output formats of one command disagreeing about one fact is worse than either being wrong.
     print(json.dumps(r, indent=2) if args.format == "json"
-          else f"annotated {args.id}: {field} = {value}"
+          else f"annotated {args.id}: {r['field']} = {r['value']}"
                + ("" if r["changed"] else " (already set)"))
     return 0
 
@@ -2400,10 +2404,11 @@ def _is_live_survivor(mu: dict) -> bool:
 
     A withdrawal is the ledger's record that the READING was retracted - the row was measured
     against a fixture that could not reach the branch, or re-measured and killed - and every
-    other reader already honours it. Reading the verdict alone filed a HIGH bug against a row
-    that had been withdrawn and re-registered killed, and the release-notes gate then refused
-    the commit because the notes claim zero High. The over-report cost a release, so the
-    predicate lives in one place and both readers ask it.
+    other reader already honours it. Reading the verdict alone filed a bug against a row that
+    had been withdrawn and re-registered killed, and the disclosure guard then refused the
+    commit over the severity it was filed at. The over-report cost a commit, so the predicate
+    lives in one place and both readers ask it - defensively at the gate, whose own loop skips
+    a withdrawn row first, so that a later reader cannot restore the verdict-only reading.
     """
     return mu.get("verdict") == "survived" and not mu.get("withdrawn")
 

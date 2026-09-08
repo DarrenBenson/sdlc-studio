@@ -847,5 +847,87 @@ class BudgetSeriesTests(unittest.TestCase):
                           f"the line exists to show is gone:\n{res['detail']}")
 
 
+class BudgetLineTests(unittest.TestCase):
+    """BG0608: the line opened with a seconds total against a seconds budget and appended the
+    rate verdict last, so the figure a reader took away was the one the tool does not judge on.
+    A total is selection width times cost-per-test, and width varies continuously here."""
+
+    def _root(self, d, cfg: str) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(cfg, encoding="utf-8")
+        return root
+
+    RATED = ("gate_budget:\n  seconds: 380\n  rate_seconds_per_test: 0.152\n")
+
+    def _record(self, root, seconds, tests):
+        """Seed one SELECTED run. `record` stamps `total.last_series` itself, so the series is
+        set by writing into `total.selected` rather than by a second write that can disagree."""
+        gt.record(root, "total.selected", seconds)
+        gt.record(root, "total.selected.tests", tests)
+
+    def test_the_line_leads_with_the_rate_verdict(self) -> None:
+        """MUTANT: move the rate-verdict concatenation back below the drift block."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, self.RATED)
+            self._record(root, 200.0, 2000.0)          # 0.100 s/test, inside the 0.152 ceiling
+            detail = gt.budget_report(root)["detail"]
+            self.assertTrue(detail.startswith("rate "),
+                            f"the line does not lead with the rate verdict:\n{detail}")
+            self.assertIn("under", detail.split(";")[0],
+                          f"the leading clause does not state the verdict:\n{detail}")
+
+    def test_an_over_rate_run_reads_over_in_the_same_leading_clause(self) -> None:
+        """MUTANT: hard-code the word chosen from `over` to the literal `under`.
+
+        The paired control. Both halves are false at HEAD before the fix, because at HEAD
+        neither run leads with a rate clause at all."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, self.RATED)
+            self._record(root, 400.0, 1000.0)          # 0.400 s/test, over the ceiling
+            detail = gt.budget_report(root)["detail"]
+            lead = detail.split(";")[0]
+            self.assertTrue(lead.startswith("rate "), detail)
+            self.assertIn("OVER", lead, f"an over-rate run did not read over:\n{detail}")
+            self.assertNotIn("under", lead)
+
+    def test_a_cross_width_drift_clause_names_both_widths_or_is_withheld(self) -> None:
+        """MUTANT: hoist the baseline block above the selected test so it runs unconditionally.
+
+        A percentage between two totals measured at different selection widths is a number
+        about the widths, not about the cost."""
+        cfg = self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, cfg)
+            self._record(root, 200.0, 2000.0)
+            detail = gt.budget_report(root)["detail"]
+            self.assertIn("baseline 317s", detail, detail)
+            self.assertNotIn("% since", detail,
+                             f"a percentage was stated against a baseline of unrecorded "
+                             f"width:\n{detail}")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, cfg + "  baseline_tests: 2500\n")
+            self._record(root, 200.0, 2000.0)
+            detail = gt.budget_report(root)["detail"]
+            self.assertIn("2500 tests", detail, detail)
+            self.assertIn("% since", detail,
+                          f"with both widths on record the trend must still be stated:\n"
+                          f"{detail}")
+
+    def test_an_unmeasured_width_is_named_beside_its_total(self) -> None:
+        """MUTANT: delete the `else` limb that annotates the line when no rate can be computed.
+
+        The Given is the measured one: no test count AND no rate ceiling. With a ceiling
+        declared, the line already says a run recorded no test count, so a wider wording would
+        pass before any code was written."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, "gate_budget:\n  seconds: 380\n")
+            gt.record(root, "total.selected", 200.0)
+            detail = gt.budget_report(root)["detail"]
+            self.assertIn("did not record", detail,
+                          f"a bare total was printed with no width and no note that the width "
+                          f"is unrecorded:\n{detail}")
+
+
 if __name__ == "__main__":
     unittest.main()
