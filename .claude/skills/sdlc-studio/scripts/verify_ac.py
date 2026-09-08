@@ -2429,6 +2429,13 @@ def add_coverage_ruling(root, unit_path: Path, rel: str, line: int, reason: str,
         raise ValueError(f"coverage rule refused: a reason of {len((reason or '').strip())} "
                          f"character(s) is below the floor of {floor} that `mutation.py retract` "
                          f"holds a withdrawal to - a ruling is not a free bypass of the gate")
+    if " ".join(str(reason).split()).lower().startswith("withdrawn "):
+        # `withdrawn ` opens the cell a withdrawal writes, and `coverage_rulings` reads a row
+        # starting with it as retracted - so a reason that happens to open with the word would
+        # be written, reported ruled, and counted by nothing
+        raise ValueError("coverage rule refused: a reason may not begin with `withdrawn`, which "
+                         "is how a withdrawal marks a row - reword it, or the ruling is written "
+                         "and read by nothing")
     root = Path(root)
     digest = _file_hash(root, rel)
     if not digest:
@@ -2491,19 +2498,24 @@ def withdraw_coverage_ruling(root, unit_path: Path, rel: str, line: int, reason:
                          f"character(s) is below the floor of {floor} - a withdrawal is recorded, "
                          f"never silent")
     text = sdlc_md.read_text_safe(unit_path)
-    hit = None
-    for r in coverage_rulings(text):
-        if r["file"] == rel and int(r["line"]) == int(line):
-            hit = r
-            break
-    if hit is None:
+    said = " ".join(str(reason).split()).replace("|", "\\|")
+    out, hit = [], False
+    for row in text.splitlines(True):
+        m = _RULING_ROW_RE.match(row.strip())
+        # matched on the ROW's own identity, never on its reason text: rulings written in one
+        # pass share a reason, and a text match withdrew whichever row came first rather than
+        # the one named - a withdrawal that silently retracts somebody else's waiver
+        if (not hit and m and m.group("file") == rel and int(m.group("line")) == int(line)
+                and not _uncell(m.group("reason")).strip().lower().startswith("withdrawn ")):
+            row = (f"| {m.group('file')} | {m.group('line')} | {m.group('hash')} "
+                   f"| withdrawn {sdlc_md.now_iso8601()[:10]}: {said} "
+                   f"(was: {m.group('reason')}) | {m.group('author')} | {m.group('date')} |\n")
+            hit = True
+        out.append(row)
+    if not hit:
         raise ValueError(f"coverage withdraw refused: no live ruling names {rel}:{line} - a "
                          f"withdrawal that matches nothing has done nothing")
-    old = f"| {hit['reason']} | {hit['author']} |"
-    said = " ".join(str(reason).split()).replace("|", "\\|")
-    new = f"| withdrawn {sdlc_md.now_iso8601()[:10]}: {said} (was: {hit['reason']}) | {author} |"
-    assert text.count(old) >= 1
-    sdlc_md.atomic_write(unit_path, text.replace(old, new, 1))
+    sdlc_md.atomic_write(unit_path, "".join(out))
     return {"file": rel, "line": int(line), "withdrawn": True}
 
 

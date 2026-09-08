@@ -6779,15 +6779,23 @@ class LineCoverageTests(unittest.TestCase):
             # a run cut short leaves behind is purged rather than combined by the next run.
             root, base = self._repo(Path(d))
             self._append(root, self.PROD, "\n\ndef added_dead():\n    return 4\n")
-            self._append(root, self.TEST, "\n    def test_slow(self):\n        import time\n        time.sleep(20)\n")
+            # the verifier spawns a TRACED child that finishes - writing a real parallel data
+            # file - and only then outruns the timeout, so the handler's purge runs with
+            # something to delete. Seeding a file instead cannot reach it: the pre-run purge
+            # has already emptied the directory, and a killed child writes nothing.
+            self._append(root, self.TEST, "\n    def test_slow(self):\n        import subprocess, time\n"
+                         "        subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve().parents[1] / 'prod' / 'mod.py')], capture_output=True)\n"
+                         "        time.sleep(20)\n")
+            self._append(root, self.PROD, "\n\ndef child_only():\n    print('child')\n\n\nif __name__ == '__main__':\n    child_only()\n")
             story = self._story(root, self.UNIT, f"{self.PROD}, docs/note.md", [f"pytest {self.TEST}::TestT::test_slow"])
             self._commit(root, f"fix({self.UNIT}): a slow verifier\n")
             leftover_dir = root / "sdlc-studio" / ".local" / "coverage"; leftover_dir.mkdir(parents=True)
             (leftover_dir / f"{self.UNIT}.coverage.partial").write_text("left by a run cut short\n", encoding="utf-8")
             with self.assertRaises(verify_ac.CoverageUnavailable) as cm:
-                verify_ac.coverage_report(root, story, self.UNIT, base_ref=base, timeout=3)
-            self.assertIn("exceeded 3s under coverage", str(cm.exception))
-            self.assertEqual(list((root / "sdlc-studio" / ".local" / "coverage").glob(f"{self.UNIT}.coverage*")), [])
+                verify_ac.coverage_report(root, story, self.UNIT, base_ref=base, timeout=6)
+            self.assertIn("exceeded 6s under coverage", str(cm.exception))
+            left = list((root / "sdlc-studio" / ".local" / "coverage").glob(f"{self.UNIT}.coverage*"))
+            self.assertEqual(left, [], "a run cut short leaves no data file for the next run to combine: " + str(left))
 
     # -- AC4 -------------------------------------------------------------------------
     def test_the_cli_exit_code_and_report_carry_the_verdict(self) -> None:

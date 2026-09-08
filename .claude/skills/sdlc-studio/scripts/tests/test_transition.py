@@ -5537,6 +5537,27 @@ class CoverageGateTests(unittest.TestCase):
             gone = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "withdraw", "--id", self.UNIT, "--file", self.PROD, "--line", "99", "--reason", "there is no ruling on this line to withdraw at all", "--root", str(root)], capture_output=True, text=True)
             self.assertEqual(gone.returncode, 2, gone.stdout + gone.stderr)
             self.assertIn("matches nothing has done nothing", gone.stderr)
+            # two rulings sharing one reason, and one carrying a pipe: the withdrawal must take
+            # the row NAMED, found by its own file, line and hash, and must read the escaped
+            # cell back - a reason-text match took whichever row came first, at exit 0
+            import verify_ac  # noqa: PLC0415
+            for ln, why in ((4, "one reason, written for every line in a single pass"),
+                            (5, "one reason, written for every line in a single pass"),
+                            (6, "the arm | the OS decides, and no fixture reaches it")):
+                r = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--line", str(ln), "--reason", why, "--root", str(root)], capture_output=True, text=True)
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            for ln in (5, 6):
+                w = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "withdraw", "--id", self.UNIT, "--file", self.PROD, "--line", str(ln), "--reason", "withdrawn by the probe that proves the row named is the row taken", "--root", str(root)], capture_output=True, text=True)
+                self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
+            live = {r["line"] for r in verify_ac.coverage_rulings(self._status(root))}
+            self.assertNotIn(5, live, "the row NAMED is withdrawn, not whichever shares its reason")
+            self.assertNotIn(6, live, "a reason carrying a pipe is withdrawn, never silently left live")
+            self.assertIn(4, live, "the row that shares the reason but was not named stays live")
+            # a reason OPENING with the withdrawal's own sentinel is refused: written, it would
+            # be reported ruled and read by nothing
+            sent = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--line", "7", "--reason", "withdrawn from the earlier reading, which no fixture reaches", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(sent.returncode, 2, sent.stdout + sent.stderr)
+            self.assertIn("may not begin with `withdrawn`", sent.stderr)
             import verify_ac  # noqa: PLC0415
             self.assertEqual(verify_ac.coverage_rulings(body), [], "a withdrawn row counts for nothing")
 
