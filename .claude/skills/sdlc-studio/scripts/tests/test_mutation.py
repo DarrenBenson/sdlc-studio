@@ -5114,5 +5114,133 @@ class RegisterKeepsOtherUnitsRowsTests(unittest.TestCase):
         self.assertIn("STALE: BG0002", buf.getvalue()); self.assertIn("mutation.py register", buf.getvalue())
 
 
+class DuplicateKeyTests(unittest.TestCase):
+    """BG0614: the ledger keeps several LIVE rows on one (unit, criterion, row) key and the join
+    takes whichever was iterated last. `mutation.py audit` names every such key with its rows,
+    tags rows whose entry is stale, counts the keys whose rows name different tests, and is
+    silent on a clean ledger."""
+
+    FIXTURE = Path(__file__).resolve().parent / "fixtures" / "bg0614-ledger"
+
+    def _root_with(self, tmp: Path, entries: list) -> Path:
+        root = tmp / "r"; (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+            json.dumps({"version": 1, "dropped": 0, "entries": entries}), encoding="utf-8")
+        return root
+
+    def _entry(self, root: Path, name: str, body: str, mutants: list, *, stale: bool = False) -> dict:
+        import hashlib  # noqa: PLC0415
+        (root / name).write_text(body, encoding="utf-8")
+        h = hashlib.sha256((body + ("\n# drift" if stale else "")).encode()).hexdigest()
+        return {"target": name, "hash": h, "mutants": mutants}
+
+    @staticmethod
+    def _row(unit, ac, row, verdict, test, withdrawn=False):
+        m = {"unit": unit, "criterion": ac, "row": row, "verdict": verdict, "test": test, "line": 3,
+             "mutant": f"{unit} {ac} r{row}", "at": "2026-09-01T00:00:00Z"}
+        if withdrawn:
+            m["withdrawn"] = {"reason": "withdrawn for the fixture, on purpose", "at": "2026-09-02T00:00:00Z", "verdict": verdict}
+        return m
+
+    def _fixture_root(self, tmp: Path) -> Path:
+        import shutil  # noqa: PLC0415
+        root = tmp / "r"; (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        shutil.copytree(self.FIXTURE / "targets", root / "targets")
+        shutil.copy(self.FIXTURE / "mutation-runs.json", root / "sdlc-studio" / ".local" / "mutation-runs.json")
+        return root
+
+    def _audit(self, root: Path) -> tuple[int, str, str]:
+        mut = _load(); out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mut.main(["audit", "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    # -- AC1 -------------------------------------------------------------------------
+    def test_the_audit_reports_a_key_whose_rows_disagree(self) -> None:
+        """MUTANTS: narrow the duplicate test with an equality on the verdict column (a
+        killed/survived pair walks through); drop the `withdrawn` skip (the withdrawn duplicate
+        is named)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "r"; (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            e1 = self._entry(root, "a.py", "A = 1\n", [self._row("BG9101", "AC1", 0, "killed", "pytest t.py::T::test_x")])
+            e2 = self._entry(root, "b.py", "B = 1\n", [self._row("BG9101", "AC1", 0, "survived", "pytest t.py::T::test_x"),
+                                                        self._row("BG9102", "AC1", 0, "killed", "pytest t.py::T::test_y"),
+                                                        self._row("BG9102", "AC1", 0, "killed", "pytest t.py::T::test_y", withdrawn=True)])
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(json.dumps({"version": 1, "dropped": 0, "entries": [e1, e2]}), encoding="utf-8")
+            rc, out, err = self._audit(root)
+            self.assertEqual(rc, 1, out + err)
+            self.assertIn("audit: BG9101 AC1 r0 - 2 live row(s) (verdicts DISAGREE)", out)
+            self.assertIn("killed  test=pytest t.py::T::test_x  target=a.py  hash=" + e1["hash"][:12], out)
+            self.assertIn("survived  test=pytest t.py::T::test_x  target=b.py  hash=" + e2["hash"][:12], out)
+            self.assertNotIn("BG9102", out, "a withdrawn row is not live, so its key is not a duplicate")
+
+    # -- AC2 -------------------------------------------------------------------------
+    def test_a_clean_ledger_produces_no_audit_output(self) -> None:
+        """MUTANT: report every key the audit walks rather than only the duplicated ones."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "r"; (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            e = self._entry(root, "a.py", "A = 1\n", [self._row("BG9101", "AC1", 0, "killed", "pytest t.py::T::test_x"),
+                                                       self._row("BG9101", "AC2", 0, "killed", "pytest t.py::T::test_y"),
+                                                       self._row("BG9101", "AC2", 1, "killed", "pytest t.py::T::test_z")])
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(json.dumps({"version": 1, "dropped": 0, "entries": [e]}), encoding="utf-8")
+            rc, out, err = self._audit(root)
+            self.assertEqual(rc, 0, out + err)
+            self.assertEqual(out, "", "a clean ledger must be SILENT: " + out[:200])
+            self.assertEqual(err, "")
+
+    # -- AC3 -------------------------------------------------------------------------
+    def test_the_audit_verb_reports_a_duplicate_through_the_cli(self) -> None:
+        """MUTANT: keep the audit correct but omit its subcommand from the parser - argparse's
+        exit 2 satisfies neither the 1 nor the 0 asserted here."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture_root(Path(d))
+            cp = subprocess.run([sys.executable, str(SCRIPT), "audit", "--root", str(root)], capture_output=True, text=True, timeout=120)
+            self.assertEqual(cp.returncode, 1, cp.stdout + cp.stderr)
+            self.assertIn("audit: BG9001 AC1 r0 - 2 live row(s)", cp.stdout)
+            clean = Path(d) / "clean"; (clean / "sdlc-studio" / ".local").mkdir(parents=True)
+            (clean / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(json.dumps({"version": 1, "dropped": 0, "entries": []}), encoding="utf-8")
+            cp = subprocess.run([sys.executable, str(SCRIPT), "audit", "--root", str(clean)], capture_output=True, text=True, timeout=120)
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+            self.assertEqual(cp.stdout, "")
+
+    # -- AC4 -------------------------------------------------------------------------
+    def test_the_live_ledger_duplicates_are_all_reported(self) -> None:
+        """MUTANT: key the audit on (unit, criterion) and drop the row, so the fixture's
+        two-distinct-rows criterion BG9003 AC1 is named and the count changes."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture_root(Path(d))
+            mut = _load(); report = mut.audit_duplicates(root)
+            keys = [(k["unit"], k["criterion"], k["row"]) for k in report["keys"]]
+            expected = ([("BG9001", f"AC{i}", 0) for i in range(1, 11)] + [("BG9002", "AC1", 0)]
+                        + [("BG9005", f"AC{i}", 0) for i in range(1, 6)] + [("BG9006", f"AC{i}", 0) for i in range(1, 4)])
+            self.assertEqual(sorted(keys), sorted(expected))
+            self.assertEqual(report["duplicated"], 19)
+            self.assertNotIn(("BG9003", "AC1", 0), keys); self.assertNotIn(("BG9003", "AC1", 1), keys)
+            self.assertNotIn(("BG9004", "AC1", 0), keys, "a withdrawn duplicate is not live")
+            four = next(k for k in report["keys"] if k["unit"] == "BG9002"); self.assertEqual(len(four["rows"]), 4)
+
+    # -- AC5 -------------------------------------------------------------------------
+    def test_rows_in_a_stale_entry_are_tagged_and_current_rows_are_not(self) -> None:
+        """MUTANT: delete the `entry_staleness` call in the audit's row printer and emit an
+        empty suffix."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture_root(Path(d))
+            rc, out, _ = self._audit(root)
+            self.assertEqual(rc, 1)
+            lines = out.splitlines()
+            stale = [ln for ln in lines if ln.strip().startswith("killed") and "targets/stale_target.py" in ln]
+            current = [ln for ln in lines if ln.strip().startswith("killed") and "targets/stale_target.py" not in ln]
+            self.assertEqual(len(stale), 6); self.assertTrue(all(ln.endswith("  [stale entry]") for ln in stale), stale[:2])
+            self.assertTrue(current); self.assertFalse(any("[stale entry]" in ln for ln in current), current[:2])
+
+    # -- AC6 -------------------------------------------------------------------------
+    def test_the_summary_counts_only_keys_whose_rows_name_different_tests(self) -> None:
+        """MUTANT: hard-code the summary's second figure to `len(dups)`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture_root(Path(d))
+            rc, out, err = self._audit(root)
+            self.assertEqual(rc, 1)
+            self.assertIn("audit: 19 duplicated key(s), 5 naming different tests, 0 disagreeing on verdict", err)
+
 if __name__ == "__main__":
     unittest.main()

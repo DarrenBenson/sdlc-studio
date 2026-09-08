@@ -2887,6 +2887,72 @@ def retractions(root: Path | str, unit: str | None = None) -> list:
     return sorted(out, key=lambda r: str(r.get("at") or ""), reverse=True)
 
 
+def audit_duplicates(root: Path | str) -> dict:
+    """Every `(unit, criterion, row)` key the ledger holds more than one LIVE row for.
+
+    A row is live when it is not withdrawn, whether or not its entry is stale: `plan_execution`
+    skips a stale entry, but a reader cannot tell two rows apart from the join, and that is the
+    harm this audit exists to name. Each row carries its target and hash, so a same-row pair on
+    two entries can be told from a pair inside one; a row whose entry `entry_staleness` reports
+    `stale` or `missing` is tagged. `row` None and `row` 0 are the same slot - a criterion
+    carrying one row registers it without a number.
+
+    Returns `{"keys": [...], "duplicated": n, "different_tests": n, "disagreeing": n}` where each
+    key is `{"unit", "criterion", "row", "rows": [{target, hash, verdict, test, line, stale}],
+    "different_tests": bool, "disagreeing": bool}`. Nothing is printed here; the verb prints.
+    """
+    root = Path(root)
+    state, _reset = _load_ledger(ledger_path(root))
+    by_key: dict = {}
+    for entry in state.get("entries", []):
+        if not isinstance(entry, dict):
+            continue
+        staleness = entry_staleness(root, entry)
+        stale = staleness in ("stale", "missing")
+        for mu in entry.get("mutants") or []:
+            if not isinstance(mu, dict) or not mu.get("unit") or mu.get("withdrawn"):
+                continue
+            key = (str(mu.get("unit")), str(mu.get("criterion") or "").upper(), int(mu.get("row") or 0))
+            by_key.setdefault(key, []).append({
+                "target": entry.get("target"), "hash": entry.get("hash"),
+                "verdict": mu.get("verdict"), "test": mu.get("test"), "line": mu.get("line"),
+                "stale": stale})
+    keys = []
+    for (unit, criterion, row), rows in sorted(by_key.items()):
+        if len(rows) < 2:
+            continue
+        keys.append({"unit": unit, "criterion": criterion, "row": row, "rows": rows,
+                     "different_tests": len({r["test"] for r in rows}) > 1,
+                     "disagreeing": len({r["verdict"] for r in rows}) > 1})
+    return {"keys": keys, "duplicated": len(keys),
+            "different_tests": sum(1 for k in keys if k["different_tests"]),
+            "disagreeing": sum(1 for k in keys if k["disagreeing"])}
+
+
+def cmd_audit(args: argparse.Namespace) -> int:
+    """Name every duplicated live key; silent and 0 on a clean ledger, 1 with any duplicate."""
+    report = audit_duplicates(args.root)
+    if not report["keys"]:
+        return 0
+    for k in report["keys"]:
+        flags = []
+        if k["disagreeing"]:
+            flags.append("verdicts DISAGREE")
+        if k["different_tests"]:
+            flags.append("different tests")
+        print(f"audit: {k['unit']} {k['criterion']} r{k['row']} - {len(k['rows'])} live row(s)"
+              + (f" ({', '.join(flags)})" if flags else ""))
+        for r in k["rows"]:
+            print(f"    {r['verdict']}  test={r['test']}  target={r['target']}  "
+                  f"hash={str(r['hash'] or '')[:12]}  line={r['line']}"
+                  + ("  [stale entry]" if r["stale"] else ""))
+    print(f"audit: {report['duplicated']} duplicated key(s), {report['different_tests']} naming "
+          f"different tests, {report['disagreeing']} disagreeing on verdict - the (criterion, row) "
+          "join reads whichever was iterated last; withdraw the wrong one with `mutation.py "
+          "retract --reason`", file=sys.stderr)
+    return 1
+
+
 def cmd_retractions(args: argparse.Namespace) -> int:
     rows = retractions(args.root, getattr(args, "unit", None))
     if getattr(args, "format", "text") == "json":
@@ -3183,6 +3249,10 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument("--note", help="what is being done, for whoever the guard blocks")
     w.add_argument("--root", default=".")
     w.set_defaults(func=cmd_window)
+    a = sub.add_parser("audit", help="Name every (unit, criterion, row) key carrying more than "
+                                     "one live row; exit 1 when any, silent and 0 when none.")
+    a.add_argument("--root", default=".", help="Repo root")
+    a.set_defaults(func=cmd_audit)
     f = sub.add_parser("prefilter", help="List test files with no recognisable assertion.")
     f.add_argument("--tests", nargs="+", required=True)
     f.set_defaults(func=cmd_prefilter)

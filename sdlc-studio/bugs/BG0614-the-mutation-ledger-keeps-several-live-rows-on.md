@@ -1,9 +1,10 @@
 # BG0614: the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
+> **Verification depth:** functional [[derived: criteria 6; plan rows 6; executed 6; killed 6; survived 0; not-run 0; entry point 5 of 6 criteria through the shipped CLI, 1 in-process | fp dfdd1745417a ]] (AC3 drives the shipped verb by subprocess with exact exit codes both ways; AC1, AC2, AC4 to AC6 drive `main` in-process over a committed fixture ledger with materialised targets, so `entry_staleness` hashes real bytes; the corpus figure is recorded in the revision row from the shipped verb, never as a suite test)
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-surface.md
 > **Evidence:** Adversarial review of BG0606, 2026-08-25, which found three live rows on BG0606 AC1 row 0. Widened to a full-ledger audit by the authoring session, finding 14 keys.
 > **Created:** 2026-08-25
 > **Created-by:** sdlc-studio file
@@ -50,16 +51,22 @@ bug is not the place to reverse it.
 
 - [ ] **AC1** Given a ledger holding two live rows on one `(unit, criterion, row)` key that DISAGREE on their verdict - one killed, one survived - when the audit runs, then it reports the key and both rows. A row is LIVE when it is not withdrawn, whether or not its entry is stale; a row in a stale entry is reported tagged `stale entry` (three of today's keys sit in one), and each row is printed with its target and hash so a same-row pair on different hashes can be told from a same-hash pair. The audit keys on `(unit, criterion, row)`; US0818's replace keys on `(unit, criterion, row, target, hash)`, so a same-row registration against a different target PATH appends there and is named here (a different hash of the same target cannot: `register_mutant` drops the unit's own rows on the old hash before it appends). A withdrawn row is NOT live: the AC4 fixture holds a withdrawn duplicate that the expected key list excludes, so a walk counting retracted rows names it and dies. The disagreeing pair is the case a reader most needs told about, and a detector that only fires when the rows agree would pass a fixture nobody looks at twice
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_audit_reports_a_key_whose_rows_disagree
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC2** Given a ledger with no duplicate keys, when the audit runs, then it is SILENT - the paired control, so reporting cannot be satisfied by reporting everything
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_a_clean_ledger_produces_no_audit_output
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC3** Given the shipped command, when the audit is run as a SUBPROCESS over a ledger holding a duplicate, then it names the key and exits non-zero. `mutation.py` has no audit verb today - its subcommands are run, register, retract, retractions, yield, window and prefilter - so this criterion is what makes the audit reachable at all rather than a library function nothing calls The audit exits 1 with a duplicate and 0 on a clean ledger, both asserted as exact codes through the CLI (argparse's 2 for a mis-typed verb satisfies neither), with the key in stdout on the duplicate.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_audit_verb_reports_a_duplicate_through_the_cli
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC4** Given a COMMITTED ledger fixture under `scripts/tests/fixtures/` whose entries name target files that exist INSIDE the fixture (so `entry_staleness` can hash them), carrying the shapes this repository's ledger holds today - measured 2026-09-07 on `sdlc-studio/.local/mutation-runs.json` by a walk over `entries[].mutants` excluding withdrawn rows, keyed on `(unit, criterion, row)`: 19 live duplicate keys, 0 disagreeing on verdict, 5 naming different tests, every one on a single `(target, hash)` entry, 3 in entries `entry_staleness` reports stale (the fixture's `stale_target.py` is written with bytes that differ from its entry's hash, so the tag branch is entered) - two rows one test, three rows two tests, four rows one test, three keys in a stale entry, AND one criterion carrying two DISTINCT rows (row 0 and row 1, each once, no duplicate) so a key that drops the row collapses them - when the audit runs, then it names every duplicated key, and does not name the two-distinct-rows criterion; the stale tag and the different-tests count are AC5 and AC6. The live corpus figure is re-measured at delivery through `mutation.py audit` and recorded in the revision row with the command; the suite never reads `.local/`, which is gitignored and absent on CI.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_live_ledger_duplicates_are_all_reported
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC5** Given the AC4 fixture, when the audit runs, then each row whose entry `entry_staleness` reports stale is printed with the exact tag `stale entry`, and rows in current entries carry no tag - asserted as exact expected lines.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_rows_in_a_stale_entry_are_tagged_and_current_rows_are_not
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC6** Given the AC4 fixture, when the audit runs, then its summary counts exactly the duplicated keys whose rows name DIFFERENT tests (five shapes in the fixture, matching the corpus measurement), never every duplicated key - asserted as an exact expected line.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_summary_counts_only_keys_whose_rows_name_different_tests
+  - **Verified:** yes (2026-09-08)
 
 ## Impact
 
@@ -85,3 +92,6 @@ bug is not the place to reverse it.
 | 2026-09-07 | Claude Fable 5.1 | Goal review round 2: AC4's fixture gains materialised targets and a two-distinct-rows criterion so the (unit, criterion) mutant moves on it (qa); the Test Plan title re-synced |
 | 2026-09-07 | Claude Fable 5.1 | Goal review round 3 (all seats yes): Test Plan titles re-synced to the criteria |
 | 2026-09-07 | Claude Fable 5.1 | Plan review round 1: qa REJECT answered - AC1 defines withdrawn as not live with a fixture row and a mutant, AC3 pins exact exit codes with a clean-ledger control through the CLI, AC4's three claims split into AC4, AC5 and AC6 with a row each and the drifted fixture file named; US0818's different-hash control restated as a different target path (engineering) |
+| 2026-09-08 | Claude Fable 5.1 | Delivery: built in a worktree while the corpus lane ran, ported by patch. AC4's obligation, the live figure by the shipped verb `python3 .claude/skills/sdlc-studio/scripts/mutation.py audit --root .`: 21 duplicated keys, 5 naming different tests, 0 disagreeing at first run - three of the 21 were this run's own (BG0653 AC3, AC4, AC5, registered twice on unchanged bytes by a re-run of its runner, US0818's case), withdrawn with the reason and re-measured once, after which the verb reads 18 duplicated keys, 5 naming different tests, 0 disagreeing. Seven mutants, seven killed (two rows on AC1). D0183's figure by `coverage run` with `patch = subprocess` joined to `git diff -U0`: 38 added statements, 37 executed by the unit's own tests, 1 uncovered - the `continue` past a non-dict entry, which no ledger this repository writes contains; ruled by note |
+| 2026-09-08 | Claude Fable 5.1 | Delivery: the commit hook's suites refused the first commit on `test_command_audit`'s verb census - a shipped verb named in no hand-written doc (263 verbs, 262 documented) - so `reference-scripts.md` names `audit` (joins Affects); BG0653's `stamps --staged`, reported by its engineering seat as uncatalogued, is named in the same sentence |
+| 2026-09-08 | Claude Fable 5.1 | Delivery: the verb census reads the GENERATED catalogue, so `docgen.py surface` was re-run and its page joins Affects (.claude/skills/sdlc-studio/reference-scripts-surface.md) |

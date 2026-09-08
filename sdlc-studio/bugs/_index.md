@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 15 |
+| Open | 14 |
 | In Progress | 0 |
-| Fixed | 538 |
+| Fixed | 539 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
@@ -153,7 +153,7 @@
 | [BG0611](BG0611-the-verdict-ledger-is-re-parsed-and-re.md) | The verdict ledger is re-parsed and re-annotated on EVERY lookup, so conformance spends 122 seconds making 374 million calls to judge 23 units | Fixed | High | 2026-08-25 | 2026-08-25 |
 | [BG0612](BG0612-three-limbs-that-survived-the-closure-of-bg0599.md) | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot | Open | Medium | 2026-08-25 | 2026-08-25 |
 | [BG0613](BG0613-sprint-breakdown-grades-an-epic-that-the-close.md) | sprint breakdown grades an epic that the close's two grooming surfaces both skip, so one run refuses to plan a batch and then closes saying that unit was not gradeable | Fixed | Medium | 2026-08-25 | 2026-08-25 |
-| [BG0614](BG0614-the-mutation-ledger-keeps-several-live-rows-on.md) | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last | Open | Medium | 2026-08-25 | 2026-08-25 |
+| [BG0614](BG0614-the-mutation-ledger-keeps-several-live-rows-on.md) | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last | Fixed | Medium | 2026-08-25 | 2026-08-25 |
 | [BG0615](BG0615-an-abandoned-guided-onboarding-marker-outranks-the-whole.md) | an abandoned guided-onboarding marker outranks the whole hint ladder forever, so an established project is told to go and onboard itself | Fixed | High | 2026-08-26 | 2026-08-26 |
 | [BG0616](BG0616-a-unit-closed-by-triage-can-never-be.md) | a unit CLOSED by triage can never be covered by a retro, so it owes a close-down for ever and the advisory can only be cleared by lying | Fixed | Medium | 2026-08-26 | 2026-08-26 |
 | [BG0617](BG0617-sprint-close-titles-the-run-s-handoff-with.md) | sprint close titles the run's handoff with the run's GOAL, so a run that missed its goal ships a handoff asserting it | Fixed | Medium | 2026-08-26 | 2026-08-26 |

@@ -32,7 +32,6 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0601` | Medium | The dry-run class sweep compares only the first two probes of each pair |
 | `BG0608` | Medium | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits i... |
 | `BG0612` | Medium | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot |
-| `BG0614` | Medium | the mutation ledger keeps several LIVE rows on one (unit, criterion, row) key, and the join takes whichever was iterated last |
 | `BG0627` | Medium | eleven other fields-file consumers carry the same `or ""` guard, so a falsey value is reported as a missing field across five more modules |
 | `BG0630` | Medium | the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever bei... |
 | `BG0633` | Medium | transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the... |
@@ -40,7 +39,7 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0638` | Medium | five sprint-checklist rows state a conclusion they never established, and _ck_known_issues FAILS OPEN where its own sibling reports the same blindn... |
 | `BG0654` | Medium | A push whose pre-push gate outlives the SSH connection git opened before the hook dies with exit 141 after the gate reports PASS, and nothing names... |
 
-15 findings: 15 Medium, 0 Low.
+14 findings: 14 Medium, 0 Low.
 
 ## Not carried
 

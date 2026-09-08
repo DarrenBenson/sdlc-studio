@@ -174,8 +174,8 @@ lists every script with a one-line summary; open the linked page for the full en
 - `gate.py` - Portable, ecosystem-neutral CI quality gate. Aggregates the deterministic checks;
   `--release` is the pre-tag form (the same gate plus an executing AC-verify pass, one exit code);
   `--require-retro` is the sprint-close form (retro present + lessons re-validated + summary current)
-- `verify_ac.py` - Executes AC verifiers defined in story files and updates each AC's
-- `mutation.py` - The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac
+- `verify_ac.py` - Executes AC verifiers defined in story files and updates each AC's `stamps --staged` judges only the stamped selectors naming a test file the commit stages, against the index blob by AST in all four selector shapes, and reports a stamp already dead at HEAD rather than refusing it - the `stamps-staged` pre-commit lane.
+- `mutation.py` - The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac `audit` names every `(unit, criterion, row)` key the ledger holds more than one live row for, with each row's verdict, test, target and hash, tags rows whose entry is stale, counts the keys whose rows name different tests or disagree on their verdict, exits 1 when any exist and is silent with exit 0 on a clean ledger.
   confirms an AC's tests pass, this asks whether they would fail if the feature broke. Every run
   appends one row to `sdlc-studio/.local/mutation-series.jsonl` recording what it cost
   (wall-clock) and what it found, so the gate is judged on its record rather than on the run that
