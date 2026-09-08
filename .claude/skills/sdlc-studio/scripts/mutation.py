@@ -2144,11 +2144,37 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     # because a genuine correction and an author registering their way out of a survivor are
     # byte-identical here. Making the correction cheap would make the escape cheap with it.
     # The cost is real and recorded rather than traded away: see the bug filed on it.
-    entry.setdefault("mutants", []).append(record)
-    entry["summary"]["applied"] += 1
+    #
+    # What IS replaced: the IDENTICAL registration - same unit, criterion, row, target and hash
+    # (this entry), same verdict, same test - the idempotent re-run of a registration runner,
+    # which used to append a duplicate that inflated the executed count and left the join
+    # reading whichever row was iterated last. A same-key row whose verdict or test differs is
+    # REFUSED, naming `retract`: that is the correction the rule above keeps expensive.
+    replaced = False
+    if record.get("unit") and record.get("criterion"):
+        same_key = [m for m in (entry.get("mutants") or [])
+                    if isinstance(m, dict) and not m.get("withdrawn")
+                    and m.get("unit") == record["unit"]
+                    and str(m.get("criterion") or "").upper() == record["criterion"]
+                    and int(m.get("row") or 0) == record["row"]]
+        for m in same_key:
+            if m.get("verdict") != record["verdict"] or (m.get("test") or None) != record["test"]:
+                raise ValueError(
+                    f"refused: {record['unit']} {record['criterion']} r{record['row']} already "
+                    f"holds a live {m.get('verdict')} row against `{m.get('test')}` on these bytes; "
+                    f"a registration with a different verdict or test does not replace it - "
+                    f"withdraw the row first with `mutation.py retract --reason <why>`, so the "
+                    f"correction stays on the record (worst-verdict-wins is not traded away)")
+        if same_key:
+            entry["mutants"] = [m for m in entry["mutants"] if m not in same_key] + [record]
+            replaced = True
+    if not replaced:
+        entry.setdefault("mutants", []).append(record)
+        entry["summary"]["applied"] += 1
     # setdefault, not [verdict] += 1: an entry written before this verdict existed has no such
     # counter, and a KeyError on an older ledger would make the vocabulary's growth a crash
-    entry["summary"][verdict] = entry["summary"].get(verdict, 0) + 1
+    if not replaced:
+        entry["summary"][verdict] = entry["summary"].get(verdict, 0) + 1
     # The list is what grows here, and the ledger's entry bound cannot reach it: this entry is
     # rewritten, never added. Bounded on its own axis, newest kept, and what was dropped is
     # recorded - the summary tally below is never truncated, so the COUNT of what was
@@ -2159,7 +2185,7 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
         entry["dropped_mutants"] = int(entry.get("dropped_mutants") or 0) + over
     entries.append(entry)
     written = _store_ledger(lpath, state, entries, reset)
-    return {**written, "target": rel, "verdict": verdict,
+    return {**written, "target": rel, "verdict": verdict, "replaced": replaced,
             "registered": entry["summary"]["applied"],
             "retained": len(entry["mutants"]),
             # How many earlier registrations this call discarded because the target's bytes
@@ -3012,6 +3038,11 @@ def cmd_register(args: argparse.Namespace) -> int:
         print(f"mutation: recorded an EQUIVALENT mutant on {res['target']} - EXCLUDED from "
               f"this run's yield and from its outstanding survivors, because "
               f"{args.reason}. Self-reported: nothing here re-ran anything")
+        return 0
+    if res.get("replaced"):
+        print(f"mutation: replaced the identical live row for {args.unit} {(args.criterion or '').upper()} "
+              f"r{int(args.row or 0)} on {res['target']} ({res['verdict']}) - one live row per key; "
+              f"{res['registered']} registered mutant(s) on this content, unchanged")
         return 0
     print(f"mutation: registered a SELF-REPORTED mutant on {res['target']} "
           f"({res['verdict']}) - {res['registered']} registered mutant(s) on this content. "

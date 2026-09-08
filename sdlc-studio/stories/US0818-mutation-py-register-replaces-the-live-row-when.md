@@ -1,6 +1,6 @@
 # US0818: mutation.py register replaces the live row when unit, criterion, row, target, hash, verdict and test all match, refuses a disagreeing verdict or test naming retract, and says so
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0568
 > **Created:** 2026-09-07
 > **Created-by:** sdlc-studio new
@@ -20,10 +20,13 @@
 
 - [ ] **AC1** Given a live ledger row on (unit, criterion, row, target, hash) with a verdict and a test, when a registration with the SAME key, verdict and test is made again, then the ledger holds ONE live row for the key and the command prints `replaced` naming the key - the idempotent re-run of a registration runner, CR0568's case; a registration for a different row of the same criterion still appends, and a registration on the same row against a DIFFERENT TARGET PATH appends and is then named by BG0614's audit - the paired controls (a different hash of the same target is not a control: `register_mutant` drops the unit's own rows on the old hash before it appends, so that case leaves one row by construction).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterReplacesTests::test_a_same_key_registration_replaces_the_live_row_and_a_new_row_appends
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC2** Given a live row whose verdict or test DIFFERS from the new registration's on the same key, when it is registered, then the registration is REFUSED with exit code 2 naming `mutation.py retract --reason` as the route and the live row is untouched - worst-verdict-wins stands, because a genuine correction and an author registering out of a survivor are byte-identical, the rule `register_mutant`'s own comment and BG0614 both record as implemented and reverted; AC1's same-key replace is this refusal's positive control.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterReplacesTests::test_a_disagreeing_verdict_or_test_is_refused_naming_retract
+  - **Verified:** yes (2026-09-08)
 - [ ] **AC3** Given the shipped `mutation.py register` run twice as a SUBPROCESS with the same key, verdict and test, when the second run exits, then its stdout carries the `replaced` line naming the key and `plan_execution` reads one executed row for the key - the wiring a library test cannot see.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterReplacesTests::test_the_cli_path_replaces_and_reports_through_the_shipped_command
+  - **Verified:** yes (2026-09-08)
 
 ## Test Plan
 
@@ -45,3 +48,4 @@
 | 2026-09-07 | Claude Fable 5.1 | Goal review round 3 (all seats yes): Test Plan rows name the file, titles re-synced |
 | 2026-09-07 | Claude Fable 5.1 | Test Plan rows rewritten as edits led by a verb and the Mutant sentences moved out of the criteria, so `testplan derive` reads the plan as its own shape |
 | 2026-09-07 | Claude Fable 5.1 | Plan review round 1: engineering REJECT answered - AC1's third control is a different target path, AC2 names its exit code and its control, AC3's mutants are edits that exist after the fix |
+| 2026-09-08 | Claude Fable 5.1 | Delivery: built in a worktree on top of BG0614, ported by patch. `register_mutant` replaces the identical live row and refuses a disagreeing one with `ValueError` (exit 2 at the CLI) naming `retract`; the six suite fixtures that built a contradiction through the shipped writer now append the second row directly in the shape older ledgers hold, since that shape can no longer be produced, and two fixtures that registered two DIFFERENT mutants on one criterion give the second its own row. Four mutants, four killed. D0183's figure by `coverage run` with `patch = subprocess`: 18 added statements, 18 executed by the unit's own tests |

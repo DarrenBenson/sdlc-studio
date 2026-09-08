@@ -82,6 +82,33 @@ def _fixture(d: Path) -> Path:
     return d
 
 
+def _register_or_legacy_append(mut, root, target, mutant, test, verdict, **kw):
+    """Register a row; when `register` REFUSES it as a disagreeing same-key registration
+    (US0818), append it to the ledger directly in the shape older ledgers hold. The tests below
+    exercise readers of a contradiction - the self-contradiction check, `retract`'s join, the
+    cross-provenance rule - and that shape can no longer be PRODUCED through the shipped writer,
+    which is the point of US0818; it can still be READ, which is what these pin."""
+    import datetime as _dt  # noqa: PLC0415
+    try:
+        return mut.register_mutant(root, target, mutant, test, verdict, **kw)
+    except ValueError as exc:
+        if not str(exc).startswith("refused:"):
+            raise
+    path = mut.ledger_path(root)
+    led = json.loads(path.read_text(encoding="utf-8"))
+    rel = str(Path(target).relative_to(root)) if str(target).startswith(str(root)) else str(target)
+    entry = next(e for e in led["entries"] if e.get("target") == rel)
+    row = {"mutant": mutant, "test": test, "verdict": verdict, "reason": kw.get("reason"),
+           "run": kw.get("run"), "line": kw.get("line"),
+           "unit": kw.get("unit"), "criterion": (kw.get("criterion") or "").upper() or None,
+           "row": int(kw.get("row") or 0), "at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+           "fault_class": kw.get("fault_class"), "provenance": entry.get("provenance")}
+    entry["mutants"].append(row); entry["summary"]["applied"] += 1
+    entry["summary"][verdict] = entry["summary"].get(verdict, 0) + 1
+    path.write_text(json.dumps(led, indent=1) + "\n", encoding="utf-8")
+    return {"target": rel, "verdict": verdict, "legacy_append": True}
+
+
 class EngineTests(unittest.TestCase):
     def test_enumeration_is_deterministic(self) -> None:
         mut = _load()
@@ -3451,8 +3478,8 @@ class FromPlanTests(unittest.TestCase):
         return m
 
     def _register(self, m, root, criterion, verdict):
-        m.register_mutant(root, "src/thing.py", f"mutant for {criterion}", "pytest x",
-                          verdict, line=2, unit="BG0001", criterion=criterion)
+        _register_or_legacy_append(m, root, "src/thing.py", f"mutant for {criterion}", "pytest x",
+                                   verdict, line=2, unit="BG0001", criterion=criterion)
 
     def test_an_unexecuted_planned_mutant_is_not_a_pass(self) -> None:
         """Mutant: treat `not-run` as killed, or omit unexecuted rows from `outstanding` - a plan
@@ -4467,9 +4494,9 @@ class CrossProvenanceContradictionTests(unittest.TestCase):
             unit="BG9002")
 
     def _register(self, verdict: str, fault_class: str | None) -> None:
-        self.mut.register_mutant(self.d, "src/thing.py", "inverted the a == b guard",
-                                 "pytest t.py", verdict, unit="BG9002", criterion="AC1",
-                                 line=2, fault_class=fault_class)
+        _register_or_legacy_append(self.mut, self.d, "src/thing.py", "inverted the a == b guard",
+                                   "pytest t.py", verdict, unit="BG9002", criterion="AC1",
+                                   line=2, fault_class=fault_class)
 
     def _blocks(self) -> list[str]:
         return [u for u in self.tr.requirements(str(self.d), "BG9002", "Fixed")
@@ -4537,9 +4564,11 @@ class CrossProvenanceContradictionTests(unittest.TestCase):
         self.mut.register_mutant(self.d, "src/thing.py", "inverted the a == b guard",
                                  "pytest t.py", "killed", unit="BG9002", criterion="AC1",
                                  line=2, fault_class="invert-guard")
+        # a second, DIFFERENT mutant on the criterion is its own plan row (US0818 refuses a
+        # disagreeing registration on the SAME row)
         self.mut.register_mutant(self.d, "src/thing.py", "inverted a different guard entirely",
                                  "pytest t.py", "survived", unit="BG9002", criterion="AC1",
-                                 line=2, fault_class="invert-guard")
+                                 line=2, fault_class="invert-guard", row=1)
         self._measure()
         _hard, soft = self.tr._ledger_contradiction(str(self.d), "BG9002")
         self.assertTrue(soft, "a same-provenance row hid the cross-provenance disagreement")
@@ -4578,9 +4607,11 @@ class CrossProvenanceContradictionTests(unittest.TestCase):
         self.mut.register_mutant(self.d, "src/thing.py", "inverted the a == b guard",
                                  "pytest t.py", "killed", unit="BG9002", criterion="AC1",
                                  line=2, fault_class="invert-guard")
+        # a second, DIFFERENT mutant on the criterion is its own plan row (US0818 refuses a
+        # disagreeing registration on the SAME row)
         self.mut.register_mutant(self.d, "src/thing.py", "inverted a different guard entirely",
                                  "pytest t.py", "survived", unit="BG9002", criterion="AC1",
-                                 line=2, fault_class="invert-guard")
+                                 line=2, fault_class="invert-guard", row=1)
         _hard, soft = self.tr._ledger_contradiction(str(self.d), "BG9002")
         self.assertIsNone(soft, "two registered mutants of one class were read as the two "
                                 "instruments disagreeing")
@@ -4617,8 +4648,8 @@ class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):
             encoding="utf-8")
 
     def _register(self, verdict: str) -> None:
-        self.mut.register_mutant(self.d, "f.py", "inverted the a == b guard", "pytest t.py",
-                                 verdict, unit="BG9001", criterion="AC1", line=2)
+        _register_or_legacy_append(self.mut, self.d, "f.py", "inverted the a == b guard", "pytest t.py",
+                                   verdict, unit="BG9001", criterion="AC1", line=2)
 
     def _retract(self, **over):
         kw = dict(target="f.py", unit="BG9001", criterion="AC1", line=2,
@@ -5332,6 +5363,87 @@ class AuditRemedyTests(unittest.TestCase):
             self.assertIn('line=3  mutant=""', out, "a row registered without a description prints the empty join value")
             self.assertIn("Rows identical on those fields: `retract` withdraws them together", err)
 
+
+
+class RegisterReplacesTests(unittest.TestCase):
+    """US0818 (CR0568): `register` replaces the IDENTICAL live row on (unit, criterion, row,
+    target, hash) instead of appending a duplicate, and REFUSES a same-key registration whose
+    verdict or test differs, naming `retract` - worst-verdict-wins stands."""
+
+    def _root(self, tmp: Path) -> Path:
+        root = tmp / "r"; (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "t.py").write_text("VALUE = 1\n", encoding="utf-8")
+        (root / "u.py").write_text("VALUE = 2\n", encoding="utf-8")
+        return root
+
+    def _rows(self, root: Path, unit: str = "BG9201") -> list:
+        led = json.loads((root / "sdlc-studio" / ".local" / "mutation-runs.json").read_text(encoding="utf-8"))
+        return [(e["target"], m["criterion"], m.get("row"), m["verdict"], m["test"]) for e in led["entries"]
+                for m in e["mutants"] if m.get("unit") == unit and not m.get("withdrawn")]
+
+    def _reg(self, mut, root, **kw):
+        base = dict(unit="BG9201", criterion="AC1", row=0, line=1, mutant="flip VALUE", test="pytest x.py::T::test_a", verdict="killed")
+        base.update(kw)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            res = mut.register_mutant(root, root / base.pop("target", "t.py"), base.pop("mutant"), base.pop("test"), base.pop("verdict"), **base)
+        return res
+
+    # -- AC1 -------------------------------------------------------------------------
+    def test_a_same_key_registration_replaces_the_live_row_and_a_new_row_appends(self) -> None:
+        """MUTANT: remove the same-key lookup in `register_mutant` so every registration appends."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(Path(d))
+            first = self._reg(mut, root); self.assertFalse(first["replaced"])
+            again = self._reg(mut, root); self.assertTrue(again["replaced"], "the identical registration must REPLACE")
+            self.assertEqual(self._rows(root), [("t.py", "AC1", 0, "killed", "pytest x.py::T::test_a")], "one live row per key")
+            self.assertEqual(again["registered"], 1, "the applied count must not inflate on a replace")
+            # Control one: a different ROW of the same criterion appends.
+            self._reg(mut, root, row=1, mutant="flip VALUE twice")
+            self.assertEqual(len(self._rows(root)), 2)
+            # Control two: the same row against a DIFFERENT TARGET PATH appends, and BG0614's
+            # audit names the pair (a different hash of the same target is not a control: the
+            # unit's own rows on the old hash are dropped before the append).
+            self._reg(mut, root, target="u.py")
+            self.assertEqual(len(self._rows(root)), 3)
+            self.assertEqual([k["unit"] for k in mut.audit_duplicates(root)["keys"]], ["BG9201"])
+
+    # -- AC2 -------------------------------------------------------------------------
+    def test_a_disagreeing_verdict_or_test_is_refused_naming_retract(self) -> None:
+        """MUTANT: in `register_mutant`, delete the `raise` for a verdict or test mismatch and
+        fall through to the replace."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(Path(d))
+            self._reg(mut, root, verdict="survived")
+            with self.assertRaises(ValueError) as cm:
+                self._reg(mut, root, verdict="killed")
+            self.assertIn("mutation.py retract --reason", str(cm.exception))
+            self.assertIn("survived", str(cm.exception))
+            with self.assertRaises(ValueError):
+                self._reg(mut, root, verdict="survived", test="pytest x.py::T::test_b")
+            self.assertEqual(self._rows(root), [("t.py", "AC1", 0, "survived", "pytest x.py::T::test_a")], "the live row is untouched by a refused registration")
+            # The positive control: AC1's identical replace still passes on this same row.
+            self.assertTrue(self._reg(mut, root, verdict="survived")["replaced"])
+
+    # -- AC3 -------------------------------------------------------------------------
+    def test_the_cli_path_replaces_and_reports_through_the_shipped_command(self) -> None:
+        """MUTANTS: delete the `replaced` line from `cmd_register`'s stdout; make `cmd_register`
+        append the record a second time after `register_mutant` returns."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(Path(d))
+            argv = [sys.executable, str(SCRIPT), "register", "--root", str(root), "--unit", "BG9201", "--criterion", "AC1", "--row", "0",
+                    "--target", "t.py", "--line", "1", "--mutant", "flip VALUE", "--test", "pytest x.py::T::test_a", "--verdict", "killed"]
+            first = subprocess.run(argv, capture_output=True, text=True, timeout=120); self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+            second = subprocess.run(argv, capture_output=True, text=True, timeout=120); self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+            self.assertIn("replaced the identical live row for BG9201 AC1 r0", second.stdout)
+            self.assertEqual(len(self._rows(root)), 1)
+            # ...and the refusal reaches the shell with exit 2, naming retract.
+            third = subprocess.run(argv[:-1] + ["survived"], capture_output=True, text=True, timeout=120)
+            self.assertEqual(third.returncode, 2, third.stdout + third.stderr)
+            self.assertIn("retract --reason", third.stderr)
 
 if __name__ == "__main__":
     unittest.main()
