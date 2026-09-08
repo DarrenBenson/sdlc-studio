@@ -683,12 +683,20 @@ def unit_run_base_ref(repo_root: Path | str, unit: str) -> str:
     reader that took only an open run's ref would refuse every story at its own close. A run
     whose batch does not name the unit is never read - its ref is about other work.
     """
-    state = read(repo_root) or {}
+    try:
+        state = read(repo_root) or {}
+    except RunStateError:
+        return ""     # unreadable is reported by the run's own readers; here it is "no run names it"
     want = sdlc_md.norm_id(unit)
     batch = [sdlc_md.norm_id(str(u)) for u in (state.get("batch") or [])]
     if want not in batch:
         return ""
     return str(state.get(BASE_REF) or "")
+
+
+def has_state(repo_root: Path | str) -> bool:
+    """Whether a run-state file exists at all - a project that never opened a run has none."""
+    return path(repo_root).exists()
 
 
 def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | None = None,

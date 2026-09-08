@@ -2364,6 +2364,129 @@ def print_coverage(rep: dict) -> None:
           f"coverage {rep['coverage_version']} on {rep['interpreter']})")
 
 
+
+# --- Coverage rulings: a line ruled equivalent, INSIDE the artefact ------------------------
+#
+# A ruling lives in a `## Coverage Rulings` table in the unit's own file - tracked, never in
+# `.local/` - keyed on file, line and the file's content hash, the rule the mutation ledger
+# applies to its rows: a ruling about bytes the file no longer has counts for nothing.
+
+COVERAGE_RULINGS_HEADING = "## Coverage Rulings"
+_RULINGS_HEADER = ("| File | Line | Hash | Reason | Author | Date |\n"
+                   "| --- | --- | --- | --- | --- | --- |\n")
+_RULING_ROW_RE = re.compile(r"^\|\s*(?P<file>[^|]+?)\s*\|\s*(?P<line>\d+)\s*\|\s*(?P<hash>[0-9a-f]{12,64})\s*\|"
+                            r"\s*(?P<reason>[^|]*?)\s*\|\s*(?P<author>[^|]*?)\s*\|\s*(?P<date>[^|]*?)\s*\|\s*$")
+
+
+def coverage_rulings(text: str) -> list:
+    """Every ruling row the artefact carries: `[{file, line, hash, reason, author, date}]`."""
+    m = re.search(r"(?ms)^## Coverage Rulings\s*\n(.*?)(?=^## |\Z)", text)
+    if not m:
+        return []
+    out = []
+    for line in m.group(1).splitlines():
+        r = _RULING_ROW_RE.match(line.strip())
+        if r and r.group("file").lower() != "file" and not r.group("file").startswith("-"):
+            out.append({"file": r.group("file"), "line": int(r.group("line")), "hash": r.group("hash"),
+                        "reason": r.group("reason"), "author": r.group("author"), "date": r.group("date")})
+    return out
+
+
+def _file_hash(root: Path, rel: str) -> str:
+    p = Path(root) / rel
+    return hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else ""
+
+
+def live_rulings(root, text: str) -> tuple:
+    """`(live, stale)`: a ruling is live while the file still has the bytes it was made on."""
+    live, stale = [], []
+    for r in coverage_rulings(text):
+        (live if _file_hash(root, r["file"]).startswith(r["hash"]) else stale).append(r)
+    return live, stale
+
+
+def add_coverage_ruling(root, unit_path: Path, rel: str, line: int, reason: str,
+                        author: str = "sdlc-studio") -> dict:
+    """Write one ruling into the artefact, refusing a reason below the floor `retract` holds."""
+    import mutation as _mut  # noqa: PLC0415 - the floor is its constant, shared on purpose
+    floor = getattr(_mut, "_RETRACT_REASON_MIN", 20)
+    if len((reason or "").strip()) < floor:
+        raise ValueError(f"coverage rule refused: a reason of {len((reason or '').strip())} "
+                         f"character(s) is below the floor of {floor} that `mutation.py retract` "
+                         f"holds a withdrawal to - a ruling is not a free bypass of the gate")
+    root = Path(root)
+    digest = _file_hash(root, rel)
+    if not digest:
+        raise ValueError(f"coverage rule refused: {rel} is not a readable file under the root")
+    text = sdlc_md.read_text_safe(unit_path)
+    row = f"| {rel} | {int(line)} | {digest[:16]} | {reason.strip()} | {author} | {sdlc_md.now_iso8601()[:10]} |\n"
+    if COVERAGE_RULINGS_HEADING in text:
+        m = re.search(r"(?ms)^## Coverage Rulings\s*\n.*?(?=^## |\Z)", text)
+        block = text[m.start():m.end()].rstrip("\n") + "\n" + row + "\n"
+        text = text[:m.start()] + block + text[m.end():]
+    else:
+        # before the Revision History when there is one, so the table sits with the evidence
+        m = re.search(r"(?m)^## Revision History", text)
+        insert = f"{COVERAGE_RULINGS_HEADING}\n\n{_RULINGS_HEADER}{row}\n"
+        text = (text[:m.start()] + insert + text[m.start():]) if m else (text.rstrip("\n") + "\n\n" + insert)
+    sdlc_md.atomic_write(unit_path, text)
+    return {"file": rel, "line": int(line), "hash": digest[:16]}
+
+
+def apply_rulings(root, text: str, rep: dict) -> dict:
+    """Subtract the live rulings from a coverage report's uncovered lines; name the stale."""
+    live, stale = live_rulings(root, text)
+    ruled = {(r["file"], r["line"]) for r in live}
+    total = 0
+    for rel, entry in rep.get("files", {}).items():
+        if entry.get("status") != "measured":
+            continue
+        entry["ruled"] = [ln for ln in entry.get("uncovered", []) if (rel, ln) in ruled]
+        entry["uncovered"] = [ln for ln in entry.get("uncovered", []) if (rel, ln) not in ruled]
+        total += len(entry["uncovered"])
+    rep["uncovered_total"] = total
+    rep["ok"] = total == 0
+    rep["rulings"] = {"live": len(live), "stale": [f"{r['file']}:{r['line']}" for r in stale]}
+    return rep
+
+
+def cmd_coverage(args: argparse.Namespace) -> int:
+    root = resolve_root(args)
+    fields = {"file": args.file, "line": args.line, "reason": args.reason,
+              "author": getattr(args, "author", None)}
+    if getattr(args, "fields_file", None):
+        # THE RECOMMENDED PATH for the reason: prose read off disk (or stdin with `-`) never
+        # crosses a shell, so a backtick or a `$(` in it is stored, not executed. A flag given
+        # beside the document overrides it, as the sibling writers do.
+        import file_finding as _ff  # noqa: PLC0415 - the one shared loader
+        try:
+            doc = _ff.load_fields_file(args.fields_file, allowed=("file", "line", "reason", "author"))
+        except ValueError as exc:
+            print(f"coverage rule refused: {exc}", file=sys.stderr)
+            return 2
+        for key, val in doc.items():
+            if fields.get(key) is None:
+                fields[key] = val
+    missing = [k for k in ("file", "line", "reason") if fields.get(k) in (None, "")]
+    if missing:
+        print(f"coverage rule refused: missing {', '.join(missing)} - give each as a flag or in "
+              f"the --fields-file document", file=sys.stderr)
+        return 2
+    found = sdlc_md.find_by_id(root, args.id)
+    if not found:
+        print(f"coverage rule refused: no artefact with id {args.id}", file=sys.stderr)
+        return 2
+    try:
+        res = add_coverage_ruling(root, found[0], str(fields["file"]), int(fields["line"]),
+                                  str(fields["reason"]), author=fields.get("author") or "sdlc-studio")
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"coverage rule: {sdlc_md.norm_id(args.id)} {res['file']}:{res['line']} ruled equivalent "
+          f"on hash {res['hash']} - counted in the depth field, void when the file's bytes change")
+    return 0
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     """Run verifiers across stories, update files, and write the report."""
     repo_root = resolve_root(args)
@@ -4654,6 +4777,7 @@ def depth_facts(root, unit: str) -> dict:
         "ledger_absent": not _unit_ledger_rows(root, uid),
         "ledger_rows": _unit_ledger_rows(root, uid),
         "entry_point": _entry_point_split(root, text),
+        "lines_ruled": len(live_rulings(root, text)[0]),
         "errors": join.get("errors", []) or [],
     }
     facts["executed"] = facts["killed"] + facts["survived"] + facts["equivalent"]
@@ -4682,6 +4806,8 @@ def render_depth(facts: dict) -> str:
                   f"survived {facts['survived']}"]
         if facts["equivalent"]:
             parts.append(f"ruled equivalent {facts['equivalent']}")
+    if facts.get("lines_ruled"):
+        parts.append(f"lines ruled {facts['lines_ruled']}")
     # NAMED WHATEVER THE LEDGER HOLDS. This sat inside the `else` above, so a unit whose every
     # declared row was unrun - the single case where a reader most needs the row ids - was the
     # single case that printed EVIDENCE ABSENT and named none of them.
@@ -4867,6 +4993,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     r.set_defaults(func=cmd_run)
 
+    cv = sub.add_parser("coverage", help="Coverage rulings: `rule` marks one uncovered added "
+                                         "line equivalent, inside the artefact")
+    cv.add_argument("action", choices=["rule"])
+    cv.add_argument("--id", required=True, help="the unit whose line is ruled")
+    cv.add_argument("--fields-file", dest="fields_file", metavar="RULING.json",
+                    help="THE RECOMMENDED PATH: a JSON object with file, line, reason and author, "
+                         "read off disk (or stdin with `-`) so the reason never crosses a shell")
+    cv.add_argument("--file", help="the Affects file, repo-relative")
+    cv.add_argument("--line", type=int, help="the line number at its current bytes")
+    cv.add_argument("--reason", help="why no test can execute it (floor: the same length "
+                                     "`mutation.py retract` demands)")
+    cv.add_argument("--author", default=None)
+    cv.add_argument("--root", default=".")
+    cv.set_defaults(func=cmd_coverage)
     st = sub.add_parser("stamps", help="Flag stamped-green ACs whose verifier selects nothing")
     st.add_argument("--root", default=".", help="Repo root --dir is resolved under")
     st.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")

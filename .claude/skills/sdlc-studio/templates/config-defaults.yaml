@@ -57,6 +57,17 @@ review:
   # files the findings and ships, as reference-review.md already allows for a missing leg.
   # Unrecognised values are refused, never defaulted.
   policy: block
+  # What an ADDED LINE the unit's own verifiers never executed does to a terminal transition
+  # (`verify_ac run --coverage`, measured at the transition itself, never read from a prior report):
+  #   report  (default)  print `coverage: N uncovered added line(s)` and proceed
+  #   block              refuse, naming the file, the line and `verify_ac.py coverage rule`
+  #   off                collect nothing, print nothing
+  # `coverage` (7.10 or later) is an OPTIONAL dependency: absent, `block` refuses naming it and
+  # `report` says so and proceeds. Adopt `block` with a dated cutoff - units created before
+  # `line_coverage_after` are exempt, a unit with no parseable Created date is judged:
+  #   line_coverage: block
+  #   line_coverage_after: "2026-01-01"
+  line_coverage: report
   # What a repair's MISSING, STALE or SURVIVING mutation evidence does to a terminal transition:
   #   report  (default)  file a severity-rated bug and let the transition proceed - the team
   #                      decides next sprint whether to fix it or live with it

@@ -848,8 +848,149 @@ class GateRefusal(ValueError):
         self.blocks = list(blocks)
 
 
+
+# --- The line-coverage gate (US0816) ---------------------------------------------------------
+#
+# Every surviving mutant the seats found in RUN-01M1WPNV sat on a branch the unit's own
+# selectors never executed. `verify_ac run --coverage` measures that; this gate reads the
+# measurement at the terminal transition, COLLECTING it there rather than trusting a report
+# written before the last edit.
+
+LINE_COVERAGE_MODES = ("report", "block", "off")
+LINE_COVERAGE_DEFAULT = "report"     # the fallback LITERAL: `project_override` merges no defaults
+LINE_COVERAGE_ABSENT_REPORT = ("coverage: not measured - the coverage module is absent "
+                               "(pip install coverage, or review.line_coverage: off)")
+
+
+def line_coverage_mode(root) -> str:
+    """The project's `review.line_coverage`: `report` (the shipped default), `block` or `off`.
+
+    An unrecognised value is REFUSED by name, never read as `off`: a typo that switched a
+    project's bar off silently is the one outcome nobody asked for. YAML 1.1 parses a bare
+    `off` as False, so False is `off` - the only thing it can honestly mean.
+    """
+    raw = sdlc_md.project_override(root, "review.line_coverage", None)
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        return LINE_COVERAGE_DEFAULT
+    if raw is False:
+        return "off"
+    value = str(raw).strip().lower()
+    if value not in LINE_COVERAGE_MODES:
+        raise ValueError(f"review.line_coverage is `{raw}`, which is not one of "
+                         f"{', '.join(LINE_COVERAGE_MODES)} - refused rather than read as off")
+    return value
+
+
+def line_coverage_cutoff(root) -> str:
+    """`review.line_coverage_after` as an ISO date string, or "" - compared as strings, never
+    through `parse_cutoff`, which parses numeric ids and raises on a date."""
+    raw = sdlc_md.project_override(root, "review.line_coverage_after", None)
+    return str(raw).strip()[:10] if raw not in (None, "", False) else ""
+
+
+def _created_date(text: str) -> str:
+    return (sdlc_md.extract_field(text, "Created") or "").strip()[:10]
+
+
+def line_coverage_lane(root, unit: str, text: str, type_: str, path, *,
+                       base_ref: str | None = None, report_path: str | None = None) -> dict:
+    """`{"blocks": [...], "warning": str | None, "mode": str}` for one terminal transition.
+
+    Under `block`, an uncovered added line, a `not measured` Python file, a stale ruling, a
+    missing base ref or an absent coverage module each refuse by name. Under `report` the same
+    facts are printed and the transition proceeds. Under `off` nothing is collected.
+    """
+    out: dict = {"blocks": [], "warning": None, "mode": None}
+    mode = line_coverage_mode(root)
+    out["mode"] = mode
+    if mode == "off":
+        return out
+    try:
+        import verify_ac as _va  # noqa: PLC0415 - sibling; verify_ac imports transition back
+    except ImportError as exc:
+        # FAILS LOUD, as the manual-evidence gate beside it does: a gate whose instrument
+        # cannot be imported has measured nothing, and under `block` that is a refusal
+        msg = f"coverage: not measured - verify_ac could not be imported ({exc})"
+        if mode == "block":
+            out["blocks"].append(f"{sdlc_md.norm_id(unit)}: {msg}")
+        else:
+            out["warning"] = msg
+        return out
+    from lib import run_state as _rs  # noqa: PLC0415
+    if not base_ref and not _rs.has_state(root) and mode == "report":
+        # A project that never opened a run is not in a delivery: `report` stays silent rather
+        # than printing "no base ref" on every terminal transition of every upgrading project.
+        # `block` still refuses below, naming `--base` - a project that chose the bar is in one.
+        return out
+    cutoff = line_coverage_cutoff(root)
+    created = _created_date(text)
+    if cutoff and created and len(created) == 10 and created < cutoff:
+        return out            # created before the cutoff: exempt. No Created date: judged.
+    uid = sdlc_md.norm_id(unit)
+    rep = None
+    notes: list = []     # every report-mode observation, joined at the end - never overwritten
+    if report_path:
+        # a reused report is accepted only when its recorded Affects hash matches the bytes now
+        data = sdlc_md.read_json(Path(root) / report_path, None) or {}
+        cov = (data.get("coverage") or {}).get(Path(path).stem) if isinstance(data, dict) else None
+        affects = [r.strip().strip("`") for r in sdlc_md.affects_files(text)]
+        if not cov or cov.get("affects_hash") != _va._affects_hash(Path(root), affects):
+            msg = (f"{uid}: the coverage report at {report_path} is STALE - its Affects hash does "
+                   f"not match the files' bytes now; re-run `verify_ac.py run --id {uid} --coverage`")
+            if mode == "block":
+                out["blocks"].append(msg)
+                return out
+            notes.append(msg)
+        else:
+            rep = cov
+    if rep is None:
+        try:
+            rep = _va.coverage_report(root, Path(path), uid, base_ref=base_ref)
+        except _va.CoverageUnavailable as exc:
+            msg = str(exc)
+            if mode == "block":
+                out["blocks"].append(f"{uid}: {msg}")
+            elif _va.COVERAGE_ABSENT in msg:
+                notes.append(LINE_COVERAGE_ABSENT_REPORT)
+            else:
+                notes.append(msg.split(": no run", 1)[0] if _va.COVERAGE_NO_BASE in msg else msg)
+            out["warning"] = " | ".join(notes)
+            return out
+    rep = _va.apply_rulings(root, text, rep)
+    uncovered_lines = []
+    not_measured = []
+    for rel, entry in rep["files"].items():
+        if entry.get("status") == "measured" and entry.get("uncovered"):
+            uncovered_lines.append(f"{rel}: {', '.join(map(str, entry['uncovered']))}")
+        elif str(entry.get("status", "")).startswith("not measured"):
+            not_measured.append(f"{rel}: not measured - no traced verifier")
+    stale = rep.get("rulings", {}).get("stale") or []
+    problems = []
+    if rep["uncovered_total"]:
+        problems.append(f"{rep['uncovered_total']} uncovered added line(s) its own verifiers never "
+                        f"executed - " + "; ".join(uncovered_lines)
+                        + f". Rule a line equivalent with `verify_ac.py coverage rule --id {uid} "
+                        f"--file <path> --line <n> --reason <why>`, or reach it with a test")
+    if not_measured:
+        problems.append("Python file(s) with added lines and no traced verifier, which is not "
+                        "covered: " + "; ".join(not_measured))
+    if stale:
+        problems.append("stale coverage ruling(s) on bytes the file no longer has: "
+                        + ", ".join(stale) + " - rule again on the current bytes")
+    if problems:
+        if mode == "block":
+            out["blocks"].append(f"{uid}: " + " | ".join(problems))
+        else:
+            notes.append(f"coverage: {rep['uncovered_total']} uncovered added line(s) - "
+                         + " | ".join(problems))
+    if notes:
+        out["warning"] = " | ".join(notes)
+    return out
+
+
 def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
-                     target_canon, from_canon, force, dry_run, triaged_by) -> str | None:
+                     target_canon, from_canon, force, dry_run, triaged_by,
+                     coverage_opts: dict | None = None) -> str | None:
     """Run the ordered pre-write gates (bug-depth, depth-parity, done-verify, triage,
     plan-review). Raise ValueError on a hard block; else return the accumulated advisory
     warning (or None). Behaviour-preserving extraction of the interleaved gate ladder."""
@@ -965,6 +1106,21 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             blocks.append(f"{block}. Override with --force")
         if lane["warning"]:
             gate_warn = f"{gate_warn}; {lane['warning']}" if gate_warn else lane["warning"]
+    # THE LINE-COVERAGE GATE (US0816), beside the mutation lane and on the same terms: it asks a
+    # third question - "did the unit's own verifiers execute the lines the unit added" - and is
+    # governed by its own setting, so it is neither nested in the plan gate nor in the lane above.
+    if (not force and sdlc_md.executes_verifiers(type_)
+            and sdlc_md.is_delivered_terminal(type_, target_canon or "")):
+        try:
+            cov = line_coverage_lane(root, sdlc_md.norm_id(artifact_id), text, type_, path,
+                                     base_ref=(coverage_opts or {}).get("base"),
+                                     report_path=(coverage_opts or {}).get("report"))
+        except ValueError as exc:
+            cov = {"blocks": [str(exc)], "warning": None}
+        for block in cov["blocks"]:
+            blocks.append(f"{block}. Override with --force")
+        if cov["warning"]:
+            gate_warn = f"{gate_warn}; {cov['warning']}" if gate_warn else cov["warning"]
     if type_ == "story" and target_canon == "Done":
         parity = _story_target_parity(text)
         if parity:
@@ -1238,7 +1394,8 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                dry_run: bool = False, force: bool = False,
                metrics: dict | None = None, triaged_by: str | None = None,
                triage_severity: str | None = None,
-               pending_fields: dict | None = None) -> dict:
+               pending_fields: dict | None = None,
+               coverage_opts: dict | None = None) -> dict:
     """Set `artifact_id`'s status to `new_status`, sync its index, and cascade the epic
     breakdown for a story. Returns {id, type, from, to, index_synced, epic}.
 
@@ -1276,7 +1433,8 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     from_canon = sdlc_md.canonical_status(current, vocab)
 
     gate_warn = _pre_write_gates(root, artifact_id, new_status, type_, path, text,
-                                 target_canon, from_canon, force, dry_run, triaged_by)
+                                 target_canon, from_canon, force, dry_run, triaged_by,
+                                 coverage_opts=coverage_opts)
     triage_fields, gate_warn = _triage_fields(root, type_, text, from_canon, triaged_by,
                                               triage_severity, gate_warn, dry_run)
 
@@ -1786,7 +1944,9 @@ def cmd_set(args: argparse.Namespace) -> int:
             res = transition(args.root, aid, args.status, dry_run=args.dry_run,
                              force=args.force, metrics=metrics,
                              triaged_by=args.triaged_by, triage_severity=args.triage_severity,
-                             pending_fields=pending)
+                             pending_fields=pending,
+                             coverage_opts={"base": getattr(args, "base", None),
+                                            "report": getattr(args, "coverage_report", None)})
             results.append(res)
             if args.format != "json":
                 _print_result(res, args.dry_run)
@@ -2621,6 +2781,11 @@ def build_parser() -> argparse.ArgumentParser:
                         "transition, must differ from the raiser (separation of duties)")
     s.add_argument("--triage-severity", dest="triage_severity",
                    help="v3 triage: the triager's severity, recorded alongside the raiser's")
+    s.add_argument("--base", help="line-coverage gate: the base ref when no run's approved batch "
+                                  "names the unit (a closed run's ref is still that unit's)")
+    s.add_argument("--coverage-report", dest="coverage_report",
+                   help="line-coverage gate: reuse this `verify_ac run --coverage --report` file "
+                        "instead of collecting, accepted only while its Affects hash matches")
     s.add_argument("--dry-run", action="store_true")
     s.add_argument("--format", choices=("text", "json"), default="text")
     s.set_defaults(func=cmd_set)

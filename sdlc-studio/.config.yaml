@@ -101,6 +101,12 @@ review:
   # before any code; older units (the stories) do not. `retro.py accuracy` reports both arms, and
   # that number decides whether this process is pointed at the remaining unplanned backlog.
   test_plan_after: "2026-08-01"
+  # D0183/US0816 (2026-09-07): the line-coverage gate is ON here from the day the batch that
+  # built it was planned, so that batch is judged by it rather than exempted - the exemption
+  # D0131's cutoff granted its own builders. The four units Fixed before the gate landed carry
+  # a hand-collected `verify_ac run --coverage` figure in their revision rows instead.
+  line_coverage: block
+  line_coverage_after: "2026-09-07"
   # D0146 (2026-08-21) CUTS this from 6 to 2, superseding D0132's raise, and the reason is a
   # measurement rather than a preference. D0132 raised it to 6 saying "revisit if a run reaches 6";
   # RUN-01M0CT8P reached 5 delivery rounds on 6 units, and the marginal yield of those rounds is

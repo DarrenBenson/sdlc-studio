@@ -5364,5 +5364,275 @@ class MisplacedCriterionGateTests(unittest.TestCase):
             self.assertNotIn("outside", str(ctx2.exception))
 
 
+class CoverageGateTests(unittest.TestCase):
+    """US0816: the Fixed and Done gates refuse a unit whose own verifiers never executed a line
+    it added, under `review.line_coverage: block`; report and off are the other modes; a ruled
+    line is subtracted and counted in the depth field; a ruling on stale bytes counts for
+    nothing; the base ref belongs to the run whose batch names the unit, open or closed."""
+
+    UNIT = "BG0001"
+    PROD = "src/thing.py"
+    TEST = "tests/test_thing.py"
+    BASE_PROD = "def used():\n    return 1\n"
+    BASE_TEST = ("import sys, pathlib\nsys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))\n"
+                 "from src import thing\n\n\nclass TestT:\n    def test_a(self):\n        assert thing.used() == 1\n")
+
+    def _config(self, root: Path, mode, after: str | None = None) -> None:
+        lines = ["review:\n"]
+        if mode is not None:
+            lines.append(f"  line_coverage: {mode}\n")
+        if after:
+            lines.append(f"  line_coverage_after: \"{after}\"\n")
+        (root / "sdlc-studio" / ".config.yaml").write_text("".join(lines), encoding="utf-8")
+
+    def _bug(self, root: Path, created: str | None = "2026-09-08", verifiers=None, affects=None) -> Path:
+        p = root / "sdlc-studio" / "bugs" / f"{self.UNIT}-cov.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        vs = verifiers or [f"pytest {self.TEST}::TestT::test_a"]
+        acs = "".join(f"- [x] **AC{i}** Given it, when it, then it.\n  - **Verify:** {v}\n" for i, v in enumerate(vs, 1))
+        head = f"# {self.UNIT}: coverage gate fixture\n\n> **Status:** Open\n> **Severity:** Medium\n> **Points:** 1\n> **Affects:** {affects or self.PROD}\n"
+        if created:
+            head += f"> **Created:** {created}\n"
+        p.write_text(head + f"> **Verification depth:** functional\n\n## Acceptance Criteria\n\n{acs}\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n| 2026-09-08 | t | Filed |\n", encoding="utf-8")
+        return p
+
+    def _repo(self, d: Path, *, mode="block", uncovered=True, created="2026-09-08", after=None, batch=None) -> Path:
+        root = _refuse_working_tree(d)
+        for rel in ("src", "tests", "sdlc-studio/.local"):
+            (root / rel).mkdir(parents=True, exist_ok=True)
+        (root / "src" / "__init__.py").write_text("", encoding="utf-8")
+        (root / self.PROD).write_text(self.BASE_PROD, encoding="utf-8")
+        (root / self.TEST).write_text(self.BASE_TEST, encoding="utf-8")
+        self._bug(root, created=created)
+        self._config(root, mode, after)
+        _git_repo(root)
+        base = _head(root)
+        (root / self.PROD).write_text(self.BASE_PROD + ("\n\ndef added_dead():\n    return 2\n" if uncovered else "\n\ndef added_used():\n    return 3\n"), encoding="utf-8")
+        if not uncovered:
+            (root / self.TEST).write_text(self.BASE_TEST + "\n    def test_b(self):\n        assert thing.added_used() == 3\n", encoding="utf-8")
+            self._bug(root, created=created, verifiers=[f"pytest {self.TEST}::TestT::test_a", f"pytest {self.TEST}::TestT::test_b"])
+        _git_commit(root, f"fix({self.UNIT}): the change")
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+            {"run_id": "RUN-TEST01", "outcome": "goal-reached", "ended_at": "2026-09-08T00:00:00Z",
+             "batch": batch if batch is not None else [self.UNIT], "base_ref": base}), encoding="utf-8")
+        return root
+
+    def _set(self, root: Path, *extra: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = transition.main(["set", self.UNIT, "Fixed", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _status(self, root: Path) -> str:
+        return (root / "sdlc-studio" / "bugs" / f"{self.UNIT}-cov.md").read_text(encoding="utf-8")
+
+    # -- AC1 -------------------------------------------------------------------------
+    def test_an_uncovered_added_line_refuses_the_terminal_transition_and_a_covered_unit_passes(self) -> None:
+        """MUTANTS: replace the fresh collection with a read of the last report on disk (the
+        seeded `uncovered: 0` report passes the uncovered unit); drop the hash comparison on a
+        reused report (the stale report is accepted)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            # a PRIOR report claiming clean coverage, so a build that reads reports passes wrongly
+            (root / "sdlc-studio" / ".local" / "verify-report.json").write_text(json.dumps(
+                {"stories": {}, "coverage": {f"{self.UNIT}-cov": {"uncovered_total": 0, "affects_hash": "0" * 64, "files": {}}}}), encoding="utf-8")
+            rc, out, err = self._set(root); text = out + err
+            self.assertNotEqual(rc, 0, text)
+            self.assertIn("uncovered added line", text); self.assertIn("src/thing.py: 6", text)
+            self.assertIn("verify_ac.py coverage rule", text)
+            self.assertIn("> **Status:** Open", self._status(root))
+            # a reused report whose Affects hash does not match is refused as STALE
+            rc, out, err = self._set(root, "--coverage-report", "sdlc-studio/.local/verify-report.json")
+            self.assertNotEqual(rc, 0, out + err); self.assertIn("STALE", out + err)
+            # ...and one whose hash matches is REUSED: written by the shipped `run --coverage`
+            cp = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "run", "--id", self.UNIT, "--dir", "sdlc-studio/bugs", "--coverage", "--dry-run", "--report", "sdlc-studio/.local/cov.json", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(cp.returncode, 1, cp.stdout + cp.stderr)
+            rc, out, err = self._set(root, "--coverage-report", "sdlc-studio/.local/cov.dry-run.json")
+            self.assertNotEqual(rc, 0, out + err); self.assertIn("src/thing.py: 6", out + err); self.assertNotIn("STALE", out + err)
+            # under report, a stale report is a warning and the transition proceeds
+            self._config(root, "report")
+            rc, out, err = self._set(root, "--coverage-report", "sdlc-studio/.local/verify-report.json")
+            self.assertEqual(rc, 0, out + err); self.assertIn("STALE", out + err)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), uncovered=False)
+            rc, out, err = self._set(root)
+            self.assertEqual(rc, 0, out + err); self.assertIn("> **Status:** Fixed", self._status(root))
+
+    # -- AC2 -------------------------------------------------------------------------
+    def test_a_ruled_line_passes_and_the_ruling_is_in_the_depth_field(self) -> None:
+        """MUTANTS: remove the read of the Coverage Rulings table at the gate; drop the
+        reason-floor check in `coverage rule`; omit the ruled-line count from the derived half."""
+        import verify_ac  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            short = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--line", "6", "--reason", "too short", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(short.returncode, 2, short.stdout + short.stderr); self.assertIn("floor", short.stderr)
+            self.assertNotIn("## Coverage Rulings", self._status(root))
+            ok = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--line", "6", "--reason", "a dormant arm no fixture can reach without faking the OS", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
+            self.assertIn("## Coverage Rulings", self._status(root))
+            rc, out, err = self._set(root)
+            self.assertEqual(rc, 0, out + err); self.assertIn("> **Status:** Fixed", self._status(root))
+            facts = verify_ac.write_depth(root, self.UNIT)
+            self.assertTrue(facts.get("ok"), facts)
+            self.assertIn("lines ruled 1", self._status(root))
+            # The recommended path: the reason read off disk, so a backtick in it is stored,
+            # not executed - and a second ruling appends to the table the first one made.
+            (root / "ruling.json").write_text(json.dumps({"file": self.PROD, "line": 1, "reason": "a `$(second)` reason long enough to pass the floor"}), encoding="utf-8")
+            ff = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--fields-file", str(root / "ruling.json"), "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(ff.returncode, 0, ff.stdout + ff.stderr)
+            self.assertIn("`$(second)`", self._status(root)); self.assertEqual(self._status(root).count("## Coverage Rulings"), 1)
+            missing = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(missing.returncode, 2); self.assertIn("missing line, reason", missing.stderr)
+            nobody = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", "BG0999", "--file", self.PROD, "--line", "6", "--reason", "a dormant arm no fixture can reach without faking the OS", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(nobody.returncode, 2); self.assertIn("no artefact with id BG0999", nobody.stderr)
+            nofile = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", "src/absent.py", "--line", "6", "--reason", "a dormant arm no fixture can reach without faking the OS", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(nofile.returncode, 2); self.assertIn("not a readable file", nofile.stderr)
+            (root / "bad.json").write_text("{not json", encoding="utf-8")
+            bad = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--fields-file", str(root / "bad.json"), "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(bad.returncode, 2, bad.stdout + bad.stderr); self.assertIn("coverage rule refused", bad.stderr)
+
+    # -- AC3 -------------------------------------------------------------------------
+    def test_a_ruling_on_stale_bytes_does_not_satisfy_the_gate(self) -> None:
+        """MUTANT: drop the content-hash comparison so a ruling matches on path and line alone."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            ok = subprocess.run([sys.executable, str(DIR / "verify_ac.py"), "coverage", "rule", "--id", self.UNIT, "--file", self.PROD, "--line", "6", "--reason", "a dormant arm no fixture can reach without faking the OS", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(ok.returncode, 0, ok.stderr)
+            # the file's bytes change after the ruling
+            (root / self.PROD).write_text((root / self.PROD).read_text(encoding="utf-8") + "\n# drift\n", encoding="utf-8")
+            _git_commit(root, f"fix({self.UNIT}): drift")
+            rc, out, err = self._set(root)
+            self.assertNotEqual(rc, 0, out + err); self.assertIn("stale coverage ruling", out + err)
+            self.assertIn("> **Status:** Open", self._status(root))
+
+    # -- AC4 -------------------------------------------------------------------------
+    def test_the_mode_decides_refusal_report_or_silence(self) -> None:
+        """MUTANTS: change the report branch to refuse like block; change the else branch to
+        treat an unknown value as off; call the collector under off and print nothing."""
+        import verify_ac  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), mode="report")
+            rc, out, err = self._set(root)
+            self.assertEqual(rc, 0, out + err); self.assertIn("coverage: 1 uncovered added line(s)", out + err)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), mode="off")     # the bare YAML word, which parses to False
+            calls = []
+            real = verify_ac.coverage_report
+            with unittest.mock.patch.object(verify_ac, "coverage_report", lambda *a, **k: (calls.append(1), real(*a, **k))[1]):
+                rc, out, err = self._set(root)
+            self.assertEqual(rc, 0, out + err); self.assertEqual(calls, [], "off must call no collector")
+            self.assertNotIn("coverage:", out + err)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), mode="blcok")
+            rc, out, err = self._set(root)
+            self.assertNotEqual(rc, 0, out + err); self.assertIn("not one of report, block, off", out + err)
+
+    # -- AC5 -------------------------------------------------------------------------
+    def test_units_created_before_the_cutoff_are_exempt(self) -> None:
+        """MUTANTS: remove the cutoff comparison; exempt a unit with no Created field; compare
+        with `>` so the on-the-date unit is exempt; compare as a string prefix."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), created="2026-09-01", after="2026-09-07")
+            rc, out, err = self._set(root); self.assertEqual(rc, 0, out + err)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), created="2026-09-07", after="2026-09-07")
+            rc, out, err = self._set(root); self.assertNotEqual(rc, 0, "a unit created ON the date is judged")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), created="2026-09-10", after="2026-09-1")
+            rc, out, err = self._set(root); self.assertNotEqual(rc, 0, "a prefix is not a date comparison")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), created=None, after="2026-09-07")
+            rc, out, err = self._set(root); self.assertNotEqual(rc, 0, "no Created date is judged, never exempted")
+
+    # -- AC6 -------------------------------------------------------------------------
+    def test_a_missing_coverage_module_never_reads_as_covered(self) -> None:
+        """MUTANT: an absent module yields an empty uncovered set."""
+        with tempfile.TemporaryDirectory() as d:
+            hidden = Path(d) / "python-without-coverage"
+            hidden.write_text(f"#!/bin/sh\nexec {sys.executable} -S \"$@\"\n", encoding="utf-8"); hidden.chmod(0o755)
+            root = self._repo(Path(d))
+            with unittest.mock.patch.dict(os.environ, {"SDLC_COVERAGE_PYTHON": str(hidden)}):
+                rc, out, err = self._set(root)
+            self.assertNotEqual(rc, 0, out + err); self.assertIn("the coverage module is absent", out + err)
+            root2 = self._repo(Path(d) / "two", mode="report")
+            with unittest.mock.patch.dict(os.environ, {"SDLC_COVERAGE_PYTHON": str(hidden)}):
+                rc, out, err = self._set(root2)
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("coverage: not measured - the coverage module is absent (pip install coverage, or review.line_coverage: off)", out + err)
+        with tempfile.TemporaryDirectory() as d:
+            # the instrument itself unimportable: block refuses naming it, report warns and proceeds
+            root = self._repo(Path(d))
+            with unittest.mock.patch.dict(sys.modules, {"verify_ac": None}):
+                rc, out, err = self._set(root)
+            self.assertNotEqual(rc, 0, out + err); self.assertIn("verify_ac could not be imported", out + err)
+            root2 = self._repo(Path(d) / "two", mode="report")
+            with unittest.mock.patch.dict(sys.modules, {"verify_ac": None}):
+                rc, out, err = self._set(root2)
+            self.assertEqual(rc, 0, out + err); self.assertIn("verify_ac could not be imported", out + err)
+
+    # -- AC7 -------------------------------------------------------------------------
+    def test_the_shipped_default_is_report(self) -> None:
+        """MUTANTS: flip the fallback literal for the mode to `block`; flip the template's
+        `line_coverage` value to the refusing mode."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), mode=None)     # never set
+            rc, out, err = self._set(root)
+            self.assertEqual(rc, 0, out + err); self.assertIn("coverage: 1 uncovered added line(s)", out + err)
+        template = (DIR.parent / "templates" / "config-defaults.yaml").read_text(encoding="utf-8")
+        self.assertIn("line_coverage: report", template)
+        self.assertIn("OPTIONAL dependency", template); self.assertIn("line_coverage_after", template)
+
+    # -- AC8 -------------------------------------------------------------------------
+    def test_no_base_ref_refuses_under_block_and_is_reported_under_report(self) -> None:
+        """MUTANTS: read the base ref only while the run is open (every story at the close is
+        refused); drop the batch-membership check so a run whose batch does not name the unit is
+        read. Driven through `artifact.close`, the seam `sprint close --apply-signoff` reaches."""
+        import artifact  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), uncovered=False)      # the run is CLOSED (ended_at set)
+            r = artifact.close(root, self.UNIT, "Fixed")
+            self.assertEqual(r["to"], "Fixed", r)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), uncovered=False, batch=["BG0099"])   # a run naming another unit
+            rc, out, err = self._set(root)
+            self.assertNotEqual(rc, 0, out + err); self.assertIn("--base", out + err)
+            rc, out, err = self._set(root, "--base", "HEAD~1")
+            self.assertEqual(rc, 0, out + err)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), mode="report", uncovered=False, batch=["BG0099"])
+            rc, out, err = self._set(root)
+            self.assertEqual(rc, 0, out + err); self.assertIn("coverage: not measured - no base ref", out + err)
+        with tempfile.TemporaryDirectory() as d:
+            # an UNREADABLE run state names no unit: block refuses naming --base rather than
+            # crashing or inventing a ref, and --base still answers
+            root = self._repo(Path(d), uncovered=False)
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text("{ not json", encoding="utf-8")
+            rc, out, err = self._set(root)
+            self.assertNotEqual(rc, 0, out + err); self.assertIn("--base", out + err)
+        with tempfile.TemporaryDirectory() as d:
+            # no run state AT ALL: `report` stays silent - a project that never opened a run is
+            # not in a delivery, and a line printed on its every terminal transition is noise
+            root = self._repo(Path(d), mode="report", uncovered=False)
+            (root / "sdlc-studio" / ".local" / "run-state.json").unlink()
+            rc, out, err = self._set(root)
+            self.assertEqual(rc, 0, out + err); self.assertNotIn("coverage:", out + err)
+
+    # -- AC9 -------------------------------------------------------------------------
+    def test_a_not_measured_python_file_is_refused_under_block(self) -> None:
+        """MUTANT: change the not-measured branch to count the file as covered."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            self._bug(root, verifiers=["shell echo ok"])
+            _git_commit(root, f"fix({self.UNIT}): shell verifier only")
+            rc, out, err = self._set(root)
+            self.assertNotEqual(rc, 0, out + err); self.assertIn("not measured - no traced verifier", out + err)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), mode="report")
+            self._bug(root, verifiers=["shell echo ok"])
+            _git_commit(root, f"fix({self.UNIT}): shell verifier only")
+            rc, out, err = self._set(root)
+            self.assertEqual(rc, 0, out + err); self.assertIn("not measured - no traced verifier", out + err)
+
 if __name__ == "__main__":
     unittest.main()

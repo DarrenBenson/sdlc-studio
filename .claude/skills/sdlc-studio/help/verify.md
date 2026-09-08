@@ -133,6 +133,22 @@ or when a verifier outruns the timeout under coverage. The `--report` JSON gains
 per-file uncovered lines, the base ref and a hash over the unit's Affects, so a gate can tell
 a stale report from a current one. Data files live under `sdlc-studio/.local/coverage/`.
 
+### coverage rule
+
+Rule one uncovered added line equivalent, inside the artefact:
+
+```bash
+python3 <skill>/scripts/verify_ac.py coverage rule --id US0042 --file src/thing.py --line 88 \
+    --reason "a defensive arm no fixture can reach without faking the OS"
+```
+
+The ruling is a row in the unit's own `## Coverage Rulings` table - file, line, the file's
+content hash, reason, author, date - tracked with the artefact, never in `.local/`. A reason
+shorter than the floor `mutation.py retract` holds a withdrawal to is refused. The terminal
+transition subtracts live rulings from the uncovered lines and counts them in the derived half
+of `Verification depth` as `lines ruled N`; a ruling made on bytes the file no longer has is
+stale, refused under `review.line_coverage: block` and counted by nothing.
+
 ### report
 
 Prints the latest verification report in text or JSON. Reads
