@@ -253,6 +253,7 @@ Manual verification: `./install.sh --local`, then `/sdlc-studio help`, `status`,
 | `cr sync`, `story sync`, `project sync` | `gh` CLI, authenticated |
 | `reconcile --verify` | whichever of `pytest`, `jest`, `vitest`, `go`, `curl`, `jq`, `rg` your Verify lines invoke |
 | `repo map build` | Python 3.10+ (pure stdlib) |
+| `verify_ac run --coverage` and the `review.line_coverage` gate | `coverage` 7.10 or later on the interpreter that runs the selectors (`SDLC_COVERAGE_PYTHON`, else the current one); absent, the run refuses under `block` and reports under `report` |
 
 ## Style
 

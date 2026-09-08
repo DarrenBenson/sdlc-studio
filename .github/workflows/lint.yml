@@ -52,7 +52,10 @@ jobs:
         # is not validated by accident of the runner image happening to preinstall PyYAML.
         # BG0107: pytest is a genuine dependency of the bench harness's class-D grader
         # (tools/bench/audit_quiz.py shells `python -m pytest` inside fixture workspaces).
-        run: python -m pip install --quiet pyyaml pytest
+        # US0815: `verify_ac run --coverage` measures a unit's own added lines under `coverage`,
+        # and its subprocess patching needs 7.10+. Installed BEFORE the suite, or the push that
+        # ships the lane turns main red on a runner that installs it only for the gate below.
+        run: python -m pip install --quiet pyyaml pytest 'coverage>=7.10'
 
       - name: Lint (markdown, style, links)
         run: npm run lint

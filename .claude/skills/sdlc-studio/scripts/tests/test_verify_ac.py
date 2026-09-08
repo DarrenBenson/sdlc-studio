@@ -6575,5 +6575,253 @@ class StagedStampsTests(unittest.TestCase):
             self.assertIn("1 already dead at HEAD, reported", err)
 
 
+class LineCoverageTests(unittest.TestCase):
+    """US0815: `verify_ac run --coverage` names every line a unit itself added that its own
+    verifiers never executed, against the base ref of the run whose batch names the unit."""
+
+    UNIT = "US9301"
+    MATE = "US9302"
+    STORY = "sdlc-studio/stories/US9301-cov.md"
+    PROD = "prod/mod.py"
+    BASE_PROD = "def used():\n    return 1\n\n\ndef dormant():\n    return 2\n"
+    TEST = "tests/test_mod.py"
+    BASE_TEST = ("import sys, pathlib\nsys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))\n"
+                 "from prod import mod\n\n\nclass TestT:\n    def test_a(self):\n        assert mod.used() == 1\n")
+
+    def _story(self, root: Path, unit: str, affects: str, verifiers: list, name: str | None = None) -> Path:
+        p = root / "sdlc-studio" / "stories" / (name or f"{unit}-cov.md")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        acs = "".join(f"- [ ] **AC{i}** Given it, when it, then it.\n  - **Verify:** {v}\n" for i, v in enumerate(verifiers, 1))
+        p.write_text(f"# {unit}: coverage fixture\n\n> **Status:** In Progress\n> **Affects:** {affects}\n\n"
+                     f"## Acceptance Criteria\n\n{acs}", encoding="utf-8")
+        return p
+
+    def _run_state(self, root: Path, base: str, batch: list) -> None:
+        from lib import run_state as rs  # noqa: PLC0415
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+            {"schema": rs.SCHEMA, "run_id": "RUN-FIXTURE", "started_at": "2026-09-01T00:00:00Z",
+             "ended_at": "2026-09-02T00:00:00Z", "outcome": "goal-reached", "goal": "done",
+             "batch": batch, "base_ref": base}), encoding="utf-8")
+
+    def _commit(self, root: Path, msg: str) -> str:
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-q", "--no-verify", "-F", "-"], root, input=msg, text=True)
+        return gitutil.git(["rev-parse", "HEAD"], root, text=True).stdout.strip()
+
+    def _repo(self, tmp: Path) -> tuple[Path, str]:
+        root = tmp / "r"
+        (root / "prod").mkdir(parents=True); (root / "tests").mkdir(); (root / "docs").mkdir()
+        (root / "prod" / "__init__.py").write_text("", encoding="utf-8")
+        (root / self.PROD).write_text(self.BASE_PROD, encoding="utf-8")
+        (root / self.TEST).write_text(self.BASE_TEST, encoding="utf-8")
+        (root / "docs" / "note.md").write_text("# note\n", encoding="utf-8")
+        (root / ".gitignore").write_text("sdlc-studio/.local/\n__pycache__/\n", encoding="utf-8")
+        self._story(root, self.UNIT, f"{self.PROD}, docs/note.md", [f"pytest {self.TEST}::TestT::test_a"])
+        gitutil.git(["init", "-q"], root)
+        base = self._commit(root, "base\n")
+        self._run_state(root, base, [self.UNIT])
+        return root, base
+
+    def _run(self, root: Path, unit: str, *extra: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = verify_ac.main(["run", "--id", unit, "--coverage", "--root", str(root), "--dry-run", *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _append(self, root: Path, rel: str, text: str) -> None:
+        p = root / rel; p.write_text(p.read_text(encoding="utf-8") + text, encoding="utf-8")
+
+    # -- AC1 -------------------------------------------------------------------------
+    def test_uncovered_added_lines_are_named_by_number_and_covered_ones_are_not(self) -> None:
+        """MUTANTS (rows): delete the hunk filter so every line is listed (the control's dormant
+        function appears); replace the per-commit attribution with one diff (the cluster-mate's
+        line is listed); delete the batch-membership check (the foreign run's ref is read);
+        widen the match to body prose; narrow it to the subject alone (the Refs-only commit's
+        line vanishes); read only the first Refs line."""
+        with tempfile.TemporaryDirectory() as d:
+            root, base = self._repo(Path(d))
+            self._append(root, self.PROD, "\n\ndef added_used():\n    return 3\n\n\ndef added_dead():\n    return 4\n")
+            self._append(root, self.TEST, "\n    def test_a2(self):\n        assert mod.added_used() == 3\n")
+            # the unit's own selector must reach added_used: name it in the story's verifier
+            self._story(root, self.UNIT, f"{self.PROD}, docs/note.md", [f"pytest {self.TEST}::TestT::test_a", f"pytest {self.TEST}::TestT::test_a2"])
+            self._commit(root, f"fix({self.UNIT}): add a used and a dead function\n")
+            self._append(root, self.PROD, "\n\ndef mate_dead():\n    return 5\n")
+            self._commit(root, f"fix({self.MATE}): the cluster-mate's own line\n\nLanded beside {self.UNIT}, whose work this is not.\n")
+            self._append(root, self.PROD, "\n\ndef refs_dead():\n    return 6\n")
+            self._commit(root, f"chore: paperwork\n\nRefs: US9309\nRefs: {self.UNIT}\n")
+            self._append(root, self.PROD, "\n\ndef comma_dead():\n    return 7\n")
+            self._commit(root, f"chore: more paperwork\n\nRefs: US9309, {self.UNIT}\n")
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 1, out + err)
+            src = (root / self.PROD).read_text(encoding="utf-8").splitlines()
+            def line_of(name):
+                # the BODY line: a `def` line executes at import, so the statement that goes
+                # unexecuted when nothing calls the function is the one beneath it
+                return next(i + 2 for i, ln in enumerate(src) if ln.startswith(f"def {name}("))
+            m = re.search(r"coverage: prod/mod.py: (\d+) added statement\(s\), (\d+) executed, (\d+) uncovered: (.*)", out)
+            self.assertIsNotNone(m, out)
+            listed = {int(x) for x in m.group(4).split(", ")}
+            for name in ("added_dead", "refs_dead", "comma_dead"):
+                self.assertIn(line_of(name), listed, f"{name} must be listed as this unit's uncovered line: {out}")
+            self.assertNotIn(line_of("mate_dead"), listed, "a cluster-mate's commit is not this unit's, even though its body names it")
+            self.assertNotIn(line_of("dormant"), listed, "a line that pre-dates the base ref is not an added line")
+            self.assertNotIn(line_of("added_used"), listed)
+            self.assertIn("coverage: uncovered: 3", out)
+        with tempfile.TemporaryDirectory() as d:
+            # The paired control: every added line executed -> uncovered 0, and the dormant
+            # pre-existing function is still there for the diff-filter mutant to trip over.
+            root, base = self._repo(Path(d))
+            self._append(root, self.PROD, "\n\ndef added_used():\n    return 3\n")
+            self._append(root, self.TEST, "\n    def test_a2(self):\n        assert mod.added_used() == 3\n")
+            self._story(root, self.UNIT, f"{self.PROD}, docs/note.md", [f"pytest {self.TEST}::TestT::test_a", f"pytest {self.TEST}::TestT::test_a2"])
+            self._commit(root, f"fix({self.UNIT}): all executed\n")
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("coverage: uncovered: 0", out)
+        with tempfile.TemporaryDirectory() as d:
+            # A run whose batch names a DIFFERENT unit is never read: with no --base the check
+            # refuses naming the flag, never diffs against the foreign run's ref.
+            root, base = self._repo(Path(d))
+            self._run_state(root, base, ["US9399"])
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn("--base <ref>", err)
+            rc, out, err = self._run(root, self.UNIT, "--base", base)
+            self.assertEqual(rc, 0, out + err)
+        with tempfile.TemporaryDirectory() as d:
+            # A NEW module the unit wrote and has not staged: blame cannot see it, and read as
+            # "no lines" its dead function measured as zero statements. Every line is the unit's.
+            root, base = self._repo(Path(d))
+            (root / "prod" / "new.py").write_text("def fresh_used():\n    return 8\n\n\ndef fresh_dead():\n    return 9\n", encoding="utf-8")
+            self._append(root, self.TEST, "\n    def test_new(self):\n        from prod import new\n        assert new.fresh_used() == 8\n")
+            self._story(root, self.UNIT, f"{self.PROD}, prod/new.py, docs/note.md", [f"pytest {self.TEST}::TestT::test_a", f"pytest {self.TEST}::TestT::test_new"])
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 1, out + err)
+            self.assertIn("coverage: prod/new.py: 4 added statement(s), 3 executed, 1 uncovered: 6", out)
+
+    # -- AC2 -------------------------------------------------------------------------
+    def test_only_the_units_own_verifiers_count_as_coverage(self) -> None:
+        """MUTANTS: replace the per-selector collection with a collection over the whole test
+        module the selector names (the sibling test runs); change the untraced-only branch to
+        count the file as uncovered (the exit-0 assertion dies)."""
+        with tempfile.TemporaryDirectory() as d:
+            root, base = self._repo(Path(d))
+            self._append(root, self.PROD, "\n\ndef added_dead():\n    return 4\n")
+            # a SIBLING test in the same module executes it - not one of the unit's selectors
+            self._append(root, self.TEST, "\n    def test_sibling(self):\n        assert mod.added_dead() == 4\n")
+            self._commit(root, f"fix({self.UNIT}): a line only a sibling test reaches\n")
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 1, out + err)
+            self.assertIn("1 uncovered", out)
+        with tempfile.TemporaryDirectory() as d:
+            root, base = self._repo(Path(d))
+            self._append(root, self.PROD, "\n\ndef added_dead():\n    return 4\n")
+            self._story(root, self.UNIT, f"{self.PROD}, docs/note.md", ["shell echo ok"])
+            self._commit(root, f"fix({self.UNIT}): only a shell verifier\n")
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("coverage: prod/mod.py: not measured - no traced verifier", out)
+            self.assertIn("coverage: not traced - `shell echo ok`", out)
+        with tempfile.TemporaryDirectory() as d:
+            root, base = self._repo(Path(d))
+            self._story(root, self.UNIT, f"{self.PROD}, docs/note.md", ["manual: checked by a human", "frobnicate the widget"])
+            self._commit(root, f"fix({self.UNIT}): a manual and an unparseable verifier\n")
+            rc, out, err = self._run(root, self.UNIT)
+            # the run's OWN verdict fails the unrecognised verifier (exit 1); the coverage half
+            # still lists it untraced and says nothing of the manual one
+            self.assertEqual(rc, 1, out + err)
+            self.assertIn("coverage: not traced - `frobnicate the widget`", out)
+            self.assertNotIn("not traced - `manual", out, "a manual verifier is a human's, never listed as untraced: " + out)
+
+    # -- AC3 -------------------------------------------------------------------------
+    def test_a_missing_coverage_module_is_refused_not_read_as_covered(self) -> None:
+        """MUTANTS: swallow the import failure on the selector interpreter and return an empty
+        uncovered set; drop the version-floor check."""
+        with tempfile.TemporaryDirectory() as d:
+            root, base = self._repo(Path(d))
+            self._append(root, self.PROD, "\n\ndef added_dead():\n    return 4\n")
+            self._commit(root, f"fix({self.UNIT}): x\n")
+            hidden = Path(d) / "python-without-coverage"
+            hidden.write_text(f"#!/bin/sh\nexec {sys.executable} -S \"$@\"\n", encoding="utf-8"); hidden.chmod(0o755)
+            with unittest.mock.patch.dict(os.environ, {"SDLC_COVERAGE_PYTHON": str(hidden)}):
+                rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn("coverage: not measured - the coverage module is absent", err)
+            self.assertNotIn("uncovered: 0", out)
+            stub = Path(d) / "stub"; (stub / "coverage").mkdir(parents=True)
+            (stub / "coverage" / "__init__.py").write_text("__version__ = '6.5.0'\n", encoding="utf-8")
+            old = Path(d) / "python-old-coverage"
+            old.write_text(f"#!/bin/sh\nPYTHONPATH={stub} exec {sys.executable} \"$@\"\n", encoding="utf-8"); old.chmod(0o755)
+            with unittest.mock.patch.dict(os.environ, {"SDLC_COVERAGE_PYTHON": str(old)}):
+                rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn("below the floor 7.10", err)
+            with unittest.mock.patch.dict(os.environ, {"SDLC_COVERAGE_PYTHON": str(Path(d) / "no-such-python")}):
+                rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn("coverage: not measured - the coverage module is absent", err)
+
+    # -- AC4 -------------------------------------------------------------------------
+    def test_the_cli_exit_code_and_report_carry_the_verdict(self) -> None:
+        """MUTANTS: hard-code the CLI exit code to 0; move coverage's data file to the tree
+        root; omit the Affects hash from the report's `coverage` key."""
+        with tempfile.TemporaryDirectory() as d:
+            root, base = self._repo(Path(d))
+            self._append(root, self.PROD, "\n\ndef added_dead():\n    return 4\n")
+            self._commit(root, f"fix({self.UNIT}): x\n")
+            argv = [sys.executable, str(SCRIPT_PATH), "run", "--id", self.UNIT, "--coverage", "--root", str(root), "--dry-run", "--report", "sdlc-studio/.local/cov-report.json"]
+            cp = subprocess.run(argv, capture_output=True, text=True, timeout=600)
+            self.assertEqual(cp.returncode, 1, cp.stdout + cp.stderr)
+            rep = json.loads((root / "sdlc-studio" / ".local" / "cov-report.dry-run.json").read_text(encoding="utf-8"))
+            entry = rep["coverage"]["US9301-cov"]
+            self.assertEqual(entry["base_ref"], base); self.assertEqual(len(entry["affects_hash"]), 64)
+            self.assertEqual(len(entry["files"]["prod/mod.py"]["uncovered"]), 1)
+            self.assertEqual([p.name for p in root.glob(".coverage*")], [], "coverage's data files must never land at the tree root")
+            self._append(root, self.TEST, "\n    def test_a3(self):\n        assert mod.added_dead() == 4\n")
+            self._story(root, self.UNIT, f"{self.PROD}, docs/note.md", [f"pytest {self.TEST}::TestT::test_a", f"pytest {self.TEST}::TestT::test_a3"])
+            self._commit(root, f"fix({self.UNIT}): covered\n")
+            cp = subprocess.run(argv, capture_output=True, text=True, timeout=600)
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+            cp = subprocess.run([*argv, "--base", "deadbeefcafe"], capture_output=True, text=True, timeout=600)
+            self.assertEqual(cp.returncode, 2, cp.stdout + cp.stderr)
+            self.assertIn("base ref `deadbeefcafe` does not resolve here", cp.stderr)
+
+    # -- AC5 -------------------------------------------------------------------------
+    def test_a_non_python_affects_file_is_reported_not_measurable(self) -> None:
+        """MUTANTS: replace the not-measurable branch for a non-Python file with covered;
+        replace it with uncovered, which the exit-0 control kills."""
+        with tempfile.TemporaryDirectory() as d:
+            root, base = self._repo(Path(d))
+            self._append(root, "docs/note.md", "\nmore prose the unit added\n")
+            self._commit(root, f"docs({self.UNIT}): prose only\n")
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("coverage: docs/note.md: not measurable", out)
+            self.assertIn("coverage: uncovered: 0", out)
+            # An Affects file that no longer exists (a module the unit deleted): blame fails
+            # and there is nothing to read, so it has no lines - never a crash, never untracked
+            self._story(root, self.UNIT, f"{self.PROD}, prod/gone.py, docs/note.md", [f"pytest {self.TEST}::TestT::test_a"])
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("coverage: prod/gone.py: 0 added statement(s), 0 executed, 0 uncovered", out)
+
+    # -- AC6 -------------------------------------------------------------------------
+    def test_a_line_executed_only_in_a_spawned_child_is_covered(self) -> None:
+        """MUTANT: remove the subprocess patching so a child interpreter's lines read
+        uncovered."""
+        with tempfile.TemporaryDirectory() as d:
+            root, base = self._repo(Path(d))
+            self._append(root, self.PROD, "\n\ndef child_only():\n    print('child')\n\n\nif __name__ == '__main__':\n    child_only()\n")
+            self._append(root, self.TEST, f"\n    def test_child(self):\n        import subprocess\n        cp = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve().parents[1] / 'prod' / 'mod.py')], capture_output=True, text=True)\n        assert cp.stdout.strip() == 'child'\n")
+            self._story(root, self.UNIT, f"{self.PROD}, docs/note.md", [f"pytest {self.TEST}::TestT::test_a", f"pytest {self.TEST}::TestT::test_child"])
+            self._commit(root, f"fix({self.UNIT}): a child-only line\n")
+            data_dir = root / "sdlc-studio" / ".local" / "coverage"; data_dir.mkdir(parents=True)
+            (data_dir / f"{self.UNIT}.coverage.stale").write_text("left by an earlier run\n", encoding="utf-8")
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 0, out + err)
+            self.assertIn("coverage: uncovered: 0", out)
+            self.assertEqual([p.name for p in data_dir.glob(f"{self.UNIT}.coverage*")], [], "the run's data files, and any stale one, are removed after the read")
+
 if __name__ == "__main__":
     unittest.main()

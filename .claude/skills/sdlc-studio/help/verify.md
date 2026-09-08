@@ -109,6 +109,29 @@ verdict it would have got from the whole-workspace run.
 every verdict outside it, so the combination is refused (exit 2, nothing written): drop the
 scope to rebuild the whole report, or drop `--fresh` so the scoped run merges into it.
 
+### run --coverage
+
+Measure which of a unit's OWN added lines its OWN verifiers executed, after the run:
+
+```bash
+python3 <skill>/scripts/verify_ac.py run --id US0042 --coverage            # the unit's run supplies the base ref
+python3 <skill>/scripts/verify_ac.py run --id US0042 --coverage --base abc1234   # no run names it
+```
+
+The base ref is the one recorded by the run whose approved batch names the unit, open or
+closed; with none, `--base <ref>` is required and its absence refuses. A line is the unit's
+when a commit between that ref and HEAD names the unit in its subject or on a `Refs:` line
+(one per line as the commit-msg hook writes them, or the older comma form), or when it is
+still uncommitted; a cluster-mate's commit in a shared file is not this unit's. Coverage is
+collected from the unit's own `pytest` selectors alone, on `SDLC_COVERAGE_PYTHON` when set
+(else the current interpreter), following the child interpreters they spawn. A `shell`,
+`grep`, `eval` or `http` verifier is listed `not traced`; a Python file with no traced
+verifier is `not measured`; a non-Python file is `not measurable`. Exit 1 on any uncovered
+added line; exit 2 and `coverage: not measured - the coverage module is absent` when the
+module is missing or below 7.10. The `--report` JSON gains a `coverage` key carrying the
+per-file uncovered lines, the base ref and a hash over the unit's Affects, so a gate can tell
+a stale report from a current one. Data files live under `sdlc-studio/.local/coverage/`.
+
 ### report
 
 Prints the latest verification report in text or JSON. Reads

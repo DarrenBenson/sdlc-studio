@@ -674,6 +674,23 @@ def base_ref(repo_root: Path | str) -> str:
     return str((read(repo_root) or {}).get(BASE_REF) or "")
 
 
+
+def unit_run_base_ref(repo_root: Path | str, unit: str) -> str:
+    """The base ref of the run whose APPROVED BATCH names `unit`, open or CLOSED, or "".
+
+    The ref belongs to the unit's run, not to whether that run is still open: the terminal
+    transitions fire at `sprint close --apply-signoff`, after the run is stamped ended, and a
+    reader that took only an open run's ref would refuse every story at its own close. A run
+    whose batch does not name the unit is never read - its ref is about other work.
+    """
+    state = read(repo_root) or {}
+    want = sdlc_md.norm_id(unit)
+    batch = [sdlc_md.norm_id(str(u)) for u in (state.get("batch") or [])]
+    if want not in batch:
+        return ""
+    return str(state.get(BASE_REF) or "")
+
+
 def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | None = None,
              plan: str | None = None) -> dict:
     """Open a run, or re-plan the OPEN one.

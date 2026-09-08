@@ -37,6 +37,8 @@ from __future__ import annotations
 import argparse
 import ast
 import glob
+import tempfile
+import hashlib
 import json
 import os
 import re
@@ -2117,6 +2119,226 @@ def _scoped_paths(args: argparse.Namespace, repo_root: Path) -> tuple[list[Path]
     return [by_id[i] for i in ids], None
 
 
+
+# --- Line coverage of a unit's OWN added lines by its OWN verifiers -------------------------
+#
+# Every surviving mutant the seats found in RUN-01M1WPNV sat on a branch the unit's own
+# selectors never executed. The plan-time mutant table cannot name branches that do not exist
+# yet, and the done-gate reads only those rows. This measures the thing directly: run the unit's
+# own pytest selectors under `coverage`, following the child interpreters they spawn, and list
+# every line the unit itself added that nothing executed.
+
+COVERAGE_FLOOR = (7, 10)          # `patch = subprocess` shipped in 7.10
+COVERAGE_ABSENT = "coverage: not measured - the coverage module is absent"
+COVERAGE_NO_BASE = "coverage: not measured - no base ref"
+_TRACED_VERBS = {"pytest"}
+_REFS_LINE_RE = re.compile(r"(?im)^\s*Refs:\s*(.+)$")
+
+
+class CoverageUnavailable(RuntimeError):
+    """The interpreter that runs the selectors cannot measure coverage: the module is absent
+    or below the floor. Refused, never read as `uncovered: 0`."""
+
+
+def coverage_interpreter() -> str:
+    """The interpreter the selectors run under for measurement: `SDLC_COVERAGE_PYTHON` when
+    set, else this one. Named so a test can point it at a wrapper that hides the module."""
+    return os.environ.get("SDLC_COVERAGE_PYTHON") or sys.executable
+
+
+def coverage_version(python: str) -> tuple | None:
+    """`coverage.__version__` on `python` as a tuple, or None when the import fails THERE."""
+    try:
+        cp = subprocess.run([python, "-c", "import coverage; print(coverage.__version__)"],
+                            capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if cp.returncode != 0:
+        return None
+    nums = re.findall(r"\d+", cp.stdout.strip())
+    return tuple(int(n) for n in nums[:3]) if nums else None
+
+
+def _unit_commit_shas(root: Path, base: str, unit: str) -> set:
+    """Commits in `base..HEAD` whose SUBJECT names the unit id, or whose `Refs:` line(s) do -
+    one id per line as the commit-msg hook writes them, or the older comma-separated single
+    line. Parsed from the message text: git's trailer parser does not see a `Refs:` line that
+    sits above the sign-off block. A commit naming the unit only in body prose is not its
+    commit."""
+    want = sdlc_md.norm_id(unit)
+    cp = subprocess.run(["git", "-C", str(root), "log", "--format=%H%x1e%s%x1e%B%x1d",
+                         f"{base}..HEAD"], capture_output=True, text=True, timeout=120,
+                        env=_git_env())
+    if cp.returncode != 0:
+        raise CoverageUnavailable(f"git could not list {base}..HEAD: "
+                                  f"{(cp.stderr or '').strip().splitlines()[:1]}")
+    shas: set = set()
+    for chunk in cp.stdout.split("\x1d"):
+        if not chunk.strip():
+            continue
+        sha, subject, body = (chunk.strip("\n").split("\x1e", 2) + ["", ""])[:3]
+        ids = {sdlc_md.norm_id(i) for i in re.findall(r"\b(?:US|BG|CR|RFC)-?\d{4,}\b", subject)}
+        for m in _REFS_LINE_RE.finditer(body):
+            ids |= {sdlc_md.norm_id(i) for i in re.findall(r"\b(?:US|BG|CR|RFC)-?\d{4,}\b", m.group(1))}
+        if want in ids:
+            shas.add(sha.strip())
+    return shas
+
+
+def _unit_added_lines(root: Path, rel: str, unit_shas: set) -> set:
+    """Line numbers of `rel` (working copy) that the unit added: blamed to one of the unit's
+    commits, or uncommitted. `git blame` follows the lines to where they sit NOW, so an earlier
+    commit's additions are counted at their current numbers."""
+    cp = subprocess.run(["git", "-C", str(root), "blame", "--porcelain", "--", rel],
+                        capture_output=True, text=True, timeout=120, env=_git_env())
+    if cp.returncode != 0:
+        # blame cannot see a file HEAD does not hold. An UNTRACKED file the unit wrote is
+        # wholly uncommitted, so every line is the unit's; read as "no lines" it was invisible,
+        # and a new module with a dead function measured as zero statements, all covered.
+        path = root / rel
+        if path.is_file() and _untracked(root, rel):
+            return set(range(1, len(sdlc_md.read_text_safe(path).splitlines()) + 1))
+        return set()
+    out: set = set()
+    for line in cp.stdout.splitlines():
+        m = re.match(r"^([0-9a-f]{40}) \d+ (\d+)(?: \d+)?$", line)
+        if not m:
+            continue
+        sha, final = m.group(1), int(m.group(2))
+        if sha == "0" * 40 or sha in unit_shas:
+            out.add(final)
+    return out
+
+
+def _untracked(root: Path, rel: str) -> bool:
+    cp = subprocess.run(["git", "-C", str(root), "ls-files", "--error-unmatch", "--", rel],
+                        capture_output=True, text=True, timeout=60, env=_git_env())
+    return cp.returncode != 0
+
+
+def _affects_hash(root: Path, rels: list) -> str:
+    h = hashlib.sha256()
+    for rel in sorted(rels):
+        p = root / rel
+        h.update(rel.encode()); h.update(b"\0")
+        h.update(p.read_bytes() if p.is_file() else b"<absent>"); h.update(b"\0")
+    return h.hexdigest()
+
+
+def coverage_report(root, unit_path: Path, unit: str, *, base_ref: str | None = None,
+                    timeout: int = 900) -> dict:
+    """Which of the unit's own added lines did its own verifiers execute?
+
+    Returns `{"ok", "base_ref", "affects_hash", "files": {rel: {"status", "added", "uncovered",
+    "executed"}}, "untraced": [...], "uncovered_total", "errors": [...]}`. `status` is
+    `measured`, `not measurable` (not Python) or `not measured` (a Python file whose selectors
+    are all untraced verbs). Raises CoverageUnavailable when the measurement cannot be taken.
+    """
+    root = Path(root)
+    text = sdlc_md.read_text_safe(unit_path)
+    uid = sdlc_md.norm_id(unit)
+    base = str(base_ref or run_state.unit_run_base_ref(root, uid) or "").strip()
+    if not base:
+        raise CoverageUnavailable(
+            f"{COVERAGE_NO_BASE}: no run's approved batch names {uid}, and no `--base <ref>` "
+            "was given - the ref belongs to the unit's run, and this check must not invent one")
+    if not _ref_exists(root, base):
+        raise CoverageUnavailable(f"coverage: not measured - base ref `{base}` does not resolve here")
+    python = coverage_interpreter()
+    version = coverage_version(python)
+    if version is None:
+        raise CoverageUnavailable(f"{COVERAGE_ABSENT} on {python} - install it (pip install "
+                                  "'coverage>=7.10') or set review.line_coverage: off")
+    if version < COVERAGE_FLOOR:
+        raise CoverageUnavailable(f"coverage: not measured - coverage {'.'.join(map(str, version))} "
+                                  f"on {python} is below the floor {'.'.join(map(str, COVERAGE_FLOOR))} "
+                                  "that subprocess patching needs")
+    selectors, untraced = [], []
+    for block in criteria_blocks(text):
+        expr = (block.verifier or "").strip()
+        if not expr or _is_manual(expr):
+            continue
+        try:
+            kind, argv = _build_command(expr, cwd=root)
+        except ValueError:
+            untraced.append(expr); continue
+        if kind in _TRACED_VERBS and isinstance(argv, list):
+            selectors.append(argv[1:])
+        else:
+            untraced.append(expr)
+    affects = [r.strip().strip("`") for r in sdlc_md.affects_files(text)]
+    files: dict = {}
+    for rel in affects:
+        files[rel] = {"status": "measured" if rel.endswith(".py") else "not measurable",
+                      "added": [], "uncovered": [], "executed": 0}
+    unit_shas = _unit_commit_shas(root, base, uid)
+    executed_by_file: dict = {}
+    py_targets = [r for r in affects if r.endswith(".py")]
+    if selectors and py_targets:
+        data_dir = root / "sdlc-studio" / ".local" / "coverage"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="sdlc-cov-") as tmp:
+            rc = Path(tmp) / "coveragerc"
+            data_file = data_dir / f"{uid}.coverage"
+            rc.write_text("[run]\nparallel = True\npatch = subprocess\nbranch = False\n"
+                          f"data_file = {data_file}\n"
+                          "source = " + ",".join(sorted({str((root / r).parent) for r in py_targets})) + "\n",
+                          encoding="utf-8")
+            for stale in data_dir.glob(f"{uid}.coverage*"):
+                stale.unlink()
+            env = {**os.environ, "COVERAGE_RCFILE": str(rc)}
+            for argv in selectors:
+                subprocess.run([python, "-m", "coverage", "run", "-m", "pytest", "-q", "-p",
+                                "no:cacheprovider", *argv], cwd=str(root), capture_output=True,
+                               text=True, timeout=timeout, env=env)
+            subprocess.run([python, "-m", "coverage", "combine", "-q"], cwd=str(root),
+                           capture_output=True, text=True, timeout=timeout, env=env)
+            out_json = Path(tmp) / "cov.json"
+            subprocess.run([python, "-m", "coverage", "json", "-q", "-o", str(out_json)],
+                           cwd=str(root), capture_output=True, text=True, timeout=timeout, env=env)
+            try:
+                data = json.loads(out_json.read_text(encoding="utf-8")).get("files", {})  # bare-read-ok: coverage's own JSON in a temp dir, not an artefact; unreadable is caught beside it
+            except (OSError, ValueError):
+                data = {}
+            for path, info in data.items():
+                rel_key = os.path.relpath(path, root) if os.path.isabs(path) else path
+                executed_by_file[rel_key] = (set(info.get("executed_lines", [])),
+                                             set(info.get("missing_lines", [])))
+            for stale in data_dir.glob(f"{uid}.coverage*"):
+                stale.unlink()
+    uncovered_total = 0
+    for rel, entry in files.items():
+        if entry["status"] != "measured":
+            continue
+        if not selectors:
+            entry["status"] = "not measured - no traced verifier"; continue
+        added = _unit_added_lines(root, rel, unit_shas)
+        executed, missing = executed_by_file.get(rel, (set(), set()))
+        statements = {ln for ln in added if ln in executed or ln in missing}
+        unc = sorted(ln for ln in statements if ln not in executed)
+        entry["added"] = sorted(statements); entry["uncovered"] = unc
+        entry["executed"] = len(statements) - len(unc)
+        uncovered_total += len(unc)
+    return {"ok": uncovered_total == 0, "unit": uid, "base_ref": base,
+            "affects_hash": _affects_hash(root, affects), "files": files,
+            "untraced": untraced, "uncovered_total": uncovered_total,
+            "interpreter": python, "coverage_version": ".".join(map(str, version))}
+
+
+def print_coverage(rep: dict) -> None:
+    for rel, entry in rep["files"].items():
+        if entry["status"] == "measured":
+            print(f"coverage: {rel}: {len(entry['added'])} added statement(s), "
+                  f"{entry['executed']} executed, {len(entry['uncovered'])} uncovered"
+                  + (": " + ", ".join(map(str, entry["uncovered"])) if entry["uncovered"] else ""))
+        else:
+            print(f"coverage: {rel}: {entry['status']}")
+    for expr in rep["untraced"]:
+        print(f"coverage: not traced - `{expr}` contributes no coverage")
+    print(f"coverage: uncovered: {rep['uncovered_total']} (base {rep['base_ref'][:12]}, "
+          f"coverage {rep['coverage_version']} on {rep['interpreter']})")
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     """Run verifiers across stories, update files, and write the report."""
     repo_root = resolve_root(args)
@@ -2268,6 +2490,31 @@ def cmd_run(args: argparse.Namespace) -> int:
     if unreadable or vacuous:
         return 2
 
+    if getattr(args, "coverage", False):
+        cov_rc = 0
+        cov_entries: dict = {}
+        for p in paths:
+            uid = sdlc_md.extract_record_id(p.stem) or p.stem
+            try:
+                rep = coverage_report(repo_root, p, uid, base_ref=getattr(args, "base", None),
+                                      timeout=max(int(args.timeout), 900))
+            except CoverageUnavailable as exc:
+                print(str(exc), file=sys.stderr)
+                return 2
+            print_coverage(rep)
+            cov_entries[os.path.basename(str(p)).replace(".md", "")] = rep
+            if rep["uncovered_total"]:
+                cov_rc = 1
+        try:
+            # the SAME file the run just wrote - the dry-run path when dry-running - so a gate
+            # reading the report finds the coverage beside the verdicts it belongs to
+            data = sdlc_md.read_json(report_path, None) or {}
+            data.setdefault("coverage", {}).update(cov_entries)
+            sdlc_md.atomic_write(report_path, json.dumps(data, indent=2) + "\n")
+        except (OSError, ValueError, AttributeError) as exc:
+            print(f"coverage: report not written: {exc}", file=sys.stderr)
+        if cov_rc:
+            return cov_rc
     return 1 if overall_fail > 0 else 0
 
 
@@ -4556,6 +4803,12 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--batch", action="store_true",
                    help="run jest once and resolve jest verifiers from the cached result")
     r.add_argument("--timeout", type=int, default=120, help="Per-verifier timeout in seconds")
+    r.add_argument("--coverage", action="store_true",
+                   help="after the run, measure which of each unit's OWN added lines its OWN "
+                        "verifiers executed, following child interpreters; exit 1 on any "
+                        "uncovered line, refuse when the coverage module is absent")
+    r.add_argument("--base", help="the base ref for --coverage when no run's approved batch "
+                                  "names the unit (a closed run's ref is still that unit's)")
     r.add_argument("--no-shell", dest="no_shell", action="store_true",
                    help="block shell-backed verifiers (shell/eval/http); run only structured "
                         "DSL verbs - for CI over less-trusted content")
