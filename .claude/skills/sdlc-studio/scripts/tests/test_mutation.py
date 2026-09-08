@@ -5242,5 +5242,96 @@ class DuplicateKeyTests(unittest.TestCase):
             self.assertEqual(rc, 1)
             self.assertIn("audit: 19 duplicated key(s), 5 naming different tests, 0 disagreeing on verdict", err)
 
+
+class AuditRemedyTests(unittest.TestCase):
+    """The audit's round-one repairs: an unparseable ledger is refused rather than read as clean,
+    the summary figures follow the ledger's shape, a missing target is tagged like a stale one,
+    and each row prints the mutant description `retract` joins on."""
+
+    _row = staticmethod(DuplicateKeyTests._row)
+
+    def _ledger(self, tmp: Path, entries: list) -> Path:
+        root = tmp / "r"; (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+            json.dumps({"version": 1, "dropped": 0, "entries": entries}), encoding="utf-8")
+        return root
+
+    def _entry(self, root: Path, name: str, mutants: list, *, present: bool = True) -> dict:
+        import hashlib  # noqa: PLC0415
+        body = f"# {name}\n"
+        if present:
+            (root / name).write_text(body, encoding="utf-8")
+        return {"target": name, "hash": hashlib.sha256(body.encode()).hexdigest(), "mutants": mutants}
+
+    def _audit(self, root: Path) -> tuple[int, str, str]:
+        mut = _load(); out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mut.main(["audit", "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_an_unparseable_ledger_is_refused_rather_than_read_as_clean(self) -> None:
+        """MUTANT: read the ledger through `_load_ledger` and drop its reset flag, so `{not json`
+        yields an empty history and the audit exits 0 in silence."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._ledger(Path(d), [])
+            path = root / "sdlc-studio" / ".local" / "mutation-runs.json"
+            path.write_text("{not json", encoding="utf-8")
+            rc, out, err = self._audit(root)
+            self.assertEqual(rc, 1, out + err)
+            self.assertEqual(out, "")
+            self.assertIn("could not be parsed", err); self.assertIn(str(path), err)
+            self.assertNotIn("duplicated key(s)", err)
+            self.assertEqual(path.read_text(encoding="utf-8"), "{not json", "a reader never rewrites the ledger")
+
+    def test_the_summary_figures_follow_the_ledger_shape(self) -> None:
+        """MUTANTS: hard-code the summary's second figure to 5; hard-code its third to 0 - each
+        passes the committed fixture, whose figures are 5 and 0, and dies here."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "r"; (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            e = self._entry(root, "a.py", [
+                self._row("BG9201", "AC1", 0, "killed", "pytest t.py::T::test_x"),
+                self._row("BG9201", "AC1", 0, "survived", "pytest t.py::T::test_x"),
+                self._row("BG9201", "AC2", 0, "killed", "pytest t.py::T::test_y"),
+                self._row("BG9201", "AC2", 0, "killed", "pytest t.py::T::test_z")])
+            self._ledger(Path(d), [e])
+            rc, out, err = self._audit(root)
+            self.assertEqual(rc, 1, out + err)
+            self.assertIn("audit: 2 duplicated key(s), 1 naming different tests, 1 disagreeing on verdict", err)
+            self.assertIn("audit: BG9201 AC1 r0 - 2 live row(s) (verdicts DISAGREE)", out)
+            self.assertIn("audit: BG9201 AC2 r0 - 2 live row(s) (different tests)", out)
+
+    def test_a_row_whose_target_is_missing_is_tagged_like_a_stale_one(self) -> None:
+        """MUTANT: tag only `staleness == "stale"`, so a row whose target file no longer exists
+        prints untagged."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "r"; (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            gone = self._entry(root, "gone.py", [self._row("BG9202", "AC1", 0, "killed", "pytest t.py::T::test_x"),
+                                                self._row("BG9202", "AC1", 0, "killed", "pytest t.py::T::test_x")], present=False)
+            here = self._entry(root, "here.py", [self._row("BG9203", "AC1", 0, "killed", "pytest t.py::T::test_y"),
+                                                self._row("BG9203", "AC1", 0, "killed", "pytest t.py::T::test_y")])
+            self._ledger(Path(d), [gone, here])
+            rc, out, _ = self._audit(root)
+            self.assertEqual(rc, 1)
+            rows = [ln for ln in out.splitlines() if ln.strip().startswith("killed")]
+            self.assertEqual(len(rows), 4, out)
+            missing = [ln for ln in rows if "target=gone.py" in ln]; current = [ln for ln in rows if "target=here.py" in ln]
+            self.assertEqual(len(missing), 2); self.assertTrue(all(ln.endswith("  [stale entry]") for ln in missing), missing)
+            self.assertEqual(len(current), 2); self.assertFalse(any("[stale entry]" in ln for ln in current), current)
+
+    def test_each_row_prints_the_mutant_description_retract_joins_on(self) -> None:
+        """MUTANT: drop the `mutant=` field from the row line, so the remedy names a join field
+        the report does not print."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "r"; (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            bare = self._row("BG9204", "AC1", 0, "killed", "pytest t.py::T::test_x"); del bare["mutant"]
+            e = self._entry(root, "a.py", [self._row("BG9204", "AC1", 0, "killed", "pytest t.py::T::test_x"), bare])
+            self._ledger(Path(d), [e])
+            rc, out, err = self._audit(root)
+            self.assertEqual(rc, 1, out + err)
+            self.assertIn('line=3  mutant="BG9204 AC1 r0"', out)
+            self.assertIn('line=3  mutant=""', out, "a row registered without a description prints the empty join value")
+            self.assertIn("Rows identical on those fields: `retract` withdraws them together", err)
+
+
 if __name__ == "__main__":
     unittest.main()

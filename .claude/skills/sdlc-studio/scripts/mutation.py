@@ -2894,19 +2894,19 @@ def audit_duplicates(root: Path | str) -> dict:
     skips a stale entry, but a reader cannot tell two rows apart from the join, and that is the
     harm this audit exists to name. Each row carries its target and hash, so a same-row pair on
     two entries can be told from a pair inside one; a row whose entry `entry_staleness` reports
-    `stale` or `missing` is tagged. `row` None and `row` 0 are the same slot - a criterion
-    carrying one row registers it without a number.
+    `stale` or `missing` is tagged. `row` None and `row` 0 read as one slot: `register` writes 0
+    for a criterion carrying one row, and None marks a row registered before the row column
+    existed.
 
     Returns `{"keys": [...], "duplicated": n, "different_tests": n, "disagreeing": n}` where each
     key is `{"unit", "criterion", "row", "rows": [{target, hash, verdict, test, line, stale}],
     "different_tests": bool, "disagreeing": bool}`. Nothing is printed here; the verb prints.
     """
     root = Path(root)
-    state, _reset = _load_ledger(ledger_path(root))
+    # `ledger_entries` refuses a ledger that cannot be parsed, so an audit over one raises
+    # rather than reading as clean - an unreadable instrument is not an empty history.
     by_key: dict = {}
-    for entry in state.get("entries", []):
-        if not isinstance(entry, dict):
-            continue
+    for entry in ledger_entries(root):
         staleness = entry_staleness(root, entry)
         stale = staleness in ("stale", "missing")
         for mu in entry.get("mutants") or []:
@@ -2916,7 +2916,7 @@ def audit_duplicates(root: Path | str) -> dict:
             by_key.setdefault(key, []).append({
                 "target": entry.get("target"), "hash": entry.get("hash"),
                 "verdict": mu.get("verdict"), "test": mu.get("test"), "line": mu.get("line"),
-                "stale": stale})
+                "mutant": mu.get("mutant"), "stale": stale})
     keys = []
     for (unit, criterion, row), rows in sorted(by_key.items()):
         if len(rows) < 2:
@@ -2930,8 +2930,13 @@ def audit_duplicates(root: Path | str) -> dict:
 
 
 def cmd_audit(args: argparse.Namespace) -> int:
-    """Name every duplicated live key; silent and 0 on a clean ledger, 1 with any duplicate."""
-    report = audit_duplicates(args.root)
+    """Name every duplicated live key; silent and 0 on a clean ledger, 1 with any duplicate or
+    with a ledger that cannot be parsed - refused and named, never read as clean."""
+    try:
+        report = audit_duplicates(args.root)
+    except LedgerUnreadable as exc:
+        print(f"audit: {exc}", file=sys.stderr)
+        return 1
     if not report["keys"]:
         return 0
     for k in report["keys"]:
@@ -2944,12 +2949,15 @@ def cmd_audit(args: argparse.Namespace) -> int:
               + (f" ({', '.join(flags)})" if flags else ""))
         for r in k["rows"]:
             print(f"    {r['verdict']}  test={r['test']}  target={r['target']}  "
-                  f"hash={str(r['hash'] or '')[:12]}  line={r['line']}"
+                  f"hash={str(r['hash'] or '')[:12]}  line={r['line']}  "
+                  f"mutant=\"{r['mutant'] or ''}\""
                   + ("  [stale entry]" if r["stale"] else ""))
     print(f"audit: {report['duplicated']} duplicated key(s), {report['different_tests']} naming "
           f"different tests, {report['disagreeing']} disagreeing on verdict - the (criterion, row) "
-          "join reads whichever was iterated last; withdraw the wrong one with `mutation.py "
-          "retract --reason`", file=sys.stderr)
+          "join reads whichever was iterated last. Rows that differ: withdraw the wrong one with "
+          "`mutation.py retract --reason` on the join fields printed above (unit, criterion, "
+          "target, line, verdict, mutant). Rows identical on those fields: `retract` withdraws "
+          "them together, so re-register the key once after", file=sys.stderr)
     return 1
 
 
