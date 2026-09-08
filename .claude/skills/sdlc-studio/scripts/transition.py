@@ -679,6 +679,18 @@ def _upsert_field(text: str, name: str, value: str) -> str:
 # which ADDS those sections; there is no legitimate way to change it without them.
 # Case-insensitive.
 _ANNOTATE_DENYLIST = {"status", "triaged-by", "triage-severity", "provenance", "template"}
+
+# Fields whose VALUE is drawn from a closed vocabulary, keyed by the folded field name and
+# carrying the canonical spelling of that name. `annotate` was the third writer of a Severity
+# line and the only one that never checked: `--value major` was written verbatim, and a
+# severity outside the set is dropped by the release bar AND the disclosure page at once, so
+# the finding is absent from both and the absence reads like a clean corpus.
+#
+# The canonical NAME travels with the normaliser because the writer below matches a field name
+# case-sensitively. Keyed on the folded name alone, `--field severity` slipped past a guard
+# written for `Severity` and then inserted a SECOND metadata line beside the untouched one -
+# so the guard and the write have to agree on the same spelling, not merely on the same word.
+_ANNOTATE_VOCABULARY = {"severity": "Severity"}
 # The remedy named in the refusal, per denied field - so a refusal points somewhere.
 _ANNOTATE_REMEDY = {
     "template": "the tier is changed by `artifact.py promote --id <id> --to full`, which adds "
@@ -698,6 +710,13 @@ def annotate(repo_root: Path | str, artifact_id: str, field: str, value: str) ->
         remedy = _ANNOTATE_REMEDY.get(key, "status and triage records go through `transition "
                                             "set` so their gates run")
         raise ValueError(f"annotate refuses the gate-protected field {field!r}: {remedy}")
+    if key in _ANNOTATE_VOCABULARY:
+        import file_finding  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        # `normalise_severity` RAISES naming the accepted set, which is the refusal this verb
+        # owed; it also folds case, so `high` is written `High` rather than refused. Both
+        # readers fold, and a writer stricter than its readers refuses findings they classify.
+        field = _ANNOTATE_VOCABULARY[key]
+        value = file_finding.normalise_severity(value)
     # A line-broken field/value is refused by `_upsert_field` below - the one writer of a
     # metadata line, and so the one place that rule lives. This verb keeps no copy of it: a
     # caller-side copy is how the triage stamps came to be written by a writer that did not
@@ -2376,6 +2395,19 @@ def mutation_evidence_lane(root, unit: str, text: str, type_: str) -> dict:
     return out
 
 
+def _is_live_survivor(mu: dict) -> bool:
+    """True for a `survived` row the ledger has NOT withdrawn.
+
+    A withdrawal is the ledger's record that the READING was retracted - the row was measured
+    against a fixture that could not reach the branch, or re-measured and killed - and every
+    other reader already honours it. Reading the verdict alone filed a HIGH bug against a row
+    that had been withdrawn and re-registered killed, and the release-notes gate then refused
+    the commit because the notes claim zero High. The over-report cost a release, so the
+    predicate lives in one place and both readers ask it.
+    """
+    return mu.get("verdict") == "survived" and not mu.get("withdrawn")
+
+
 def _survivor_records(root, uid: str) -> list[dict]:
     """The surviving mutants recorded for `uid`, as records rather than as a sentence.
 
@@ -2394,7 +2426,7 @@ def _survivor_records(root, uid: str) -> list[dict]:
             continue
         for mu in (e.get("mutants") or []):
             if (isinstance(mu, dict) and mu.get("unit") == uid
-                    and mu.get("verdict") == "survived"):
+                    and _is_live_survivor(mu)):
                 out.append({"target": e.get("target"), "line": mu.get("line"),
                             "mutant": mu.get("mutant"), "test": mu.get("test"),
                             "criterion": mu.get("criterion"), "unit": uid})
@@ -2622,8 +2654,13 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
                 continue
             if mu.get("verdict") == mutation.EQUIVALENT_VERDICT:
                 continue          # excluded by design, and visibly so
+            if mu.get("withdrawn"):
+                # Withdrawn on the same terms: the reading was retracted, so it is neither a
+                # survivor nor evidence that a mutant was applied. Counting it as applied
+                # would let a retracted row satisfy the vacuous-zero check on its own.
+                continue
             applied += 1
-            if mu.get("verdict") == "survived":
+            if _is_live_survivor(mu):
                 survivors += 1
                 living.append(f"{e.get('target')}:{mu.get('line') or '?'} "
                               f"({mu.get('mutant') or 'unnamed mutant'})")

@@ -1147,6 +1147,29 @@ class SurvivorFilingCLITests(unittest.TestCase):
                               f"the filed finding does not name {needle!r}, so a reader cannot "
                               f"act on it without going back to the ledger")
 
+    def test_no_bug_is_filed_when_the_live_row_for_the_key_is_killed(self) -> None:
+        """BG0655 AC2. MUTANT: replace the filtered helper on this path with a direct
+        unfiltered ledger read, so the library filter stands and the command still files.
+
+        The wiring is the half a library test cannot see: `_file_surviving_mutants` is reached
+        only through the shipped verb, and a filer that over-reports holds a release on
+        evidence the ledger says does not exist."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _lane_repo(d, mode=None, record="current", mutants=[
+                {"unit": "BG0001", "criterion": "AC1", "row": 0, "verdict": "survived",
+                 "line": 2, "mutant": "inverted the a == b guard", "test": "pytest x",
+                 "withdrawn": {"reason": "re-measured on the current bytes and killed"}},
+                {"unit": "BG0001", "criterion": "AC1", "row": 0, "verdict": "killed",
+                 "line": 2, "mutant": "inverted the a == b guard", "test": "pytest x"}])
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
+            self.assertEqual(0, code, out)
+            filed = self._bugs(root)
+            self.assertEqual([], filed,
+                             f"a bug was filed for a withdrawn row whose live reading is "
+                             f"killed: {filed}")
+            self.assertNotIn("SURVIVED", out,
+                             "the command reported a survivor the ledger has retracted")
+
     def test_one_command_mints_exactly_one_bug_and_a_dry_run_mints_none(self) -> None:
         """AC2, on TWO PRISTINE FIXTURES. One fixture cannot see this: once AC4's idempotence
         exists, a dry run following a real one dedupes against it and mints nothing for the
@@ -5725,5 +5748,139 @@ class CoverageGateTests(unittest.TestCase):
             rc, out, err = self._set(root)
             self.assertEqual(rc, 0, out + err); self.assertIn("not measured - no traced verifier", out + err)
 
+
+class AnnotateSeverityTests(unittest.TestCase):
+    """BG0633: `annotate` was a third writer of a Severity line and the only one that never
+    checked the vocabulary, so an off-vocabulary value was written verbatim and then read by
+    neither the release bar nor the disclosure page - the finding disappearing from both at
+    once, which reads exactly like a clean corpus."""
+
+    def _bug(self, root: Path) -> Path:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / "BG0001-x.md"
+        p.write_text("# BG0001: x\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                     "> **Created-by:** sdlc-studio new\n\n## Summary\n\ns\n", encoding="utf-8")
+        return p
+
+    def test_an_off_vocabulary_severity_is_refused_through_the_shipped_command(self) -> None:
+        """MUTANT: delete the vocabulary call from `annotate` so any value reaches the writer.
+
+        Driven as the shipped command rather than as a call, because without `--id` argparse
+        exits 2 and the file is unchanged for a reason that has nothing to do with the
+        vocabulary - which is a green test for the wrong reason."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._bug(root)
+            before = p.read_text(encoding="utf-8")
+            rc, out = _cli(root, "annotate", "--id", "BG0001",
+                           "--field", "Severity", "--value", "major")
+            self.assertNotEqual(0, rc, out)
+            self.assertIn("Critical, High, Medium, Low", out,
+                          "the refusal must name the accepted set, or the author guesses")
+            self.assertEqual(before, p.read_text(encoding="utf-8"),
+                             "a refused annotate must leave the artefact untouched")
+
+    def test_a_differently_cased_severity_is_normalised(self) -> None:
+        """MUTANT: replace the normalisation with an exact-match membership test, so `high`
+        is refused rather than written `High`.
+
+        The positive control for the row above: a guard refusing EVERY severity satisfies the
+        refusal test on its own. Both readers fold case, and a writer stricter than its own
+        readers refuses findings they classify perfectly well."""
+        for spelling in ("high", "High"):
+            with self.subTest(spelling=spelling), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                p = self._bug(root)
+                rc, out = _cli(root, "annotate", "--id", "BG0001",
+                               "--field", "Severity", "--value", spelling)
+                self.assertEqual(0, rc, out)
+                body = p.read_text(encoding="utf-8")
+                self.assertIn("> **Severity:** High", body)
+                self.assertEqual(1, body.count("Severity:"),
+                                 "the canonical line is updated in place, never duplicated")
+
+    def test_the_guard_is_keyed_on_the_normalised_field_name(self) -> None:
+        """MUTANT: key the guard on the raw `field` argument rather than the folded `key`.
+
+        Measured before the fix: `--field severity --value banana` exited 0 and INSERTED a
+        second metadata line beside the untouched canonical one, because the denylist folds
+        the name and the writer matches it case-sensitively. A guard keyed on the literal
+        spelling passes both rows above with the defect live on every other one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._bug(root)
+            before = p.read_text(encoding="utf-8")
+            rc, out = _cli(root, "annotate", "--id", "BG0001",
+                           "--field", "severity", "--value", "banana")
+            self.assertNotEqual(0, rc, out)
+            self.assertEqual(before, p.read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._bug(root)
+            rc, out = _cli(root, "annotate", "--id", "BG0001",
+                           "--field", "severity", "--value", "low")
+            self.assertEqual(0, rc, out)
+            body = p.read_text(encoding="utf-8")
+            self.assertIn("> **Severity:** Low", body)
+            self.assertEqual(1, body.count("everity:"),
+                             "an accepted value under a lowercase field name must update the "
+                             "canonical line, not insert a second one beside it")
+
+
+class SurvivorFilerTests(unittest.TestCase):
+    """BG0655: the survivor filer selected on the verdict alone, so a row recorded `survived`
+    and then WITHDRAWN was still offered. The run that filed this bug filed it as a HIGH from
+    exactly such a row, and the release-notes gate then refused the commit because the notes
+    claim zero High - the over-report cost a release."""
+
+    def _ledger(self, root: Path, rows: list) -> None:
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(json.dumps(
+            {"version": 1, "dropped": 0,
+             "entries": [{"target": "src/thing.py", "hash": "a" * 64,
+                          "provenance": "registered", "mutants": rows}]}), encoding="utf-8")
+
+    def test_a_withdrawn_row_is_not_offered_as_a_survivor(self) -> None:
+        """MUTANT: delete the `withdrawn` test from the predicate, returning to verdict alone.
+
+        The paired control is in the same fixture: a row recorded `survived` and NOT withdrawn
+        IS still offered, so the filter narrows the selection rather than emptying it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._ledger(root, [
+                {"unit": "BG0001", "criterion": "AC1", "row": 0, "verdict": "survived",
+                 "line": 2, "mutant": "retracted reading", "test": "pytest x",
+                 "withdrawn": {"reason": "measured against a fixture that could not reach it"}},
+                {"unit": "BG0001", "criterion": "AC2", "row": 0, "verdict": "survived",
+                 "line": 7, "mutant": "a real survivor", "test": "pytest y"},
+            ])
+            got = tr._survivor_records(root, "BG0001")
+            self.assertEqual(["a real survivor"], [m["mutant"] for m in got],
+                             "a withdrawn row was offered, or the live one was dropped with it")
+
+    def test_a_withdrawn_row_is_not_counted_by_the_evidence_gate(self) -> None:
+        """MUTANT: delete the withdrawn skip from the gate's own counting loop.
+
+        The same defect sits in the second reader, and the observable is the APPLIED count
+        rather than the survivor count: with the skip, a unit whose only row is a retracted
+        reading has applied nothing, and the gate says so. Without it the retraction counts as
+        an applied mutant and satisfies the vacuous-zero check on its own - evidence that a
+        run happened, manufactured out of a row the ledger withdrew."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _lane_repo(d, mode=None, record="current", mutants=[
+                {"unit": "BG0001", "criterion": "AC1", "row": 0, "verdict": "survived",
+                 "line": 2, "mutant": "retracted reading", "test": "pytest x",
+                 "withdrawn": {"reason": "measured against a fixture that could not reach it"}}])
+            text = _read(root, "bugs", "BG0001-x.md")
+            reason = tr.repair_mutation_gate(root, "BG0001", text)
+            self.assertIn("applied NO mutant", str(reason or ""),
+                          "a retracted row was counted as an applied mutant, so a unit with no "
+                          "evidence at all passed the vacuous-zero check")
+            self.assertNotIn("SURVIVED", str(reason or ""),
+                             "the gate counted a withdrawn row as a survivor")
+
+
 if __name__ == "__main__":
     unittest.main()
+
