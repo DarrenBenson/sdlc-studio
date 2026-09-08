@@ -40,6 +40,21 @@ exists to catch, hidden by pytest importing it for us.
   2026-09-07, `off` collects nothing, an unknown value is refused by name, and a line ruled
   equivalent is subtracted and counted in the depth field.
 
+## THE SECOND ROUND, AND WHAT IT COST
+
+Round two ran on every unit whose repair was unreviewed, and rejected again: four seats,
+four rejections, converging from opposite directions on one defect. `coverage withdraw`
+searched by the ruling's REASON text, so a withdrawal retracted whichever row came first
+while reporting the row named, and on an escaped pipe it matched nothing, crashed on a
+bare assertion, and under `python3 -O` reported success with the waiver still live. Beside
+it, a ruling this run wrote claimed its line was reachable only by breaking a tool the
+suite needs; two seats reached it with every tool intact. The fixture now spawns a traced
+child before the verifier hangs, the ruling is withdrawn on the record rather than
+restated, and the withdrawal is keyed on the row's own file, line and hash.
+
+The lesson the run leaves is narrow and repeatable: the mechanism that waives a check is
+itself a check, and it needs the same adversarial treatment as the thing it waives.
+
 ## WHAT IS OWED
 
 - The push: twelve commits stand unpushed. The pre-push hook pays three boundary lanes, roughly

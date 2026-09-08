@@ -125,6 +125,38 @@ ruling HOLDS the close, which is the point of being able to make one.
 | BG0638 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
 | BG0654 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
 | CR0511 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0509 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0528 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0529 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0530 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0531 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0533 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0534 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0535 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0536 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0539 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0546 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0547 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0548 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0550 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0551 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0552 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0553 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0554 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0555 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0556 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0557 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0558 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0559 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0560 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0561 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0562 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0563 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0564 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0565 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0566 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0567 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
+| CR0568 | not-stop-ship | Claude Fable 5.1 | 2026-09-08 |
 
 ## Estimate vs actual
 
