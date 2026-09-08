@@ -1,7 +1,8 @@
 # BG0652: status.py hint takes 56 seconds on this corpus: its close-owed advisory runs outside any corpus sweep
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
+> **Verification depth:** functional [[derived: criteria 1; plan rows 1; executed 1; killed 1; survived 0; not-run 0; entry point 1 of 1 criteria through the shipped CLI, 0 in-process | fp a12548787c5f ]] (the one criterion drives the shipped command as a subprocess over the corpus-shaped fixture and pins the sweep by identity in-process; the figure on this corpus is recorded in the revision row with its command, never as a suite test)
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
 > **Evidence:** BG0646 product seat, delivery r1, 2026-09-07, timed on this corpus: 56 s after the fix, 123 s at e61b98fb.
@@ -28,6 +29,7 @@ Run `cmd_hint`'s advisories inside one `corpus_cache()` sweep as `cmd_pillars` d
 
 - [ ] **AC1** Given the fixture corpus BG0646's tests generate, when `status.py hint` runs as a SUBPROCESS over it, then it exits 0 inside 15 s and its advisories are entered inside the same sweep as its census, asserted in-process by identity as BG0646 AC2 does for the dashboard.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::HintPerformanceTests::test_the_hint_command_answers_the_corpus_shaped_fixture_inside_the_bound
+  - **Verified:** yes (2026-09-08)
 
 ## Test Plan
 
@@ -42,3 +44,4 @@ Run `cmd_hint`'s advisories inside one `corpus_cache()` sweep as `cmd_pillars` d
 | 2026-09-07 | sdlc-studio | Filed |
 | 2026-09-07 | Claude Fable 5.1 | Goal review round 3 (all seats yes): Test Plan titles re-synced to the criteria |
 | 2026-09-07 | Claude Fable 5.1 | Test Plan rows rewritten as edits led by a verb and the Mutant sentences moved out of the criteria, so `testplan derive` reads the plan as its own shape |
+| 2026-09-08 | Claude Fable 5.1 | Delivery: built in a worktree while the corpus lane ran, ported by patch. Measured by `/usr/bin/time -f wall=%es python3 .claude/skills/sdlc-studio/scripts/status.py hint` on this corpus: 0.74 s in the worktree (no run state) against 56 s before; the dashboard reads 0.64 s beside it. Over `_corpus_shaped_fixture`: 1.4 s after, 23.4 s with the one planned mutant applied, which the 15 s bound and the identity pin both kill. D0183's figure by `coverage run` with `patch = subprocess` joined to `git diff -U0`: 3 added statements, 3 executed by the unit's own test, 0 uncovered |

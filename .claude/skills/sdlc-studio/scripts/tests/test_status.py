@@ -1266,5 +1266,50 @@ class GatherPerformanceTests(unittest.TestCase):
         self.assertGreater(seen["flushed_before_gather"], 0)
 
 
+class HintPerformanceTests(unittest.TestCase):
+    """BG0652. MUTANT (AC1): move `close_owed_advisory` and the other advisories in `cmd_hint`
+    back outside the `corpus_cache()` sweep - today's code, measured at 22.9 s over the fixture
+    against 0.7 s for the dashboard. The bound is the consumer's: `status hint` exits inside 15 s
+    on a corpus this repository's shape; the identity pin is the structural half, so a faster
+    machine cannot pass the wrong shape."""
+
+    def _fixture(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="status_hint_perf_")); self.addCleanup(shutil.rmtree, d, True)
+        _corpus_shaped_fixture(d)
+        return d
+
+    def test_the_hint_command_answers_the_corpus_shaped_fixture_inside_the_bound(self) -> None:
+        import subprocess, time  # noqa: PLC0415
+        from lib import sdlc_md  # noqa: PLC0415
+        root = self._fixture()
+        t0 = time.monotonic()
+        proc = subprocess.run([sys.executable, "-B", str(SCRIPT_PATH), "hint", "--root", str(root)],
+                              capture_output=True, text=True, timeout=120)
+        t_exit = time.monotonic() - t0
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertTrue(proc.stdout.startswith("/sdlc-studio "), proc.stdout[:120])
+        self.assertLess(t_exit, 15.0, f"`status hint` took {t_exit:.1f}s over a corpus this repository's shape")
+        # The structural pin, as the dashboard's (BG0646 AC2): the shipped command hands the
+        # close-owed advisory the census the gather took - entered inside the SAME open sweep,
+        # never after it closed or in one of its own.
+        seen = {}
+        real_gather, real_adv = status.gather, status.close_owed_advisory
+
+        def spy_gather(r, **kw):
+            seen["gather_sweep"] = id(sdlc_md._CORPUS_CACHE) if sdlc_md.corpus_cache_active() else None
+            return real_gather(r, **kw)
+
+        def spy_adv(r):
+            seen["advisory_sweep"] = id(sdlc_md._CORPUS_CACHE) if sdlc_md.corpus_cache_active() else None
+            return real_adv(r)
+
+        with unittest.mock.patch.object(status, "gather", spy_gather), \
+             unittest.mock.patch.object(status, "close_owed_advisory", spy_adv), \
+             contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(0, status.main(["hint", "--root", str(root)]))
+        self.assertIsNotNone(seen.get("gather_sweep"), "`hint` ran gather outside any sweep")
+        self.assertIsNotNone(seen.get("advisory_sweep"), "`hint` ran the close-owed advisory outside any sweep - its own walk")
+        self.assertEqual(seen["gather_sweep"], seen["advisory_sweep"], "the advisory ran in a different sweep from the gather - a second census")
+
 if __name__ == "__main__":
     unittest.main()

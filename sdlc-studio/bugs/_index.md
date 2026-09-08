@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 16 |
+| Open | 15 |
 | In Progress | 0 |
-| Fixed | 537 |
+| Fixed | 538 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
@@ -191,7 +191,7 @@
 | [BG0649](BG0649-test-critic-is-red-when-run-alone-unittest.md) | test_critic is red when run alone: unittest.mock is used at line 5131 without an import | Fixed | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0650](BG0650-the-depth-count-census-reads-the-entry-point.md) | The depth-count census reads the entry-point denominator, so an artefact with a manual criterion fails it | Fixed | Medium | 2026-09-04 | 2026-09-04 |
 | [BG0651](BG0651-a-later-commit-that-changes-a-target-file.md) | A later commit that changes a target file empties an earlier unit's mutation evidence silently, and nothing refuses until the close dry-run | Fixed | Medium | 2026-09-06 | 2026-09-06 |
-| [BG0652](BG0652-status-py-hint-takes-56-seconds-on-this.md) | status.py hint takes 56 seconds on this corpus: its close-owed advisory runs outside any corpus sweep | Open | Medium | 2026-09-07 | 2026-09-07 |
+| [BG0652](BG0652-status-py-hint-takes-56-seconds-on-this.md) | status.py hint takes 56 seconds on this corpus: its close-owed advisory runs outside any corpus sweep | Fixed | Medium | 2026-09-07 | 2026-09-07 |
 | [BG0653](BG0653-a-test-rename-at-a-close-commit-orphaned.md) | A test rename at a close commit orphaned a stamped selector, and the scheduled corpus lane that saw it has been red for three weeks unread | Fixed | Medium | 2026-09-07 | 2026-09-07 |
 | [BG0654](BG0654-a-push-whose-pre-push-gate-outlives-the.md) | A push whose pre-push gate outlives the SSH connection git opened before the hook dies with exit 141 after the gate reports PASS, and nothing names the cause | Open | Medium | 2026-09-07 | 2026-09-07 |
 

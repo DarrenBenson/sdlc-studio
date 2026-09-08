@@ -571,6 +571,14 @@ def _compute_hint_rung(data: dict, repo_root: Path) -> dict:
 
 def cmd_hint(args: argparse.Namespace) -> int:
     """Print the single next recommended action."""
+    # ONE corpus sweep for the census and every advisory, as the dashboard takes: entered
+    # outside any sweep, the close-owed advisory alone re-walked all 2,340 artefacts per
+    # `children_of` call - 56 s on this corpus after the dashboard had come down to a second.
+    with sdlc_md.corpus_cache():
+        return _hint_inside_sweep(args)
+
+
+def _hint_inside_sweep(args: argparse.Namespace) -> int:
     repo_root = Path(args.root).resolve()
     data = gather(repo_root)
     hint = compute_hint(data, repo_root)

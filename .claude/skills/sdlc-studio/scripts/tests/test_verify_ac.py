@@ -6323,6 +6323,7 @@ class StagedStampsTests(unittest.TestCase):
     TEST = "tools/tests/test_probe.py"
     OTHER = "tools/tests/test_elsewhere.py"
     KEPT = ("def test_top():\n    assert True\n\n\n"
+            "async def test_async_top():\n    assert True\n\n\n"
             "class Probe:\n    def test_it(self):\n        assert True\n\n"
             "    def test_other(self):\n        assert True\n\n"
             "    async def test_async(self):\n        assert True\n")
@@ -6417,6 +6418,13 @@ class StagedStampsTests(unittest.TestCase):
             rc, out, _ = self._stamps(root)
             self.assertEqual(rc, 1, out)
             self.assertIn("US9001 AC1: stamped verified, but its verifier selects nothing", out)
+        with tempfile.TemporaryDirectory() as d:
+            # A MODULE-LEVEL async def renamed: the other half of the async arm.
+            root = self._repo(Path(d), selector=f"pytest {self.TEST}::test_async_top")
+            self._stage(root, self.TEST, self.KEPT.replace("def test_async_top(", "def test_async_apex("))
+            rc, out, _ = self._stamps(root)
+            self.assertEqual(rc, 1, out)
+            self.assertIn("US9001 AC1", out)
         with tempfile.TemporaryDirectory() as d:
             # The `-k` shape, 324 stamped instances in this corpus: the pattern is judged over
             # the AST-derived node ids, so renaming the node it matches is refused...
