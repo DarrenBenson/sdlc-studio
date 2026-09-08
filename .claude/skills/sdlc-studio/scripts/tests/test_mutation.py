@@ -5397,8 +5397,20 @@ class RegisterReplacesTests(unittest.TestCase):
             root = self._root(Path(d))
             first = self._reg(mut, root); self.assertFalse(first["replaced"])
             again = self._reg(mut, root); self.assertTrue(again["replaced"], "the identical registration must REPLACE")
+            summary = json.loads((root / "sdlc-studio" / ".local" / "mutation-runs.json").read_text(encoding="utf-8"))["entries"][0]["summary"]
+            self.assertEqual((summary.get("applied"), summary.get("killed")), (1, 1), "a replace must not advance the tallies the gates read: " + str(summary))
             self.assertEqual(self._rows(root), [("t.py", "AC1", 0, "killed", "pytest x.py::T::test_a")], "one live row per key")
             self.assertEqual(again["registered"], 1, "the applied count must not inflate on a replace")
+            # Two identical rows an older ledger already holds (the shape BG0614 audits) collapse
+            # to one, and the tallies come down with them: applied 2 -> 1, killed 2 -> 1.
+            ledger = root / "sdlc-studio" / ".local" / "mutation-runs.json"
+            led = json.loads(ledger.read_text(encoding="utf-8")); e = led["entries"][0]
+            e["mutants"].append(dict(e["mutants"][0])); e["summary"]["applied"] = 2; e["summary"]["killed"] = 2
+            ledger.write_text(json.dumps(led), encoding="utf-8")
+            collapsed = self._reg(mut, root); self.assertTrue(collapsed["replaced"])
+            e = json.loads(ledger.read_text(encoding="utf-8"))["entries"][0]
+            self.assertEqual(len([m for m in e["mutants"] if not m.get("withdrawn")]), 1)
+            self.assertEqual((e["summary"]["applied"], e["summary"]["killed"]), (1, 1), "collapsing two rows into one takes one off each tally: " + str(e["summary"]))
             # Control one: a different ROW of the same criterion appends.
             self._reg(mut, root, row=1, mutant="flip VALUE twice")
             self.assertEqual(len(self._rows(root)), 2)
@@ -5419,13 +5431,23 @@ class RegisterReplacesTests(unittest.TestCase):
             self._reg(mut, root, verdict="survived")
             with self.assertRaises(ValueError) as cm:
                 self._reg(mut, root, verdict="killed")
-            self.assertIn("mutation.py retract --reason", str(cm.exception))
             self.assertIn("survived", str(cm.exception))
+            # The remedy is printed runnable: every one of retract's six join fields, with the
+            # LIVE row's line and description rather than the caller's.
+            self.assertIn('`mutation.py retract --unit BG9201 --criterion AC1 --target t.py --line 1 --mutant "flip VALUE" --verdict survived --reason <why>`', str(cm.exception))
             with self.assertRaises(ValueError):
                 self._reg(mut, root, verdict="survived", test="pytest x.py::T::test_b")
             self.assertEqual(self._rows(root), [("t.py", "AC1", 0, "survived", "pytest x.py::T::test_a")], "the live row is untouched by a refused registration")
             # The positive control: AC1's identical replace still passes on this same row.
             self.assertTrue(self._reg(mut, root, verdict="survived")["replaced"])
+            # The route the refusal names, followed to its end: withdraw the live row on the
+            # printed join fields, then register the corrected verdict - accepted, one live row,
+            # the withdrawal still on the record.
+            mut.retract_mutant(root, root / "t.py", "BG9201", "AC1", 1, "flip VALUE", "survived", "the survived reading was a stale bytecode artefact")
+            corrected = self._reg(mut, root, verdict="killed")
+            self.assertFalse(corrected["replaced"])
+            self.assertEqual(self._rows(root), [("t.py", "AC1", 0, "killed", "pytest x.py::T::test_a")])
+            self.assertEqual(len(mut.retractions(root, "BG9201")), 1, "the withdrawal stays on the record")
 
     # -- AC3 -------------------------------------------------------------------------
     def test_the_cli_path_replaces_and_reports_through_the_shipped_command(self) -> None:
@@ -5443,7 +5465,7 @@ class RegisterReplacesTests(unittest.TestCase):
             # ...and the refusal reaches the shell with exit 2, naming retract.
             third = subprocess.run(argv[:-1] + ["survived"], capture_output=True, text=True, timeout=120)
             self.assertEqual(third.returncode, 2, third.stdout + third.stderr)
-            self.assertIn("retract --reason", third.stderr)
+            self.assertIn("mutation.py retract --unit BG9201 --criterion AC1 --target t.py --line 1 --mutant \"flip VALUE\" --verdict killed --reason <why>", third.stderr)
 
 if __name__ == "__main__":
     unittest.main()

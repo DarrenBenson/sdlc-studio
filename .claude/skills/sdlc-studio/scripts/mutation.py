@@ -2159,15 +2159,28 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
                     and int(m.get("row") or 0) == record["row"]]
         for m in same_key:
             if m.get("verdict") != record["verdict"] or (m.get("test") or None) != record["test"]:
+                # The remedy is printed RUNNABLE: retract joins on six fields, and two of them
+                # (the live row's line and description) are the row's, not the caller's - a
+                # same-verdict registration with drifted prose replaced the row and kept its own.
                 raise ValueError(
                     f"refused: {record['unit']} {record['criterion']} r{record['row']} already "
-                    f"holds a live {m.get('verdict')} row against `{m.get('test')}` on these bytes; "
-                    f"a registration with a different verdict or test does not replace it - "
-                    f"withdraw the row first with `mutation.py retract --reason <why>`, so the "
-                    f"correction stays on the record (worst-verdict-wins is not traded away)")
+                    f"holds a live {m.get('verdict')} row against `{m.get('test')}` on these bytes "
+                    f"(line {m.get('line')}, mutant \"{m.get('mutant') or ''}\"); a registration "
+                    f"with a different verdict or test does not replace it - withdraw the row "
+                    f"first with `mutation.py retract --unit {record['unit']} --criterion "
+                    f"{record['criterion']} --target {rel} --line {m.get('line')} --mutant "
+                    f"\"{m.get('mutant') or ''}\" --verdict {m.get('verdict')} --reason <why>`, "
+                    f"so the correction stays on the record (worst-verdict-wins is not traded away)")
         if same_key:
             entry["mutants"] = [m for m in entry["mutants"] if m not in same_key] + [record]
             replaced = True
+            # N identical rows collapse to one, and the tallies the gates read (`applied`, the
+            # verdict count) were advanced once per row when they were appended: take the
+            # N-1 back, or one row reads as N registrations forever.
+            extra = len(same_key) - 1
+            if extra:
+                entry["summary"]["applied"] = max(0, int(entry["summary"].get("applied") or 0) - extra)
+                entry["summary"][verdict] = max(0, int(entry["summary"].get(verdict) or 0) - extra)
     if not replaced:
         entry.setdefault("mutants", []).append(record)
         entry["summary"]["applied"] += 1
