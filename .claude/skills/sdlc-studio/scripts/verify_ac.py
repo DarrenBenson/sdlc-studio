@@ -2244,6 +2244,11 @@ def coverage_report(root, unit_path: Path, unit: str, *, base_ref: str | None = 
             "was given - the ref belongs to the unit's run, and this check must not invent one")
     if not _ref_exists(root, base):
         raise CoverageUnavailable(f"coverage: not measured - base ref `{base}` does not resolve here")
+    if not _is_ancestor(root, base):
+        # a ref off the line of history has no commits "since" it: the measurement would read
+        # zero added lines and pass, which is the gate satisfied by a wrong ref
+        raise CoverageUnavailable(f"coverage: not measured - base ref `{base}` is not an ancestor of "
+                                  "HEAD, so nothing since it can be attributed")
     python = coverage_interpreter()
     version = coverage_version(python)
     if version is None:
@@ -2287,19 +2292,39 @@ def coverage_report(root, unit_path: Path, unit: str, *, base_ref: str | None = 
             for stale in data_dir.glob(f"{uid}.coverage*"):
                 stale.unlink()
             env = {**os.environ, "COVERAGE_RCFILE": str(rc)}
+
+            def run_cov(argv: list, *, must_succeed: bool = False) -> None:
+                # A run cut short by the timeout has written a partial data file; left behind,
+                # the next run would combine it and read a dead line as executed. Purge, then
+                # refuse by name - nothing is read from a measurement that did not finish. A
+                # verifier's own exit code is its verdict, not this lane's; coverage's own
+                # verbs (combine, json) failing is a measurement that never happened, and read
+                # as "no data" it was zero added statements everywhere, at exit 0.
+                try:
+                    cp = subprocess.run(argv, cwd=str(root), capture_output=True, text=True,
+                                        timeout=timeout, env=env)
+                    if must_succeed and cp.returncode != 0:
+                        raise CoverageUnavailable(
+                            f"coverage: not measured - `{' '.join(map(str, argv[-4:-2]))}` exited "
+                            f"{cp.returncode} on {python}: {(cp.stderr or cp.stdout).strip().splitlines()[-1:]}")
+                except subprocess.TimeoutExpired as exc:
+                    for stale in data_dir.glob(f"{uid}.coverage*"):
+                        stale.unlink()
+                    raise CoverageUnavailable(
+                        f"coverage: not measured - `{' '.join(map(str, exc.cmd[-2:]))}` exceeded "
+                        f"{timeout}s under coverage, and a run cut short is not evidence") from exc
+
             for argv in selectors:
-                subprocess.run([python, "-m", "coverage", "run", "-m", "pytest", "-q", "-p",
-                                "no:cacheprovider", *argv], cwd=str(root), capture_output=True,
-                               text=True, timeout=timeout, env=env)
-            subprocess.run([python, "-m", "coverage", "combine", "-q"], cwd=str(root),
-                           capture_output=True, text=True, timeout=timeout, env=env)
+                run_cov([python, "-m", "coverage", "run", "-m", "pytest", "-q", "-p",
+                         "no:cacheprovider", *argv])
+            run_cov([python, "-m", "coverage", "combine", "-q", "--keep"], must_succeed=True)
             out_json = Path(tmp) / "cov.json"
-            subprocess.run([python, "-m", "coverage", "json", "-q", "-o", str(out_json)],
-                           cwd=str(root), capture_output=True, text=True, timeout=timeout, env=env)
+            run_cov([python, "-m", "coverage", "json", "-q", "-o", str(out_json)], must_succeed=True)
             try:
-                data = json.loads(out_json.read_text(encoding="utf-8")).get("files", {})  # bare-read-ok: coverage's own JSON in a temp dir, not an artefact; unreadable is caught beside it
-            except (OSError, ValueError):
-                data = {}
+                data = json.loads(out_json.read_text(encoding="utf-8")).get("files", {})  # bare-read-ok: coverage's own JSON in a temp dir, not an artefact; unreadable is refused beside it
+            except (OSError, ValueError) as exc:
+                raise CoverageUnavailable(f"coverage: not measured - coverage's JSON report could not "
+                                          f"be read on {python}: {exc}") from exc
             for path, info in data.items():
                 rel_key = os.path.relpath(path, root) if os.path.isabs(path) else path
                 executed_by_file[rel_key] = (set(info.get("executed_lines", [])),
@@ -4143,6 +4168,15 @@ def _base_blob(root: Path, ref: str, rel: str) -> bytes | None:
             f"`git show {ref}:{rel}` failed for a path `ls-tree` says exists: "
             f"{shown.stderr.decode('utf-8', 'replace').strip() or 'no message'}")
     return shown.stdout
+
+
+def _is_ancestor(root: Path, ref: str) -> bool:
+    try:
+        cp = subprocess.run(["git", "-C", str(root), "merge-base", "--is-ancestor", ref, "HEAD"],
+                            capture_output=True, text=True, timeout=30, env=_git_env())
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return cp.returncode == 0
 
 
 def _ref_exists(root: Path, ref: str) -> bool:

@@ -361,7 +361,7 @@ No. It is a curl-installed Agent Skill (a plug-in for AI coding tools) - a folde
 <details>
 <summary>What do I need installed?</summary>
 
-Python 3.10+ for the bundled scripts (standard library only; **PyYAML** and **coverage** (7.10 or later) are the optional dependencies - PyYAML, needed only if you set a project `.config.yaml` - without it the scripts degrade to the built-in defaults with a one-line warning, never a crash). The `gh` CLI only for the GitHub sync commands, and whatever test runners your acceptance criteria invoke (pytest, vitest, go, ...).
+Python 3.10+ for the bundled scripts (standard library only, with two optional dependencies: **PyYAML**, needed only if you set a project `.config.yaml`, without which the scripts degrade to the built-in defaults with a one-line warning, never a crash; and **coverage** 7.10 or later, needed only by `verify_ac run --coverage`, which measures a unit's own added lines). The `gh` CLI only for the GitHub sync commands, and whatever test runners your acceptance criteria invoke (pytest, vitest, go, ...).
 
 </details>
 

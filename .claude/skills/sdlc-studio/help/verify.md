@@ -127,8 +127,9 @@ collected from the unit's own `pytest` selectors alone, on `SDLC_COVERAGE_PYTHON
 (else the current interpreter), following the child interpreters they spawn. A `shell`,
 `grep`, `eval` or `http` verifier is listed `not traced`; a Python file with no traced
 verifier is `not measured`; a non-Python file is `not measurable`. Exit 1 on any uncovered
-added line; exit 2 and `coverage: not measured - the coverage module is absent` when the
-module is missing or below 7.10. The `--report` JSON gains a `coverage` key carrying the
+added line; exit 2 naming the dependency when the module is missing (`coverage: not measured -
+the coverage module is absent`), when it is older than 7.10 (`... is below the floor 7.10 ...`),
+or when a verifier outruns the timeout under coverage. The `--report` JSON gains a `coverage` key carrying the
 per-file uncovered lines, the base ref and a hash over the unit's Affects, so a gate can tell
 a stale report from a current one. Data files live under `sdlc-studio/.local/coverage/`.
 

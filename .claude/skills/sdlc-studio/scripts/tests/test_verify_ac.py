@@ -6652,6 +6652,8 @@ class LineCoverageTests(unittest.TestCase):
             self._commit(root, f"chore: paperwork\n\nRefs: US9309\nRefs: {self.UNIT}\n")
             self._append(root, self.PROD, "\n\ndef comma_dead():\n    return 7\n")
             self._commit(root, f"chore: more paperwork\n\nRefs: US9309, {self.UNIT}\n")
+            # an UNCOMMITTED edit to the tracked module: blame's zero sha, the unit's line
+            self._append(root, self.PROD, "\n\ndef wt_dead():\n    return 8\n")
             rc, out, err = self._run(root, self.UNIT)
             self.assertEqual(rc, 1, out + err)
             src = (root / self.PROD).read_text(encoding="utf-8").splitlines()
@@ -6662,12 +6664,12 @@ class LineCoverageTests(unittest.TestCase):
             m = re.search(r"coverage: prod/mod.py: (\d+) added statement\(s\), (\d+) executed, (\d+) uncovered: (.*)", out)
             self.assertIsNotNone(m, out)
             listed = {int(x) for x in m.group(4).split(", ")}
-            for name in ("added_dead", "refs_dead", "comma_dead"):
+            for name in ("added_dead", "refs_dead", "comma_dead", "wt_dead"):
                 self.assertIn(line_of(name), listed, f"{name} must be listed as this unit's uncovered line: {out}")
             self.assertNotIn(line_of("mate_dead"), listed, "a cluster-mate's commit is not this unit's, even though its body names it")
             self.assertNotIn(line_of("dormant"), listed, "a line that pre-dates the base ref is not an added line")
             self.assertNotIn(line_of("added_used"), listed)
-            self.assertIn("coverage: uncovered: 3", out)
+            self.assertIn("coverage: uncovered: 4", out)
         with tempfile.TemporaryDirectory() as d:
             # The paired control: every added line executed -> uncovered 0, and the dormant
             # pre-existing function is still there for the diff-filter mutant to trip over.
@@ -6757,10 +6759,35 @@ class LineCoverageTests(unittest.TestCase):
                 rc, out, err = self._run(root, self.UNIT)
             self.assertEqual(rc, 2, out + err)
             self.assertIn("below the floor 7.10", err)
+            # present, at the floor, and unable to RUN: `python -m coverage` fails, and a
+            # measurement that never happened must not read as zero added statements
+            broken = Path(d) / "broken"; (broken / "coverage").mkdir(parents=True)
+            (broken / "coverage" / "__init__.py").write_text("__version__ = '7.12.0'\n", encoding="utf-8")
+            lame = Path(d) / "python-lame-coverage"
+            lame.write_text(f"#!/bin/sh\nPYTHONPATH={broken} exec {sys.executable} \"$@\"\n", encoding="utf-8"); lame.chmod(0o755)
+            with unittest.mock.patch.dict(os.environ, {"SDLC_COVERAGE_PYTHON": str(lame)}):
+                rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn("coverage: not measured", err); self.assertIn("exited", err)
+            self.assertNotIn("uncovered: 0", out)
             with unittest.mock.patch.dict(os.environ, {"SDLC_COVERAGE_PYTHON": str(Path(d) / "no-such-python")}):
                 rc, out, err = self._run(root, self.UNIT)
             self.assertEqual(rc, 2, out + err)
             self.assertIn("coverage: not measured - the coverage module is absent", err)
+        with tempfile.TemporaryDirectory() as d:
+            # A verifier that outruns the timeout: refused by name, and the partial data file
+            # a run cut short leaves behind is purged rather than combined by the next run.
+            root, base = self._repo(Path(d))
+            self._append(root, self.PROD, "\n\ndef added_dead():\n    return 4\n")
+            self._append(root, self.TEST, "\n    def test_slow(self):\n        import time\n        time.sleep(20)\n")
+            story = self._story(root, self.UNIT, f"{self.PROD}, docs/note.md", [f"pytest {self.TEST}::TestT::test_slow"])
+            self._commit(root, f"fix({self.UNIT}): a slow verifier\n")
+            leftover_dir = root / "sdlc-studio" / ".local" / "coverage"; leftover_dir.mkdir(parents=True)
+            (leftover_dir / f"{self.UNIT}.coverage.partial").write_text("left by a run cut short\n", encoding="utf-8")
+            with self.assertRaises(verify_ac.CoverageUnavailable) as cm:
+                verify_ac.coverage_report(root, story, self.UNIT, base_ref=base, timeout=3)
+            self.assertIn("exceeded 3s under coverage", str(cm.exception))
+            self.assertEqual(list((root / "sdlc-studio" / ".local" / "coverage").glob(f"{self.UNIT}.coverage*")), [])
 
     # -- AC4 -------------------------------------------------------------------------
     def test_the_cli_exit_code_and_report_carry_the_verdict(self) -> None:
@@ -6776,6 +6803,11 @@ class LineCoverageTests(unittest.TestCase):
             rep = json.loads((root / "sdlc-studio" / ".local" / "cov-report.dry-run.json").read_text(encoding="utf-8"))
             entry = rep["coverage"]["US9301-cov"]
             self.assertEqual(entry["base_ref"], base); self.assertEqual(len(entry["affects_hash"]), 64)
+            first_hash = entry["affects_hash"]
+            self._append(root, "docs/note.md", "\nthe same names, different bytes\n")
+            cp = subprocess.run(argv, capture_output=True, text=True, timeout=600)
+            rep = json.loads((root / "sdlc-studio" / ".local" / "cov-report.dry-run.json").read_text(encoding="utf-8"))
+            self.assertNotEqual(rep["coverage"]["US9301-cov"]["affects_hash"], first_hash, "the hash is over the files' CONTENT, so a gate can tell a stale report from a current one")
             self.assertEqual(len(entry["files"]["prod/mod.py"]["uncovered"]), 1)
             self.assertEqual([p.name for p in root.glob(".coverage*")], [], "coverage's data files must never land at the tree root")
             self._append(root, self.TEST, "\n    def test_a3(self):\n        assert mod.added_dead() == 4\n")
@@ -6786,6 +6818,14 @@ class LineCoverageTests(unittest.TestCase):
             cp = subprocess.run([*argv, "--base", "deadbeefcafe"], capture_output=True, text=True, timeout=600)
             self.assertEqual(cp.returncode, 2, cp.stdout + cp.stderr)
             self.assertIn("base ref `deadbeefcafe` does not resolve here", cp.stderr)
+            # a ref that resolves but sits off HEAD's line of history: nothing since it can be
+            # attributed, and reading that as zero added lines would pass a wrong ref
+            gitutil.git(["checkout", "-q", "-b", "aside", base], root)
+            self._append(root, "docs/note.md", "\naside\n"); aside = self._commit(root, "aside: not on the line\n")
+            gitutil.git(["checkout", "-q", "-"], root)
+            cp = subprocess.run([*argv, "--base", aside], capture_output=True, text=True, timeout=600)
+            self.assertEqual(cp.returncode, 2, cp.stdout + cp.stderr)
+            self.assertIn("is not an ancestor of HEAD", cp.stderr)
 
     # -- AC5 -------------------------------------------------------------------------
     def test_a_non_python_affects_file_is_reported_not_measurable(self) -> None:
@@ -6822,6 +6862,24 @@ class LineCoverageTests(unittest.TestCase):
             self.assertEqual(rc, 0, out + err)
             self.assertIn("coverage: uncovered: 0", out)
             self.assertEqual([p.name for p in data_dir.glob(f"{self.UNIT}.coverage*")], [], "the run's data files, and any stale one, are removed after the read")
+        with tempfile.TemporaryDirectory() as d:
+            # A REAL data file from an earlier, interrupted run, in which a sibling test executed
+            # the dead line: combined, it would read the line covered. Purged before the run, the
+            # unit's own selector alone decides.
+            root, base = self._repo(Path(d))
+            self._append(root, self.PROD, "\n\ndef added_dead():\n    return 4\n")
+            self._append(root, self.TEST, "\n    def test_sibling(self):\n        assert mod.added_dead() == 4\n")
+            self._commit(root, f"fix({self.UNIT}): a line only a sibling reaches\n")
+            data_dir = root / "sdlc-studio" / ".local" / "coverage"; data_dir.mkdir(parents=True)
+            # the earlier run is its own process: it must not inherit the rc of a lane that may
+            # be measuring THIS test, or its data lands in that lane's file instead of the leftover
+            clean_env = {k: v for k, v in os.environ.items() if not k.startswith("COVERAGE")}
+            cp = subprocess.run([sys.executable, "-m", "coverage", "run", f"--data-file={data_dir / (self.UNIT + '.coverage.leftover')}", f"--source={root / 'prod'}", "-m", "pytest", "-q", "-p", "no:cacheprovider", f"{self.TEST}::TestT::test_sibling"], cwd=str(root), capture_output=True, text=True, timeout=300, env=clean_env)
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+            self.assertTrue((data_dir / f"{self.UNIT}.coverage.leftover").is_file())
+            rc, out, err = self._run(root, self.UNIT)
+            self.assertEqual(rc, 1, out + err)
+            self.assertIn("1 uncovered", out)
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,7 +25,7 @@ class CoverageBeforeSuiteTests(unittest.TestCase):
         start = agents.index("## Soft dependencies")
         self.assertIn("`coverage` 7.10 or later", agents[start:start + 2000], "AGENTS.md's soft-dependency table must name coverage")
         readme = (REPO / "README.md").read_text(encoding="utf-8")
-        self.assertIn("**coverage** (7.10 or later)", readme, "README's dependency sentence must name coverage")
+        self.assertIn("**coverage** 7.10 or later, needed only by `verify_ac run --coverage`", readme, "README's dependency sentence must name coverage and what needs it")
         self.assertNotIn("PyYAML** is the one optional dependency", readme)
 
 
