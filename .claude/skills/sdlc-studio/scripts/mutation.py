@@ -46,6 +46,7 @@ import contextlib
 import hashlib
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -2162,14 +2163,19 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
                 # The remedy is printed RUNNABLE: retract joins on six fields, and two of them
                 # (the live row's line and description) are the row's, not the caller's - a
                 # same-verdict registration with drifted prose replaced the row and kept its own.
+                # The description is SHELL-QUOTED: most of them name code, and a backtick or a
+                # `$(` in a pasted argument is command substitution, so the shell ran the
+                # description and passed retract a mangled one that matched nothing.
+                quoted = shlex.quote(str(m.get("mutant") or ""))
                 raise ValueError(
                     f"refused: {record['unit']} {record['criterion']} r{record['row']} already "
                     f"holds a live {m.get('verdict')} row against `{m.get('test')}` on these bytes "
-                    f"(line {m.get('line')}, mutant \"{m.get('mutant') or ''}\"); a registration "
+                    f"(line {m.get('line')}, mutant {quoted}); a registration "
                     f"with a different verdict or test does not replace it - withdraw the row "
                     f"first with `mutation.py retract --unit {record['unit']} --criterion "
-                    f"{record['criterion']} --target {rel} --line {m.get('line')} --mutant "
-                    f"\"{m.get('mutant') or ''}\" --verdict {m.get('verdict')} --reason <why>`, "
+                    f"{record['criterion']} --target {shlex.quote(str(rel))} --line {m.get('line')} "
+                    f"--mutant {quoted} --verdict {m.get('verdict')} --reason <why> "
+                    f"--root {shlex.quote(str(root))}`, "
                     f"so the correction stays on the record (worst-verdict-wins is not traded away)")
         if same_key:
             entry["mutants"] = [m for m in entry["mutants"] if m not in same_key] + [record]

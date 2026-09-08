@@ -5432,9 +5432,23 @@ class RegisterReplacesTests(unittest.TestCase):
             with self.assertRaises(ValueError) as cm:
                 self._reg(mut, root, verdict="killed")
             self.assertIn("survived", str(cm.exception))
-            # The remedy is printed runnable: every one of retract's six join fields, with the
-            # LIVE row's line and description rather than the caller's.
-            self.assertIn('`mutation.py retract --unit BG9201 --criterion AC1 --target t.py --line 1 --mutant "flip VALUE" --verdict survived --reason <why>`', str(cm.exception))
+            # The remedy is printed runnable: every one of retract's join fields, with the LIVE
+            # row's line and description rather than the caller's, and shell-quoted - most
+            # descriptions name code, and a backtick in a pasted argument is a command.
+            self._reg(mut, root, verdict="survived", line=9, mutant="flip `VALUE` in ctx[\"root\"]")
+            with self.assertRaises(ValueError) as cm2:
+                self._reg(mut, root, verdict="killed", line=1, mutant="flip VALUE")
+            msg = str(cm2.exception)
+            self.assertIn("--line 9 --mutant 'flip `VALUE` in ctx[\"root\"]'", msg, "the LIVE row's line and description, shell-quoted: " + msg)
+            self.assertNotIn("--line 1 ", msg, "the caller's line is not the row's")
+            self.assertIn("(line 9, mutant 'flip `VALUE`", msg, "the row's own line is named where the refusal describes it too: " + msg)
+            remedy = msg.split("`mutation.py retract ")[1].split("`,")[0]
+            import shlex as _shlex  # noqa: PLC0415
+            argv = _shlex.split("retract " + remedy.replace("<why>", _shlex.quote("the survived reading was a stale bytecode artefact")))
+            self.assertEqual(argv[argv.index("--mutant") + 1], 'flip `VALUE` in ctx["root"]', "a shell splits the printed remedy back into the row's own description")
+            self.assertEqual(mut.main(argv), 0, "the printed remedy runs as printed")
+            self.assertEqual(self._rows(root), [], "the row the remedy named is withdrawn")
+            self._reg(mut, root, verdict="survived")
             with self.assertRaises(ValueError):
                 self._reg(mut, root, verdict="survived", test="pytest x.py::T::test_b")
             self.assertEqual(self._rows(root), [("t.py", "AC1", 0, "survived", "pytest x.py::T::test_a")], "the live row is untouched by a refused registration")
@@ -5447,7 +5461,7 @@ class RegisterReplacesTests(unittest.TestCase):
             corrected = self._reg(mut, root, verdict="killed")
             self.assertFalse(corrected["replaced"])
             self.assertEqual(self._rows(root), [("t.py", "AC1", 0, "killed", "pytest x.py::T::test_a")])
-            self.assertEqual(len(mut.retractions(root, "BG9201")), 1, "the withdrawal stays on the record")
+            self.assertEqual(len(mut.retractions(root, "BG9201")), 2, "both withdrawals stay on the record - the one the printed remedy ran and this one")
 
     # -- AC3 -------------------------------------------------------------------------
     def test_the_cli_path_replaces_and_reports_through_the_shipped_command(self) -> None:
@@ -5465,7 +5479,7 @@ class RegisterReplacesTests(unittest.TestCase):
             # ...and the refusal reaches the shell with exit 2, naming retract.
             third = subprocess.run(argv[:-1] + ["survived"], capture_output=True, text=True, timeout=120)
             self.assertEqual(third.returncode, 2, third.stdout + third.stderr)
-            self.assertIn("mutation.py retract --unit BG9201 --criterion AC1 --target t.py --line 1 --mutant \"flip VALUE\" --verdict killed --reason <why>", third.stderr)
+            self.assertIn("mutation.py retract --unit BG9201 --criterion AC1 --target t.py --line 1 --mutant 'flip VALUE' --verdict killed --reason <why>", third.stderr)
 
 if __name__ == "__main__":
     unittest.main()
