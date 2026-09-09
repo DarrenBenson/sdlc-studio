@@ -132,6 +132,50 @@ def _sibling_modules(root: Path, rel: Path) -> list[Path]:
         and p.relative_to(root) != rel and p.name not in ("__init__.py", "conftest.py"))
 
 
+#: `# test-census-subject: <path>` on its own line - the author naming the module this file
+#: covers. One spelling, checked at the head of the file only, so a mention of the marker
+#: inside a fixture's string cannot claim a subject.
+_SUBJECT_RE = re.compile(r"^#\s*test-census-subject:\s*(\S+)\s*$", re.M)
+
+
+def _declared_subject(text: str) -> str:
+    """The module a test file declares it covers, or "" when it declares none."""
+    m = _SUBJECT_RE.search(text)
+    return m.group(1) if m else ""
+
+
+def _declared_by_affects(base: Path, rel: Path, mods: list) -> str:
+    """The one script a unit's `Affects` names beside this test file, or "" when it is not one.
+
+    Several declaring units, or one naming several scripts, decide NOTHING: the point is a
+    statement, and two statements that disagree are not a statement. Counting then continues,
+    which is the fallback rather than the rule.
+    """
+    want = rel.as_posix()
+    names = {m.as_posix() for m in mods}
+    found: set[str] = set()
+    for d in ("bugs", "stories"):
+        folder = base / "sdlc-studio" / d
+        if not folder.is_dir():
+            continue
+        for p in sorted(folder.glob("*.md")):
+            if p.name.startswith("_"):
+                continue
+            try:
+                head = p.read_text(encoding="utf-8", errors="replace")[:4000]
+            except OSError:
+                continue
+            m = re.search(r"^>\s*\*\*Affects:\*\*\s*(.+)$", head, re.M)
+            if not m or want not in m.group(1):
+                continue
+            scripts = {a.strip() for a in m.group(1).split(",")} & names
+            if len(scripts) == 1:
+                found |= scripts
+            elif scripts:
+                return ""      # a declaration naming several scripts decides nothing
+    return next(iter(found)) if len(found) == 1 else ""
+
+
 def attribute(root: Path | str, rel: Path | str) -> tuple[str | None, str]:
     """Which module does test file `rel` cover, and which pass decided?
 
@@ -142,15 +186,30 @@ def attribute(root: Path | str, rel: Path | str) -> tuple[str | None, str]:
     mods = _sibling_modules(base, rel)
     if not mods:
         return None, f"no source module sits beside {rel.as_posix()} to attribute it to"
-    stem = _norm(rel.stem.removeprefix("test_"))
-    by_name = [m for m in mods if _norm(m.stem) == stem]
-    if by_name:
-        return by_name[0].as_posix(), "name"
     text = ""
     try:
         text = (base / rel).read_text(encoding="utf-8", errors="replace")
     except OSError:
         return None, f"{rel.as_posix()} could not be read, so it cannot be attributed"
+    # A DECLARED subject wins over every derivation, including the name match. Attribution was
+    # decided by how often a module's name happened to appear in the prose, so adding one
+    # mention of a sibling moved a file from one owner to unattributed - a test file's owner
+    # changing because somebody wrote a sentence. The marker is the author saying which module
+    # this file covers; nothing derived should overrule a statement.
+    marked = _declared_subject(text)
+    if marked and (base / marked).exists():
+        return Path(marked).as_posix(), "marker"
+    stem = _norm(rel.stem.removeprefix("test_"))
+    by_name = [m for m in mods if _norm(m.stem) == stem]
+    if by_name:
+        return by_name[0].as_posix(), "name"
+    # THE DECLARING UNIT, before counting. A unit's `Affects` naming this test file and exactly
+    # ONE script is the artefact saying what the file is for. Where the declarations name
+    # several scripts between them they decide nothing, and the result says which route
+    # answered rather than leaving a reader to guess.
+    declared = _declared_by_affects(base, rel, mods)
+    if declared:
+        return declared, "affects"
     counts = {}
     for m in mods:
         hits = len(re.findall(r"\b" + re.escape(m.stem) + r"\b", text))

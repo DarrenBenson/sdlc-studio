@@ -361,8 +361,15 @@ def check_root_docs(repo_root: Path) -> list[str]:
 _TEMPLATED = re.compile(r"\{[^}]*\}")
 #: A cell that is a command to run, not a file to load.
 _INVOCATION = re.compile(r"\b(python3|bash|npm|rg)\b")
-#: A path-shaped token: a relative path ending in an extension the skill actually ships.
-_PATH_CELL = re.compile(r"^([A-Za-z0-9_./-]+\.(?:md|py|yaml|yml|sh|json))(#[A-Za-z0-9_-]+)?$")
+#: A path-shaped token. The extension list is DELIBERATELY open: an allowlist of six suffixes
+#: made every other one a silent exemption, so a cell naming `notes/x.txt` or `tools/x.toml`
+#: fell through to `prose` and was never looked at. Any dotted suffix on a path-shaped token is
+#: a path claim, and a claim is what this check exists to test.
+_PATH_CELL = re.compile(r"^([A-Za-z0-9_./-]+\.[A-Za-z0-9]{1,8})(#[A-Za-z0-9_-]+)?$")
+#: The script argument inside an invocation cell - the one token that names a file. The cell
+#: keeps its `invocation` kind, because the shipped contract is that a command is classified OUT
+#: as a command; what is new is that the file it names is still required to exist.
+_INVOKED_PATH = re.compile(r"\b([A-Za-z0-9_./-]+\.(?:py|sh|js|ts))\b")
 
 
 def loading_guide_cells(skill_root: Path) -> list[dict]:
@@ -423,7 +430,13 @@ def loading_guide_cells(skill_root: Path) -> list[dict]:
                 out.append({"cell": cell, "path": None, "anchor": None, "kind": "templated"})
                 continue
             if _INVOCATION.search(bare):
-                out.append({"cell": cell, "path": None, "anchor": None, "kind": "invocation"})
+                # The KIND is unchanged - a command is still classified out as a command, which
+                # is the shipped contract. What is new is the script it names: a guide row
+                # telling a reader to run something that is not on disk is the same broken
+                # promise as one telling them to load a file that is not there.
+                hit = _INVOKED_PATH.search(bare)
+                out.append({"cell": cell, "path": hit.group(1) if hit else None,
+                            "anchor": None, "kind": "invocation"})
                 continue
             link = re.match(r"^\[[^\]]+\]\(([^)]+)\)$", bare)
             target = link.group(1) if link else bare

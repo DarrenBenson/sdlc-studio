@@ -13,6 +13,8 @@ must MERGE on repeat (`action="append"`), never silently overwrite.
 Run from the repo root:
     python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
 """
+# test-census-subject: .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py
+
 from __future__ import annotations
 
 import argparse

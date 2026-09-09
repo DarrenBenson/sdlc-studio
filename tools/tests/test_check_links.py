@@ -6,6 +6,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import importlib.util
+import re
 import shutil
 import sys
 import tempfile
@@ -549,11 +550,19 @@ class LoadingGuideTests(unittest.TestCase):
                          "the live SKILL.md was written by a test that must never touch it")
 
     def test_templated_and_invocation_cells_are_classified_OUT_explicitly(self) -> None:
-        """An exemption is a decision on the page, not a pattern that quietly matched nothing."""
+        """An exemption is a decision on the page, not a pattern that quietly matched nothing.
+
+        AMENDED for BG0490. The KIND assertion is the shipped contract and is unchanged: a
+        command is still classified out as a command. What changed beneath it is that the script
+        an invocation names is now resolved, so the fixture's command names a file that EXISTS -
+        otherwise this test would be asserting that a guide row may promise a script the tree
+        does not have."""
         d = _guide_fixture(["| A | help/{type}.md |",
                             "| B | `python3 scripts/x.py build` |",
                             "| C | some prose about loading |"])
         self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "scripts").mkdir()
+        (d / "scripts" / "x.py").write_text("# a script the guide row names\n", encoding="utf-8")
         kinds = {c["kind"] for c in check_links.loading_guide_cells(d)}
         self.assertEqual({"templated", "invocation", "prose"}, kinds)
         self.assertEqual([], check_links.check_loading_guide(d),
@@ -710,6 +719,85 @@ class RootDocCodeSpanTests(unittest.TestCase):
         root = self._root("one\ntwo `[x](a.md)`\nthree\n[real](b.md)\n")
         broken = check_links.check_root_docs(root)
         self.assertEqual(["README.md:4 -> b.md [file missing]"], broken)
+
+
+
+
+class AuditProfilePathsTests(unittest.TestCase):
+    """BG0490: the audit profile's one script-naming signature row, pinned so it cannot rot."""
+
+    PROFILE = Path(__file__).resolve().parents[2] / (
+        ".claude/skills/sdlc-studio/templates/audit-profiles/code.md")
+    REPO = Path(__file__).resolve().parents[2]
+
+    def test_the_one_real_row_resolves(self) -> None:
+        """MUTANT: replace the ac-drift signature's command with a manual note.
+
+        The EXISTENCE half is not decoration. A later edit turning that row to `manual - ...`
+        leaves zero script-naming rows, and a test asserting only that the named ones resolve
+        then passes over nothing at all."""
+        rows = [ln for ln in self.PROFILE.read_text(encoding="utf-8").splitlines()
+                if ln.startswith("|") and not re.match(r"^\|[\s:|-]+\|$", ln)]
+        named = []
+        for ln in rows[1:]:                       # skip the header
+            signature = ln.strip().strip("|").split("|")[-1]
+            named += re.findall(r"(?<![A-Za-z0-9_.-])([.A-Za-z0-9_/-]+\.py)\b", signature)
+        self.assertTrue(named, "no signature row names a script, so this pin measures nothing")
+        for rel in named:
+            self.assertTrue((self.REPO / rel).is_file(),
+                            f"the profile's signature column names {rel}, which is not on disk")
+
+
+class LoadingGuideExemptionTests(unittest.TestCase):
+    """BG0490: an unlisted extension and an invocation's own script were silent exemptions."""
+
+    def _guide(self, rows):
+        d = _guide_fixture(rows)
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    def test_an_unlisted_extension_is_resolved_rather_than_exempted(self) -> None:
+        """MUTANT: narrow the `_PATH_CELL` extension alternation back to the six shipped suffixes.
+
+        Both halves in one fixture: the MISSING one must be reported and the EXISTING one must
+        not, or a classifier that reports every cell satisfies this row."""
+        d = self._guide(["| A | notes/gone.txt |", "| B | notes/here.toml |"])
+        (d / "notes").mkdir()
+        (d / "notes" / "here.toml").write_text("x = 1\n", encoding="utf-8")
+        errs = check_links.check_loading_guide(d)
+        self.assertTrue(any("gone.txt" in e for e in errs),
+                        f"an unlisted extension was exempted rather than resolved: {errs}")
+        self.assertFalse(any("here.toml" in e for e in errs),
+                         f"a path that IS on disk was reported: {errs}")
+
+    def test_an_invocation_keeps_its_kind_and_its_script_is_resolved(self) -> None:
+        """MUTANT: delete the `_INVOCATION` branch's script-token extraction.
+
+        The kind is the shipped contract and must not move: a command is classified OUT as a
+        command. What is new is that the file it names is required to exist."""
+        d = self._guide(["| A | `python3 scripts/gone.py build` |"])
+        cells = [c for c in check_links.loading_guide_cells(d) if "gone.py" in c["cell"]]
+        self.assertEqual(["invocation"], [c["kind"] for c in cells],
+                         "the cell stopped being classified as an invocation")
+        errs = check_links.check_loading_guide(d)
+        self.assertTrue(any("gone.py" in e for e in errs),
+                        f"a command naming a script that is not on disk was not reported: {errs}")
+
+    def test_templated_and_prose_cells_are_still_exempt(self) -> None:
+        """MUTANT: emit a finding for every `_INVOCATION` cell without testing its script.
+
+        The positive control the two rows above cannot supply between them: a classifier that
+        reports every command it sees satisfies the invocation row without resolving anything.
+        The templated cell is deliberately NOT the control - measured, deleting the templated
+        branch only moves the cell to `prose`, and a braced path fails the path pattern either
+        way, so that observable cannot move."""
+        d = self._guide(["| A | help/{type}.md |",
+                         "| B | `python3 scripts/here.py build` |",
+                         "| C | some prose about loading |"])
+        (d / "scripts").mkdir()
+        (d / "scripts" / "here.py").write_text("# here\n", encoding="utf-8")
+        self.assertEqual([], check_links.check_loading_guide(d),
+                         "a templated cell, a prose cell or a resolvable command was reported")
 
 
 if __name__ == "__main__":

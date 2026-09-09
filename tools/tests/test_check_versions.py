@@ -345,5 +345,27 @@ class DiscoveryIsNotEnumerationTests(unittest.TestCase):
                          "the fixture path is in SPEC_FILES, so this assertion proves nothing")
 
 
+
+
+class DocstringMatchesTheCodeTests(unittest.TestCase):
+    """BG0490: the module claimed the version was read `never by repo-wide grep` from `exactly
+    five places`, while `discover_spec_homes` walks every tracked markdown file and reads a
+    version out of each. Two claims, both false, in the sentence a reader trusts most."""
+
+    SRC = Path(__file__).resolve().parents[2] / "tools" / "check_versions.py"
+
+    def test_the_never_by_grep_claim_is_true(self) -> None:
+        """MUTANT: reinsert the absolute phrasing while the tree walk stays in the resolver."""
+        text = self.SRC.read_text(encoding="utf-8")
+        doc = text.split('"""', 2)[1]
+        walks = "rglob" in text
+        self.assertTrue(walks, "the tree walk is gone, so this pin no longer measures anything")
+        self.assertNotIn("never by repo-wide grep", doc,
+                         "the docstring denies a repo-wide walk the module performs")
+        self.assertNotIn("exactly five places", doc,
+                         "the docstring claims a fixed set of homes while the homes are "
+                         "discovered by walking the repo")
+
+
 if __name__ == "__main__":
     unittest.main()

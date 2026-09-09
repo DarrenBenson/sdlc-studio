@@ -53,19 +53,19 @@ blast radius across every loading-guide cell, and that is engineering rather tha
 
 - [ ] **AC1** Given `templates/audit-profiles/code.md`, when its signature rows are read, then AT LEAST ONE names a script and every script so named is on disk. The existence half is not decoration: a later edit turning that row to `manual - ...` leaves zero script-naming rows, and a test asserting only that the named ones resolve then passes on nothing. The BG0434 half, re-measured 2026-08-15 as ALREADY LAPSED and pinned here so it cannot regress unnoticed
   - **Verify:** pytest tools/tests/test_check_links.py::AuditProfilePathsTests::test_the_one_real_row_resolves
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC2** Given a guide cell naming a path whose extension is outside the six the classifier allows - `notes/X.txt`, `tools/X.toml` - when the cells are classified, then a MISSING one is reported and an EXISTING one is not. Today both fall through to `prose`, so an unlisted extension is a silent exemption rather than a decision
   - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideExemptionTests::test_an_unlisted_extension_is_resolved_rather_than_exempted
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC3** Given a cell that is an INVOCATION, when it is classified, then its kind is still `invocation` - the explicit-exemption contract the shipped classification test pins is unchanged - and the script path inside it is separately resolved, so a command naming a script that does not exist is reported while one naming a script that does is not. The shipped exemption test's empty-result assertion runs on a fixture whose command names a script that is not on disk, so resolving invocation scripts reddens it: that fixture is amended in the same change to name a script that exists, and its kind assertion is kept. Ruled here rather than discovered at the gate
   - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideExemptionTests::test_an_invocation_keeps_its_kind_and_its_script_is_resolved
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC4** Given an INVOCATION cell whose script IS on disk, and a prose cell naming no path at all, when the check runs, then neither is reported. This is the positive control the two rows above cannot supply between them: a classifier reporting every command it sees satisfies AC3 without resolving anything. The templated cell is deliberately not the control: measured, deleting the templated branch only moves the cell to `prose` and a braced path fails the path pattern either way, so that observable cannot move
   - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideExemptionTests::test_templated_and_prose_cells_are_still_exempt
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC5** Given `check_versions.py`, when its module docstring is read beside its code, then it does not claim the version is read 'never by repo-wide grep' while an `rglob` fallback stands. Today it does, so the docstring overstates the guarantee a reader relies on
   - **Verify:** pytest tools/tests/test_check_versions.py::DocstringMatchesTheCodeTests::test_the_never_by_grep_claim_is_true
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 
 ## Test Plan
 
@@ -104,3 +104,4 @@ Four false Fixed records. The cost is not the individual defects - it is that a 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-09 | Claude Fable 5.1 | Delivered. AC4's mutant was corrected at delivery: it made the invocation branch report only when no script token was found, which is not a change on this criterion's own fixture, so it survived. It now reports unconditionally, which is the careless implementation the control exists to catch. The shipped exemption test was AMENDED as AC3 said it would be: its command names a script that now exists, so it asserts an exemption rather than asserting that a guide row may promise a file the tree does not have |

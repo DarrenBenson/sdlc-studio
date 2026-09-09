@@ -21,6 +21,7 @@ import json
 import re
 import sys
 import tempfile
+import shutil
 import subprocess
 import unittest
 from pathlib import Path
@@ -269,7 +270,10 @@ class RealRepoTests(unittest.TestCase):
     #: that is the category this baseline exists to hold rather than a case of it failing.
     #: Distinguished from the 36 -> 37 raise beside it, which was a real defect: there,
     #: attribution moved because a file MENTIONED one more module, and is filed as BG0578.
-    UNATTRIBUTED_BASELINE = 38
+    #: LOWERED 38 -> 33 when BG0578 gave attribution two DECLARED routes - a module-level
+    #: subject marker and a unit's `Affects` naming this file beside exactly one script.
+    #: Five files gained a home; none was placed by loosening the counting rule.
+    UNATTRIBUTED_BASELINE = 33
 
     def test_this_repos_test_files_are_mostly_attributed(self) -> None:
         """A convention that placed a handful of files would be a report of nothing.
@@ -820,6 +824,145 @@ class DuplicateTestClassTests(unittest.TestCase):
         self.assertEqual(["A", "A"], names,
                          "the detector's own premise is wrong - two module-level ClassDefs of "
                          "one name should both be present in the AST")
+
+
+
+
+class AttributionTests(unittest.TestCase):
+    """BG0578: a test file's owner was decided by how often a module's name happened to appear
+    in its prose, so adding ONE mention of a sibling moved a file from an owner to unattributed.
+    A file's subject changing because somebody wrote a sentence is not attribution."""
+
+    REPO = REPO
+
+    def _tree(self, d) -> Path:
+        root = Path(d)
+        (root / "pkg").mkdir(parents=True)
+        for name in ("alpha", "beta"):
+            (root / "pkg" / f"{name}.py").write_text("x = 1\n", encoding="utf-8")
+        (root / "pkg" / "tests").mkdir()
+        return root
+
+    def _test_file(self, root: Path, name: str, body: str) -> str:
+        rel = f"pkg/tests/{name}"
+        (root / rel).write_text(body, encoding="utf-8")
+        return rel
+
+    def _unit(self, root: Path, uid: str, affects: str) -> None:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n> **Status:** Open\n> **Affects:** {affects}\n", encoding="utf-8")
+
+    def test_a_module_level_subject_marker_decides_the_owner(self) -> None:
+        """MUTANT: delete the marker lookup from `attribute`.
+
+        The marker outranks the by-name route too: measured over the two test trees, 95 of 204
+        files are placed by name, so a marker consulted after it would be ignored on most of
+        the corpus."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._tree(d)
+            rel = self._test_file(root, "test_alpha.py",
+                                  "# test-census-subject: pkg/beta.py\nimport alpha\n")
+            mod, how = tc.attribute(root, rel)
+            self.assertEqual("pkg/beta.py", mod, f"the declared subject lost to {how}")
+            self.assertEqual("marker", how)
+
+    def test_a_single_script_declaration_decides_and_a_multi_script_one_defers(self) -> None:
+        """MUTANT: widen the declaration route to take the first script of a multi-script
+        declaration.
+
+        Most files here are declared by several units naming many scripts between them. A rule
+        that only handles the single-script case decides almost nothing; a rule that guesses at
+        the multi-script case decides the wrong thing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._tree(d)
+            rel = self._test_file(root, "test_zeta.py", "alpha and beta\n")
+            self._unit(root, "BG0001", f"{rel}, pkg/beta.py")
+            mod, how = tc.attribute(root, rel)
+            self.assertEqual("pkg/beta.py", mod)
+            self.assertEqual("affects", how)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._tree(d)
+            rel = self._test_file(root, "test_zeta.py", "alpha alpha beta\n")
+            self._unit(root, "BG0001", f"{rel}, pkg/alpha.py, pkg/beta.py")
+            mod, how = tc.attribute(root, rel)
+            self.assertEqual("reference", how,
+                             "a declaration naming several scripts decided the owner anyway")
+
+    def test_counting_is_the_fallback_and_says_so(self) -> None:
+        """MUTANT: delete the counting fallback so a file with no declared subject is dropped."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._tree(d)
+            rel = self._test_file(root, "test_zeta.py", "alpha alpha alpha beta\n")
+            mod, how = tc.attribute(root, rel)
+            self.assertEqual("pkg/alpha.py", mod)
+            self.assertEqual("reference", how, "the fallback did not say which route answered")
+
+    def test_a_tie_with_a_declared_owner_is_attributed_not_unattributed(self) -> None:
+        """MUTANT: return the unattributed result whenever the counts tie, before the declared
+        routes are consulted.
+
+        A tie already NAMES its tied candidates today, so asserting the wording alone passes on
+        unmodified code. What is false at HEAD is that the file gets an owner at all."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._tree(d)
+            rel = self._test_file(root, "test_zeta.py",
+                                  "# test-census-subject: pkg/alpha.py\nalpha beta\n")
+            mod, how = tc.attribute(root, rel)
+            self.assertEqual("pkg/alpha.py", mod,
+                             "a tie with a declared owner was still reported unattributed")
+            self.assertEqual("marker", how)
+
+    def test_one_more_mention_cannot_move_the_grammar_module(self) -> None:
+        """MUTANT: remove the marker branch so mention frequency decides the file again.
+
+        The exact regression: this file was moved to unattributed by an edit that added one
+        mention of a sibling. It is edited on a COPY carrying its sibling directory, because a
+        copy beside the original is an untracked file the repo-writes lane refuses and a copy
+        alone answers that no source module sits beside it."""
+        rel = ".claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py"
+        before = tc.attribute(self.REPO, rel)
+        self.assertIsNotNone(before[0], f"the live file is unattributed: {before[1]}")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # The LAYOUT travels with the copy: a subject marker is a path relative to the
+            # root being scanned, so a copy that flattens the tree changes what the marker
+            # means. Copying into the same relative place keeps the fixture honest about what
+            # the edit changed - one added mention, and nothing else.
+            dst = root / ".claude/skills/sdlc-studio/scripts"
+            dst.parent.mkdir(parents=True)
+            shutil.copytree(self.REPO / ".claude/skills/sdlc-studio/scripts", dst,
+                            ignore=shutil.ignore_patterns("__pycache__", ".local"))
+            copy = dst / "tests" / "test_cli_grammar.py"
+            copy.write_text(copy.read_text(encoding="utf-8")
+                            + "\n# transition transition transition\n", encoding="utf-8")
+            after = tc.attribute(root, rel)
+        self.assertEqual(Path(before[0]).name, Path(after[0] or "").name,
+                         f"one more mention moved the owner: {before} -> {after}")
+
+    def test_the_owner_map_is_stable_under_a_prose_only_edit(self) -> None:
+        """MUTANT: drop the per-file owner from the entry point's payload, emitting only the
+        tally.
+
+        The ratchet counts UNATTRIBUTED files, so an owner flip from one module to another
+        leaves its number untouched - the count cannot observe the defect in this bug's own
+        title, and the map can."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dst = root / ".claude/skills/sdlc-studio/scripts"
+            dst.parent.mkdir(parents=True)
+            shutil.copytree(self.REPO / ".claude/skills/sdlc-studio/scripts", dst,
+                            ignore=shutil.ignore_patterns("__pycache__", ".local"))
+            files = [f for f in tc.test_files(root)]
+            self.assertGreater(len(files), 20, "the copied tree carries no test files")
+            before = {f.as_posix(): tc.attribute(root, f)[0] for f in files}
+            target = dst / "tests" / "test_cli_grammar.py"
+            target.write_text(target.read_text(encoding="utf-8")
+                              + "\n# sprint sprint sprint sprint\n", encoding="utf-8")
+            after = {f.as_posix(): tc.attribute(root, f)[0] for f in files}
+        moved = {k: (before[k], after[k]) for k in before if before[k] != after[k]}
+        self.assertEqual({}, moved, f"a prose-only edit moved these files' owners: {moved}")
 
 
 if __name__ == "__main__":

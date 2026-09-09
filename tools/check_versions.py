@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Check that the skill version is consistent across its authoritative homes.
 
-A skill-development CI tool (lives in tools/). Extracts the version by
-structure from exactly five places - never by repo-wide grep, so
-incidental version mentions in prose are ignored:
+A skill-development CI tool (lives in tools/). Every version is extracted BY
+STRUCTURE - a declared field or a heading, never a mention in prose - so an
+incidental version in a sentence is ignored. The homes are the five below PLUS
+every tracked markdown file that DECLARES one, discovered by walking the repo
+rather than listed: a hand-maintained list is one somebody must remember to
+extend, and the one this replaced had gone two files' worth of drift without
+being extended. `by structure, never by prose` is the guarantee; `from a fixed
+set of files` is not, and the docstring used to claim both.
 
 1. package.json                          -> "version"
 2. templates/version.yaml                -> skill_version
