@@ -30,13 +30,13 @@ git opens the transport to the remote BEFORE it runs `pre-push`, and only writes
 
 - [ ] **AC1** Given a throwaway clone whose LOCAL config carries no `core.sshCommand`, and an environment with `GIT_CONFIG_GLOBAL` and `GIT_CONFIG_SYSTEM` POINTED AT `/dev/null` so the developer's own `~/.gitconfig` cannot answer for the clone. Unsetting those two is what LETS it answer, which is the opposite of what this control needs, and pointing them at a null file is the mechanism the module's own git helper already uses, when `bash tools/enable-hooks.sh` runs, then `git config --local core.sshCommand` names an ssh carrying `ServerAliveInterval` and `ServerAliveCountMax`, and the script prints what it set
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::KeepaliveTests::test_enable_hooks_sets_the_keepalive_on_a_clone_that_has_none
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC2** Given a clone whose LOCAL `core.sshCommand` is already set to something else, when the script runs in the same scrubbed environment, then that value is unchanged and the script says it left it alone. This is the paired control AC1 cannot supply: deleting the write satisfies "an existing one is untouched" trivially, and the likelier careless implementation is an unconditional write that clobbers it
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::KeepaliveTests::test_an_existing_ssh_command_is_left_alone_and_said_so
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC3** Given the shipped `.githooks/pre-push` driven as a subprocess in the existing hook fixture, when it prints its opening cost estimate, then that output names the keepalive the connection needs across the gate and the command that sets it, on stderr where the pusher reads it. The fixture copies the hook alone and never runs `enable-hooks.sh`, so this criterion is carried by the hook's own text and nothing else
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::KeepaliveTests::test_the_hook_names_the_keepalive_the_gate_needs
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 
 ## Test Plan
 

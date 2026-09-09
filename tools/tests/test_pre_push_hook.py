@@ -470,5 +470,83 @@ class AgentsMdNamesTheHookTests(unittest.TestCase):
         self.assertIn("`.githooks/pre-push`", text, "the boundary prose does not say where the lanes bind")
 
 
+
+
+class KeepaliveTests(unittest.TestCase):
+    """BG0654: the pre-push gate pays minutes of boundary lanes before git writes a byte, and an
+    ssh connection idle that long is dropped before the push starts - so the gate passes, the
+    push fails, and the retry pays the gate again. Nothing set a keepalive and nothing said so."""
+
+    def _clone(self) -> Path:
+        tmp = Path(tempfile.mkdtemp(prefix="keepalive_"))
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        _git(tmp, "init", "-q", "-b", "main", str(tmp))
+        (tmp / ".githooks").mkdir()
+        shutil.copy(REPO / ".githooks" / "pre-push", tmp / ".githooks" / "pre-push")
+        (tmp / "tools").mkdir(); shutil.copy(ENABLE, tmp / "tools" / "enable-hooks.sh")
+        return tmp
+
+    def _env(self) -> dict:
+        """The developer's own config POINTED AT /dev/null, not unset.
+
+        Unsetting these two is what lets `~/.gitconfig` answer for the clone, which is the
+        opposite of what this control needs - it is also the mechanism this module's own `_git`
+        helper already uses."""
+        env = {k: v for k, v in os.environ.items() if k not in _GIT_ENV_VARS}
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        env["GIT_CONFIG_SYSTEM"] = "/dev/null"
+        return env
+
+    def _run(self, tmp: Path):
+        return subprocess.run(["bash", "tools/enable-hooks.sh"], cwd=tmp, capture_output=True,
+                              text=True, timeout=60, env=self._env())
+
+    def _local(self, tmp: Path) -> str:
+        r = subprocess.run(["git", "-C", str(tmp), "config", "--local", "--get",
+                            "core.sshCommand"], capture_output=True, text=True, env=self._env())
+        return r.stdout.strip()
+
+    def test_enable_hooks_sets_the_keepalive_on_a_clone_that_has_none(self) -> None:
+        """MUTANT: delete the core.sshCommand write so a fresh clone gets no keepalive."""
+        tmp = self._clone()
+        r = self._run(tmp)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        got = self._local(tmp)
+        self.assertIn("ServerAliveInterval", got, f"no keepalive interval was set: {got!r}")
+        self.assertIn("ServerAliveCountMax", got, f"no keepalive count was set: {got!r}")
+        self.assertIn("ServerAliveInterval", r.stdout + r.stderr,
+                      "the script set it without saying so")
+
+    def test_an_existing_ssh_command_is_left_alone_and_said_so(self) -> None:
+        """MUTANT: drop the guard that reads the existing value first, making the write
+        unconditional so it overwrites what the developer set.
+
+        The paired control AC1 cannot supply: deleting the write satisfies `an existing one is
+        untouched` trivially, and the likelier careless implementation is the clobber."""
+        tmp = self._clone()
+        mine = "ssh -i ~/.ssh/mine"
+        subprocess.run(["git", "-C", str(tmp), "config", "--local", "core.sshCommand", mine],
+                       check=True, capture_output=True, env=self._env())
+        r = self._run(tmp)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual(mine, self._local(tmp), "the developer's own ssh command was clobbered")
+        self.assertIn("Left core.sshCommand", r.stdout + r.stderr,
+                      "the script kept the value without saying it had")
+
+    def test_the_hook_names_the_keepalive_the_gate_needs(self) -> None:
+        """MUTANT: strip the keepalive sentence from the cost line the hook echoes to stderr.
+
+        The fixture copies the hook alone and never runs the enabling script, so this criterion
+        rests on the hook's own text and nothing else."""
+        text = (REPO / ".githooks" / "pre-push").read_text(encoding="utf-8")
+        self.assertIn("ServerAliveInterval", text,
+                      "the hook never names the keepalive the gate needs")
+        self.assertIn("enable-hooks.sh", text,
+                      "the hook names the need without naming the command that meets it")
+        line = next(l for l in text.splitlines() if "ServerAliveInterval" in l and "echo" in l)
+        self.assertIn(">&2", line,
+                      f"the keepalive line is not on the stream git shows a pusher:\n{line}")
+
+
 if __name__ == "__main__":
     unittest.main()

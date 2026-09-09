@@ -50,7 +50,10 @@ These block. Everything else in this file is guidance.
 | `critic signoff` | a principal the authoring session controls |
 
 **Enable the hooks once per clone: `bash tools/enable-hooks.sh`.** It installs the three tracked hooks
-(pre-commit, commit-msg, pre-push) and names each. Without them you are running with the gates off.
+(pre-commit, commit-msg, pre-push), names each, and sets this clone's `core.sshCommand` to an ssh
+carrying a keepalive - the pre-push gate runs for minutes before git writes a byte, and a connection
+idle that long is dropped before the push starts, so the gate passes, the push fails and the retry
+pays the gate again. An existing `core.sshCommand` is left as you set it. Without them you are running with the gates off.
 Emergency bypass is `git commit --no-verify` for a commit and `git push --no-verify` for a push, and
 nothing else.
 

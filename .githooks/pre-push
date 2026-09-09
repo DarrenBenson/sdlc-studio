@@ -107,6 +107,11 @@ if [ -z "$cost" ]; then
   fi
 fi
 echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2
+# The connection has to survive the gate. Minutes of boundary lanes run before git writes a
+# byte, and an ssh connection idle that long is dropped before the push starts - so the gate
+# passes and the push fails, and the retry pays the gate again. Named here rather than only in
+# the enabling script, because the pusher meets this line at the moment it matters.
+echo "pre-push: the connection must stay up across the gate; set it once with: bash tools/enable-hooks.sh (ssh ServerAliveInterval)" >&2
 
 # Scrubbed exactly as the commit hooks scrub their suite lanes, and for the same reason: git
 # hands a pre-push hook the pushing repository's locations, and the gate's rehearsal lane builds

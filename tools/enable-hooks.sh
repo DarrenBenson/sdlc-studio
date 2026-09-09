@@ -34,5 +34,21 @@ for hook in .githooks/*; do
   [ -n "$desc" ] || desc="(no description)"
   printf '  %-14s %s\n' "$(basename "$hook")" "$desc"
 done
+# THE CONNECTION HAS TO OUTLIVE THE GATE. The pre-push hook pays minutes of boundary lanes
+# before the push itself begins, and an ssh connection idle that long is dropped by a NAT or a
+# forge before git ever writes a byte - the push then fails after the gate has passed, and the
+# gate is paid again on the retry. A keepalive costs nothing and removes the whole class.
+#
+# LOCAL scope, and an existing value is left alone: this is the clone's setting to make, and a
+# developer who has chosen their own ssh command has chosen it deliberately.
+if existing="$(git config --local --get core.sshCommand)" && [ -n "$existing" ]; then
+  echo "Left core.sshCommand as you set it: $existing"
+  echo "  (a keepalive is what the pre-push gate needs; add ServerAliveInterval if yours has none)"
+else
+  git config --local core.sshCommand "ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
+  echo "Set core.sshCommand: ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
+  echo "  (the pre-push gate runs for minutes; without a keepalive the connection is dropped"
+  echo "   before the push starts and the gate is paid twice)"
+fi
 echo "A multi-id commit subject now needs a 'Refs: <id>' trailer per owning id."
 echo "Bypass a single commit in an emergency with: git commit --no-verify; a single push with: git push --no-verify"
