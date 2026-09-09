@@ -71,6 +71,8 @@ prints each lane's rule and fix on failure, so this is the roster, not the manua
 `lint-style.sh`, `check_links.py`, `check_budgets.py`, `check_versions.py`,
 `check_spec_claims.py`, `check_script_tests.py`, `check_neutrality.py`,
 `check_action_pins.sh`, `validate_skill.py`, `verify_ac.py`, `readiness.py`, `runbook.py`,
+`best_practice_rules.py` (the shipped testing practice states the entry-point rule; it existed
+and was wired into nothing until BG0493),
 `validate.py` (the warning ratchet), `stamps-staged` (`verify_ac.py stamps --staged`, which refuses a
 commit that stages a rename or deletion of a test node a stamped `Verify:` selector names, judging
 the staged blobs by AST - the write-time guard cannot see a rename, and the scheduled corpus lane that

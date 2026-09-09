@@ -60,8 +60,15 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     path = Path(args.root) / PRACTICE_REL
     if not path.exists():
-        print(f"no testing practice at {path} - nothing to check", file=sys.stderr)
-        return 0
+        # REFUSED, not excused. An exemption reachable by deleting a file is the shape this
+        # whole guard exists to prevent: the practice this reads is shipped with the skill, so
+        # its absence is a broken install or a deletion, never a project that legitimately has
+        # no practice. Returning 0 there made the one input that silences the check completely
+        # the easiest one to produce.
+        print(f"no testing practice at {path} - the practice ships with the skill, so its "
+              f"absence is a broken tree rather than a project without one. Restore it, or "
+              f"point --root at the tree that has it", file=sys.stderr)
+        return 2
     missing = missing_claims(path.read_text(encoding="utf-8"))
     if missing:
         print(f"{PRACTICE_REL}: the entry-point rule never states {', '.join(missing)} - a "

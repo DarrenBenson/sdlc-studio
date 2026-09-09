@@ -72,6 +72,10 @@ EXPECTED_LANES = {
     "stamps-staged", "warning-ratchet", "runbook",
     "lens-signatures",
     "spec-claims",
+    # BG0493: the practice-rules checker existed and was wired into nothing, so it guarded
+    # nothing. Added to the roster in the same commit that added the lane, because a roster
+    # that is not updated is how a lane is dropped silently.
+    "practice-rules",
     "script-tests", "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "markdown", "markdown-payload",
@@ -445,6 +449,46 @@ class SuiteVerdictFailOpenTests(unittest.TestCase):
         idx = skill_lane.index("gate-suite-last.log")
         self.assertIn('if [ "$fail" -ne 0 ]', skill_lane[:idx].rsplit("\n\n", 1)[-1],
                       "the log is written unconditionally rather than on a failure")
+
+
+
+
+class PracticeRulesLaneTests(unittest.TestCase):
+    """BG0493: `best_practice_rules.py` was referenced by nothing in `.githooks/` or
+    `package.json`, so it guarded nothing. Naming it in a lane is half the fix; the lane has to
+    RUN it and carry its exit, or an enumeration-only criterion is satisfied by a dead lane."""
+
+    REPO = Path(__file__).resolve().parents[2]
+    HOOK = REPO / ".githooks" / "pre-commit"
+
+    def test_the_checker_is_named_by_a_lane(self) -> None:
+        """MUTANT: delete the block that invokes the practice-rules module."""
+        text = self.HOOK.read_text(encoding="utf-8")
+        self.assertIn("best_practice_rules.py", text,
+                      "no pre-commit lane names the practice-rules checker, so it guards nothing")
+
+    def test_the_lane_runs_the_checker_and_carries_its_exit(self) -> None:
+        """MUTANT: swap the lane body for a bare `echo` mentioning the module path.
+
+        Naming a script is not running it. The lane's own `run` helper is what carries an exit
+        code into the gate, so the assertion is that the checker is its COMMAND rather than a
+        word inside a message."""
+        text = self.HOOK.read_text(encoding="utf-8")
+        i = text.index("best_practice_rules.py")
+        line = text[text.rindex("\n", 0, i) + 1:text.index("\n", i)].strip()
+        self.assertTrue(line.startswith("--"),
+                        f"the checker is named outside a lane's command position:\n{line}")
+        # The ARGV, not a word in a message. `-- echo "tools/best_practice_rules.py"` also
+        # begins with the separator and names the module, and runs nothing at all - which is
+        # exactly the dead-lane shape this criterion exists to refuse.
+        argv = line[2:].split()
+        self.assertEqual("python3", argv[0],
+                         f"the lane's command is not an interpreter invoking the checker:\n{line}")
+        self.assertIn("best_practice_rules.py", argv[1],
+                      f"the checker is not the script the lane runs:\n{line}")
+        block = text[text.rindex('run "', 0, i):i]
+        self.assertTrue(block.startswith('run "practice-rules"'),
+                        f"the checker is not the command of a named lane:\n{block}")
 
 
 if __name__ == "__main__":

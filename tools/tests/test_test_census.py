@@ -78,6 +78,25 @@ def _repo(tmp: Path) -> Path:
 TESTS_DIR = Path(__file__).resolve().parent
 REPO = TESTS_DIR.parents[1]
 
+
+def tc_conftest_inserts_path(src: str) -> bool:
+    """Whether `src` really CALLS `sys.path.insert`, decided by AST rather than by text.
+
+    The conftest's own docstring names the call, so a substring search is satisfied by the
+    prose with the call gone - a guard that reads its own explanation (BG0493).
+    """
+    import ast
+    for node in ast.walk(ast.parse(src)):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        if (isinstance(f, ast.Attribute) and f.attr == "insert"
+                and isinstance(f.value, ast.Attribute) and f.value.attr == "path"
+                and isinstance(f.value.value, ast.Name) and f.value.value.id == "sys"):
+            return True
+    return False
+
+
 class CensusTests(unittest.TestCase):
     """US0506: suite time and count attributed to the module each test covers."""
 
@@ -662,8 +681,10 @@ class ImportabilityTests(unittest.TestCase):
         self.assertTrue(conftest.is_file(),
                         "tools/tests has no conftest.py, so a sibling import resolves under "
                         "unittest and not under pytest")
-        self.assertIn("sys.path.insert", conftest.read_text(encoding="utf-8"),
-                      "the conftest does not put this directory on the path")
+        self.assertTrue(
+            tc_conftest_inserts_path(conftest.read_text(encoding="utf-8")),
+            "the conftest does not CALL sys.path.insert - its own docstring names the call, so "
+            "a text search is satisfied with the call deleted")
 
     def test_every_module_here_imports_under_pytest(self) -> None:
         """MUTANT: revert the conftest, or add a module with an unresolvable sibling import.
@@ -963,6 +984,32 @@ class AttributionTests(unittest.TestCase):
             after = {f.as_posix(): tc.attribute(root, f)[0] for f in files}
         moved = {k: (before[k], after[k]) for k in before if before[k] != after[k]}
         self.assertEqual({}, moved, f"a prose-only edit moved these files' owners: {moved}")
+
+
+
+
+class TheGuardSeesTheCallNotTheDocstringTests(unittest.TestCase):
+    """BG0493: the conftest guard asserted the TEXT `sys.path.insert` appeared in the file, and
+    the file's own docstring names the call - so deleting the call left the guard green. A guard
+    reading its own explanation."""
+
+    CONFTEST = Path(__file__).resolve().parent / "conftest.py"
+
+    def test_deleting_the_call_reddens_ac1(self) -> None:
+        """MUTANT: read the file's text again instead of parsing it.
+
+        Driven on a COPY: the existing verifier hard-codes the tracked path, and a test that
+        edited the real file would trip the repo-writes lane and leave the tree dirty."""
+        src = self.CONFTEST.read_text(encoding="utf-8")
+        self.assertTrue(tc_conftest_inserts_path(src), "the live conftest makes no such call")
+        without = "\n".join(l for l in src.splitlines()
+                            if not l.strip().startswith("sys.path.insert("))
+        self.assertIn("sys.path.insert", without,
+                      "the docstring no longer names the call, so this fixture cannot show the "
+                      "difference between reading the prose and reading the code")
+        self.assertFalse(tc_conftest_inserts_path(without),
+                         "the guard is satisfied with the call deleted, because it is reading "
+                         "the docstring that mentions it")
 
 
 if __name__ == "__main__":

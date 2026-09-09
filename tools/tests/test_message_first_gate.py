@@ -60,6 +60,10 @@ EXPECTED_LANES = (
     "stamps-staged", "warning-ratchet", "runbook",
     "lens-signatures",
     "spec-claims",
+    # BG0493: the practice-rules checker was wired into nothing and guarded nothing. Added to
+    # BOTH lane rosters in the commit that added the lane - two inventories of one hook is how
+    # a lane comes to exist in one list and not the other.
+    "practice-rules",
     "script-tests", "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",

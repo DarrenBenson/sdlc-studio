@@ -5796,10 +5796,20 @@ class LaneCheckLaneTests(unittest.TestCase):
                       "nothing on any real commit")
         self.assertIn("verify_ac.py", text,
                       "the hook mentions lane-check but never invokes verify_ac")
-        block = text.split("lane-check")[1][:600]
+        # ANCHORED ON THE GUARD'S OWN CALL SITE, not on a fixed window from the first mention
+        # of the word. The 600-character slice ended on the id-gathering pipeline, because the
+        # comment that carries the literal sits above the lane's own code - so the assertion
+        # was reading a `|| true` belonging to a different pipeline, and any window bound that
+        # kept it there satisfied a test written against the number instead of the target.
+        call = text.index('verify_ac.py" lane-check')
+        block = text[call:text.index("\nfi\n", call)]
+        self.assertTrue(block.startswith('verify_ac.py" lane-check'),
+                        f"the examined block does not begin at the guard's own call, so the "
+                        f"`|| true` below could belong to any pipeline that happens to fall "
+                        f"inside the window:\n{block[:120]}")
         self.assertIn("|| true", block,
-                      "the lane can fail the commit - it ships ADVISORY until its yield is "
-                      "measured")
+                      f"the lane can fail the commit - it ships ADVISORY until its yield is "
+                      f"measured:\n{block}")
 
     def test_the_pass_runs_through_its_own_command(self) -> None:
         """MUTANT: break the `lane-check` subcommand wiring in verify_ac's parser.
@@ -7312,6 +7322,38 @@ class ModuleAloneLaneTests(unittest.TestCase):
         (bare / "sdlc-studio").mkdir()
         n = self._gate("--boundary", "push", "--only", "module-alone", root=bare)
         self.assertIn("N/A (no skill tests directory under --root)", n.stdout + n.stderr)
+
+
+
+class LaneCheckAnchorTests(unittest.TestCase):
+    """BG0493: US0606's assertion took a fixed 600-character window from the first mention of
+    `lane-check`. The comment carrying that literal sits above the lane's own code, so the
+    window landed in commentary and the or-true fallback it found belonged to a different
+    pipeline. Any window bound that kept it there satisfied a test written against the number
+    rather than the target."""
+
+    HOOK = Path(__file__).resolve().parents[5] / ".githooks" / "pre-commit"
+
+    def test_the_assertion_is_anchored_on_the_guards_own_call(self) -> None:
+        """MUTANT: revert the assertion to slicing the first 600 characters after the keyword.
+
+        Asserted on WHERE THE BLOCK BEGINS, not on what it contains: adding any lane above the
+        guard lets a fixed window pass again by luck, which is exactly what happened when the
+        practice-rules lane was added in this same unit."""
+        text = self.HOOK.read_text(encoding="utf-8")
+        first = text.index("lane-check")
+        call = text.index('verify_ac.py" lane-check')
+        self.assertGreater(call, first,
+                           "the guard's call is the first mention, so this fixture cannot show "
+                           "the difference between anchoring and slicing")
+        window = text[first:first + 600]
+        self.assertNotIn('verify_ac.py" lane-check', window,
+                         "a 600-character window from the first mention now reaches the call, "
+                         "so the two readings agree here and the pin measures nothing")
+        block = text[call:text.index("\nfi\n", call)]
+        self.assertIn("|| true", block,
+                      f"the lane can fail the commit - it ships advisory:\n{block}")
+
 
 if __name__ == "__main__":
     unittest.main()

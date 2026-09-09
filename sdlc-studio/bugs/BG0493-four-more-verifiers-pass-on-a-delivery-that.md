@@ -42,20 +42,20 @@ verifiers named here would still pass over a delivery that had been made inert.
 ## Acceptance Criteria
 
 - [ ] **AC1** Given `tools/tests/conftest.py` with its `sys.path.insert` CALL deleted, when BG0476's AC1 verifier runs, then it FAILS. The file's own docstring names `sys.path.insert` at line 8, so today the assertion is satisfied with the call gone and the guard reads its own prose. The existing verifier hard-codes the tracked path, so the new node drives a COPY with the call removed rather than the file itself
-  - **Verify:** pytest tools/tests/test_conftest_guard.py::TheGuardSeesTheCallNotTheDocstringTests::test_deleting_the_call_reddens_ac1
-  - **Verified:** no
+  - **Verify:** pytest tools/tests/test_test_census.py::TheGuardSeesTheCallNotTheDocstringTests::test_deleting_the_call_reddens_ac1
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC2** Given US0606's `lane-check` assertion, when it runs, then it is anchored on the guard's own call site. Measured, the 600-character window ends on the id-gathering pipeline at relative offset 556, because the comment carrying the literal sits above the lane's own code; moving the hook block alone leaves that window in place, so the anchor is what the fix has to change
-  - **Verify:** pytest tools/tests/test_precommit_lane_order.py::TheSliceReadsTheLaneTests::test_the_slice_is_not_a_comment_block
-  - **Verified:** no
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::LaneCheckAnchorTests::test_the_assertion_is_anchored_on_the_guards_own_call
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC3** Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it REFUSES rather than returning zero findings. An exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent
   - **Verify:** pytest tools/tests/test_best_practice_rules.py::AnAbsentPracticeFileRefusesTests::test_a_missing_file_is_not_an_exemption
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC4** Given the shipped gate, when its lanes are enumerated, then one of them NAMES `best_practice_rules.py`. It is referenced by nothing in `.githooks/` or `package.json` today, so it guards nothing
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_checker_is_named_by_a_lane
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC5** Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_lane_runs_the_checker_and_carries_its_exit
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 
 ## Steps to Reproduce
 
@@ -74,13 +74,14 @@ Four more criteria that cannot fail. Individually small; together they are why f
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
 | AC1 | in tools/tests/test_test_census.py, change BG0476's assertion to read the file's text rather than the imported module | Given `tools/tests/conftest.py` with its `sys.path.insert` CALL deleted, when BG0476's AC1 verifier runs, then it FAILS. The file's own docstring names `sys.path.insert` at line 8, so today the assertion is satisfied with the call gone and the guard reads its own prose. The existing verifier hard-codes the tracked path, so the new node drives a COPY with the call removed rather than the file itself |
-| AC2 | in .claude/skills/sdlc-studio/scripts/tests/test_gate.py, revert `LaneCheckLaneTests` to slicing the first 600 characters after the keyword | Given US0606's `lane-check` assertion, when it runs, then it is anchored on the guard's own call site. Measured, the 600-character window ends on the id-gathering pipeline at relative offset 556, because the comment carrying the literal sits above the lane's own code; moving the hook block alone leaves that window in place, so the anchor is what the fix has to change |
+| AC2 | in .githooks/pre-commit, delete the lane-check comment block so the guard's call becomes the first mention of the keyword | Given US0606's `lane-check` assertion, when it runs, then it is anchored on the guard's own call site. Measured, the 600-character window ends on the id-gathering pipeline at relative offset 556, because the comment carrying the literal sits above the lane's own code; moving the hook block alone leaves that window in place, so the anchor is what the fix has to change |
 | AC3 | in tools/best_practice_rules.py, return 0 from `main()` on the missing-file path instead of refusing | Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it REFUSES rather than returning zero findings. An exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent |
 | AC4 | in .githooks/pre-commit, delete the block that invokes the practice-rules module | Given the shipped gate, when its lanes are enumerated, then one of them NAMES `best_practice_rules.py`. It is referenced by nothing in `.githooks/` or `package.json` today, so it guards nothing |
-| AC5 | in .githooks/pre-commit, swap the lane body for a bare `echo` mentioning the module path | Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing |
+| AC5 | in .githooks/pre-commit, swap the lane body for a bare echo mentioning the module path | Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-09 | Claude Fable 5.1 | Delivered, and TWO of the five tests failed to kill their own mutant on the first measurement. AC5's asserted the lane's command position began with the separator, which an echo naming the module also does - it reads the argv now, so a mention is told from an invocation. AC2's asserted an or-true fallback was present in the examined block, which the 600-character slice still contained by luck once a lane was added above it - it asserts where the block BEGINS now, at the guard's own call. Both were found by running the mutant rather than by reading it, which is the discipline this whole batch was re-groomed for |

@@ -7,7 +7,9 @@ forever while the command does nothing.
 """
 from __future__ import annotations
 
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -52,6 +54,35 @@ class TestingPracticeTests(unittest.TestCase):
             target.write_text(PRACTICE.read_text(encoding="utf-8"), encoding="utf-8")
             self.assertEqual(0, bpr.main(["--root", str(root)]),
                              "the shipped practice was refused by its own guard")
+
+
+
+
+class AnAbsentPracticeFileRefusesTests(unittest.TestCase):
+    """BG0493: `best_practice_rules.py` returned 0 when its practice file was absent, so the one
+    input that silenced the check completely was the easiest to produce - and nothing ran it at
+    all, so it guarded nothing either way."""
+
+    REPO = Path(__file__).resolve().parents[2]
+    SRC = REPO / "tools" / "best_practice_rules.py"
+
+    def test_a_missing_file_is_not_an_exemption(self) -> None:
+        """MUTANT: swap the refusal on a missing practice file for a zero return.
+
+        An exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent."""
+        with tempfile.TemporaryDirectory() as d:
+            r = subprocess.run([sys.executable, str(self.SRC), "--root", d],
+                               capture_output=True, text=True, timeout=60)
+            self.assertNotEqual(0, r.returncode,
+                                f"an absent practice file was treated as nothing to check:\n"
+                                f"{r.stdout}{r.stderr}")
+            self.assertIn("absence is a broken tree", r.stdout + r.stderr)
+
+    def test_a_present_practice_still_passes(self) -> None:
+        """The paired control: a checker that refuses every root satisfies the row above."""
+        r = subprocess.run([sys.executable, str(self.SRC), "--root", str(self.REPO)],
+                           capture_output=True, text=True, timeout=60)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
 
 
 if __name__ == "__main__":
