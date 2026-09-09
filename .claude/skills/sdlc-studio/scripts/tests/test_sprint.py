@@ -16409,6 +16409,92 @@ class DryRunScratchParityTests(unittest.TestCase):
     # code and running the suite. A helper that rebuilds the thing under test is not a fixture,
     # it is a second implementation, and the tests then pin the copy.
 
+    # ---- BG0601: the sweep compares the whole answer, and resolves its roster at run time ----
+
+    def _parity(self, root, scratch):
+        """The sweep's own comparison, over every `_ck_` resolver the module carries NOW.
+
+        One helper, called by all three criteria below, because two copies of the comparison is
+        how the sweep and its own tests came to disagree about which fields were compared.
+        """
+        base = {"retro_id": None, "units": [], "run": {}}
+        real = dict(base, root=root, read_root=root)
+        copy = dict(base, root=scratch, read_root=root)
+        probes = [(n, f) for n, f in vars(sprint_report).items()
+                  if n.startswith("_ck_") and callable(f)]
+        differing = []
+        for name, fn in probes:
+            try:
+                x, y = fn(real), fn(copy)
+            except Exception:      # a probe that raises alike on both answers the same either way
+                continue
+            if x != y:
+                differing.append(f"{name}: real={x} preview={y}")
+        return probes, differing
+
+    def _scratched(self, d):
+        root = self._repo(Path(d))
+        scratch = Path(tempfile.mkdtemp(prefix="parity_"))
+        self.addCleanup(shutil.rmtree, scratch, ignore_errors=True)
+        shutil.copytree(root / "sdlc-studio", scratch / "sdlc-studio", symlinks=True)
+        return root, scratch
+
+    def test_a_difference_in_the_detail_field_is_caught(self) -> None:
+        """MUTANT: narrow the swept comparison back to the first two fields.
+
+        The probe is SYNTHETIC because no shipped one diverges that way: the full-width sweep
+        reports zero differing across all of them, so the case has to be constructed, and
+        constructing it is what shows the sweep can see the third field at all."""
+        def _ck_zz_synthetic(ctx):
+            same = ("not-run", None)
+            return (*same, "real" if ctx.get("read_root") == ctx.get("root") else "preview")
+
+        with tempfile.TemporaryDirectory() as d:
+            root, scratch = self._scratched(d)
+            sprint_report._ck_zz_synthetic = _ck_zz_synthetic
+            self.addCleanup(lambda: delattr(sprint_report, "_ck_zz_synthetic"))
+            _probes, differing = self._parity(root, scratch)
+            self.assertTrue(any("_ck_zz_synthetic" in x for x in differing),
+                            f"a probe differing only in its detail field was read as agreeing:\n"
+                            f"{differing}")
+
+    def test_the_sweep_passes_on_an_unmodified_tree(self) -> None:
+        """MUTANT: compare the real tree against the BLIND scratch instead of the read-root copy.
+
+        The paired control. A sweep that fails on correct output is one that gets deleted rather
+        than fixed, and this is the assertion that says the widened comparison is still quiet on
+        every probe the module actually ships."""
+        with tempfile.TemporaryDirectory() as d:
+            root, scratch = self._scratched(d)
+            probes, differing = self._parity(root, scratch)
+            self.assertGreater(len(probes), 15,
+                               f"only {len(probes)} probes were resolved - the sweep measures "
+                               f"nothing")
+            self.assertEqual([], differing,
+                             "these probes answer differently inside a preview from outside "
+                             "one:\n" + "\n".join(differing))
+
+    def test_a_resolver_added_after_the_sweep_is_swept_too(self) -> None:
+        """MUTANT: hard-code the probe roster as a literal tuple instead of reading the module.
+
+        An enumerated roster exempts whichever probe is added next, which is the shape this
+        repository keeps meeting. The sensitivity control cannot serve as this row: measured,
+        the blind scratch already differs from the real tree at the STATE field, so narrowing
+        that control leaves it discriminating and its mutant survives."""
+        def _ck_zz_added_later(ctx):
+            return ("not-run", None, "added after the sweep was written")
+
+        with tempfile.TemporaryDirectory() as d:
+            root, scratch = self._scratched(d)
+            before, _ = self._parity(root, scratch)
+            sprint_report._ck_zz_added_later = _ck_zz_added_later
+            self.addCleanup(lambda: delattr(sprint_report, "_ck_zz_added_later"))
+            after, _ = self._parity(root, scratch)
+            self.assertEqual(len(before) + 1, len(after),
+                             "a resolver added to the module after the sweep was written was "
+                             "not swept, so the roster is a list rather than a walk")
+            self.assertIn("_ck_zz_added_later", [n for n, _f in after])
+
     def test_the_dry_run_gives_a_read_only_probe_the_real_root(self) -> None:
         """MUTANT: in `sprint.py`, delete `read_root` from the dry run's step call.
 
@@ -16462,15 +16548,17 @@ class DryRunScratchParityTests(unittest.TestCase):
                 # The SENSITIVITY CONTROL first: a scratch with NO read root must disagree, or
                 # this fixture cannot show the read root is what makes them agree.
                 blind = dict(base, root=scratch)
-                # (state, detail), not state alone: the blind scratch and the real tree both
-                # report NOT_RUN here and differ only in WHY - `not applicable` versus
-                # `unreadable` - so a state-only assertion passes whichever root the probe read.
-                a = sprint_report._ck_doc_surface(real)[:2]
-                b = sprint_report._ck_doc_surface(blind)[:2]
+                # THE WHOLE ANSWER, not a prefix of it. Every `_ck_` resolver returns
+                # `(state, value, detail)`, and the slice that used to stand here took
+                # `(state, value)` while this comment claimed it took `(state, detail)` - so a
+                # probe reading the scratch and differing only in WHY was read as agreeing. The
+                # comparison is the resolver's whole return, and the comment now names it.
+                a = sprint_report._ck_doc_surface(real)
+                b = sprint_report._ck_doc_surface(blind)
                 self.assertNotEqual(a, b,
                                     "the probe answers the same with and without a real tree, "
                                     "so this fixture cannot discriminate")
-                c = sprint_report._ck_doc_surface(copy)[:2]
+                c = sprint_report._ck_doc_surface(copy)
                 self.assertEqual(a, c,
                                  f"the doc-surface probe answers differently inside a preview "
                                  f"({c}) from outside one ({a}), on a surface that lives outside "
@@ -16482,6 +16570,10 @@ class DryRunScratchParityTests(unittest.TestCase):
                 # enumerated-list shape this repository keeps meeting. Every `_ck_*` resolver is
                 # swept, and the ones that legitimately read only `sdlc-studio/` agree trivially
                 # because the scratch carries a copy of it.
+                # RESOLVED FROM THE MODULE AT RUN TIME, never listed. A resolver added after
+                # this code was written is swept by the same walk; an enumerated roster exempts
+                # whichever probe is added next, which is the shape this repository keeps
+                # meeting. The synthetic probe below proves the walk really is what selects.
                 probes = [(n, f) for n, f in vars(sprint_report).items()
                           if n.startswith("_ck_") and callable(f)]
                 self.assertGreater(len(probes), 15,
@@ -16490,8 +16582,8 @@ class DryRunScratchParityTests(unittest.TestCase):
                 differing = []
                 for name, fn in probes:
                     try:
-                        x = fn(real)[:2]
-                        y = fn(copy)[:2]
+                        x = fn(real)
+                        y = fn(copy)
                     except Exception:      # a probe that raises alike on both is not this test's
                         continue           # subject; it answers the same either way
                     if x != y:

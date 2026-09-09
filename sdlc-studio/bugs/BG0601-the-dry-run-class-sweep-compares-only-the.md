@@ -26,13 +26,13 @@ Compare the probes in full, or state a bounded reason for the horizon in the tes
 
 - [ ] **AC1** Given a SYNTHETIC `_ck_` probe registered on the module for the duration of the test, whose real-tree and preview answers agree on `state` and `value` and differ in `detail`, when the dry-run parity sweep runs, then it FAILS and names that probe. Measured, no shipped probe diverges that way today - the full-width sweep reports zero differing across all of them - so the case has to be constructed rather than found, and constructing it is what shows the sweep can see the third field. Every `_ck_` resolver returns `(state, value, detail)`, so today's `[:2]` compares `(state, value)` while the fixture's own comment says it compares `(state, detail)` - a probe that reads the scratch and differs only in WHY is read as agreeing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_a_difference_in_the_detail_field_is_caught
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC2** Given every `_ck_` probe against an unmodified tree, when the sweep runs, then it PASSES - the paired control, because a sweep that fails on correct output is one that gets deleted rather than fixed
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_the_sweep_passes_on_an_unmodified_tree
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC3** Given a `_ck_` resolver added to the module after the sweep's code was written, when the sweep runs, then it is swept too, because the roster is resolved from the module at run time rather than listed. An enumerated roster exempts whichever probe is added next, which is the shape this repository keeps meeting, and the sensitivity control cannot serve as the third row: measured, the blind scratch already differs from the real tree at the `state` field, so narrowing that control leaves it discriminating
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_the_sensitivity_control_compares_what_the_sweep_compares
-  - **Verified:** no
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_a_resolver_added_after_the_sweep_is_swept_too
+  - **Verified:** yes (2026-09-09)
 
 ## Test Plan
 
