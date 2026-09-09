@@ -1311,5 +1311,181 @@ class HintPerformanceTests(unittest.TestCase):
         self.assertIsNotNone(seen.get("advisory_sweep"), "`hint` ran the close-owed advisory outside any sweep - its own walk")
         self.assertEqual(seen["gather_sweep"], seen["advisory_sweep"], "the advisory ran in a different sweep from the gather - a second census")
 
+
+
+class CloseOwedAgreementTests(unittest.TestCase):
+    """BG0591: `status`'s advisory read the RAW owed list while the renderer and the exit code
+    both read the accounted-for set, so status announced a close was owed for units the command
+    had already accounted for - and sent the operator to write a retro the tool would refuse.
+
+    FIXTURE INVARIANT, stated per row rather than once. On the real tree `owed` and the
+    accounted-for set are equal, with the run-attributed and repair limbs both empty, so the two
+    surfaces agree by an empty subtraction rather than by structure. A fixture built the obvious
+    way reproduces that coincidence and no mutant can kill it. `blocking` subtracts TWO limbs -
+    the run-attributed units and the close-time repairs - and a recorded override is a LABEL on a
+    unit already inside the repairs limb, not a limb of its own."""
+
+    def _story(self, root: Path, sid: str, st: str) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{sid}-x.md").write_text(f"# {sid}\n\n> **Status:** {st}\n> **Points:** 2\n",
+                                       encoding="utf-8")
+
+    def _baselined(self, d) -> Path:
+        import close_owed
+        root = Path(d)
+        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+        self._story(root, "US0001", "Done")
+        close_owed.stamp_baseline(root, date="2026-01-01")
+        return root
+
+    def _run_attributed(self, root: Path, sid: str) -> None:
+        """A unit RAISED inside a closed run's window and terminal before it ended.
+
+        All three of the detector's conditions are supplied, because it demands all three: the
+        `Raised-in-batch` stamp inside the window, a terminal date on or before the run's end
+        (read from the close telemetry, never declared), and a run whose outcome says its close
+        completed."""
+        import close_owed
+        d = root / "sdlc-studio" / "stories"
+        (d / f"{sid}-x.md").write_text(
+            f"# {sid}\n\n> **Status:** Done\n> **Points:** 2\n"
+            f"> **Raised-in-batch:** RUN-T 2026-01-02T06:00:00Z\n", encoding="utf-8")
+        arch = root / "sdlc-studio" / ".local" / "run-archive"
+        arch.mkdir(parents=True, exist_ok=True)
+        (arch / "RUN-T.json").write_text(json.dumps(
+            {"run_id": "RUN-T", "outcome": close_owed._CLOSED_OUTCOMES[0], "batch": [],
+             "started_at": "2026-01-02T00:00:00Z", "ended_at": "2026-01-03T00:00:00Z"}),
+            encoding="utf-8")
+        ev = root / "sdlc-studio" / "retros" / "evidence"
+        ev.mkdir(parents=True, exist_ok=True)
+        (ev / "actuals-2026-01-02.jsonl").write_text(
+            json.dumps({"id": sid, "type": "story", "project": "t"}) + "\n", encoding="utf-8")
+
+    def test_a_run_attributed_unit_is_not_announced_as_owed(self) -> None:
+        """MUTANT: revert the advisory's source to the raw owed list."""
+        import close_owed
+        with tempfile.TemporaryDirectory() as d:
+            root = self._baselined(d)
+            self._story(root, "US0005", "Done")
+            self._run_attributed(root, "US0005")
+            report = close_owed.owed(root)
+            if not (report.get("run_attributed") or []):
+                self.skipTest("the fixture did not produce a run-attributed unit")
+            self.assertEqual([], close_owed.blocking(report)["units"],
+                             "the fixture's unit is not accounted for, so this proves nothing")
+            self.assertIsNone(status.close_owed_advisory(root),
+                              "status announced a close for a unit the command accounted for")
+
+    def test_a_real_owed_close_is_still_reported_on_both(self) -> None:
+        """MUTANT: delete the advisory's emit so nothing is ever announced.
+
+        The paired control: narrowing the advisory's key must not be satisfiable by silencing
+        it outright."""
+        import close_owed
+        with tempfile.TemporaryDirectory() as d:
+            root = self._baselined(d)
+            self._story(root, "US0005", "Done")
+            report = close_owed.owed(root)
+            self.assertTrue(close_owed.is_owed(report), "the fixture owes no close")
+            adv = status.close_owed_advisory(root)
+            self.assertIsNotNone(adv)
+            self.assertIn("US0005", adv)
+            self.assertIn("US0005", close_owed.render(report))
+
+    def _retro(self, root: Path, rid: str, date: str, override: str = "",
+               velocity: bool = True) -> None:
+        """A retro, and by default its velocity row too.
+
+        The row matters: without it the velocity limb is non-empty and the advisory fires for a
+        reason that has nothing to do with the criterion under test. The one row that WANTS an
+        empty velocity record asks for it."""
+        d = root / "sdlc-studio" / "retros"
+        d.mkdir(parents=True, exist_ok=True)
+        body = f"# {rid}\n\n> **Date:** {date}\n> **Batch:** US0001\n"
+        if override:
+            body += f"> **Close-repair-override:** {override}\n"
+        (d / f"{rid}-x.md").write_text(body + "\n## Summary\n\ns\n", encoding="utf-8")
+        if velocity:
+            (root / "sdlc-studio" / "retros" / "VELOCITY.md").write_text(
+                "# Velocity\n\n| Retro | Points | Tokens |\n| --- | --- | --- |\n"
+                f"| {rid} | 2 | 1000 |\n", encoding="utf-8")
+
+    def test_a_repaired_or_overridden_unit_is_not_announced_as_owed(self) -> None:
+        """MUTANT: drop the close-time-repairs subtraction from the accounted-for set.
+
+        TWO fixtures, both built through the repairs path: `blocking` subtracts two limbs, and a
+        recorded override is a LABEL on a unit already inside the repairs one rather than a limb
+        of its own - so a fix special-casing either alone fails the other."""
+        import close_owed
+        for override in ("", "US0005 - the release could not wait for it"):
+            with self.subTest(override=bool(override)), tempfile.TemporaryDirectory() as d:
+                root = self._baselined(d)
+                self._retro(root, "RETRO0001", "2026-01-02", override)
+                self._story(root, "US0005", "Done")
+                # The run must have FINISHED: an open run reads as never-closed and the split
+                # degrades to calling everything unaccounted, which is the safe direction and
+                # not the one under test here.
+                loc = root / "sdlc-studio" / ".local"
+                loc.mkdir(parents=True, exist_ok=True)
+                (loc / "run-state.json").write_text(json.dumps(
+                    {"run_id": "RUN-T", "outcome": close_owed._CLOSED_OUTCOMES[0]}),
+                    encoding="utf-8")
+                # Terminal AFTER the retro was written, which is what makes it a close-time
+                # repair rather than ordinary unaccounted work. The date is DERIVED from the
+                # close telemetry, never declared, so the fixture supplies the telemetry.
+                ev = root / "sdlc-studio" / "retros" / "evidence"
+                ev.mkdir(parents=True, exist_ok=True)
+                (ev / "actuals-2026-01-05.jsonl").write_text(
+                    json.dumps({"id": "US0005", "type": "story", "project": "t"}) + "\n",
+                    encoding="utf-8")
+                report = close_owed.owed(root)
+                if not (report.get("close_time_repairs") or
+                        report.get("close_repair_overrides")):
+                    self.fail("the fixture produced no close-time repair, so it proves nothing")
+                self.assertEqual([], close_owed.blocking(report)["units"],
+                                 "a close-time repair is still counted as blocking")
+                self.assertIsNone(status.close_owed_advisory(root),
+                                  "status announced a close for a unit the command accounted for")
+
+    def test_a_velocity_only_fixture_still_announces_a_close(self) -> None:
+        """MUTANT: narrow the advisory's predicate to the units limb, dropping the velocity one.
+
+        The DELIBERATE exception to this class's fixture invariant: the units limb is EMPTY here
+        and a retro carries no velocity row. `is_owed` is true on that limb alone, so an advisory
+        reading only the units goes silent exactly where the command exits 1 - the same
+        two-surfaces-disagree defect this bug is about, moved rather than fixed."""
+        import close_owed
+        with tempfile.TemporaryDirectory() as d:
+            root = self._baselined(d)
+            self._retro(root, "RETRO0001", "2026-02-01", velocity=False)
+            report = close_owed.owed(root)
+            block = close_owed.blocking(report)
+            self.assertEqual([], block["units"], "the units limb must be empty for this row")
+            self.assertTrue(block["velocity"], "the fixture owes no velocity row")
+            self.assertTrue(close_owed.is_owed(report), "the command does not consider this owed")
+            adv = status.close_owed_advisory(root)
+            self.assertIsNotNone(
+                adv, "status is silent on a fixture where the command exits 1")
+            self.assertIn("velocity", adv)
+
+    def test_the_two_commands_name_the_same_blocking_set(self) -> None:
+        """MUTANT: delete the line that names the blocking set, leaving the raw enumeration.
+
+        `detect` enumerated only the raw owed list, so there was nothing for a second reader to
+        compare against - which is how the two surfaces came to disagree at all."""
+        import close_owed
+        with tempfile.TemporaryDirectory() as d:
+            root = self._baselined(d)
+            self._story(root, "US0005", "Done")
+            report = close_owed.owed(root)
+            rendered = close_owed.render(report)
+            named = [ln for ln in rendered.splitlines() if "BLOCKING" in ln]
+            self.assertTrue(named, f"the renderer names no blocking set:\n{rendered}")
+            for cid, _t in close_owed.blocking(report)["units"]:
+                self.assertIn(cid, named[0],
+                              f"{cid} holds the close and is not on the blocking line")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -641,12 +641,25 @@ def close_owed_advisory(repo_root: Path | str) -> str | None:
                     f"delivery unit(s) exist with no baseline - run `close_owed.py baseline` once "
                     f"to grandfather them, then a later skipped close is caught")
         return None
-    if not report["owed"]:
+    # THE ACCOUNTED-FOR SET, not the raw one. This advisory read `report["owed"]` while the
+    # renderer and the exit code both read `blocking(report)`, so `status` announced a close was
+    # owed for units the command itself had already accounted for - a run-attributed unit, a
+    # close-time repair, an overridden one. Two surfaces answering one question differently is
+    # worse than either answer: the operator is sent to write a retro the tool would refuse.
+    block = close_owed.blocking(report)
+    ids = [cid for cid, _ in block["units"]]
+    # The VELOCITY limb too. `is_owed` is true on it alone, so an advisory narrowed to the units
+    # limb goes silent on exactly the fixture where the command exits 1.
+    vel = list(block.get("velocity") or [])
+    if not ids and not vel:
         return None
-    ids = [cid for cid, _ in report["owed"]]
+    if not ids:
+        return (f"a sprint close is owed: {len(vel)} retro(s) closed with no velocity row - "
+                f"record it with `retro.py accuracy --id RETROxxxx --write`")
     shown = ", ".join(ids[:5]) + ("..." if len(ids) > 5 else "")
+    tail = (f", and {len(vel)} retro(s) with no velocity row" if vel else "")
     return (f"a sprint close is owed: {len(ids)} delivery unit(s) reached terminal with no retro "
-            f"({shown}) - run the retro, then `gate --require-retro RETROxxxx`")
+            f"({shown}){tail} - run the retro, then `gate --require-retro RETROxxxx`")
 
 
 def backlog_triage_advisory(repo_root: Path | str) -> str | None:

@@ -777,6 +777,12 @@ def render(report: dict) -> str:
     # for this" are different facts, and a ledger that reports a run which DID account for
     # itself is one people learn to step over. Only printed when the split found something, so
     # an ordinary owed close reads exactly as before.
+    # THE BLOCKING SET, NAMED. Every listing line below reports a limb of `owed`; none of them
+    # enumerated what actually holds the close, so a second reader - `status`'s advisory - had
+    # nothing to compare against and computed its own answer, which disagreed. One reader, named
+    # once, is what lets the two surfaces be checked against each other at all.
+    if blocking_ids := [cid for cid, _t in blocking(report)["units"]]:
+        lines.append(f"  BLOCKING ({len(blocking_ids)}): " + ", ".join(blocking_ids))
     if repairs := report.get("close_time_repairs") or []:
         lines.append(f"  {len(repairs)} of these is a CLOSE-TIME REPAIR - terminal after the "
                      f"retro was written, so the account it postdates could not name it: "

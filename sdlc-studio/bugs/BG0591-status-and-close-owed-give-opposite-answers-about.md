@@ -65,19 +65,19 @@ command exits 1, and no fixture obeying the difference rule can show it.
 
 - [ ] **AC1** Given a fixture carrying a run-attributed unit and no repair or override, so the raw owed list and the accounted-for set differ on that limb alone, when `status`'s close advisory runs, then it announces nothing owed - it reads the accounted-for set the renderer and the exit code read, not the raw one
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_run_attributed_unit_is_not_announced_as_owed
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC2** Given a unit that genuinely owes a close, when both surfaces run, then both report it - the paired control, so narrowing the advisory's key cannot be satisfied by silencing it outright
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_real_owed_close_is_still_reported_on_both
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC3** Given a fixture carrying a close-time REPAIR, and a second carrying a repair the retro OVERRIDES by id, when the advisory runs on each, then neither announces anything owed. An override is a label on a unit already inside the repairs limb rather than a limb of its own, so both fixtures must be built through the repairs path or the criterion tests one thing twice
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_repaired_or_overridden_unit_is_not_announced_as_owed
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC4** Given a fixture whose ONLY outstanding item is a retro with no velocity row, when the advisory runs, then it still announces a close is owed. `is_owed` returns true on the velocity limb alone, so an advisory narrowed to the units limb goes silent on exactly the fixture where the command exits 1 - the same two-surfaces-disagree defect this bug is about, moved rather than fixed
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_a_velocity_only_fixture_still_announces_a_close
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC5** Given one fixture root, when `status` and `close_owed.py detect` are BOTH run as subprocesses, then the id set each NAMES as holding the close is the same set. `detect` enumerates only the raw owed list today, so there is nothing to compare against and the comparison must be made possible before it can be made
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CloseOwedAgreementTests::test_the_two_commands_name_the_same_blocking_set
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 
 ## Test Plan
 
