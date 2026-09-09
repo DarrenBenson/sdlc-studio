@@ -6182,5 +6182,73 @@ class RepairPhaseJoinTests(unittest.TestCase):
                              "a row whose phase IS unambiguous was reported unattributable")
 
 
+
+
+class CleanEscapesForContextTests(unittest.TestCase):
+    """BG0637: `_clean` escaped every underscore in the value, span interiors included, so an
+    identifier a reviewer named came out of the ledger with a literal backslash in it - and it
+    was not idempotent, so a value passing through twice was escaped twice. This function serves
+    the verdict, evidence and repair writers, which is every record this project keeps of what
+    review found."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.critic = _load()
+
+    IDENT = "the reader `_read_rows` and a bare _name"
+
+    def test_an_underscore_inside_a_code_span_is_not_escaped(self) -> None:
+        """MUTANT: revert to a single unconditional escape over the whole value."""
+        got = self.critic._clean(self.IDENT)
+        self.assertIn("`_read_rows`", got,
+                      f"the span's interior was escaped, so it renders with a backslash:\n{got}")
+
+    def test_an_underscore_outside_a_span_is_still_escaped(self) -> None:
+        """MUTANT: delete the underscore escape altogether.
+
+        Without this row the one-token implementation - dropping the escape - satisfies the
+        row above, and every underscored identifier in free prose pairs into emphasis again."""
+        got = self.critic._clean(self.IDENT)
+        self.assertIn(r"\_name", got,
+                      f"an underscore outside any span was left bare:\n{got}")
+
+    def test_cleaning_an_already_cleaned_value_changes_nothing(self) -> None:
+        """MUTANT: remove the already-escaped lookbehind so a backslash-underscore is escaped
+        a second time.
+
+        The largest measured half of the defect: the repair record carried hundreds of doubled
+        escapes, because a value re-recorded or quoted into a closure went through twice."""
+        once = self.critic._clean(self.IDENT)
+        self.assertEqual(once, self.critic._clean(once))
+
+    def test_a_pipe_or_newline_inside_a_span_is_still_neutralised(self) -> None:
+        """MUTANT: hoist the pipe and newline substitutions into the outside-a-span branch.
+
+        These rows are built by f-string, not by a row joiner, so this function is the only
+        thing standing between a reviewer's piped shell command and a forged column."""
+        got = self.critic._clean("see `grep x | wc -l` and\na second line")
+        self.assertNotIn("|", got, f"a pipe survived inside a code span:\n{got}")
+        self.assertNotIn("\n", got, f"a newline survived:\n{got}")
+
+    def test_an_odd_backtick_count_is_refused_at_the_write(self) -> None:
+        """MUTANT: replace the refusal with an appended backtick that balances it silently.
+
+        Balancing rewrites a reviewer's words and swallows the row's tail into a code span.
+        Refusing tells the author while they can still edit - and catches the caller that
+        truncated a quotation mid-span, which balancing would have papered over."""
+        with self.assertRaises(ValueError) as ctx:
+            self.critic._clean("a value with one ` stray backtick")
+        self.assertIn("backtick", str(ctx.exception))
+
+    def test_an_even_backtick_count_is_written_through_unchanged(self) -> None:
+        """MUTANT: strip every backtick from the value before writing it.
+
+        The paired control: a writer that removes or appends backticks satisfies the refusal
+        row above while destroying every code span in the record."""
+        got = self.critic._clean("a `span` and `another` here")
+        self.assertEqual(4, got.count("`"), f"backticks were rewritten:\n{got}")
+        self.assertIn("`span`", got)
+
+
 if __name__ == "__main__":
     unittest.main()

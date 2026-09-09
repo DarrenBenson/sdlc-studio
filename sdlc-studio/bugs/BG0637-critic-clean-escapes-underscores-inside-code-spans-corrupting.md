@@ -29,22 +29,22 @@ Escape for the CONTEXT rather than for the string. Split the value on code-span 
 
 - [ ] **AC1** Given free text carrying an underscored identifier INSIDE a code span, when a critic verdict, an evidence row or a repair closure is recorded, then the span's interior reaches the ledger unescaped, because a backslash inside a code span is literal and renders as one
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_an_underscore_inside_a_code_span_is_not_escaped
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC2** Given the same text carrying an underscored identifier OUTSIDE any code span, when it is recorded, then that one IS still escaped. Without this row the likeliest careless implementation - deleting the escape outright, a one-token edit - satisfies AC1 and passes its test
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_an_underscore_outside_a_span_is_still_escaped
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC3** Given a value that has ALREADY been cleaned once, when it is cleaned again, then the result is unchanged. The repair record carries 943 doubled escapes today, which is the largest measured half of this defect and the half no criterion covered
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_cleaning_an_already_cleaned_value_changes_nothing
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC4** Given text carrying a pipe or a newline INSIDE a code span, when it is recorded, then both are still neutralised. The rows are built by f-string rather than by a row joiner, so this function is the only thing standing between a reviewer's piped shell command and a forged column - and leaving span interiors verbatim, as the fix proposes, would put the pipe back
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_a_pipe_or_newline_inside_a_span_is_still_neutralised
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC5** Given free text carrying an ODD number of backticks, when it is recorded, then the write is REFUSED naming the value, rather than the text being silently rewritten. An unbalanced span turns the rest of the row into code and markdownlint then refuses the whole file, and rewriting a reviewer's words to fix it is a worse answer than telling the author while they can still edit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_an_odd_backtick_count_is_refused_at_the_write
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC6** Given free text carrying an EVEN number of backticks, when it is recorded, then every backtick is written through unchanged - the paired control, because a writer that strips or appends backticks satisfies AC5 on its own
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_an_even_backtick_count_is_written_through_unchanged
-  - **Verified:** no
+  - **Verified:** yes (2026-09-09)
 
 ## Impact
 
@@ -57,7 +57,7 @@ Every identifier a reviewer names in a finding is written wrong, in the three fi
 | AC1 | in .claude/skills/sdlc-studio/scripts/critic.py, revert `_clean` to a single unconditional `replace("_", "\\_")` over the whole value | Given free text carrying an underscored identifier INSIDE a code span, when a critic verdict, an evidence row or a repair closure is recorded, then the span's interior reaches the ledger unescaped, because a backslash inside a code span is literal and renders as one |
 | AC2 | in .claude/skills/sdlc-studio/scripts/critic.py, delete the underscore escape from `_clean` altogether | Given the same text carrying an underscored identifier OUTSIDE any code span, when it is recorded, then that one IS still escaped. Without this row the likeliest careless implementation - deleting the escape outright, a one-token edit - satisfies AC1 and passes its test |
 | AC3 | in .claude/skills/sdlc-studio/scripts/critic.py, remove the already-escaped test so a backslash-underscore pair is escaped a second time | Given a value that has ALREADY been cleaned once, when it is cleaned again, then the result is unchanged. The repair record carries 943 doubled escapes today, which is the largest measured half of this defect and the half no criterion covered |
-| AC4 | in .claude/skills/sdlc-studio/scripts/critic.py, hoist the pipe and newline substitutions into the branch that handles text outside a span | Given text carrying a pipe or a newline INSIDE a code span, when it is recorded, then both are still neutralised. The rows are built by f-string rather than by a row joiner, so this function is the only thing standing between a reviewer's piped shell command and a forged column - and leaving span interiors verbatim, as the fix proposes, would put the pipe back |
+| AC4 | in .claude/skills/sdlc-studio/scripts/critic.py, delete the pipe substitution so a pipe inside a code span survives | Given text carrying a pipe or a newline INSIDE a code span, when it is recorded, then both are still neutralised. The rows are built by f-string rather than by a row joiner, so this function is the only thing standing between a reviewer's piped shell command and a forged column - and leaving span interiors verbatim, as the fix proposes, would put the pipe back |
 | AC5 | in .claude/skills/sdlc-studio/scripts/critic.py, replace the odd-parity refusal with an appended backtick that balances the value silently | Given free text carrying an ODD number of backticks, when it is recorded, then the write is REFUSED naming the value, rather than the text being silently rewritten. An unbalanced span turns the rest of the row into code and markdownlint then refuses the whole file, and rewriting a reviewer's words to fix it is a worse answer than telling the author while they can still edit |
 | AC6 | in .claude/skills/sdlc-studio/scripts/critic.py, strip every backtick from the value before writing it | Given free text carrying an EVEN number of backticks, when it is recorded, then every backtick is written through unchanged - the paired control, because a writer that strips or appends backticks satisfies AC5 on its own |
 
@@ -72,3 +72,4 @@ Every identifier a reviewer names in a finding is written wrong, in the three fi
 | 2026-09-09 | Claude Fable 5.1 | A FOURTH reproduction, and a shape the earlier three did not show: a closure whose finding key was a 60-character quote was cut inside a code span, leaving an unclosed backtick in the repair record and blocking the commit. The other three came from a reviewer's own text; this one came from a caller TRUNCATING text before handing it to the writer. Both belong to AC5: the writer must refuse odd parity whatever produced it, rather than trusting that its callers hand it balanced text |
 | 2026-09-09 | Claude Fable 5.1 | A FIFTH reproduction on the same day, and the plainest one: a reviewer quoting the withdrawal sentinel literal, whose trailing space is part of the value, produced a code span markdownlint refuses. There is no way to write that literal in a ledger row today, so the writer is refusing to record a fact about its own sibling's contract |
 | 2026-09-09 | Claude Fable 5.1 | SIXTH and SEVENTH reproductions, both from one review round: a reviewer quoting an http verifier with a trailing ellipsis, and another quoting a level-two heading marker whose trailing space is the whole point of the quote. Every one of the seven this week is a reviewer or a caller writing a value the ledger cannot hold, and the writer accepting it. Seven blocked commits is now the measured cost of this bug |
+| 2026-09-09 | Claude Fable 5.1 | Delivered. AC4's row was corrected at delivery: it named hoisting the substitutions into the outside-a-span branch, and the fix keeps them in one place ABOVE the span walk rather than inside it, so there is no such branch to hoist into. The edit that reddens AC4 is deleting the pipe substitution, which is what the row now names. The refusal shape was also settled here rather than left to the implementation: an odd backtick count raises, and the message says why it is not balanced - rewriting a reviewer's words is worse than refusing them, and refusing also catches the caller that truncated a quotation mid-span, which balancing would have papered over |

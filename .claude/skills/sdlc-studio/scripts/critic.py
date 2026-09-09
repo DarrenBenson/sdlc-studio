@@ -188,10 +188,57 @@ def verdicts_path(repo_root: Path | str, phase: str = "delivery") -> Path:
     return Path(repo_root) / "sdlc-studio" / "reviews" / _FILE[phase]
 
 
+#: A balanced code span. Anything between a pair of backticks is markdown's literal region:
+#: a backslash there is a backslash, not an escape, so escaping an underscore inside one
+#: WRITES the backslash the reader sees.
+_SPAN_RE = re.compile(r"`[^`]*`")
+#: An underscore that is not already escaped. The lookbehind is what makes the pass
+#: idempotent, and idempotence is not a nicety here: every value that goes back through this
+#: function - a re-recorded verdict, a closure quoting a finding - was being escaped again,
+#: which is how the repair record came to carry hundreds of doubled escapes.
+_BARE_UNDERSCORE = re.compile(r"(?<!\\)_")
+
+
+def _escape_outside_spans(text: str) -> str:
+    """Escape underscores in `text`, leaving the interior of every code span alone."""
+    out, last = [], 0
+    for m in _SPAN_RE.finditer(text):
+        out.append(_BARE_UNDERSCORE.sub(r"\\_", text[last:m.start()]))
+        out.append(m.group(0))
+        last = m.end()
+    out.append(_BARE_UNDERSCORE.sub(r"\\_", text[last:]))
+    return "".join(out)
+
+
 def _clean(value: str) -> str:
-    # Escape `_` so an underscored identifier (e.g. `_read`, `_index_row`) in free-text notes
-    # cannot pair across words into markdown emphasis and trip markdownlint MD037.
-    return value.replace("|", "/").replace("\n", " ").strip().replace("_", r"\_")
+    """A free-text value as a ledger cell: escaped for its CONTEXT, and refused if unwritable.
+
+    Three rules, and each was learned from a blocked commit:
+
+    The underscore escape applies OUTSIDE code spans only. Markdown does not process a
+    backslash inside a span, so escaping there wrote the backslash into the record - every
+    identifier a reviewer named came out wrong in the three files this project uses as its
+    account of what review found.
+
+    The pipe and newline substitutions apply EVERYWHERE, span interiors included. These rows
+    are built by f-string rather than by a row joiner, so this function is the only thing
+    standing between a reviewer's piped shell command and a forged column.
+
+    An ODD number of backticks is REFUSED rather than balanced. An unbalanced span turns the
+    rest of the row into code and markdownlint then refuses the whole file, so the value cannot
+    be written as it stands - but rewriting a reviewer's words to make them fit is a worse
+    answer than telling the author while they can still edit. Refusing also catches the caller
+    that TRUNCATED a quotation mid-span, which balancing would have silently papered over.
+    """
+    text = str(value or "")
+    if text.count("`") % 2:
+        raise ValueError(
+            f"refused: the value carries an odd number of backticks, so its last code span "
+            f"never closes and markdownlint refuses the file it is written into. Close the "
+            f"span or drop the stray backtick - it is not balanced here, because rewriting "
+            f"what a reviewer wrote is worse than refusing it: {text[:120]!r}")
+    text = text.replace("|", "/").replace("\n", " ").strip()
+    return _escape_outside_spans(text)
 
 
 def record_verdict(repo_root: Path | str, unit: str, verdict: str,
