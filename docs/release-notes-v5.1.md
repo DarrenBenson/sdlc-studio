@@ -20,7 +20,7 @@ can act on.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1 discloses 16 open defects: 16 Medium, 0 Low.** Zero Critical, zero High.
+**v5.1 discloses 17 open defects: 17 Medium, 0 Low.** Zero Critical, zero High.
 
 ## What is in it
 

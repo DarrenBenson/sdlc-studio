@@ -1,7 +1,7 @@
 # EP0251: A plan ruling is recorded and withdrawable, not hand-authored
 
 > **Status:** Draft
-> **Derived Point Total:** 5
+> **Derived Point Total:** 8
 > **Parent:** CR0569
 > **Created:** 2026-09-09
 > **Created-by:** sdlc-studio new

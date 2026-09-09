@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-08
+**Last Updated:** 2026-09-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 16 |
+| Open | 17 |
 | In Progress | 0 |
 | Fixed | 539 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **657** |
+| **Total** | **658** |
 
 ## All Bugs
 
@@ -197,6 +197,7 @@
 | [BG0655](BG0655-a-mutant-survives-at-claude-skills-sdlc-studio.md) | the survivor filer reads a WITHDRAWN row as a live survivor, so a close files a High bug for a mutant the ledger says is dead | Open | Medium | 2026-09-08 | 2026-09-08 |
 | [BG0656](BG0656-the-disclosure-page-s-prose-and-its-guard.md) | The disclosure page's prose and its guard are bound to a RELEASED version's notes, so every disposition walks a published claim and the page lies at a low count | Open | Medium | 2026-09-08 | 2026-09-08 |
 | [BG0657](BG0657-the-scheduled-corpus-lane-is-red-at-23.md) | The scheduled corpus lane is red at 23 against a baseline of 20, and the baseline records only a COUNT, so no reader can tell which three are new | Open | Medium | 2026-09-08 | 2026-09-08 |
+| [BG0658](BG0658-testplan-derive-writes-its-rows-unescaped-and-reads.md) | testplan derive writes its rows unescaped and reads them back by splitting on a raw pipe, so a mutant naming a piped command is silently truncated | Open | Medium | 2026-09-09 | 2026-09-09 |
 
 ## Archived Releases
 
