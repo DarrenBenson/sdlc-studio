@@ -6889,5 +6889,53 @@ class LineCoverageTests(unittest.TestCase):
             self.assertEqual(rc, 1, out + err)
             self.assertIn("1 uncovered", out)
 
+
+
+class TestPlanCellEscapingTests(unittest.TestCase):
+    """BG0658: `testplan derive` composed each row by f-string and `_testplan_rows` read it back
+    by splitting on a raw pipe. A mutant naming a piped command - and a shell pipeline is an
+    ordinary thing for a mutant to name - was written as a row with too many cells and read back
+    TRUNCATED at the first pipe, while the writer reported success and markdownlint refused the
+    file for a column count nobody intended."""
+
+    PIPED = "in scripts/x.py, replace the guard with `rg -n foo | head -1`"
+
+    def _plan(self, row: str) -> str:
+        return ("## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                + row + "\n")
+
+    def test_a_piped_mutant_round_trips_and_the_table_keeps_its_columns(self) -> None:
+        """MUTANT: delete the pipe escape from the cell writer."""
+        row = f"| AC1 | {verify_ac._cell(self.PIPED)} | a title |"
+        cells = verify_ac._UNESCAPED_PIPE.split(row.strip().strip("|"))
+        self.assertEqual(3, len(cells), f"the row does not hold three columns:\n{row}")
+        got = verify_ac._testplan_rows(self._plan(row))
+        self.assertEqual([self.PIPED], [r["mutant"] for r in got],
+                         "the mutant did not survive the round trip")
+
+    def test_a_row_written_before_the_fix_is_still_read_whole(self) -> None:
+        """MUTANT: read only the second cell, dropping the legacy re-join.
+
+        Escaping the writer alone would leave every row already on disk unreadable, which is a
+        worse tree than the defect produced: the corruption moves from new rows to every old
+        one, silently."""
+        got = verify_ac._testplan_rows(self._plan(f"| AC1 | {self.PIPED} | a title |"))
+        self.assertEqual([self.PIPED], [r["mutant"] for r in got],
+                         "a row written before the escape was truncated at its pipe")
+
+    def test_a_mutant_with_no_pipe_is_written_byte_identically(self) -> None:
+        """MUTANT: fold whitespace in the cell writer as well as escaping pipes.
+
+        The paired control. An escaper applied unconditionally rewrites every row in the corpus,
+        and a diff touching every artefact is indistinguishable from the defect it claims to
+        fix - so a value carrying no pipe must come back byte for byte."""
+        for plain in ("in scripts/x.py, delete the guard",
+                      "in scripts/x.py,  two  spaces  kept",
+                      "in scripts/x.py, a `code span` and a - dash"):
+            with self.subTest(plain=plain):
+                self.assertEqual(plain, verify_ac._cell(plain))
+                self.assertEqual(plain, verify_ac._uncell(verify_ac._cell(plain)))
+
+
 if __name__ == "__main__":
     unittest.main()

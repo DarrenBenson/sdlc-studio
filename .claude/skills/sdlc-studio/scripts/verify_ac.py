@@ -2993,6 +2993,39 @@ _EDIT_VERBS = (
     "comment out", "suppress", "ignore", "relax",
 )
 
+#: A cell split on UNESCAPED pipes only. A mutant naming a piped command is an ordinary thing
+#: to write - a shell pipeline is what half the corpus's shell verifiers are - and the raw
+#: `split("|")` that read these rows truncated it at the first one while the writer reported
+#: success, so the plan read as complete and measured less than it said.
+_UNESCAPED_PIPE = re.compile(r"(?<!\\)\|")
+
+
+def _cell(value: str) -> str:
+    """A value as a markdown table cell: newlines folded, pipes escaped.
+
+    Deliberately NOT a whitespace fold. Every row already on disk would be rewritten by one,
+    and a diff that touches every artefact is indistinguishable from the defect it claims to
+    fix. A single-line value carrying no pipe comes back byte-identical.
+    """
+    return " ".join(str(value or "").splitlines()).replace("|", r"\|")
+
+
+def _split_cells(line: str, *, strip: bool = True) -> list:
+    """A table row's cells, split on unescaped pipes and unescaped.
+
+    Rows written BEFORE the escape carry raw pipes, and splitting them yields more cells than
+    the table has columns. Escaping the writer alone would leave every one of those unreadable,
+    so the reader recovers them: the first cell is the criterion and the last is the title, and
+    everything between belongs to the mutant, put back together.
+
+    `strip=False` keeps each cell's own surrounding spaces, which is what the re-join needs: a
+    stripped join turns the author's `foo | head` into `foo|head`, repairing the truncation and
+    corrupting the text in the same move.
+    """
+    parts = _UNESCAPED_PIPE.split(line.strip().strip("|"))
+    return [_uncell(c.strip() if strip else c) for c in parts]
+
+
 _TESTPLAN_HEADING = "## Test Plan"
 _TESTPLAN_PLACEHOLDER = "{{name the production change this test must fail on}}"
 
@@ -3157,10 +3190,14 @@ def _testplan_rows(text: str) -> list:
             continue
         if not in_plan or not line.strip().startswith("|"):
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        cells = _split_cells(line)
         if len(cells) >= 2 and re.fullmatch(r"AC\d+", cells[0] or ""):
             ac = cells[0]
-            rows.append({"ac": ac, "mutant": cells[1], "row": seen.get(ac, 0)})
+            # More cells than columns means a legacy row whose mutant carries a raw pipe. The
+            # title is the last cell; the mutant is everything between, put back together.
+            mutant = ("|".join(_split_cells(line, strip=False)[1:-1]).strip()
+                      if len(cells) > 3 else cells[1])
+            rows.append({"ac": ac, "mutant": mutant, "row": seen.get(ac, 0)})
             seen[ac] = seen.get(ac, 0) + 1
     return rows
 
@@ -3302,7 +3339,7 @@ def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
 
     table = ["| Criterion | Mutant - the production change this test must fail on | Title |",
              "| --- | --- | --- |"]
-    table += [f"| {i} | {m} | {t} |" for i, t, m in rows]
+    table += [f"| {i} | {_cell(m)} | {_cell(t)} |" for i, t, m in rows]
     section = _TESTPLAN_HEADING + "\n\n" + "\n".join(table) + "\n"
     rendered = _replace_testplan(text, section)
     unchanged = rendered == text

@@ -33,10 +33,13 @@ Escape the cell on write and un-escape on read, on the same terms the coverage r
 
 - [ ] **AC1** Given a Test Plan row whose mutant names a piped command, when the row is written and read back, then the value round-trips unchanged and the table keeps its three columns
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanCellEscapingTests::test_a_piped_mutant_round_trips_and_the_table_keeps_its_columns
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC2** Given a row written before this fix, carrying an unescaped pipe already on disk, when it is read, then it is read whole rather than truncated - escaping the writer alone would leave every existing row unreadable
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanCellEscapingTests::test_a_row_written_before_the_fix_is_still_read_whole
+  - **Verified:** yes (2026-09-09)
 - [ ] **AC3** Given a mutant carrying no pipe at all, when it is written and read, then the bytes are unchanged from today. The paired control: an escaper applied unconditionally rewrites every row in the corpus and its diff would be indistinguishable from the defect
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanCellEscapingTests::test_a_mutant_with_no_pipe_is_written_byte_identically
+  - **Verified:** yes (2026-09-09)
 
 ## Impact
 
