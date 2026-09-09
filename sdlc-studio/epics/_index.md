@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-09-07
+**Last Updated:** 2026-09-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 36 |
+| Draft | 38 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 213 |
-| **Total** | **249** |
+| **Total** | **251** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -95,6 +95,8 @@
 | [EP0247](EP0247-a-unit-s-own-verifiers-must-execute-every.md) | A unit's own verifiers must execute every line it adds, or the gate says which they missed | Done | 2 | -- | 2026-09-07 | 2026-09-07 |
 | [EP0248](EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Draft | 1 | -- | 2026-09-07 | 2026-09-07 |
 | [EP0249](EP0249-mutation-py-register-replaces-a-live-row-on.md) | mutation.py register replaces a live row on the same key instead of appending a duplicate | Done | 1 | -- | 2026-09-07 | 2026-09-07 |
+| [EP0250](EP0250-a-test-plan-is-checked-for-falsifiability-not.md) | A test plan is checked for falsifiability, not only for shape | Draft | 2 | -- | 2026-09-09 | 2026-09-09 |
+| [EP0251](EP0251-a-plan-ruling-is-recorded-and-withdrawable-not.md) | A plan ruling is recorded and withdrawable, not hand-authored | Draft | 1 | -- | 2026-09-09 | 2026-09-09 |
 
 ## Archived Releases
 

@@ -1,0 +1,76 @@
+# US0819: The plan probe runs each criterion against the tree and reports a pass as the finding
+
+> **Status:** Draft
+> **Delivers:** CR0569
+> **Created:** 2026-09-09
+> **Created-by:** sdlc-studio new
+> **Raised-by:** sdlc-studio; agent; v1
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Epic:** EP0250
+> **Points:** 8
+> **Persona:** Maya Okafor
+
+## User Story
+
+**As a** Maya Okafor
+**I want** The plan probe runs each criterion against the tree and reports a pass as the finding
+**So that** CR0569 is delivered by work that can be planned and checked
+
+## Acceptance Criteria
+
+> **Re-designed 2026-09-09 after a three-seat plan review rejected the first cut.** The
+> classifier had four classes over an outcome space with nine points in it, and everything it
+> did not name fell to `red`, which is the class that means healthy. Two seats measured that a
+> `shell true` verifier classified GREEN, which would have refused the greenfield release
+> rehearsal and blocked every push and tag from this repository on the day it landed.
+
+- [ ] **AC1** Given a criterion whose `Verify:` selector runs and PASSES, when `verify_ac.py testplan probe --unit <id>` runs, then it is classified `green`, the line names the unit and the criterion, and the command exits non-zero. A criterion the tree already satisfies is one whose delivery proves nothing
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanProbeTests::test_a_criterion_already_green_is_named_and_fails_the_command
+  - **Verified:** no
+- [ ] **AC2** Given a criterion whose selector resolves to NO test node, when the probe runs, then it is `not-yet-written` and does not fail the command. That is the ordinary state before the test exists, and a check refusing every plan at the moment plans are made is switched off rather than satisfied
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanProbeTests::test_a_selector_that_resolves_to_nothing_is_not_a_finding
+  - **Verified:** no
+- [ ] **AC3** Given a criterion whose selector runs and FAILS, when the probe runs, then it is `red` and the command exits 0. The paired control: a probe reporting every criterion as a finding satisfies AC1 on its own
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanProbeTests::test_a_red_criterion_is_the_state_a_plan_should_be_in
+  - **Verified:** no
+- [ ] **AC4** Given a criterion whose node EXISTS but whose every selected test is skipped, when the probe runs, then it is `never-fails` and IS a finding, distinct from `not-yet-written`. The runner already separates those two and gives them different remedies; a permanently skipped test can no more fail after delivery than before, which is the shape this command exists to catch
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanProbeTests::test_an_all_skipped_node_is_a_finding_not_the_pre_code_state
+  - **Verified:** no
+- [ ] **AC5** Given an answer that cannot be trusted - a `Verify:` line the runner reports invalid, a verb the trust boundary blocked, a run that timed out, or a runner absent from this machine - when the probe runs, then it is `unreadable` and a finding, never `green` and never `red`. Counting an unreadable answer red is the mistake this module's own comment records having made once: a unit whose selector was a typo passed the one check that asks whether its tests reach anything
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanProbeTests::test_an_untrustworthy_answer_is_unreadable_and_never_red
+  - **Verified:** no
+- [ ] **AC6** Given a `shell` or `eval` verifier, when the probe runs, then it is `not-probed`, it is named, and NOTHING is executed for it. Planning must not run artefact-authored shell: this corpus holds over 350 such verifiers, among them one that takes the id allocation lock and mints an id, and one that runs a link build. This is also what keeps the greenfield release rehearsal, whose only criterion is a shell verifier, out of the finding set
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanProbeTests::test_a_shell_verifier_is_named_and_never_executed
+  - **Verified:** no
+- [ ] **AC7** Given a `manual` verifier and a criterion carrying no `Verify:` line at all, when the probe runs, then each is named, the two are counted SEPARATELY, and neither is a finding. The runner already counts them apart on purpose, because conflating them is how a deleted verifier reaches a green gate
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanProbeTests::test_manual_and_unspecified_are_named_and_counted_apart
+  - **Verified:** no
+- [ ] **AC8** Given a `green` criterion on a unit that already carries commits attributing work to it, when the probe runs, then it is `delivered` - reported and not a finding. Measured on this repository's own backlog, 17 green criteria across 5 of 52 open units are all this shape, work committed whose status has not advanced, and not one is the defect this command exists to catch. A gate that refuses them refuses the wrong thing and offers a pin whose stated meaning would be false
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanProbeTests::test_a_green_criterion_on_a_delivered_unit_is_reported_not_refused
+  - **Verified:** no
+- [ ] **AC9** Given any of the above, when the probe runs, then the artefact is byte-identical afterwards. The obvious implementation reuses the story runner, whose non-dry path stamps `Verified: yes` onto exactly the passing criteria this command exists to report - and wired into a plan command that would be a census mutating tracked files, the failure the repo-writes lane exists for
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanProbeTests::test_the_probe_leaves_every_artefact_byte_identical
+  - **Verified:** no
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, merge the passing branch of the probe's classifier into the failing one | Given a criterion whose `Verify:` selector runs and PASSES, when `verify_ac.py testplan probe --unit <id>` runs, then it is classified `green`, the line names the unit and the criterion, and the command exits non-zero. A criterion the tree already satisfies is one whose delivery proves nothing |
+| AC1 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, print a bare count in the probe's report instead of the ids | Given a criterion whose `Verify:` selector runs and PASSES, when `verify_ac.py testplan probe --unit <id>` runs, then it is classified `green`, the line names the unit and the criterion, and the command exits non-zero. A criterion the tree already satisfies is one whose delivery proves nothing |
+| AC1 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, return 0 from the probe whatever it classified | Given a criterion whose `Verify:` selector runs and PASSES, when `verify_ac.py testplan probe --unit <id>` runs, then it is classified `green`, the line names the unit and the criterion, and the command exits non-zero. A criterion the tree already satisfies is one whose delivery proves nothing |
+| AC2 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, merge the resolves-to-nothing branch into the passing one | Given a criterion whose selector resolves to NO test node, when the probe runs, then it is `not-yet-written` and does not fail the command. That is the ordinary state before the test exists, and a check refusing every plan at the moment plans are made is switched off rather than satisfied |
+| AC3 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, return a non-zero exit from the probe whenever it classified any criterion at all | Given a criterion whose selector runs and FAILS, when the probe runs, then it is `red` and the command exits 0. The paired control: a probe reporting every criterion as a finding satisfies AC1 on its own |
+| AC4 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, route an all-skipped result to the same class as a selector that resolves to nothing | Given a criterion whose node EXISTS but whose every selected test is skipped, when the probe runs, then it is `never-fails` and IS a finding, distinct from `not-yet-written`. The runner already separates those two and gives them different remedies; a permanently skipped test can no more fail after delivery than before, which is the shape this command exists to catch |
+| AC5 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, delete the invalid and blocked kinds from the untrusted branch, leaving them to fall through | Given an answer that cannot be trusted - a `Verify:` line the runner reports invalid, a verb the trust boundary blocked, a run that timed out, or a runner absent from this machine - when the probe runs, then it is `unreadable` and a finding, never `green` and never `red`. Counting an unreadable answer red is the mistake this module's own comment records having made once: a unit whose selector was a typo passed the one check that asks whether its tests reach anything |
+| AC5 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, drop the timeout and absent-runner exit codes from the untrusted branch | Given an answer that cannot be trusted - a `Verify:` line the runner reports invalid, a verb the trust boundary blocked, a run that timed out, or a runner absent from this machine - when the probe runs, then it is `unreadable` and a finding, never `green` and never `red`. Counting an unreadable answer red is the mistake this module's own comment records having made once: a unit whose selector was a typo passed the one check that asks whether its tests reach anything |
+| AC6 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, pass the shell-backed verbs through to the runner instead of short-circuiting them | Given a `shell` or `eval` verifier, when the probe runs, then it is `not-probed`, it is named, and NOTHING is executed for it. Planning must not run artefact-authored shell: this corpus holds over 350 such verifiers, among them one that takes the id allocation lock and mints an id, and one that runs a link build. This is also what keeps the greenfield release rehearsal, whose only criterion is a shell verifier, out of the finding set |
+| AC7 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, add the unspecified tally into the manual one and report a single number | Given a `manual` verifier and a criterion carrying no `Verify:` line at all, when the probe runs, then each is named, the two are counted SEPARATELY, and neither is a finding. The runner already counts them apart on purpose, because conflating them is how a deleted verifier reaches a green gate |
+| AC8 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, delete the commit-attribution test so every passing criterion is a finding | Given a `green` criterion on a unit that already carries commits attributing work to it, when the probe runs, then it is `delivered` - reported and not a finding. Measured on this repository's own backlog, 17 green criteria across 5 of 52 open units are all this shape, work committed whose status has not advanced, and not one is the defect this command exists to catch. A gate that refuses them refuses the wrong thing and offers a pin whose stated meaning would be false |
+| AC9 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, call the story runner from the probe with its dry-run flag off | Given any of the above, when the probe runs, then the artefact is byte-identical afterwards. The obvious implementation reuses the story runner, whose non-dry path stamps `Verified: yes` onto exactly the passing criteria this command exists to report - and wired into a plan command that would be a census mutating tracked files, the failure the repo-writes lane exists for |
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-09-09 | sdlc-studio | Created via `new` (deterministic) |

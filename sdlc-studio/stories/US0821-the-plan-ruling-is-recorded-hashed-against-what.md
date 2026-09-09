@@ -1,0 +1,57 @@
+# US0821: The plan ruling is recorded, hashed against what it excuses, and withdrawable
+
+> **Status:** Draft
+> **Delivers:** CR0569
+> **Created:** 2026-09-09
+> **Created-by:** sdlc-studio new
+> **Raised-by:** sdlc-studio; agent; v1
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Epic:** EP0251
+> **Points:** 5
+> **Persona:** Maya Okafor
+
+## User Story
+
+**As a** Maya Okafor
+**I want** The plan ruling is recorded, hashed against what it excuses, and withdrawable
+**So that** CR0569 is delivered by work that can be planned and checked
+
+## Acceptance Criteria
+
+- [ ] **AC1** Given a criterion the probe classifies as a finding, when `verify_ac.py testplan rule` records a ruling for it, then the row carries the criterion, the reason, the author and the date; and a reason shorter than the floor the sibling writers share is REFUSED. A one-character reason is not a decision anybody can review
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_ruling_records_who_when_and_why_and_refuses_a_thin_reason
+  - **Verified:** no
+- [ ] **AC2** Given a criterion that already carries a live ruling, when a second is recorded for it, then it is REFUSED; and a reason opening with the withdrawal sentinel is refused too. Two live rulings on one criterion make the join ambiguous, and a reason shaped like a withdrawal makes a live row read as a retracted one
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_second_live_ruling_and_a_sentinel_reason_are_both_refused
+  - **Verified:** no
+- [ ] **AC3** Given a ruling recorded against a criterion, when that criterion's `Verify:` SELECTOR is re-pointed while its title is unchanged, then the ruling no longer satisfies it. The hash covers the title AND the selector, because the selector is what actually runs - a pin surviving a re-pointed verifier is exactly a ruling outliving the criterion it excused
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_re_pointing_the_selector_staleens_the_ruling
+  - **Verified:** no
+- [ ] **AC4** Given a stale ruling, when the probe reports, then it NAMES it as stale rather than dropping it silently. A pin that vanishes without a word is indistinguishable from one that was never written, and the reader cannot tell a repaired criterion from a lost exemption
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_stale_ruling_is_named_rather_than_dropped
+  - **Verified:** no
+- [ ] **AC5** Given a live ruling, when `verify_ac.py testplan withdraw` runs against it, then the row is marked in place with the withdrawal's own reason rather than deleted, and the criterion is a finding again. A retraction that erases its own row leaves no record that the exemption was ever taken
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_withdrawal_marks_the_row_in_place_and_restores_the_finding
+  - **Verified:** no
+- [ ] **AC6** Given a finding criterion carrying a live, non-stale ruling, when the probe runs, then it is `pinned` and does not fail the command. The paired control: without it, a ruling mechanism that satisfies nothing passes every row above
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_live_ruling_pins_the_criterion_and_the_probe_passes
+  - **Verified:** no
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, drop the author and date columns from the ruling row the writer emits | Given a criterion the probe classifies as a finding, when `verify_ac.py testplan rule` records a ruling for it, then the row carries the criterion, the reason, the author and the date; and a reason shorter than the floor the sibling writers share is REFUSED. A one-character reason is not a decision anybody can review |
+| AC1 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, delete the minimum-length comparison on the reason | Given a criterion the probe classifies as a finding, when `verify_ac.py testplan rule` records a ruling for it, then the row carries the criterion, the reason, the author and the date; and a reason shorter than the floor the sibling writers share is REFUSED. A one-character reason is not a decision anybody can review |
+| AC2 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, remove the existing-live-row lookup before the append | Given a criterion that already carries a live ruling, when a second is recorded for it, then it is REFUSED; and a reason opening with the withdrawal sentinel is refused too. Two live rulings on one criterion make the join ambiguous, and a reason shaped like a withdrawal makes a live row read as a retracted one |
+| AC2 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, delete the sentinel-prefix comparison on the reason | Given a criterion that already carries a live ruling, when a second is recorded for it, then it is REFUSED; and a reason opening with the withdrawal sentinel is refused too. Two live rulings on one criterion make the join ambiguous, and a reason shaped like a withdrawal makes a live row read as a retracted one |
+| AC3 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, narrow the digest input to the title alone | Given a ruling recorded against a criterion, when that criterion's `Verify:` SELECTOR is re-pointed while its title is unchanged, then the ruling no longer satisfies it. The hash covers the title AND the selector, because the selector is what actually runs - a pin surviving a re-pointed verifier is exactly a ruling outliving the criterion it excused |
+| AC4 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, skip a stale ruling silently instead of appending it to the report | Given a stale ruling, when the probe reports, then it NAMES it as stale rather than dropping it silently. A pin that vanishes without a word is indistinguishable from one that was never written, and the reader cannot tell a repaired criterion from a lost exemption |
+| AC5 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, remove the matched row from the table when the withdrawal is applied | Given a live ruling, when `verify_ac.py testplan withdraw` runs against it, then the row is marked in place with the withdrawal's own reason rather than deleted, and the criterion is a finding again. A retraction that erases its own row leaves no record that the exemption was ever taken |
+| AC6 | in .claude/skills/sdlc-studio/scripts/verify_ac.py, ignore the ruling lookup in the classifier so a pinned criterion stays a finding | Given a finding criterion carrying a live, non-stale ruling, when the probe runs, then it is `pinned` and does not fail the command. The paired control: without it, a ruling mechanism that satisfies nothing passes every row above |
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-09-09 | sdlc-studio | Created via `new` (deterministic) |
