@@ -95,6 +95,32 @@ ruling HOLDS the close, which is the point of being able to make one.
 | CR0539 | not-stop-ship | Claude Opus 5 (lane-check's 181 units; it reports and blocks nothing, and this run measured one of its readings to be a false positive on `import subprocess as _sp`) | 2026-09-10 |
 | CR0546 | deferred | Claude Opus 5 (a run noticing work its batch never named; this batch named all 22 and delivered all 22) | 2026-09-10 |
 | CR0547 | not-stop-ship | Claude Opus 5 (revert-check as a blocking requirement; it ships advisory while its yield is measured, which is the recorded decision) | 2026-09-10 |
+| CR0569 | not-stop-ship | Claude Opus 5 (DISCHARGED by this run - US0819, US0820 and US0821 are its three units, all delivered and terminal. The request stays open only until it is closed against them) | 2026-09-10 |
+| CR0570 | not-stop-ship | Claude Opus 5 (DISCHARGED by this run - US0822 is its unit, delivered and terminal, and the join the terminal gate reads was repaired at the delivery review) | 2026-09-10 |
+| CR0424 | deferred | Claude Opus 5 (an RV artefact demanded beside a critic sign-off; this close ran the critic chain and the RV requirement did not fire) | 2026-09-10 |
+| CR0441 | deferred | Claude Opus 5 (in-flight sprint controls; this run changed its batch once, by hand, and the cost did not justify the tooling) | 2026-09-10 |
+| CR0496 | deferred | Claude Opus 5 (a project-config decision invisible to the forward-port check; the check ran clean here and 25 files were mirrored) | 2026-09-10 |
+| CR0497 | deferred | Claude Opus 5 (silent grandfathering at the v5 upgrade; no upgrade was performed this run) | 2026-09-10 |
+| CR0499 | deferred | Claude Opus 5 (asking whether a sprint produced a shippable increment; the v5.1 cut this run leads into asks it directly instead) | 2026-09-10 |
+| CR0503 | not-stop-ship | Claude Opus 5 (an adversarial review run outside the seat ceremony; every one of this run's 66 verdicts went through `critic.py brief`, and `critic record` refuses a verdict with no brief provenance) | 2026-09-10 |
+| CR0504 | deferred | Claude Opus 5 (closing review doing development's work; this run's closing findings were 49 raised outside a batch boundary, which is the number the close reports and the next run drives down) | 2026-09-10 |
+| CR0507 | deferred | Claude Opus 5 (the close asking twenty questions; it asked ten stages and two checklist items this time, and both items were real gaps) | 2026-09-10 |
+| CR0512 | not-stop-ship | Claude Opus 5 (unit review scope; the rule held all run - two seat findings were recorded OVER-CLAIMED on exactly this ground rather than repaired) | 2026-09-10 |
+| CR0515 | deferred | Claude Opus 5 (detecting hand-rolled work from the transcript; not on this batch's path) | 2026-09-10 |
+| CR0526 | deferred | Claude Opus 5 (a sprint ending with nothing open; D0186 replaces that bar with a dated ruling per id, which this retro carries) | 2026-09-10 |
+| CR0548 | deferred | Claude Opus 5 (deriving `Verification depth` from the ledger; the field was authored by hand this run and no unit was refused for it) | 2026-09-10 |
+| CR0550 | not-stop-ship | Claude Opus 5 (the test-plan gate scoped by date alone; it refused three units this run and each refusal was a real gap, so the scope is doing work) | 2026-09-10 |
+| CR0551 | deferred | Claude Opus 5 (the appetite ceiling measuring wall-clock; this run stayed inside its 64-unit, 5760-minute appetite) | 2026-09-10 |
+| CR0552 | not-stop-ship | Claude Opus 5 (revert-check mutating the live tree; it is advisory and its blind spot is filed as BG0661, ruled open) | 2026-09-10 |
+| CR0553 | deferred | Claude Opus 5 (the exemption reason floor counting characters; every ruling this run carries a reason a reviewer can read, and 471 of them were written to one of nine stated reasons) | 2026-09-10 |
+| CR0554 | not-stop-ship | Claude Opus 5 (a plan row whose kill node is not the criterion's own verifier; three such rows were caught by hand this run and retracted, which is the cost the request names) | 2026-09-10 |
+| CR0555 | deferred | Claude Opus 5 (moving the expensive half of the test-plan gate behind a diff; the gate cost seconds at every transition this run) | 2026-09-10 |
+| CR0556 | not-stop-ship | Claude Opus 5 (a bug reaching terminal with no independent judgement of its plan; the gate fired on three units here and each was reviewed rather than waived) | 2026-09-10 |
+| CR0558 | deferred | Claude Opus 5 (the derived-depth lane checking a seal rather than re-deriving; no depth field was contested this run) | 2026-09-10 |
+| CR0559 | deferred | Claude Opus 5 (one concept named three ways; a vocabulary change across the toolchain is its own unit, not a close item) | 2026-09-10 |
+| CR0560 | not-stop-ship | Claude Opus 5 (filing a finding leaving the disclosure page stale; it happened twice this run, both times caught by the suite within one commit, and it is the same class as BG0662) | 2026-09-10 |
+| CR0561 | deferred | Claude Opus 5 (the Python 3.10 floor stated in six places and guarded nowhere; this tree runs 3.14 and no floor was tripped) | 2026-09-10 |
+| CR0565 | deferred | Claude Opus 5 (a gate or hook change reaching Fixed with no recorded self-run; US0817 is its unit and was deferred at plan time, as D0185 recorded) | 2026-09-10 |
 
 ## Estimate vs actual
 
