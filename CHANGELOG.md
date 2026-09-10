@@ -7,6 +7,1693 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.0] - 2026-09-10
+
+### Added
+
+- **A plan ruling is recorded, pinned to what it excuses, and withdrawable.** The probe reports
+  criteria that cannot fail; a ruling is the decision to plan over one anyway, and it belongs on
+  the record rather than in somebody's memory. `verify_ac.py testplan rule` writes the criterion,
+  the reason, the author and the date to `sdlc-studio/reviews/plan-rulings.md` - committed,
+  beside the other review records, because evidence nobody else can read is evidence only its
+  author has. A reason under the floor the sibling writers share is refused: a word nobody can
+  check is not a decision anybody can review.
+- **The pin covers the criterion's TITLE and its `Verify:` SELECTOR together.** Either alone
+  lets a ruling outlive what it excused - pinned to the title, re-pointing the verifier keeps
+  the pin while the thing that actually runs has changed; pinned to the selector, rewriting the
+  criterion keeps it while the claim has changed. When a ruling stops applying the probe NAMES
+  it as stale and quotes its reason, because a pin that vanishes without a word is
+  indistinguishable from one that was never written.
+- **`testplan withdraw` marks the row in place rather than deleting it**, carrying the
+  withdrawal's own reason beside the decision it undoes, and a criterion whose only rulings are
+  withdrawn or stale can be pinned again. A second LIVE ruling on one criterion is refused,
+  since two make the join ambiguous, and so is a reason opening with the withdrawal sentinel,
+  which would make a live row read as a retracted one.
+- **`sprint plan` now asks whether a criterion CAN FAIL, and refuses a batch carrying an unruled
+  one under `review.plan_falsifiability: block` (US0820).** The grooming gate beside it reads a
+  criterion's SHAPE - does it exist, does it carry a verifier - and that shape is satisfied by a
+  verifier the tree already passes. This gate reads the plan probe's classification instead: a
+  `green`, `never-fails` or `unreadable` criterion is a finding, and the refusal names the unit,
+  the criterion, the class, why that class is a finding and the command that rules it. It fires
+  beside the breakdown gate, before anything is written and before a run is opened, so a refusal
+  leaves no trace.
+  The shipped default is `report`: the finding is printed and the plan proceeds at exit 0, like
+  the two sibling review gates that ship advisory while their yield is measured. `off` drives
+  the probe not at all - it executes artefact-authored verifiers, so off has to mean nothing
+  runs - and the bare `off` spelling YAML reads as a boolean is honoured, because that is the
+  spelling this tooling itself prints. A mode that is none of the three is REFUSED naming the
+  key and the accepted set rather than quietly picking one.
+  The class and the refuse-or-proceed decision both come from the probe's own record, never from
+  a second reading of a verifier's exit status: `unreadable` and `red` both exit non-zero and
+  only one of them is a finding, so a second reader would let through the one class this gate
+  exists to catch. A tree whose `verify_ac.py` carries no `testplan probe` is reported as not
+  driven and refuses under `block`, rather than reading an unclassified batch as a clean one.
+- **`verify_ac.py testplan probe` asks whether a criterion CAN fail, and reports a pass as the
+  finding.** Nothing in this project asked that question. A plan whose criteria are already
+  satisfied before a line of code is written states what the tree already does, and every gate
+  downstream - the mutation ledger, the review seats, the transition gates - is built on the
+  assumption that somebody checked. The probe runs each criterion against the tree as it is:
+  `green` is a finding and exits 2, `red` is the state a plan should be in and exits 0.
+  A selector resolving to no test node yet is `not-yet-written` and passes, because that is the
+  expected state before the work; a node that EXISTS and skips every test is `never-fails`, a
+  finding, because the two take different remedies. An answer the runner could not produce -
+  an unparseable `Verify:` line, a timeout, an absent runner - is `unreadable` and is never
+  read as red, since read as red it is indistinguishable from a criterion doing its job.
+  Shell-backed verifiers - `shell`, `eval` and `http`, whose builder returns a piped
+  curl-and-jq string - are NAMED and never executed: probing a plan must not run unreviewed
+  text out of an artefact somebody else wrote. `manual` and criteria carrying no `Verify:` line
+  are counted apart and neither is a failure. On a unit whose commits already do the work a
+  green criterion is `delivered` - reported, not refused - and the artefact is byte-identical
+  afterwards, because the story runner it would be easy to reuse stamps as it goes.
+- **The Fixed and Done gates refuse a unit whose own verifiers never executed a line it
+  added.** `review.line_coverage` is a third mode beside the plan and mutation gates: `report`
+  (the shipped default) prints `coverage: N uncovered added line(s)` and proceeds, `block`
+  refuses naming the file, the lines and the ruling command, `off` collects nothing. The gate
+  COLLECTS the measurement at the transition through `verify_ac run --coverage` rather than
+  trusting a prior report, and accepts `--coverage-report` only while the report's Affects hash
+  matches the files' bytes. A line ruled equivalent through `verify_ac.py coverage rule` -
+  a row in the artefact's own `## Coverage Rulings` table, with a reason held to the floor
+  `retract` enforces - is subtracted and counted in the depth field as `lines ruled N`; a
+  ruling on stale bytes counts for nothing and blocks nothing: whatever it once excused is
+  either executed now or still uncovered and counted as such. `verify_ac.py coverage withdraw`
+  retracts a ruling on the record, leaving the row and both reasons in the table. The base ref belongs to the run whose approved
+  batch names the unit, open or closed, so the close's own transitions are judged; with no
+  such run and no `--base`, `block` refuses naming the flag. `review.line_coverage_after`
+  exempts units created before a date, never one with no parseable date; this repository
+  adopts `block` from 2026-09-07.
+- **`verify_ac run --coverage` names every line a unit itself added that its own verifiers
+  never executed.** Every surviving mutant the seats found in the previous run sat on a branch
+  the unit's own selectors never reached, and the plan-time mutant table cannot name branches
+  that do not exist yet. The run now measures it directly: the unit's own `pytest` selectors run
+  under `coverage` (7.10 or later, on `SDLC_COVERAGE_PYTHON` or the current interpreter),
+  following the child interpreters they spawn, and every added line nothing executed is
+  listed by file and number. A line is the unit's when a commit since the base ref of the run
+  whose batch names it - open or closed, and refused by name when it is not an ancestor of
+  HEAD - names the unit in its subject or on a `Refs:` line,
+  or is still uncommitted, and a new file the unit has not yet staged is wholly the unit's; a
+  cluster-mate's commit is not. Untraced verifiers, Python files
+  with no traced verifier and non-Python files are listed as such rather than as uncovered.
+  Exit 1 on an uncovered line; exit 2 naming the dependency when the module is absent or
+  below the floor, or the verifier when one outruns the timeout, and a run cut short leaves
+  no data file for the next run to combine. The `--report` JSON gains a `coverage` key with a hash over the unit's
+  Affects, and CI installs `coverage` before the suite.
+- The derived half of a Verification depth sits inside explicit delimiters and carries a fingerprint over its own contents, so a hand-edit inside them is refused by a blocking gate lane - EVERY span in the field is judged, not the first, because a field carries exactly one derived half and a second one is a hand-edit by construction and the refusal names the command that regenerates the field. The author's judgement half - the tier, and what was deliberately not covered - sits outside the delimiters and survives regeneration byte for byte. Sealed rather than re-derived: re-deriving needs the mutation ledger, which lives in gitignored sdlc-studio/.local/, so a re-deriving guard would report every unit as unsupported in a fresh clone and refuse the whole corpus. A field carrying no derived half at all is left alone, which is most of this corpus and is the pre-existing state rather than a fault.
+- verify_ac.py depth derives the counted half of a unit's Verification depth from the mutation ledger through mutation.plan_execution - criteria, plan rows, executed, killed, survived - so a figure the ledger does not hold cannot be rendered. A row the ledger says was never executed is NAMED by criterion and row rather than omitted, an absent ledger is reported as EVIDENCE ABSENT rather than as a line of noughts, and the field carries a derived count of how many criteria enter the shipped entry point against how many run in-process, so a prose claim of CLI coverage that does not exist is contradicted rather than left standing. --write amends the delimited span only, carrying the author's tier and judgement half through byte for byte.
+- `gate.py --boundary push|release` runs revert-check as a named ADVISORY lane over the open run's batch: it reverts each unit's declared production files to the run's base ref, re-runs that unit's own Verify: selectors, and names any unit whose criteria stay green. The exit code is unchanged while its yield is measured, and the pair it accumulates - how many units examined, how many would have been refused - is recorded under sdlc-studio/.local/ so the decision to make it blocking can rest on a number rather than an assertion. A unit the lane cannot examine at all is reported as such and LEADS the lane's message, rather than being swallowed so a wholly crashed run reads as a clean sweep, and a truncated finding list says how many it dropped. Bound at the boundary and not per commit, on release-rehearsal's precedent: a revert-and-run per unit is minutes against a gate already at its ceiling, and a lane whose cost is paid on every commit gets switched off.
+- revert-check REPORTS rather than passes two conditions an absence would otherwise make indistinguishable from evidence: a unit whose Affects names no production file at all, and a unit whose Affects names a production file absent from the tree. It exits on its own code and names the paths - a partial revert would judge the unit against a smaller surface than it declared.
+- revert-check restores the working tree from a BYTE SNAPSHOT taken before the revert, in a finally, so a check that dies cannot leave a unit's production change reverted on disk. The restore never reads git: uncommitted edits present when the check starts are still there when it returns, and a git-sourced restore destroyed exactly that work the first time this was built.
+- verify_ac.py revert-check reverts a unit's declared production files to the run's base ref, re-runs that unit's own Verify: selectors, and REFUSES when every measurable criterion stays green - a test that passes without the change never reached it. Green is the refusal, reported per criterion and decided per unit: one criterion going red proves the tests reach the change. Three declared classes are exempt, because five criteria in one six-unit batch legitimately stay green on a production-only revert - a well-formed unnameable plan row, a reasoned Revert-check-exempt field, and a criterion whose plan row names only test code - where a path carrying a directory counts as a file whatever its extension, so a production `.yaml` or `.md` named beside a test path is seen rather than read as test-code-only. A selector that resolves to nothing is reported UNRESOLVED and never counted red, since counting it would manufacture a false pass.
+- **`sprint breakdown` now reports probable duplicate bugs at plan time (BG0577).**
+  Working a forty-one bug backlog found that 12% of it was not work at all - two bugs already
+  repaired with the fix landed and the bug never closed, two whose stated counts had gone to zero
+  untouched, and one a straight duplicate. None was detectable: `status.py points` counts open
+  artefacts and `conformance` judges terminal ones, so nothing asks whether an OPEN bug is still
+  true. A plan sized against that number inherits the error in silence - and one was, with a
+  capacity ceiling, a token forecast and a run count all derived from it.
+  A pair declaring the same files AND describing the same subject is now named where the cost of
+  carrying both is about to be paid. It reports and does nothing else: a backlog that silently
+  closed its own items would be the same failure with the sign reversed.
+  Narrowed deliberately, and the narrowing is written on the bug. The repaired-but-open detector
+  needs an open bug's own criteria to run, and measuring found ZERO of thirty-one open bugs
+  carried an executable one - so that check has nothing to execute until grooming catches up.
+- **`mutation.py retract` withdraws a mistyped verdict on the record, instead of leaving the
+  author worse off for correcting it (BG0553).**
+  `plan_execution` holds the worst verdict per criterion, so a mutant registered `survived` by
+  mistake could not be corrected by registering it `killed` - the survivor stood. That rule is
+  right: to the tool, a genuine correction and an author registering their way out of a survivor
+  are byte-identical. Then the self-contradiction check made the cost sharper still, refusing the
+  transition in every mode including `off`, so the mistype became a hard block with no escape but
+  `--force` while leaving the wrong verdict in place cost nothing.
+  A review round proposed superseding the earlier row; that was implemented and reverted, because
+  a supersede is invisible and reopens the escape the worst-verdict rule closes. So the correction
+  is made VISIBLE rather than cheap: the row is marked withdrawn, never deleted, carrying who
+  withdrew it, when, and why, and the summary counts the retraction. The plan and the
+  contradiction check skip withdrawn rows, and three readers SHOW the withdrawal: a
+  `mutation.py retractions` verb, the plan join whose own answer the retraction changed, and the
+  seat brief handed to a reviewer, who is asked to judge the reason - an unconvincing retraction
+  is a finding. That last part had to be built after an independent review pointed out that
+  nothing read the field back, which made the correction as invisible as the supersede design
+  this one was chosen over. A measured row cannot be retracted - the way to correct an
+  observation is to observe again.
+- **`mutation.py register --class` makes a hand-typed claim checkable against a measurement
+  (BG0552).**
+  The ledger's self-contradiction check could only ever see WITHIN one instrument. A measured row
+  names the generator's fault class and a registered row names the author's own prose, so across
+  the two the join had nothing but the line - and joining on a line alone reads two honest
+  different mutants as the instrument lying. The valuable half was therefore missing: a measured
+  `killed` and a hand-registered `survived` for the same mutant, at the same line, under the same
+  content hash, exited 0.
+  The class is now recorded on both sides, drawn from the generator's own vocabulary and refused
+  if it is anything else, so the join is exact rather than guessed. The check keeps two keys: the
+  prose within one provenance, where two different mutants at one line must stay two statements,
+  and the class ACROSS provenances, where a claim disagreeing with a measurement is exactly what
+  should be caught. The two findings have different standing, because they have different odds of
+  being wrong: the class is coarser than a mutant, so the cross-provenance one REPORTS by default
+  and refuses only under `review.mutation_evidence: block`, while the prose-keyed one still
+  refuses in every mode. An independent review established that difference by building a false
+  positive which told an author to withdraw TRUE evidence, in a branch no config could reach.
+  `--class` stays optional - a hand-applied mutant does not always belong to a
+  class the generator can produce, and requiring one would make authors pick the nearest label,
+  which is a join that lies. Without it the rows are simply not compared, and that is now pinned
+  as a decision rather than left as a gap.
+
+### Changed
+
+- **A mutation-ledger row records the site its mutant was applied to, and is judged from it.**
+  Evidence was keyed on a content hash of the WHOLE target, so an edit anywhere in a file staled
+  every row on it. Measured on this repository's ledger: 26 of 74 targets carry rows from more
+  than one unit and `verify_ac.py` carries seven, so one line moving in a shared file demanded
+  seven units' evidence be re-measured by hand before a commit could land - a tax paid on every
+  commit that touches shared surface, and 152 rows on one of them. A row now carries the exact
+  text its mutant replaced, and `mutation.py register` REQUIRES it: the value was validated for
+  uniqueness and then discarded, which is why nothing on a row could answer whether its own site
+  had moved. A row is live while its anchor occurs exactly once in the bytes under question,
+  stale when the site is gone AND stale when the anchor matches twice - an anchor that no longer
+  identifies one site cannot say which site the verdict was about. The evidence-drift lane names
+  only the rows whose sites this commit actually moved, judged against the staged bytes.
+
+  Rows written before this carry no anchor and are judged by the file's hash exactly as before,
+  because silently promoting them to live would turn a cost into a correctness failure. The
+  conversion is by requirement rather than by backfill: a row gains its anchor at the moment
+  somebody actually measures it, and deriving one for a row nobody re-ran would assert a site
+  for a measurement never taken there. Every remedy the tools print for `register` names the
+  flag, so following one still works.
+- **`mutation.py register` replaces the identical live row instead of appending a duplicate.**
+  A re-run of a registration runner appended a second row on the same unit, criterion, row,
+  target and hash, inflating the executed count and leaving the join to read whichever row was
+  iterated last. Now a registration whose verdict and test match the live row on those bytes
+  replaces it and says so; one whose verdict or test differs is REFUSED naming
+  `mutation.py retract`, because worst-verdict-wins is the rule that keeps a correction
+  visible, and the refusal reaches the shell with exit 2. The refusal prints that retraction
+  as a runnable command: every join field, the LIVE row's line and description rather than
+  the caller's, and shell-quoted, because most descriptions name code and a backtick in a
+  pasted argument is a command substitution.
+- **The per-commit gate had outgrown the timeouts that run it, so a commit was KILLED rather than
+  refused (BG0579).**
+  A kill records nothing and looks exactly like a hang, and the documented escape from a hang is
+  `git commit --no-verify` - so the failure mode trained the bypass on the guard this repository
+  leans on hardest.
+  Profiling changed the fix. Four tests were 452s of a 934s run, and the largest was the
+  release-rehearsal lane's test at 228s - a quarter of the whole suite - whose own docstring says
+  the rehearsal binds at the push and release boundaries and nowhere else. The lane was
+  boundary-only and its test was not. So the repair is that same rule applied consistently rather
+  than a new mechanism: two tests are deferred to the boundary suite, which every push, release,
+  close and CI run executes in full. Nothing is removed; what changes is when. Measured, the
+  suite in per-commit shape falls from 934s to 569s.
+  The deferral is itself guarded, because every suppression is also a blindfold: the runner must
+  set the marker, every CI command must carry it, each deferral must state its reason, and the
+  deferred set must stay small and named.
+- **The skill suite runs in parallel, in two phases, and the split is guarded (BG0579).**
+  Measured on 16 cores: the skill suite falls 597s to 220s and the full run 951s to 460s, twice,
+  at an identical 6,560 passed. Everything runs across all cores, then the `serial_only`
+  partition runs alone.
+  Exactly ONE test cannot run beside others, and it is neither flaky nor slow: it snapshots
+  `git status` across the whole repository, so any concurrent worker doing legitimate work makes
+  it wrong. Three parallel runs each failed that same test and nothing else, and it passes alone
+  in both modes - so the unsafe set is measured and named rather than assumed. It is MARKED, not
+  deselected: the two phases partition the suite, so a test that gains or loses the marker still
+  runs.
+  The first verdict the split wrote said `GREEN (1 passed)` for a run of 6,556 - the runner took
+  the last `N passed` line, which after the split was the serial phase alone. That number feeds
+  the suite-claim lane, so it would have read as a green over a false claim in the understating
+  direction. The count is summed now, and a test mutates it back.
+  `pytest-xdist` is an optimisation and never a dependency: without it the runner falls back to
+  one serial pass, so CI and a fresh clone are unaffected.
+
+### Fixed
+
+- **The release-rehearsal lane's own test no longer pays for the whole push boundary.** It drove
+  `gate.py --boundary push` unscoped to read one lane's reporting, so it also paid `revert-check`
+  and `module-alone` to observe neither. On this machine that is 0.23 seconds scoped against
+  1800.42 seconds unscoped - the latter being the test's own timeout expiring rather than a run
+  completing - and on CI it errored the suite twice, leaving main red for two days with the
+  green-run noise gate never reached because the run stopped before it. The check now names the
+  one lane it asserts on; the sibling row that proves the lane does not bind per commit drives
+  the plain gate, not the boundary, so nothing needs an unscoped boundary run any more. A new
+  scan guards the CLASS rather than the instance: no test in either suite may drive the boundary
+  gate without scoping it, because the next one added costs the same hour and an enumerated
+  exemption exempts whichever comes after. Getting its REACH right took a second pass and an
+  independent seat: it reads list, tuple and `args=` keyword forms, the joined `--boundary=push`
+  spelling, and an argv head that is not a literal - this repository's own
+  `subprocess.run([sys.executable, str(scripts / "gate.py"), ...])` idiom, which the first cut
+  could not see at all, so a planted unscoped call passed it. `--only=docs` and `--skip` count
+  as scoped, and an `assertIn` naming the flag in help text or a different command's
+  `--boundary` spelled the same are not invocations. The class's boundary marker moved to the
+  one row that still pays for the rehearsal itself, measured at 21.8s of the class's 22.2s: the
+  other three cost a tenth of a second each, and while the marker sat on the class BG0660's own
+  criteria could not execute in the environment the terminal gate runs them in.
+- **A Test Plan mutant naming a piped command is no longer truncated.** `testplan derive` wrote
+  each row by string interpolation and read it back by splitting on a raw pipe, so a mutant
+  naming a shell pipeline was written as a row with too many cells and read back cut at the
+  first pipe, while the writer reported success and markdownlint refused the artefact for a
+  column count nobody intended. A mutant is the load-bearing half of a test plan - it is what
+  says the criterion can fail - so one silently truncated is a plan that reads complete and
+  measures less than it says. Cells are now escaped on write and un-escaped on read, by one
+  splitter both readers of that table share - the second read the line raw, so a reason with an
+  escaped pipe was truncated at the backslash and `sprint plan` refused the batch over a row
+  that had a reason. A mutant carrying no pipe is written byte for byte as before. A row whose
+  MUTANT carries a raw pipe is still truncated at it, and deliberately: the reader cannot tell
+  that pipe from a column separator, markdownlint refuses such a row anyway, and none of this
+  corpus's 1,032 Test Plan rows is one. Guessing instead - the first cut re-joined the extra
+  cells - fused a piped TITLE into the mutant and had the command blame the author for it.
+- **The corpus baseline records WHICH criteria are red, not only how many (BG0657).** The
+  scheduled lane told a reader `red-criteria: 23, baseline 20 - 3 NEW one(s)`, instructed them to
+  find and fix the three rather than raise the baseline, and gave them nothing to find them with:
+  the baseline held a bare number, so naming the three meant running the same 28-minute lane
+  against the baseline commit and diffing two lists by hand.
+  `gate.py` now appends a machine-readable identity payload to its red clause - every
+  `<record>::<AC>` address, never elided - beside the human list that still stops at ten. That
+  bound is right for a line somebody reads and fatal for one a lane parses: the eleventh identity
+  is unrecoverable from `(+11 more)`, which is why this bug's own Summary could name exactly ten of
+  its twenty-three. Each baseline row carries the identities behind its count, and the lane reports
+  what rose and what went green by id.
+  Three things the identities buy that the count could not. An equal-sized SWAP stops being silent:
+  one criterion repaired and another introduced in the same window leaves the number right and the
+  corpus changed, and the lane exited 0 on it. A baseline identity that no longer EXISTS is named
+  as vanished rather than counted as a repair, so the number cannot fall because a unit was deleted
+  or its criteria renumbered. And the count and its own list are checked against each other at both
+  ends - a row recording a number its list does not support is a record of neither, and so is a
+  run.
+  RE-MEASURED with the identities recorded for the first time, and the count stays at 20. By
+  `gate.py --root . --release`: 20 red of 2,095 executable criteria across 822 stories in ~2,236s,
+  with 156 failing criteria excluded on stories claiming no completion; `verify_ac.py stamps` reads
+  3 dead stamps, at baseline.
+  The first thing the identities bought was the answer to the baseline file's own open question.
+  Two runs were taken. The first, under three concurrent boundary gates on the same machine, read
+  21; the second, on an idle one, read 20. The lane named the difference in a line -
+  `went green: US0220::AC2` - and that criterion is
+  `unittest discover -s tools/tests -p test_precommit_selection.py -k RunTests`, timed at 118
+  seconds against the lane's 120-second per-verifier ceiling: it passes with two seconds to spare
+  on a quiet machine and times out under any load. That is precisely the instability the baseline
+  file has predicted since 2026-08-17 - "a timing-sensitive row of that kind flips the count
+  between 20 and 21" - and it had gone three baselines without being identified, because a bare
+  number cannot say which row moved.
+- **The disclosure guard reads the release being cut, and the page's prose is derived from its
+  own count.** `NOTES_REL` named a RELEASED version, so every finding disposed of walked a
+  published claim: closing one bug demanded that v5.0.1's notes be rewritten to a count that
+  version never shipped with. A released version's record states what it shipped with and
+  freezes; only the release being cut tracks the corpus. The page's prose is now generated from
+  the number of rows beneath it, so a corpus with no open finding says so rather than promising
+  a list of ids and a file per id over an empty table, and the heading names the bar THIS
+  release is held to with the previous one kept below it as history.
+- **A withdrawn mutation row is no longer read as a surviving mutant.** The survivor filer
+  selected on the verdict alone, so a row recorded `survived` and later WITHDRAWN was still
+  offered: the close that found this filed a bug from exactly such a row, against a
+  reading the ledger had already retracted. One predicate
+  now decides, and both readers ask it - the filer and the mutation-evidence gate's own
+  counting loop, where a retracted row was also counted as an applied mutant and could satisfy
+  the vacuous-zero check on its own.
+- **`enable-hooks.sh` sets a keepalive on the clone's ssh, and the pre-push hook says why.** The
+  pre-push gate runs boundary lanes for minutes before git writes a byte, and an ssh connection
+  idle that long is dropped by a NAT or a forge before the push starts: the gate passes, the push
+  fails, and the retry pays the gate again. The enabling script now sets `core.sshCommand` at
+  LOCAL scope with `ServerAliveInterval` and `ServerAliveCountMax`, and says so. A value
+  already in force at ANY scope is left exactly as the developer set it and the script names the
+  scope it found it in - reading only the local one shadows a global `core.sshCommand`, which is
+  where a user, an identity file or a port usually lives, and replacing it with a bare ssh
+  strips all three silently. The hook itself
+  names the keepalive and the command that sets it, on stderr, where a pusher reads it - printed
+  BEFORE the red-CI read, because that block refuses and exits, and the pusher whose connection
+  is about to drop is exactly the one who retries. If your own ssh command carries no keepalive
+  you get the advice and not the setting, which is the deliberate trade: a command you chose is
+  not overwritten.
+- **A test rename at a close commit orphaned a stamped selector, and the scheduled corpus lane
+  that saw it was red for three weeks unread.** Commit 245513c9 renamed a test that BG0585 AC6's
+  `Verify:` line named; the write-time guard sees a selector only when the LINE is written, so a
+  rename in the test file passed every per-commit lane, and the one reader, the weekly
+  `corpus-verify` job, failed on 24 and 31 August and 7 September with nobody reading it. Now a
+  `stamps-staged` pre-commit lane (`verify_ac.py stamps --staged`) reads the test files a commit
+  stages and resolves every stamped selector naming them against the INDEX blob by AST, in the
+  four shapes the corpus holds: a bare path while the file is in the index, `path::name` while
+  the function or class is, `path::Class::test` while the method (async or not) is inside that
+  class, and `path -k pattern` while the pattern selects an AST-derived node id. A selector dead
+  in the index is then resolved against HEAD's blob: one that was live at HEAD is orphaned by
+  this commit and the lane refuses, naming the artefact, the criterion and the selector; one
+  already dead at HEAD is reported by name and never refused, because a pre-existing finding does
+  not hold the gate. A staged deletion is refused as `deleted`, a `git mv` as `renamed to <new
+  path>`; a commit staging no test file reads nothing; a failed git call, an unparseable blob or a
+  non-UTF-8 blob is refused by name rather than read as clean. BG0585 AC6 is repointed at the
+  renamed node, so the corpus lane's dead-stamp count returns to its baseline of three. The lane
+  is named in AGENTS.md's roster and pinned by literal in `tools/tests`.
+- **`status.py hint` took 56 seconds on this corpus after `status` had come down to a second.**
+  BG0646 put the dashboard's census and advisories inside one corpus sweep; `hint` called the
+  same close-owed advisory with no sweep open, so its 189 `children_of` calls each re-walked all
+  2,340 artefacts. `hint` now enters its census and every advisory inside the same
+  `corpus_cache()` sweep the dashboard uses, pinned by identity in the suite and by a 15 s bound
+  over the corpus-shaped fixture (22.9 s before, under a second after).
+- **A later commit emptied an earlier unit's mutation evidence, and nothing said so until the close.**
+  The mutation ledger keys evidence on a content hash, and two things acted on that hash without
+  anyone being told: `mutation.py register` by a later unit on a file with different bytes DELETED
+  the earlier unit's rows before any commit, and a commit that rewrote a registered target left the
+  rows about bytes that no longer existed. In RUN-01M1NS3C it happened four times in one day, found
+  hours later by the close dry-run.
+
+  **What changed.** A stale row means one thing to every reader of the ledger: its recorded hash
+  matches neither HEAD's blob nor the working file. `register` by a later unit now KEEPS the earlier
+  unit's rows, marks them stale with the later unit named, and prints the remedy; a unit's own rows
+  are still replaced. The plan join that `--from-plan`, the done-gate and the depth deriver all
+  consume reads a stale row as not-run, so a unit with any stale row cannot reach Fixed until it
+  re-registers, whether or not a commit lane ran. And the pre-commit gate gained `evidence-drift`,
+  a blocking lane: a commit whose staged file drifts a delivered unit's registered rows - HEAD's blob
+  still matched the recorded hash and the staged one differs - is refused with the unit, the file,
+  the rows and the remedy named; rows already stale at HEAD, a target that exists neither at HEAD
+  nor on disk, and rows of a unit not yet delivered are reported by unit and never refused, so the
+  lane does not refuse the commit that ships it. Delivered is decided by `is_delivered_terminal`,
+  the done-gate's own predicate, so a Done story is guarded and a Won't Fix bug's rows are reported.
+  The lane is named in AGENTS.md's roster with its status. This unit's own commit drifted eleven
+  live rows of BG0640, BG0596 and BG0597; they were re-measured and re-registered here.
+- **The depth-count census read the wrong number.** `tools/tests/test_known_issues.py` checks that no
+  `Verification depth` field states a criterion count its artefact contradicts, and it took the FIRST
+  `<n> criteria` in the field. The deriver writes the total as `criteria 9` (the count after the word,
+  which that pattern never matches) and, later in the same field, the entry-point figure as `6 of 8
+  criteria through the shipped CLI`, a count of executable criteria. On the first artefact carrying a
+  manual criterion and a derived field, BG0641, the census read the 8, compared it with all 9 ACs and
+  refused every commit through the tools suite for a contradiction the artefact did not contain.
+
+  **What changed.** The extraction is one helper that reads the deriver's own total first and falls back
+  to the hand-written `<n> criteria` form only when no derived total is present, so a field whose total
+  disagrees with its artefact is still reported. A test pins both readings and the fall-back.
+- **One skill test module was red for a month, and the suite said green.** `test_critic` used
+  `unittest.mock` without importing it; the name was there whenever an earlier module had imported
+  it, which the discovery run always had. Run alone under the unittest runner from the repository
+  root it errored, and pytest never saw it either, because pytest imports the missing name itself.
+
+  **What changed.** The head import is added. And the push and release boundaries gained
+  `module-alone`, a BLOCKING lane: every module under the skill's tests directory (derived from
+  `--root`, N/A when absent) runs alone under `unittest` in a fresh interpreter from the repository
+  root, in parallel across the cores, with the `serial_only` partition run after the parallel phase
+  the way the suite's own runner partitions it - the marker read through `pytest --collect-only`,
+  never a source scan. A red module is named with its first failure header, its exception line and the phase it ran
+  in; a module that dies silently is named by a fallback, a module that hangs by its timeout; a
+  partition read that fails is refused rather than read as empty. The environment is the hook's
+  own - the tests path RELATIVE to the root, since one module is green under that form and red
+  under an absolute one. It is off the per-commit path on `release-rehearsal`'s precedent: its
+  cost is the lane's wall clock, four to five minutes on this machine - `test_gate`, the slowest
+  module, near four of them - against a serial sum of fifteen to seventeen minutes, and a guard
+  paid on every commit gets switched off. The roster in AGENTS.md names it with its
+  boundary and its cost beside D0180's.
+- **A criterion written outside `## Acceptance Criteria` was verified and never judged.**
+  `verify_ac` executed every `**ACn**` block wherever it sat in a bug or story, while the seat
+  brief read the section alone, so a criterion under `## Impact` or after `## Revision History`
+  ran green and no reviewer ever saw it. Two bugs or stories already held that shape (a retro does
+  too, out of this rule's scope).
+
+  **What changed.** Every parsed block knows the `##` heading it sits under, and one reader -
+  `criteria_blocks` - answers for the runner, the lint, the plan deriver, the depth deriver, the
+  fingerprint and the brief's caller check, while the brief reads the section by the same heading
+  rule: the
+  section's blocks when the section exists, every block when it does not (narrowing that case
+  turned fifteen tests red, so the shape is refused instead). `validate check` reports an ERROR
+  tagged `criterion-outside-section` per misplaced criterion, naming the artefact, the id and the
+  heading, and one for an artefact with criteria and no section; `verify_ac lint --bugs` names
+  each misplaced criterion as unreviewable with the section it belongs in; and the brief renders
+  the whole file's criteria for a no-section artefact where it rendered none, so the two readers
+  agree on the fallback too. The `Done` gate refuses a misplaced criterion by name rather than
+  ignoring it, since the runner no longer executes its verifier; the depth deriver and the AC
+  fingerprint read the section's blocks; and the heading is read one way everywhere - any case,
+  more words allowed - as `count_acs` always read it. US0597 gains its section and BG0270's AC4 moves into its own (neither carries a
+  derived depth field to regenerate), so the lane never refuses the tree that
+  ships it; US0629's hand-authored `### AC1 -` plan headings never matched the grammar and are
+  left alone.
+- **The suite's status integration test gathered THIS repository.** `test_status_reads_config`
+  called `status.gather(Path("."))`, so on this corpus one test took 72 to 113 seconds, and
+  whatever this clone's ledgers made `status` print landed in the green-run noise count: twelve
+  repair-ledger warnings while a run was open, none on CI, so a full local run read 118 against a
+  baseline of 106 with nothing in the diff leaking, and the count differed between a clone with an
+  open run and a clean one.
+
+  **What changed.** The test gathers a fixture workspace (its directories are inert: status reads the defaults for any root, and an override of 3 reads back to prove the config is consumed) with its console captured,
+  asserts the default `schema_version` it came to check, and holds itself to two seconds; a second
+  test pins that the gather prints nothing for the fixture, and a third that a fixture which DOES make it
+  warn is captured at both of its warning sites and never reaches the console. Measured alone, the module now prints one line, a pre-existing warning from another class, so
+  its count is state-independent rather than zero. The claim the test exists for - that
+  `status` consumes `config-defaults.yaml` - is proved by a workspace with no config of its own.
+- **`status` took 53 to 115 seconds on this corpus, and printed nothing until it had finished.**
+  Step two of every session is the dashboard, and on a workspace of 2,340 artefacts it walked and
+  read every one of them on each of the 45 `children_of` calls the census makes and the 189 the
+  close-owed advisory makes beneath it. With a run open it also derived the `Run:` line's remaining
+  count through `handoff.build`, paying a conformance and readiness pass for one integer. A piped
+  consumer under a tool timeout saw an empty pipe for the whole of it.
+
+  **What changed.** The `Run:` headline is printed from the run record and flushed BEFORE the
+  census is taken, so the reader arriving after a context reset learns which run they stand in
+  inside the first second. The census and every advisory beneath it now run inside ONE
+  `corpus_cache()` sweep: the walk reads each artefact once and hands its text to `read_text_safe`
+  for the rest of the sweep, so `children_of` answers from the sweep's child index and the advisory
+  reuses the census the gather took. The memo is the sweep's - opened and closed by the `with`,
+  never a cache that outlives it - so `children_of` with no sweep open still walks. The run line's remaining
+  count comes from `handoff.remaining_count`, which reads `handoff._classify` - the ONE
+  terminal-versus-dropped predicate `build` now reads too, extracted from `_unit` so there is no
+  second copy - without `build`'s conformance and readiness passes. The in-process pin asserts the
+  run line's count on its closed token (`remaining=4)`) and equal to `build`'s over a batch that
+  exercises every branch: delivered, red evidence, open, dropped, missing, and quarantined outside
+  the batch. On this corpus the command now takes 0.87 s with a run open and 0.62 s without; the
+  shipped command is measured end to end over a fixture this repository's shape, headline inside
+  3 s, exit inside 15 s.
+
+  Two visible consequences, disclosed. `handoff.build` used to print the critic repair-record's
+  warnings on stderr while the dashboard derived its count; the dashboard no longer prints them
+  (`critic.py` and `handoff.py` still do). And `_classify` reads a unit through `read_text_safe`,
+  so the run line counts an unreadable batch file as Unknown and remaining, recorded in the
+  degradation log, rather than raising; `build` still raises on the same file from its own reader
+  in `_open_decisions`, as at the base ref, so the change reaches the count and not the join.
+- **A plan-review rejoinder was briefed as a delivery review.** `critic.py brief --rejoinder`
+  ignored `--phase plan-review` and rendered the delivery brief: a diff scope for a diff that did
+  not exist, no Test Plan table, the delivery return contract with its origin tags, and no
+  fingerprint footer at all - so the re-review's verdict could only be recorded by hand, and into
+  the delivery ledger.
+
+  **What changed.** The rejoinder keeps its phase. A plan-review rejoinder renders the plan-review
+  brief - the charter that says there is no diff scope, the criteria as law, the CURRENT Test Plan
+  table - quotes the prior verdict verbatim, asks the seat to rule each finding against the table
+  rather than to re-run mutants that do not exist, and closes with the plan-review return
+  contract; its stderr footer names `record --phase plan-review --kind test-plan` with the
+  fingerprint, and `--tier` is refused as on the plain plan brief. The delivery rejoinder keeps
+  its diff scope and delivery contract, and gains the fingerprint footer it also lacked. Its fingerprint identifies the rejoinder's base brief and phase, never the quoted prior, so `record --brief`
+  recognises it and an honest re-review no longer carries the unrecognised-brief note (a re-review of a unit
+  whose artefact has not changed shares its predecessor's fingerprint, and a tier chosen against the derived
+  one still misses, as the first-round brief always has); the plan footer is one
+  function for both plan paths and its record command runs as printed; the flag's help and the review
+  reference describe both shapes.
+- **The test-noise ratchet compared a selected subset against a whole-suite baseline.** The
+  commit-msg hook runs the modules selected from the changed surface and held their leak count to
+  the number the FULL suite had last printed, so a subset almost always passed whatever it added.
+  Two shipped warnings leaked 37 lines across 24 fixtures, every commit that added them passed the
+  gate, and CI turned red on main after the push, unread.
+
+  **What changed.** The budget is a file, `tools/test-noise-baseline.json`: one entry per test
+  module, measured alone, plus `_total` for the discovery run. A selected run is held to the SUM of
+  its modules' entries and a full run to `_total`, so a commit whose selection leaks more than its
+  modules' recorded debt is refused by the hook that used to pass it. Attribution is by sum over
+  the selection, because one `unittest` process cannot say which module printed a line; the bound
+  that leaves - one module's overrun masked by a sibling's slack within the same selection - is
+  stated, not hidden. A module with no entry contributes zero. `budget-check` compares the file
+  with its committed version before the suite runs and refuses a raised entry or a new one above
+  zero; a budget file that is named but missing or unreadable refuses loudly, with no fall-back to
+  the scalar the script used to carry. `_total` is the measured full-run figure and the per-module
+  entries need not sum to it: modules measured alone print their import-time leaks once each, at
+  most a couple of lines here, and `test_config` is held at its state-independent figure because
+  it gathers status over the real tree and prints whatever this clone's ledger prints (twelve lines
+  while a run was open, none on CI - BG0647, which lands ahead of this unit so the entry is now the
+  module's own line). The delivery review found the first
+  budget recording that state-dependent 13, the masking this unit exists to close.
+- **The `--verify` flag was refused for the one case it exists for.** A bug is filed before its fix,
+  so the test its criterion names does not exist yet - and the write guard BG0570 narrowed still
+  refused every selector whose file collected but whose node was absent. Three findings filed in the
+  run that shipped the flag had to be filed without it and hand-edited afterwards, which is the
+  hand-rolling the flag was added to end.
+
+  **What changed.** `_classify_selector`'s collected-file case is split on what the guard can NAME.
+  A node that is a near miss of a collected test is a typo and is refused with the hint: the method
+  exists under another class (the recurring shape), or a method of the named class is a close match.
+  A node no collected test resembles - a class the file does not collect, or a genuinely new method on
+  an existing class - is the test not yet written. It files, byte-exact, and `verify_ac run` reports
+  the criterion RED on its first run, which is the net. The accepted trade: a selector with the class
+  AND the method mistyped is refused with a hint today and files RED tomorrow.
+
+  `selector_near_miss`'s close-match branch is scoped to the named class. It used to gather difflib
+  candidates from every class at that depth, which made a new method on an existing class a "near
+  miss" of any method anywhere in the file that resembled it - measured over one 360-node module, all
+  three of a sibling unit's own selectors would have been refused. The same-leaf branch is unchanged,
+  and a node hanging below a collected test now names the test it hangs off.
+
+  The licence covers the NODE case only. The delivery review found the first cut accepting every
+  target without a node - a `-k` pattern selecting nothing, a bare file collecting nothing - because
+  the near-miss reader answers None for them; those are refused exactly as before, pinned by AC6.
+
+  Three tests that pinned the old rule with a method that existed nowhere are re-authored to the
+  same-leaf shape under their own names, and BG0570 AC1 and US0667 AC1 are re-worded to the narrowed
+  rule with a revision row each. The one-reader test's second half, which the plan said was untouched,
+  is reached by the split and now uses a same-leaf selector; recorded on BG0643 as a delivery
+  amendment.
+- **Every push to main bypassed branch protection, and a red main went unread.** The required `ci`
+  status check could never be satisfied by a direct push, because the check runs after the push it
+  guards; with `enforce_admins` off it held nobody, so the bypass line was printed on every push and
+  read as noise. Main stayed red for two days on 2026-09-01 with nobody looking.
+
+  **What changed.** The operator ruled for direct pushes gated locally (D0181), so the signal moved
+  into the command people run. Before the gate, the pre-push hook asks the forge for the latest
+  COMPLETED push-triggered Lint run on main - never a scheduled corpus run, never Dependabot's - and
+  refuses on any conclusion but success, naming the run, its conclusion and its URL and printing the
+  acknowledgement command verbatim. An acknowledgement (`SDLC_PUSH_ACK_RED=<run id>`) is remembered
+  per clone, so an hour of pushes over one red run is acknowledged once; a stale or wrong id refuses
+  and records nothing. An unreadable or empty answer is named as such, never rendered as green, and
+  does not block an offline push. The hook is written against bash builtins, git, python3 and gh
+  only, because the fixture PATH holds nothing else. The branch-protection edit that removes the
+  never-satisfiable check is the operator's, after the ruling, and is not part of this delivery.
+- **The push boundary had nothing behind it.** AGENTS.md said `release-rehearsal` and `revert-check`
+  bind at the push and release boundaries and `gate.py --boundary` existed to run them, and nothing
+  invoked either: there was no `.githooks/pre-push`, the release boundary had no caller anywhere, and
+  a push completed in seconds. Two lanes this repository relies on for release confidence had never
+  run at the boundary they claimed.
+
+  **What changed.** A tracked `.githooks/pre-push` reads the refs git hands it: a branch ref runs
+  `gate.py --boundary push`, a tag ref runs `--boundary release` (a mixed push runs once, at release,
+  which binds the same two lanes), and a deletion runs no gate. It announces its cost before paying
+  it - the recorded median for that boundary, else the full suite's own figure, else a literal - and
+  records its duration after, so the second push has a number. Both invocations run behind the
+  repo-locating scrub the commit hooks' suite lanes use, because git hands a pre-push hook the pushing
+  repository's locations and the gate's rehearsal lane builds git repositories of its own; the
+  scrub-site sweep in `tools/tests` now names the third hook and pins its list. The gate's own output travels
+  on stderr beside the refusal, the stream git shows the pusher, so "the lane named above" is there to
+  read. Every refusal names the re-run and the bypass, `git push --no-verify`. `tools/enable-hooks.sh` installs and names every hook under
+  `.githooks/` with the comment on line 2 of each as its description, derived from the directory, and marks one whose line 2 is not a comment `(no description)`. A new checker,
+  `tools/boundary_roster.py`, reads the boundaries AGENTS.md names in their actual shape and refuses
+  any without an invocation line behind it, in either spelling the gate accepts; a roster that parses
+  to nothing is refused rather than passed as empty. AGENTS.md carries the pre-push row, its cost and
+  the command that prints the current figure. The per-push price is the operator's ruling, D0180.
+- **The revert-check lane rendered an absence as a result.** With nothing refused and nothing
+  crashed it reported `0 unit(s) examined, none stayed green without its change`: literally true
+  over an empty set, and read by anyone skimming a gate page as a clean bill for a run that
+  measured nothing. The crashed branch had been repaired to lead with the failure, on exactly the
+  reasoning that condemns this shape, and then ended `; 0 examined and clean`, the same clause one
+  line away.
+
+  **What changed.** When the lane examined nothing it says so and says why: `no unit was examined,
+  so this lane measured nothing (N reported, M in error)`, counting the units its check reported
+  or errored on rather than dropping them. With crashes the crash count still leads and the
+  absence follows it; a run that examined at least one unit reports its count and outcome as
+  before. The existing test that pinned the reported-unit case asserted the old `0 unit(s)
+  examined` phrase and is re-authored under its own name to assert the new lead and the yield pair
+  on the recorder itself.
+- **The review ledgers escape for the CONTEXT, and refuse a value they cannot write.** `_clean`
+  applied the underscore escape to the whole value, code spans included, where markdown does not
+  process a backslash - so every identifier a reviewer named came out of the record with a
+  literal backslash in it, across the three files this project uses as its account of what
+  review found. It was also not idempotent, so a value passing through twice was escaped twice.
+  The escape is now applied outside spans only and never doubles. The pipe and newline
+  substitutions stay unconditional, span interiors included, because these rows are built by
+  interpolation rather than by a row joiner and this is the only thing standing between a
+  reviewer's piped shell command and a forged column. And a value carrying an ODD number of
+  backticks is refused at the write, naming the value: an unbalanced span turns the rest of the
+  row into code and markdownlint then refuses the whole file, and rewriting what a reviewer
+  wrote to make it fit is a worse answer than saying so while they can still edit.
+  A code span is a run of N backticks closed by the next run of exactly N, so a `` ``double`` ``
+  span's interior is left alone too, and a backslash-escaped backtick is a literal one that
+  needs no partner rather than a parity fault. The refusal quotes the text around the stray
+  backtick and says how long the value is, because a leading excerpt named a remedy over text
+  that could not be the fault. A refused write now leaves NOTHING behind: a repair answering two
+  rejections builds every row before it appends the first, so a value the record cannot hold
+  cannot half-write one into an append-only file. `plan_review.py record` answers such a value
+  with a named refusal and exit 2, the way its siblings do, rather than a traceback.
+- **The filer could write an acceptance criterion but not its verifier.** `file_finding.py file` -
+  the command this project's doctrine names for filing every finding - exposed `--ac` and nothing to
+  pair with it, and its fields-file schema had an `acs` key with no verifier counterpart. There was
+  no route to an executable criterion for a bug at all.
+
+  `artifact.py new` appears to offer the model and does not. `--verify` is documented there, but
+  `_story_acs` is the only renderer that emits a Verify sub-bullet, so `artifact.py new --type bug
+  --ac X --verify Y` accepts the flag and silently drops it. Copying that path would have copied a
+  second defect; it is named in this unit's scope as a model to fix rather than to follow.
+
+  The consequence compounded quietly. A criterion with no verifier reads as SPECIFIED - to a human,
+  to the grooming check, and to the generated seat brief, which reported "every unit is groomed"
+  over a batch whose twenty-five criteria could not be executed. `verify_ac` reported that nothing
+  carried a Verify line, and the Done gate was inert precisely BECAUSE zero non-manual verifiers
+  were declared - so the unit reached a terminal status on a hand-stamped `Verification depth` with
+  no criterion ever run. The shipped corpus scan counts 51 bug files in that state.
+
+  **What changed.** `--verify` pairs positionally with `--ac`, and `verify` is a fields-file key. It
+  was already in the list-valued fields, so the type rule had anticipated it while the key itself was
+  refused as unknown. The selector is written BYTE-EXACT: markdown-safing backtick-wraps underscored
+  tokens, and a pytest node id is nothing but those, so a selector routed through it becomes
+  unrunnable and, under a shell verb, command substitution. Only the selector is exempt; criterion
+  prose is still markdown-safed.
+
+  `conformance.unit_is_ungroomed` gains a fourth shape. The three it had asked whether a criterion
+  was WRITTEN; none asked whether it could be CHECKED. The VACUOUS case is answered first and
+  deliberately: a rule phrased "every criterion carries a verifier" is true over an empty list, and
+  61 bug files parse to no criterion blocks at all - the largest sub-population and the one such a
+  rule waves through. A `manual` marker remains an accepted answer, because the rule is "state how
+  this is checked", not "everything must be automatable".
+
+  The ungroomed-reason vocabulary is lifted to module scope with a rendering for the new reason. Its
+  consumer is a bare dictionary subscript, so a reason with no entry is a `KeyError` that takes down
+  `plan` and `breakdown` for every batch holding such a unit. A plan review found that while
+  reviewing the change that adds the fourth reason; `sprint.py` was outside this unit's declared
+  scope until it did.
+
+  **The refusal is at the planner, not the filer** - D0178, taken during delivery. This unit first
+  refused an unverifiable criterion at filing, and implementing it showed a blast radius nobody had
+  measured: `acs` is authored by callers across ten test modules here and by every consuming
+  project's scripts, so refusing at the filer breaks capture everywhere instead of tightening
+  commitment. Filing captures a finding; planning commits to it. The filer now REPORTS, naming each
+  criterion and the flag that fixes it, and `sprint plan` refuses. Nothing escapes by filing thin: a
+  unit with no criteria at all was already ungroomed.
+
+  One asymmetry the warning states plainly rather than glossing: the planner refuses a unit whose
+  criteria carry NO verifier at all, while a unit where only some are bare is planned. The message
+  says so, because a warning that claims a refusal which does not happen is the same class of defect
+  this unit exists to close.
+
+  **This deliberately takes 12 of 19 open bugs out of the plannable backlog** until each is groomed
+  with a real verifier - accepted on the operator's ruling of 2026-09-02 rather than discovered.
+
+  **Follow-on: the warning reached the test console too.** It is emitted from `file_finding()` itself rather than from `main()`, because the five library callers that auto-file findings - `transition`, `sprint`, `lessons`, `readiness`, `command_audit` - are exactly the ones whose criteria carry no verifier, and moving the print to the CLI would silence it for them. The cost is 24 fixtures across ten test modules that file in passing and are about something else; they capture it through the new `tests/quiet.py`, which yields the buffer so a test that IS about the warning can still read it.
+- `sprint close` counted the lanes it had just called advisory. `_record_close_attempt` took its
+  convergence count from `pre["blockers"]`, which carries every row the same pre-flight prints as
+  `reported not blocking` - so in any repository holding a standing advisory, and this one always
+  holds four, the series could never reach zero.
+
+  That mattered because of what it made unreachable. `loop_termination` short-circuits to CONVERGED
+  when the latest count is zero, and its own comment says why: the cap once read only the length, so
+  a finished loop was refused, and raising the cap merely moved the number at which that happened.
+  With advisory rows in the count, that branch could not fire. RUN-01M11MEP recorded 5, 5, 4, 4, 4, 4
+  against an empty real blocker set and was stopped by a cap no value could have satisfied.
+
+  The count now reads `held_blockers()`, which already existed twenty lines above and which
+  `preflight_headline` already used. Both cells come from the filtered list: `outstanding` and
+  `stages` are separate expressions over the same data, so filtering only the count would write
+  `outstanding: 0` beside `stages: ["gate"]` - an attempt that reads converged while naming the lane
+  it converged past.
+
+  **`review.max_rounds` is removed from the project config rather than set to a number.** One key
+  feeds two consumers with different defaults - the close-attempt cap is 4, the review-round ceiling
+  is 3 - so no single value is correct: 4 loosens the review ceiling past D0175's ruling, and 3
+  tightens the close budget below stock. Removing it lets each consumer take its own default, which
+  is the precedent BG0517 set. D0177's interim authorisation expires on this commit.
+
+  AC3 was narrowed by D0179 during delivery. It first required a CONVERGED run at the cap to reach a
+  stage past the convergence check, which is not demonstrable through the CLI: the close records a
+  fresh attempt before consulting the terminator, so a converged run is one whose pre-flight is
+  genuinely clear - and clearing it needs a goal, a verdict, an anchor and a valid retro, after
+  which the checklist raises eighteen more prerequisites. The half kept is the discriminating one:
+  the cap fires on a run whose outstanding set never clears, asserted on the close's decision rather
+  than on the trend string it narrates. A review deleted that decision branch and an assertion on
+  the string alone stayed green.
+- **`transition annotate` checks the severity vocabulary, and checks it on the field name it
+  was given.** It was the third writer of a Severity line and the only one that never looked:
+  `--value major` was written verbatim, and a severity outside the accepted set is dropped by
+  the release bar AND the disclosure page at once, so the finding vanished from both and the
+  absence read like a clean corpus. The refusal now names the accepted set, a recognised value
+  is written in its canonical spelling whatever case it arrives in, and the guard is keyed on
+  the folded field name: `--field severity` used to slip past it and then insert a SECOND
+  metadata line beside the untouched canonical one.
+- **A repair row was joined to the rejection it answers by DATE alone.** The ledger carried neither
+  the phase nor the rejection, and `repairs_for` took no phase, so `repair_state` selected rows on
+  date equality across both review phases.
+
+  The two shapes originally filed both pass on HEAD and are not the defect: `repair_state` loops per
+  rejection, and `resolve_finding` separates rejections whose findings read differently. What still
+  failed is TEXT COLLISION - the same finding raised in both phases on one date - and that is the
+  ordinary shape, because a plan-review finding surviving into delivery is what a review round
+  normally produces. Reproduced: a delivery repair made the plan-review state read complete with
+  nothing outstanding.
+
+  It stopped being a reporting nuisance when BG0629 landed. A plan-review rejection is now retired
+  by its repair, so a delivery repair discharging one opens a gate that should have stayed shut.
+
+  **What changed.** The ledger carries a `Phase` column and a `Rejection` column - the brief
+  fingerprint, which BG0607 established identifies the seat and the round together where a date
+  cannot. Both are appended, so rows written before them still parse with the fields absent. The
+  first cut added only the phase and left the criterion's other half unbuilt while its verifier went
+  green; a review found that.
+
+  `repairs_for` takes a phase and filters on it. A row that names its phase is taken at its word. A
+  legacy row is attributed only where the date is UNAMBIGUOUS, meaning exactly one phase rejected
+  that day; where both did, the row's own closures are consulted. Guessing which one a legacy row meant
+  would be the record made prettier rather than truer, which this project refused once already.
+
+  `unattributable_repairs` reports what the change cannot place: **13 legacy rows** on the live
+  ledger, each naming the unit, the date and the phases the date collides across.
+
+  **Five units moved to `none` and are named here rather than left to be discovered.** US0664,
+  US0665, US0666, US0671 and US0674 previously read complete or partial in one or both phases
+  through the date-only join; under the phase rule their legacy rows are unattributable. That
+  includes 72 recorded closures on US0664 and US0665 that stop counting. This is the fix working -
+  those rows never said which rejection they answered - but it changes what the BG0629 gate does for
+  them, so it belongs in the record.
+
+  **The closure fallback places no live row today, and the code comment that said otherwise was
+  wrong.** Where both rejections raise the same finding text - the common shape, and the whole of
+  this bug - the closure resolves for both phases and the guard correctly concludes neither. A review
+  measured that as 52 of 52 on this ledger. The branch is kept for the case it does answer, two
+  rejections on one date raising DIFFERENT findings, now pinned by a test rather than assumed. An
+  earlier code comment claimed the branch had rescued US0674; it had not, and this changelog said so
+  correctly while the code said so falsely.
+
+  One consequence worth recording: the test-plan gate now refuses one step earlier for a collision.
+  The state is `none` rather than `partial`, so it says no repair is recorded rather than naming an
+  outstanding finding - the finding was only ever visible there because the delivery repair was
+  being counted as a partial answer to it.
+
+  **Follow-on: the report reached the test console too.** The read-path warning fires once per unreadable row per process, and this repo's own ledger holds enough of them that a full suite printed 13 - which `tools/skill-tests.sh` fails a GREEN run for. The one place that runs the real gate now captures them through `tests/quiet.py`; the warning still reaches a real operator unchanged.
+- **The test-plan gate is consulted at the transition that makes the work permanent, not only at
+  the one that starts it (BG0630).** The gate fired on entry to an implementation status and was
+  skipped once the unit was already in one, which made it order-dependent rather than strict: a
+  plan-review rejection recorded AFTER a unit started was consulted by nothing, because every
+  transition left to it was one the entry guard skipped.
+  Measured through the shipped command at the base of this change, on a fixture carrying a
+  standing test-plan REJECT: `Open -> In Progress` is refused, while both `In Progress -> Fixed`
+  and a DIRECT `Open -> Fixed` exit 0. `Fixed` is not in the entry guard's target set at all, so
+  the gate fired on no transition to `Fixed` whatever - and every unit this defect is about is a
+  bug.
+  The gate now fires again at `Done` for a story and `Fixed` for a bug, by whatever route reached
+  it, deduplicated against the entry firing so a direct route does not print the same refusal
+  twice. It sits INSIDE the `review.test_plan_after` cutoff, because a gate that refuses a whole
+  existing backlog is one that gets switched off wholesale rather than satisfied, and it fires on
+  a transition and never retrospectively: a unit already at rest is untouched until something
+  moves it again.
+  Measured through the gate's own reading of the plan-review ledger over this repository's bugs -
+  `critic.verdict_for(..., phase="plan-review", kind="test-plan")` followed by
+  `critic.plan_review_repair_clears` - 48 bugs carry a standing test-plan REJECT, 34 of those are
+  at Fixed, and 16 of those have no repair clearing it. Those 16 are not reopened by this change;
+  a re-fix of any of them is refused until its rejection is answered.
+- A plan-review REJECT can now be retired by the repair that answers it. Retirement previously
+  demanded a later APPROVE carrying the rejection's own brief fingerprint, and the fingerprint
+  hashes the criteria - so repairing what the reviewer rejected necessarily changed it, and 44 of
+  44 rejected units stood REJECTed with not one ever cleared.
+
+  The reading is not new: `conformance.py` has applied it to the delivery phase since US0192. It is
+  applied in the caller, `transition._test_plan_gate`, because both alternatives recurse -
+  `_unanswered_rejects` is called BY `repair_state`, and `verdict_for` is reached by
+  `repair_state`'s own fallback - and because the caller placement flips one of `verdict_for`'s
+  twenty-two call sites rather than all of them, leaving the delivery lane and the conformance
+  `critiqued` population where they are.
+
+  Two guards beyond `state == complete`, each closing a way the gate could be opened by a repair
+  that answered something else: the phase is passed explicitly, so a delivery repair cannot answer
+  a plan-review rejection; and the per-date count is compared, so one repair cannot discharge a
+  day's worth of rejections. The join itself is repaired by BG0631.
+
+  `critic.py repair` now resolves a closure against every unanswered rejection rather than the
+  standing row alone. Ordinals stay scoped to the standing verdict, because `#1` is positional and
+  would otherwise answer whichever finding happened to sit first. Without this the rule above is
+  unusable: a twice-rejected unit could be held PARTIAL for ever by a finding no command would
+  accept a closure for.
+- **The conformance figure was a fact about the tree, not about the corpus.** A unit misses
+  `verified` when its stamped verifiers do not resolve, and that covered two situations with
+  opposite remedies: a test file that exists and will not collect - real debt - and a test file
+  this tree simply does not hold, where there is nothing to fix and the reading is unavailable.
+
+  So the same 814 units scored differently depending only on which directories had been copied, and
+  nothing in the output said which reading you had. The summary then recommended `backfill` and an
+  adoption cutoff, which are right for debt and useless for an incomplete checkout. The readers most
+  exposed were the ones following this project's own doctrine: every adversarial reviewer is told to
+  copy the tree before running anything, so the wrong reading is the one an independent reviewer is
+  instructed to produce. Two did in one session and both reported it as fact.
+
+  **What changed.** `selector_resolves` is deliberately NOT widened. Three lanes read it and two need
+  `False` for a file that is not there: the write guard, where a mistyped path must be refused rather
+  than laundered into "not judged here", and revert-check, where a selector pointing at nothing is a
+  dead pointer worth naming. The distinction is drawn in `unevaluable_stamps`, which is a SUBSET of
+  `unresolvable_stamps`, and `conformance` subtracts it - so only the caller that needs the other
+  reading gets it.
+
+  A file can also be PRESENT and uncollectable because what it imports is not, which is the same
+  "this tree cannot answer" fact. A review measured that the first cut missed it: a checkout without
+  the skill directory read 727 of 814 with 5 non-conformant against 731 with 1 complete, because
+  `tools/tests/test_lint_corpus.py` is present there and dies on a missing module.
+  `_uncollectable_because_absent` tells that apart from a file broken on its own terms, which stays
+  a dead stamp.
+
+  Measured after the fix, through the shipped CLI: a complete tree, a checkout without the skill
+  directory, and a `sdlc-studio/`-only copy all report 731 of 814 conformant with 1 not. The partial
+  trees name their unevaluable units instead of scoring them as debt.
+
+  The exit code deliberately does not change. Whether an unevaluable tree should exit 0 or take a
+  distinct third code is a decision to make rather than a defect to fix; what had to stop was
+  scoring it silently as debt.
+- **A `--fields-file` document whose free-text field carries a non-string is now REFUSED by
+  name, and the guard that used to swallow it is gone from ten call sites (BG0627).** The
+  shared loader tested TRUTH - `str(x.get(k) or "").strip()` - so a `false`, a `0` and an
+  empty string were all indistinguishable from a key the document never carried: the writer
+  reported a field missing while naming one the file plainly contains. Where the value reached
+  a string method instead it raised a traceback: `ledger.py record` with `"rationale": false`
+  exited 1 on `AttributeError: 'bool' object has no attribute 'replace'`, measured before the
+  fix.
+  The rule is applied where the prose keys are KNOWN - `resolve_prose_fields`, and the filer's
+  own `cmd_file` - and never in `load_fields_file`, which also sees typed values: a `points`
+  integer, an `acs` list, and the numeric `line` three writers outside this surface pass
+  through it. All five shipped commands now exit non-zero naming the field, none prints a
+  traceback, and `file_finding.prose_value` is the presence-tested replacement for the guard.
+  The enumeration this was filed against was a lower bound, so it is now a BOUNDARY: an AST
+  sweep over every module in `scripts/` reports each `.get(...) or ""` applied to a fields-file
+  receiver, and only those. Measured after the fix: 201 such guards stand in the scripts tree,
+  187 of them outside `tests/`, and the sweep matches 2 - `sprint.py` alone carries 35, and
+  `decisions.py` reads its own ledger rows that way, none of which this is about. The sweep
+  found 12 before the fix; 10 are repaired here, and the 2 that lie outside this unit's
+  declared surface are registered with the reason each is tolerated, so the next one added is a
+  failing test rather than a silence.
+- A Sprint Goal's own `(n)` numbering now decides where its clauses divide. `goal_clauses` split
+  on every prose comma the moment an Oxford comma appeared anywhere in the text, so a goal whose
+  author had numbered five commitments came back as fifteen fragments - one of them the bare
+  string of an artefact id - and the close's clause panel judged fragments nobody had committed
+  to. Across all 47 recorded rounds, no seat had ever carried a per-clause answer, because the
+  keys are the clause strings and nobody could predict them.
+
+  Two or more markers, in ascending order, or the text is not numbered: one marker is a
+  parenthetical rather than a list, and markers out of order are a coincidence of punctuation. The
+  marker is stripped from the clause it opens and the preamble before the first is discarded, both
+  because a seat records a verdict against the exact string and a run cannot meet framing.
+
+  For a goal carrying no numbering the heuristic is UNCHANGED. That is a choice between two
+  repairs and the rejected one is recorded in the docstring, because it reads as the more
+  principled: making a bare comma stop being a boundary would be closer to what that docstring
+  promises, but it re-clauses every goal already stored and every close that reads them. Measured
+  over the 42 stored goals, numbering-wins moves two.
+- An absent brief fingerprint now matches NOTHING rather than every other absent one, so a
+  different seat's approval can no longer retire a rejection - the behaviour BG0607 exists to
+  prevent, live in this repository's own record.
+
+  The bug was filed against the wrong value and would not have worked. The ledger writes `-` for
+  an absent brief, not the empty string, so the `if not fp` this was filed with never fired.
+  Measured over the corpus: 556 of 856 delivery rows carry the placeholder, and nine rejections had
+  been retired through it - four of them cross-seat, where the qa seat rejected and the engineering
+  seat's approval retired it. The filing's claim that the defect was LATENT was false.
+
+  Reviewer identity was proposed as a way to preserve the five same-seat retirements and is
+  rejected on the corpus rather than on taste: it matches 0 of those 9 pairs on exact string,
+  because this repository names seats per round. `_unanswered_rejects`' own docstring already
+  recorded that reviewer-string keying shipped and was withdrawn at 579/690. What answers a
+  rejection is a repair, which is BG0629's rule.
+
+  All nine retirements now stand as unanswered, because none carries a repair record - so none was
+  ever answered. Seven of the nine are at Done.
+- A finding whose severity is in neither the barred nor the disclosed set is now NAMED rather than
+  dropped by both. `corpus()` keeps only disclosed severities and `barred_open()` only barred ones,
+  and both skip past anything else - so such a finding was absent from the release bar and from the
+  disclosure page at once, and absence read exactly like a clean corpus. `unparseable()` could not
+  catch it, because the file parses: every field is present and one of them is just a word nobody
+  recognises.
+
+  Two decisions are recorded rather than left for an implementation to settle silently. The residue
+  covers EVERY finding file, not only open ones - both readers test open-ness before severity, so an
+  unrecognised value on a closed unit is excluded twice over and would never be seen, which is the
+  shape the corpus's only instance has. And it is reported rather than barring: an unreadable
+  finding cannot be judged at all, while this one can be read and corrected in a single edit, and
+  making the release bar hostage to a typo is the wrong trade.
+
+  The vocabulary is enforced at BOTH writers. `file_finding.py` and `artifact.py new` are each a
+  writer of the same free-string field, so guarding one leaves the class open through the other.
+  The value is refused rather than normalised, because guessing what `major` meant would put a word
+  nobody chose on the record.
+
+  **The vocabulary is case-folded and trimmed at both ends, because both readers already are.**
+  `known_issues._matches` folds case and strips, and the corpus holds 21 findings written
+  `high`/`medium`/`low`; a case-sensitive or left-only writer refuses values the release bar and
+  the disclosure page classify perfectly well. The value written is the canonical spelling of the
+  value REQUESTED - not merely a value equal to whatever its lowercase twin produced, which any
+  input-independent writer satisfies.
+
+  The residue reader folds case too. Every early fixture was canonically spelled while the live
+  corpus is not, so a case-sensitive residue read passed its tests and turned the real report from
+  one finding into twenty-two, naming findings that classify correctly.
+
+  **A third writer exists and is NOT fixed here.** `transition.py annotate --field Severity`
+  carries no vocabulary and writes whatever it is given, because `severity` is absent from
+  `_ANNOTATE_DENYLIST`. That is BG0633, filed and carried: `transition.py` is outside this unit's
+  declared surface, and an earlier draft of this artefact claimed nothing else wrote the field,
+  which a review falsified by running it.
+- `artifact.py retitle` now REPAIRS an unparseable H1 instead of refusing on it. The H1 is the
+  thinnest of retitle's four surfaces and the only one a hand edit routinely breaks - a
+  parenthetical before the colon, a dropped colon - and refusing left the artefact untouchable by
+  the tool that exists to touch it, so the correction had to be made by hand across all four
+  surfaces instead. That is precisely what the tool-first rule exists to prevent.
+
+  The heading is composed from the FILE'S canonical id, never from what the caller typed and never
+  from the whole stem. `norm_id` folds case and the dash, so `--id bg0623` resolves, and an
+  implementation stamping the caller's spelling would write an id the rest of the toolchain does
+  not use - which is why the criterion requires its fixtures to invoke non-canonically.
+
+  A heading that already parses keeps its own spelling: the substitution re-emits the matched
+  prefix verbatim, so a dashed or lowercase form the author chose survives.
+
+  The repair is not an escape from the other three surfaces. It decides only what surface one will
+  be; the index row and the inbound references are validated exactly as before, and a failure
+  there still leaves nothing written.
+
+  **Which line gets replaced**, since a repair that writes over the wrong one loses content and
+  reports success. The only line ever overwritten is an unambiguous LEVEL-ONE ATX heading - up to
+  three spaces of indent, exactly one hash, then whitespace - sitting outside every container that
+  suspends markdown: a fenced code block (tracked on the fence character AND run length, so a
+  four-backtick fence wrapping a three-backtick one stays closed), an HTML comment, and YAML front
+  matter. Anything else, including a `##` in a document that carries no H1, gets the canonical
+  heading INSERTED, placed after any front matter.
+
+  The asymmetry is deliberate and is the whole design. Three review rounds each named the shapes
+  the previous repair destroyed - a fenced `#` comment, a `#hashtag` with no following space, a
+  four-space-indented code line, `## Summary`, a `#` inside an HTML comment, a `#` inside front
+  matter - and each repair then destroyed the next shape along. Enumerating shapes is what failed.
+  A shape the finder does not understand now costs a duplicate heading a human can see, never a
+  deleted line at exit 0.
+
+  The TSD's measured suite-timing claim is corrected with it. This batch adds tests, and the
+  recorded skill-suite median moved from the 505-540s the spec asserted to 588s, so the
+  `<!-- measured: skill-tests <= 550s -->` marker became false and `check_spec_claims` refused
+  the commit. The claim now reads 590-655s against a 660s ceiling, which is what the last ten
+  runs actually recorded. The tools-suite figure was stale in the other direction - the spec said
+  210-235s where the recorded runs are 9-12s.
+- A goal review can now record NOT achievable through `--fields-file`. `str(d.get(f) or "")`
+  collapsed a JSON `false` to the empty string, so the recommended path could record that a goal IS
+  achievable and could not record, in the same encoding, that it is not - a recorder biased toward
+  approval, whose only workaround was to write the string `no`, documented nowhere.
+
+  The guard now tests PRESENCE, then coerces, then tests the COERCED value for non-emptiness.
+  Presence alone would have been worse than the bug: it still refuses a missing key, so a control
+  asserting only that survives it, while empty string, null and zero all become admissible and
+  `verdict_polarity` reads each as `unclear` - an incomplete verdict let through the guard whose
+  whole job is to refuse one.
+
+  The same shape sits on eleven other fields-file consumers across five modules. That sweep is
+  filed separately, because it is outside this unit's declared surface and because prose fields
+  need the opposite rule: accepting a falsey value there would store the string `False` as a
+  rationale.
+- The release bar and the disclosure page read ONE population, and a finding neither can parse is named rather than dropped. Three guards were duplicated across the two readers and each missed a finding in a different way: severity was matched case-sensitively against a corpus holding seven bugs written `high`, only the literal status `Open` counted so a High mid-repair was invisible, and the heading pattern skipped 21 files whose H1 uses the hyphenated id form - taking their status and severity with them. All three now run through one reader. Status is tested as NOT-TERMINAL rather than as one spelling, so an out-of-vocabulary status falls open and over-refuses rather than hides. A finding neither reader can parse is reported by path and refuses the bar, on the per-commit path as well as at the release boundary - the guard's first run over the real corpus found BG0131, unreadable by both since 2026-07-14.
+- A retro, a handoff and a review can now be found by id. `artifact.py new --type` accepts all
+  three and `sprint close` mints two of them on every run, while `find_by_id` iterated
+  `ARTIFACT_TYPES` alone - so `artifact.py retitle --id RETRO0109` answered `no artifact found` for
+  an artefact the shipped creator had written minutes earlier, and it had to be renamed by hand
+  across the file, the H1, the index row and an inbound link.
+
+  Per D0174 the meta types are resolved by a direct GLOB of their own directory, matching on
+  `stem_record_id`. Two other designs were tried and measured first. Adding them to
+  `ARTIFACT_TYPES` puts them on the backlogs and into the derived-index machinery, across roughly
+  twenty iterating consumers. Routing them through `artifact_files` resolves nothing at all: that
+  walker returns on a membership guard, and past it `conventions.is_artifact` rejects every retro
+  on disk - 0 of 113 - because a retro carries no Status line and its H1 uses the dashed id form.
+
+  The map now lives in one place. `next_id` and `reconcile` bind to it rather than keeping their
+  own literals; three equal-but-distinct copies is the state this bug was filed in, and the
+  identity is asserted rather than the contents.
+
+  The retitle path needed three further repairs, all measured: the hard `ARTIFACT_TYPES[type_]`
+  lookups, the index row's id cell, which was matched with a pipeline-only alternation, and a
+  fallback that handed the row writer the whole filename. RETRO is not excluded from retitle by any code - `retitle --id RETRO0109` exits 0 and leaves the index row's title text stale, because that index has no Title column. That is BG0632, filed and carried rather than fixed here. The
+  reason is on the artefact - its index has no Title column, which is BG0632.
+
+  **Resolving is not the same as being able to carry a child.** Widening `find_by_id` made those
+  two diverge, and a delivery review found the consequence: `file_finding.py file --parent
+  RETRO0109` passed the pre-mint guard, wrote the child, indexed it and stamped a one-way
+  `> **Parent:**` line into it, and only then failed on the meta artefact's absent `Status` line -
+  printing "file refused" over a finding that exists on disk. The guard now asks the question the
+  write will ask, so a parent that cannot hold the back-link is refused with nothing written.
+
+  **The meta glob applies every filter the pipeline walker applies.** A direct glob that keeps what
+  the walker drops resolves ids the rest of the toolchain does not believe in. Three such shapes
+  were resolving: a pipeline id misfiled under `reviews/` came back typed as a review, a
+  `-consultations` companion note beat the artefact it annotates, and a DIRECTORY named
+  `RETRO0003-adir.md` was yielded as a file. The prefix guard, the companion-suffix filter and an
+  `is_file` test are all applied now, at the same point the walker applies them.
+
+  `ANY_ID_SEARCH_RE` is built by splicing the meta prefixes into `ID_SEARCH_RE`'s own pattern, so
+  the strict-superset property holds by construction rather than by comment. It was a hand-copy
+  first, which is what this unit exists to abolish; `artifact.py`'s `META` tuple was a fourth copy
+  and now derives from the same map.
+- A repair's evidence reaches the record WHOLE. The closure channel split on a bare `;` and then dropped any fragment without a ` -> ` separator, so evidence containing a semicolon was truncated at it and the remainder vanished - 73 characters of a two-clause closure, no warning, exit 0, in the one record whose job is to prove a review finding was answered. `--issues` shares the shape and truncated the same way. A literal semicolon can now be escaped as `\;` (and a literal backslash as `\\`, or evidence ending in one would swallow the item after it), the split is a scanner rather than a lookbehind, and `--closed-file` accepts a JSON list of `{finding, evidence}` objects - structured input has no delimiter, so nothing a reviewer writes can be read as one. An unreadable chunk is REFUSED when written and REPORTED when read: 67 chunks already on disk lack the separator, so raising on the read path would crash every reader of the ledger.
+- `sprint close` now titles the handoff from the OUTCOME, not the ambition. It read
+  `state["sprint_goal"]` unconditionally, so a run closing PARTIAL minted a handoff whose H1, its
+  filename slug and its `_index.md` row all asserted the goal the verdict had just denied - three
+  surfaces, because all three derive from that one string.
+
+  The verdict was available at title time all along: it is a plain read of the same `state` dict
+  three lines below. An earlier draft of this bug said it was "computed a few lines down" and made
+  the ordering the defect; a review measured that and it is false, which is recorded on the
+  artefact because it changed where the fix belongs.
+
+  A goal-reached run keeps the goal, because there the claim is true and the title is the one place
+  to make it. The choice is a single expression rather than a branch that repeats itself: the first
+  version branched and then recomputed the goal inside the else, so a mutant deleting the branch
+  fell through to the same answer and the control could not see it.
+
+  `Where to pick up` had the same shape. A dropped unit is terminal, so `remaining` is empty and
+  the section printed "There is no tail: close the run and plan the next batch normally" on a run
+  whose whole story was that a unit had been closed without delivery. It now names them.
+- A unit closed by pre-code TRIAGE can now be accounted for by the retro that closed it. Coverage
+  came from each retro's `Batch` field alone, and a triage closure is by definition not in the
+  batch - putting it there would misstate what the run delivered - so it owed a close for ever and
+  the advisory could only be cleared by lying. Epics already had an inheritance rule for the same
+  shape; triage closures had none.
+
+  Coverage now also reads the `fixed` dispositions of `## Actions raised`, through
+  `retro.dispositions_in`, which already parses and classifies those rows. Three readings are
+  deliberately not taken and each would be a hole: a `filed` row names future work, so the retro
+  that RAISED a bug would discharge it; an id inside a `declined:` reason names what the decline
+  defers to; and the `Blocked / deferred` section is free prose, reached by no check, whose own
+  bullet in this repository names future work in the same sentence as the units it accounts for.
+
+  A triage closure recorded only in a `declined:` row therefore still owes. That is a known edge
+  with a documented escape - record it as `fixed-in:` - rather than an unnoticed one.
+
+  Measured over the corpus: covered rises 1032 to 1037, and the owed set falls from six to four,
+  the four being units this run itself raised.
+- The guided-onboarding hint is falsifiable by the project it describes. `_onboarding_hint` was asked first and its answer returned whenever any stage was pending, and `first_incomplete` decided that from the marker's own `status` field alone - so a marker written once and abandoned outranked the entire pipeline ladder for ever, and no state of the tree could dislodge it. Measured here: one written 2026-08-14 with all seven stages pending made `hint` answer `init guided` for twelve days, in a project holding a PRD, a TRD, a TSD, personas and 218 epics. A stage whose output is already on disk no longer holds the hint, and a marker every stage of which is superseded is REPORTED by name with the command to remove it - a stale file that is quietly stepped over is one nobody ever cleans up. `status` and `hint` are what a session runs to orient itself, including after a context reset, which makes them the worst place in the tool for a claim nothing can contradict.
+- **The mutation ledger kept several live rows on one (unit, criterion, row) key, and the join
+  took whichever was iterated last.** Re-registering a criterion after re-executing its mutant
+  appended rather than replaced, and no command said so: by the shipped verb on this repository's
+  ledger on 2026-09-08, 21 keys carried more than one live row, 5 of them naming different tests,
+  and 18 once the three this run's own re-registration had made were withdrawn. `mutation.py
+  audit` now names every such key with each row's verdict, test, target, hash and mutant
+  description, tags rows whose entry is stale or whose target is missing, counts the keys whose
+  rows name different tests or disagree on their verdict, exits 1 when any exist or the ledger
+  cannot be parsed, and is silent with exit 0 on a clean ledger. Correcting a row stays with
+  `retract`, which costs a reason and leaves the correction on the record: rows that differ are
+  withdrawn one at a time on the join fields the report prints, identical rows are withdrawn
+  together and the key registered once more.
+- `sprint breakdown` now asks the same question the close asks. It graded every type while the
+  close's two surfaces shared `_rung_grades` and skipped epics, so a batch could be refused for
+  holding an ungroomed epic and the close of that same batch report the epic was never gradeable -
+  three answers to one question about one batch.
+
+  The predicate itself widens from epic alone to the three container types, per D0172: a CR and an
+  RFC are decomposed into units rather than delivered, `TSHIRT_SIZED_TYPES` is exactly that set,
+  and `executes_verifiers` is False for all three. All three surfaces D0172 names consult it -
+  `_rung_product_blockers` is a distinct call site, and a fix repairing two of the three would
+  leave the same divergence in a different pair.
+
+  Only the grooming limb is gated. `breakdown` asks two questions - is this plannable, and are its
+  criteria groomed - and an unsized CR is still named, because that is the first question and it
+  has nothing to do with container-ness. That distinction was found by running the fixture rather
+  than reading it, and it is recorded as a fixture invariant on the artefact.
+- **Three limbs that outlived the fixes meant to close them.** The edit-verb vocabulary a Test
+  Plan row is checked against enumerated subtractive, substitutive, additive and positional
+  edits, and no RESTORATIVE one - so `restore`, `keep`, `reinstate` and `reintroduce` were all
+  refused. That is the commonest shape a repair's own mutant takes, because the edit under test
+  IS a removal and its mutant is the restoration, and an author met with a refusal reaches for a
+  word that fits the checker rather than one that describes the change.
+- **The close checklist roster is asserted by NAME, and every entry is resolved at import.** The
+  roster's test asserted a count, so deleting an entry moved the number and the test reported a
+  different one - a roster nobody could quietly lose an item from was exactly what it did not
+  give. It names all 22 entries in order now. And an entry naming a resolver the module does not
+  define, or one naming an attribute that exists but is not callable, used to fail only when a
+  close REACHED that item: minutes in, on the one run that needed it. Both are refused at import,
+  where they cost nothing to find.
+- The verdict ledger's supersession join is an index built once per annotation rather than a scan repeated per row. It walked every row against every record on EVERY lookup: over this repository, 848 rows against 32 records is 27,136 comparisons per annotation, and one whole-workspace conformance run made 16.8 million of them with 37 million id normalisations. The lane now costs 77s where it cost 123s, and the count is asserted rather than the clock, because a wall-clock assertion is a flake on a shared machine.
+- A `--fields-file` supplying a scalar where a list-valued field is expected is REFUSED, naming the field and the type it got. A string is iterated rather than stored, so one value became one character per item - a story was written with six Verify lines reading p, y, t, e, s and t, and the command reported success. The keys were validated and the types were not. The check sits in the shared loader, so both readers of the contract are held to it; a scalar for a scalar field is still accepted, because the rule is about list-valued fields rather than about lists everywhere.
+- `transition.py annotate` takes `--fields-file`, on the same terms as every sibling verb. It had only `--value`, so a value quoting a command in backticks was EXECUTED by the shell and whatever it printed was stored in place of the text - a re-triage rationale was written with the command gone and the annotation reported success. The document is refused when it carries a key annotate does not read, or a `value` that is not a string; the flag path is unchanged.
+- **The gate budget line leads with the verdict it is judged on, and stops stating a drift
+  percentage across selection widths.** A total is selection width times cost-per-test, and the
+  width here moves from 2,197 to 6,101 tests across the ten recorded selected runs, so the
+  seconds figure the line opened with was the one the tool does not judge on. The rate verdict is
+  now the first clause and says `under` or `OVER` in words, once - the command used to add a
+  prefix of its own in front of a clause that already carried the word. On a SELECTED run - the
+  series whose width moves commit to commit - the drift percentage is withheld unless the
+  baseline records a width, and the withheld clause names both sides and the key that restores
+  it. So is a FULL run judged against the per-commit ceiling, which compares a whole-suite total
+  with the per-commit baseline: measured at +184% for a 7,400-test run against a ~1,400-test one,
+  which is the same cross-population figure read the other way round. A full run judged on its
+  OWN series keeps its percentage - two whole-suite totals are like-for-like even with neither
+  count recorded. And a run that recorded no test count at all now says its width is unrecorded
+  rather than printing a bare total nobody can calibrate, while a run that DID record one names
+  it and says nothing about unrecorded widths.
+- A unit's standing verdict is the LATEST unanswered rejection, not the last row somebody wrote. A panel is several seats recorded one after another, so taking the last row made the verdict a fact about the order the recorder was invoked in: a unit REJECTed by one seat read APPROVE whenever another seat's approval happened to be written second. The key is the BRIEF FINGERPRINT rather than the reviewer's name - the fingerprint hashes the brief a seat was handed, so it identifies the seat and the round together, where a name does not: this repository names seats per round, and keying on the name made a legitimate second-round approval read as a different seat. `repair_state` now derives its outstanding findings from EVERY unanswered rejection rather than only the standing one, which took 118 previously invisible findings into view - before this roll-up a unit carried one live rejection by construction, so reading the standing row was the same as reading them all, and it no longer is. Closures are matched per rejection rather than pooled, because a closure may name its finding by ordinal and an ordinal is positional. The nineteen units this rule surfaces as carrying an unanswered rejection are resolved by a recorded waiver naming each one: a historical rejection cannot be answered retroactively without fabricating evidence, and a backfill that tried was rejected at review for citing, as its proof, the cross-seat approval this rule exists to refuse.
+- `tools/batch_plan_shape.py` reports any unit whose `## Test Plan` is not the shape `testplan derive` writes, and pins the six rows an independent review rejected across US0671, US0674 and US0676. Three of the arrangements that review found need no ledger to detect - a criterion carrying two rows where one cannot fail its verifier, a row filed under a criterion that does not make its claim, and a row FUSED into the previous row's Title cell where a human reads it and the parser cannot. Each moves a unit off the derived shape, so each is now caught by asking the cheap question. `check --all` runs it over every unit carrying a plan; a paired control proves the check can fail at all.
+- A unit's repair state is computed from every repair row answering its rejection, not from the latest one alone. Closures recorded across two invocations - one closing the first finding, another closing the rest - left two rows each stamped PARTIAL, each naming as outstanding what the other had closed, and nothing in the ledger said the unit was repaired. A genuinely partial repair still reads PARTIAL, because reading every row must not turn an unanswered finding into an answered one.
+- The mutation-practice brief names the snapshot-and-restore obligation, not only the worktree. D0149 already required the manual oracle to run "in an isolated worktree" and a reviewer reverted in the author's tree anyway, destroying roughly four hundred uncommitted lines that nothing could restore. The rule existed and was broken, so it now appears in the surface a reviewer actually reads, with the reason `git checkout --` is the wrong restore stated beside it.
+- **Stacked `Verify:` lines were refused at Draft and Ready and nowhere else.** A bug sits at Open
+  for its whole delivery and never passes through either, so `verify_ac.py lint` - the pre-commit
+  lane's own invocation - never refused the shape on a bug while it was being authored, and a story
+  at In Progress or Blocked slipped past the same way. A stacked criterion cannot report which of its
+  claims failed, which is the reason the rule exists.
+
+  **What changed.** The "still being authored" test is derived, not enumerated: an artefact is
+  authored until it reaches a terminal status for its type, read through `is_terminal_status` over
+  the one terminal-status table, with the type taken from the id prefix and a decorated status line
+  canonicalised through the type's vocabulary. The markdown-only-evidence refusal shares the same
+  window, so it widens with it - measured over every non-terminal story and bug at HEAD, nothing
+  lands refused. Five tests drive `lint --ratchet --bugs` as a subprocess over a seeded fixture tree (one
+  of them `--story` as well), because plain `lint` walks stories only, and the tree seeds an empty dup-ratchet baseline: the
+  criteria are linted and refused regardless, but without a baseline the ratchet then returns 1,
+  so the exit-0 control needs it. The widening of the markdown-only rule and the derived window's
+  two edges - a decorated terminal status exempt, an unreadable status or prefix refused - are
+  pinned by tests added at the delivery review.
+- **The dry-run parity sweep compares the whole answer, and resolves its roster at run time.**
+  Every checklist resolver returns `(state, value, detail)`, and the sweep compared a two-field
+  prefix while its own comment claimed it compared state and detail - so a probe that read the
+  preview's scratch and differed only in WHY was recorded as agreeing. The comparison is now the
+  resolver's whole return, and the sweep is shown to see the third field by a synthetic probe
+  built for it, because no shipped probe diverges that way today. The roster is walked off the
+  module rather than listed, with a test that adds a resolver afterwards and requires the sweep
+  to pick it up: an enumerated roster exempts whichever probe is added next.
+- A test-plan row marked `unnameable` is judged by its own contract rather than by the four mutant rules. A row declaring that no production change can falsify its criterion cannot also be required to name one: held to those rules it failed all four by construction, so the declaration this project charges for was unusable and the criterion had no honest row at all. What it owes instead is a reason with substance, so the marker still costs a written declaration; an ordinary row is unaffected and still refused for carrying no edit verb.
+- the plan's BUILT-NOT-CLOSED exclusion read verifier greens and never the verdict ledger, so a unit rejected four times and never repaired was priced at zero and named in a sentence ending 'close them'. The read now spans BOTH ledgers, and a rejected unit gets its own class, priced IN.
+- testplan derive silently destroyed an authored Test Plan row at exit 0 when a criterion carried two - and, found while authoring this unit's own criteria, dropped an ORPHAN row the same way. It now preserves every row in file order and REFUSES rather than losing one.
+- _testplan_rows keyed by criterion, so a plan declaring several mutants for one AC kept one and --from-plan printed 'every one executed and killed' over mutants it had never joined. The join is now keyed by (criterion, row), the done-gate names the unexecuted row and quotes its mutant, and the shipped plan-review brief and help page no longer teach a format the tool accepts.
+- one commit-msg hook test passed neither cwd nor a scrubbed env, so it ran against the developer's own repository, consumed the gate handoff a real commit was going to use, and started a full skill suite inside a unit test. The hook now exits before the suite lanes when handed no message file - keyed on the ABSENT MESSAGE, never on the identity of the caller.
+- the budget lane judged one row of a width-varying series against one scalar, and judged a ~899s full run against a 380s per-commit ceiling so the verdict carried no information. It now reports the per-test rate beside the total, takes a declared full-suite ceiling when there is one, and LABELS the fallback when there is not. sprint.execution_cost also priced the close and release boundaries from the per-commit series - 187s against a real 899s.
+- close --dry-run previewed against a scratch carrying only sdlc-studio/, so every probe reading .git, .claude/skills/, tools/ or changelog.d/ degraded to a softer verdict than the close it previews. The scratch stays a pure copy with no links out of it, and a separate read root travels beside it, reaching only the steps whose signature accepts one - so a reading probe sees the real tree while a writing step can reach nothing outside the copy. _changed_paths distinguishes a tree with NO COMMITS from a diff it could not read - the row said diff unreadable about a repository that was simply empty.
+- The corpus red-criteria metric counts only criteria on stories that CLAIM completion, and the criteria it excludes are named on their own line with each story's status rather than dropped - an exclusion nobody can see is one nobody can audit. Narrowing the count does not narrow what is run: every criterion is still executed and still reported in the scope line. A story with no Status field, or one carrying a status the vocabulary does not recognise, is COUNTED rather than excused, so the exclusion cannot be reached by deleting a line or by declaring a status. A verifier the trust boundary refused to run stays BLOCKED at every status, because unproven and unbuilt are different facts. The green figure subtracts every failing class, never a subset.
+- **`status` and `close_owed` now give the same answer about whether a close is owed.** The
+  status advisory read the RAW owed list while the renderer and the exit code both read the
+  accounted-for set, so status announced a close for units the command had already accounted
+  for - a run whose close ran, a close-time repair, an overridden one - and sent the operator to
+  write a retro the tool would refuse. The advisory now reads the same set, and it reads the
+  VELOCITY limb too, because the exit code is true on that limb alone and an advisory narrowed
+  to the units would go silent exactly where the command exits 1. `close_owed` also NAMES its
+  blocking set, which nothing enumerated before: with nothing to compare against, a second
+  reader had no choice but to compute its own answer.
+- `sprint close` no longer writes a handoff bullet that the repository's own markdown lane
+  refuses. The link into the retro's `## Handoff` section was hardcoded to a dash whatever list
+  style the document used, and markdownlint's MD004 defaults to `consistent` - so appending to
+  an asterisk-styled retro made the very next commit uncommittable. Three of this
+  repository's 105 retros are asterisk-styled - the ones this line of work wrote - and
+  the close wrote into one of them. Two earlier versions of this sentence claimed
+  "every retro" and "what `artifact.py new` produces"; a review measured both false,
+  and the template is in fact dash-styled. The close exited 0 first, so the
+  operator had already been told the run closed.
+
+  Both appenders now read the document's own first list marker through one shared helper, which
+  skips fenced blocks - a dash-bulleted transcript quoted inside a code fence is an
+  illustration, not the document's style, and reading it as the rule writes the wrong bullet
+  into a file that looked consistent. The sibling in `artifact.py`, which writes a story bullet
+  into its parent epic, carried the same assumption and is fixed in the same change: repairing
+  one instance of a class and leaving the other is the failure this repository keeps meeting.
+
+  Nothing outside the appended section is touched. A writer that normalised every bullet in the
+  file would satisfy the lint perfectly while silently reformatting prose a human authored.
+
+  The shared helper skipped blockquotes as well as fenced blocks, and markdownlint does not:
+  a quoted list is a list to it, a fenced one is text. A retro whose only unordered list was a
+  quoted reviewer verdict therefore still received a dash, which a review reproduced end to end
+  through the shipped CLI - clean before the close, MD004 after it, the exact ordering this
+  change exists to remove. The asymmetry is now matched deliberately rather than by accident.
+
+  A second round found that repair had introduced a regression of its own: the helper read a
+  SPACED thematic break (`* * *`, `- - -`) as a list marker, because a marker followed by
+  whitespace and a non-space character is exactly the item shape. markdownlint counts neither
+  as a list, so a dash-styled retro carrying one received an asterisk bullet and MD004 refused
+  the file - where the code before this change had linted clean. The docstring had asserted
+  that case was already handled; it is a pattern now rather than a sentence.
+
+  The same round found the tests' markdownlint helper did not skip when the linter was absent,
+  it PASSED. `npx --no-install` raises for a missing binary but merely exits non-zero for a
+  missing package, and the helper returned that text to an `assertNotIn("MD004", ...)`. The
+  lint half of four criteria was therefore inert in any clone that had not run `npm ci`. The
+  class now lints a known-bad file first and skips unless MD004 is reported: a detector's
+  silence is evidence only once it has been shown able to speak.
+- The close pre-flight's `N unmet prerequisite(s)` headline now counts the rows that actually
+  HOLD the close. It rendered the length of the blocker list, including rows that had declared
+  themselves non-blocking, while its sibling renderer in the same file rendered the held count -
+  one fact with two answers, and the louder one overstating. An operator told `8 unmet
+  prerequisite(s)` when 3 hold is being told the close is nearly twice as far away as it is,
+  and a count that cries wolf is one whose real refusals get waved through.
+
+  Both renderers now read one helper, so the two cannot drift apart again. The total is stated
+  beside the blocking count rather than replacing it, so the advisory rows stay visible without
+  inflating the headline - and when nothing is advisory the two numbers coincide and the phrase
+  is byte-identical to the one it replaces.
+- A rung has a terminal of its own, and a groomed unit short of it now blocks the close. Groomed is not finished: a unit whose criteria are authored and which sits at Draft or Blocked has the rung's product without having reached the rung's end, so a rung that did half its work closed clean. A unit groomed AND at the terminal reports no blocker, so the check discriminates rather than refusing every rung put in front of it.
+- The close's grooming report and its pre-flight read ONE definition of ungroomed, and ask it of the same types. The report counted stories and asked `story_is_ungroomed` while the pre-flight asked `unit_is_ungroomed` of every unit, so one close carried two answers to one question - a batch of bugs read "no story units in this batch" beside a pre-flight blocking on those very bugs, stating in one breath that there was nothing to grade and that what there was had failed. Widening the report then left a second disagreement standing over EPICS, which the report skipped and the pre-flight blocked on; both now ask one shared predicate, and neither grades an epic, whose product is the units beneath it rather than acceptance criteria of its own.
+- A non-build rung must have produced something IN the run. Every per-unit check asked whether the rung's product EXISTS, so a batch groomed before the run opened, with no commit naming any of its units, closed identically to one that groomed everything. The close now reports that once for the batch, names the units it judged, and excludes any unit declared as pre-work - a legitimate close may carry work groomed earlier; what it may not do is let that be invisible. Silent when git cannot answer, so a run whose history is unreadable is not accused.
+- The derived-criteria detector now matches the criteria this repository's own filer writes. It
+  strips the bullet, the checkbox and the emphasis, but never the `ACn` label - and `criteria_block`
+  emits only the numbered form. `is_derived_criterion` shipped on 2026-08-04; the marker was added
+  two days later, and nothing re-ran the detector against its own writer. For twelve days the
+  `derived-only` limb of the grooming check was inert, so the placeholder that reads like content
+  passed every gate in the repository, which is the exact state it exists to catch.
+
+  The AC label is now stripped in every spelling the writer emits - `AC1`, `**AC2**`, `AC3:` and
+  the `### AC4:` heading form - with a control proving a word merely beginning with those letters
+  survives untouched, so stripping the number cannot start eating authored prose.
+
+  Four artefacts change from groomed to ungroomed: BG0537, BG0547, BG0578 and BG0581. No story
+  moves. Two independent review seats measured that number before the fix was written, and it is
+  pinned by a criterion so an over-reaching fix fails at the test rather than by refusing somebody's
+  plan a week later. A `sprint plan` naming any of the four will now refuse it, which is the check
+  working rather than a regression.
+
+  The detector's behaviour was found correct under review; its EVIDENCE was not, and three of
+  six criteria have been repaired. The over-reach control asserted a lower-case `the` against a
+  case-sensitive matcher, so it read False whether or not `ACCEPTED:` was eaten, and the
+  criterion's own mutant survived all 6603 tests. The census criterion named four ids and
+  asserted no count, so a detector returning True unconditionally - moving the census from 17
+  bugs and 0 stories to 364 and 669 - still passed it; and its test resolved the repository
+  root to `.claude/`, where the glob matched nothing, so every assertion was skipped and it
+  measured nothing at all. The wiring criterion named `sprint.py plan` and drove `breakdown`,
+  which is read-only and exits 0, so no refusal was ever asserted.
+- The sprint checklist's tick-verification row now reads the rung the run was driven to,
+  instead of asking every run the BUILD rung's question. It asks whether the tree supports
+  what the units TICKED - which on a `design` rung is unanswerable by construction, because
+  that rung's product is authored criteria that are deliberately RED and therefore unticked.
+  The row reported `no ticked criteria found` and held the close as a compulsory unanswered
+  item, printing the waiver command as its own remedy. Nothing could ANSWER it, so every
+  design run had to waive the same row, which trains an operator to waive.
+
+  A non-build rung is now asked the question it actually owes - that nothing is ticked yet -
+  which converts an unanswerable item into one that would catch a criterion ticked before its
+  behaviour existed, checked by nothing until now. It never blocks in either direction:
+  `checklist` is not a deferrable close stage, so an outstanding row there is a hard refusal
+  with no bounded exit, and relocating that refusal from the empty case to the ticked one
+  would have kept the defect. A `done` rung is untouched, and so is a run recording no rung
+  at all, which is every run predating rungs.
+
+  The rung is read AHEAD of the base-ref and diff branches, because both of those also refuse
+  and the real close resolved this row through one of them - so a check placed after them
+  satisfies a fixture while leaving the observed wall standing.
+
+  D0144, which waived this row for RUN-01M05A5M, is retracted by D0145 in the same change. A
+  fix landing under a live waiver is a fix nobody can observe: the row reads WAIVED whether it
+  is repaired or not, and would conceal a regression in the repair just as effectively.
+
+  The first cut scoped that on `rung != "done"`, which switched the gate off for `plan` and
+  `triage` as well - rungs whose product is not grooming at all, since `--goal plan` selects,
+  sequences and estimates already-groomed units. A review proved by execution that an
+  unsupported tick would ship on those rungs. It is the identical error BG0582's sibling
+  readers were rejected for at their own round two, with the correct ruling already recorded
+  twice in `sprint.py`, so this is the second time the repository has made it. Scoped to
+  `design` alone; `plan` and `triage` keep exactly the behaviour they had.
+
+  The helper also reported every criterion unticked having opened zero files, when the batch
+  named units that resolve to nothing - the affirmative-over-an-empty-set shape the build-rung
+  branch twenty lines below refuses in terms. It refuses it now on either rung.
+- The close chain now reads the rung the run was opened at, as the planner always has. A
+  `design` rung grooms units and they correctly end at Ready with red acceptance criteria -
+  `anchor_status_block` said so in words while `undelivered_blockers`, the done-gate fan-out and
+  the sign-off preview all demanded the build rung's terminal anyway, and `critic signoff`
+  refused to write the very row they demanded. A grooming run could be planned and could not be
+  closed by any route, including by hand.
+
+  A `design` rung is now judged against its own product instead: every batch unit must be
+  groomed, asked of `conformance.unit_is_ungroomed` - the one definition `sprint plan` and
+  `transition` already consult, across every unit type rather than stories alone. A rung is
+  exempt from the other rung's bar, never from a bar, so an ungroomed unit still blocks. The
+  skipped delivery gates are recorded as a non-blocking row naming the rung rather than passing
+  in silence, and `close` now prints those rows on the ready path too - a gate that quietly stops
+  asking reads identically to one that asked and was satisfied.
+
+  Scoped to `design` specifically, not to "not `done`", in BOTH lanes. `plan` and `triage` are
+  also non-build rungs and their product is not grooming, so judging them by it told a plan run
+  it had produced no acceptance criteria and left it unable to use `--file-and-close` either -
+  the same defect, one rung over. The first cut of this fix scoped one lane correctly and left
+  the other wide, which silently dropped a hard done-gate blocker for those two rungs with no
+  substitute bar behind it. Both are now `design`-scoped and pinned against the base ref.
+
+  The build rung is unchanged, and six of the twelve criteria exist only to prove it: a `done` run
+  still reports units delivered and left at Ready, still gets its blocking sign-off preview, and a
+  `plan` rung is not judged by grooming.
+  A run state carrying no `goal` key answers `done`, so the many runs predating the rung keep
+  every gate they had.
+- The reachable end state a plan reports is derived from the run's RUNG and said in the batch's OWN status vocabulary. It reported the build rung's terminal for every rung, so a `design` rung - finished when its units are groomed - was described as reaching `Done`, work it never set out to do. It also named story states for batches that have none: the two-role cap was applied to every unit though that gate is guarded by `type == "story" and target == "Done"`, and the rung terminals themselves are written in the story vocabulary, so a bug batch was reported at `Review`, `Done` or `Ready` - not one of which exists for a bug. A bug batch now reaches `Fixed` on the build rung and is reported as unmoved by a design one, and a mixed batch names each type's answer beside its type.
+- **A test file's owner is decided by what the author DECLARED, not by how often a name appears
+  in its prose.** Attribution counted mentions of each sibling module, so adding one mention of
+  another module moved a file from an owner to unattributed - a file's subject changing because
+  somebody wrote a sentence. Two declared routes now come first: a module-level
+  `# test-census-subject:` marker, and a unit whose `Affects` names the test file beside exactly
+  one script. Declarations that name several scripts between them decide nothing and counting
+  continues, which is the fallback rather than the rule, and the result says which route
+  answered. The unattributed ratchet drops from 38 to 33, and FOUR files gained a home: the
+  tree measured 37 against a declared 38 before the change, so one of those five was slack
+  in the baseline rather than a file that gained an owner. Each was placed through a
+  declaration, none by loosening the counting rule.
+- **The premise re-check was run over the remaining backlog, and it corrected its own design
+  (BG0577).** The bug proposed a repaired-but-open detector: for each open bug, run the criteria
+  it already carries. Measured immediately after filing, **0 of 31 open bugs carry an executable
+  `Verify:` line** - a verifier is authored when somebody TRANSITIONS a unit, which is exactly
+  the step a repaired-but-open bug never reached. The check needed the artefact of the thing that
+  did not happen, which is the same defect the bug is about, one level up.
+  The half that does work is the COUNT re-check: four of the five fiction units stated a number,
+  and every one was re-derivable. Ten of the 31 remaining bugs state one. Two were re-derived:
+  BG0529's four lane-check units still print, so its premise holds; BG0555's grammar test passes,
+  but only because the twelve scripts sit on a named `ROOT_GRAMMAR_DEBT` exemption whose comment
+  points back at BG0555 - so that premise holds too, and a test passing was NOT evidence it did
+  not. Both stay open on evidence rather than on assumption.
+- **`tag-check` now asks the forge whether CI passed, instead of believing a local file (BG0576).**
+  The guard compared the tagged commit against a green stamped by a gate run on a developer
+  machine, and asked nothing else. So a repository could be green on every machine it was built
+  on, red on the runner, and tagged anyway - which is what happened to both v5.0.0 and v5.0.1,
+  cut over a CI that had been failing for two days with every shipped guard reporting green.
+  Whether CI passed on a pushed commit is a claim about the remote, and only the remote can
+  answer it. A tag is now refused unless the forge reports a successful conclusion, and each way
+  of not getting an answer is refused separately rather than collapsed into a pass: no run at all
+  (never judged), a run still going (an outcome that has not happened), and a forge nobody can
+  read - whether it is `gh` that is missing or GIT that will not answer - because "I could not
+  look" is not "there is nothing wrong". Two passes keep that refusal honest rather than
+  universal: a clone with no remote, which has no CI to ask about, and a forge `gh` cannot
+  address at all - GitLab, Bitbucket, self-hosted - where the tag says out loud that CI was not
+  consulted. An independent review found both of those written the wrong way round in the first
+  repair: every git failure borrowed the no-remote pass, and every non-GitHub project became
+  permanently un-taggable.
+- **The repo-writes refusal asserted a cause it cannot know (BG0572).** Its window is the whole
+  suite run - the snapshot is taken in `pre-commit`, the comparison in `commit-msg` - so anything
+  that touched the tree in those minutes lands in the report. It then stated one cause as fact:
+  "A fixture that writes into the repository is writing over real work." An author editing a
+  tracked file while the gate runs produces the identical evidence, and is the likelier case,
+  because the gate takes minutes and waiting is nobody's instinct.
+  It now names BOTH causes, puts the author-edit one first because it is likelier and cheaper to
+  check, and says how to tell them apart: `git diff` the named paths - changes you recognise are
+  your own, while fixture debris (a stray `src/thing.py`, a fake artefact id, a rewritten
+  `.local/` record) must be traced to its writer.
+  This cost two gate cycles during this very programme, both times because the message asserted
+  a fixture had written a file the author had just edited. A guard that names the wrong cause
+  confidently sends people looking in the wrong place, which is worse than one that says it does
+  not know.
+- **Three spec-agreement guards checked that some words co-occur, so the OPPOSITE statement
+  satisfied them (BG0571).**
+  A guard a paraphrase can defeat is weak. One the opposite statement satisfies is inverted, and
+  two of these were: rewriting the fail-safe rule to say a goal outside the ladder never blocks
+  and the escape opens carried every term the guard required, and a passage saying it is NOT a
+  lower bound matched the pattern that exists to confirm it IS one. Either would have reported
+  agreement while the specification stated the reverse of what the code does.
+  Both claims are now read WITH THEIR DIRECTION, and each test asserts that the old form really
+  did accept the inversion, so a fixture cannot quietly stop reproducing the defect. The third
+  guard, which read backticked lowercase names only, now reads bold and mixed case too - and
+  found a name on its first run that the narrower form could never see.
+- **The upgrading-project baseline is captured from a pinned pre-epic commit, not from this tree
+  with one branch switched off (BG0567).** The old baseline cloned the CURRENT skill tree and
+  rewrote the plan-review softening marker, so every other change the epic made sat on both sides
+  of the comparison where nothing could see it - and the two sides were not even the same fixture,
+  the baseline holding no retros against the case under test's three.
+  The baseline now comes from commit `abb75074`, the last before the softening landed, extracted
+  read-only with `git archive` piped through `tar`. `git worktree add` is deliberately not the
+  mechanism: it mutates git administrative state from inside a test `install.sh` copies into
+  consuming projects, and leaves an entry behind whenever the test dies. Where the pin cannot be
+  resolved - no git, a shallow clone, an installed copy carrying none of that history - the
+  comparison SKIPS naming the reason rather than erroring, because a test that breaks there is one
+  a consuming project deletes.
+  Both sides now run identical fixture arguments, and the test asserts the arguments rather than
+  only the outputs. Measured: against the pinned tree the output is byte-identical for a fixture
+  with three retros and one with none, because the softening is the only thing that reads them and
+  the pinned tree has no softening - so an output comparison survives a changed argument and only
+  an assertion on the call shape catches it.
+  Measured on this tree: all three fixture shapes the epic changed nothing about compare EQUAL
+  against the pin, and the one shape it did change differs, with the pinned tree refusing where
+  this tree softens. That last check is what the control turns on - a comparison that is
+  permanently red would otherwise satisfy every criterion asking it to notice a difference.
+- **Creating a file with a common name was refused as a typo (BG0564).** `fictional_affects`
+  tells a typo from a creation by asking whether the declared basename exists anywhere in the
+  tree - sound for a distinctive name, and worthless for `__init__.py`, `conftest.py` or
+  `README.md`, where a match says only that projects have those everywhere. A unit genuinely
+  creating one was refused, and the suggestion list was dozens of unrelated files.
+  Those basenames now opt out of the inference. That fails on the correct side: a wrong refusal
+  blocks an author, while a missed suggestion is caught by the resolvable-affects check anyway.
+  The control still holds - a distinctive basename in the wrong directory is still reported with
+  its real location.
+- **A re-plan silently overwrote a ceiling the operator had deliberately raised (BG0561).**
+  `sprint appetite resize` exists so a run's ceiling moves ON THE RECORD, with a compulsory
+  reason, rather than being overrun quietly. A re-plan over an already-open run re-resolved the
+  appetite from the standing capacity and wrote the result straight over that decision - leaving
+  the resize entry sitting in `appetite_changes` describing a ceiling no longer in force. That is
+  worse than losing it: the record says the operator raised the ceiling and the number says they
+  did not, and the close reads the number.
+  A recorded resize now survives a re-plan, and the run says so rather than changing the figure
+  silently. The resolution order already prefers the more specific statement at every other level
+  (flag, then `appetite.*`, then `capacity.*`); a resize with a written reason is the most
+  specific statement there is.
+- **A `--root` that parsed perfectly and was never read passed every conformance check (BG0556).**
+  `docgen references --root TMP` resolved the target path correctly and then rendered from the
+  real installed tree, writing TMP's file with the real tree's 56 references. The flag existed,
+  bound the standard dest, defaulted correctly and was accepted in both positions, so the whole
+  grammar sweep was satisfied - it checks a flag's grammar exhaustively and its effect not at all.
+  A decorative flag is worse than a missing one: it runs, exits 0, and reports about somewhere
+  else.
+  Every `--root`-taking verb the sweep can invoke was run against a CLEAN worktree and against an
+  empty fixture. Sixteen answer differently and are swept: pointed at a fixture, none may name an
+  artefact of this repository. One hundred print nothing that names a tree either way, so the
+  inventory records that they are NOT covered rather than counting them - a guard claiming 128
+  verbs when 16 can fail is the same false comfort in a different place. Five more are excluded
+  because they WRITE, and the control runs against the real tree.
+  The first cut of this was measured in the author's own tree and was wrong twice over: six verbs
+  passed the control on an error message naming their own argument (one on a crash), and
+  `lessons summary` rewrote a TRACKED file invisibly, because gitignored state made the
+  regeneration byte-identical there. Both were found by an independent review running the suite
+  in a clean worktree. A guard that only looks clean where it was written has not been measured.
+- **Twelve scripts took `--root` only after the verb, and the sweep that should have caught it
+  had been exempting them by name (BG0555).**
+  `script.py --root X <verb>` is the family grammar, and these twelve rejected it or, worse,
+  accepted it and answered about somewhere else. `changelog.py --root <empty fixture> check`
+  exited 0 reporting this repository's nineteen fragments: it had called the helper that installs
+  the global flag three lines before its subcommands existed, so the call re-pointed nothing and
+  every subcommand default still won.
+  All four remaining offenders now install the global option after their subparsers are built,
+  and the recorded debt set is empty with a test holding it there. Emptying it found that only
+  four of the twelve were still real - the other eight had been repaired and nobody re-read the
+  list, so a record written once was being read as current.
+- **Survivor severity under-rated the codebase's commonest refusal idiom (BG0554).**
+  `_has_none_path` recognised a BARE `return` as a None path but not an explicit `return None`,
+  which parses as a `Return` whose value is a `Constant` of None - and that is the form this
+  codebase actually writes when a function refuses. So `_survivor_severity` derived Medium for
+  precisely the shape it cites as its reason to derive High, and an unpinned decision about
+  whether to refuse was reported as an unpinned report. Both spellings now count. Verified
+  across four shapes including the both-arms-valued control, which must still read as no None
+  path.
+
+<!-- section: Fixed -->
+- **BG0547 closed on evidence rather than repair.** Its premise was that the depth-parity
+  advisory ASSIGNS `gate_warn` outright while the AC-verify advisory accumulates, so one warning
+  silently replaces another. Every one of the six assignment sites in `_pre_write_gates` now uses
+  the accumulating form (`gate_warn = f"{gate_warn}; ..." if gate_warn else ...`). The defect was
+  repaired in the interim without the bug being updated, which is its own small finding: a fix
+  that lands without closing its bug leaves a backlog item that reads real and is not.
+- **Registering a mutant after editing the file silently discarded every earlier registration
+  (BG0550).** `register_mutant` keys entries on the target's content hash and drops registered
+  rows for other content, which is right - they are claims about bytes the file no longer has.
+  What was wrong is that it happened without a word. A builder who registers five mutants, edits
+  the file, then registers a sixth is left with a ledger reading `1 registered mutant(s)`, which
+  is indistinguishable from a builder who did the work once. The count going DOWN is the
+  direction nobody checks.
+  The discarded rows are now counted and reported: `DROPPED n earlier registration(s) for this
+  target`, with the reason and the remedy - register AFTER the last edit, not before. Hit during
+  the v5.0.1 release while registering BG0575's seven mutants, which is how it was noticed at all.
+
+<!-- section: Added -->
+- **`mutation register --anchor` checks that a hand-applied mutant's site was unique (BG0531).**
+  A hand-applied mutant is located by a substring, and a substring matching twice patches the
+  site the author did not mean - the test then stays green for a reason nobody looked at, and the
+  run records SURVIVED against code that was never mutated. This project has produced that false
+  verdict twice, and the discipline that prevents it (`assert count(old) == 1`) lived only in a
+  lesson file.
+  The mutant is reverted by the time it is registered, so the ORIGINAL text must be present in
+  the target exactly once - a fact the command can check rather than a habit it has to hope for.
+  `--anchor` refuses on 0 occurrences (never reverted, or not the text that was replaced) and on
+  2 or more (the patch could have landed at the wrong site), with a different message for each,
+  and tells the author to quote more surrounding context. It is optional, so every existing
+  caller keeps working; supplying it turns a self-report into something checkable.
+- **A converged review panel still reported that it was not converging (BG0549, BG0539).**
+  `panel_escalation` read the whole verdict history, so once two REJECTs existed it escalated on
+  every later record for that unit - including the APPROVE that resolved them. The ordinary
+  reject-fix-approve loop, which is the process working exactly as designed, announced "the
+  repair is not converging" at the moment it demonstrably had. Eight units did this in a single
+  run: each had a round-1 REJECT with substantive findings, a revision, and a round-2 approval.
+  The same blindness explains the sibling defect. A second ROUND is a different context reviewing
+  a revised unit; a panel SPLIT is disagreement inside one round. Comparing free-text reviewer
+  names across the whole log cannot tell them apart, so six of those eight escalated as splits.
+  Convergence is now checked first: a unit whose latest verdict is APPROVE escalates nothing. A
+  panel that is genuinely stuck - two REJECTs with no approval after them - still escalates, and
+  a real split inside a round still escalates. Verified across six cases including both controls.
+  A notice that fires after it has been answered is one readers learn to scroll past, and then it
+  is not there for the unit that genuinely stalled.
+
+<!-- section: Fixed -->
+- **`critic record --phase plan-review` demanded an origin tag for findings about a diff that
+  does not exist yet (BG0546).** The origin axis asks what THIS unit's diff did - regression, new,
+  or already true of the tree. A plan review happens BEFORE any diff, so the question is
+  unanswerable rather than merely unanswered, and the refusal trained the reviewer to pick a tag
+  at random to get past it. An invented `[new]` on a plan finding is a false statement about code
+  nobody has written. The guard now applies to delivery reviews only, where a base ref exists.
+  Hit during the v5.0.1 release, on the plan-review step the operator had mandated the same day.
+- **A criterion numbered `AC2a` was silently dropped by the parser (BG0548).** `AC_HEADING_RE` and
+  `AC_BULLET_RE` matched `AC\d+` only, so a letter-suffixed criterion matched neither and was
+  simply absent from the block list. A story carrying six criteria reported `ac=5`, and the sixth
+  was verified by nothing. The suffix is not decoration: it is what an author writes when
+  inserting a criterion between AC2 and AC3 rather than renumbering everything below it and
+  invalidating their stamps. Both patterns now accept `AC\d+[a-z]?`.
+  The failure was silent and in the direction that flatters, which is the class this project
+  files hardest against - the parser did not report what it declined, so the count simply came
+  out lower and looked correct. Hit again during the v5.0.1 release, when a criterion numbered
+  `AC2b` parsed as a duplicate `AC2` and `testplan derive` refused the whole unit.
+
+<!-- section: Fixed -->
+- **`_then_clause` ate the bold markers off a non-bulleted `Then` line (BG0562).**
+  `line.strip().lstrip("-*")` strips every leading `-` and `*`, so on a bulleted `- **Then** x` it
+  stopped at the space and the markers survived, while on a plain `**Then** x` it removed the
+  bold markers themselves and left `Then** x`, which matched nothing. The clause then fell
+  through to the whole-block fallback - and that block contains the criterion's own
+  `- **Mutant:**` bullet, so every honest mutant was measured for overlap against text that
+  already contained it, read as a 100% restatement of itself, and was refused. Now strips exactly
+  one bullet marker.
+
+<!-- section: Fixed -->
+- **The test-plan edit-verb check enumerated only subtractive verbs (BG0563, BG0534).** A mutant
+  that ADDS or MOVES something could not be stated at all: `add`, `insert`, `move`, `print`,
+  `wrap` and `emit` were all absent from a 29-item literal list, so `testplan derive` refused
+  legitimate mutants like `move the affects check below the batch write`. Authoring the first
+  real test plans hit it five times, and it happened again during the v5.0.1 release - where the
+  mutant was reworded to satisfy the list rather than the list corrected, which is the check
+  training authors to write for the checker. The vocabulary now covers additive, positional,
+  substitutive and weakening edits. It is still an enumeration and still a lower bound rather
+  than a boundary (LL0043), but it no longer has a direction.
+  BG0534 and BG0563 are the same defect filed twice from opposite ends; BG0534 closes as a
+  duplicate of BG0563, which carried the real criteria.
+- **`testplan derive` refused a unit's LAST plan row as a restatement of itself, once that unit
+  had a plan (BG0545).**
+  The final criterion's `Then` clause was bounded at the end of the FILE, so it swallowed
+  everything after the criteria section - including the `## Test Plan` table, which holds every
+  mutant's own text. The last row's mutant was therefore measured for overlap against a passage
+  containing that mutant and scored 100%. Deterministic and invisible together: it struck only
+  the last row, and only once a plan existed, so a unit's first derive passed and every re-derive
+  of it failed. Four real units were measured at exactly 100% before the fix; 303 passing tests
+  never saw it, because no fixture had a plan when it derived.
+  The clause now stops at the next heading. A second, smaller repair goes with it: an overlap
+  ratio taken over an empty substance set returned 1.0, so a mutant made only of a path was
+  refused for restating a clause it shares no word with - the right refusal with a false reason,
+  which sends an author to fix something that is not there. The true fault has its own limb and
+  is now the one reported.
+- **The closing-review row reported `ran` for a unit no independent pass covers (BG0544).**
+  Units were sorted into rejected and unreviewed, and a unit carrying an APPROVE was in neither:
+  not rejected, and not unreviewed either. It fell through both buckets and left no trace, so a
+  unit the coverage reading calls uncovered was reported as reviewed on the strength of a verdict
+  with no pass behind it. That is the precise failure the row exists to catch.
+  The residue is now counted as outstanding. An APPROVE against a unit no pass covers is a claim,
+  not evidence, and the close says so.
+- **The close ceremony reported a retro that had never been written as `ran` (BG0540).**
+  The checklist read `retro.validate` for its verdict, and that call reports a file that does not
+  exist as an error in the same list as a heading in the wrong order. A missing retro therefore
+  arrived at the checklist looking like a retro with a structural defect - which the row grades as
+  `ran`, with the errors as detail. So the one row that exists to answer "was the retrospective
+  held?" answered yes on the strength of a file nobody had opened.
+  A missing file is now separated from a malformed one and reports `not-run`. A retro that exists
+  and is malformed still reports `ran` with its errors, because that ceremony did happen.
+- **Following the changelog rule minted a warning for following the changelog rule (BG0538).**
+  The repo asks every behaviour change to ship a `changelog.d/<UNIT-ID>.md` fragment in the same
+  commit as its code, and units that comply declare that fragment under `Affects`. `changelog
+  compose` then unlinks the fragment at the release cut - so from that moment every complying
+  unit carried an `Affects` path with nothing behind it, and the unresolvable-affects check
+  reported it as a fictional file. The warning was loudest for exactly the units that had done
+  the right thing.
+  `changelog.d/` is now exempt from the unresolvable half of the rule, keyed on the DIRECTORY
+  rather than an `<ID>.md` name shape: what makes a fragment transient is where it sits, not what
+  it is called, and a name-shaped rule would exempt a real source file that happened to be named
+  after a unit. A genuinely missing path anywhere else is still reported - verified with both
+  controls.
+- **BG0537 and BG0547 close on evidence rather than repair.** Both described real defects that
+  have since been repaired in passing, without their bugs being updated:
+  BG0537 held that `check_root_docs` read raw lines while `check_body_links` blanked code spans,
+  so a link inside backticks was judged inconsistently. All three link passes in
+  `tools/check_links.py` now run their input through `_without_code` first.
+  BG0547 held that the depth-parity advisory ASSIGNED `gate_warn` outright while the AC-verify
+  advisory accumulated, so one warning silently replaced another. All six assignment sites in
+  `_pre_write_gates` now use the accumulating form.
+  Recorded rather than quietly dropped, because this is its own small finding: a fix that lands
+  without closing its bug leaves a backlog item that reads real and is not, and every estimate
+  built on that backlog is inflated by it. Two of the forty-one open bugs were in this state.
+- **One unreadable artefact took down every id lookup in the project (BG0532).** `alias_map`
+  walks EVERY artefact to build one alias map and read each with a bare `read_text`, so a single
+  permission bit, half-written file or stray non-UTF-8 byte raised out of the map and broke every
+  caller that resolves an id. It now uses `read_text_safe`: one bad file costs its own aliases
+  rather than the whole map.
+
+<!-- section: Fixed -->
+- **Archiving your retros made the project look brand new (BG0565).** `has_run_history` decides
+  whether a project has ever closed a sprint, and it read the retro directory with `iterdir()` -
+  top level only. A project that files closed runs into `retros/archive/` or `retros/v5.0.0/`,
+  which this repository's own archive verb does, therefore read as having no history at all and
+  would be handed the new-project concession for ever, on the strength of tidying up. Now
+  recursive, with the empty-directory case still answering False.
+- **Four units changed a command and nothing automated ever drove it (BG0529).**
+  Every criterion the four carried was pinned in-process only. That is not the same as
+  unverified - both adversarial seats drove each mechanism through the shipped verb during the
+  review - but a hand-run transcript verifies today and pins nothing for tomorrow. It is exactly
+  the state `critic.py brief --tier` sat in for a whole sprint while the library call passed and
+  the shipped verb printed nothing.
+  Each unit now carries a CLI lane test that drives its verb in a subprocess and asserts on exit
+  code and output: the tier gating the printed brief, a sign-off's fields reaching the written
+  record, an absent record NAMED absent rather than rendered as a zero, and a stated
+  `plan_review.enabled` changing what the command answers.
+- **The appetite breaker is now pulled by the command that reaches a unit boundary, instead of
+  waiting to be remembered (BG0526).**
+  `loop_guard budget` was fully wired to its data - the run state carries the ceiling, the
+  elapsed minutes and the units done - and had no caller at all. Every reference to it anywhere
+  was a reference doc TELLING an agent to run it between units. So a ceiling an operator set at
+  plan time held only while the driving agent remembered to pull it, which turns a recorded
+  decision into a suggestion.
+  A unit reaching a terminal status is the boundary the breaker was designed for, so
+  `transition set` now evaluates it there. It REPORTS rather than refuses: the unit that
+  triggered the check has already been delivered, and what a ceiling stops is the next one - the
+  message says so, and names `sprint appetite resize` as the way to move the ceiling on the
+  record rather than overrun it quietly. It stays silent while budget remains, when no appetite
+  is declared, and when the run state cannot be read, because this gates nothing and a line
+  printed after every transition is one nobody reads on the day it matters.
+- **A unit the plan gate would have refused could walk in through the side door (BG0512).**
+  `sprint plan` refuses a batch holding an ungroomed unit - one with no `Affects`, no `Points`, or
+  criteria that state no passing condition - because a plan over unsized units is false authority:
+  it cannot forecast them and it reports two units as safely parallel when they will collide. The
+  in-flight verb `batch add-epic` added straight to the batch without consulting that census, so
+  the same unit the gate had just refused could be added afterwards and delivered from a run that
+  never judged it. The gate was on the door and not on the window.
+  `add-epic` now runs the identical `breakdown` census and refuses on identical terms, adding
+  NOTHING when it refuses rather than leaving a half-populated batch. The message is the same one
+  `plan` prints, so an operator meets one refusal rather than two dialects of it.
+- **A unit fixed EARLIER on the day of the retro was excused from the close ledger on an
+  inference, and one recorded override forgave its unit for ever (BG0509).**
+  Neither side of that comparison carries a time - the retro has a date, and the terminal date is
+  parsed out of an actuals filename - so a unit terminal at 09:00 and a retro written at 14:00 on
+  the same date are indistinguishable from the reverse. The comparison resolved that ambiguity in
+  the excusing direction, releasing the unit from the exit code and contradicting the definition
+  of "after" the function itself states.
+  It resolves the other way now: strictly later, unless the retro SAYS otherwise. The genuine
+  case survives, and it is usually the same-day one - a repair found during the ceremony is
+  recorded through the `Close-repair-override` the ceremony already has, so the excusal is stated
+  rather than guessed at. An unanswered question does not get to excuse anything.
+  Overrides are also scoped to the close being judged. They were read from every retro ever
+  written, so a decision taken about one close had quietly become a standing exemption.
+- **A missing sibling module destroyed a completed close (BG0508).** `_tell_the_operator` guards
+  its body with an advisory `except`, on the stated principle that the close outranks its own
+  report - a missing report must never lose a finished ceremony. Both of its deferred imports sat
+  OUTSIDE that guard, so an `ImportError` escaped the function after every close step had already
+  run: a consuming project without `critic.py`, a partial install, or a syntax error in a sibling
+  would each turn a successful close into a traceback. The guard covered the body and left the
+  door open.
+  Both imports moved inside. Verified by making `critic` unimportable through a meta-path
+  blocker and calling the reporter: it now returns having printed the report it could build,
+  where before it raised.
+- **Four verifiers that passed on a delivery they could not see now see it.** The conftest guard
+  asserted the text `sys.path.insert` appeared in the file, and the file's own docstring names
+  the call, so deleting the call left the guard green - it reads the CALL by AST now. US0606's
+  lane-check assertion took a fixed 600-character window from the first mention of the word,
+  which landed in a comment block and read a different pipeline's `|| true`; it is anchored on
+  the guard's own call site. `best_practice_rules.py` returned zero when its practice file was
+  absent, making the one input that silenced it completely the easiest to produce - the practice
+  ships with the skill, so its absence is a broken tree and is refused. And the checker was
+  referenced by nothing in `.githooks/` or `package.json`: it is a pre-commit lane now, named in
+  the roster, and the criterion pins that the lane RUNS it rather than merely naming it.
+- **`lane-check` swept stories only, so every bug sat outside the number a blocking decision
+  would rest on (BG0491).** The corpus sweep globbed `stories/US*.md`, and `--ids BG0487` printed
+  `0 unit(s)` rather than saying the type was out of scope - which reads as a clean bill of
+  health for a unit nothing looked at. Bugs carry executable criteria and reach a terminal status
+  through the same gate, so a lane judging one and silently omitting the other measures half the
+  corpus while reporting a whole-corpus figure.
+  Bugs are now in scope. The corpus count moves from 181 to 280 library-only verifiers - not
+  because anything regressed, but because the previous number was measured over half the tree.
+  CR0539 proposes ratcheting this lane to blocking; it should ratchet against 280, not 181.
+- **A guide cell's unlisted extension and a command's own script are no longer silent
+  exemptions.** The path pattern allowed six suffixes, so a cell naming a `.txt` or a `.toml`
+  fell through to `prose` and was never resolved - an exemption by omission rather than by
+  decision. Any dotted suffix on a path-shaped token is now a path claim, which is what the
+  check exists to test. An invocation cell keeps its `invocation` kind, because a command being
+  classified out as a command is the shipped contract, but the script it names must now be on
+  disk: a guide row telling a reader to run something absent is the same broken promise as one
+  telling them to load a missing file. `check_versions`'s own docstring is corrected too - it
+  claimed the version was read from exactly five places and never by repo-wide grep, while the
+  module walks every tracked markdown file to discover its homes.
+- **Two criteria naming the same test run in different words were reported as no duplicate at
+  all (BG0486).**
+  The duplicate-verifier ratchet grouped on the written string, so a flag ordered differently or
+  a `-q` the runner supplies anyway made one command into a group of one under each spelling.
+  Two criteria sharing a selector cannot both discriminate - a regression in either fails both
+  and neither says which broke - and that is true however each was typed.
+  Grouping is now on the command that RUNS. Reporting is unchanged in kind: a group names the
+  line as its author wrote it, with any other spelling listed beside it, because quoting a
+  resolved argv back at somebody names a line that appears nowhere in their file.
+  Measured on this corpus the regrouping changes nothing - 31 duplicate partitions before and
+  after, none gained, none lost, because no unit here spells one command two ways today. The
+  guard is now correct for the case it claims to cover; it did not find anything.
+- **Two audit-residue bugs close on re-measurement rather than repair (BG0421, BG0350).** Both
+  were filed against counts, and both counts have since gone to zero without either bug being
+  touched.
+  BG0421 held that twenty-one Open Questions reached a terminal status unanswered. Sweeping
+  `unresolved_questions` over every markdown file in the workspace now returns **0**, and the
+  mechanism the bug asked for is live: a question citing an id that resolves to no artefact is
+  reported, one citing a real id is not.
+  BG0350 held that twenty-five Done stories carry no independent critic verdict. `conformance
+  check` now reports **588/670 conformant, 0 not**, and the units that clear do so through
+  recorded sprint-level approvals - which is exactly the batched adversarial pass BG0350's own
+  Proposed Fix sanctioned.
+  Recorded as measurements, not assertions, because this backlog has now produced FIVE units of
+  roughly seventeen points that were never work: two already repaired with their bugs left open
+  (BG0547, BG0537), these two whose premises expired, and one duplicate (BG0534). Nothing in the
+  pipeline detects a fix that lands without closing its bug, so every plan sized against the
+  backlog inherits the error - including the one that scheduled this programme.
+
 ## [5.0.1] - 2026-08-12
 
 ### Fixed

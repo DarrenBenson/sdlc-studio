@@ -6,7 +6,7 @@
 
 Ask for software in plain language. The team plans it, builds it, tests it, and proves it is done.
 
-**Version 5.0.1**
+**Version 5.1.0**
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
@@ -57,7 +57,7 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 **Installing in a sensitive environment?** The default install tracks `main`, which publishes no `.sha256` sidecar, so the installer warns and proceeds unverified. Pin a tagged release and make the checksum mandatory instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v5.0.1
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v5.1.0
 ```
 
 What that verifies: an archive this project built from the tag and published as a release asset, against a `.sha256` published beside it in the same step. Both halves are ours, so they cannot drift apart. Tags before v5.0.1 have no published assets and this command will refuse them rather than pretend - see [Verifying the download](docs/INSTALL.md#verifying-the-download).
@@ -446,7 +446,8 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths
 - [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - the operating doctrine for running any project with this skill
 - [docs/release-notes-v5.0.0.md](docs/release-notes-v5.0.0.md) - what v5 is, what it refuses, and what changed, for a reader deciding whether to upgrade
-- [docs/release-notes-v5.0.1.md](docs/release-notes-v5.0.1.md) - the current release: one defect, the verified install path that had never worked
+- [docs/release-notes-v5.1.md](docs/release-notes-v5.1.md) - the current release: the carried list closed, every Medium disposed of or ruled
+- [docs/release-notes-v5.0.1.md](docs/release-notes-v5.0.1.md) - one defect, the verified install path that had never worked
 - [docs/known-issues.md](docs/known-issues.md) - the defects this release ships with, by id, and the bar it was held to
 - [CHANGELOG.md](CHANGELOG.md) - release history | [SECURITY.md](SECURITY.md) | [SUPPORT.md](SUPPORT.md)
 
