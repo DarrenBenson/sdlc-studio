@@ -1,6 +1,6 @@
 # BG0601: The dry-run class sweep compares only the first two probes of each pair
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)

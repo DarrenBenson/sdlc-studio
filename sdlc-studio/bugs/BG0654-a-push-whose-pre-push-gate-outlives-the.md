@@ -1,6 +1,6 @@
 # BG0654: A push whose pre-push gate outlives the SSH connection git opened before the hook dies with exit 141 after the gate reports PASS, and nothing names the cause
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)

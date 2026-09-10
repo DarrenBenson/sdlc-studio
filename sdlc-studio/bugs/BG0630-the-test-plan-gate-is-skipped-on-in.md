@@ -1,6 +1,6 @@
 # BG0630: the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever being checked
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
@@ -73,6 +73,7 @@ The gate is enforced by accident of ordering. A unit rejected before it starts i
 | AC5 | in .claude/skills/sdlc-studio/scripts/transition.py, skip the gate for any unit whose artefact already records a terminal status in its revision history | Given one of the 16 bugs already at Fixed the gate would refuse, when nothing is done to it, then this change does not reopen it - the gate fires on a transition, never retrospectively; and when such a bug IS reopened and re-fixed, that transition is REFUSED until the rejection is answered. The behaviour is decided here rather than deferred to whatever the implementation happens to do |
 | AC6 | in `.claude/skills/sdlc-studio/scripts/transition.py`, revert the second firing's suppression test to a whole-message comparison | Two wordings of one fact both survive |
 | AC6 | in `.claude/skills/sdlc-studio/scripts/transition.py`, delete the suppression test from the second firing | Nothing suppresses the second wording |
+| AC6 | in `.claude/skills/sdlc-studio/scripts/transition.py`, narrow the second firing's suppression test to the absent-plan fact, dropping the whole-message half | The gate's other message is stated once too |
 
 ## Revision History
 

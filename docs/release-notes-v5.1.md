@@ -18,8 +18,7 @@ can act on.
 **The bar is the RULING, not the count.** An earlier form of it named a number - fewer than
 sixteen disclosed - and that number is the wrong instrument: a count falls by fixing findings
 or by not looking for them, and the two are indistinguishable from the outside. RUN-01M20RWX
-filed seven of the twenty-one disclosed here, every one from a review that was doing its job,
-and
+filed all three disclosed here, every one from a review that was doing its job, and
 holding a count would have made the run's own thoroughness the reason it could not ship.
 What holds instead is that nothing Critical or High is open, and that every Medium on the
 page carries a dated ruling naming why it ships rather than blocks (D0186, which
@@ -30,7 +29,7 @@ supersedes D0185's count promise; the other two promises D0185 made still bind).
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1 discloses 21 open defects: 21 Medium, 0 Low.** Zero Critical, zero High.
+**v5.1 discloses 3 open defects: 3 Medium, 0 Low.** Zero Critical, zero High.
 
 ## What is in it
 

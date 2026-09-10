@@ -1287,7 +1287,11 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     if (type_ != "epic" and target_canon in _TERMINAL_FOR_PLAN
             and _plan_gate_active(root, text)):
         block = _test_plan_gate(root, sdlc_md.norm_id(artifact_id), text)
-        already = any(_TESTPLAN_FACT in b for b in blocks)
+        # BOTH tests. The FACT catches `_planned_mutant_gate` saying the same absence in its own
+        # words; the exact-message test catches this gate's OTHER message - a plan no independent
+        # seat approved - which the entry firing states verbatim and the fact key does not match.
+        # Dropping the second one traded one doubled requirement for another, measured on US0822.
+        already = block in blocks or any(_TESTPLAN_FACT in b for b in blocks)
         if block and not already:
             blocks.append(block)
     # ...and in its place, the gate an epic SHOULD have had. NOT entry-triggered: `In Progress` is

@@ -6516,6 +6516,11 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
     #: non-literal argv heads. Set by `_scan` before each parse.
     _SOURCE = ""
 
+    #: Callees whose arguments are an argv rather than prose. Only these have their JOINED
+    #: string arguments read, so a hook body written into a fixture and a Test Plan row quoting
+    #: a command stay what they are - text - rather than becoming invocations.
+    _RUNNERS = ("run", "check_call", "check_output", "Popen", "getoutput", "getstatusoutput")
+
     def _boundary_calls(self, tree):
         """Every call whose arguments include a literal `--boundary`, with its own literals."""
         for node in ast.walk(tree):
@@ -6532,16 +6537,33 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
             # "--boundary", "push"])` the other, and reading only the first shape would exempt
             # every test that used the second - the enumerated-exemption failure this class is
             # itself about.
+            args = [*node.args, *(k.value for k in node.keywords if k.arg == "args")]
             flat = []
-            for arg in [*node.args, *(k.value for k in node.keywords if k.arg == "args")]:
+            for arg in args:
                 flat.extend(arg.elts if isinstance(arg, (ast.List, ast.Tuple)) else [arg])
             literals = [a.value for a in flat
                         if isinstance(a, ast.Constant) and isinstance(a.value, str)]
-            # `--boundary push` AND `--boundary=push`: the joined form carries the flag inside
-            # one literal, so a membership test on the bare flag misses it entirely. An
-            # independent seat measured `seen=0` for a call written that way.
-            if not any(v == "--boundary" or v.startswith("--boundary=") for v in literals):
+            # A JOINED command line - `run("gate.py --boundary push", shell=True)`, or the same
+            # string inside a `shlex.split(...)` - puts the whole argv in ONE literal, so the
+            # token tests below see neither the flag nor the scope. Read only when the callee is
+            # a RUNNER: the same words appear in fixture text written to a file and in a Test
+            # Plan row quoting a command, and reading those cost four false positives before
+            # this filter was added.
+            joined = []
+            if called in self._RUNNERS:
+                for arg in args:
+                    for sub in ast.walk(arg):
+                        if isinstance(sub, ast.Constant) and isinstance(sub.value, str) \
+                                and "--boundary" in sub.value:
+                            joined.append(sub.value)
+            # `--boundary push` AND `--boundary=push` as TOKENS, or the flag inside a joined
+            # argv - but the joined reading applies only to `joined`, which is runner-gated. A
+            # substring test over every literal read a Test Plan row that QUOTES a command and
+            # three hook bodies written into fixtures as invocations.
+            if not (any(v == "--boundary" or v.startswith("--boundary=") for v in literals)
+                    or joined):
                 continue
+            literals = literals + joined
             # THE GATE's boundary flag, not every flag spelled the same. `critic.py supersede`
             # takes a `--boundary` naming a trust boundary - "operator console" - and has
             # nothing to do with the lanes this guard is about.
@@ -6557,7 +6579,7 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
             if "gate" not in called and not any("gate.py" in v for v in literals) \
                     and "gate.py" not in seg:
                 continue
-            yield node, literals
+            yield node, literals, joined
 
     def _scan(self, roots):
         """(offenders, invocations seen) over every `test_*.py` under `roots`."""
@@ -6570,14 +6592,19 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
                 except SyntaxError:                     # not this guard's subject
                     continue
                 self._SOURCE = src
-                for node, literals in self._boundary_calls(tree):
+                for node, literals, joined in self._boundary_calls(tree):
                     seen += 1
                     # SCOPED is `--only` or `--skip`, in either spelling. A call written
                     # `--only=docs` carries the flag inside one literal, and a membership test
                     # on the bare flag reported that legitimately scoped call as an offender.
-                    scoped = any(v in ("--only", "--skip")
-                                 or v.startswith(("--only=", "--skip="))
-                                 for v in literals)
+                    # A JOINED command line counts too. `subprocess.run("gate.py --boundary
+                    # push", shell=True)` and `subprocess.run(shlex.split("..."))` put the whole
+                    # argv in ONE literal, so a membership test on separate tokens saw neither
+                    # the flag nor the scope - this file already writes the first shape.
+                    scoped = (any(v in ("--only", "--skip")
+                                  or v.startswith(("--only=", "--skip="))
+                                  for v in literals)
+                              or any("--only" in v or "--skip" in v for v in joined))
                     if not scoped:
                         offenders.append(f"{path.name}:{node.lineno}")
         return offenders, seen
@@ -6616,6 +6643,10 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
                 'subprocess.run([sys.executable, str(scripts / "gate.py"), "--boundary", "push"])',
             "test_joined_flag.py": 'subprocess.run(["gate.py", "--boundary=push"])',
             "test_kwarg_argv.py": 'subprocess.run(args=["gate.py", "--boundary", "push"])',
+            # A JOINED command line, which this file itself already writes elsewhere: the whole
+            # argv is one literal, so neither the flag nor the scope is a separate token.
+            "test_joined_argv.py": 'subprocess.run("gate.py --boundary push", shell=True)',
+            "test_shlex_argv.py": 'subprocess.run(shlex.split("gate.py --boundary push"))',
         }
         innocent = {
             "test_innocent.py":
@@ -6624,12 +6655,20 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
                 'subprocess.run(["gate.py", "--boundary", "push", "--only=docs"])',
             "test_skipped.py":
                 'subprocess.run(["gate.py", "--boundary", "push", "--skip", "module-alone"])',
+            "test_joined_scoped.py":
+                'subprocess.run("gate.py --boundary push --only docs", shell=True)',
         }
-        head = "import subprocess, sys\nfrom pathlib import Path\nscripts = Path('s')\n"
+        head = ("import shlex, subprocess, sys\nfrom pathlib import Path\n"
+                "scripts = Path('s')\n")
         with tempfile.TemporaryDirectory() as d:
             planted = pathlib.Path(d)
             for name, call in {**offending, **innocent}.items():
                 (planted / name).write_text(f"{head}def probe():\n    {call}\n", encoding="utf-8")
+            # A file the parser cannot read is NOT this guard's subject and must not stop the
+            # sweep: a scan that dies on the first unparseable sibling reports the tree clean
+            # for every file after it, which is the silent form of the failure this class is
+            # about. Planted here so the arm is executed rather than asserted.
+            (planted / "test_unparseable.py").write_text("def broken(:\n", encoding="utf-8")
             offenders, seen = self._scan([planted])
         self.assertEqual(len(offending) + len(innocent), seen,
                          f"the scan did not see every invocation - a shape it cannot see is a "

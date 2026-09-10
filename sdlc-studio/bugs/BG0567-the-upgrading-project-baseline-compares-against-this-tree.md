@@ -1,6 +1,6 @@
 # BG0567: the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere sits on both sides and is invisible
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)

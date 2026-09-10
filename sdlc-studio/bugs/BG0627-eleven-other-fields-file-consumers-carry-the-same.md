@@ -1,6 +1,6 @@
 # BG0627: eleven other fields-file consumers carry the same `or ""` guard, so a falsey value is reported as a missing field across five more modules
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 8
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)

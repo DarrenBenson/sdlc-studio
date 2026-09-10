@@ -30,29 +30,11 @@ evidence, the reproduction and the proposed fix in full.
 
 | Id | Severity | Finding |
 | --- | --- | --- |
-| `BG0490` | Medium | four bug repairs are Fixed with half their title undelivered and no recorded narrowing |
-| `BG0493` | Medium | four more verifiers pass on a delivery that has been made inert |
-| `BG0567` | Medium | the upgrading-project baseline compares against this tree minus one branch, not against the base ref, so a regression the epic introduced elsewhere... |
-| `BG0578` | Medium | test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner |
-| `BG0591` | Medium | status and close_owed give opposite answers about the same units |
-| `BG0601` | Medium | The dry-run class sweep compares only the first two probes of each pair |
-| `BG0608` | Medium | The budget line still LEADS with the seconds comparison BG0594 proved uninformative, so the reader's eye lands on +130% and the real verdict sits i... |
-| `BG0612` | Medium | Three limbs that survived the closure of BG0599 and BG0602: an edit-verb gap, an unpinned checklist roster and an import-time blind spot |
-| `BG0627` | Medium | eleven other fields-file consumers carry the same `or ""` guard, so a falsey value is reported as a missing field across five more modules |
-| `BG0630` | Medium | the test-plan gate is skipped on In Progress to Done, so a unit that entered before its rejection was recorded reaches terminal without it ever bei... |
-| `BG0633` | Medium | transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the... |
-| `BG0637` | Medium | critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick |
-| `BG0654` | Medium | A push whose pre-push gate outlives the SSH connection git opened before the hook dies with exit 141 after the gate reports PASS, and nothing names... |
-| `BG0655` | Medium | the survivor filer reads a WITHDRAWN row as a live survivor, so a close files a High bug for a mutant the ledger says is dead |
-| `BG0656` | Medium | The disclosure page's prose and its guard are bound to a RELEASED version's notes, so every disposition walks a published claim and the page lies a... |
-| `BG0657` | Medium | The scheduled corpus lane is red at 23 against a baseline of 20, and the baseline records only a COUNT, so no reader can tell which three are new |
-| `BG0658` | Medium | testplan derive writes its rows unescaped and reads them back by splitting on a raw pipe, so a mutant naming a piped command is silently truncated |
 | `BG0659` | Medium | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row |
-| `BG0660` | Medium | the rehearsal-lane test drives the WHOLE boundary gate to check one lane's reporting, and times out on CI - main was red two days and nothing read it |
 | `BG0661` | Medium | revert-check cannot see a unit whose fix and evidence share one file - it reverts the tests with the change and reports green |
 | `BG0662` | Medium | nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it |
 
-21 findings: 21 Medium, 0 Low.
+3 findings: 3 Medium, 0 Low.
 
 ## Not carried
 

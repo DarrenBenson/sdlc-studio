@@ -1,6 +1,6 @@
 # BG0633: transition.py annotate is a THIRD writer of Severity and carries no vocabulary, so the class BG0624 closed at two entry points is still open at the third
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)

@@ -1,6 +1,6 @@
 # BG0637: critic._clean escapes underscores INSIDE code spans, corrupting 655 identifiers across the three review ledgers, and never escapes a backtick
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)

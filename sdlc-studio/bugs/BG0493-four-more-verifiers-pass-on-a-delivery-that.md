@@ -1,11 +1,11 @@
 # BG0493: four more verifiers pass on a delivery that has been made inert
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/tests/conftest.py, tools/tests/test_conftest_guard.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/best_practice_rules.py, tools/tests/test_best_practice_rules.py, tools/tests/test_precommit_lane_order.py, tools/tests/test_test_census.py
+> **Affects:** tools/tests/conftest.py, tools/tests/test_test_census.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/best_practice_rules.py, tools/tests/test_best_practice_rules.py, tools/tests/test_precommit_lane_order.py, tools/tests/test_test_census.py
 > **Severity:** Medium
 > **Points:** 5
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery)
@@ -82,6 +82,7 @@ Four more criteria that cannot fail. Individually small; together they are why f
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-09 | Claude Fable 5.1 | Delivered, and TWO of the five tests failed to kill their own mutant on the first measurement. AC5's asserted the lane's command position began with the separator, which an echo naming the module also does - it reads the argv now, so a mention is told from an invocation. AC2's asserted an or-true fallback was present in the examined block, which the 600-character slice still contained by luck once a lane was added above it - it asserts where the block BEGINS now, at the guard's own call. Both were found by running the mutant rather than by reading it, which is the discipline this whole batch was re-groomed for |
 | 2026-09-10 | Claude Opus 5 | Delivery review, all three seats REJECT on the same two holes, both of them tests that read text where their criterion demands behaviour. AC5 says the lane is DRIVEN as a subprocess against a tree the checker refuses and one it accepts; its verifier only inspected the hook's argv, so a lane running the checker with `--help`, a lane pointed at a fixed root, and a bare echo naming the module all satisfied it - and so did discarding the lane's exit inside the hook's own `run` helper. The lane's argv is now taken from the hook and EXECUTED against two trees the checker is known to judge differently (0 and 2), and a second row executes the hook's own `run` definition - extracted, never retyped - against a failing command and a passing one. Four mutants, four killed. AC2 asserted properties of the HOOK rather than of US0606's assertion, so reverting that assertion to the fixed window left it green; it now RUNS US0606's own test method against a fixture hook built so the two readings disagree - an unrelated pipeline carrying the token inside the window, the lane's own block past it and able to fail a commit - and the mutant dies |
+| 2026-09-10 | Claude Opus 5 | Affects corrected at the terminal transition: it named `tools/tests/test_conftest_guard.py`, a file that has never existed. The guard it means lives in `tools/tests/test_test_census.py`, which is where AC1's verifier already pointed. The warning fires only once a unit is terminal, so a declared path that resolves nowhere sat unread for the whole delivery |
 
 ## Steps to Reproduce
 

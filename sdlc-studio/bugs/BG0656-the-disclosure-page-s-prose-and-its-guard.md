@@ -1,6 +1,6 @@
 # BG0656: The disclosure page's prose and its guard are bound to a RELEASED version's notes, so every disposition walks a published claim and the page lies at a low count
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Verification depth:** functional (authored at plan time; the derived half is written by `verify_ac.py depth --write` at delivery)

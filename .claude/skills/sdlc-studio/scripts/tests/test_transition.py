@@ -1947,6 +1947,20 @@ class TestPlanGateEntryTests(unittest.TestCase):
             self.assertEqual("1", m.group(1),
                              f"the requirement count double-counts one absence:\n{text}")
 
+        # THE GATE'S OTHER MESSAGE, on the ONE route where both firings reach it. `Done` is in
+        # `_IMPL_TARGETS` and `Ready` is not, so a story taken straight from Ready meets the
+        # entry firing AND the terminal one - and the un-approved-plan sentence does
+        # not contain the absent-plan key, so a suppression keyed on that fact alone let the
+        # same sentence land twice. Measured on US0822 at its own transition: 3 requirements,
+        # two of them one sentence. The bug route above cannot show this, because `Fixed` is
+        # outside `_IMPL_TARGETS` and the entry firing never runs on it.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, status="Ready", verdict=None, kind="story", unit="US0001")
+            code, text = self._set(root, "Done", unit="US0001")
+            self.assertNotEqual(0, code, f"an unreviewed plan reached Done: {text}")
+            self.assertEqual(1, text.count("no independent seat has approved"),
+                             f"the un-approved plan is refused more than once:\n{text}")
+
     def test_a_direct_route_to_a_terminal_status_is_refused_too(self) -> None:
         """AC2. MUTANT: narrow the new firing to transitions whose source status is In Progress.
 

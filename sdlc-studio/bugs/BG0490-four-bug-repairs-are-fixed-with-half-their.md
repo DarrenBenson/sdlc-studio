@@ -1,6 +1,6 @@
 # BG0490: four bug repairs are Fixed with half their title undelivered and no recorded narrowing
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** dogfood

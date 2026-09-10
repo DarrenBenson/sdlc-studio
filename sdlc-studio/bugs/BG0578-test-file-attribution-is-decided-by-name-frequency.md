@@ -1,6 +1,6 @@
 # BG0578: test-file attribution is decided by name frequency, so mentioning one more module silently changes a file's owner
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Verification depth:** functional (authored at plan time as the tier this unit is driven to; the derived half is written by `verify_ac.py depth --write` at delivery, never by hand)
