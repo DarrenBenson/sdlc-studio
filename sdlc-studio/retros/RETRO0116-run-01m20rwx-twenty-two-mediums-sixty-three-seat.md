@@ -121,6 +121,11 @@ ruling HOLDS the close, which is the point of being able to make one.
 | CR0560 | not-stop-ship | Claude Opus 5 (filing a finding leaving the disclosure page stale; it happened twice this run, both times caught by the suite within one commit, and it is the same class as BG0662) | 2026-09-10 |
 | CR0561 | deferred | Claude Opus 5 (the Python 3.10 floor stated in six places and guarded nowhere; this tree runs 3.14 and no floor was tripped) | 2026-09-10 |
 | CR0565 | deferred | Claude Opus 5 (a gate or hook change reaching Fixed with no recorded self-run; US0817 is its unit and was deferred at plan time, as D0185 recorded) | 2026-09-10 |
+| CR0557 | deferred | Claude Opus 5 (re-triaging BG0463's twenty batch-boundary findings against HEAD; this run's own 49 close-work findings are the nearer instance of the same problem) | 2026-09-10 |
+| CR0562 | not-stop-ship | Claude Opus 5 (no shipped command ticks a delivered unit's criteria - met head-on at this close, where the checklist reported that NOTHING had been checked because not one of 22 units carried a ticked criterion. 113 were ticked by hand against their own `Verified: yes` stamps. The request names exactly this cost and it is now measured) | 2026-09-10 |
+| CR0563 | deferred | Claude Opus 5 (the near-miss hint on an absent node; no verifier this run was misread for it) | 2026-09-10 |
+| CR0566 | not-stop-ship | Claude Opus 5 (claim-drift flagging an unbacked numeric claim; it reported four times on this run's own commits and each was prose about a measurement recorded elsewhere, so the lane stays advisory) | 2026-09-10 |
+| CR0567 | deferred | Claude Opus 5 (the done-gate demanding a generated mutation run beside the self-report; all 174 rows this run registered are self-reported by design, and the gate accepted them, which is the state the request asks to change) | 2026-09-10 |
 
 ## Estimate vs actual
 
