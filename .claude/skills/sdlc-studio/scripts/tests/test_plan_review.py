@@ -603,5 +603,47 @@ class ArchivedRetroHistoryTests(unittest.TestCase):
                              "the control: an empty retros directory is still no history")
 
 
+
+class RecordRefusalTests(unittest.TestCase):
+    """BG0637 round two: `_clean` gained a refusal, and this command was the one caller that
+    did not catch it. reference-config.md tells the user to PREFER `plan_review.py record`
+    over `critic.py record --phase plan-review`, and it answered an unwritable cell with a
+    Python traceback and exit 1 where every sibling prints a named refusal and exits 2."""
+
+    SCRIPT = DIR / "plan_review.py"
+
+    def _run(self, root: Path, notes: str):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run(
+            [sys.executable, "-B", str(self.SCRIPT), "record", "--id", "US0001",
+             "--verdict", "approve", "--reviewer", "alice", "--author", "bob",
+             "--notes", notes, "--root", str(root)],
+            capture_output=True, text=True, check=False)
+
+    def test_an_unwritable_note_is_a_named_refusal_not_a_traceback(self) -> None:
+        """MUTANT: drop the try/except around record_review so the ValueError escapes.
+
+        Exercised at the shipped entry point, because the wiring IS the defect: the escaping
+        helper refused correctly in-process for a whole round while this command crashed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            _story(root)
+            r = self._run(root, "a note with one ` stray backtick")
+            self.assertEqual(2, r.returncode, f"expected a refusal (2):\n{r.stdout}{r.stderr}")
+            self.assertNotIn("Traceback", r.stderr, f"the user met a traceback:\n{r.stderr}")
+            self.assertIn("record refused", r.stderr, f"the refusal is not named:\n{r.stderr}")
+            self.assertIn("stray backtick", r.stderr,
+                          f"the refusal does not quote the value:\n{r.stderr}")
+
+    def test_a_writable_note_still_records(self) -> None:
+        """The paired control: a command that refused everything would pass the row above."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            _story(root)
+            r = self._run(root, "a note with a `balanced` span")
+            self.assertEqual(0, r.returncode, f"{r.stdout}{r.stderr}")
+            ledger = root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md"
+            self.assertIn("US0001", ledger.read_text(encoding="utf-8"))
+
 if __name__ == "__main__":
     unittest.main()

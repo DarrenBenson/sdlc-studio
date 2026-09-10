@@ -188,10 +188,11 @@ def verdicts_path(repo_root: Path | str, phase: str = "delivery") -> Path:
     return Path(repo_root) / "sdlc-studio" / "reviews" / _FILE[phase]
 
 
-#: A balanced code span. Anything between a pair of backticks is markdown's literal region:
-#: a backslash there is a backslash, not an escape, so escaping an underscore inside one
-#: WRITES the backslash the reader sees.
-_SPAN_RE = re.compile(r"`[^`]*`")
+#: A run of backticks that opens or closes a code span. NOT a single backtick: markdown
+#: pairs a run of N with the next run of exactly N, so a ``double`` span's opener is two.
+#: A backslash-escaped backtick is excluded - `\\`` is a literal backtick, needs no partner,
+#: and reading it as a delimiter refused values markdown holds perfectly well.
+_TICK_RUN = re.compile(r"(?<!\\)`+")
 #: An underscore that is not already escaped. The lookbehind is what makes the pass
 #: idempotent, and idempotence is not a nicety here: every value that goes back through this
 #: function - a re-recorded verdict, a closure quoting a finding - was being escaped again,
@@ -199,15 +200,54 @@ _SPAN_RE = re.compile(r"`[^`]*`")
 _BARE_UNDERSCORE = re.compile(r"(?<!\\)_")
 
 
+def _scan_ticks(text: str) -> tuple[list[tuple[int, int]], list[int]]:
+    """The code spans in `text`, and the offset of every backtick run nothing closes.
+
+    Markdown pairs a run of N backticks with the NEXT run of exactly N. The single-backtick
+    pattern this replaces could not see that: it read the two backticks opening a ``double``
+    span as a complete empty span, so the span's own contents were escaped as prose and the
+    identifier came out with backslashes in it - the very corruption this function exists to
+    prevent, in the one shape nobody had written a case for.
+    """
+    runs = [(m.start(), m.end()) for m in _TICK_RUN.finditer(text)]
+    spans: list[tuple[int, int]] = []
+    paired: set[int] = set()
+    i = 0
+    while i < len(runs):
+        width = runs[i][1] - runs[i][0]
+        close = next((j for j in range(i + 1, len(runs))
+                      if runs[j][1] - runs[j][0] == width), None)
+        if close is None:
+            i += 1
+            continue
+        spans.append((runs[i][0], runs[close][1]))
+        paired.update({i, close})
+        i = close + 1
+    return spans, [runs[i][0] for i in range(len(runs)) if i not in paired]
+
+
 def _escape_outside_spans(text: str) -> str:
     """Escape underscores in `text`, leaving the interior of every code span alone."""
     out, last = [], 0
-    for m in _SPAN_RE.finditer(text):
-        out.append(_BARE_UNDERSCORE.sub(r"\\_", text[last:m.start()]))
-        out.append(m.group(0))
-        last = m.end()
+    for start, end in _scan_ticks(text)[0]:
+        out.append(_BARE_UNDERSCORE.sub(r"\\_", text[last:start]))
+        out.append(text[start:end])
+        last = end
     out.append(_BARE_UNDERSCORE.sub(r"\\_", text[last:]))
     return "".join(out)
+
+
+#: How much of the value to quote either side of the stray backtick. A LEADING excerpt was
+#: useless: 71% of this repo's review-ledger findings cells run past 120 characters, and in
+#: every corpus row this rule refuses, the first 120 characters hold no backtick at all - so
+#: the message quoted text that could not be the fault and named a remedy for it.
+_EXCERPT_RADIUS = 60
+
+
+def _excerpt(text: str, at: int) -> str:
+    """`text` around offset `at`, elided at both ends, so the quote holds the stray."""
+    start, end = max(0, at - _EXCERPT_RADIUS), min(len(text), at + _EXCERPT_RADIUS + 1)
+    return ("..." if start else "") + text[start:end] + ("..." if end < len(text) else "")
 
 
 def _clean(value: str) -> str:
@@ -231,12 +271,18 @@ def _clean(value: str) -> str:
     that TRUNCATED a quotation mid-span, which balancing would have silently papered over.
     """
     text = str(value or "")
-    if text.count("`") % 2:
+    # Parity over the DELIMITER backticks only. A backslash-escaped backtick is a literal
+    # one and never opened a span, so counting it refused values markdown writes correctly.
+    # Odd parity always leaves a run unpaired, which is the one this message points at.
+    unclosed = _scan_ticks(text)[1]
+    if unclosed and sum(len(m.group(0)) for m in _TICK_RUN.finditer(text)) % 2:
+        at = unclosed[0]
         raise ValueError(
             f"refused: the value carries an odd number of backticks, so its last code span "
             f"never closes and markdownlint refuses the file it is written into. Close the "
             f"span or drop the stray backtick - it is not balanced here, because rewriting "
-            f"what a reviewer wrote is worse than refusing it: {text[:120]!r}")
+            f"what a reviewer wrote is worse than refusing it. The stray is at character "
+            f"{at} of {len(text)}, here: {_excerpt(text, at)!r}")
     text = text.replace("|", "/").replace("\n", " ").strip()
     return _escape_outside_spans(text)
 
@@ -1261,7 +1307,12 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
                 target = str(rejection.get("date") or standing_date)
                 break
         by_date.setdefault(target, []).append(c)
-    written = None
+    # EVERY row's cells are cleaned BEFORE the first row is appended. `_clean` refuses a value
+    # carrying an odd number of backticks, and it used to refuse from inside the write loop: a
+    # repair answering two rejections appended the first group's row and THEN refused, so the
+    # corrected re-run wrote that row a second time into a record that is append-only. Build
+    # every row, then write them.
+    pending = []
     for when, group in sorted(by_date.items()):
         # The rejection this group answers, resolved ONCE and carried into the row. Keyed on
         # the brief fingerprint rather than the date, because two rejections share a day
@@ -1274,22 +1325,23 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
         # semicolon was truncated at it and the rest never reached the record.
         text = closures_from_document(
             [{"finding": c["finding"], "evidence": c["evidence"]} for c in group])
-        written = _append_row(repair_path(repo_root), _REPAIR_HEADER,
-                              (sdlc_md.norm_id(unit), _clean(when),
-                               _clean(author), sdlc_md.now_date(), _clean(text),
-                               _clean("; ".join(outstanding) or "-"),
-                               # The PHASE this repair answers. Without it the row is joined to
-                               # a rejection by date alone, and a delivery repair discharged a
-                               # plan-review rejection carrying the same finding text - which
-                               # since BG0629 opens the test-plan gate rather than merely
-                               # mis-reporting.
-                               _clean(str(phase or "delivery")),
-                               # THE REJECTION this repair answers, keyed on the brief
-                               # fingerprint - a content hash of the brief the seat was handed,
-                               # which BG0607 established identifies the seat AND the round
-                               # together. The date alone cannot: two rejections share a day
-                               # routinely, which is the whole of this bug.
-                               _clean(str(rejection.get("brief") or "-"))))
+        pending.append((sdlc_md.norm_id(unit), _clean(when),
+                        _clean(author), sdlc_md.now_date(), _clean(text),
+                        _clean("; ".join(outstanding) or "-"),
+                        # The PHASE this repair answers. Without it the row is joined to a
+                        # rejection by date alone, and a delivery repair discharged a
+                        # plan-review rejection carrying the same finding text - which since
+                        # BG0629 opens the test-plan gate rather than merely mis-reporting.
+                        _clean(str(phase or "delivery")),
+                        # THE REJECTION this repair answers, keyed on the brief fingerprint -
+                        # a content hash of the brief the seat was handed, which BG0607
+                        # established identifies the seat AND the round together. The date
+                        # alone cannot: two rejections share a day routinely, which is the
+                        # whole of this bug.
+                        _clean(str(rejection.get("brief") or "-"))))
+    written = None
+    for cells in pending:
+        written = _append_row(repair_path(repo_root), _REPAIR_HEADER, cells)
     return written
 
 

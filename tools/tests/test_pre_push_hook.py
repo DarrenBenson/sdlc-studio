@@ -533,19 +533,65 @@ class KeepaliveTests(unittest.TestCase):
         self.assertIn("Left core.sshCommand", r.stdout + r.stderr,
                       "the script kept the value without saying it had")
 
-    def test_the_hook_names_the_keepalive_the_gate_needs(self) -> None:
-        """MUTANT: strip the keepalive sentence from the cost line the hook echoes to stderr.
+    def test_a_global_ssh_command_is_not_shadowed_by_the_local_write(self) -> None:
+        """MUTANT: read `--local` instead of the effective value in the precondition.
 
-        The fixture copies the hook alone and never runs the enabling script, so this criterion
-        rests on the hook's own text and nothing else."""
-        text = (REPO / ".githooks" / "pre-push").read_text(encoding="utf-8")
-        self.assertIn("ServerAliveInterval", text,
-                      "the hook never names the keepalive the gate needs")
-        self.assertIn("enable-hooks.sh", text,
-                      "the hook names the need without naming the command that meets it")
-        line = next(l for l in text.splitlines() if "ServerAliveInterval" in l and "echo" in l)
-        self.assertIn(">&2", line,
-                      f"the keepalive line is not on the stream git shows a pusher:\n{line}")
+        A GLOBAL `core.sshCommand` is where a user, an identity file or a port usually lives.
+        Reading only the local scope shadows it, so writing a bare ssh over it strips all three
+        and the next push fails to authenticate for a reason nothing names. AC1 and AC2 both
+        point the outer config files at a null file, so neither can tell the safe
+        implementation from the harmful one - this row is the only place that distinction is
+        made."""
+        tmp = self._clone()
+        gcfg = tmp / "global.gitconfig"
+        gcfg.write_text("[core]\n\tsshCommand = ssh -o User=ops -i ~/.ssh/id_ops -p 2222\n",
+                        encoding="utf-8")
+        env = self._env()
+        env["GIT_CONFIG_GLOBAL"] = str(gcfg)
+        r = subprocess.run(["bash", "tools/enable-hooks.sh"], cwd=tmp, capture_output=True,
+                           text=True, timeout=60, env=env)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        effective = subprocess.run(["git", "-C", str(tmp), "config", "--get", "core.sshCommand"],
+                                   capture_output=True, text=True, env=env).stdout.strip()
+        self.assertIn("id_ops", effective,
+                      f"the developer's global ssh command was shadowed by a local write, "
+                      f"losing its identity file: {effective!r}")
+        self.assertIn("Left core.sshCommand", r.stdout + r.stderr,
+                      "the script replaced nothing but did not say it had left the value alone")
+
+    def test_the_hook_names_the_keepalive_the_gate_needs(self) -> None:
+        """MUTANTS: strip the keepalive sentence from the line the hook echoes to stderr; wrap
+        that line in `if false; then ... fi` so it is present and unreachable.
+
+        DRIVEN, not grepped. The shipped node asserted on the hook's SOURCE TEXT, so a
+        keepalive sentence that no pusher can ever see satisfied every assertion - a reviewer
+        wrapped it in a false branch and the node stayed green. The criterion says the pusher
+        reads it on stderr, so the fixture that pushes is the only thing that can say so."""
+        fx = _Clone()
+        try:
+            out = fx.push(rc=0).stderr
+            self.assertIn("ServerAliveInterval", out,
+                          f"the driven hook never names the keepalive the gate needs:\n{out}")
+            self.assertIn("enable-hooks.sh", out,
+                          f"it names the need without the command that meets it:\n{out}")
+        finally:
+            fx.cleanup()
+
+    def test_the_keepalive_reaches_a_push_the_red_ci_read_refuses(self) -> None:
+        """MUTANT: move the keepalive line back below the red-CI acknowledgement block.
+
+        A push refused for an unacknowledged red main exits inside that block, and the pusher
+        whose connection is about to drop is exactly the one who retries. Printed after it, the
+        advice reaches only the pushes that get as far as paying for the gate."""
+        fx = _Clone()
+        try:
+            r = fx.push(gh_mode="red")
+            self.assertNotEqual(0, r.returncode,
+                                f"an unacknowledged red main did not refuse the push:\n{r.stderr}")
+            self.assertIn("ServerAliveInterval", r.stderr,
+                          f"the refused push never saw the keepalive advice:\n{r.stderr}")
+        finally:
+            fx.cleanup()
 
 
 if __name__ == "__main__":

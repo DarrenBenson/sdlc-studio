@@ -29,6 +29,16 @@ while read -r _local_ref local_sha remote_ref _remote_sha; do
 done
 [ -z "$boundary" ] && exit 0
 
+# The connection has to survive the gate. Minutes of boundary lanes run before git writes a
+# byte, and an ssh connection idle that long is dropped before the push starts - so the gate
+# passes and the push fails, and the retry pays the gate again. Named here rather than only in
+# the enabling script, because the pusher meets this line at the moment it matters.
+# BEFORE the red-CI read, not after the cost line: a push refused for an unacknowledged red
+# main exits inside that block, and the pusher whose connection is about to drop is exactly
+# the one who then retries. The advice has to reach every boundary push, not the ones that
+# get as far as paying.
+echo "pre-push: the connection must stay up across the gate; set it once with: bash tools/enable-hooks.sh (ssh ServerAliveInterval)" >&2
+
 # --- read the latest push-triggered Lint run on main BEFORE the gate (BG0642, D0181) -------
 # A red main must be READ before the next push, not discovered two days later in a tab. The
 # hook asks the forge for the latest COMPLETED push-triggered Lint run on main - never a
@@ -107,12 +117,6 @@ if [ -z "$cost" ]; then
   fi
 fi
 echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2
-# The connection has to survive the gate. Minutes of boundary lanes run before git writes a
-# byte, and an ssh connection idle that long is dropped before the push starts - so the gate
-# passes and the push fails, and the retry pays the gate again. Named here rather than only in
-# the enabling script, because the pusher meets this line at the moment it matters.
-echo "pre-push: the connection must stay up across the gate; set it once with: bash tools/enable-hooks.sh (ssh ServerAliveInterval)" >&2
-
 # Scrubbed exactly as the commit hooks scrub their suite lanes, and for the same reason: git
 # hands a pre-push hook the pushing repository's locations, and the gate's rehearsal lane builds
 # git repositories of its own - unscrubbed, every one of them is steered at this clone. The

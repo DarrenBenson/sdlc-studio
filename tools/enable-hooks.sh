@@ -41,8 +41,14 @@ done
 #
 # LOCAL scope, and an existing value is left alone: this is the clone's setting to make, and a
 # developer who has chosen their own ssh command has chosen it deliberately.
-if existing="$(git config --local --get core.sshCommand)" && [ -n "$existing" ]; then
-  echo "Left core.sshCommand as you set it: $existing"
+# The EFFECTIVE value, not the local one. Reading only `--local` shadows a developer's global
+# `core.sshCommand` - and a global one is where a user, an identity file or a port usually
+# lives, so writing a bare ssh over it silently strips all three and the next push fails to
+# authenticate for a reason nothing names. Local scope is still the right place to WRITE; it is
+# the precondition that has to ask the wider question.
+if existing="$(git config --get core.sshCommand)" && [ -n "$existing" ]; then
+  scope="$(git config --local --get core.sshCommand >/dev/null 2>&1 && echo local || echo "global or system")"
+  echo "Left core.sshCommand as you set it ($scope): $existing"
   echo "  (a keepalive is what the pre-push gate needs; add ServerAliveInterval if yours has none)"
 else
   git config --local core.sshCommand "ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10"

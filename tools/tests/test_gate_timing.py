@@ -184,11 +184,17 @@ class BudgetLaneTests(unittest.TestCase):
 
     def test_the_report_names_the_baseline_and_the_drift(self) -> None:
         """Reporting only 'under budget' is how test_gate.py grew 28% unnoticed: it was under
-        every ceiling the whole time. The drift is the signal, not the verdict."""
+        every ceiling the whole time. The drift is the signal, not the verdict.
+
+        The baseline declares its WIDTH since BG0608: a full run judged against the per-commit
+        ceiling is compared with the per-commit baseline, which is not like-for-like, so the
+        percentage is withheld there unless both widths are on record. Declaring one keeps this
+        row about the drift rather than about the withholding, which has its own criteria."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._project(root, "gate_budget:\n  seconds: 200\n"
-                                "  baseline_seconds: 100\n  baseline_date: 2026-07-21\n")
+                                "  baseline_seconds: 100\n  baseline_date: 2026-07-21\n"
+                                "  baseline_tests: 1000\n")
             gt.record(root, "total", 128.0)                  # under budget, but +28% on baseline
             rep = gt.budget_report(root)
             self.assertFalse(rep["over"])
@@ -928,6 +934,155 @@ class BudgetLineTests(unittest.TestCase):
                           f"a bare total was printed with no width and no note that the width "
                           f"is unrecorded:\n{detail}")
 
+
+    def test_the_note_is_withheld_when_a_count_is_recorded(self) -> None:
+        """AC4's paired control. MUTANT: append the "did not record" note unconditionally.
+
+        Without it, a note that fires on every line satisfies the row above - and a line that
+        says the width is unrecorded while printing the width is the same wrong number, read
+        the other way."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, "gate_budget:\n  seconds: 380\n")
+            self._record(root, 200.0, 2000.0)
+            detail = gt.budget_report(root)["detail"]
+            self.assertNotIn("did not record", detail,
+                             f"the width WAS recorded and the line says otherwise:\n{detail}")
+            self.assertIn("2000 tests", detail,
+                          f"the recorded width is not named beside its total:\n{detail}")
+
+    def test_the_withheld_clause_names_the_key_that_restores_the_figure(self) -> None:
+        """MUTANT: delete the `Declare ... to restore it` sentence from the withheld clause.
+
+        Both sibling disclosures in the same line name their key, and BG0594 AC5 made that law
+        for the neighbouring clause. A reader who has just lost the trend needs the route back
+        from the line they are looking at, not from a changelog."""
+        cfg = self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, cfg)
+            self._record(root, 200.0, 2000.0)
+            detail = gt.budget_report(root)["detail"]
+            self.assertIn("gate_budget.baseline_tests", detail,
+                          f"the withheld clause never names the key that restores it:\n{detail}")
+
+    def test_the_leading_clause_names_the_width_the_rate_was_taken_over(self) -> None:
+        """MUTANT: delete `over {tests} tests` from the rate clause.
+
+        The whole premise: a total is width times cost-per-test, so a total printed without its
+        width is the figure this bug exists to stop being quoted."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, self.RATED)
+            self._record(root, 200.0, 2000.0)
+            detail = gt.budget_report(root)["detail"]
+            self.assertIn("over 2000 tests", detail,
+                          f"the leading clause does not name the width:\n{detail}")
+
+    def test_an_unrecorded_current_width_is_named_in_the_withheld_clause(self) -> None:
+        """MUTANT: replace the `an unrecorded number of` arm with a literal.
+
+        Reachable, and reached by nothing until now: a selected run with a baseline declared
+        and no `total.selected.tests` recorded. The clause compares "this width" against the
+        baseline's, so when this side is unknown too the clause has to say so rather than
+        print a bare number."""
+        cfg = self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, cfg)
+            gt.record(root, "total.selected", 200.0)          # seconds only: no width recorded
+            detail = gt.budget_report(root)["detail"]
+            self.assertIn("an unrecorded number of tests here", detail,
+                          f"the unknown CURRENT width is not named:\n{detail}")
+
+    def test_a_non_numeric_baseline_width_degrades_to_silence(self) -> None:
+        """MUTANT: read the key with a bare `float()`, unguarded.
+
+        `budget_config` states that a bad config is advisory here and never a commit failure,
+        and the module docstring promises the report degrades to silence rather than to a wrong
+        number. An unguarded read raised, `budget` exited 1 with a traceback, and the hook
+        swallows this command's stderr - so the whole line vanished with no diagnostic."""
+        cfg = (self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
+               "  baseline_tests: not-a-number\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, cfg)
+            self._record(root, 200.0, 2000.0)
+            detail = gt.budget_report(root)["detail"]
+            self.assertIn("baseline 317s", detail,
+                          f"a bad width key took the whole line down:\n{detail}")
+            self.assertNotIn("% since", detail,
+                             f"an unreadable width was treated as a recorded one:\n{detail}")
+
+    def test_a_full_run_judged_on_the_per_commit_baseline_withholds_the_percentage(self) -> None:
+        """MUTANT: exempt every non-selected series, as the first cut did.
+
+        The FALLBACK limb: a full run with no `gate_budget.full_seconds` declared is judged
+        against the per-commit ceiling and the per-commit baseline. Measured on this repo that
+        printed `+184% since` for a 7,400-test run against a ~1,400-test baseline - the
+        cross-population percentage this unit exists to remove, exempted by the first cut and
+        defended in a comment as like-for-like, which it is only for a full run judged on its
+        OWN series."""
+        cfg = self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, cfg)
+            gt.record(root, "total", 900.0)                   # a FULL run, no full_seconds declared
+            gt.record(root, "total.tests", 7400.0)
+            detail = gt.budget_report(root)["detail"]
+            self.assertIn("FULL run judged against the per-commit ceiling", detail,
+                          f"the fixture did not reach the fallback limb:\n{detail}")
+            self.assertNotIn("% since", detail,
+                             f"a full total was compared with the per-commit baseline as a "
+                             f"percentage:\n{detail}")
+
+    def test_a_full_run_on_its_own_series_keeps_its_percentage(self) -> None:
+        """The paired control for the row above. MUTANT: withhold on every series.
+
+        A full run judged against a full-run baseline IS like-for-like even with neither count
+        recorded, and withholding there would remove the trend from the only comparison that
+        never needed a width."""
+        cfg = ("gate_budget:\n  seconds: 380\n  full_seconds: 1080\n"
+               "  full_baseline_seconds: 899\n  full_baseline_date: 2026-08-19\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, cfg)
+            gt.record(root, "total", 900.0)
+            gt.record(root, "total.tests", 7400.0)
+            detail = gt.budget_report(root)["detail"]
+            self.assertIn("% since", detail,
+                          f"a full run on its own series lost its trend:\n{detail}")
+
+    def test_the_shipped_command_prints_the_verdict_word_once(self) -> None:
+        """AC12. MUTANT: prefix the command's own OVER whenever the run is over budget.
+
+        DRIVEN through `gate_timing.py budget`, because the stutter lives in the COMMAND and
+        not in the report: every other node here reads `budget_report`, which never carried the
+        prefix, so the doubled word was invisible to all of them. The repo's own lane-check
+        named this unit as one whose verifiers never enter the shipped entry point."""
+        import subprocess  # noqa: PLC0415
+        script = Path(__file__).resolve().parents[2] / "tools" / "gate_timing.py"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, self.RATED)
+            self._record(root, 400.0, 1000.0)          # 0.400 s/test, over the 0.152 ceiling
+            r = subprocess.run([sys.executable, "-B", str(script), "--root", str(root), "budget"],
+                               capture_output=True, text=True, check=False, timeout=120)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            line = r.stdout.strip()
+            self.assertTrue(line.startswith("gate-budget: rate "),
+                            f"the printed line does not lead with the rate verdict:\n{line}")
+            self.assertEqual(1, line.count("OVER -"),
+                             f"the verdict word is printed more than once:\n{line}")
+
+    def test_the_shipped_command_still_says_over_when_only_the_total_decides(self) -> None:
+        """AC13, the paired control. MUTANT: drop the command's prefix altogether.
+
+        With no rate ceiling declared the detail carries no verdict word of its own, so the
+        command's prefix is the only thing that says the run is over - removing it to fix the
+        stutter would take the verdict off the line entirely."""
+        import subprocess  # noqa: PLC0415
+        script = Path(__file__).resolve().parents[2] / "tools" / "gate_timing.py"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, "gate_budget:\n  seconds: 100\n")
+            self._record(root, 400.0, 1000.0)          # over the seconds budget, no rate ceiling
+            r = subprocess.run([sys.executable, "-B", str(script), "--root", str(root), "budget"],
+                               capture_output=True, text=True, check=False, timeout=120)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("OVER -", r.stdout,
+                          f"an over-budget run did not say so on the printed line:\n{r.stdout}")
 
 if __name__ == "__main__":
     unittest.main()

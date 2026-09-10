@@ -325,8 +325,19 @@ def cmd_record(args: argparse.Namespace) -> int:
     independent, why = critic.independence(args.reviewer, args.author)
     if not independent:
         print(f"WARNING: {why} - this never clears the gate", file=sys.stderr)
-    path = record_review(args.root, args.id, args.verdict, args.reviewer, args.author,
-                         args.notes)
+    # A cell the ledger cannot hold is a REFUSAL, printed and exit 2, the way every sibling
+    # verb answers one. Left uncaught it reached the user as a Python traceback from the
+    # escaping helper, and this is the command reference-config.md tells them to prefer.
+    try:
+        path = record_review(args.root, args.id, args.verdict, args.reviewer, args.author,
+                             args.notes)
+    except ValueError as exc:
+        detail = str(exc)
+        prefix = "refused: "
+        print("record refused: "
+              + (detail[len(prefix):] if detail.startswith(prefix) else detail),
+              file=sys.stderr)
+        return 2
     print(f"recorded plan-review {args.verdict.upper()} for {args.id} "
           f"(AC-pinned) -> {path}")
     return 0

@@ -5446,7 +5446,15 @@ class RegisterReplacesTests(unittest.TestCase):
             import shlex as _shlex  # noqa: PLC0415
             argv = _shlex.split("retract " + remedy.replace("<why>", _shlex.quote("the survived reading was a stale bytecode artefact")))
             self.assertEqual(argv[argv.index("--mutant") + 1], 'flip `VALUE` in ctx["root"]', "a shell splits the printed remedy back into the row's own description")
-            self.assertEqual(mut.main(argv), 0, "the printed remedy runs as printed")
+            # Captured rather than left on the console, and ASSERTED: the verb has to SAY what
+            # it withdrew, which is the half an exit code cannot carry, and a green suite that
+            # prints teaches every reader to skim past the lines that matter.
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc_remedy = mut.main(argv)
+            self.assertEqual(rc_remedy, 0, "the printed remedy runs as printed")
+            self.assertIn("WITHDREW 1", out.getvalue(),
+                          f"the remedy ran without saying what it withdrew:\n{out.getvalue()}")
             self.assertEqual(self._rows(root), [], "the row the remedy named is withdrawn")
             self._reg(mut, root, verdict="survived")
             with self.assertRaises(ValueError):

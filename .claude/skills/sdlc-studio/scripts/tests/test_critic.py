@@ -545,11 +545,17 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            rc = mod.main(["record", "--brief", "abcdef123456",
-                           "--unit", "US0017", "--verdict", "approve",
-                           "--author", "builder", "--root", str(root)])
-            self.assertEqual(rc, 0)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["record", "--brief", "abcdef123456",
+                               "--unit", "US0017", "--verdict", "approve",
+                               "--author", "builder", "--root", str(root)])
+            self.assertEqual(rc, 0, out.getvalue() + err.getvalue())
             self.assertEqual(mod.verdict_for(root, "US0017")["verdict"], "APPROVE")
+            # Captured rather than left on the console, and ASSERTED rather than dropped: the
+            # command has to say what it wrote, which is the half a return code cannot carry.
+            self.assertIn("US0017", out.getvalue(),
+                          f"the CLI recorded a verdict without naming the unit:\n{out.getvalue()}")
 
     def test_cli_record_requires_author(self) -> None:
         # The authoring seat is mandatory: independence you cannot verify is none at all.
@@ -2180,13 +2186,20 @@ class EscalationTests(unittest.TestCase):
             affected.parent.mkdir(parents=True, exist_ok=True)
             affected.write_text("# fixture\n", encoding="utf-8")
             mod, finding = self._regressed(root)
-            out = mod.record_escalation(root, "accept-and-file", finding,
-                                        title="the regressed guard is unpinned",
-                                        summary="round 1's repair left the branch unpinned",
-                                        severity="Medium", steps="see the round-1 finding",
-                                        fix="pin the branch",
-                                        affects="scripts/critic.py",
-                                        points=2)
+            # The filer NOTES an Affects that names a source file without its test. That is a
+            # correct diagnostic about this fixture's deliberately-narrow Affects, and it is
+            # not what this row is about - so it is captured and asserted rather than left on
+            # the console, where a green suite printing `note:` teaches everyone to skim.
+            with quiet.diagnostics() as err:
+                out = mod.record_escalation(root, "accept-and-file", finding,
+                                            title="the regressed guard is unpinned",
+                                            summary="round 1's repair left the branch unpinned",
+                                            severity="Medium", steps="see the round-1 finding",
+                                            fix="pin the branch",
+                                            affects="scripts/critic.py",
+                                            points=2)
+            self.assertIn("footprint was understated", err.getvalue(),
+                          f"the filer stopped noting a source-only Affects:\n{err.getvalue()}")
             self.assertTrue(out["filed"], "accept-and-file must report the id it filed")
             self.assertRegex(out["filed"], r"^BG\d{4}$")
             self.assertTrue((root / "sdlc-studio" / "bugs").glob(f"{out['filed']}*"))
@@ -6222,7 +6235,7 @@ class CleanEscapesForContextTests(unittest.TestCase):
         self.assertEqual(once, self.critic._clean(once))
 
     def test_a_pipe_or_newline_inside_a_span_is_still_neutralised(self) -> None:
-        """MUTANT: hoist the pipe and newline substitutions into the outside-a-span branch.
+        """MUTANT: delete the pipe substitution so a pipe inside a code span survives.
 
         These rows are built by f-string, not by a row joiner, so this function is the only
         thing standing between a reviewer's piped shell command and a forged column."""
@@ -6236,9 +6249,17 @@ class CleanEscapesForContextTests(unittest.TestCase):
         Balancing rewrites a reviewer's words and swallows the row's tail into a code span.
         Refusing tells the author while they can still edit - and catches the caller that
         truncated a quotation mid-span, which balancing would have papered over."""
+        value = "a value with one ` stray backtick"
         with self.assertRaises(ValueError) as ctx:
-            self.critic._clean("a value with one ` stray backtick")
-        self.assertIn("backtick", str(ctx.exception))
+            self.critic._clean(value)
+        message = str(ctx.exception)
+        self.assertIn("backtick", message)
+        # NAMING THE VALUE is the half of this criterion that carries its product value, and
+        # asserting only the word "backtick" left it revertible with the suite green: a
+        # refusal that does not quote what it refused sends the author looking through a row
+        # they cannot see.
+        self.assertIn(value, message,
+                      f"the refusal does not name the value it refused:\n{message}")
 
     def test_an_even_backtick_count_is_written_through_unchanged(self) -> None:
         """MUTANT: strip every backtick from the value before writing it.
@@ -6249,6 +6270,87 @@ class CleanEscapesForContextTests(unittest.TestCase):
         self.assertEqual(4, got.count("`"), f"backticks were rewritten:\n{got}")
         self.assertIn("`span`", got)
 
+
+
+class CleanSpanWidthAndRefusalTests(unittest.TestCase):
+    """BG0637 round two. Three seats found the first fix incomplete in the same place: it knew
+    what a code span was only for a SINGLE pair of backticks, and its refusal fired from inside
+    a write loop, so a repair answering two rejections appended one row and then refused."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.critic = _load()
+
+    def test_a_double_backtick_span_interior_is_left_alone(self) -> None:
+        """MUTANT: narrow the delimiter pattern back to a single backtick.
+
+        Markdown pairs a run of N backticks with the next run of exactly N. Reading the two
+        that OPEN a ``double`` span as a complete empty span escaped the span's own contents -
+        the artefact's own first reproduction, still live after the first fix."""
+        got = self.critic._clean("the reader ``_read_rows`` and a bare _name")
+        self.assertIn("``_read_rows``", got,
+                      f"a double-backtick span's interior was escaped:\n{got}")
+        self.assertIn(r"\_name", got,
+                      f"the underscore OUTSIDE the span was left bare:\n{got}")
+
+    def test_an_escaped_backtick_is_not_a_delimiter(self) -> None:
+        """MUTANT: drop the not-a-backslash lookbehind from the delimiter pattern.
+
+        `\\`` is a literal backtick and needs no partner. Counting it as one refused values
+        markdown holds perfectly well, and told the author to close a span that was never open."""
+        got = self.critic._clean(r"a literal \` backtick and a _name")
+        self.assertIn(r"\`", got, f"the escaped backtick did not survive:\n{got}")
+        self.assertIn(r"\_name", got, f"the underscore was not escaped:\n{got}")
+
+    def test_the_refusal_quotes_the_stray_backtick_and_the_value(self) -> None:
+        """MUTANT: quote the value's first 120 characters instead of the text around the stray.
+
+        Seventy-one per cent of this repo's review-ledger findings cells run past 120
+        characters, and in every corpus row this rule refuses, the first 120 hold no backtick
+        at all - so the message quoted text that could not be the fault and named a remedy for
+        it, which is the complaint this bug's own Impact section makes about the OLD failure."""
+        value = "prose that says nothing about backticks. " * 6 + "and then a ` stray one"
+        with self.assertRaises(ValueError) as ctx:
+            self.critic._clean(value)
+        message = str(ctx.exception)
+        self.assertIn("` stray one", message,
+                      f"the excerpt does not reach the stray backtick:\n{message}")
+        self.assertIn(str(len(value)), message,
+                      f"the refusal does not say how long the value is:\n{message}")
+
+    def test_a_refused_repair_leaves_no_row_behind(self) -> None:
+        """MUTANT: clean each row's cells inside the write loop again, appending as it goes.
+
+        The record is append-only, so a row written before the refusal cannot be taken back:
+        `repair` exited 2 with one row committed, and the corrected re-run duplicated it -
+        `repair_state` then reported three findings fixed for two findings raised."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+            (root / "sdlc-studio" / "bugs" / "BG9001-fixture.md").write_text(
+                "# BG9001: Fixture\n\n**Status:** Open\n", encoding="utf-8")
+            mod = self.critic
+            for when, seat, issue in [("2026-09-08", "qa", "the older round names one thing"),
+                                      ("2026-09-09", "eng", "the newer round names another")]:
+                with unittest.mock.patch.object(mod.sdlc_md, "now_date", lambda w=when: w):
+                    mod.record_verdict(root, "BG9001", "reject", reviewer=seat, author="author",
+                                       issues=f"[new] {issue}", tier="full")
+            # The stray sits in the closure answering the LATER rejection, so the earlier
+            # group's row is built and written first. That ordering is the whole defect.
+            with self.assertRaises(ValueError):
+                mod.record_repair(root, "BG9001", "author",
+                                  "the older round names one thing -> fixed, and this one is fine; "
+                                  "the newer round names another -> fixed too, see `here")
+            record = mod.repair_path(root)
+            self.assertFalse(record.exists() and "BG9001" in record.read_text(encoding="utf-8"),
+                             "a row reached the append-only repair record before the refusal")
+            # The control: the same two-group repair with nothing unwritable in it records BOTH.
+            mod.record_repair(root, "BG9001", "author",
+                              "the older round names one thing -> fixed, and this one is fine; "
+                              "the newer round names another -> fixed too")
+            rows = [r for r in record.read_text(encoding="utf-8").splitlines()
+                    if r.startswith("| BG9001")]
+            self.assertEqual(2, len(rows), f"the clean repair did not write both rows:\n{rows}")
 
 if __name__ == "__main__":
     unittest.main()

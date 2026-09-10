@@ -270,6 +270,13 @@ gate_budget:
   full_seconds: 1080
   full_baseline_seconds: 899
   full_baseline_date: 2026-08-19
+  # THE BASELINE'S OWN WIDTH, one key per series, and both optional. A drift percentage between
+  # two totals taken at different selection widths is a number about the widths, so the budget
+  # line withholds it unless the baseline records the width it was taken at - `baseline_tests`
+  # for the per-commit series, `full_baseline_tests` for the full one. Declaring the key
+  # restores the percentage and puts the baseline's width in the clause beside it. Neither is
+  # declared here: the two baselines above predate the counts being recorded at all, so the
+  # honest answer for this repo is the withheld clause until a baseline is re-taken (BG0608).
 
 # Creation-time noise controls, switched on independently of the artefact schema (CR0510).
 # They were reachable only through a schema v3 bump that also switches on plan-review,

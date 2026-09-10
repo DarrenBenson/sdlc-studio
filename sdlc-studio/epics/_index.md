@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 38 |
+| Draft | 39 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 213 |
-| **Total** | **251** |
+| **Total** | **252** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -97,6 +97,7 @@
 | [EP0249](EP0249-mutation-py-register-replaces-a-live-row-on.md) | mutation.py register replaces a live row on the same key instead of appending a duplicate | Done | 1 | -- | 2026-09-07 | 2026-09-07 |
 | [EP0250](EP0250-a-test-plan-is-checked-for-falsifiability-not.md) | A test plan is checked for falsifiability, not only for shape | Draft | 2 | -- | 2026-09-09 | 2026-09-09 |
 | [EP0251](EP0251-a-plan-ruling-is-recorded-and-withdrawable-not.md) | A plan ruling is recorded and withdrawable, not hand-authored | Draft | 1 | -- | 2026-09-09 | 2026-09-09 |
+| [EP0252](EP0252-mutation-evidence-is-staled-per-row-not-per.md) | Mutation evidence is staled per row, not per file | Draft | 1 | -- | 2026-09-09 | 2026-09-09 |
 
 ## Archived Releases
 

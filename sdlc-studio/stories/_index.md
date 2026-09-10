@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 127 |
+| Draft | 128 |
 | Ready | 20 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 2 |
 | Blocked | 14 |
-| **Total** | **821** |
+| **Total** | **822** |
 
 ## All Stories
 
@@ -261,6 +261,7 @@
 | [US0819](US0819-the-plan-probe-runs-each-criterion-against-the.md) | The plan probe runs each criterion against the tree and reports a pass as the finding | Draft | EP0250 | 2026-09-09 | 2026-09-09 |
 | [US0820](US0820-sprint-plan-refuses-a-batch-carrying-an-unruled.md) | sprint plan refuses a batch carrying an unruled green or unknown criterion | Draft | EP0250 | 2026-09-09 | 2026-09-09 |
 | [US0821](US0821-the-plan-ruling-is-recorded-hashed-against-what.md) | The plan ruling is recorded, hashed against what it excuses, and withdrawable | Draft | EP0251 | 2026-09-09 | 2026-09-09 |
+| [US0822](US0822-a-ledger-row-records-the-anchor-it-was.md) | A ledger row records the anchor it was applied to, and staleness is judged from it | Draft | EP0252 | 2026-09-09 | 2026-09-09 |
 
 ## Archived Releases
 

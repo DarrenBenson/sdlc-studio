@@ -355,25 +355,43 @@ def budget_report(root: Path) -> dict | None:
         # different selection widths is a number about the widths, not about the cost - and the
         # baseline recorded here carries no width at all, so on a SELECTED run - whose width
         # moves commit to commit - the clause was stating a change nobody had measured. The
-        # percentage is withheld exactly there: a full run against a full-series baseline is
-        # like-for-like even with the count unrecorded, and the fallback path says in the same
-        # line that it is not judging on its own series.
-        base_tests = block.get("full_baseline_tests" if own_series else "baseline_tests")
+        # percentage is withheld exactly there. A full run judged on its OWN series is
+        # like-for-like even with the count unrecorded, and keeps its percentage. The FALLBACK
+        # path is not: it compares a whole-suite total against the per-commit baseline, a
+        # measured +184% for a 7,400-test run against a ~1,400-test baseline, which is the
+        # cross-population number this unit exists to remove. The first cut exempted it along
+        # with the own-series full run and said in a comment that both were like-for-like -
+        # true of one shape and false of the other, and a review executed the difference.
+        # BOTH config reads are guarded, on the same terms as every other float in this
+        # function: a bad config is advisory here and never a commit failure. An unguarded
+        # `float()` on a hand-declared key raised, the command exited with a traceback, and the
+        # hook swallows this line's stderr - so the whole budget report vanished with no
+        # diagnostic, which is the one outcome the module docstring promises against.
+        try:
+            base_tests = float(block.get("full_baseline_tests" if own_series
+                                         else "baseline_tests"))
+        except (TypeError, ValueError):
+            base_tests = None
         try:
             base_s = float(baseline)
         except (TypeError, ValueError):
             base_s = None
         if base_s is None:
             detail += f" (baseline {baseline}s on {when})"
-        elif base_tests or series != "selected":
+        elif base_tests or own_series:
             drift = (measured - base_s) / base_s * 100.0
-            width = (f" over {float(base_tests):.0f} tests" if base_tests else "")
+            width = (f" over {base_tests:.0f} tests" if base_tests else "")
             detail += (f" (baseline {base_s:.0f}s on {when}{width}, {drift:+.0f}% since)")
         else:
             here = f"{tests:.0f}" if tests else "an unrecorded number of"
+            # NAMES THE KEY that restores the figure, on the same terms as the two disclosures
+            # above it: a clause that explains a withholding without saying what to declare
+            # leaves the reader knowing only that something is missing.
+            key = "full_baseline_tests" if own_series else "baseline_tests"
             detail += (f" (baseline {base_s:.0f}s on {when} over an unrecorded width, against "
                        f"{here} tests here - no percentage is stated, because a change between "
-                       f"two widths is a number about the widths)")
+                       f"two widths is a number about the widths. Declare "
+                       f"`gate_budget.{key}` to restore it)")
     return {"measured": measured, "budget": budget, "baseline": baseline,
             "baseline_date": when, "over": over, "detail": detail,
             "rate": rate, "rate_verdict": rate_verdict}
@@ -446,7 +464,11 @@ def cmd_budget(args: argparse.Namespace) -> int:
     rep = budget_report(Path(args.root))
     if rep is None:
         return 0                      # no budget declared, or nothing recorded yet: say nothing
-    print(f"gate-budget: {'OVER - ' if rep['over'] else ''}{rep['detail']}")
+    # The verdict word ONCE. Where a rate ceiling is declared the detail leads with its own
+    # `- OVER` / `- under`, and prefixing there printed `OVER - rate ... - OVER - REGRESSION`:
+    # the first thing a reader meets on every commit, stuttering.
+    lead = "OVER - " if rep["over"] and not rep.get("rate_verdict") else ""
+    print(f"gate-budget: {lead}{rep['detail']}")
     return 0
 
 

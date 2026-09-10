@@ -1,6 +1,6 @@
 {
  "_note": "Per test module, measured alone; _total is the discovery run's own figure and the entries need not sum to it (import-time leaks print once per module measured alone). Every entry is the figure a clean clone prints: test_config once printed this clone's ledger warnings as well (BG0647, fixed) and is held at its own line. Lower an entry as leaks are captured; budget-check refuses a raised one.",
- "_total": 106,
+ "_total": 104,
  "test_ac_scope": 0,
  "test_affects_resolvable": 0,
  "test_amigo_consult": 0,
@@ -32,7 +32,7 @@
  "test_constitution": 0,
  "test_conventions": 0,
  "test_create_validate_roundtrip": 0,
- "test_critic": 3,
+ "test_critic": 0,
  "test_decisions": 0,
  "test_deploy": 0,
  "test_detector_owed": 0,

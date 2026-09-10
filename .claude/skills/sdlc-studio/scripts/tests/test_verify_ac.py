@@ -6913,15 +6913,80 @@ class TestPlanCellEscapingTests(unittest.TestCase):
         self.assertEqual([self.PIPED], [r["mutant"] for r in got],
                          "the mutant did not survive the round trip")
 
-    def test_a_row_written_before_the_fix_is_still_read_whole(self) -> None:
-        """MUTANT: read only the second cell, dropping the legacy re-join.
+    def test_a_title_carrying_a_raw_pipe_leaves_the_mutant_alone(self) -> None:
+        """MUTANT: re-join cells 1 to -1 whenever the row splits into more than three.
 
-        Escaping the writer alone would leave every row already on disk unreadable, which is a
-        worse tree than the defect produced: the corruption moves from new rows to every old
-        one, silently."""
-        got = verify_ac._testplan_rows(self._plan(f"| AC1 | {self.PIPED} | a title |"))
-        self.assertEqual([self.PIPED], [r["mutant"] for r in got],
-                         "a row written before the escape was truncated at its pipe")
+        The re-join read every extra pipe as a mutant that carried a raw one. A reader cannot
+        tell that from a pipe in the TITLE, and on a title-piped row it fused the title into
+        the mutant and truncated it - `testplan derive` then refused the artefact for
+        restating its own criterion, blaming the author for what the reader had done. Nothing
+        in this corpus exercises the re-join: 0 of 1,032 Test Plan rows split to anything but
+        three cells, because markdownlint MD056 refuses a row that does."""
+        plan = self._plan("| AC1 | in scripts/x.py, delete the guard | "
+                          "quotes gate.py --boundary push | release |")
+        got = verify_ac._testplan_rows(plan)
+        self.assertEqual(["in scripts/x.py, delete the guard"], [r["mutant"] for r in got],
+                         "the title's pipe reached the mutant")
+
+    def _unit(self, root, mutant: str, ac_then: str = "the guard refuses a bad row"):
+        """A bug artefact whose ONE criterion carries the given authored mutant, ready for the
+        shipped `testplan derive` to rewrite in place."""
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "BG9002-x.md"
+        f.write_text(
+            "# BG9002: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Points:** 2\n> **Affects:** scripts/x.py, tests/test_x.py\n"
+            "> **Created:** 2026-09-09\n\n## Summary\n\nA thing.\n\n"
+            "## Acceptance Criteria\n\n### AC1: it behaves\n\n"
+            f"- **Then** {ac_then}\n- **Verify:** shell true\n\n"
+            "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+            f"| AC1 | {verify_ac._cell(mutant)} | a title |\n\n## Revision History\n",
+            encoding="utf-8")
+        return f
+
+    def test_the_shipped_derive_writes_a_piped_mutant_and_reads_it_back(self) -> None:
+        """MUTANT: revert the row writer to a bare f-string over the raw values.
+
+        DRIVEN through `testplan_derive`, because the writer is the half a hand-built row can
+        never reach: the first cut's three nodes all composed their rows by calling the cell
+        helper directly, so reverting the write site left every one of them green and the
+        repo's own coverage gate named the writer line as executed by no verifier."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            f = self._unit(root, self.PIPED)
+            # THROUGH THE SHIPPED COMMAND, not the library function: the repo's own lane-check
+            # named this unit as one whose verifiers never enter an entry point, and the
+            # wiring is the part a library call does not exercise.
+            import subprocess  # noqa: PLC0415
+            script = Path(verify_ac.__file__)
+            r = subprocess.run([sys.executable, "-B", str(script), "testplan", "derive",
+                                "--unit", "BG9002", "--root", str(root)],
+                               capture_output=True, text=True, check=False, timeout=180)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            row = next(l for l in f.read_text(encoding="utf-8").splitlines()
+                       if l.startswith("| AC1 |"))
+            self.assertEqual(3, len(verify_ac._UNESCAPED_PIPE.split(row.strip().strip("|"))),
+                             f"the written row does not hold three columns:\n{row}")
+            got = verify_ac._testplan_rows(f.read_text(encoding="utf-8"))
+            self.assertEqual([self.PIPED], [r["mutant"] for r in got],
+                             f"the mutant did not survive the shipped writer:\n{row}")
+
+    def test_the_unnameable_reader_uses_the_same_splitter_as_the_row_reader(self) -> None:
+        """MUTANT: read the line raw in `testplan_unnameable`, splitting on every pipe.
+
+        Two parsers of one table. The unnameable reader split on the escaped pipe the writer
+        produces, so its reason was truncated at the backslash and `sprint plan` refused the
+        batch for a row with no reason recorded - over a row that had one."""
+        reason = ("unnameable: a `rg x " + verify_ac._cell("| wc") +
+                  "` sweep of the whole corpus, no code branch decides it")
+        plan = self._plan(f"| AC3 | {reason} | a title |")
+        got = verify_ac.testplan_unnameable(plan)
+        self.assertEqual(1, len(got), got)
+        self.assertFalse(got[0]["malformed"],
+                         f"a reason with 12 characters of substance read as malformed: {got[0]}")
+        self.assertIn("sweep of the whole corpus", got[0]["reason"],
+                      f"the reason was truncated at the escaped pipe: {got[0]}")
 
     def test_a_mutant_with_no_pipe_is_written_byte_identically(self) -> None:
         """MUTANT: fold whitespace in the cell writer as well as escaping pipes.

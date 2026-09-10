@@ -47,8 +47,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0656` | Medium | The disclosure page's prose and its guard are bound to a RELEASED version's notes, so every disposition walks a published claim and the page lies a... |
 | `BG0657` | Medium | The scheduled corpus lane is red at 23 against a baseline of 20, and the baseline records only a COUNT, so no reader can tell which three are new |
 | `BG0658` | Medium | testplan derive writes its rows unescaped and reads them back by splitting on a raw pipe, so a mutant naming a piped command is silently truncated |
+| `BG0659` | Medium | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row |
 
-17 findings: 17 Medium, 0 Low.
+18 findings: 18 Medium, 0 Low.
 
 ## Not carried
 

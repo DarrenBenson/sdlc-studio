@@ -159,6 +159,21 @@ fi
 # that wants to assert on the diagnostic still can. Measured at 106 with the captures in place.
 # Lowered to match rather than raised to accommodate, as every entry above. 106 is now the
 # `_total` entry of the budget file; the scalar is no longer passed.
+# 107 -> 106 (BG0637/BG0608/BG0654/BG0658 round two): the lane was RED on main again. Measured
+# at 107 in a detached worktree at HEAD and at 107 with this round's change, so the extra line
+# was pre-existing and the gate had been enforcing nothing since it arrived. `test_cli_record`
+# in test_critic.py was letting `critic.py record` print the line naming what it wrote with
+# nothing capturing stdout; capturing it and ASSERTING on it takes the run back to 106 and
+# gives the test the half a return code cannot carry. test_critic's entry is lowered 3 -> 1 to
+# match what it now leaks alone, rather than left over-declared. Lowering it to 1 then put the
+# SELECTED run one line over its own sum - the bound this file already states, a module's
+# overrun masked by a sibling's slack - so test_critic's last leak was captured as well: an
+# escalation fixture whose deliberately-narrow Affects made the filer note it, 0 now. That
+# STILL left the selected run one over, so every module was measured alone against its entry -
+# 129 of them - and exactly one was over: test_mutation, leaking the `WITHDREW` line from the
+# refusal remedy it runs as printed, with an entry of 0. Captured and asserted on. Whatever the
+# masking, a per-module sweep is what settles it; the sum alone cannot. `_total` follows the
+# three captures down, 106 -> 104.
 if [ -n "${mods:-}" ]; then
   # shellcheck disable=SC2086
   printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --budget "$budget" --select $mods

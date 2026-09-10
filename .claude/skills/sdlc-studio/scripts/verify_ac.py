@@ -2994,7 +2994,7 @@ _EDIT_VERBS = (
 )
 
 #: A cell split on UNESCAPED pipes only. A mutant naming a piped command is an ordinary thing
-#: to write - a shell pipeline is what half the corpus's shell verifiers are - and the raw
+#: to write - 36 of this corpus's 370 shell verifiers are pipelines - and the raw
 #: `split("|")` that read these rows truncated it at the first one while the writer reported
 #: success, so the plan read as complete and measured less than it said.
 _UNESCAPED_PIPE = re.compile(r"(?<!\\)\|")
@@ -3193,11 +3193,15 @@ def _testplan_rows(text: str) -> list:
         cells = _split_cells(line)
         if len(cells) >= 2 and re.fullmatch(r"AC\d+", cells[0] or ""):
             ac = cells[0]
-            # More cells than columns means a legacy row whose mutant carries a raw pipe. The
-            # title is the last cell; the mutant is everything between, put back together.
-            mutant = ("|".join(_split_cells(line, strip=False)[1:-1]).strip()
-                      if len(cells) > 3 else cells[1])
-            rows.append({"ac": ac, "mutant": mutant, "row": seen.get(ac, 0)})
+            # THE SECOND CELL, always. An earlier cut re-joined cells 1 to -1 whenever a row
+            # split into more than three, reading the extra pipes as a mutant that carried a
+            # raw one - but the reader cannot tell a pipe in the mutant from a pipe in the
+            # title, and a row whose TITLE carried one had its title fused into its mutant and
+            # truncated. Nothing in this corpus exercised the re-join (0 of 1,032 rows split to
+            # anything but three cells; markdownlint MD056 refuses a row that does), so it was
+            # dead for every real row and wrong for the one shape it fired on. A pipe inside a
+            # cell is escaped at the write site, which is where the ambiguity is decidable.
+            rows.append({"ac": ac, "mutant": cells[1], "row": seen.get(ac, 0)})
             seen[ac] = seen.get(ac, 0) + 1
     return rows
 
@@ -3236,7 +3240,11 @@ def testplan_unnameable(text: str) -> list:
             continue
         if not in_plan or not line.strip().startswith("|"):
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        # THE SAME SPLITTER the row parser uses. This read the line raw, so an escaped pipe
+        # the writer produced was split on and its reason truncated at the backslash - the two
+        # parsers of one table then disagreed about the same row, and `sprint plan` refused a
+        # batch for "`unnameable` with no reason recorded" over a row that had one.
+        cells = _split_cells(line)
         if len(cells) < 2 or not re.fullmatch(r"AC\d+", cells[0] or ""):
             continue
         cell = cells[1]
