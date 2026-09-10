@@ -1914,6 +1914,24 @@ def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> 
             "dropped_total": state["dropped"], "written": True}
 
 
+def blob_text(root: Path, rel: str, spec: str) -> str | None:
+    """The TEXT git holds for `rel` at `spec` (`HEAD:` or `:` for the index), or None.
+
+    An anchored row is judged by whether its site still occurs exactly once in the bytes under
+    question, and at commit time those bytes are the STAGED ones - not the working copy, which
+    the commit will not carry.
+    """
+    import subprocess  # noqa: PLC0415
+    try:
+        out = subprocess.run(["git", "-C", str(root), "show", f"{spec}{rel}"],
+                             capture_output=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return out.stdout.decode("utf-8", errors="replace")
+
+
 def _blob_sha256(root: Path, rel: str, spec: str) -> str | None:
     """sha256 of the bytes git holds for `rel` at `spec` (`HEAD:` or `:` for the index), or
     None when git has no such blob. The ledger keys evidence on a content hash, so the
@@ -1928,6 +1946,36 @@ def _blob_sha256(root: Path, rel: str, spec: str) -> str | None:
     if out.returncode != 0:
         return None
     return hashlib.sha256(out.stdout).hexdigest()
+
+
+def row_staleness(root: Path | str, entry: dict, mutant: dict) -> str:
+    """One meaning of STALE for a single ROW, which is the grain the evidence is actually at.
+
+    A row registered WITH an anchor is judged by that anchor's presence in the working file:
+    `live` when it occurs exactly once, `stale` otherwise. It says nothing about the rest of
+    the file, and that is the point - a mutant's evidence is about the site it was applied to,
+    and 26 of this ledger's 74 targets carry rows from more than one unit. Judged by the file's
+    hash, an edit anywhere in `verify_ac.py` staled seven units' rows at once and every one had
+    to be re-measured by hand.
+
+    An anchor that occurs MORE THAN ONCE is stale too. It no longer identifies one site, so it
+    cannot say which site the verdict was about, and reading it as live would report a
+    measurement nobody made - the same reasoning that makes `register` refuse a non-unique
+    anchor in the first place.
+
+    A row with NO anchor falls back to the entry's hash, unchanged. That is every row written
+    before this shipped, and silently promoting them to live would turn a cost into a
+    correctness failure.
+    """
+    text = str(mutant.get("anchor") or "")
+    if not text:
+        return entry_staleness(root, entry)
+    fp = Path(root) / str(entry.get("target") or "")
+    if not fp.is_file():
+        # The target is gone from the working tree; the entry-wide judgement still distinguishes
+        # `missing` from `head`, and an anchor cannot be counted in a file that is not there.
+        return entry_staleness(root, entry)
+    return "live" if fp.read_text(encoding="utf-8", errors="replace").count(text) == 1 else "stale"
 
 
 def entry_staleness(root: Path | str, entry: dict) -> str:
@@ -2088,6 +2136,13 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
               # Absent, the row simply cannot be compared across provenances, and that is the
               # honest state rather than a guessed one.
               "class": fault_class,
+              # THE SITE THIS ROW'S EVIDENCE IS ABOUT, kept rather than validated and thrown
+              # away. Without it a row can only be judged by the WHOLE FILE's hash, so an edit
+              # anywhere in a target stales every unit's rows on it - measured on this ledger,
+              # 26 of 74 targets carry rows from more than one unit and `verify_ac.py` carries
+              # seven. Re-measuring seven units because one line moved in an eighth is a cost
+              # paid on every commit that touches a shared file.
+              "anchor": anchor or None,
               "at": sdlc_md.now_iso8601()}
     entry = next((e for e in entries if e.get("target") == rel
                   and entry_provenance(e) == PROVENANCE_REGISTERED
@@ -3038,6 +3093,22 @@ def cmd_retract(args: argparse.Namespace) -> int:
 
 
 def cmd_register(args: argparse.Namespace) -> int:
+    # REQUIRED AT THE COMMAND, which is where a self-reported row is written by a person or an
+    # agent. Validated-and-discarded is what left every row judgeable only by its whole file,
+    # so an edit anywhere in a shared target staled every unit's evidence on it - measured on
+    # this ledger, `verify_ac.py` carried seven units and one edit re-measured all seven.
+    #
+    # Required HERE and not in `register_mutant`, because the library function is also the
+    # fixtures' way of building a ledger to test the readers with, and those rows are not
+    # claims about a measurement anybody took. The migration is the same either way: a row
+    # gains its anchor at the moment somebody actually measures it, rather than by a backfill
+    # asserting a site for a measurement never taken there (US0822).
+    if not getattr(args, "anchor", None):
+        print("error: --anchor is required: pass the exact text your mutant REPLACED, quoted "
+              "with enough surrounding context to occur exactly once in the target. It is what "
+              "lets this row be judged on its own site rather than on the whole file's hash, so "
+              "an edit elsewhere in the target stops staling it", file=sys.stderr)
+        return 2
     try:
         res = register_mutant(args.root, args.target, args.mutant, args.test, args.verdict,
                               reason=getattr(args, "reason", None),

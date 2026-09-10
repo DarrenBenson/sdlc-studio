@@ -7216,6 +7216,36 @@ class EvidenceDriftTests(unittest.TestCase):
                             "--only", "evidence-drift"], capture_output=True, text=True, timeout=300)
         return r.returncode, r.stdout + r.stderr
 
+    def test_the_lane_names_only_the_rows_whose_anchors_moved(self) -> None:
+        """US0822 AC6. MUTANT: report the whole entry when any row on a target moved, rather
+        than the moved rows.
+
+        The library answer is not the one a committer meets; the LANE is. A target here carries
+        rows from four units, all anchored at their own sites, and the commit edits exactly one
+        of those sites - so one unit must be named and the other three must not. Judged against
+        the STAGED bytes, because those are what the commit will carry."""
+        import mutation as _mut  # noqa: PLC0415
+        fx = self._fixture()
+        # Four units are anchored on `x = 1`; give ONE of them a site of its own and move only
+        # that site, so a per-file judgement and a per-row judgement give different answers.
+        (fx / "src" / "x.py").write_text("x = 1\nmine = 1\n", encoding="utf-8")
+        self._git(fx, "add", "-A"); self._git(fx, "commit", "-q", "-m", "add a second site")
+        _mut.register_mutant(fx, fx / "src" / "x.py", "flip mine", "pytest t", "killed",
+                             unit="BG0003", criterion="AC2", line=2, anchor="mine = 1", row=0)
+        (fx / "src" / "x.py").write_text("x = 1\nmine = 99\n", encoding="utf-8")
+        self._git(fx, "add", "-A")
+        rc, out = self._lane(fx)
+        self.assertIn("BG0003", out,
+                      f"the unit whose own site moved was not named:\n{out}")
+        self.assertIn("AC2 r0", out,
+                      f"the ROW whose site moved was not named:\n{out}")
+        for untouched in ("BG0001", "US0001", "BG0002"):
+            self.assertNotIn(f"{untouched}: src/x.py", out,
+                             f"{untouched}'s rows are anchored at a site this commit did not "
+                             f"touch, and the lane demanded them re-measured anyway:\n{out}")
+        self.assertNotIn("AC1 r0", out,
+                         f"the rows anchored on the untouched site were named:\n{out}")
+
     def test_a_commit_that_rewrites_a_registered_target_is_refused_with_the_unit_named(self) -> None:
         import mutation as _mut  # noqa: PLC0415
         fx = self._fixture()

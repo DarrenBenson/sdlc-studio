@@ -1285,13 +1285,25 @@ def _evidence_drift(root: str) -> dict:
     reported: list[str] = []
     seen = 0
     remedy = ("re-apply each row's mutant with the working copy equal to the staged bytes and "
-              "`mutation.py register` it, then check with `mutation.py run --story <id> --from-plan`")
+              "`mutation.py register --anchor '<the text it replaced>'` it, then check with "
+              "`mutation.py run --story <id> --from-plan`")
 
-    def _unit_rows(entry):
+    def _unit_rows(entry, staged_text=None):
+        """The live rows this entry carries, per unit - MINUS those an anchor exonerates.
+
+        A row that records the site its mutant was applied to is drifted only when THAT SITE
+        moved. Judged against the STAGED text, because those are the bytes the commit will
+        carry. Without this the grain is the whole file: an edit anywhere in `verify_ac.py`
+        drifted seven units' rows at once, and every one had to be re-measured by hand before
+        the commit could land.
+        """
         rows: dict[str, list[str]] = {}
         for m in entry.get("mutants") or []:
             if not isinstance(m, dict) or not m.get("unit") or m.get("withdrawn"):
                 continue
+            site = str(m.get("anchor") or "")
+            if site and staged_text is not None and staged_text.count(site) == 1:
+                continue                     # the row's own site is untouched by this commit
             rows.setdefault(str(m["unit"]), []).append(
                 f"{m.get('criterion') or '?'} r{int(m.get('row') or 0)}")
         return rows
@@ -1306,7 +1318,8 @@ def _evidence_drift(root: str) -> dict:
 
     for entry in registered:
         rel = str(entry.get("target") or "")
-        rows = _unit_rows(entry)
+        staged_text = _mu.blob_text(root, rel, ":") if rel in staged_set else None
+        rows = _unit_rows(entry, staged_text)
         if not rows:
             continue
         staleness = _mu.entry_staleness(root, entry)

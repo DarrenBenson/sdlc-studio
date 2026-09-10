@@ -1583,7 +1583,8 @@ def _file_surviving_mutants(root, uid: str, text: str, type_: str) -> list[str]:
             "fix": (f"Add the assertion the mutant escapes, then re-register: "
                     f"`mutation.py register --unit {uid} --criterion "
                     f"{mu.get('criterion') or 'ACn'} --target {target} --line {line} "
-                    f"--mutant '<the edit>' --test '<the command>' --verdict killed`"),
+                    f"--mutant '<the edit>' --anchor '<the text it replaced>' "
+                    f"--test '<the command>' --verdict killed`"),
         })
         # The idempotence key is stamped on the ARTEFACT, upserted after the filer wrote it -
         # a `.local` cache re-mints on cache loss, and the finding is then in the backlog twice
@@ -2637,7 +2638,8 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
                 f"Its diff against {base[:12]} changes {len(targets)} mutatable file(s): "
                 f"{named}. Apply a mutant to what it changed, watch its test fail, and record "
                 f"it: `mutation.py register --unit {uid} --criterion ACn --target <file> "
-                f"--line <n> --mutant <the edit> --test <the command> --verdict killed`")
+                f"--line <n> --mutant <the edit> --anchor <the text it replaced> "
+                f"--test <the command> --verdict killed`")
 
     stale = []
     for e in mine:

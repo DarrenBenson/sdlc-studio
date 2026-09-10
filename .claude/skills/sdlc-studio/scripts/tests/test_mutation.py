@@ -6,6 +6,7 @@ nothing beyond python3. Test titles are pinned by TS0002's AC Coverage Matrix.
 from __future__ import annotations
 
 import argparse
+import ast
 import contextlib
 import importlib.util
 import io
@@ -858,10 +859,13 @@ class RegisterTests(unittest.TestCase):
         return hashlib.sha256(path.read_bytes()).hexdigest()
 
     def _register(self, mut, root: Path, **kw):
+        # `--anchor` is required by the shipped command since US0822: a row records the SITE its
+        # mutant was applied to, so an edit elsewhere in the target stops staling it.
         args = ["register", "--target", str(root / kw.pop("target", "target.py")),
                 "--mutant", kw.pop("mutant", "classify: inverted the x > 0 guard"),
                 "--test", kw.pop("test", "test_good.T.test_classify"),
                 "--line", str(kw.pop("line", 2)),
+                "--anchor", kw.pop("anchor", "    if x > 0:"),
                 "--verdict", kw.pop("verdict", "killed"), "--root", str(root)]
         assert not kw, kw
         buf = io.StringIO()
@@ -1859,6 +1863,7 @@ class EquivalentMutantExclusionTests(unittest.TestCase):
             with contextlib.redirect_stdout(buf):
                 rc = mut.main(["register", "--root", str(root), "--target", str(target),
                                "--mutant", "a no-op swap", "--verdict", "equivalent",
+                               "--anchor", "x = 1",
                                "--reason", "unkillable by construction", "--run", rid])
             self.assertEqual(rc, 0)
             self.assertIn("EXCLUDED", buf.getvalue())
@@ -4059,6 +4064,7 @@ class RegisteredLineTests(unittest.TestCase):
             with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
                 rc = m.main(["register", "--root", str(root), "--unit", "BG0001",
                              "--target", "src/thing.py", "--line", "2",
+                             "--anchor", "    if a == b:",
                              "--mutant", "inverted the guard", "--test", "pytest x",
                              "--verdict", "survived"])
             self.assertEqual(0, rc, buf.getvalue())
@@ -5479,7 +5485,7 @@ class RegisterReplacesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = self._root(Path(d))
             argv = [sys.executable, str(SCRIPT), "register", "--root", str(root), "--unit", "BG9201", "--criterion", "AC1", "--row", "0",
-                    "--target", "t.py", "--line", "1", "--mutant", "flip VALUE", "--test", "pytest x.py::T::test_a", "--verdict", "killed"]
+                    "--target", "t.py", "--line", "1", "--mutant", "flip VALUE", "--anchor", "VALUE = 1", "--test", "pytest x.py::T::test_a", "--verdict", "killed"]
             first = subprocess.run(argv, capture_output=True, text=True, timeout=120); self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
             second = subprocess.run(argv, capture_output=True, text=True, timeout=120); self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
             self.assertIn("replaced the identical live row for BG9201 AC1 r0", second.stdout)
@@ -5488,6 +5494,198 @@ class RegisterReplacesTests(unittest.TestCase):
             third = subprocess.run(argv[:-1] + ["survived"], capture_output=True, text=True, timeout=120)
             self.assertEqual(third.returncode, 2, third.stdout + third.stderr)
             self.assertIn("mutation.py retract --unit BG9201 --criterion AC1 --target t.py --line 1 --mutant 'flip VALUE' --verdict killed --reason <why>", third.stderr)
+
+
+class AnchoredStalenessTests(unittest.TestCase):
+    """US0822 (CR0570): a registered row records the SITE its mutant was applied to, and its
+    staleness is judged from that site rather than from the whole file's content hash.
+
+    Measured on the live ledger when this was written: 26 of 74 targets carried rows from more
+    than one unit and `verify_ac.py` carried seven, so an edit anywhere in it staled all seven
+    and every one had to be re-measured by hand before a commit could land."""
+
+    SRC = 'ALPHA = 1\nBETA = 2\nGAMMA = 3\n'
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "thing.py").write_text(self.SRC, encoding="utf-8")
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        return root
+
+    def _reg(self, mut, root, *, anchor="BETA = 2", unit="US9001", criterion="AC1", row=0):
+        return mut.register_mutant(root, root / "src" / "thing.py",
+                                   mutant="flip the value", test="pytest t.py::T::test_x",
+                                   verdict="killed", unit=unit, criterion=criterion, row=row,
+                                   line=2, anchor=anchor)
+
+    def _entry_and_row(self, mut, root, unit="US9001"):
+        state, _ = mut._load_ledger(mut.ledger_path(root))
+        for e in state["entries"]:
+            for m in e.get("mutants") or []:
+                if m.get("unit") == unit:
+                    return e, m
+        raise AssertionError("no registered row found")
+
+    def test_an_unrelated_edit_leaves_an_anchored_row_live(self) -> None:
+        """AC1. MUTANT: ignore the stored anchor and fall back to the entry's content hash.
+
+        The whole point: a row's evidence is about the site it was applied to, so a line moving
+        somewhere else in the same file says nothing about it."""
+        with tempfile.TemporaryDirectory() as d:
+            mut = _load()
+            root = self._root(d)
+            self._reg(mut, root)
+            (root / "src" / "thing.py").write_text(
+                self.SRC.replace("GAMMA = 3", "GAMMA = 30  # unrelated"), encoding="utf-8")
+            entry, row = self._entry_and_row(mut, root)
+            self.assertEqual("stale", mut.entry_staleness(root, entry),
+                             "the file-wide judgement must still call this stale, or this row "
+                             "cannot show the difference the anchor makes")
+            self.assertEqual("live", mut.row_staleness(root, entry, row),
+                             "an edit elsewhere in the target staled a row whose own site is "
+                             "untouched")
+
+    def test_editing_the_anchored_text_stales_that_row(self) -> None:
+        """AC2. MUTANT: invert the zero-occurrence branch so a vanished site reads live."""
+        with tempfile.TemporaryDirectory() as d:
+            mut = _load()
+            root = self._root(d)
+            self._reg(mut, root)
+            (root / "src" / "thing.py").write_text(
+                self.SRC.replace("BETA = 2", "DELTA = 9"), encoding="utf-8")
+            entry, row = self._entry_and_row(mut, root)
+            self.assertEqual("stale", mut.row_staleness(root, entry, row),
+                             "the row's own site was edited and it still read live")
+
+    def test_an_anchor_matching_twice_is_stale_not_live(self) -> None:
+        """AC3. MUTANT: replace the equality on the occurrence count with a greater-than-zero.
+
+        An anchor that no longer identifies ONE site cannot say which site the verdict was
+        about, so reading it as live reports a measurement nobody made - the same reasoning
+        that makes `register` refuse a non-unique anchor in the first place."""
+        with tempfile.TemporaryDirectory() as d:
+            mut = _load()
+            root = self._root(d)
+            self._reg(mut, root)
+            (root / "src" / "thing.py").write_text(self.SRC + "BETA = 2\n", encoding="utf-8")
+            entry, row = self._entry_and_row(mut, root)
+            self.assertEqual("stale", mut.row_staleness(root, entry, row),
+                             "an anchor matching twice was read as live, so the row claims a "
+                             "site it can no longer identify")
+
+    def test_a_row_with_no_anchor_is_still_judged_by_the_file_hash(self) -> None:
+        """AC4. MUTANT: skip the hash comparison when the field is absent.
+
+        Every row written before this shipped carries no anchor, and silently promoting them to
+        live would turn a cost into a correctness failure - this repository has already shipped
+        a schema widened without testing its oldest shape."""
+        with tempfile.TemporaryDirectory() as d:
+            mut = _load()
+            root = self._root(d)
+            self._reg(mut, root)
+            entry, row = self._entry_and_row(mut, root)
+            legacy = dict(row); legacy.pop("anchor", None)
+            (root / "src" / "thing.py").write_text(
+                self.SRC.replace("GAMMA = 3", "GAMMA = 30"), encoding="utf-8")
+            self.assertEqual("live", mut.row_staleness(root, entry, row),
+                             "the control: the anchored row is unaffected by the same edit")
+            self.assertEqual("stale", mut.row_staleness(root, entry, legacy),
+                             "a row carrying no anchor was not judged by the file's hash, so "
+                             "every legacy row was silently promoted to live")
+
+    def test_register_persists_the_anchor_and_still_refuses_a_non_unique_one(self) -> None:
+        """AC5. MUTANTS: omit the field from the dict `register_mutant` builds; remove the
+        uniqueness test applied to the anchor at registration.
+
+        The value was validated and then thrown away, which is why nothing on a row could
+        answer whether its own site had moved."""
+        with tempfile.TemporaryDirectory() as d:
+            mut = _load()
+            root = self._root(d)
+            self._reg(mut, root)
+            _entry, row = self._entry_and_row(mut, root)
+            self.assertEqual("BETA = 2", row.get("anchor"),
+                             f"the anchor was validated and discarded rather than kept: {row}")
+            with self.assertRaises(ValueError) as ctx:
+                self._reg(mut, root, anchor="= ", unit="US9002")
+            self.assertIn("not exactly once", str(ctx.exception))
+
+
+class AnchorIsRequiredTests(unittest.TestCase):
+    """US0822's migration half. AC1 to AC6 give an ANCHORED row the benefit and AC4 keeps every
+    unanchored row on the file hash - so with 515 unanchored rows on disk the unit would buy
+    nothing in the run that built it. Requiring the anchor at the write is the conversion: a row
+    gains one at the moment somebody actually measures it, rather than by a backfill asserting a
+    site for a measurement never taken there."""
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "thing.py").write_text("ALPHA = 1\n", encoding="utf-8")
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        return root
+
+    def test_a_self_reported_registration_without_an_anchor_is_refused(self) -> None:
+        """AC7. MUTANT: default the missing anchor and fall through to the write.
+
+        DRIVEN through the shipped command, which is where a person or an agent writes a
+        self-reported row - and where the requirement belongs. `register_mutant` stays
+        permissive because the fixtures use it to build ledgers for the readers under test, and
+        those rows are not claims about a measurement anybody took."""
+        with tempfile.TemporaryDirectory() as d:
+            mut = _load()
+            root = self._root(d)
+            argv = ["register", "--root", str(root), "--target", str(root / "src" / "thing.py"),
+                    "--unit", "US9001", "--criterion", "AC1", "--row", "0", "--line", "1",
+                    "--mutant", "flip it", "--test", "pytest t.py::T::test_x",
+                    "--verdict", "killed"]
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mut.main(argv)
+            self.assertEqual(2, rc, "a registration with no anchor was accepted")
+            msg = err.getvalue()
+            self.assertIn("--anchor is required", msg)
+            self.assertIn("REPLACED", msg, f"the refusal does not say WHAT to pass: {msg}")
+            # The paired control: with one, the same registration through the same command is
+            # accepted - a check that refused everything would satisfy the row above.
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                rc = mut.main([*argv, "--anchor", "ALPHA = 1"])
+            self.assertEqual(0, rc, f"a registration carrying an anchor was refused: {out.getvalue()}")
+
+    def test_every_printed_register_remedy_names_the_flag_it_now_needs(self) -> None:
+        """AC8. MUTANT: drop the anchor argument from any remedy that names `register`.
+
+        Three sites compose one, and none named the flag - so requiring it would have shipped a
+        tool whose own printed instructions the tool refuses.
+
+        Read as WHOLE remedies. Every one is an implicit concatenation spanning several source
+        lines, and TWO readings have already got this wrong: line by line reports a remedy that
+        names the flag on its next line as missing it, and per-AST-node does the same, because
+        Python 3.12 stopped merging adjacent f-strings into one node. The source's implicit
+        concatenations are joined first, then each remedy is taken from the command to the
+        backtick that closes it. Source-level deliberately, and the reason is stated rather than
+        hidden: the remedies carry `<placeholder>` arguments, so there is no literal form of
+        them to execute - what a reader can be given is the advice they are shown."""
+        import re  # noqa: PLC0415
+        scripts = Path(__file__).resolve().parent.parent
+        found = 0
+        for name in ("transition.py", "gate.py"):
+            text = (scripts / name).read_text(encoding="utf-8")
+            joined = re.sub(r"['\"]\s*\n\s*[fr]?['\"]", "", text)
+            for m in re.finditer(r"mutation\.py register", joined):
+                tail = joined[m.start():]
+                remedy = tail[:tail.index("`")] if "`" in tail[:400] else tail[:400]
+                found += 1
+                with self.subTest(source=name, remedy=remedy[:60]):
+                    self.assertIn("--anchor", remedy,
+                                  f"{name} composes a `mutation.py register` remedy that omits "
+                                  f"the flag the tool now requires, so a reader who follows it "
+                                  f"is refused:\n{remedy}")
+        self.assertGreater(found, 0,
+                           "no remedy naming `mutation.py register` was found at all, so this "
+                           "guard is looking in the wrong place and measures nothing")
 
 if __name__ == "__main__":
     unittest.main()
