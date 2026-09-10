@@ -1,6 +1,6 @@
 # US0821: The plan ruling is recorded, hashed against what it excuses, and withdrawable
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0569
 > **Created:** 2026-09-09
 > **Created-by:** sdlc-studio new

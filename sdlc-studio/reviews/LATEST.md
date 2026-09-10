@@ -3,61 +3,60 @@
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-> **Run of record:** RUN-01M1YK70 - the delivery loop refuses before the seats do (D0183). Six
-> units, 27 points, 98 mutants registered killed and none surviving; the rows of ten earlier
-> units re-measured after every shared-file edit. Goal **achieved**, every clause measured on
-> main. The push stays the operator's.
+> **Run of record:** RUN-01M20RWX - every Medium open at the base ref, disposed of. Twenty-two
+> units, 72 points, 174 mutants registered killed and none surviving. Goal **achieved**: 18 bugs
+> at Fixed with their own verifiers passing, 4 stories at Done, and the three findings this run
+> itself filed ruled open with a date and a reason. The push and the v5.1 tag stay the operator's.
 
-## THE HEADLINE: THE GATE THIS BATCH BUILT CAUGHT ITS OWN BUILDERS
+## THE HEADLINE: THE REVIEW FOUND ONE SHAPE NINE TIMES
 
-`verify_ac run --coverage` was run on the two stories that built it before either was briefed.
-On US0815 it named thirteen unexecuted added lines and a new file measured as zero statements,
-which produced six mutants and a real fix; on US0816 it named one line, an unused branch of the
-test's own fixture, removed rather than ruled. That is the instrument doing to its author what
-the seats had been doing all run.
+Sixty-three seat verdicts across plan and delivery, forty-four of them REJECT, and almost every
+blocking finding was the same defect: **a criterion whose words go further than its fixture.**
+AC5 named three grep failures by name and tested none of them, so a selector that was simply a
+typo classified as healthy on 126 verifiers. AC8 said it judged a printed remedy by RUNNING it
+and read the source instead, which is how four remedies came to tell a reader to run a command
+the tool now refuses - one of them printed by the very command that does the refusing. AC7
+required its values to round-trip and asserted that the WORD "pipe" survived a writer that
+replaced the character with a slash. AC4's control was built on a class the shipped code never
+emits. In each case the criterion read as met and measured something narrower than it said.
 
-The seats still found eight blocking defects across thirty-three delivery verdicts, and every
-one was a branch a fixture could not reach rather than wrong code: an unparseable ledger read as
-clean, an uncommitted edit to a TRACKED file where the fixture used an untracked one, a stale
-coverage data file the fixture wrote as prose that `coverage combine` cannot read, coverage's own
-verbs failing read as no data, a printed retraction a shell mangles because 67 of 430 ledger rows
-carry a backtick, and a test module red under the plain unittest runner because `unittest.mock`
-was used without importing the submodule - the exact failure the `module-alone` boundary lane
-exists to catch, hidden by pytest importing it for us.
+The sharpest finding was a product seat's census rather than a reading: US0819's probe, which
+exists to ask whether a criterion can fail, classified a unit as a finding unless a commit
+SUBJECT named it - and a repo-wide run showed every one of its 25 findings was a unit the same
+commit had delivered. The test could not see it, because it patched the reader out.
 
 ## WHAT LANDED
 
-- BG0653 - a staged test rename or deletion that orphans a stamped `Verify:` selector is refused
-  at pre-commit, resolving index blobs by AST in all four selector shapes.
-- BG0652 - `status.py hint` inside one corpus sweep: 57 s to under a second.
-- BG0614 - `mutation.py audit` names every duplicated ledger key with its rows, tags stale and
-  missing targets, and refuses a ledger it cannot parse.
-- US0818 - `register` replaces the identical live row, refuses a disagreeing one, and prints the
-  retraction as a command that runs as printed.
-- US0815 - `verify_ac run --coverage` names every line a unit itself added that its own verifiers
-  never executed, and refuses when the measurement cannot be trusted.
-- US0816 - the Fixed and Done gates read that measurement. `report` by default, `block` here from
-  2026-09-07, `off` collects nothing, an unknown value is refused by name, and a line ruled
-  equivalent is subtracted and counted in the depth field.
+- **US0819/US0820/US0821** - the falsifiability probe. `testplan probe` runs each criterion
+  against the tree and reports a PASS as the finding; `sprint plan` refuses a batch carrying an
+  unruled one (three modes, default `report`); a ruling is recorded against the criterion's title
+  AND selector, and reported STALE when either moves.
+- **US0822** - a ledger row is judged by the site its mutant was applied to. The reviewer found
+  the benefit was unreachable: `plan_execution`, the join the terminal gate reads, still keyed on
+  the whole file's hash, so the anchors reached the commit lane and stopped. 26 rows across three
+  units went from `not-run` to counted the moment that was fixed.
+- **Eighteen Mediums**, from `check_versions` extracting a version by structure only, through the
+  test-plan gate firing at the terminal transition by whatever route reached it, to the corpus
+  lane reporting what rose, what went green and what VANISHED by id.
+- **D0186** - the v5.1 bar is the RULING, not the count, superseding D0185's first promise.
 
-## THE SECOND ROUND, AND WHAT IT COST
+## WHAT THE SEATS GOT WRONG
 
-Round two ran on every unit whose repair was unreviewed, and rejected again: four seats,
-four rejections, converging from opposite directions on one defect. `coverage withdraw`
-searched by the ruling's REASON text, so a withdrawal retracted whichever row came first
-while reporting the row named, and on an escaped pipe it matched nothing, crashed on a
-bare assertion, and under `python3 -O` reported success with the waiver still live. Beside
-it, a ruling this run wrote claimed its line was reachable only by breaking a tool the
-suite needs; two seats reached it with every tool intact. The fixture now spawns a traced
-child before the verifier hangs, the ruling is withdrawn on the record rather than
-restated, and the withdrawal is keyed on the row's own file, line and hash.
+Two blocking findings were REFUTED by execution and recorded as OVER-CLAIMED rather than
+repaired: BG0657's dead-stamps count (the shipped lane exits 0 here with identities matching, and
+two other seats read the same) and BG0630's `--force` regression (the gate's entry call site has
+never carried a force guard either, so making one firing waivable would let the same fact be
+waived or refused by which route a caller took). A review is evidence, not an instruction.
 
-The lesson the run leaves is narrow and repeatable: the mechanism that waives a check is
-itself a check, and it needs the same adversarial treatment as the thing it waives.
+Three of my own mutant verdicts were RETRACTED for the same reason in reverse: each was applied
+to the wrong site - a spy test instead of the sweep, a fixture whose route could not reach the
+branch, an edit that killed on a TypeError rather than on its criterion - and a mutant aimed at
+the wrong site is a measurement of nothing whichever way it reads.
 
 ## WHAT IS OWED
 
-- The push: twelve commits stand unpushed. The pre-push hook pays three boundary lanes, roughly
-  fifteen minutes.
-- US0817 (CR0565, the self-run gate) was deferred at plan time and opens the next run.
-- Fourteen Mediums and the consolidated Low CR are disclosed and ruled not-stop-ship in RETRO0115.
+- The push, and the v5.1 tag. Both the operator's.
+- The v5.1 cut itself: 119 changelog fragments fold cleanly now, and 59 of them had to be
+  repaired by hand first because nothing checks a fragment's shape until the cut tries it
+  (BG0662, ruled open).
+- Three Mediums ship disclosed and ruled: BG0659, BG0661, BG0662.

@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0408: **Two readers of one rule will disagree, and the one that blocks is the one nobody tested.** `row_staleness` shipped with no production...**
+- **L-0407: **A guard's reach is the spelling its fixture used.** BG0660's scan could not see this repository's own `subprocess.run([sys.executable...**
+- **L-0406: **A mutant aimed at the wrong site is not weak evidence, it is none.** Three retractions this run.**
+- **L-0405: **A criterion's words are law and its fixture is the measurement; when they differ, the fixture wins silently.** Nine of this run's...**
 - **L-0404: **Re-measure by target, not by unit.** Before porting a patch, list every delivered unit with live rows on each file it touches and chain...**
 - **L-0403: **A tool failing between two calls is not an absence of findings.** Coverage's own `combine` and `json` verbs failing read as no data and...**
 - **L-0402: **A message that claims to be runnable must be RUN by its test.** The refusal US0818 ships printed a `retract` command that a shell...**
