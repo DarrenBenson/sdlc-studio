@@ -1,6 +1,6 @@
 # CR-0569: A test plan is checked for shape but never for falsifiability, so a criterion already satisfied at HEAD passes every guard the toolchain has
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0250, EP0251
 > **Priority:** High
 > **Type:** Improvement

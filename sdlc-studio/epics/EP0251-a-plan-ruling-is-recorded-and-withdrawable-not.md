@@ -1,6 +1,6 @@
 # EP0251: A plan ruling is recorded and withdrawable, not hand-authored
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0569
 > **Created:** 2026-09-09
@@ -14,7 +14,7 @@ Decomposed from CR0569. Delivers the work CR0569 requested.
 
 ## Story Breakdown
 
-- [ ] [US0821: The plan ruling is recorded, hashed against what it excuses, and withdrawable](../stories/US0821-the-plan-ruling-is-recorded-hashed-against-what.md)
+- [x] [US0821: The plan ruling is recorded, hashed against what it excuses, and withdrawable](../stories/US0821-the-plan-ruling-is-recorded-hashed-against-what.md)
 
 ## Revision History
 

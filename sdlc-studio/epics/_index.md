@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 39 |
+| Draft | 36 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 213 |
+| Done | 216 |
 | **Total** | **252** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -95,9 +95,9 @@
 | [EP0247](EP0247-a-unit-s-own-verifiers-must-execute-every.md) | A unit's own verifiers must execute every line it adds, or the gate says which they missed | Done | 2 | -- | 2026-09-07 | 2026-09-07 |
 | [EP0248](EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Draft | 1 | -- | 2026-09-07 | 2026-09-07 |
 | [EP0249](EP0249-mutation-py-register-replaces-a-live-row-on.md) | mutation.py register replaces a live row on the same key instead of appending a duplicate | Done | 1 | -- | 2026-09-07 | 2026-09-07 |
-| [EP0250](EP0250-a-test-plan-is-checked-for-falsifiability-not.md) | A test plan is checked for falsifiability, not only for shape | Draft | 2 | -- | 2026-09-09 | 2026-09-09 |
-| [EP0251](EP0251-a-plan-ruling-is-recorded-and-withdrawable-not.md) | A plan ruling is recorded and withdrawable, not hand-authored | Draft | 1 | -- | 2026-09-09 | 2026-09-09 |
-| [EP0252](EP0252-mutation-evidence-is-staled-per-row-not-per.md) | Mutation evidence is staled per row, not per file | Draft | 1 | -- | 2026-09-09 | 2026-09-09 |
+| [EP0250](EP0250-a-test-plan-is-checked-for-falsifiability-not.md) | A test plan is checked for falsifiability, not only for shape | Done | 2 | -- | 2026-09-09 | 2026-09-09 |
+| [EP0251](EP0251-a-plan-ruling-is-recorded-and-withdrawable-not.md) | A plan ruling is recorded and withdrawable, not hand-authored | Done | 1 | -- | 2026-09-09 | 2026-09-09 |
+| [EP0252](EP0252-mutation-evidence-is-staled-per-row-not-per.md) | Mutation evidence is staled per row, not per file | Done | 1 | -- | 2026-09-09 | 2026-09-09 |
 
 ## Archived Releases
 

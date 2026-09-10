@@ -1,6 +1,6 @@
 # CR-0570: Mutation evidence is staled by the whole file's hash, so an edit anywhere re-measures every unit holding a row on that file
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0252
 > **Priority:** High
 > **Type:** Improvement

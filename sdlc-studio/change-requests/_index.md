@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 12 |
 | Approved | 0 |
-| In Progress | 38 |
-| Complete | 496 |
+| In Progress | 36 |
+| Complete | 498 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 23 |
@@ -119,8 +119,8 @@
 | [CR-0566](CR0566-claim-drift-flags-a-numeric-claim-in-a.md) | claim-drift flags a numeric claim in a diff's prose that no measurement backs | Proposed | Medium | Improvement | 2026-09-07 | -- |
 | [CR-0567](CR0567-the-done-gate-demands-a-generated-mutation-run.md) | The done-gate demands a generated mutation run over the unit's Affects beside its self-reported rows | Proposed | Medium | Improvement | 2026-09-07 | -- |
 | [CR-0568](CR0568-mutation-py-register-replaces-a-live-row-with.md) | mutation.py register replaces a live row with the same unit, criterion, row, target and hash instead of appending a duplicate | Complete | Medium | Improvement | 2026-09-07 | EP0249 |
-| [CR-0569](CR0569-a-test-plan-is-checked-for-shape-but.md) | A test plan is checked for shape but never for falsifiability, so a criterion already satisfied at HEAD passes every guard the toolchain has | In Progress | High | Improvement | 2026-09-09 | EP0250, EP0251 |
-| [CR-0570](CR0570-mutation-evidence-is-staled-by-the-whole-file.md) | Mutation evidence is staled by the whole file's hash, so an edit anywhere re-measures every unit holding a row on that file | In Progress | High | Improvement | 2026-09-09 | EP0252 |
+| [CR-0569](CR0569-a-test-plan-is-checked-for-shape-but.md) | A test plan is checked for shape but never for falsifiability, so a criterion already satisfied at HEAD passes every guard the toolchain has | Complete | High | Improvement | 2026-09-09 | EP0250, EP0251 |
+| [CR-0570](CR0570-mutation-evidence-is-staled-by-the-whole-file.md) | Mutation evidence is staled by the whole file's hash, so an edit anywhere re-measures every unit holding a row on that file | Complete | High | Improvement | 2026-09-09 | EP0252 |
 
 ## Archived Releases
 

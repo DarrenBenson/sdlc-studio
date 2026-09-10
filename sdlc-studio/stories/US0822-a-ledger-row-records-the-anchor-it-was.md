@@ -1,6 +1,6 @@
 # US0822: A ledger row records the anchor it was applied to, and staleness is judged from it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0570
 > **Created:** 2026-09-09
 > **Created-by:** sdlc-studio new

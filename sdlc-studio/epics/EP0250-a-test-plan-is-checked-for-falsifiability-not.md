@@ -1,6 +1,6 @@
 # EP0250: A test plan is checked for falsifiability, not only for shape
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 13
 > **Parent:** CR0569
 > **Created:** 2026-09-09
@@ -14,8 +14,8 @@ Decomposed from CR0569. Delivers the work CR0569 requested.
 
 ## Story Breakdown
 
-- [ ] [US0819: The plan probe runs each criterion against the tree and reports a pass as the finding](../stories/US0819-the-plan-probe-runs-each-criterion-against-the.md)
-- [ ] [US0820: sprint plan refuses a batch carrying an unruled green or unknown criterion](../stories/US0820-sprint-plan-refuses-a-batch-carrying-an-unruled.md)
+- [x] [US0819: The plan probe runs each criterion against the tree and reports a pass as the finding](../stories/US0819-the-plan-probe-runs-each-criterion-against-the.md)
+- [x] [US0820: sprint plan refuses a batch carrying an unruled green or unknown criterion](../stories/US0820-sprint-plan-refuses-a-batch-carrying-an-unruled.md)
 
 ## Acceptance Criteria (Epic Level)
 
