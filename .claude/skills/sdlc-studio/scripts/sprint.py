@@ -4210,7 +4210,8 @@ def _falsifiability_lines(findings, mode: str) -> list:
             f"{PLAN_FALSIFIABILITY_WHY.get(cls, 'the probe classified it as a finding')}")
     lines.append(
         "  fix the criterion so it CAN fail, or record a ruling for it with `verify_ac.py "
-        "testplan rule` (the unit, the criterion and a reason) - a ruled criterion is reported "
+        "testplan rule --unit <id> --criterion ACn --reason <why> --author <who>` - a ruling "
+        "needs all four, and the command refuses without them. A ruled criterion is reported "
         "and never refused; `review.plan_falsifiability: report` plans over the whole set while "
         f"the finding is still recorded (this run: `{mode}`)")
     return lines

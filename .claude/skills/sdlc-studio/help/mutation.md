@@ -104,12 +104,23 @@ is committed.
   what a sprint touching one module looks like - do not erase each other's evidence. An unreadable ledger is replaced and says so (`reset`).
 - **`measured` against `registered`.** A `measured` entry is a run that applied the mutant and
   observed the suite's answer. `mutation.py register --target F --line N --mutant "..."
-  --test "..." --verdict killed|survived|equivalent` records a mutant a builder applied **by
-  hand**, so the
+  --anchor "..." --test "..." --verdict killed|survived|equivalent` records a mutant a builder
+  applied **by hand**, so the
   per-unit practice (write a test, mutate the code it pins, see RED, restore) leaves a trace.
   Nothing re-runs anything, so that entry is a self-report and is reported as a claim, never as
   a measured run; a measured entry outranks a registered one on the same content. A run
   supersedes only its own kind, so it never deletes a hand-registered claim about the same file.
+- **`--anchor` is required**, on every verdict including `equivalent`. Pass the exact text your
+  mutant REPLACED, quoted with enough surrounding context to occur exactly once in the target -
+  an anchor occurring zero times or more than once is refused, because it cannot say which site
+  the verdict was about. The anchor is what lets the row be judged on its OWN SITE rather than
+  on a hash of the whole file: an edit anywhere else in the target stops staling it, and the
+  target is usually shared - measured on one project's ledger, 26 of 74 targets carried rows
+  from more than one unit and a single file carried seven, so one edit forced seven units to
+  re-measure by hand. A row registered before this shipped carries no anchor and keeps the
+  whole-file rule, unchanged; there is no backfill, because deriving an anchor for a row nobody
+  re-measured would assert a site for a measurement never taken there. A row gains its anchor
+  the next time somebody actually measures it.
 - **`--line` is required** for a `killed` or `survived` verdict. The refusal a gate composes
   quotes `target:line`, and a record with no line never joins a measured one - so the check
   that catches a ledger contradicting itself would silently never fire. An `equivalent` verdict

@@ -153,6 +153,62 @@ whatever it once excused is either executed now or still uncovered and counted a
 `coverage withdraw --id <unit> --file <path> --line <n> --reason <why>` retracts one on the
 record: the row stays in the table, carrying both reasons, and counts for nothing after.
 
+### testplan probe
+
+Asks, of every criterion in one unit, whether it CAN FAIL as written - the question nothing else
+in the toolchain asks:
+
+```bash
+python3 <skill>/scripts/verify_ac.py testplan probe --unit BG0123
+```
+
+It runs each criterion's `Verify:` selector against the tree as it is and classifies the answer.
+A criterion that already PASSES is the finding: it states what the tree already does, so
+delivering it would prove nothing, and the command exits non-zero. So is one whose every
+selected test is skipped (`never-fails`), and one whose answer the runner could not be trusted
+to give (`unreadable` - an invalid selector, a timeout, an absent runner, or a `grep` that
+exited 2 because it could not run at all). Everything else is a state a plan is allowed to be
+in: `red` is what a plan SHOULD look like, `not-yet-written` is the ordinary state before the
+test exists, `manual` and `unspecified` have nothing to run, `delivered` is a green criterion on
+a unit whose commits already do the work, and `pinned` is a finding carrying a live ruling.
+
+A `shell`, `eval` or `http` verifier is named `not-probed` and NOTHING is executed for it: a
+plan-time check must not run shell somebody else authored into an artefact.
+
+`sprint plan` runs the same probe over a whole batch - see `review.plan_falsifiability` in the
+[configuration reference](../reference-config.md#plan-falsifiability).
+
+### testplan rule / testplan withdraw
+
+Record the decision to plan over a criterion the probe named, so the exemption is on the record
+rather than in somebody's head:
+
+```bash
+python3 <skill>/scripts/verify_ac.py testplan rule --unit BG0123 --criterion AC2 \
+    --reason "the behaviour shipped in an earlier unit and this row pins the regression" \
+    --author "engineering seat"
+```
+
+All four are required; a reason shorter than the floor is refused, because a one-character
+reason is not a decision anybody can review. The row lands in
+`sdlc-studio/reviews/plan-rulings.md` - tracked beside the other review records, not in
+gitignored `.local/`, because a ruling is evidence and evidence nobody else can read is evidence
+only its author has.
+
+The ruling is pinned to a digest over the criterion's TITLE and its SELECTOR together. Rewrite
+either and the ruling is reported STALE with its reason rather than quietly continuing to
+excuse a criterion that now says something else. A criterion carrying a live, non-stale ruling
+is `pinned`: reported, never refused.
+
+```bash
+python3 <skill>/scripts/verify_ac.py testplan withdraw --unit BG0123 --criterion AC2 \
+    --reason "the criterion was rewritten and can fail now"
+```
+
+A withdrawal MARKS the row in place rather than deleting it, carrying both reasons, and the
+criterion is a finding again. A withdrawal naming no live row is refused rather than exiting 0,
+which would leave the author believing a pin was lifted that is still standing.
+
 ### report
 
 Prints the latest verification report in text or JSON. Reads

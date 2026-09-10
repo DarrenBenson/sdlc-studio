@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 20 |
+| Open | 21 |
 | In Progress | 0 |
 | Fixed | 539 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **661** |
+| **Total** | **662** |
 
 ## All Bugs
 
@@ -201,6 +201,7 @@
 | [BG0659](BG0659-a-code-span-whose-value-ends-in-a.md) | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row | Open | Medium | 2026-09-09 | 2026-09-09 |
 | [BG0660](BG0660-the-rehearsal-lane-test-drives-the-whole-boundary.md) | the rehearsal-lane test drives the WHOLE boundary gate to check one lane's reporting, and times out on CI - main was red two days and nothing read it | Open | Medium | 2026-09-10 | 2026-09-10 |
 | [BG0661](BG0661-revert-check-cannot-see-a-unit-whose-fix.md) | revert-check cannot see a unit whose fix and evidence share one file - it reverts the tests with the change and reports green | Open | Medium | 2026-09-10 | 2026-09-10 |
+| [BG0662](BG0662-nothing-checks-a-changelog-fragment-s-shape-until.md) | nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it | Open | Medium | 2026-09-10 | 2026-09-10 |
 
 ## Archived Releases
 

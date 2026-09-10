@@ -5546,6 +5546,54 @@ class AnchoredStalenessTests(unittest.TestCase):
                              "an edit elsewhere in the target staled a row whose own site is "
                              "untouched")
 
+    def test_the_join_the_terminal_gate_reads_judges_a_row_by_its_own_site(self) -> None:
+        """AC9. MUTANTS: judge the whole ENTRY in `plan_execution`, as it did before; skip a
+        row whose anchor is still present.
+
+        `plan_execution` is the join `--from-plan`, the Fixed/Done gate and the depth deriver
+        all consume, and it keyed on the entry's content hash - so an anchored row was exonerated
+        by the commit lane and still demanded a re-measure at the transition. That is the whole
+        cost this unit exists to remove, left in place at the one reader where it is paid.
+        Measured on this repository at delivery: 26 rows across three units read `not-run` under
+        the entry rule and `live` under the row rule, on files nobody had touched at their sites.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            mut = _load()
+            root = self._root(d)
+            (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "bugs" / "BG9701-x.md").write_text(
+                "# BG9701: x\n\n> **Status:** Open\n> **Severity:** Medium\n> **Points:** 2\n\n"
+                "## Summary\n\nA thing.\n\n## Acceptance Criteria\n\n"
+                "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n"
+                "## Test Plan\n\n| Criterion | Mutant - the production change this test must "
+                "fail on | Title |\n| --- | --- | --- |\n"
+                "| AC1 | in src/thing.py, flip the value BETA is bound to | a title |\n\n"
+                "## Revision History\n", encoding="utf-8")
+            self._reg(mut, root, unit="BG9701", criterion="AC1")
+            self.assertTrue(mut.plan_execution(root, "BG9701")["ok"],
+                            "the row did not read as executed before any edit")
+            (root / "src" / "thing.py").write_text(
+                self.SRC.replace("GAMMA = 3", "GAMMA = 30  # unrelated"), encoding="utf-8")
+            state, _ = mut._load_ledger(mut.ledger_path(root))
+            entry = next(e for e in state["entries"] if e.get("target") == "src/thing.py")
+            self.assertEqual("stale", mut.entry_staleness(root, entry),
+                             "the file-wide judgement must still call this stale, or this row "
+                             "cannot show which rule the join is using")
+            res = mut.plan_execution(root, "BG9701")
+            self.assertTrue(res["ok"],
+                            f"an edit ELSEWHERE in the target made the terminal gate demand a "
+                            f"re-measure of a row whose own site is untouched: {res['rows']}")
+            self.assertEqual(["killed"], [r["verdict"] for r in res["rows"]])
+
+            # THE PAIRED CONTROL: edit the row's OWN site and the join must read it not-run
+            # again, or a rule that never stales anything satisfies the row above.
+            (root / "src" / "thing.py").write_text(
+                self.SRC.replace("BETA = 2", "DELTA = 9"), encoding="utf-8")
+            after = mut.plan_execution(root, "BG9701")
+            self.assertFalse(after["ok"], "the row's own site was edited and the gate still "
+                                          "read its verdict as evidence")
+            self.assertEqual(["not-run"], [r["verdict"] for r in after["rows"]])
+
     def test_editing_the_anchored_text_stales_that_row(self) -> None:
         """AC2. MUTANT: invert the zero-occurrence branch so a vanished site reads live."""
         with tempfile.TemporaryDirectory() as d:
@@ -5657,35 +5705,100 @@ class AnchorIsRequiredTests(unittest.TestCase):
     def test_every_printed_register_remedy_names_the_flag_it_now_needs(self) -> None:
         """AC8. MUTANT: drop the anchor argument from any remedy that names `register`.
 
-        Three sites compose one, and none named the flag - so requiring it would have shipped a
-        tool whose own printed instructions the tool refuses.
+        Six sites compose one, and none named the flag - so requiring it would have shipped a
+        tool whose own printed instructions the tool refuses, including the one `cmd_register`
+        prints as it does the refusing.
 
         Read as WHOLE remedies. Every one is an implicit concatenation spanning several source
         lines, and TWO readings have already got this wrong: line by line reports a remedy that
         names the flag on its next line as missing it, and per-AST-node does the same, because
         Python 3.12 stopped merging adjacent f-strings into one node. The source's implicit
         concatenations are joined first, then each remedy is taken from the command to the
-        backtick that closes it. Source-level deliberately, and the reason is stated rather than
-        hidden: the remedies carry `<placeholder>` arguments, so there is no literal form of
-        them to execute - what a reader can be given is the advice they are shown."""
+        backtick that closes it. Each is then RUN, as the criterion requires, with its
+        `<placeholder>` arguments filled from a throwaway fixture - the earlier cut asserted
+        `--anchor` was in the text instead, and a source read can only see the flag somebody
+        thought to look for. It could not see that four of the six remedies were refused."""
         import re  # noqa: PLC0415
         scripts = Path(__file__).resolve().parent.parent
         found = 0
-        for name in ("transition.py", "gate.py"):
-            text = (scripts / name).read_text(encoding="utf-8")
+        # EVERY shipped module that composes one, not an enumerated pair. The first cut named
+        # `transition.py` and `gate.py`, and `mutation.py` itself prints four - including one
+        # from `cmd_register`, the very command that does the refusing, so the tool told a
+        # reader to run the instruction it had just refused. An enumerated list exempts
+        # whichever module composes the next one.
+        for path in sorted(scripts.glob("*.py")):
+            name = path.name
+            text = path.read_text(encoding="utf-8")
             joined = re.sub(r"['\"]\s*\n\s*[fr]?['\"]", "", text)
             for m in re.finditer(r"mutation\.py register", joined):
                 tail = joined[m.start():]
                 remedy = tail[:tail.index("`")] if "`" in tail[:400] else tail[:400]
                 found += 1
                 with self.subTest(source=name, remedy=remedy[:60]):
-                    self.assertIn("--anchor", remedy,
-                                  f"{name} composes a `mutation.py register` remedy that omits "
-                                  f"the flag the tool now requires, so a reader who follows it "
-                                  f"is refused:\n{remedy}")
+                    self._remedy_runs(remedy, name)
         self.assertGreater(found, 0,
                            "no remedy naming `mutation.py register` was found at all, so this "
                            "guard is looking in the wrong place and measures nothing")
+
+    #: One shell-safe value per FLAG, so a printed remedy can be RUN rather than read. AC8 says
+    #: the remedy is judged by running it; an earlier cut asserted `--anchor` appeared in the
+    #: text instead, and a source read can only see the flag somebody thought to look for. It
+    #: could not see that four of the six shipped remedies were refused.
+    _FILL = {
+        "unit": "US9001", "criterion": "AC1", "row": "0", "target": "src/thing.py",
+        "line": "1", "mutant": "flip the value", "anchor": "BETA = 2",
+        "test": "pytest t.py::T::test_x", "verdict": "killed", "class": "invert-guard",
+    }
+    #: A value that is a PLACEHOLDER rather than something a reader would type as it stands: an
+    #: `<angle-bracketed>` slot, an f-string interpolation the source composes, or an ellipsis.
+    _PLACEHOLDER = re.compile(r"^(?:<.*>|\{.*\}|\.\.\.)$")
+    _ARG = re.compile(r"--([a-z][a-z-]*)(?:[= ]+((?:'[^']*'|\"[^\"]*\"|<[^>]*>|\{[^}]*\}|\S+)))?")
+
+    def _remedy_argv(self, remedy: str) -> list:
+        """The printed remedy as an argv a shell would build, with each placeholder FILLED.
+
+        Parsed flag by flag rather than split on whitespace: `--mutant <the edit>` is one
+        argument whose placeholder holds spaces, and a naive split turns it into three."""
+        argv = []
+        for flag, raw in self._ARG.findall(remedy):
+            # Quotes stripped BEFORE the placeholder test: the printed remedies quote their
+            # slots (`--mutant '<the edit>'`), and testing the quoted form matched nothing.
+            value = (raw or "").strip().strip("'\"")
+            if not raw or self._PLACEHOLDER.match(value):
+                value = self._FILL.get(flag)
+                if value is None:
+                    continue                  # a flag this fixture has no value for
+            argv += [f"--{flag}", value]
+        # A FRAGMENT - a sentence naming one or two flags rather than a whole command - is
+        # completed from the fixture, because what a reader types is the flag it emphasises plus
+        # the arguments it does not repeat. A FULL remedy is run exactly as printed and is
+        # completed with nothing: that is where dropping `--anchor` has to be caught, and
+        # completing it there would refill the very flag under test.
+        named = [a[2:] for a in argv[::2]]
+        if len(named) < 4:
+            for flag, value in self._FILL.items():
+                if flag not in named and flag != "class":
+                    argv += [f"--{flag}", value]
+        return argv
+
+    def _remedy_runs(self, remedy: str, source: str) -> None:
+        """RUN the printed remedy against a throwaway fixture and require it to be accepted."""
+        import subprocess, tempfile  # noqa: PLC0415
+        argv = self._remedy_argv(remedy[remedy.index("register") + len("register"):])
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "src").mkdir(parents=True)
+            (root / "src" / "thing.py").write_text("ALPHA = 1\nBETA = 2\n", encoding="utf-8")
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            script = Path(__file__).resolve().parent.parent / "mutation.py"
+            r = subprocess.run([sys.executable, "-B", str(script), "register", *argv,
+                                "--root", str(root)],
+                               capture_output=True, text=True, timeout=180)
+        self.assertEqual(0, r.returncode,
+                         f"{source} prints a `mutation.py register` remedy the tool REFUSES, so "
+                         f"a reader who follows it as printed is turned away:\n"
+                         f"  remedy: {remedy}\n  ran: register {' '.join(argv)}\n"
+                         f"  {(r.stdout + r.stderr).strip()[:400]}")
 
 if __name__ == "__main__":
     unittest.main()

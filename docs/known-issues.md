@@ -50,8 +50,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0659` | Medium | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row |
 | `BG0660` | Medium | the rehearsal-lane test drives the WHOLE boundary gate to check one lane's reporting, and times out on CI - main was red two days and nothing read it |
 | `BG0661` | Medium | revert-check cannot see a unit whose fix and evidence share one file - it reverts the tests with the change and reports green |
+| `BG0662` | Medium | nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it |
 
-20 findings: 20 Medium, 0 Low.
+21 findings: 21 Medium, 0 Low.
 
 ## Not carried
 

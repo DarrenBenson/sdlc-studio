@@ -80,6 +80,20 @@ review:
   # Unrecognised values are refused BY NAME: a typo must not switch a hard bar off silently.
   # Quote it if you mean `off` - YAML 1.1 reads the bare word as a boolean.
   mutation_evidence: report
+  # What `sprint plan` does about a criterion that CANNOT FAIL as written - one the tree
+  # already satisfies, or whose every selected test is skipped, or whose answer the runner
+  # could not be trusted to give:
+  #   report  (default)  name each one and plan anyway
+  #   block              refuse the batch, naming the unit, the criterion, its class and the
+  #                      command that rules it
+  #   off                do not probe at all
+  # The probe RUNS each criterion's verifier, so planning costs what those verifiers cost -
+  # measured on this repository, about 8-12 seconds per unit. It never executes a `shell`,
+  # `eval` or `http` verifier: those are named `not-probed` and nothing is run for them, so
+  # planning cannot run artefact-authored shell. A criterion carrying a live ruling
+  # (`verify_ac.py testplan rule`) is reported and never refused. Unrecognised values are
+  # refused BY NAME. Quote it if you mean `off` - YAML 1.1 reads the bare word as a boolean.
+  plan_falsifiability: report
   # The repair-plan gate (EP0106 / RFC0053). OFF by default: an upgrading project's close does
   # not change until it opts in. When on, a REJECT is answered by a written plan reviewed before
   # any code. `repair_design_threshold` is the failed-round count past which a repeat-class

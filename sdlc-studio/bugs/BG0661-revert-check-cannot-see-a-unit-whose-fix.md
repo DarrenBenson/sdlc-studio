@@ -38,3 +38,4 @@ The yield figure accumulating in the local revert-check record is the number thi
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-10 | Claude Opus 5 | Filed |
+| 2026-09-10 | Claude Opus 5 | Ruled OPEN for v5.1 on 2026-09-10, under D0186's disclosure half. revert-check is an ADVISORY lane whose yield is still being measured, so a blind spot in it holds nothing back and misleads nobody: the boundary run records what it examined and this bug names, by id, the class it cannot see - a unit whose production change and its evidence live in one file, which is every test-only unit. Two independent seats reached it on BG0601 and a hand check confirmed 11 of 11 green after the revert. Fixing it means deciding what 'production file' means for a unit that only adds tests, which is a design question and not a patch. |

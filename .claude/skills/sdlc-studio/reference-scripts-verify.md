@@ -155,12 +155,14 @@ counted, never silent).
   `sdlc-studio/.local/mutation-report.json` and appends this run's per-target evidence to
   the bounded ledger `sdlc-studio/.local/mutation-runs.json`; exits non-zero on
   survivors/errors
-- `register --target F --line N --mutant M --test T --verdict killed|survived|equivalent`:
+- `register --target F --line N --mutant M --anchor A --test T --verdict killed|survived|equivalent`:
   record a mutant a builder applied BY HAND, so the per-unit practice (write a test, mutate
   the code it pins, see RED, restore) leaves a trace in the same ledger. Nothing here re-runs
   anything, so the entry is marked `registered` and read as a claim, never as a measured run.
   `--line` is required for `killed`/`survived`: a record with no line never joins a measured
-  one, and the refusal that quotes `target:line` would print a question mark
+  one, and the refusal that quotes `target:line` would print a question mark. `--anchor` is
+  required on every verdict: it is the exact text the mutant REPLACED, and must occur exactly
+  once in the target
 - `prefilter --tests <paths>`: advisory list of test files with no recognisable
   assertion - the cheap static signal for which tests to mutate first
 
@@ -178,7 +180,14 @@ It reads the ledger, not the report, for coverage, judging each file of the chan
 now: a matching `measured` entry is **covered**; a matching `registered` one is covered and
 named as a self-report, unless it carries only `equivalent`, which asserts no test could have
 killed the mutant and so proves nothing about the suite; an entry whose hash no longer matches
-is **stale** - that file was edited since its mutant ran; no entry at all is **uncovered**. The
+is **stale** - that file was edited since its mutant ran; no entry at all is **uncovered**.
+
+**Staleness is judged per ROW where a row has an anchor.** A row registered with `--anchor` is
+live while that text occurs exactly once in the target and stale otherwise, whatever else in the
+file changed - so an edit somewhere else in a shared target no longer stales every unit's
+evidence at once. A row with no anchor (every row written before this) keeps the whole-file
+rule. Both the commit-time evidence-drift lane and the join the terminal transition reads
+(`plan_execution`) apply the same rule, so the two cannot disagree about whether a row counts. The
 report's `target_hashes` is deliberately not read as coverage: it is written for every file
 named as a target before any verdict exists, so a refused run would report its targets covered.
 With nothing per-file to judge, the lane degrades to the whole-report checks - a target the

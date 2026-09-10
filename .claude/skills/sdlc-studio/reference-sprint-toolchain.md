@@ -23,6 +23,9 @@ Read this at plan time. `sprint plan` prints it.
 | --- | --- | --- |
 | Turn a CR/RFC into deliverable units | `refine.py apply --request <id> --breakdown <file>` | hand-creating epics and stories |
 | Check a batch is plannable | `sprint.py breakdown --stories Ready --bugs Open` | reading each file for `Affects` and `Points` |
+| Ask whether a unit's criteria CAN FAIL | `verify_ac.py testplan probe --unit <id>` | assuming a criterion nobody ran is falsifiable |
+| Record a decision to plan over one that cannot | `verify_ac.py testplan rule --unit <id> --criterion ACn --reason <why> --author <who>` | leaving the exemption in somebody's head |
+| Lift that decision when the criterion changes | `verify_ac.py testplan withdraw --unit <id> --criterion ACn --reason <why>` | deleting the row, which leaves no record it was ever taken |
 | Review the sprint goal with the seats | `sprint.py goal-review record --goal ... --seat ...` | asserting the goal is achievable |
 | Open the run | `sprint.py plan --worklist <file> --write --sprint-goal ...` | picking units by eye |
 

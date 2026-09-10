@@ -1272,11 +1272,23 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     # a terminal status is untouched until something moves it again.
     #
     # Deduplicated against the entry firing, which also reaches a direct `Ready -> Done`: the
-    # same refusal printed twice reads as two requirements.
+    # same refusal printed twice reads as two requirements. Deduplicated by the ABSENT-PLAN
+    # FACT rather than by the exact string - `_planned_mutant_gate` states the same fact in
+    # different words with its own remedy, so a string comparison let a unit with no test plan
+    # be refused twice for not having one and inflated the count `transition.py requirements`
+    # derives. Found by an independent seat, measured: 2 requirements at the base ref, 3 here.
+    #
+    # NOT `not force`, and the asymmetry is deliberate rather than an oversight: the ENTRY call
+    # site above carries no `force` guard either, so this gate has never been waivable at any
+    # call site since it was written. A seat read the change as removing `--force` from the
+    # terminal route; what it removes is the route that reached NO test-plan gate at all, which
+    # is this unit's whole point. Making one firing forceable while its twin is not would let the
+    # same fact be waived or refused depending on which transition a caller happened to take.
     if (type_ != "epic" and target_canon in _TERMINAL_FOR_PLAN
             and _plan_gate_active(root, text)):
         block = _test_plan_gate(root, sdlc_md.norm_id(artifact_id), text)
-        if block and block not in blocks:
+        already = any(_TESTPLAN_FACT in b for b in blocks)
+        if block and not already:
             blocks.append(block)
     # ...and in its place, the gate an epic SHOULD have had. NOT entry-triggered: `In Progress` is
     # in an epic's own vocabulary, so a gate guarded by `from_canon not in _IMPL_TARGETS` is
@@ -2708,6 +2720,14 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
                 f"earlier surface cannot be spent on this one - re-run it over the current "
                 f"changed lines")
     return None
+
+
+#: The FACT two different gates state in two different sentences: this unit has no test
+#: plan and the dated cutoff puts it in scope. `_planned_mutant_gate` and `_test_plan_gate`
+#: both say it, with their own remedies, so the deduplication has to key on the fact
+#: rather than on either wording - a string comparison refused one unit twice for the
+#: same absence and inflated the requirement count the CLI derives.
+_TESTPLAN_FACT = "has no `## Test Plan`"
 
 
 def _test_plan_gate(root, unit: str, text: str) -> str | None:

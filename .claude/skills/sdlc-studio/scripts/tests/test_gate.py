@@ -6377,10 +6377,6 @@ class DocSurfaceApplicabilityTests(unittest.TestCase):
         return __import__(name)
 
 
-@boundary_only("it DRIVES the rehearsal - a greenfield init and a v4 upgrade, end to end - to "
-               "check a lane whose own rule is that it binds at the push and release boundaries "
-               "and nowhere else. At 228s it was 24% of the whole suite, paid on every commit, "
-               "to measure something no commit can reach")
 class ReleaseRehearsalLaneTests(unittest.TestCase):
     """US0666: the rehearsal binds at the push and release boundaries and nowhere else."""
 
@@ -6399,6 +6395,10 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
         return {m.group(1) for m in re.finditer(r"^\s+\[(?:PASS|FAIL|warn)\] ([a-z-]+) ",
                                                 out, re.M)}
 
+    @boundary_only("it DRIVES the rehearsal - a greenfield init and a v4 upgrade, end to end - "
+                   "to check a lane whose own rule is that it binds at the push and release "
+                   "boundaries and nowhere else. Measured: 21.8s of this class's 22.2s, and it "
+                   "is the only row here that pays for the rehearsal itself")
     def test_the_rehearsal_lane_runs_at_the_push_and_release_boundaries(self) -> None:
         # The PLAIN per-commit gate, not a `--only` selection: a bound lane that is deselected
         # is refused by the selection guard rather than omitted, so a `--only` run cannot tell
@@ -6512,8 +6512,11 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
         pathlib.Path(__file__).resolve().parents[5] / "tools" / "tests",
     )
 
-    @staticmethod
-    def _boundary_calls(tree):
+    #: The source the tree was parsed from, so a call's own text can be read back for the
+    #: non-literal argv heads. Set by `_scan` before each parse.
+    _SOURCE = ""
+
+    def _boundary_calls(self, tree):
         """Every call whose arguments include a literal `--boundary`, with its own literals."""
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
@@ -6530,16 +6533,29 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
             # every test that used the second - the enumerated-exemption failure this class is
             # itself about.
             flat = []
-            for arg in node.args:
+            for arg in [*node.args, *(k.value for k in node.keywords if k.arg == "args")]:
                 flat.extend(arg.elts if isinstance(arg, (ast.List, ast.Tuple)) else [arg])
             literals = [a.value for a in flat
                         if isinstance(a, ast.Constant) and isinstance(a.value, str)]
-            if "--boundary" not in literals:
+            # `--boundary push` AND `--boundary=push`: the joined form carries the flag inside
+            # one literal, so a membership test on the bare flag misses it entirely. An
+            # independent seat measured `seen=0` for a call written that way.
+            if not any(v == "--boundary" or v.startswith("--boundary=") for v in literals):
                 continue
             # THE GATE's boundary flag, not every flag spelled the same. `critic.py supersede`
             # takes a `--boundary` naming a trust boundary - "operator console" - and has
             # nothing to do with the lanes this guard is about.
-            if "gate" not in called and not any("gate.py" in v for v in literals):
+            #
+            # The argv head is usually NOT a literal. This repository's own idiom is
+            # `subprocess.run([sys.executable, str(scripts / "gate.py"), ...])`, where the
+            # callee is `run` and `gate.py` is a `Call` node - so a filter reading only the
+            # callee name and the string literals dropped a genuinely unscoped invocation and
+            # reported the suite clean. Measured by an independent seat: an unscoped call
+            # planted at test_gate.py:7479 was invisible, and the scan saw 12 of 13. Any
+            # `gate.py` appearing anywhere in the call's own source segment counts.
+            seg = (ast.get_source_segment(self._SOURCE, node) or "") if self._SOURCE else ""
+            if "gate" not in called and not any("gate.py" in v for v in literals) \
+                    and "gate.py" not in seg:
                 continue
             yield node, literals
 
@@ -6549,12 +6565,20 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
         for root in roots:
             for path in sorted(pathlib.Path(root).glob("test_*.py")):
                 try:
-                    tree = ast.parse(path.read_text(encoding="utf-8"))
+                    src = path.read_text(encoding="utf-8")
+                    tree = ast.parse(src)
                 except SyntaxError:                     # not this guard's subject
                     continue
+                self._SOURCE = src
                 for node, literals in self._boundary_calls(tree):
                     seen += 1
-                    if "--only" not in literals:
+                    # SCOPED is `--only` or `--skip`, in either spelling. A call written
+                    # `--only=docs` carries the flag inside one literal, and a membership test
+                    # on the bare flag reported that legitimately scoped call as an offender.
+                    scoped = any(v in ("--only", "--skip")
+                                 or v.startswith(("--only=", "--skip="))
+                                 for v in literals)
+                    if not scoped:
                         offenders.append(f"{path.name}:{node.lineno}")
         return offenders, seen
 
@@ -6579,24 +6603,40 @@ class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
         in a fixture and requires the scan to tell them apart, which is the only way to know
         the guard above would fire."""
         import tempfile  # noqa: PLC0415
+        # EVERY SHAPE A CALL CAN TAKE, not the one the fix happened to be written against. An
+        # independent seat measured three that the first cut could not see - this repository's
+        # own `subprocess.run([sys.executable, str(scripts / "gate.py"), ...])` idiom, where the
+        # argv head is a `Call` node and the callee is `run`; the joined `--boundary=push`; and
+        # `args=[...]` as a keyword - and one legitimately scoped call it reported as an
+        # offender, `--only=docs`. A guard whose reach is the spelling its fixture used is an
+        # enumerated exemption for every other spelling.
+        offending = {
+            "test_offender.py": 'subprocess.run(["gate.py", "--boundary", "push"])',
+            "test_repo_idiom.py":
+                'subprocess.run([sys.executable, str(scripts / "gate.py"), "--boundary", "push"])',
+            "test_joined_flag.py": 'subprocess.run(["gate.py", "--boundary=push"])',
+            "test_kwarg_argv.py": 'subprocess.run(args=["gate.py", "--boundary", "push"])',
+        }
+        innocent = {
+            "test_innocent.py":
+                'subprocess.run(["gate.py", "--boundary", "push", "--only", "docs"])',
+            "test_joined_scope.py":
+                'subprocess.run(["gate.py", "--boundary", "push", "--only=docs"])',
+            "test_skipped.py":
+                'subprocess.run(["gate.py", "--boundary", "push", "--skip", "module-alone"])',
+        }
+        head = "import subprocess, sys\nfrom pathlib import Path\nscripts = Path('s')\n"
         with tempfile.TemporaryDirectory() as d:
             planted = pathlib.Path(d)
-            (planted / "test_offender.py").write_text(
-                "import subprocess\n"
-                "def probe():\n"
-                '    subprocess.run(["gate.py", "--boundary", "push"])\n', encoding="utf-8")
-            (planted / "test_innocent.py").write_text(
-                "import subprocess\n"
-                "def probe():\n"
-                '    subprocess.run(["gate.py", "--boundary", "push", "--only", "docs"])\n',
-                encoding="utf-8")
+            for name, call in {**offending, **innocent}.items():
+                (planted / name).write_text(f"{head}def probe():\n    {call}\n", encoding="utf-8")
             offenders, seen = self._scan([planted])
-        self.assertEqual(2, seen, f"the scan did not see both invocations: {seen}")
-        self.assertEqual(1, len(offenders),
+        self.assertEqual(len(offending) + len(innocent), seen,
+                         f"the scan did not see every invocation - a shape it cannot see is a "
+                         f"shape it exempts: {seen} of {len(offending) + len(innocent)}")
+        self.assertEqual(sorted(offending), sorted(o.split(":")[0] for o in offenders),
                          f"the scan cannot tell a scoped invocation from an unscoped one: "
                          f"{offenders}")
-        self.assertTrue(offenders[0].startswith("test_offender.py"),
-                        f"the scan named the wrong file: {offenders}")
 
 
 class RevertCheckReportingTests(unittest.TestCase):

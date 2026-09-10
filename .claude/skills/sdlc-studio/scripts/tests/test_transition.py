@@ -1922,6 +1922,31 @@ class TestPlanGateEntryTests(unittest.TestCase):
                             f"a story took the same route to Done unchecked: {text}")
         self.assertIn(self._REJECTED, text, text)
 
+    def test_one_absent_test_plan_is_one_requirement_not_two(self) -> None:
+        """AC6. MUTANTS: dedupe on the exact refusal STRING again, so two wordings of the same
+        fact both stand; delete the deduplication entirely.
+
+        `_planned_mutant_gate` and `_test_plan_gate` both say a unit has no test plan and the
+        cutoff puts it in scope, in different words with different remedies. Deduped on the
+        string, both survived: a unit with no plan was refused TWICE for not having one, and
+        the count `transition.py requirements` derives was inflated with it. Measured on one
+        fixture: 2 requirements at the base of this change, 3 with the new firing added, 1 here.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._proj(d, status="Open", verdict=None)
+            art = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+            art.write_text(art.read_text(encoding="utf-8").replace(self._PLAN, "\n"),
+                           encoding="utf-8")
+            code, text = self._set(root, "Fixed")
+            self.assertNotEqual(0, code, f"a unit with no test plan reached Fixed: {text}")
+            self.assertEqual(1, text.count("has no `## Test Plan`"),
+                             f"the same absence is stated more than once:\n{text}")
+            import re as _re  # noqa: PLC0415
+            m = _re.search(r"blocked \((\d+) requirement", text)
+            self.assertIsNotNone(m, text)
+            self.assertEqual("1", m.group(1),
+                             f"the requirement count double-counts one absence:\n{text}")
+
     def test_a_direct_route_to_a_terminal_status_is_refused_too(self) -> None:
         """AC2. MUTANT: narrow the new firing to transitions whose source status is In Progress.
 

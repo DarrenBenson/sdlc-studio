@@ -1331,8 +1331,9 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                   f"proceeded here could revert it silently. Two routes to a measured verdict: "
                   f"mutate an ISOLATED CHECKOUT (`git worktree add`), or apply the mutant BY "
                   f"HAND and record it with `mutation.py register --unit <id> --criterion ACn "
-                  f"--target <file> --line <n> --mutant '<the edit>' --test '<the command>' "
-                  f"--verdict killed` - asserting the anchor is unique, purging `__pycache__`, "
+                  f"--target <file> --line <n> --mutant '<the edit>' --anchor '<the text it "
+                  f"replaced>' --test '<the command>' --verdict killed` - the anchor is "
+                  f"REQUIRED and must occur exactly once, purging `__pycache__`, "
                   f"running with `python3 -B`, and restoring the file byte-identically from a "
                   f"saved copy. Committing or stashing the work also clears it.")
     else:
@@ -1570,9 +1571,10 @@ def series_reason(report: dict) -> str | None:
             "this is not 'no evidence', it is evidence not yet obtainable here. Two routes give "
             "a measured verdict: mutate an ISOLATED CHECKOUT (`git worktree add`), or apply the "
             "mutant by hand and record it with `mutation.py register --unit <id> --criterion "
-            "ACn --target <file> --line <n> --mutant <the edit> --test <the command> --verdict "
-            "killed`. A hand run is only trustworthy with the discipline that makes it so - assert "
-            "the anchor occurs exactly once before patching, purge `__pycache__` and run the "
+            "ACn --target <file> --line <n> --mutant <the edit> --anchor <the text it replaced> "
+            "--test <the command> --verdict killed`. A hand run is only trustworthy with the "
+            "discipline that makes it so - the anchor is required and must occur exactly once "
+            "in the target, purge `__pycache__` and run the "
             "child under `python3 -B` so a cached module cannot report a false survival, and "
             "restore from captured bytes with the restoration asserted byte-identical.")
     elif refused:
@@ -2748,18 +2750,23 @@ def plan_execution(root: Path | str, unit: str) -> dict:
     for entry in state.get("entries", []):
         if not isinstance(entry, dict):
             continue
-        # A STALE entry's rows are evidence about bytes that exist nowhere. They read
-        # as NOT-RUN here - the one join `--from-plan`, the done-gate and the depth deriver all
-        # consume - so a unit whose rows went stale (marked at a later register, or drifted
-        # by a commit) cannot reach Fixed on them whether or not the commit lane ran.
-        if any(isinstance(m, dict) and m.get("unit") == uid for m in entry.get("mutants", []) or []):
+        for m in entry.get("mutants", []) or []:
+            if not isinstance(m, dict) or m.get("unit") != uid or not m.get("criterion"):
+                continue
+            # STALE evidence is evidence about bytes that exist nowhere, and it reads as NOT-RUN
+            # here - the one join `--from-plan`, the done-gate and the depth deriver all consume
+            # - so a unit whose rows went stale cannot reach Fixed on them.
+            #
+            # Judged per ROW (`row_staleness`), which is the grain the evidence is at. Judging
+            # the whole ENTRY re-imposed the exact cost US0822 removed: an edit anywhere in a
+            # shared target read every unit's rows as not-run, so the anchors reached the commit
+            # lane and never reached the gate that blocks a transition - the reader that made
+            # the cost hurt. `row_staleness` falls back to the entry's hash for a row carrying
+            # no anchor, which is every row written before that, so nothing is promoted silently.
             # The `stale` mark a later register leaves is a RECORD of who and when; the rule is
             # the computed comparison, so a file restored to the recorded bytes reads live again
             # and the mark never contradicts the definition (one meaning, AC4).
-            if entry_staleness(root, entry) in ("stale", "missing"):
-                continue
-        for m in entry.get("mutants", []) or []:
-            if not isinstance(m, dict) or m.get("unit") != uid or not m.get("criterion"):
+            if row_staleness(root, entry, m) in ("stale", "missing"):
                 continue
             # A WITHDRAWN row is skipped, not counted: `retract` marks a registered verdict as
             # corrected and leaves it visible in the ledger, so the correction has to reach the
@@ -2851,7 +2858,8 @@ def cmd_from_plan(args: argparse.Namespace) -> int:
             print(f"from-plan: {res['unit']} {where} was PLANNED and never executed - "
                   f"`{r['mutant'][:80]}` - a plan whose rows are optional measures nothing. "
                   f"Apply it, then record it with `mutation.py register --unit {res['unit']} "
-                  f"--criterion {r['ac']}{row_flag} ...`", file=sys.stderr)
+                  f"--criterion {r['ac']}{row_flag} --anchor '<the text it replaced>' ...`",
+                  file=sys.stderr)
         else:
             print(f"from-plan: {res['unit']} {r['ac']} mutant SURVIVED on {r.get('target')} - "
                   f"the test named by that criterion did not notice `{r['mutant'][:80]}`. The "
@@ -3152,8 +3160,8 @@ def cmd_register(args: argparse.Namespace) -> int:
         print(f"  STALE: {', '.join(res['kept_stale_units'])} hold registered rows on this "
               f"target's earlier bytes. They are kept and marked stale, and read as NOT-RUN "
               f"until re-registered - re-apply each row's mutant with the working copy equal "
-              f"to what is staged and `mutation.py register` it, then check with "
-              f"`mutation.py run --story <id> --from-plan`")
+              f"to what is staged and `mutation.py register --anchor '<the text it replaced>'` "
+              f"it, then check with `mutation.py run --story <id> --from-plan`")
     if res["verdict"] == "survived":
         print(f"  FINDING: the mutant SURVIVED, so {args.test} does not pin the behaviour it "
               f"was applied to. The gate's coverage lane counts this - fix the test or file it")

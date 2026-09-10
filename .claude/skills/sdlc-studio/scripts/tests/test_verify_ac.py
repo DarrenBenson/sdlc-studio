@@ -4743,20 +4743,28 @@ class EditVerbVocabularyTests(unittest.TestCase):
         the vocabulary. The honest phrasing of a repair's own mutant was refused, and authors
         reached for a word that fitted the checker rather than the change.
 
-        Driven through the cell reader that `testplan derive` uses, with the control beside it:
-        widening the vocabulary must not widen it to nothing."""
+        Driven through `testplan_row_faults`, the reader `testplan derive` calls, with the
+        control beside it: widening the vocabulary must not widen it to nothing. The first cut
+        asserted `any(v in phrase for v in verify_ac._EDIT_VERBS)` - the predicate re-typed
+        against the constant it reads - so it never reached the refusal at all. Measured by two
+        independent seats: with the whole edit-verb limb deleted from `testplan_row_faults`, a
+        verbless cell was accepted and this node stayed green."""
+        then = "the writer emits a row for every criterion in the artefact"
         for phrase in ("restore the two-field slice in the sweep",
                        "keep the original guard and skip the new branch",
                        "reinstate the deleted lane",
                        "reintroduce the discarded anchor"):
             with self.subTest(phrase=phrase):
-                self.assertTrue(any(v in phrase for v in verify_ac._EDIT_VERBS),
-                                f"{phrase!r} names a real production edit and must be accepted")
+                faults = verify_ac.testplan_row_faults(phrase, then, [])
+                self.assertEqual([], [f for f in faults if "edit verb" in f],
+                                 f"{phrase!r} names a real production edit and must be "
+                                 f"accepted: {faults}")
         for outcome in ("the row stays green", "nothing is recorded"):
             with self.subTest(outcome=outcome):
-                self.assertFalse(any(v in outcome for v in verify_ac._EDIT_VERBS),
-                                 f"{outcome!r} is an outcome, not an edit - the vocabulary was "
-                                 f"widened to nothing")
+                faults = verify_ac.testplan_row_faults(outcome, then, [])
+                self.assertTrue([f for f in faults if "edit verb" in f],
+                                f"{outcome!r} is an outcome, not an edit - the vocabulary was "
+                                f"widened to nothing: {faults}")
 
     def test_an_outcome_phrased_mutant_is_still_refused(self) -> None:
         """The control. Widening the vocabulary must not widen it to nothing - a mutant stating
@@ -7149,6 +7157,14 @@ class TestPlanProbeTests(unittest.TestCase):
             ("invalid", "not-a-verb something", 60),
             ("absent runner", "jest --testPathPattern nothing-here", 60),
             ("timeout", "pytest --collect-only -q", 0),
+            # The three RUNNER-ERROR shapes AC5 spells out by name. Each exits 2, which `grep`
+            # uses for "I could not run" against 1 for "I ran and matched nothing" - a
+            # legitimate red. Without these three the branch was tested against one of the six
+            # outcomes it decides, and a selector that is simply a typo classified `red`: the
+            # healthy class, on 126 of this corpus's verifiers.
+            ("malformed grep pattern", 'grep "[unclosed" test_probe_fixture.py', 60),
+            ("grep path that does not exist", 'grep "hello" no-such-file.py', 60),
+            ("grep glob matching nothing", 'grep "hello" nothing-here/*.ts', 60),
         )
         for label, expr, timeout in cases:
             with self.subTest(case=label), tempfile.TemporaryDirectory() as d:
@@ -7177,7 +7193,7 @@ class TestPlanProbeTests(unittest.TestCase):
                               f"eval touch {marks['eval']}",
                               f"http touch {marks['http']}"])
             res = self._probe(root)
-            self.assertEqual(["shell-not-run"] * 3, [r["state"] for r in res["criteria"]],
+            self.assertEqual(["not-probed"] * 3, [r["state"] for r in res["criteria"]],
                              f"a shell-backed verifier was not short-circuited: {res['criteria']}")
             for verb, mark in marks.items():
                 self.assertFalse(mark.exists(),
@@ -7201,23 +7217,68 @@ class TestPlanProbeTests(unittest.TestCase):
             self.assertEqual([], res["findings"], "neither is a failure the probe can call")
             self.assertTrue(res["ok"])
 
+    def _git_unit_history(self, root: Path):
+        """A repository whose history holds the two shapes attribution has to tell apart: a
+        PLAN commit whose `Refs:` block names the whole batch, and a DELIVERY commit that names
+        one unit in its subject and attributes a second by trailer alone."""
+        import subprocess as _sp  # noqa: PLC0415
+        env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@e",
+               "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@e",
+               "GIT_CONFIG_GLOBAL": str(root / "no-such-gitconfig"), "GIT_CONFIG_SYSTEM": ""}
+
+        def git(*args, **kw):
+            return _sp.run(["git", "-C", str(root), *args], capture_output=True, text=True,
+                           timeout=120, env=env, **kw)
+
+        git("init", "-q", "-b", "main")
+        (root / "seed.txt").write_text("1\n", encoding="utf-8")
+        git("add", "-A")
+        git("commit", "-q", "-m",
+            "plan(RUN-0001): the batch, before a line of its code exists\n\n"
+            "Refs: BG9401\nRefs: BG9402\n\nCo-Authored-By: t <t@e>\n")
+        (root / "seed.txt").write_text("2\n", encoding="utf-8")
+        git("add", "-A")
+        # The delivery shape this repository actually writes: a subject naming some of the
+        # units, the rest attributed by `Refs:` ABOVE the sign-off block - which is why the
+        # reader scans the body rather than asking git for trailers.
+        git("commit", "-q", "-m",
+            "fix(US9999): the delivery, naming one unit in its subject\n\n"
+            "Refs: US9999\nRefs: BG9401\n\nCo-Authored-By: t <t@e>\n")
+
     def test_a_green_criterion_on_a_delivered_unit_is_reported_not_refused(self) -> None:
-        """AC8. MUTANT: delete the commit-attribution test so every passing criterion is a
-        finding.
+        """AC8. MUTANTS: delete the commit-attribution test so every passing criterion is a
+        finding; read the `Refs:` trailers of EVERY commit, so a planned unit reads delivered;
+        read the SUBJECT alone, so a unit attributed by trailer reads as a finding.
 
         After delivery a green criterion is the fix working. Without this the probe refuses
-        every unit it has already helped ship."""
+        every unit it has already helped ship. A REAL repository, not a mocked reader: the
+        mocked form asserted only "if the helper says delivered, the class is delivered", which
+        is strictly weaker than the criterion and left both wrong readings alive. Measured on
+        this repository before the repair: all 25 findings the probe produced were units the
+        same commit had delivered."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             name = self._tests(root, self.PASSING)
-            self._unit(root, [f"pytest {name}::T::test_a"])
-            with unittest.mock.patch.object(verify_ac, "_probe_unit_is_delivered",
-                                            return_value=True):
-                res = self._probe(root)
-            self.assertEqual(["delivered"], [r["state"] for r in res["criteria"]])
+            self._git_unit_history(root)
+            self._unit(root, [f"pytest {name}::T::test_a"], uid="BG9401")
+            res = self._probe(root, uid="BG9401")
+            self.assertEqual(["delivered"], [r["state"] for r in res["criteria"]],
+                             "a unit attributed by a delivery commit's `Refs:` trailer read as "
+                             "a finding - the shape most of this repository's deliveries take")
             self.assertEqual([], res["findings"], "a delivered unit's green criterion is not a "
                                                   "plan that measures nothing")
             self.assertTrue(res["ok"])
+
+            # THE PAIRED CONTROL, and the half the mocked test could never carry: a unit named
+            # only by the PLAN commit's trailer block has no code yet, so its green criterion is
+            # exactly the finding the unit exists to raise.
+            self._unit(root, [f"pytest {name}::T::test_a"], uid="BG9402")
+            other = self._probe(root, uid="BG9402")
+            self.assertEqual(["green"], [r["state"] for r in other["criteria"]],
+                             "a unit that only a PLAN commit refers to read as delivered, so "
+                             "the probe is answered by planning rather than by delivering")
+            self.assertEqual(["AC1"], other["findings"])
+            self.assertFalse(other["ok"])
 
     def test_the_probe_leaves_every_artefact_byte_identical(self) -> None:
         """AC9. MUTANT: call the story runner from the probe with its dry-run flag off.
@@ -7395,18 +7456,75 @@ class PlanRulingTests(unittest.TestCase):
         A criterion title and a reason are free text somebody wrote, and these rows are built by
         interpolation - so the cell writer is the only thing between a pipe in prose and a
         forged column."""
+        reason = "a reason with a | pipe, a `span`\nand a newline in it"
+        title = "it handles a | pipe and a `span`"
         with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, title="it handles a | pipe and a `span`")
-            self._rule(root, reason="a reason with a | pipe, a `span`\nand a newline in it")
+            root = self._root(d, title=title)
+            self._rule(root, reason=reason, author="a | seat")
             text = (root / "sdlc-studio" / "reviews" / "plan-rulings.md").read_text(
                 encoding="utf-8")
             row = next(l for l in text.splitlines() if l.startswith("| BG9501"))
-            self.assertEqual(6, len(row.strip().strip("|").split("|")),
+            self.assertEqual(6, len(verify_ac._split_cells(row)),
                              f"the row does not hold six columns:\n{row}")
             self.assertNotIn("\n", row.strip(), "a newline survived into the row")
             rows = verify_ac.read_rulings(root)
             self.assertEqual(1, len(rows), "the hostile row did not parse back")
-            self.assertIn("pipe", rows[0]["reason"])
+            # ROUND-TRIP, character for character - not `assertIn("pipe", ...)`, which is the
+            # WORD and passes on a write that substituted the character away. AC7 says the
+            # values round-trip; the first cut wrote `|` as `/`, so a reason quoting a shell
+            # pipeline came back saying something its author had not written, and the weaker
+            # assertion could not tell.
+            self.assertEqual(" ".join(reason.splitlines()), rows[0]["reason"],
+                             "the reason did not survive the write")
+            self.assertEqual("a | seat", rows[0]["author"],
+                             "the author did not survive the write")
+
+    def test_both_verbs_are_reached_through_the_shipped_command(self) -> None:
+        """AC8. MUTANTS: delete the `rule`/`withdraw` dispatch so both verbs fall through to
+        `derive`; drop the `--author` requirement from the ruling command.
+
+        Every other row here calls `record_ruling` and `withdraw_ruling` in process, and the
+        wiring is the part a library test does not exercise. Measured: with the two-line
+        dispatch deleted, all seven of this class's other verifiers stayed green while
+        `testplan rule` fell through to `testplan derive` - it WROTE A TEST PLAN into the
+        artefact, recorded no ruling, and exited 0. A reader following the refusal that names
+        this command would have got the opposite of what it asked for, silently."""
+        import subprocess as _sp  # noqa: PLC0415
+
+        def cli(*args, root):
+            return _sp.run([sys.executable, "-B", str(SCRIPT_PATH), "testplan", *args,
+                            "--root", str(root)], capture_output=True, text=True, timeout=180)
+
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            art = root / "sdlc-studio" / "bugs" / "BG9501-x.md"
+            before = art.read_bytes()
+
+            r = cli("rule", "--unit", "BG9501", "--criterion", "AC1", "--reason", self.REASON,
+                    root=root)
+            self.assertEqual(2, r.returncode,
+                             f"a ruling with no --author was accepted:\n{r.stdout}{r.stderr}")
+            self.assertIn("author", (r.stdout + r.stderr).lower())
+
+            r = cli("rule", "--unit", "BG9501", "--criterion", "AC1", "--reason", self.REASON,
+                    "--author", "a seat", root=root)
+            self.assertEqual(0, r.returncode, f"{r.stdout}{r.stderr}")
+            rows = verify_ac.read_rulings(root)
+            self.assertEqual(1, len(rows), f"the command recorded no ruling: {rows}")
+            self.assertFalse(rows[0]["withdrawn"])
+            self.assertEqual(before, art.read_bytes(),
+                             "`testplan rule` MUTATED the artefact - the shape a fall-through "
+                             "to `derive` takes, which is exactly what this row exists to catch")
+
+            r = cli("withdraw", "--unit", "BG9501", "--criterion", "AC1",
+                    "--reason", "the criterion was rewritten and can fail now", root=root)
+            self.assertEqual(0, r.returncode, f"{r.stdout}{r.stderr}")
+            rows = verify_ac.read_rulings(root)
+            self.assertEqual(1, len(rows), "the withdrawal deleted the row rather than marking it")
+            self.assertTrue(rows[0]["withdrawn"], "the row was not marked withdrawn")
+            self.assertEqual(before, art.read_bytes(),
+                             "`testplan withdraw` MUTATED the artefact")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3272,7 +3272,7 @@ _PROBE_RED = "red"                      # ran and failed: what a plan should loo
 _PROBE_NOT_WRITTEN = "not-yet-written"  # the selector resolves to no test node yet
 _PROBE_NEVER_FAILS = "never-fails"      # the node exists and every selected test is skipped
 _PROBE_UNREADABLE = "unreadable"        # the answer cannot be trusted, so it is not an answer
-_PROBE_SHELL = "shell-not-run"          # a shell-backed verb, named and never executed
+_PROBE_SHELL = "not-probed"             # a shell-backed verb, named and never executed
 _PROBE_MANUAL = "manual"                # a human verifier: nothing to run
 _PROBE_UNSPECIFIED = "unspecified"      # the criterion carries no Verify line at all
 _PROBE_PINNED = "pinned"             # a finding carrying a live ruling
@@ -3280,6 +3280,15 @@ _PROBE_DELIVERED = "delivered"          # green, but the unit already has commit
 
 #: The states that are FINDINGS - the ones a plan has to answer for.
 _PROBE_FINDINGS = (_PROBE_GREEN, _PROBE_NEVER_FAILS)
+
+#: Exit statuses that mean the RUNNER failed rather than the test, per runner family. `grep`
+#: exits 1 when it matched nothing - a legitimate red - and 2 when it could not run at all: a
+#: malformed pattern, a path that does not exist, a glob that expanded to nothing. AC5 names
+#: exactly those three shapes, and `grep` is excluded from the vacuity test by construction, so
+#: without this a selector that is simply a typo is read as the healthy class. Measured on this
+#: corpus: 126 grep verifiers. Kept per family rather than as a bare `exit == 2`, because 2 does
+#: not mean the same thing to every runner.
+_PROBE_RUNNER_ERROR: dict[str, tuple[int, ...]] = {"grep": (2,)}
 
 #: Verbs the runner executes through a SHELL. `http` is here because its builder returns a
 #: piped curl-and-jq STRING, so it runs under `shell=True` exactly as `shell` and `eval` do -
@@ -3294,19 +3303,31 @@ def _probe_is_shell_backed(expr: str) -> bool:
     return head in _PROBE_SHELL_VERBS
 
 
+#: Conventional-commit types whose `Refs:` trailers attribute DELIVERY. Both simpler readings
+#: are wrong and this repository ships an instance of each. Reading EVERY trailer marks a unit
+#: delivered before a line of its code exists: the plan commit of RUN-01M20RWX carries a `Refs:`
+#: line naming all 22 units of the batch. Reading the SUBJECT alone misses most real deliveries:
+#: `f763a89a` delivered eight units and named three in its subject, so five of its own
+#: deliveries read as not-delivered - and a repo-wide census found every one of the probe's 25
+#: findings was a unit that same commit had delivered. The commit TYPE is the discriminator both
+#: readings missed, and the `Refs:` trailer is what `.githooks/commit-msg` requires of a
+#: multi-id subject - it never requires a delivered unit to appear in the subject at all.
+_DELIVERY_TYPES = ("feat", "fix", "perf", "refactor")
+_REFS_LINE = re.compile(r"^Refs:[ \t]*(.+)$", re.M)
+_DELIVERY_SUBJECT = re.compile(r"^(?:" + "|".join(_DELIVERY_TYPES) + r")\s*(?:\(|!|:)")
+
+
 def _probe_unit_is_delivered(root: Path, unit: str, base: str | None) -> bool:
     """Whether any commit attributes work to `unit` - the whole history unless `base` narrows it.
 
-    The SUBJECT only. A `Refs:` trailer is written by planning and paperwork commits as well as
-    by delivery ones, and this repository's plan commit carries a `Refs:` line naming the entire
-    batch - measured: it names all 22 units of RUN-01M20RWX, so reading trailers marks every
-    planned unit delivered before a line of its code exists. A delivery commit names its unit in
-    the subject, which is what the commit-msg hook requires of one.
+    The subject of every commit, plus the `Refs:` trailers of DELIVERY commits only - see
+    `_DELIVERY_TYPES` for why neither half alone is enough.
     """
     want = sdlc_md.norm_id(unit)
     rng = [f"{base}..HEAD"] if base and base != "HEAD" else []
+    fmt = "%s%x1e%B%x1d"
     try:
-        cp = subprocess.run(["git", "-C", str(root), "log", "--format=%s%x1d", *rng],
+        cp = subprocess.run(["git", "-C", str(root), "log", f"--format={fmt}", *rng],
                             capture_output=True, text=True, timeout=120, env=_git_env())
     except (OSError, subprocess.SubprocessError):
         return False          # git cannot answer; the strict read is "not delivered"
@@ -3315,8 +3336,17 @@ def _probe_unit_is_delivered(root: Path, unit: str, base: str | None) -> bool:
     for chunk in cp.stdout.split("\x1d"):
         if not chunk.strip():
             continue
-        subject = chunk.strip("\n").split("\x1e", 1)[0]
-        ids = {sdlc_md.norm_id(i) for i in re.findall(r"\b(?:US|BG|CR|RFC)-?\d{4,}\b", subject)}
+        subject, _, body = chunk.strip("\n").partition("\x1e")
+        text = subject
+        if _DELIVERY_SUBJECT.match(subject.strip()):
+            # The BODY, scanned for `Refs:` lines, not `git log --format=%(trailers)`. Git reads
+            # trailers out of the LAST paragraph only, and this repository's own messages put the
+            # `Refs:` block above the sign-off block - measured on f763a89a, where the trailer
+            # lookup returns empty while eight `Refs:` lines sit in the message. `commit-msg`
+            # checks the same way, by line, so this reader and the gate agree about what a
+            # `Refs:` line is.
+            text = subject + " " + " ".join(_REFS_LINE.findall(body))
+        ids = {sdlc_md.norm_id(i) for i in re.findall(r"\b(?:US|BG|CR|RFC)-?\d{4,}\b", text)}
         if want in ids:
             return True
     return False
@@ -3351,14 +3381,17 @@ def ruling_path(repo_root) -> Path:
 
 
 def _ruling_cell(value: str) -> str:
-    """A value as a table cell: newlines and runs of whitespace folded, pipes neutralised.
+    """A value as a table cell: newlines folded, pipes ESCAPED so the value round-trips.
 
     A criterion title or a reason is free text a human wrote, and these rows are built by
     interpolation - so this is the only thing standing between a pipe in somebody's prose and a
-    forged column. Backticks are left alone: they are ordinary in a criterion that names code,
-    and a row is not markdown-linted the way a prose document is.
+    forged column. It escapes rather than substitutes, and `_split_cells` puts it back: the
+    first cut wrote `|` as `/`, which forges no column and also loses the character, so a reason
+    quoting a shell pipeline came back saying something its author did not write. The sibling
+    writer in this module (`_cell`/`_uncell`, BG0658) already had the escaping form. Backticks
+    are left alone: they are ordinary in a criterion that names code.
     """
-    return " ".join(str(value or "").split()).replace("|", "/")
+    return _cell(value)
 
 
 def ruling_digest(title: str, selector: str) -> str:
@@ -3382,7 +3415,10 @@ def read_rulings(repo_root) -> list:
     for line in sdlc_md.read_text_safe(path).splitlines():
         if not line.strip().startswith("|"):
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        # `_split_cells`, the same reader BG0658 gave the Test Plan table: it splits on
+        # UNESCAPED pipes and unescapes each cell, so a reason carrying a pipe reads back as it
+        # was written rather than as an extra column.
+        cells = _split_cells(line)
         if len(cells) < 6 or cells[0].lower() == "unit" or set(cells[0]) <= set("- "):
             continue
         reason = cells[3]
@@ -3531,7 +3567,8 @@ def testplan_probe(repo_root, unit: str, *, timeout: int = 120, base: str = "HEA
             # and never reaches the runner, so the runner can never return that kind to this
             # branch - and a condition nothing can satisfy is a condition no mutant can kill,
             # which is precisely what this unit exists to refuse.
-            if res.kind == "invalid" or res.exit_code in (124, 127):
+            if (res.kind == "invalid" or res.exit_code in (124, 127)
+                    or res.exit_code in _PROBE_RUNNER_ERROR.get(res.kind, ())):
                 row.update(state=_PROBE_UNREADABLE,
                            detail=f"the answer cannot be trusted ({res.kind}, exit "
                                   f"{res.exit_code}), so it is not read as red or green")
