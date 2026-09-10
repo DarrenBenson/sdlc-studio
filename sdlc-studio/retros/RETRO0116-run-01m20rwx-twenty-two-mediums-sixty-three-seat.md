@@ -83,6 +83,18 @@ ruling HOLDS the close, which is the point of being able to make one.
 | BG0659 | not-stop-ship | Claude Opus 5 (ruled 2026-09-10, D0186 disclosure half) | 2026-09-10 |
 | BG0661 | not-stop-ship | Claude Opus 5 (ruled 2026-09-10, D0186 disclosure half) | 2026-09-10 |
 | BG0662 | not-stop-ship | Claude Opus 5 (ruled 2026-09-10, D0186 disclosure half) | 2026-09-10 |
+| CR0509 | deferred | Claude Opus 5 (a review worktree's stale base; every reviewer this run worked in /tmp copies taken at HEAD, so the cost did not land) | 2026-09-10 |
+| CR0528 | not-stop-ship | Claude Opus 5 (the installed copy is reconciled at the close; this close ran `forward-port.sh --yes` and 25 files were mirrored) | 2026-09-10 |
+| CR0529 | deferred | Claude Opus 5 (prior-art scoped to the reviewer; no unit this run was rejected for rediscovering one) | 2026-09-10 |
+| CR0530 | deferred | Claude Opus 5 (the planner reports clusters not the parallelisable fraction; two worktrees were split by hand this run and the split held) | 2026-09-10 |
+| CR0531 | deferred | Claude Opus 5 (a charter's scope query cannot express a decomposition; no charter was queued this run) | 2026-09-10 |
+| CR0533 | not-stop-ship | Claude Opus 5 (revert-check ships advisory and its blind spot is filed as BG0661, ruled open) | 2026-09-10 |
+| CR0534 | deferred | Claude Opus 5 (configuration as an introduced surface; this run added `review.plan_falsifiability` to the shipped defaults and the reference, which is the narrow half) | 2026-09-10 |
+| CR0535 | deferred | Claude Opus 5 (a refusing verb stating its contract before you trip it; 39 verbs, none of them on this batch's path) | 2026-09-10 |
+| CR0536 | deferred | Claude Opus 5 (spec documents not learning about a shipped tool; the three new verbs this run added were documented by hand at the delivery review's insistence) | 2026-09-10 |
+| CR0539 | not-stop-ship | Claude Opus 5 (lane-check's 181 units; it reports and blocks nothing, and this run measured one of its readings to be a false positive on `import subprocess as _sp`) | 2026-09-10 |
+| CR0546 | deferred | Claude Opus 5 (a run noticing work its batch never named; this batch named all 22 and delivered all 22) | 2026-09-10 |
+| CR0547 | not-stop-ship | Claude Opus 5 (revert-check as a blocking requirement; it ships advisory while its yield is measured, which is the recorded decision) | 2026-09-10 |
 
 ## Estimate vs actual
 
@@ -141,8 +153,6 @@ sprints fits noise.
 | **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
 **0 of 22 unit(s) measured; 16 of 22 forecast at plan time.**
-
-**Sprint tokens/point: 299,771** (21,583,487 tokens over 72 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 

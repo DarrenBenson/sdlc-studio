@@ -39,24 +39,25 @@ Decide what the gate means, then make it mean that at both ends. Re-firing on th
 > answered their rejections and cannot reach the refusal, and nine others it never named are
 > walled. AC5's fixture is built on one of the sixteen.
 
-- [ ] **AC1** Given a unit that entered In Progress before its plan-review REJECT was recorded, when it is transitioned to a TERMINAL status - `Done` for a story, `Fixed` for a bug - then it is REFUSED. The verdict is consulted at the transition that makes the work permanent, not only at the one that starts it
+- [x] **AC1** Given a unit that entered In Progress before its plan-review REJECT was recorded, when it is transitioned to a TERMINAL status - `Done` for a story, `Fixed` for a bug - then it is REFUSED. The verdict is consulted at the transition that makes the work permanent, not only at the one that starts it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_the_gate_applies_on_the_in_progress_to_terminal_route
-  - **Verified:** no
-- [ ] **AC2** Given the same unit taken DIRECTLY to a terminal status without passing through In Progress, then it is refused too. Measured on a fixture with a standing rejection on record: `Open -> In Progress` is refused today while BOTH `In Progress -> Fixed` and a direct `Open -> Fixed` exit 0, so a fix that adds only the first route leaves the second wide open and every unit this bug is about is a bug
+  - **Verified:** yes (2026-09-10)
+- [x] **AC2** Given the same unit taken DIRECTLY to a terminal status without passing through In Progress, then it is refused too. Measured on a fixture with a standing rejection on record: `Open -> In Progress` is refused today while BOTH `In Progress -> Fixed` and a direct `Open -> Fixed` exit 0, so a fix that adds only the first route leaves the second wide open and every unit this bug is about is a bug
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_a_direct_route_to_a_terminal_status_is_refused_too
-  - **Verified:** no
-- [ ] **AC3** Given a unit whose plan review carries an independent APPROVE, when it moves to a terminal status by either route, then it passes - the positive control, because a gate that now fires on the ordinary route must still let a properly reviewed unit through, and both routes are green at HEAD so each discriminates only through its mutant
+  - **Verified:** yes (2026-09-10)
+- [x] **AC3** Given a unit whose plan review carries an independent APPROVE, when it moves to a terminal status by either route, then it passes - the positive control, because a gate that now fires on the ordinary route must still let a properly reviewed unit through, and both routes are green at HEAD so each discriminates only through its mutant
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_an_approved_plan_review_passes_on_both_routes
-  - **Verified:** no
-- [ ] **AC4** Given a workspace where `review.test_plan_after` is unset, when any unit reaches a terminal status, then the gate does not fire at all. The new firing sits INSIDE the dated adoption cutoff, per RETRO0098, because a gate that refuses a whole backlog is switched off rather than satisfied
+  - **Verified:** yes (2026-09-10)
+- [x] **AC4** Given a workspace where `review.test_plan_after` is unset, when any unit reaches a terminal status, then the gate does not fire at all. The new firing sits INSIDE the dated adoption cutoff, per RETRO0098, because a gate that refuses a whole backlog is switched off rather than satisfied
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_the_new_firing_sits_inside_the_dated_cutoff
-  - **Verified:** no
-- [ ] **AC5** Given one of the 16 bugs already at Fixed the gate would refuse, when nothing is done to it, then this change does not reopen it - the gate fires on a transition, never retrospectively; and when such a bug IS reopened and re-fixed, that transition is REFUSED until the rejection is answered. The behaviour is decided here rather than deferred to whatever the implementation happens to do
+  - **Verified:** yes (2026-09-10)
+- [x] **AC5** Given one of the 16 bugs already at Fixed the gate would refuse, when nothing is done to it, then this change does not reopen it - the gate fires on a transition, never retrospectively; and when such a bug IS reopened and re-fixed, that transition is REFUSED until the rejection is answered. The behaviour is decided here rather than deferred to whatever the implementation happens to do
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_a_reopened_and_refixed_bug_must_answer_its_rejection_first
+  - **Verified:** yes (2026-09-10)
 
-- [ ] **AC6** Given a unit with NO `## Test Plan` inside the cutoff, when a terminal transition is attempted, then the absence is stated ONCE and counted as one requirement. `_planned_mutant_gate` and `_test_plan_gate` both say it, in different words with different remedies, so a deduplication keyed on the refusal STRING lets both stand: the unit is refused twice for one absence and the count `transition.py requirements` derives is inflated with it. Measured on one fixture: 2 requirements at this change's base, 3 with the new firing added, 1 after
+- [x] **AC6** Given a unit with NO `## Test Plan` inside the cutoff, when a terminal transition is attempted, then the absence is stated ONCE and counted as one requirement. `_planned_mutant_gate` and `_test_plan_gate` both say it, in different words with different remedies, so a deduplication keyed on the refusal STRING lets both stand: the unit is refused twice for one absence and the count `transition.py requirements` derives is inflated with it. Measured on one fixture: 2 requirements at this change's base, 3 with the new firing added, 1 after
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TestPlanGateEntryTests::test_one_absent_test_plan_is_one_requirement_not_two
-  - **Verified:** no
+  - **Verified:** yes (2026-09-10)
 
 ## Impact
 

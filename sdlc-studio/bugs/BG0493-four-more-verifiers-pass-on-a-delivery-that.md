@@ -41,19 +41,19 @@ verifiers named here would still pass over a delivery that had been made inert.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given `tools/tests/conftest.py` with its `sys.path.insert` CALL deleted, when BG0476's AC1 verifier runs, then it FAILS. The file's own docstring names `sys.path.insert` at line 8, so today the assertion is satisfied with the call gone and the guard reads its own prose. The existing verifier hard-codes the tracked path, so the new node drives a COPY with the call removed rather than the file itself
+- [x] **AC1** Given `tools/tests/conftest.py` with its `sys.path.insert` CALL deleted, when BG0476's AC1 verifier runs, then it FAILS. The file's own docstring names `sys.path.insert` at line 8, so today the assertion is satisfied with the call gone and the guard reads its own prose. The existing verifier hard-codes the tracked path, so the new node drives a COPY with the call removed rather than the file itself
   - **Verify:** pytest tools/tests/test_test_census.py::TheGuardSeesTheCallNotTheDocstringTests::test_deleting_the_call_reddens_ac1
   - **Verified:** yes (2026-09-09)
-- [ ] **AC2** Given US0606's `lane-check` assertion, when it runs, then it is anchored on the guard's own call site. Measured, the 600-character window ends on the id-gathering pipeline at relative offset 556, because the comment carrying the literal sits above the lane's own code; moving the hook block alone leaves that window in place, so the anchor is what the fix has to change
+- [x] **AC2** Given US0606's `lane-check` assertion, when it runs, then it is anchored on the guard's own call site. Measured, the 600-character window ends on the id-gathering pipeline at relative offset 556, because the comment carrying the literal sits above the lane's own code; moving the hook block alone leaves that window in place, so the anchor is what the fix has to change
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::LaneCheckAnchorTests::test_the_assertion_is_anchored_on_the_guards_own_call
   - **Verified:** yes (2026-09-09)
-- [ ] **AC3** Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it REFUSES rather than returning zero findings. An exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent
+- [x] **AC3** Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it REFUSES rather than returning zero findings. An exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent
   - **Verify:** pytest tools/tests/test_best_practice_rules.py::AnAbsentPracticeFileRefusesTests::test_a_missing_file_is_not_an_exemption
   - **Verified:** yes (2026-09-09)
-- [ ] **AC4** Given the shipped gate, when its lanes are enumerated, then one of them NAMES `best_practice_rules.py`. It is referenced by nothing in `.githooks/` or `package.json` today, so it guards nothing
+- [x] **AC4** Given the shipped gate, when its lanes are enumerated, then one of them NAMES `best_practice_rules.py`. It is referenced by nothing in `.githooks/` or `package.json` today, so it guards nothing
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_checker_is_named_by_a_lane
   - **Verified:** yes (2026-09-09)
-- [ ] **AC5** Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing
+- [x] **AC5** Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_lane_runs_the_checker_and_carries_its_exit
   - **Verified:** yes (2026-09-09)
 - [ ] **AC6** Given the hook's own `run` helper, when it invokes a command that FAILS, then the hook's failure flag is set - and when the command succeeds, it is not. The other half of AC5, and the half no assertion about the lane's argv can reach: a lane whose command refuses correctly still guards nothing if the helper that invokes it drops the exit. The helper is extracted from the hook and executed rather than retyped

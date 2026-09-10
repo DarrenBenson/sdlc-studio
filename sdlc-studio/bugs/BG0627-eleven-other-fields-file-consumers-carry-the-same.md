@@ -38,21 +38,21 @@ Split the guard by field type rather than sweeping one rule across all of them. 
 > outside its allowlist. The defect that does reproduce is the other one - a non-string in a
 > prose field is not refused by name, it CRASHES.
 
-- [ ] **AC1** Given a fields file whose PROSE field carries a non-string - `false`, `0`, `5`, a list - when the document is read, then it is REFUSED naming that field. A required prose key is already refused today; a non-required one reaches a string method and raises `AttributeError` with a traceback, which is neither a refusal nor a name
+- [x] **AC1** Given a fields file whose PROSE field carries a non-string - `false`, `0`, `5`, a list - when the document is read, then it is REFUSED naming that field. A required prose key is already refused today; a non-required one reaches a string method and raises `AttributeError` with a traceback, which is neither a refusal nor a name
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileTypeTests::test_a_non_string_prose_field_is_refused_naming_it
-  - **Verified:** no
-- [ ] **AC2** Given a fields file whose prose fields are all strings AND whose TYPED fields carry non-strings - a `points` integer, an `acs` list, a `verify` list, a `line` number - when the document is read, then it is ACCEPTED and every one of those values reaches the record unchanged. The typed half is what stops the fix being a blanket refusal: three modules outside this unit's surface pass a numeric `line` through the same loader, and a rule refusing every non-string breaks them while satisfying AC1
+  - **Verified:** yes (2026-09-10)
+- [x] **AC2** Given a fields file whose prose fields are all strings AND whose TYPED fields carry non-strings - a `points` integer, an `acs` list, a `verify` list, a `line` number - when the document is read, then it is ACCEPTED and every one of those values reaches the record unchanged. The typed half is what stops the fix being a blanket refusal: three modules outside this unit's surface pass a numeric `line` through the same loader, and a rule refusing every non-string breaks them while satisfying AC1
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileTypeTests::test_a_well_formed_fields_file_is_still_accepted
-  - **Verified:** no
-- [ ] **AC3** Given each of the five named modules' shipped COMMANDS rather than their loaders, when a fields file carries a non-string in a prose field, then each exits non-zero naming the field and none prints a traceback. A library test cannot see a command that stops calling the shared loader, and each module reaches it by its own call site
+  - **Verified:** yes (2026-09-10)
+- [x] **AC3** Given each of the five named modules' shipped COMMANDS rather than their loaders, when a fields file carries a non-string in a prose field, then each exits non-zero naming the field and none prints a traceback. A library test cannot see a command that stops calling the shared loader, and each module reaches it by its own call site
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileTypeTests::test_the_five_shipped_commands_refuse_by_name_and_never_traceback
-  - **Verified:** no
-- [ ] **AC4** Given a NEW `.get(...) or ""` guard added to a fields-file consumer, when the repository's own check runs, then it REFUSES. The enumeration in this bug is a lower bound, and the check is what turns it into a boundary
+  - **Verified:** yes (2026-09-10)
+- [x] **AC4** Given a NEW `.get(...) or ""` guard added to a fields-file consumer, when the repository's own check runs, then it REFUSES. The enumeration in this bug is a lower bound, and the check is what turns it into a boundary
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileTypeTests::test_a_new_or_empty_guard_is_refused_by_the_repository_check
-  - **Verified:** no
-- [ ] **AC5** Given an `or ""` that is NOT on a fields-file path - `sprint.py` alone carries 35, and `decisions.py` uses them to read ledger records - when the same check runs, then it PASSES. Without this control a check that refuses every `or ""` in the tree satisfies AC4 and refuses the repository
+  - **Verified:** yes (2026-09-10)
+- [x] **AC5** Given an `or ""` that is NOT on a fields-file path - `sprint.py` alone carries 35, and `decisions.py` uses them to read ledger records - when the same check runs, then it PASSES. Without this control a check that refuses every `or ""` in the tree satisfies AC4 and refuses the repository
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileTypeTests::test_an_unrelated_or_empty_guard_is_left_alone
-  - **Verified:** no
+  - **Verified:** yes (2026-09-10)
 
 ## Impact
 

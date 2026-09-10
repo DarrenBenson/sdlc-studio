@@ -27,17 +27,17 @@ Route `annotate`'s Severity writes through the same `normalise_severity` the oth
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a bug fixture whose Severity is Medium, when `transition.py annotate --id <the fixture> --field Severity --value major` is run as a SUBPROCESS - the runnable form, since without `--id` argparse exits 2 and the file is unchanged for a reason that has nothing to do with the vocabulary - then it is REFUSED naming the accepted set and the file is unchanged
+- [x] **AC1** Given a bug fixture whose Severity is Medium, when `transition.py annotate --id <the fixture> --field Severity --value major` is run as a SUBPROCESS - the runnable form, since without `--id` argparse exits 2 and the file is unchanged for a reason that has nothing to do with the vocabulary - then it is REFUSED naming the accepted set and the file is unchanged
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::AnnotateSeverityTests::test_an_off_vocabulary_severity_is_refused_through_the_shipped_command
   - **Verified:** yes (2026-09-08)
-- [ ] **AC2** Given the same fixture, when a RECOGNISED severity is annotated in either case - `high` or `High` - then both are accepted and the file reads the canonical spelling `High`. The positive control: a guard refusing every severity satisfies AC1 on its own
+- [x] **AC2** Given the same fixture, when a RECOGNISED severity is annotated in either case - `high` or `High` - then both are accepted and the file reads the canonical spelling `High`. The positive control: a guard refusing every severity satisfies AC1 on its own
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::AnnotateSeverityTests::test_a_differently_cased_severity_is_normalised
   - **Verified:** yes (2026-09-08)
-- [ ] **AC3** Given the same fixture, when the FIELD NAME is spelled in another case - `--field severity --value banana` - then the guard fires just as it does for `Severity`, and the file gains no second severity line beside the canonical one. `annotate` lowercases the field for its denylist check alone and passes the raw spelling to the writer, so today this exits 0 and inserts a duplicate; a guard keyed on the literal `Severity` passes AC1 and AC2 with the defect live
+- [x] **AC3** Given the same fixture, when the FIELD NAME is spelled in another case - `--field severity --value banana` - then the guard fires just as it does for `Severity`, and the file gains no second severity line beside the canonical one. `annotate` lowercases the field for its denylist check alone and passes the raw spelling to the writer, so today this exits 0 and inserts a duplicate; a guard keyed on the literal `Severity` passes AC1 and AC2 with the defect live
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::AnnotateSeverityTests::test_the_guard_is_keyed_on_the_normalised_field_name
   - **Verified:** yes (2026-09-08)
 
-- [ ] **AC4** Given a vocabulary field annotated in any case, when the command reports what it did, then the text line names the field and value AS WRITTEN, and agrees with the same command's JSON output. Canonicalising inside the function left the text line printing the argv pair, so one command's two output formats disagreed about one write - and nothing in the corpus asserted that line
+- [x] **AC4** Given a vocabulary field annotated in any case, when the command reports what it did, then the text line names the field and value AS WRITTEN, and agrees with the same command's JSON output. Canonicalising inside the function left the text line printing the argv pair, so one command's two output formats disagreed about one write - and nothing in the corpus asserted that line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::AnnotateSeverityTests::test_the_success_line_reports_what_was_written
   - **Verified:** yes (2026-09-08)
 

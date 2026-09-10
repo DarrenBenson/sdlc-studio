@@ -27,22 +27,22 @@ Escape for the CONTEXT rather than for the string. Split the value on code-span 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given free text carrying an underscored identifier INSIDE a code span, when a critic verdict, an evidence row or a repair closure is recorded, then the span's interior reaches the ledger unescaped, because a backslash inside a code span is literal and renders as one
+- [x] **AC1** Given free text carrying an underscored identifier INSIDE a code span, when a critic verdict, an evidence row or a repair closure is recorded, then the span's interior reaches the ledger unescaped, because a backslash inside a code span is literal and renders as one
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_an_underscore_inside_a_code_span_is_not_escaped
   - **Verified:** yes (2026-09-09)
-- [ ] **AC2** Given the same text carrying an underscored identifier OUTSIDE any code span, when it is recorded, then that one IS still escaped. Without this row the likeliest careless implementation - deleting the escape outright, a one-token edit - satisfies AC1 and passes its test
+- [x] **AC2** Given the same text carrying an underscored identifier OUTSIDE any code span, when it is recorded, then that one IS still escaped. Without this row the likeliest careless implementation - deleting the escape outright, a one-token edit - satisfies AC1 and passes its test
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_an_underscore_outside_a_span_is_still_escaped
   - **Verified:** yes (2026-09-09)
-- [ ] **AC3** Given a value that has ALREADY been cleaned once, when it is cleaned again, then the result is unchanged. The repair record carries 943 doubled escapes today, which is the largest measured half of this defect and the half no criterion covered
+- [x] **AC3** Given a value that has ALREADY been cleaned once, when it is cleaned again, then the result is unchanged. The repair record carries 943 doubled escapes today, which is the largest measured half of this defect and the half no criterion covered
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_cleaning_an_already_cleaned_value_changes_nothing
   - **Verified:** yes (2026-09-09)
-- [ ] **AC4** Given text carrying a pipe or a newline INSIDE a code span, when it is recorded, then both are still neutralised. The rows are built by f-string rather than by a row joiner, so this function is the only thing standing between a reviewer's piped shell command and a forged column - and leaving span interiors verbatim, as the fix proposes, would put the pipe back
+- [x] **AC4** Given text carrying a pipe or a newline INSIDE a code span, when it is recorded, then both are still neutralised. The rows are built by f-string rather than by a row joiner, so this function is the only thing standing between a reviewer's piped shell command and a forged column - and leaving span interiors verbatim, as the fix proposes, would put the pipe back
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_a_pipe_or_newline_inside_a_span_is_still_neutralised
   - **Verified:** yes (2026-09-09)
-- [ ] **AC5** Given free text carrying an ODD number of backticks, when it is recorded, then the write is REFUSED naming the value, rather than the text being silently rewritten. An unbalanced span turns the rest of the row into code and markdownlint then refuses the whole file, and rewriting a reviewer's words to fix it is a worse answer than telling the author while they can still edit
+- [x] **AC5** Given free text carrying an ODD number of backticks, when it is recorded, then the write is REFUSED naming the value, rather than the text being silently rewritten. An unbalanced span turns the rest of the row into code and markdownlint then refuses the whole file, and rewriting a reviewer's words to fix it is a worse answer than telling the author while they can still edit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_an_odd_backtick_count_is_refused_at_the_write
   - **Verified:** yes (2026-09-09)
-- [ ] **AC6** Given free text carrying an EVEN number of backticks, when it is recorded, then every backtick is written through unchanged - the paired control, because a writer that strips or appends backticks satisfies AC5 on its own
+- [x] **AC6** Given free text carrying an EVEN number of backticks, when it is recorded, then every backtick is written through unchanged - the paired control, because a writer that strips or appends backticks satisfies AC5 on its own
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CleanEscapesForContextTests::test_an_even_backtick_count_is_written_through_unchanged
   - **Verified:** yes (2026-09-09)
 

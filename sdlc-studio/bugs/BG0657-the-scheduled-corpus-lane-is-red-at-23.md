@@ -28,22 +28,22 @@ Record the IDENTITIES beside the count, so the lane can name what rose rather th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given `gate.py` reporting red acceptance criteria, when its identity emission is driven DIRECTLY rather than through the lane, then the FULL list is available whatever `_MAX_NAMED` does to the human line. Driving it directly is the criterion, not a detail: every existing node in this module runs the lane against a stub printing a hand-written gate string, so a mutant inside `gate.py` reddens nothing there and would be reported as survived. The line elides after ten and appends a count of the rest, which is why this bug's own Summary lists exactly ten; a lane parsing that line can never see more, so the identities have to be obtainable before they can be recorded
+- [x] **AC1** Given `gate.py` reporting red acceptance criteria, when its identity emission is driven DIRECTLY rather than through the lane, then the FULL list is available whatever `_MAX_NAMED` does to the human line. Driving it directly is the criterion, not a detail: every existing node in this module runs the lane against a stub printing a hand-written gate string, so a mutant inside `gate.py` reddens nothing there and would be reported as survived. The line elides after ten and appends a count of the rest, which is why this bug's own Summary lists exactly ten; a lane parsing that line can never see more, so the identities have to be obtainable before they can be recorded
   - **Verify:** pytest tools/tests/test_verify_corpus.py::BaselineIdentityTests::test_the_full_red_identity_list_survives_the_elision
   - **Verified:** yes (2026-09-10)
-- [ ] **AC2** Given the corpus baseline, when it is read, then EACH metric - `red-criteria` and `dead-stamps` - carries the identities behind its count, and the count agrees with the length of that list. The parse takes the red clause alone and not the 67-row exclusion ledger printed after it, which is the same discriminator the count parse already needed
+- [x] **AC2** Given the corpus baseline, when it is read, then EACH metric - `red-criteria` and `dead-stamps` - carries the identities behind its count, and the count agrees with the length of that list. The parse takes the red clause alone and not the 67-row exclusion ledger printed after it, which is the same discriminator the count parse already needed
   - **Verify:** pytest tools/tests/test_verify_corpus.py::BaselineIdentityTests::test_each_metric_records_identities_that_agree_with_its_count
   - **Verified:** yes (2026-09-10)
-- [ ] **AC3** Given a run whose red set has GROWN, when the lane reports, then it names the new ids and the ones that went green, and exits non-zero
+- [x] **AC3** Given a run whose red set has GROWN, when the lane reports, then it names the new ids and the ones that went green, and exits non-zero
   - **Verify:** pytest tools/tests/test_verify_corpus.py::BaselineIdentityTests::test_the_lane_names_what_rose_and_what_went_green
   - **Verified:** yes (2026-09-10)
-- [ ] **AC4** Given a run whose red set changed by an equal-sized SWAP - one criterion repaired and another introduced in the same window - when the lane runs, then it exits NON-ZERO and names both sides. Today the counts match, the lane exits 0 and the swap is silent: this is the case the count alone cannot carry, and the reason the identities are worth recording at all
+- [x] **AC4** Given a run whose red set changed by an equal-sized SWAP - one criterion repaired and another introduced in the same window - when the lane runs, then it exits NON-ZERO and names both sides. Today the counts match, the lane exits 0 and the swap is silent: this is the case the count alone cannot carry, and the reason the identities are worth recording at all
   - **Verify:** pytest tools/tests/test_verify_corpus.py::BaselineIdentityTests::test_an_equal_sized_swap_is_not_silent
   - **Verified:** yes (2026-09-10)
-- [ ] **AC5** Given a baseline identity that no longer exists - a unit deleted, a criterion renumbered - when the lane runs, then it SAYS so rather than counting the absence as a repair, which would let the number fall for a reason nobody chose
+- [x] **AC5** Given a baseline identity that no longer exists - a unit deleted, a criterion renumbered - when the lane runs, then it SAYS so rather than counting the absence as a repair, which would let the number fall for a reason nobody chose
   - **Verify:** pytest tools/tests/test_verify_corpus.py::BaselineIdentityTests::test_a_vanished_identity_is_named_rather_than_counted_as_repaired
   - **Verified:** yes (2026-09-10)
-- [ ] **AC6** Given the REAL `gate.py` emitter run once over this tree, when its output is parsed by the lane's own parser, then the parse succeeds and the committed baseline still names both metrics in the shape the existing pinning test reads. This is the anchor the stubbed nodes cannot supply - a parser written against a hand-written fixture agrees with a string nobody produces - and it is the compatibility the format change must not break
+- [x] **AC6** Given the REAL `gate.py` emitter run once over this tree, when its output is parsed by the lane's own parser, then the parse succeeds and the committed baseline still names both metrics in the shape the existing pinning test reads. This is the anchor the stubbed nodes cannot supply - a parser written against a hand-written fixture agrees with a string nobody produces - and it is the compatibility the format change must not break
   - **Verify:** pytest tools/tests/test_verify_corpus.py::BaselineIdentityTests::test_an_unchanged_tree_still_passes_and_the_format_still_parses
   - **Verified:** yes (2026-09-10)
 

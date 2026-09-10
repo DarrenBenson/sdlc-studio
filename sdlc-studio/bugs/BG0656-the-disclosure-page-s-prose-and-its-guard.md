@@ -28,13 +28,13 @@ Repoint the guard at the release being cut (`docs/release-notes-v5.1.md`), so a 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given the disclosure guard, when it reads the release notes it must agree with, then it reads the notes of the release BEING CUT and not a released one - `NOTES_REL` names `docs/release-notes-v5.0.1.md` today, so disposing of one finding demanded that a published record be edited to a count that version never disclosed. A released version's record freezes; only the current one tracks the corpus, which the module's own comment already states. The rule, not today's literal: `NOTES_REL` names the HIGHEST release-notes file present in the tree, so a correct bump at v5.2 moves the guard without the test being hand-edited to stay true.
+- [x] **AC1** Given the disclosure guard, when it reads the release notes it must agree with, then it reads the notes of the release BEING CUT and not a released one - `NOTES_REL` names `docs/release-notes-v5.0.1.md` today, so disposing of one finding demanded that a published record be edited to a count that version never disclosed. A released version's record freezes; only the current one tracks the corpus, which the module's own comment already states. The rule, not today's literal: `NOTES_REL` names the HIGHEST release-notes file present in the tree, so a correct bump at v5.2 moves the guard without the test being hand-edited to stay true.
   - **Verify:** pytest tools/tests/test_known_issues.py::DisclosurePageTests::test_the_guard_reads_the_release_being_cut_not_a_published_one
   - **Verified:** yes (2026-09-08)
-- [ ] **AC2** Given a corpus holding N open findings, when the page is generated, then its prose is true of N - and given a corpus holding NONE, the page says so rather than claiming findings ship open and that each id below is a file. Both readings come from the same generated text, so the zero case cannot be left to a reader's charity.
+- [x] **AC2** Given a corpus holding N open findings, when the page is generated, then its prose is true of N - and given a corpus holding NONE, the page says so rather than claiming findings ship open and that each id below is a file. Both readings come from the same generated text, so the zero case cannot be left to a reader's charity.
   - **Verify:** pytest tools/tests/test_known_issues.py::DisclosurePageTests::test_the_prose_is_true_at_a_count_and_at_zero
   - **Verified:** yes (2026-09-08)
-- [ ] **AC3** Given the page's heading, when it is read, then it names the bar THIS release is held to, with the previous release's bar kept below it as history - the page states the v5.0.0 bar today while the release being cut is v5.1, so a reader cannot tell which bar the list in front of them serves.
+- [x] **AC3** Given the page's heading, when it is read, then it names the bar THIS release is held to, with the previous release's bar kept below it as history - the page states the v5.0.0 bar today while the release being cut is v5.1, so a reader cannot tell which bar the list in front of them serves.
   - **Verify:** pytest tools/tests/test_known_issues.py::DisclosurePageTests::test_the_heading_names_the_bar_of_the_release_being_cut
   - **Verified:** yes (2026-09-08)
 

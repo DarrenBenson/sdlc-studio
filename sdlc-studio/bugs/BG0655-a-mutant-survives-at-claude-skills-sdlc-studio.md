@@ -31,14 +31,14 @@ Add the `withdrawn` test to the row predicate in `_survivor_records`, so a retra
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a ledger row recorded `survived` and then WITHDRAWN with a reason, when the survivor filer runs for that unit at a terminal transition, then the row is not offered as a survivor and no bug is filed for it - a withdrawal is the ledger's record that the reading was retracted, and every other reader already honours it. The paired control: a row recorded `survived` and NOT withdrawn is still offered, so the filter narrows the selection rather than emptying it.
+- [x] **AC1** Given a ledger row recorded `survived` and then WITHDRAWN with a reason, when the survivor filer runs for that unit at a terminal transition, then the row is not offered as a survivor and no bug is filed for it - a withdrawal is the ledger's record that the reading was retracted, and every other reader already honours it. The paired control: a row recorded `survived` and NOT withdrawn is still offered, so the filter narrows the selection rather than emptying it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::SurvivorFilerTests::test_a_withdrawn_row_is_not_offered_as_a_survivor
   - **Verified:** yes (2026-09-08)
-- [ ] **AC2** Given a unit whose only surviving row is withdrawn and whose live row for the same key is `killed`, when the unit is driven to its terminal status THROUGH `transition.py set` as a subprocess, then no `Mutation-survivor-run` bug artefact is written to the fixture's bugs directory and the command says nothing survived - the wiring is the half a library test cannot see, and a filer that over-reports holds a release on evidence the ledger says does not exist.
+- [x] **AC2** Given a unit whose only surviving row is withdrawn and whose live row for the same key is `killed`, when the unit is driven to its terminal status THROUGH `transition.py set` as a subprocess, then no `Mutation-survivor-run` bug artefact is written to the fixture's bugs directory and the command says nothing survived - the wiring is the half a library test cannot see, and a filer that over-reports holds a release on evidence the ledger says does not exist.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::SurvivorFilingCLITests::test_no_bug_is_filed_when_the_live_row_for_the_key_is_killed
   - **Verified:** yes (2026-09-08)
 
-- [ ] **AC3** Given a unit whose ONLY recorded row is a withdrawn `survived` row, when the mutation-evidence GATE counts, then it reports that NO mutant was applied and names no survivor. The observable is the APPLIED count, not the survivor count: measured, a fix that only narrows the survivor predicate leaves this row counted as applied, so a unit with no live evidence at all satisfies the vacuous-zero check out of a reading the ledger has retracted
+- [x] **AC3** Given a unit whose ONLY recorded row is a withdrawn `survived` row, when the mutation-evidence GATE counts, then it reports that NO mutant was applied and names no survivor. The observable is the APPLIED count, not the survivor count: measured, a fix that only narrows the survivor predicate leaves this row counted as applied, so a unit with no live evidence at all satisfies the vacuous-zero check out of a reading the ledger has retracted
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::SurvivorFilerTests::test_a_withdrawn_row_is_not_counted_by_the_evidence_gate
   - **Verified:** yes (2026-09-08)
 

@@ -25,18 +25,18 @@ Add the two missing verbs and a test that fails on their absence. Pin the CHECKL
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a mutant cell whose edit verb is `restore` or `keep` - neither is in the 61-entry vocabulary today - when `testplan derive` runs, then the cell is accepted; and given a cell with no edit verb at all, it is still refused. The vocabulary is widened, not disabled
+- [x] **AC1** Given a mutant cell whose edit verb is `restore` or `keep` - neither is in the 61-entry vocabulary today - when `testplan derive` runs, then the cell is accepted; and given a cell with no edit verb at all, it is still refused. The vocabulary is widened, not disabled
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::EditVerbVocabularyTests::test_restore_and_keep_are_accepted_and_a_verbless_cell_is_still_refused
-  - **Verified:** no
-- [ ] **AC2** Given the close checklist roster, when its test runs, then it asserts the roster's exact entry names and its exact count, so deleting an entry fails the test rather than silently shrinking the close report
+  - **Verified:** yes (2026-09-10)
+- [x] **AC2** Given the close checklist roster, when its test runs, then it asserts the roster's exact entry names and its exact count, so deleting an entry fails the test rather than silently shrinking the close report
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ChecklistRosterTests::test_the_roster_asserts_its_exact_names_and_count
-  - **Verified:** no
-- [ ] **AC3** Given a roster entry naming a resolver that is absent, and one naming an attribute that exists but is not callable, when `sprint_report` is imported, then each is refused at import. `_resolve_item` catches broadly and degrades a missing resolver to UNANSWERED at close time, which is the moment a missing check is least recoverable
+  - **Verified:** yes (2026-09-10)
+- [x] **AC3** Given a roster entry naming a resolver that is absent, and one naming an attribute that exists but is not callable, when `sprint_report` is imported, then each is refused at import. `_resolve_item` catches broadly and degrades a missing resolver to UNANSWERED at close time, which is the moment a missing check is least recoverable
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ChecklistRosterTests::test_an_undefined_or_uncallable_resolver_refuses_at_import
-  - **Verified:** no
-- [ ] **AC4** Given a roster whose every entry resolves to a callable, when the module is imported, then it loads normally - the paired control, so the import check is shown to discriminate rather than to refuse everything
+  - **Verified:** yes (2026-09-10)
+- [x] **AC4** Given a roster whose every entry resolves to a callable, when the module is imported, then it loads normally - the paired control, so the import check is shown to discriminate rather than to refuse everything
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ChecklistRosterTests::test_a_fully_defined_roster_imports_normally
-  - **Verified:** no
+  - **Verified:** yes (2026-09-10)
 
 ## Test Plan
 

@@ -28,17 +28,17 @@ Scope the invocation to the lane under test. `gate.py --only release-rehearsal -
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given the reporting check for the release-rehearsal lane, when it drives the gate, then the output carries that lane and NEITHER of the other two the push boundary binds. The existing assertions - the lane failed, it named its greenfield half, it recorded a duration - all pass on an unscoped run too, so none of them can say whether the check pays for one lane or for all of them, which is the whole of this bug
+- [x] **AC1** Given the reporting check for the release-rehearsal lane, when it drives the gate, then the output carries that lane and NEITHER of the other two the push boundary binds. The existing assertions - the lane failed, it named its greenfield half, it recorded a duration - all pass on an unscoped run too, so none of them can say whether the check pays for one lane or for all of them, which is the whole of this bug
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReleaseRehearsalLaneTests::test_the_check_pays_for_one_lane_and_not_the_whole_boundary
   - **Verified:** yes (2026-09-10)
-- [ ] **AC2** Given the same check scoped, when it runs, then the lane still FAILS, still names the half that broke and still records its duration. The paired control: a scope so narrow that the lane never runs satisfies AC1 perfectly and measures nothing
+- [x] **AC2** Given the same check scoped, when it runs, then the lane still FAILS, still names the half that broke and still records its duration. The paired control: a scope so narrow that the lane never runs satisfies AC1 perfectly and measures nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReleaseRehearsalLaneTests::test_the_rehearsal_lane_names_its_failing_half_and_records_its_cost
   - **Verified:** yes (2026-09-10)
-- [ ] **AC3** Given every test module in both suites, when they are scanned, then NO test drives the boundary gate without scoping it to a lane. The class rather than the one instance: the next such invocation costs the same hour, and an enumerated exemption exempts whichever is added next. Judged over the source deliberately - the rule is about what a test invokes, and the only behavioural check is to pay the hour the rule exists to prevent
+- [x] **AC3** Given every test module in both suites, when they are scanned, then NO test drives the boundary gate without scoping it to a lane. The class rather than the one instance: the next such invocation costs the same hour, and an enumerated exemption exempts whichever is added next. Judged over the source deliberately - the rule is about what a test invokes, and the only behavioural check is to pay the hour the rule exists to prevent
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BoundaryGateIsNeverDrivenUnscopedTests::test_no_test_drives_the_boundary_gate_without_scoping_it
   - **Verified:** yes (2026-09-10)
 
-- [ ] **AC4** Given a fixture holding one unscoped gate invocation and one properly scoped one, when the scan runs over it, then it sees BOTH and names only the unscoped one. AC3 is green on a clean tree whatever the scan does - a scanner that reports nothing passes it perfectly - so this row is the only thing that says AC3 would fire
+- [x] **AC4** Given a fixture holding one unscoped gate invocation and one properly scoped one, when the scan runs over it, then it sees BOTH and names only the unscoped one. AC3 is green on a clean tree whatever the scan does - a scanner that reports nothing passes it perfectly - so this row is the only thing that says AC3 would fire
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BoundaryGateIsNeverDrivenUnscopedTests::test_the_scan_finds_an_unscoped_invocation_when_there_is_one
   - **Verified:** yes (2026-09-10)
 
