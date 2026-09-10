@@ -66,3 +66,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-10 | Claude Opus 5 | Delivered. Fourteen mutants, fourteen killed, and the whole cycle driven at the shipped command in a throwaway fixture before any test was written: probe green, thin reason refused, ruling recorded, probe pinned and exit 0, a second live ruling refused, the selector re-pointed and the ruling reported STALE with its reason, withdrawal marking the row in place with the record still one row long. The ruling record lives in `sdlc-studio/reviews/` rather than gitignored `.local/`, because a ruling is evidence and evidence nobody else can read is evidence only its author has |

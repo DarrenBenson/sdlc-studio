@@ -68,6 +68,51 @@
 # ripgrep nor the wider tool set the `ci` job does, so a criterion invoking one could read
 # differently there. Both are reasons to re-measure rather than to trust this line twice.
 #
-# metric|count|what it counts
-red-criteria|20|executable acceptance criteria that FAIL when run, across stories already at Done
-dead-stamps|3|criteria stamped `Verified: yes` whose selector now selects nothing
+# THE ROW NOW CARRIES IDENTITIES, and the count is still the gate. A bare number told a reader
+# `red-criteria: 23, baseline 20 - 3 NEW one(s)`, instructed them to find and fix the three rather
+# than raise the baseline, and gave them nothing to find them with: naming the three meant running
+# the same 28-minute lane against the baseline commit and diffing two lists by hand. So each row
+# records the `<record>::<AC>` address of every criterion behind its count, and the lane reports
+# what ROSE and what went green by id.
+#
+# Three things the identities buy that the count could not:
+#   - an equal-sized SWAP stops being silent. One criterion repaired and another introduced in the
+#     same window leaves the number right and the corpus changed, and the lane exited 0 on it.
+#   - a baseline identity that no longer EXISTS is named as vanished rather than counted as a
+#     repair, so the number cannot fall because a unit was deleted or its criteria renumbered.
+#   - the count and its own list are checked against each other, at both ends: a row recording a
+#     number its list does not support is a record of neither, and so is a run.
+#
+# RE-MEASURED 2026-09-10 and the identities are recorded for the first time. The count stays at
+# 20. Measured by `python3 .claude/skills/sdlc-studio/scripts/gate.py --root . --release` on this
+# tree: 20 red across 822 stories and 2,095 executable criteria, in ~2,236s, with 156 failing
+# criteria excluded on stories claiming no completion. The dead-stamp sweep,
+# `verify_ac.py stamps --root . --bugs`, reports 3 - at baseline, and now named.
+#
+# THE FIRST THING THE IDENTITIES BOUGHT WAS THE ANSWER TO THIS FILE'S OWN OPEN QUESTION. Two runs
+# were taken. The first, under three concurrent boundary gates on the same machine, read 21; the
+# second, on an idle one, read 20. The lane named the difference in one line -
+# `went green: US0220::AC2` - and that criterion is
+# `unittest discover -s tools/tests -p test_precommit_selection.py -k RunTests`, timed here at
+# 118 seconds against the lane's 120-second per-verifier ceiling. It passes with two seconds to
+# spare on a quiet machine and times out under any load.
+#
+# That is exactly the instability the paragraph below predicted - "a timing-sensitive row of that
+# kind flips the count between 20 and 21" - and it had gone three baselines without being
+# identified, because a bare number cannot say which row moved. Expect `US0220::AC2` to be the id
+# the lane names when this count moves by one, and treat it as a verifier to re-scope rather than
+# a criterion to hunt.
+#
+# The reading recorded on 2026-08-17 was 20 across 670 stories with 67 exclusions; the corpus has
+# since grown to 822 stories and 156 exclusions, so the count holding still across that span says
+# no more than the count moving would have. That is the argument for identities rather than a
+# footnote to it. The run that filed this change read 23 on 2026-09-08 and could not name one.
+#
+# Still true, and still a reason to re-measure rather than trust this line twice: `corpus-verify`
+# in CI installs neither ripgrep nor the wider tool set the `ci` job does, so a criterion invoking
+# one can read differently there. The difference will now be NAMED rather than appearing as a
+# number that moved.
+#
+# metric|count|what it counts|identities
+red-criteria|20|executable acceptance criteria that FAIL when run, across stories already at Done|US0021::AC1 US0040::AC3 US0042::AC2 US0047::AC1 US0052::AC4 US0063::AC1 US0063::AC2 US0070::AC1 US0070::AC2 US0080::AC2 US0165::AC2 US0202::AC3 US0207::AC3 US0268::AC1 US0284::AC4 US0289::AC2 US0347::AC1 US0512::AC4 US0666::AC1 US0666::AC2
+dead-stamps|3|criteria stamped `Verified: yes` whose selector now selects nothing|US0063::AC2 BG0357::AC4 BG0357::AC5

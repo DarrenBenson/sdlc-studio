@@ -56,3 +56,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-10 | sdlc-studio | Delivered. `plan_falsifiability_mode` (three modes, the YAML boolean `off` honoured, an unrecognised value refused by name), `falsifiability_findings` (the class taken from the probe's record, a ruled criterion never a finding) and `plan_falsifiability_gate` are wired into `cmd_plan` beside the breakdown gate, refusing before anything is written. Default `report`. The probe itself is US0819's surface and is reached through one seam; an absent probe refuses under `block` rather than reading a batch as clean. 9 declared mutants applied and killed. |

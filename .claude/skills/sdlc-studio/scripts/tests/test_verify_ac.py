@@ -4735,6 +4735,29 @@ class EditVerbVocabularyTests(unittest.TestCase):
                 self.assertTrue(any(v in phrase for v in verify_ac._EDIT_VERBS),
                                 f"{phrase!r} names a real production edit and must be accepted")
 
+    def test_restore_and_keep_are_accepted_and_a_verbless_cell_is_still_refused(self) -> None:
+        """BG0612 AC1. MUTANT: delete the two entries `restore` and `keep` from `_EDIT_VERBS`.
+
+        A mutant that puts BACK what a fix removed is the commonest shape in a repair - the edit
+        under test IS the removal, so its mutant is the restoration - and neither verb was in
+        the vocabulary. The honest phrasing of a repair's own mutant was refused, and authors
+        reached for a word that fitted the checker rather than the change.
+
+        Driven through the cell reader that `testplan derive` uses, with the control beside it:
+        widening the vocabulary must not widen it to nothing."""
+        for phrase in ("restore the two-field slice in the sweep",
+                       "keep the original guard and skip the new branch",
+                       "reinstate the deleted lane",
+                       "reintroduce the discarded anchor"):
+            with self.subTest(phrase=phrase):
+                self.assertTrue(any(v in phrase for v in verify_ac._EDIT_VERBS),
+                                f"{phrase!r} names a real production edit and must be accepted")
+        for outcome in ("the row stays green", "nothing is recorded"):
+            with self.subTest(outcome=outcome):
+                self.assertFalse(any(v in outcome for v in verify_ac._EDIT_VERBS),
+                                 f"{outcome!r} is an outcome, not an edit - the vocabulary was "
+                                 f"widened to nothing")
+
     def test_an_outcome_phrased_mutant_is_still_refused(self) -> None:
         """The control. Widening the vocabulary must not widen it to nothing - a mutant stating
         what STOPS WORKING rather than what is CHANGED still names no edit."""
@@ -7001,6 +7024,389 @@ class TestPlanCellEscapingTests(unittest.TestCase):
                 self.assertEqual(plain, verify_ac._cell(plain))
                 self.assertEqual(plain, verify_ac._uncell(verify_ac._cell(plain)))
 
+
+
+class TestPlanProbeTests(unittest.TestCase):
+    """US0819: nothing asked whether a criterion CAN FAIL. A plan whose criteria are already
+    satisfied before any code is written measures nothing, and every gate downstream is built
+    on the assumption that somebody checked. The probe runs each criterion against the tree as
+    it is and reports a PASS as the finding."""
+
+    def _unit(self, root: Path, verifiers, *, uid="BG9401"):
+        """A bug artefact whose criteria carry the given `Verify:` expressions in order."""
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        acs = []
+        for i, expr in enumerate(verifiers, 1):
+            verify = f"\n  - **Verify:** {expr}" if expr is not None else ""
+            acs.append(f"### AC{i}: a thing\n\n- **Then** it behaves{verify}\n")
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: probe fixture\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Points:** 2\n> **Affects:** src/x.py\n\n## Summary\n\nA thing.\n\n"
+            f"## Acceptance Criteria\n\n" + "\n".join(acs) + "\n## Revision History\n",
+            encoding="utf-8")
+        return d / f"{uid}-x.md"
+
+    def _tests(self, root: Path, body: str, name="test_probe_fixture.py"):
+        (root / name).write_text(body, encoding="utf-8")
+        return name
+
+    PASSING = "import unittest\n\nclass T(unittest.TestCase):\n    def test_a(self):\n        self.assertTrue(True)\n"
+    FAILING = "import unittest\n\nclass T(unittest.TestCase):\n    def test_a(self):\n        self.assertTrue(False)\n"
+    SKIPPED = ("import unittest\n\nclass T(unittest.TestCase):\n"
+               "    @unittest.skip('deliberately skipped')\n    def test_a(self):\n        pass\n")
+
+    def _probe(self, root, uid="BG9401", **kw):
+        return verify_ac.testplan_probe(root, uid, timeout=60, **kw)
+
+    def test_a_criterion_already_green_is_named_and_fails_the_command(self) -> None:
+        """AC1. MUTANTS: merge the passing branch into the failing one; print a bare count
+        instead of the ids; return 0 from the probe whatever it classified.
+
+        The whole point of the unit: a criterion true before the code is written states what
+        the tree already does. Driven through the SHIPPED COMMAND as well as the function,
+        because the exit status is the half a library call cannot show."""
+        import subprocess as _sp  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            name = self._tests(root, self.PASSING)
+            self._unit(root, [f"pytest {name}::T::test_a"])
+            res = self._probe(root)
+            self.assertEqual(["green"], [r["state"] for r in res["criteria"]])
+            self.assertEqual(["AC1"], res["findings"],
+                             "the criterion that cannot fail is not NAMED, only counted")
+            self.assertFalse(res["ok"])
+            r = _sp.run([sys.executable, "-B", str(SCRIPT_PATH), "testplan", "probe",
+                         "--unit", "BG9401", "--root", str(root)],
+                        capture_output=True, text=True, timeout=180)
+            self.assertEqual(2, r.returncode,
+                             f"the shipped command did not refuse:\n{r.stdout}{r.stderr}")
+            self.assertIn("AC1", r.stdout + r.stderr, "the command names no criterion")
+
+    def test_a_selector_that_resolves_to_nothing_is_not_a_finding(self) -> None:
+        """AC2. MUTANT: merge the resolves-to-nothing branch into the passing one.
+
+        That is the EXPECTED state before the code is written, and reporting it as a fault
+        would make the probe refuse every plan it was built to check."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tests(root, self.PASSING)
+            self._unit(root, ["pytest test_probe_fixture.py::T::test_does_not_exist"])
+            res = self._probe(root)
+            self.assertEqual(["not-yet-written"], [r["state"] for r in res["criteria"]])
+            self.assertEqual([], res["findings"])
+            self.assertTrue(res["ok"])
+
+    def test_a_red_criterion_is_the_state_a_plan_should_be_in(self) -> None:
+        """AC3, the paired control. MUTANT: return a non-zero exit whenever it classified any
+        criterion at all.
+
+        A probe that reported everything would be ignored within a sprint."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            name = self._tests(root, self.FAILING)
+            self._unit(root, [f"pytest {name}::T::test_a"])
+            res = self._probe(root)
+            self.assertEqual(["red"], [r["state"] for r in res["criteria"]])
+            self.assertTrue(res["ok"], "a red criterion is what a plan should look like")
+            # THROUGH THE COMMAND. The mutant this row names is about the EXIT STATUS, and a
+            # library call cannot show one - measured: the mutant survived the assertion above.
+            import subprocess as _sp  # noqa: PLC0415
+            r = _sp.run([sys.executable, "-B", str(SCRIPT_PATH), "testplan", "probe",
+                         "--unit", "BG9401", "--root", str(root)],
+                        capture_output=True, text=True, timeout=180)
+            self.assertEqual(0, r.returncode,
+                             f"the probe refused a plan whose criteria all fail, which is the "
+                             f"state a plan should be in:\n{r.stdout}{r.stderr}")
+
+    def test_an_all_skipped_node_is_a_finding_not_the_pre_code_state(self) -> None:
+        """AC4. MUTANT: route an all-skipped result to the same class as a selector that
+        resolves to nothing.
+
+        Two different facts with two different remedies: one is a test not written yet, the
+        other is a test that exists and can never fail."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            name = self._tests(root, self.SKIPPED)
+            self._unit(root, [f"pytest {name}::T::test_a"])
+            res = self._probe(root)
+            self.assertEqual(["never-fails"], [r["state"] for r in res["criteria"]])
+            self.assertEqual(["AC1"], res["findings"],
+                             "a node that can never fail is not the pre-code state")
+
+    def test_an_untrustworthy_answer_is_unreadable_and_never_red(self) -> None:
+        """AC5. MUTANTS: delete the invalid kind from the untrusted branch; remove the
+        runner-error exit status; drop the timeout exit status.
+
+        An answer the runner could not produce is not an answer. Read as RED it would be
+        indistinguishable from a criterion doing its job, which is the reading that lets a
+        broken selector pass for a good plan.
+
+        THREE fixtures, one per reachable outcome. A single unparseable verifier reaches only
+        the `invalid` limb, so the timeout and absent-runner mutants survived it - the branch
+        was written for three states and tested against one."""
+        cases = (
+            ("invalid", "not-a-verb something", 60),
+            ("absent runner", "jest --testPathPattern nothing-here", 60),
+            ("timeout", "pytest --collect-only -q", 0),
+        )
+        for label, expr, timeout in cases:
+            with self.subTest(case=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._tests(root, self.PASSING)
+                self._unit(root, [expr])
+                res = verify_ac.testplan_probe(root, "BG9401", timeout=timeout)
+                self.assertEqual(["unreadable"], [r["state"] for r in res["criteria"]],
+                                 f"a {label} answer was read as an answer: {res['criteria']}")
+                self.assertEqual([], res["findings"],
+                                 f"a {label} answer was counted as a finding")
+
+    def test_a_shell_verifier_is_named_and_never_executed(self) -> None:
+        """AC6. MUTANTS: pass the shell-backed verbs through to the runner; narrow the
+        short-circuit to shell and eval, letting `http` reach the runner.
+
+        `http` belongs here because its builder returns a piped curl-and-jq STRING, so it runs
+        under a shell exactly as the other two do - reading the verb list alone would miss it.
+        Proven by side effect: the command each verifier names would create a file, and the
+        probe must leave none behind."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tests(root, self.PASSING)
+            marks = {v: root / f"{v}-ran.txt" for v in ("shell", "eval", "http")}
+            self._unit(root, [f"shell touch {marks['shell']}",
+                              f"eval touch {marks['eval']}",
+                              f"http touch {marks['http']}"])
+            res = self._probe(root)
+            self.assertEqual(["shell-not-run"] * 3, [r["state"] for r in res["criteria"]],
+                             f"a shell-backed verifier was not short-circuited: {res['criteria']}")
+            for verb, mark in marks.items():
+                self.assertFalse(mark.exists(),
+                                 f"the probe EXECUTED the {verb} verifier - it ran unreviewed "
+                                 f"text out of an artefact")
+
+    def test_manual_and_unspecified_are_named_and_counted_apart(self) -> None:
+        """AC7. MUTANTS: add the unspecified tally into the manual one and report a single
+        number; add a manual criterion to the finding tally that decides the exit status.
+
+        A criterion a human verifies and a criterion with no verifier at all are different
+        facts, and neither is something the probe can call a failure."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tests(root, self.PASSING)
+            self._unit(root, ["manual a reviewer reads it", None])
+            res = self._probe(root)
+            self.assertEqual(["manual", "unspecified"], [r["state"] for r in res["criteria"]])
+            self.assertEqual(1, res["counts"].get("manual"))
+            self.assertEqual(1, res["counts"].get("unspecified"))
+            self.assertEqual([], res["findings"], "neither is a failure the probe can call")
+            self.assertTrue(res["ok"])
+
+    def test_a_green_criterion_on_a_delivered_unit_is_reported_not_refused(self) -> None:
+        """AC8. MUTANT: delete the commit-attribution test so every passing criterion is a
+        finding.
+
+        After delivery a green criterion is the fix working. Without this the probe refuses
+        every unit it has already helped ship."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            name = self._tests(root, self.PASSING)
+            self._unit(root, [f"pytest {name}::T::test_a"])
+            with unittest.mock.patch.object(verify_ac, "_probe_unit_is_delivered",
+                                            return_value=True):
+                res = self._probe(root)
+            self.assertEqual(["delivered"], [r["state"] for r in res["criteria"]])
+            self.assertEqual([], res["findings"], "a delivered unit's green criterion is not a "
+                                                  "plan that measures nothing")
+            self.assertTrue(res["ok"])
+
+    def test_the_probe_leaves_every_artefact_byte_identical(self) -> None:
+        """AC9. MUTANT: call the story runner from the probe with its dry-run flag off.
+
+        The obvious implementation reuses the story runner, which STAMPS `Verified:` lines as
+        it goes - so a probe built that way rewrites the plan it was asked to judge."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            name = self._tests(root, self.PASSING)
+            art = self._unit(root, [f"pytest {name}::T::test_a", "manual a human reads it",
+                                    "pytest test_probe_fixture.py::T::test_absent"])
+            before = art.read_bytes()
+            self._probe(root)
+            self.assertEqual(before, art.read_bytes(),
+                             "the probe rewrote the artefact it was asked to judge")
+
+
+class PlanRulingTests(unittest.TestCase):
+    """US0821: a decision to plan over a criterion that cannot fail is RECORDED - pinned to what
+    it excuses, visible when it stops applying, and withdrawable without deleting what was
+    decided."""
+
+    PASSING = ("import unittest\n\nclass T(unittest.TestCase):\n"
+               "    def test_a(self):\n        self.assertTrue(True)\n"
+               "    def test_b(self):\n        self.assertTrue(True)\n")
+    REASON = "the behaviour shipped in an earlier unit and this row pins the regression"
+
+    def _root(self, d, *, selector="pytest t.py::T::test_a", title="it behaves"):
+        root = Path(d)
+        (root / "t.py").write_text(self.PASSING, encoding="utf-8")
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / "BG9501-x.md").write_text(
+            f"# BG9501: ruling fixture\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Points:** 2\n> **Affects:** t.py\n\n## Summary\n\nA thing.\n\n"
+            f"## Acceptance Criteria\n\n### AC1: {title}\n\n- **Then** {title}\n"
+            f"  - **Verify:** {selector}\n\n## Revision History\n", encoding="utf-8")
+        return root
+
+    def _rule(self, root, **kw):
+        b = next(b for b in verify_ac.parse_story(
+            (root / "sdlc-studio" / "bugs" / "BG9501-x.md").read_text(encoding="utf-8"))
+            if b.ac_id == "AC1")
+        return verify_ac.record_ruling(root, "BG9501", "AC1", b.title, (b.verifier or "").strip(),
+                                       kw.pop("reason", self.REASON), kw.pop("author", "a seat"))
+
+    def test_a_ruling_records_who_when_and_why_and_refuses_a_thin_reason(self) -> None:
+        """AC1. MUTANTS: drop the author and date columns from the row the writer emits; delete
+        the minimum-length comparison on the reason.
+
+        A one-character reason is not a decision anybody can review."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._rule(root)
+            rows = verify_ac.read_rulings(root)
+            self.assertEqual(1, len(rows), rows)
+            row = rows[0]
+            self.assertEqual("AC1", row["criterion"])
+            self.assertEqual(self.REASON, row["reason"])
+            self.assertEqual("a seat", row["author"], "the row carries no author")
+            self.assertTrue(row["date"], "the row carries no date")
+            with self.assertRaises(ValueError) as ctx:
+                self._rule(root, reason="nope")
+            self.assertIn("at least", str(ctx.exception))
+
+    def test_a_second_live_ruling_and_a_sentinel_reason_are_both_refused(self) -> None:
+        """AC2. MUTANTS: remove the existing-live-row lookup before the append; delete the
+        sentinel-prefix comparison; drop the liveness filter from the collision lookup.
+
+        Two live rulings on one criterion make the join ambiguous, and a reason shaped like a
+        withdrawal makes a live row read as a retracted one. The last half matters most: a
+        lookup over EVERY row rather than the live ones ships a permanent, un-re-pinnable
+        withdrawal and passes every other assertion here."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._rule(root)
+            with self.assertRaises(ValueError) as ctx:
+                self._rule(root, reason="a different decision on the same criterion entirely")
+            self.assertIn("already carries a live ruling", str(ctx.exception))
+            with self.assertRaises(ValueError) as ctx2:
+                self._rule(root, reason="WITHDRAWN: this reads as a row already retracted")
+            self.assertIn("may not open with", str(ctx2.exception))
+            # ...and once the live one is withdrawn, the criterion is re-pinnable.
+            verify_ac.withdraw_ruling(root, "BG9501", "AC1",
+                                      "the decision changed after a second seat looked at it")
+            again = self._rule(root, reason="the re-taken decision, recorded after the withdrawal")
+            self.assertTrue(again["ok"], "a criterion whose only ruling is withdrawn is not "
+                                         "re-pinnable, so the withdrawal is permanent")
+
+    def test_re_pointing_the_selector_staleens_the_ruling(self) -> None:
+        """AC3. MUTANTS: narrow the digest input to the title alone; narrow it to the selector
+        alone.
+
+        The selector is what actually RUNS, and the title is what the criterion CLAIMS. A pin
+        surviving a re-pointed verifier is a ruling outliving the criterion it excused."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._rule(root)
+            digest_now = verify_ac.ruling_digest("it behaves", "pytest t.py::T::test_a")
+            self.assertIsNotNone(verify_ac.live_ruling(root, "BG9501", "AC1", digest_now))
+            moved_selector = verify_ac.ruling_digest("it behaves", "pytest t.py::T::test_b")
+            self.assertIsNone(verify_ac.live_ruling(root, "BG9501", "AC1", moved_selector),
+                              "the ruling survived a re-pointed selector")
+            moved_title = verify_ac.ruling_digest("it behaves differently",
+                                                  "pytest t.py::T::test_a")
+            self.assertIsNone(verify_ac.live_ruling(root, "BG9501", "AC1", moved_title),
+                              "the ruling survived a rewritten criterion title")
+
+    def test_a_stale_ruling_is_named_rather_than_dropped(self) -> None:
+        """AC4. MUTANT: skip a stale ruling silently instead of appending it to the report.
+
+        A pin that vanishes without a word is indistinguishable from one that was never
+        written, and the reader cannot tell a repaired criterion from a lost exemption."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._rule(root)
+            art = root / "sdlc-studio" / "bugs" / "BG9501-x.md"
+            art.write_text(art.read_text(encoding="utf-8")
+                           .replace("pytest t.py::T::test_a", "pytest t.py::T::test_b"),
+                           encoding="utf-8")
+            res = verify_ac.testplan_probe(root, "BG9501", timeout=60)
+            row = res["criteria"][0]
+            self.assertEqual("green", row["state"], "the criterion is a finding again")
+            self.assertIn("STALE", row["detail"],
+                          f"the ruling stopped applying and nothing said so: {row['detail']}")
+            self.assertIn(self.REASON, row["detail"],
+                          "the stale ruling is named without its reason, so a reader cannot "
+                          "tell which exemption was lost")
+
+    def test_a_withdrawal_marks_the_row_in_place_and_restores_the_finding(self) -> None:
+        """AC5. MUTANTS: remove the matched row from the table; drop the minimum-length
+        comparison on the withdrawal's own reason; replace the criterion lookup with a substring
+        search over the reason column; return zero when the lookup finds nothing to mark."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._rule(root)
+            before = len(verify_ac.read_rulings(root))
+            with self.assertRaises(ValueError):
+                verify_ac.withdraw_ruling(root, "BG9501", "AC1", "no")
+            verify_ac.withdraw_ruling(root, "BG9501", "AC1",
+                                      "the decision changed after a second seat looked at it")
+            rows = verify_ac.read_rulings(root)
+            self.assertEqual(before, len(rows), "the withdrawal DELETED the row instead of "
+                                                "marking it - what was decided is now invisible")
+            self.assertTrue(rows[0]["withdrawn"])
+            self.assertIn(self.REASON, rows[0]["reason"],
+                          "the original decision was overwritten rather than kept beside the "
+                          "decision to undo it")
+            with self.assertRaises(ValueError) as ctx:
+                verify_ac.withdraw_ruling(root, "BG9501", "AC2",
+                                          "a criterion that carries no live ruling at all")
+            self.assertIn("carries no live ruling", str(ctx.exception))
+
+    def test_a_live_ruling_pins_the_criterion_and_the_probe_passes(self) -> None:
+        """AC6. MUTANT: ignore the ruling lookup in the classifier so a pinned criterion stays a
+        finding.
+
+        With the paired control beside it: without the ruling the same criterion IS a finding,
+        so this row measures the ruling rather than the fixture."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            unruled = verify_ac.testplan_probe(root, "BG9501", timeout=60)
+            self.assertEqual(["AC1"], unruled["findings"], "the control: unruled, it is a finding")
+            self.assertFalse(unruled["ok"])
+            self._rule(root)
+            ruled = verify_ac.testplan_probe(root, "BG9501", timeout=60)
+            self.assertEqual("pinned", ruled["criteria"][0]["state"])
+            self.assertEqual([], ruled["findings"], "a ruled criterion still failed the command")
+            self.assertTrue(ruled["ok"])
+
+    def test_a_hostile_title_or_reason_round_trips_and_the_table_still_parses(self) -> None:
+        """AC7. MUTANTS: delete the pipe substitution applied to a cell before it is written;
+        delete the whitespace fold.
+
+        A criterion title and a reason are free text somebody wrote, and these rows are built by
+        interpolation - so the cell writer is the only thing between a pipe in prose and a
+        forged column."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, title="it handles a | pipe and a `span`")
+            self._rule(root, reason="a reason with a | pipe, a `span`\nand a newline in it")
+            text = (root / "sdlc-studio" / "reviews" / "plan-rulings.md").read_text(
+                encoding="utf-8")
+            row = next(l for l in text.splitlines() if l.startswith("| BG9501"))
+            self.assertEqual(6, len(row.strip().strip("|").split("|")),
+                             f"the row does not hold six columns:\n{row}")
+            self.assertNotIn("\n", row.strip(), "a newline survived into the row")
+            rows = verify_ac.read_rulings(root)
+            self.assertEqual(1, len(rows), "the hostile row did not parse back")
+            self.assertIn("pipe", rows[0]["reason"])
 
 if __name__ == "__main__":
     unittest.main()

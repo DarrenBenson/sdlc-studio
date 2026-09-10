@@ -17883,5 +17883,309 @@ class VerifierGroomingTests(unittest.TestCase):
                          f"batch holding such a unit")
 
 
+def _load_verify_ac():
+    """`verify_ac` as a sibling module, registered under the name `sprint` imports it by.
+
+    The same idiom `_load_critic` uses, and for the same reason: the plan reaches the probe
+    through a deferred `import verify_ac`, so a module loaded under any other name would leave
+    the test patching one object and the plan reading another.
+    """
+    path = SCRIPT.parent / "verify_ac.py"
+    spec = importlib.util.spec_from_file_location("verify_ac", path)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["verify_ac"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _probe_record(unit: str, criterion: str, klass: str, returncode: int, **extra) -> dict:
+    """One probe result, carrying BOTH the class and the verifier's exit status.
+
+    The two disagree on purpose for `unreadable`: an unreadable answer always exits non-zero, so
+    a second reader deriving the class from the status calls it `red` - healthy - and lets it
+    through. Carrying both is what makes that mutant writable, and killable.
+    """
+    return {"unit": unit, "criterion": criterion, "class": klass,
+            "returncode": returncode, **extra}
+
+
+class PlanFalsifiabilityGateTests(unittest.TestCase):
+    """`sprint plan` refuses a batch carrying an unruled green or unknown criterion.
+
+    MUTANTS, stated before the tests were written: delete the falsifiability call from
+    `cmd_plan`; truncate the composed message to its leading tally; flip the mode's fallback
+    literal to `block`; drive the probe under `off`; compare the configured value as a string
+    only, so the YAML boolean falls through to the refusal; treat an unrecognised mode as
+    `report`; refuse whenever the probe returns any classified criterion; leave the gate a
+    function the plan never calls; recompute the label and the decision from each verifier's
+    exit status.
+
+    Every one of them is exercised through `main(["plan", ...])`, never through the gate
+    function: the wiring is the half a library test does not reach.
+    """
+
+    #: A batch the probe reports as unhealthy: one criterion the tree already satisfies, one
+    #: whose tests are all skipped, one whose answer could not be read. The exit statuses are
+    #: the real ones - a passing verifier exits 0, and both of the others exit non-zero.
+    UNHEALTHY = [
+        _probe_record("BG0001", "AC1", "green", 0),
+        _probe_record("BG0002", "AC1", "never-fails", 1),
+        _probe_record("BG0002", "AC2", "unreadable", 2),
+    ]
+    #: The control. Every class here is a state a plan is ALLOWED to be in. The `delivered` row
+    #: is the shape that would otherwise make the gate refuse the wrong thing: work already
+    #: committed whose status has not advanced. Measured on this repository on 2026-09-10 by
+    #: walking `sdlc-studio/stories` and `sdlc-studio/bugs`, 52 units stand non-Draft and
+    #: non-terminal (18 Open, 20 Ready, 14 Blocked) carrying 216 pytest selectors between them,
+    #: so this is not a rare shape.
+    HEALTHY = [
+        _probe_record("BG0001", "AC1", "red", 1),
+        _probe_record("BG0001", "AC2", "not-yet-written", 5),
+        _probe_record("BG0002", "AC1", "manual", 0),
+        _probe_record("BG0002", "AC2", "not-probed", 0),
+        _probe_record("BG0002", "AC3", "delivered", 0),
+        _probe_record("BG0002", "AC4", "green", 0, ruled="already delivered, pinned at plan"),
+    ]
+
+    def setUp(self) -> None:
+        self.sprint = _load()
+        self.verify_ac = _load_verify_ac()
+        self.calls: list = []
+
+    def _probe(self, records):
+        """A stand-in for `verify_ac.testplan probe`, recording every unit it was asked about.
+
+        The probe itself is another unit's surface; what is under test here is whether the plan
+        drives it, reads its answer and decides on it.
+
+        RETURNS THE SHIPPED SHAPE - `{unit, criteria: [{ac, state, ...}]}` - not a convenient
+        one. The first cut of this stand-in returned a flat list of records, which is what the
+        gate consumed at the time; when the real probe landed it returned the shipped dict and
+        the seam broke on the first real call, with every test here still green. A stand-in
+        that does not match the contract tests a fiction.
+        """
+        def probe(root, unit, **kwargs):                # noqa: ARG001 - the root is the plan's
+            self.calls.append(unit)
+            mine = [r for r in records if r["unit"] == unit]
+            return {"unit": unit, "ok": True, "errors": [],
+                    "criteria": [{"ac": r.get("criterion"), "state": r.get("class"),
+                                  "ruled": r.get("ruled", False), "detail": ""} for r in mine]}
+        return probe
+
+    def _plan(self, root: Path, records=None, *extra: str):
+        """`sprint.py plan` - the shipped command - with the probe seam supplied."""
+        out, err = io.StringIO(), io.StringIO()
+        patch = unittest.mock.patch.object(
+            self.verify_ac, "testplan_probe", self._probe(records or []), create=True)
+        with patch, contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = self.sprint.main(["plan", "--bugs", "Open", "--root", str(root),
+                                   "--no-fetch", "--skip-personas", *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _batch(self, root: Path) -> None:
+        _groomed_bug(root, 1, _src(root, "src/a.py"))
+        _groomed_bug(root, 2, _src(root, "src/b.py"))
+
+    def test_block_refuses_and_the_refusal_names_the_class_and_the_remedy(self) -> None:
+        """AC1. Under `block`, an unruled finding REFUSES, and the refusal is readable.
+
+        MUTANTS: delete the falsifiability call from `cmd_plan` (the plan then exits 0 and says
+        nothing); truncate the composed message to its leading tally (the tally alone names no
+        unit, no criterion, no class and no remedy, which is the failure the three sibling
+        refusals on this path were built to avoid).
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            _config(root, "review:\n  plan_falsifiability: block\n")
+            rc, out, err = self._plan(root, self.UNHEALTHY)
+            self.assertNotEqual(0, rc, err)
+            self.assertIn("plan refused", err)
+            for unit, criterion, klass in (("BG0001", "AC1", "green"),
+                                           ("BG0002", "AC1", "never-fails"),
+                                           ("BG0002", "AC2", "unreadable")):
+                self.assertIn(unit, err)
+                self.assertIn(f"{unit} {criterion}: {klass}", err)
+            # ...why each class is a finding, not only its name.
+            self.assertIn("the tree already satisfies it", err)
+            self.assertIn("every selected test is skipped", err)
+            self.assertIn("could not be trusted", err)
+            # ...and the command that rules it, which is not one a reader can guess.
+            self.assertIn("verify_ac.py testplan rule", err)
+            # NO PLAN AT ALL, like every other refusal on this path.
+            self.assertNotIn("batch:", out)
+
+    def test_the_shipped_default_is_report_and_the_plan_proceeds(self) -> None:
+        """AC2. With nothing configured the same batch PLANS, and the finding is still reported.
+
+        MUTANT: flip the fallback literal for the mode to `block`. Every sibling review gate
+        here is mode- or date-governed and two ship advisory while their yield is measured, so a
+        default that blocks would refuse the repository on the day it landed.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            rc, out, err = self._plan(root, self.UNHEALTHY)
+            self.assertEqual(0, rc, err)
+            self.assertEqual("report", self.sprint.plan_falsifiability_mode(root))
+            self.assertIn("batch: 2 unit(s)", out)
+            self.assertIn("advisory", err)
+            self.assertIn("BG0001 AC1: green", err)
+            self.assertNotIn("plan refused", err)
+
+    def test_off_collects_nothing_and_an_unknown_mode_is_refused_by_name(self) -> None:
+        """AC3. `off` drives nothing at all; an unrecognised mode is REFUSED.
+
+        MUTANTS: drive the probe under `off` and report what it returns (the probe executes
+        artefact-authored verifiers, so `off` has to mean nothing runs, not "runs and is
+        ignored"); compare the configured value as a string only, so the bare `off` YAML reads
+        as the boolean false and falls through to the refusal - which refuses a project for
+        spelling the mode the way this tooling prints it; treat an unrecognised mode as `report`
+        instead of refusing, which is how a hard bar gets switched off by a typo nobody sees.
+        """
+        for spelling in ("off", "'off'"):
+            with self.subTest(spelling=spelling), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._batch(root)
+                _config(root, f"review:\n  plan_falsifiability: {spelling}\n")
+                self.assertEqual("off", self.sprint.plan_falsifiability_mode(root))
+                self.calls = []
+                rc, out, err = self._plan(root, self.UNHEALTHY)
+                self.assertEqual(0, rc, err)
+                self.assertEqual([], self.calls, "the probe was driven under `off`")
+                self.assertNotIn("falsifiability", err)
+                self.assertNotIn("green", err)
+                self.assertIn("batch: 2 unit(s)", out)
+        # A typo, and `on` - which YAML reads as the boolean TRUE, and which is not one of the
+        # three either. Guessing which of `report` or `block` `on` meant is the same silent
+        # default the typo case exists to refuse.
+        for spelling in ("blcok", "on"):
+            with self.subTest(spelling=spelling), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._batch(root)
+                _config(root, f"review:\n  plan_falsifiability: {spelling}\n")
+                rc, out, err = self._plan(root, self.UNHEALTHY)
+                self.assertNotEqual(0, rc, err)
+                self.assertIn("review.plan_falsifiability", err)   # the key
+                for mode in ("report", "block", "off"):            # ...and the accepted set
+                    self.assertIn(mode, err)
+                self.assertNotIn("batch:", out)
+        # ...and a config nobody can parse has not said `off`. It is the only thing that could
+        # have, so an unreadable one reads as the strict mode rather than as the default.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "review:\n  plan_falsifiability: [unclosed\n")
+            with contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual("block", self.sprint.plan_falsifiability_mode(root))
+
+    def test_a_batch_whose_criteria_can_all_fail_proceeds_under_block(self) -> None:
+        """AC4. The control: under `block`, a healthy batch plans.
+
+        MUTANT: refuse whenever the probe returns any classified criterion. That satisfies AC1
+        on its own and refuses every plan ever made, because `red` and `not-yet-written` are the
+        two states the whole backlog is in before a line is written. The `delivered` and ruled
+        rows are here because they are the shapes that would otherwise make the gate refuse the
+        wrong thing.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            _config(root, "review:\n  plan_falsifiability: block\n")
+            rc, out, err = self._plan(root, self.HEALTHY)
+            self.assertEqual(0, rc, err)
+            self.assertIn("batch: 2 unit(s)", out)
+            self.assertNotIn("plan refused", err)
+            # ...and the probe really was asked about every unit in the batch.
+            self.assertEqual(["BG0001", "BG0002"], sorted(self.calls))
+
+    def test_the_gate_is_reached_through_the_shipped_plan_command(self) -> None:
+        """AC5. The wiring, which is the half a library test does not reach.
+
+        MUTANT: leave the gate callable as a function and never call it from the plan command.
+        This project has already shipped a gate that was green in-process for a whole sprint
+        while the command it was wired into printed nothing.
+
+        Two halves, the second with the probe ABSENT: a `block` plan must refuse rather than
+        read an unclassified batch as a clean one. Absence is SIMULATED rather than relied on -
+        when this row was written `verify_ac.py` carried no `testplan probe` and the second half
+        needed no stand-in, and the moment that unit landed the half stopped testing anything.
+        A test whose premise is a fact about today's tree expires without saying so.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            _config(root, "review:\n  plan_falsifiability: block\n")
+            rc, _, err = self._plan(root, self.UNHEALTHY)
+            self.assertNotEqual(0, rc, err)
+            self.assertEqual(["BG0001", "BG0002"], sorted(self.calls))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            _config(root, "review:\n  plan_falsifiability: block\n")
+            out, err = io.StringIO(), io.StringIO()
+            absent = unittest.mock.patch.object(self.verify_ac, "testplan_probe", None,
+                                                create=True)
+            with absent, contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = self.sprint.main(["plan", "--bugs", "Open", "--root", str(root),
+                                       "--no-fetch", "--skip-personas"])
+            self.assertNotEqual(0, rc, err.getvalue())
+            self.assertIn("the probe was not driven", err.getvalue())
+            self.assertNotIn("batch:", out.getvalue())
+        # ...and the same when the probe is present and FAILS. It runs artefact-authored
+        # verifiers, so it is the part of this gate most able to fail on input nobody
+        # anticipated - and a plan that died with a traceback there would be a gate that broke
+        # the command it was wired into.
+        def explode(root, unit):                        # noqa: ARG001 - the probe's signature
+            raise RuntimeError("the runner is not on this machine")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            _config(root, "review:\n  plan_falsifiability: block\n")
+            out, err = io.StringIO(), io.StringIO()
+            patch = unittest.mock.patch.object(
+                self.verify_ac, "testplan_probe", explode, create=True)
+            with patch, contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = self.sprint.main(["plan", "--bugs", "Open", "--root", str(root),
+                                       "--no-fetch", "--skip-personas"])
+            self.assertNotEqual(0, rc, err.getvalue())
+            self.assertNotIn("Traceback", err.getvalue())
+            self.assertIn("the probe failed on this batch", err.getvalue())
+            self.assertIn("RuntimeError", err.getvalue())
+            self.assertNotIn("batch:", out.getvalue())
+
+    def test_the_plan_reads_the_probe_rather_than_re_deriving_the_class(self) -> None:
+        """AC6. The class and the decision both come from the probe's record.
+
+        MUTANT: recompute the label and the decision from each verifier's exit status. An
+        `unreadable` answer always exits non-zero, so the second reader calls it `red` - the
+        class that means healthy - and the plan proceeds. The batch here is exactly one
+        `unreadable` criterion beside a `red` one carrying the SAME exit status, so nothing but
+        the probe's own class can separate them.
+        """
+        records = [_probe_record("BG0001", "AC1", "red", 2),
+                   _probe_record("BG0002", "AC1", "unreadable", 2)]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            _config(root, "review:\n  plan_falsifiability: block\n")
+            rc, out, err = self._plan(root, records)
+            self.assertNotEqual(0, rc, err)
+            self.assertIn("BG0002 AC1: unreadable", err)
+            # The red criterion carries the identical status and is NOT named.
+            self.assertNotIn("BG0001", err.split("plan refused")[-1])
+            self.assertNotIn("batch:", out)
+        # ...and the decision comes from the same place: flip only the class, keep the status.
+        passing = [_probe_record("BG0001", "AC1", "red", 2),
+                   _probe_record("BG0002", "AC1", "red", 2)]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            _config(root, "review:\n  plan_falsifiability: block\n")
+            rc, out, err = self._plan(root, passing)
+            self.assertEqual(0, rc, err)
+            self.assertIn("batch: 2 unit(s)", out)
+
+
 if __name__ == "__main__":
     unittest.main()

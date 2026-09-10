@@ -1285,6 +1285,13 @@ def resolve_prose_fields(fields_file: str | None, flag_fields: dict,
     report_shell_hazards(flags, keys=prose)
     if fields_file:
         from_file = load_fields_file(fields_file, allowed=allowed)
+        # THE PROSE TYPE RULE, applied HERE and never inside `load_fields_file`. This is the one
+        # place the free-text keys are known: `allowed` minus `metadata_keys` is the writer's own
+        # declaration of which of its fields are prose. The loader itself sees TYPED keys too - a
+        # `points` integer, an `acs` list, the numeric `line` three other writers pass through it
+        # - and a refusal hoisted into it would refuse every one of those while satisfying
+        # nothing this rule exists for.
+        _refuse_non_string_prose(fields_file, from_file, prose)
         return {**from_file, **flags}          # an explicit flag wins over the document
     return flags
 
@@ -1381,6 +1388,54 @@ def _refuse_scalar_for_list(where, data: dict) -> None:
             f"--fields-file {where} supplies a scalar where a list is expected: {detail}. A "
             f"string here is ITERATED rather than stored - one value becomes one character per "
             f"item - so it is refused. Write a one-item list if you mean one item")
+
+
+#: The `--fields-file` keys that are NOT free text, so the prose type rule below leaves them
+#: alone. `points` arrives as an integer from a document and as a string from the flag; the
+#: three list-valued keys have their own refusal above. Everything else a writer declares is
+#: prose, and the direction is fail-safe on purpose: a key nobody classified is CHECKED, so a
+#: prose field somebody forgets to name here is never silently exempted.
+FIELDS_FILE_TYPED_KEYS: tuple[str, ...] = ("points", "acs", "verify", "options")
+#: The free-text half of the filer's own key set - what `cmd_file` holds to the rule.
+FIELDS_FILE_PROSE_KEYS: tuple[str, ...] = tuple(k for k in FIELDS_FILE_KEYS
+                                               if k not in FIELDS_FILE_TYPED_KEYS)
+
+
+def _refuse_non_string_prose(where, data: dict, prose) -> None:
+    """Refuse a non-string supplied for a free-text field, naming the field and its type.
+
+    The sibling of `_refuse_scalar_for_list`, for the opposite mistake, and refusing for the
+    same reason: coercion is what turns a typo into a record nobody can read back. `str(False)`
+    is the text `False`, so accepting a boolean would store `False` as somebody's rationale -
+    worse than refusing it, because it reads as an authored sentence afterwards.
+
+    The guard this replaces was `str(x.get(k) or "").strip()`, which reads EVERY falsey value as
+    an absent field: a `false`, a `0` and an empty string were indistinguishable from a key the
+    document never carried, so the writer reported a field missing while naming a key the file
+    plainly contains. Where the value reached a string method instead, it raised `AttributeError`
+    with a traceback, which is neither a refusal nor a name.
+    """
+    wrong = [(k, type(data[k]).__name__) for k in prose
+             if k in data and data[k] is not None and not isinstance(data[k], str)]
+    if wrong:
+        detail = "; ".join(f"`{k}` is {kind}, not text" for k, kind in wrong)
+        raise ValueError(
+            f"--fields-file {where} supplies a non-string where free text is expected: {detail}. "
+            f"Refused rather than coerced: coercing a boolean stores the word False as somebody's "
+            f"authored sentence, and the guard it used to meet reported the field MISSING from a "
+            f"document that plainly carries it. Quote the value if you meant the text")
+
+
+def prose_value(fields: dict, key: str) -> str:
+    """A free-text field's text, PRESENCE-tested, or `""` when the document omits it.
+
+    The replacement for `str(fields.get(key) or "").strip()`, and the difference is the whole
+    point: `or ""` tests TRUTH, so every falsey value collapses into the same answer as an
+    absent key. A field is absent when it is absent. Non-strings are refused upstream, where the
+    document is read and where the field names are known, so nothing here has to guess.
+    """
+    value = fields.get(key)
+    return "" if value is None else str(value).strip()
 
 
 def index_template_path(type_: str) -> Path:
@@ -1572,7 +1627,7 @@ def check_mutation_run(repo_root: Path | str, fields: dict) -> dict:
     caller did not name one. A run the series does not hold is REFUSED by name: an artefact
     stamped with an unresolvable run id claims a provenance nobody can check, and yield counted
     from it would be counted against a run that never happened."""
-    run = str(fields.get("mutation_run") or "").strip()
+    run = prose_value(fields, "mutation_run")
     if not run:
         return fields
     sdlc_md.require_single_line("mutation_run", run)
@@ -1584,7 +1639,7 @@ def check_mutation_run(repo_root: Path | str, fields: dict) -> dict:
             "finding with a run nobody recorded. Run `mutation.py run` first, or file without "
             "--mutation-run; a yield counted from an unresolvable id is counted against a run "
             "that never happened")
-    target = str(fields.get("mutation_target") or "").strip()
+    target = prose_value(fields, "mutation_target")
     if not target:
         target = ", ".join(str(t) for t in (row.get("targets") or []))
     sdlc_md.require_single_line("mutation_target", target)
@@ -1634,9 +1689,9 @@ def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
     cannot catch. A filing carrying none of the three stays legal, because 923 existing findings
     carry none.
     """
-    lens = str(fields.get("lens") or "").strip()
-    profile = str(fields.get("profile") or "").strip()
-    run = str(fields.get("audit_run") or "").strip()
+    lens = prose_value(fields, "lens")
+    profile = prose_value(fields, "profile")
+    run = prose_value(fields, "audit_run")
     if not (lens or profile or run):
         return fields
     import readiness  # noqa: PLC0415 - local: the filer reads the packs, it does not own them
@@ -2028,7 +2083,7 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # Parent link (spawning a child under an RFC/CR): the parent must RESOLVE before
     # anything is minted - a child born pointing at nothing is the asymmetry class the
     # bidirectional wiring exists to abolish.
-    parent = (fields.get("parent") or "").strip()
+    parent = prose_value(fields, "parent")
     parent_path = None
     if parent:
         found = sdlc_md.find_by_id(root, parent)
@@ -2173,6 +2228,12 @@ def cmd_file(args: argparse.Namespace) -> int:
     report_shell_hazards(flags)
     try:
         from_file = load_fields_file(args.fields_file) if args.fields_file else {}
+        # The prose resolution that follows the loader. This command reads the document itself
+        # rather than through `resolve_prose_fields` - it carries typed keys the shared resolver's
+        # callers do not - so the rule is applied here by its own call, over the free-text half of
+        # the filer's key set. Without this line the loader accepts `"impact": false` and the
+        # field is silently dropped by the very guard that was supposed to read it.
+        _refuse_non_string_prose(args.fields_file, from_file, FIELDS_FILE_PROSE_KEYS)
     except ValueError as exc:
         print(f"file refused: {exc}", file=sys.stderr)
         return 1

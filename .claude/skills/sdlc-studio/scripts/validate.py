@@ -1081,9 +1081,18 @@ def cmd_warning_ratchet(args: argparse.Namespace) -> int:
         fill = (getattr(args, "reason", "") or "").strip()
         # The SHARED loader, not a second JSON read: one resolver for every prose flag in the
         # toolchain means the file form and the flag form cannot diverge in what they accept.
-        fill = str(file_finding.resolve_prose_fields(
-            getattr(args, "fields_file", None) or None,
-            {"reason": fill}, allowed=("reason",)).get("reason", "") or "").strip()
+        try:
+            resolved = file_finding.resolve_prose_fields(
+                getattr(args, "fields_file", None) or None,
+                {"reason": fill}, allowed=("reason",))
+        except ValueError as exc:
+            # A refusal is a message and an exit code, not a traceback. The top-level guard
+            # would print one line for this too, but only when the module is run as a script -
+            # in-process callers of `main()` got the exception, and the stamp is the one verb
+            # here that writes a file, so the refusal has to land before the write either way.
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        fill = file_finding.prose_value(resolved, "reason")
         rows = [{"id": i, "rule": r, "target": tgt,
                  "reason": keep.get((i, r, tgt), "") or fill} for i, r, tgt in live]
         (Path(root) / WARNING_RATCHET_FILE).write_text(

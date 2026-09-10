@@ -822,7 +822,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    title = str(fields.get("title") or "").strip()
+    title = file_finding.prose_value(fields, "title")
     if not title:
         print("error: no title - pass --title, or a \"title\" key in the --fields-file "
               "document", file=sys.stderr)

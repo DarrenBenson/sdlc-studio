@@ -77,3 +77,4 @@ Every one of these loaders is on the recommended `--fields-file` path, which exi
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Filed |
+| 2026-09-10 | sdlc-studio | Delivered. `_refuse_non_string_prose` refuses a non-string in a prose key from `resolve_prose_fields` and from `file_finding`'s own `cmd_file`, never from `load_fields_file` (which still carries typed values); `prose_value` replaces the `or ""` guard at ten call sites across the five modules; an AST sweep in `test_ledger.py` reports every remaining `.get(...) or ""` on a fields-file receiver against a registered set of 2, the residue outside this unit's `Affects`. 9 declared mutants applied and killed. |

@@ -2991,6 +2991,11 @@ _EDIT_VERBS = (
     # weakening
     "widen", "narrow", "loosen", "weaken", "disable", "bypass", "short-circuit", "skip",
     "comment out", "suppress", "ignore", "relax",
+    # RESTORATIVE. A mutant that puts back what a fix removed is the commonest shape in a
+    # repair: the edit under test IS the removal, so its mutant is the restoration. Neither
+    # verb was in the vocabulary, so the honest phrasing of a repair's own mutant was refused
+    # and authors reached for a word that fitted the checker rather than the change.
+    "restore", "keep", "reinstate", "reintroduce",
 )
 
 #: A cell split on UNESCAPED pipes only. A mutant naming a piped command is an ordinary thing
@@ -3256,6 +3261,334 @@ def testplan_unnameable(text: str) -> list:
     return out
 
 
+#: What the probe can conclude about one criterion, and which conclusions are FINDINGS.
+#:
+#: The plan-time question is not "does this test pass" but "can this criterion fail". A
+#: criterion that is already green before a line of code is written states something the tree
+#: already does, and the plan built on it measures nothing. So `green` is the finding, and
+#: `red` - the state a plan SHOULD be in - is the success.
+_PROBE_GREEN = "green"                  # ran and passed: the criterion cannot fail
+_PROBE_RED = "red"                      # ran and failed: what a plan should look like
+_PROBE_NOT_WRITTEN = "not-yet-written"  # the selector resolves to no test node yet
+_PROBE_NEVER_FAILS = "never-fails"      # the node exists and every selected test is skipped
+_PROBE_UNREADABLE = "unreadable"        # the answer cannot be trusted, so it is not an answer
+_PROBE_SHELL = "shell-not-run"          # a shell-backed verb, named and never executed
+_PROBE_MANUAL = "manual"                # a human verifier: nothing to run
+_PROBE_UNSPECIFIED = "unspecified"      # the criterion carries no Verify line at all
+_PROBE_PINNED = "pinned"             # a finding carrying a live ruling
+_PROBE_DELIVERED = "delivered"          # green, but the unit already has commits doing the work
+
+#: The states that are FINDINGS - the ones a plan has to answer for.
+_PROBE_FINDINGS = (_PROBE_GREEN, _PROBE_NEVER_FAILS)
+
+#: Verbs the runner executes through a SHELL. `http` is here because its builder returns a
+#: piped curl-and-jq STRING, so it runs under `shell=True` exactly as `shell` and `eval` do -
+#: reading the verb list alone would miss it, and a probe that executed a plan's shell verbs
+#: would run unreviewed text from an artefact somebody else wrote.
+_PROBE_SHELL_VERBS = ("shell", "eval", "http")
+
+
+def _probe_is_shell_backed(expr: str) -> bool:
+    """Whether this verifier would reach a shell if it were run."""
+    head = (expr or "").strip().split(" ", 1)[0].lower()
+    return head in _PROBE_SHELL_VERBS
+
+
+def _probe_unit_is_delivered(root: Path, unit: str, base: str | None) -> bool:
+    """Whether any commit attributes work to `unit` - the whole history unless `base` narrows it.
+
+    The SUBJECT only. A `Refs:` trailer is written by planning and paperwork commits as well as
+    by delivery ones, and this repository's plan commit carries a `Refs:` line naming the entire
+    batch - measured: it names all 22 units of RUN-01M20RWX, so reading trailers marks every
+    planned unit delivered before a line of its code exists. A delivery commit names its unit in
+    the subject, which is what the commit-msg hook requires of one.
+    """
+    want = sdlc_md.norm_id(unit)
+    rng = [f"{base}..HEAD"] if base and base != "HEAD" else []
+    try:
+        cp = subprocess.run(["git", "-C", str(root), "log", "--format=%s%x1d", *rng],
+                            capture_output=True, text=True, timeout=120, env=_git_env())
+    except (OSError, subprocess.SubprocessError):
+        return False          # git cannot answer; the strict read is "not delivered"
+    if cp.returncode != 0:
+        return False
+    for chunk in cp.stdout.split("\x1d"):
+        if not chunk.strip():
+            continue
+        subject = chunk.strip("\n").split("\x1e", 1)[0]
+        ids = {sdlc_md.norm_id(i) for i in re.findall(r"\b(?:US|BG|CR|RFC)-?\d{4,}\b", subject)}
+        if want in ids:
+            return True
+    return False
+
+
+#: Where a plan ruling lives. COMMITTED, beside the other review records rather than in
+#: gitignored `.local/`: a ruling is the recorded answer to a finding, and evidence nobody else
+#: can read is evidence only its author has.
+_RULING_REL = ("sdlc-studio", "reviews", "plan-rulings.md")
+_RULING_HEADER = ("| Unit | Criterion | Digest | Reason | Author | Date |\n"
+                  "| --- | --- | --- | --- | --- | --- |\n")
+_RULING_TITLE = ("# Plan Rulings\n\n"
+                 "> Append-only. A criterion the plan probe classified as a finding, and the\n"
+                 "> recorded decision to plan over it anyway. The digest covers the criterion's\n"
+                 "> TITLE and its `Verify:` SELECTOR together, so a ruling stops applying the\n"
+                 "> moment either changes - a pin that outlives the criterion it excused is a\n"
+                 "> pin nobody decided to give.\n"
+                 "> A withdrawal MARKS its row rather than deleting it: what was decided stays\n"
+                 "> visible beside the decision to undo it.\n\n")
+
+#: The prefix that marks a row withdrawn, in place. A ruling whose own reason opened with it
+#: would read as already retracted, so recording one is refused.
+_RULING_WITHDRAWN = "WITHDRAWN:"
+
+#: The shortest reason that can be audited, matching the floor `mutation.py retract` uses. The
+#: length is a floor on effort rather than on honesty: the real control is that it is published.
+_RULING_REASON_MIN = 20
+
+
+def ruling_path(repo_root) -> Path:
+    return Path(repo_root).joinpath(*_RULING_REL)
+
+
+def _ruling_cell(value: str) -> str:
+    """A value as a table cell: newlines and runs of whitespace folded, pipes neutralised.
+
+    A criterion title or a reason is free text a human wrote, and these rows are built by
+    interpolation - so this is the only thing standing between a pipe in somebody's prose and a
+    forged column. Backticks are left alone: they are ordinary in a criterion that names code,
+    and a row is not markdown-linted the way a prose document is.
+    """
+    return " ".join(str(value or "").split()).replace("|", "/")
+
+
+def ruling_digest(title: str, selector: str) -> str:
+    """The digest a ruling is pinned to: the criterion's TITLE and its SELECTOR together.
+
+    Both, because either alone lets a ruling outlive what it excused. Pinned to the title only,
+    re-pointing `Verify:` at a different test keeps the pin while the thing that actually runs
+    has changed; pinned to the selector only, rewriting the criterion's meaning keeps it while
+    the claim has changed.
+    """
+    basis = f"{' '.join(str(title or '').split())}\x1e{' '.join(str(selector or '').split())}"
+    return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:12]
+
+
+def read_rulings(repo_root) -> list:
+    """Every ruling row on disk, newest last, withdrawn rows included and marked."""
+    path = ruling_path(repo_root)
+    if not path.is_file():
+        return []
+    rows = []
+    for line in sdlc_md.read_text_safe(path).splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 6 or cells[0].lower() == "unit" or set(cells[0]) <= set("- "):
+            continue
+        reason = cells[3]
+        rows.append({"unit": cells[0], "criterion": cells[1], "digest": cells[2],
+                     "reason": reason, "author": cells[4], "date": cells[5],
+                     "withdrawn": reason.startswith(_RULING_WITHDRAWN)})
+    return rows
+
+
+def live_ruling(repo_root, unit: str, criterion: str, digest: str):
+    """The one LIVE ruling pinning this criterion at this digest, or None.
+
+    Liveness is the whole join: a withdrawn row and a row pinned to an older digest both exist
+    on the record and neither excuses anything.
+    """
+    want = sdlc_md.norm_id(unit)
+    for row in read_rulings(repo_root):
+        if (sdlc_md.norm_id(row["unit"]) == want and row["criterion"] == criterion
+                and not row["withdrawn"] and row["digest"] == digest):
+            return row
+    return None
+
+
+def record_ruling(repo_root, unit: str, criterion: str, title: str, selector: str,
+                  reason: str, author: str) -> dict:
+    """Append a ruling for one criterion. Refuses a thin reason, a sentinel-shaped one, and a
+    second LIVE ruling on the same criterion at the same digest."""
+    reason = " ".join(str(reason or "").split())
+    if len(reason) < _RULING_REASON_MIN:
+        raise ValueError(
+            f"a ruling needs a reason of at least {_RULING_REASON_MIN} characters - this one is "
+            f"{len(reason)}. A ruling is a decision to plan over a criterion that cannot fail, "
+            f"and a word nobody can check is not a decision anybody can review")
+    if reason.upper().startswith(_RULING_WITHDRAWN):
+        raise ValueError(
+            f"a ruling's reason may not open with {_RULING_WITHDRAWN!r} - that prefix is how a "
+            f"withdrawal marks a row in place, so a live ruling carrying it would read as one "
+            f"that had already been retracted")
+    if not str(author or "").strip():
+        raise ValueError("a ruling needs --author: an unattributed decision cannot be questioned")
+    digest = ruling_digest(title, selector)
+    # LIVE rows only. A criterion whose every ruling is withdrawn or stale must be re-pinnable,
+    # and a lookup over all rows would ship a permanent, un-re-pinnable withdrawal.
+    if live_ruling(repo_root, unit, criterion, digest) is not None:
+        raise ValueError(
+            f"{sdlc_md.norm_id(unit)} {criterion} already carries a live ruling at this digest. "
+            f"Two live rulings on one criterion make the join ambiguous - withdraw the first "
+            f"with `testplan withdraw` if the decision has changed")
+    path = ruling_path(repo_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.is_file():
+        path.write_text(_RULING_TITLE + _RULING_HEADER, encoding="utf-8")
+    row = (f"| {sdlc_md.norm_id(unit)} | {_ruling_cell(criterion)} | {digest} | "
+           f"{_ruling_cell(reason)} | {_ruling_cell(author)} | {sdlc_md.now_date()} |\n")
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(row)
+    return {"ok": True, "unit": sdlc_md.norm_id(unit), "criterion": criterion,
+            "digest": digest, "path": str(path)}
+
+
+def withdraw_ruling(repo_root, unit: str, criterion: str, reason: str) -> dict:
+    """Mark a criterion's live ruling withdrawn IN PLACE, carrying the withdrawal's own reason.
+
+    Marked rather than deleted: what was decided stays visible beside the decision to undo it,
+    which is the difference between a corrected record and one that was quietly tidied.
+    """
+    reason = " ".join(str(reason or "").split())
+    if len(reason) < _RULING_REASON_MIN:
+        raise ValueError(
+            f"a withdrawal needs a reason of at least {_RULING_REASON_MIN} characters - this one "
+            f"is {len(reason)}. Undoing a recorded decision is itself a decision")
+    path = ruling_path(repo_root)
+    if not path.is_file():
+        raise ValueError(f"no ruling record at {path} - there is nothing to withdraw")
+    want = sdlc_md.norm_id(unit)
+    lines = sdlc_md.read_text_safe(path).splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if not line.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        # BY THE CRITERION, never by a substring of the reason column. A reason quoting another
+        # criterion's id would match a search over prose, and the row withdrawn would be one
+        # nobody named.
+        if (len(cells) >= 6 and sdlc_md.norm_id(cells[0]) == want and cells[1] == criterion
+                and not cells[3].startswith(_RULING_WITHDRAWN)):
+            cells[3] = f"{_RULING_WITHDRAWN} {_ruling_cell(reason)} (was: {cells[3]})"
+            lines[i] = "| " + " | ".join(cells) + " |\n"
+            path.write_text("".join(lines), encoding="utf-8")
+            return {"ok": True, "unit": want, "criterion": criterion, "path": str(path)}
+    raise ValueError(
+        f"{want} {criterion} carries no live ruling to withdraw - nothing was written. A "
+        f"withdrawal that reports success over an empty match is how a record comes to say a "
+        f"decision was undone when it never was")
+
+
+def testplan_probe(repo_root, unit: str, *, timeout: int = 120, base: str = "HEAD") -> dict:
+    """Run each of `unit`'s criteria against the tree AS IT IS, and report a PASS as a finding.
+
+    Nothing in this project asks whether a criterion CAN fail. A plan whose criteria are
+    already satisfied before any code is written is a plan that measures nothing, and every
+    gate downstream - the mutation ledger, the review seats, the transition gates - is built on
+    the assumption that somebody checked. This is the check.
+
+    The artefact is never written. The probe reads and runs; it does not stamp, and the story
+    runner it would be easy to reuse writes `Verified:` lines as it goes.
+    """
+    root = Path(repo_root)
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        return {"ok": False, "unit": unit, "criteria": [],
+                "errors": [f"{unit}: no artefact with that id"]}
+    path, _kind = found
+    text = sdlc_md.read_text_safe(path)
+    blocks = parse_story(text)
+
+    # A unit that already carries commits doing its work is being PROBED AFTER DELIVERY, and a
+    # green criterion there is the fix working rather than a plan that measures nothing. Read
+    # once for the whole unit, because it is a `git log` walk.
+    #
+    # The DEFAULT range is the whole history reachable from HEAD, not `base..HEAD`. The question
+    # is "has this unit been delivered", and a range whose base IS head answers it empty by
+    # construction - a delivered-check that can never say yes is not a check. `--base` narrows
+    # it to one run's window for a caller who wants that.
+    delivered = _probe_unit_is_delivered(root, unit, base)
+
+    all_rulings = read_rulings(root)
+    rows = []
+    for b in blocks:
+        expr = (b.verifier or "").strip()
+        row = {"ac": b.ac_id, "verifier": expr, "state": None, "detail": ""}
+        if not expr:
+            row.update(state=_PROBE_UNSPECIFIED,
+                       detail="the criterion carries no `Verify:` line, so nothing can be run "
+                              "against it and nothing says whether it can fail")
+        elif expr.lower().split(" ", 1)[0] in ("manual", "manually"):
+            row.update(state=_PROBE_MANUAL,
+                       detail="a human verifier - there is nothing here to execute, and the "
+                              "question of whether it can fail is a question for the reviewer")
+        elif _probe_is_shell_backed(expr):
+            row.update(state=_PROBE_SHELL,
+                       detail="a shell-backed verifier, NAMED and not executed: probing a plan "
+                              "must not run unreviewed text out of an artefact")
+        else:
+            res = run_verifier(expr, timeout, root, allow_shell=False)
+            # `blocked` is deliberately NOT here. A shell-backed verb is short-circuited above
+            # and never reaches the runner, so the runner can never return that kind to this
+            # branch - and a condition nothing can satisfy is a condition no mutant can kill,
+            # which is precisely what this unit exists to refuse.
+            if res.kind == "invalid" or res.exit_code in (124, 127):
+                row.update(state=_PROBE_UNREADABLE,
+                           detail=f"the answer cannot be trusted ({res.kind}, exit "
+                                  f"{res.exit_code}), so it is not read as red or green")
+            elif res.vacuous and _SKIPPED_MSG in (res.stderr or ""):
+                row.update(state=_PROBE_NEVER_FAILS,
+                           detail="the node exists and every selected test is skipped, so it "
+                                  "can never fail - which is not the same as not yet written")
+            elif res.vacuous:
+                row.update(state=_PROBE_NOT_WRITTEN,
+                           detail="the selector resolves to no test node yet, which is the "
+                                  "expected state before the code is written")
+            elif res.ok:
+                row.update(state=_PROBE_DELIVERED if delivered else _PROBE_GREEN,
+                           detail=("this criterion already passes, and the unit carries commits "
+                                   "doing its work - reported, not refused"
+                                   if delivered else
+                                   "this criterion is already TRUE of the tree, so it states "
+                                   "something the code already does and the plan built on it "
+                                   "measures nothing"))
+            else:
+                row.update(state=_PROBE_RED,
+                           detail="fails against the tree as it is, which is what a plan's "
+                                  "criteria should do before the work starts")
+        # A RULING PINS a finding: the recorded decision to plan over a criterion that cannot
+        # fail. Only a LIVE row at the criterion's CURRENT digest - a withdrawn one, or one
+        # pinned to a title or selector that has since moved, excuses nothing.
+        if row["state"] in _PROBE_FINDINGS:
+            digest = ruling_digest(b.title, expr)
+            pin = live_ruling(root, unit, b.ac_id, digest)
+            if pin is not None:
+                row.update(ruled=True, ruling=pin["reason"], was=row["state"],
+                           state=_PROBE_PINNED,
+                           detail=f"{row['state']}, ruled: {pin['reason']}")
+            else:
+                # A ruling that no longer applies is NAMED, never dropped. A pin vanishing
+                # without a word is indistinguishable from one that was never written, and the
+                # reader cannot tell a repaired criterion from a lost exemption.
+                stale = [r for r in all_rulings
+                         if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit)
+                         and r["criterion"] == b.ac_id and not r["withdrawn"]
+                         and r["digest"] != digest]
+                if stale:
+                    row["detail"] += (f" - a ruling recorded for this criterion is STALE: it "
+                                      f"was pinned to a different title or selector, so it no "
+                                      f"longer excuses anything ({stale[-1]['reason']})")
+                    row["stale_ruling"] = stale[-1]["reason"]
+        rows.append(row)
+
+    findings = [r for r in rows if r["state"] in _PROBE_FINDINGS]
+    counts: dict = {}
+    for r in rows:
+        counts[r["state"]] = counts.get(r["state"], 0) + 1
+    return {"ok": not findings, "unit": sdlc_md.norm_id(unit), "path": str(path),
+            "criteria": rows, "findings": [r["ac"] for r in findings], "counts": counts,
+            "delivered": delivered, "errors": []}
+
+
 def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
     """Derive `unit`'s test plan: one row per criterion, each naming the production change its
     test must fail on.
@@ -3388,8 +3721,14 @@ def _replace_testplan(text: str, section: str) -> str:
 
 
 def cmd_testplan(args: argparse.Namespace) -> int:
-    """`testplan derive` - write the unit's plan, or refuse and say which criterion is at fault."""
+    """`testplan derive` - write the unit's plan, or refuse and say which criterion is at fault.
+    `testplan probe` - run each criterion against the tree and report a PASS as the finding."""
     root = resolve_root(args)
+    action = getattr(args, "action", "derive")
+    if action == "probe":
+        return _cmd_testplan_probe(args, root)
+    if action in ("rule", "withdraw"):
+        return _cmd_testplan_ruling(args, root, action)
     res = testplan_derive(root, args.unit, write=not getattr(args, "dry_run", False))
     if not res.get("ok"):
         for e in res.get("errors", []):
@@ -3401,6 +3740,73 @@ def cmd_testplan(args: argparse.Namespace) -> int:
         return 0
     print(f"testplan derive: {args.unit} -> {res['rows']} row(s) for {res['criteria']} "
           f"criteria in {res['path']}")
+    return 0
+
+
+def _cmd_testplan_probe(args: argparse.Namespace, root: Path) -> int:
+    """Print the probe's verdict per criterion, and REFUSE when any criterion cannot fail.
+
+    Exit 2 on a finding, 0 otherwise - so a plan whose criteria are already true of the tree
+    stops the run that would be built on it, rather than being noticed at the close.
+    """
+    res = testplan_probe(root, args.unit, timeout=getattr(args, "timeout", 120),
+                         base=getattr(args, "base", "HEAD"))
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(res, indent=2))
+        return 0 if res.get("ok") else 2
+    if not res.get("ok") and res.get("errors"):
+        for e in res["errors"]:
+            print(f"testplan probe refused: {e}", file=sys.stderr)
+        return 2
+    for row in res["criteria"]:
+        print(f"  {row['state']:<16} {row['ac']}: {row['detail']}")
+    counts = ", ".join(f"{k}={v}" for k, v in sorted(res["counts"].items()))
+    print(f"testplan probe: {res['unit']} - {counts}")
+    if res.get("findings"):
+        print(f"\ntestplan probe REFUSED: {len(res['findings'])} criterion/criteria cannot fail "
+              f"against the tree as it is ({', '.join(res['findings'])}). A criterion already "
+              f"true before the code is written states what the tree already does, and the plan "
+              f"built on it measures nothing. Rewrite it to name the behaviour that is ABSENT, "
+              f"or - if the work is already delivered - say so on the artefact.", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _cmd_testplan_ruling(args: argparse.Namespace, root: Path, action: str) -> int:
+    """`testplan rule` / `testplan withdraw` - record or retract one criterion's ruling."""
+    crit = (getattr(args, "criterion", None) or "").strip().upper()
+    if not crit:
+        print(f"testplan {action} refused: --criterion is required - a ruling is recorded "
+              f"against ONE criterion, and a ruling that names none excuses everything",
+              file=sys.stderr)
+        return 2
+    found = sdlc_md.find_by_id(root, args.unit)
+    if not found:
+        print(f"testplan {action} refused: {args.unit}: no artefact with that id",
+              file=sys.stderr)
+        return 2
+    block = next((b for b in parse_story(sdlc_md.read_text_safe(found[0]))
+                  if b.ac_id == crit), None)
+    if block is None:
+        print(f"testplan {action} refused: {sdlc_md.norm_id(args.unit)} declares no {crit} - a "
+              f"ruling pinned to a criterion the unit does not have excuses nothing and would "
+              f"read as live for ever", file=sys.stderr)
+        return 2
+    try:
+        if action == "rule":
+            res = record_ruling(root, args.unit, crit, block.title,
+                                (block.verifier or "").strip(),
+                                getattr(args, "reason", "") or "",
+                                getattr(args, "author", "") or "")
+            print(f"testplan rule: {res['unit']} {crit} pinned at digest {res['digest']} "
+                  f"-> {res['path']}")
+        else:
+            res = withdraw_ruling(root, args.unit, crit, getattr(args, "reason", "") or "")
+            print(f"testplan withdraw: {res['unit']} {crit} marked withdrawn in place "
+                  f"-> {res['path']}")
+    except ValueError as exc:
+        print(f"testplan {action} refused: {exc}", file=sys.stderr)
+        return 2
     return 0
 
 
@@ -5177,12 +5583,22 @@ def build_parser() -> argparse.ArgumentParser:
     sc.add_argument("--out", help="Write the matrix here instead of stdout")
     sc.set_defaults(func=cmd_scaffold)
 
-    tp = sub.add_parser("testplan", help="Derive a unit's test plan from its criteria")
-    tp.add_argument("action", choices=["derive"])
+    tp = sub.add_parser("testplan",
+                        help="Derive a unit's test plan, or PROBE whether its criteria can fail")
+    tp.add_argument("action", choices=["derive", "probe", "rule", "withdraw"])
+    tp.add_argument("--criterion", help="rule/withdraw: the criterion id, e.g. AC3")
+    tp.add_argument("--reason", help="rule/withdraw: why, in a sentence a reviewer can check")
+    tp.add_argument("--author", help="rule: who decided - an unattributed ruling cannot be "
+                                     "questioned")
     tp.add_argument("--unit", required=True)
     tp.add_argument("--dry-run", action="store_true",
                     help="report what would be written, and write nothing")
+    tp.add_argument("--timeout", type=int, default=120,
+                    help="probe: seconds allowed per verifier (default 120)")
+    tp.add_argument("--base", default="HEAD",
+                    help="probe: the ref a unit's own commits are counted from (default HEAD)")
     tp.add_argument("--root", default=".")
+    sdlc_md.add_format_arg(tp)
     tp.set_defaults(func=cmd_testplan)
     cs = sub.add_parser("corpus-scan",
                         help="Count the three blind states across an artefact class")

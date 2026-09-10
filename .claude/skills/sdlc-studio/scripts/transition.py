@@ -1258,6 +1258,26 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         block = _test_plan_gate(root, sdlc_md.norm_id(artifact_id), text)
         if block:
             blocks.append(block)
+    # ...and AGAIN at the TERMINAL transition, by whatever route reached it. The entry firing
+    # above is idempotent for a forward walk, and that idempotence makes the gate ORDER-DEPENDENT
+    # rather than strict: a rejection recorded AFTER a unit entered In Progress is consulted by
+    # nothing, because every transition it has left is one the entry guard skips. Measured on a
+    # fixture carrying a standing rejection: `Open -> In Progress` is refused while both
+    # `In Progress -> Fixed` and a direct `Open -> Fixed` exit 0.
+    #
+    # Same gate, same dated cutoff. INSIDE `_plan_gate_active` deliberately - a gate that refuses
+    # a whole existing backlog is one that gets switched off wholesale rather than satisfied, and
+    # a lane placed outside the cutoff it belonged in is a mistake this repository has already
+    # made once. It fires on a transition and never retrospectively, so a unit already sitting at
+    # a terminal status is untouched until something moves it again.
+    #
+    # Deduplicated against the entry firing, which also reaches a direct `Ready -> Done`: the
+    # same refusal printed twice reads as two requirements.
+    if (type_ != "epic" and target_canon in _TERMINAL_FOR_PLAN
+            and _plan_gate_active(root, text)):
+        block = _test_plan_gate(root, sdlc_md.norm_id(artifact_id), text)
+        if block and block not in blocks:
+            blocks.append(block)
     # ...and in its place, the gate an epic SHOULD have had. NOT entry-triggered: `In Progress` is
     # in an epic's own vocabulary, so a gate guarded by `from_canon not in _IMPL_TARGETS` is
     # skipped entirely on the `In Progress -> Done` route, which is the ordinary one.

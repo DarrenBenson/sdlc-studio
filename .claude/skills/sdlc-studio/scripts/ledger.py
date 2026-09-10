@@ -83,12 +83,13 @@ def cmd_record(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    if not str(fields.get("decision") or "").strip():
+    if not file_finding.prose_value(fields, "decision"):
         print("error: no decision - pass --decision, or a \"decision\" key in the "
               "--fields-file document", file=sys.stderr)
         return 2
-    path = append_decision(args.root, args.tranche, fields["decision"],
-                           fields.get("rationale", ""))
+    path = append_decision(args.root, args.tranche,
+                           file_finding.prose_value(fields, "decision"),
+                           file_finding.prose_value(fields, "rationale"))
     print(f"recorded -> {path}")
     return 0
 

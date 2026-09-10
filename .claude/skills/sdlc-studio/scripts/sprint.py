@@ -4081,6 +4081,162 @@ def _report_oversized(bd: dict, count: int) -> None:
     print("\n".join(_oversized_detail(bd)), file=sys.stderr)
 
 
+# ---------------------------------------------------------------------------
+# THE FALSIFIABILITY GATE. Nothing on the plan path asks whether a criterion CAN FAIL.
+# ---------------------------------------------------------------------------
+# The grooming gate reads a criterion's SHAPE - does it exist, does it carry a verifier - and
+# the shape is satisfied by a verifier the tree already passes. A criterion that is green
+# before a line is written proves nothing at delivery, and neither does one whose every
+# selected test is skipped, nor one whose answer the runner could not read at all.
+#
+# The classification is the probe's, never this module's. `verify_ac.py testplan probe`
+# decides which class a criterion is in and, critically, whether the answer can be trusted -
+# it is the one reader that knows a shell-backed verifier must not be executed for a plan, and
+# that a runner-level error is `unreadable` rather than `red`.
+
+#: The three modes, spelled as the sibling review gates spell them.
+PLAN_FALSIFIABILITY_MODES: tuple[str, ...] = ("report", "block", "off")
+#: `report`, like the two sibling gates that ship advisory while their yield is measured. A new
+#: blocking check on a command this size earns its place on a number rather than on assertion.
+PLAN_FALSIFIABILITY_DEFAULT = "report"
+#: The classes that are FINDINGS. Everything else the probe names - `red`, `not-yet-written`,
+#: `manual`, `not-probed`, `delivered`, `unspecified` - is a state a plan is allowed to be in,
+#: and a gate that refused them would refuse most of a migrating backlog.
+PLAN_FALSIFIABILITY_FINDINGS: tuple[str, ...] = ("green", "never-fails", "unreadable")
+#: Why each finding class is a finding, and the remedy. The three sibling refusals on this path
+#: all name what, why and the fix; this one is not a remedy a reader can guess.
+PLAN_FALSIFIABILITY_WHY: dict = {
+    "green": "the tree already satisfies it, so delivering it would prove nothing",
+    "never-fails": "its every selected test is skipped, so it can no more fail after delivery "
+                   "than before",
+    "unreadable": "its answer could not be trusted - an invalid selector, a blocked verb, a "
+                  "timeout or an absent runner - so it is neither passing nor failing",
+}
+
+
+def plan_falsifiability_mode(root) -> str:
+    """The project's `review.plan_falsifiability`, refusing an unrecognised value BY NAME.
+
+    The two failure directions resolve opposite ways, exactly as the mutation-evidence mode's
+    do: an unrecognised value RAISES, because a project that typed `blcok` asked for a hard bar
+    and handing it the reporting default switches that bar off with nothing said; an
+    UNPARSEABLE config resolves to `block`, because the config is the only thing that could have
+    said `off` and a file nobody can read has not said it.
+    """
+    cfg = Path(root) / "sdlc-studio" / ".config.yaml"
+    if cfg.exists() and sdlc_md.config_unparseable(cfg):
+        return "block"
+    raw = sdlc_md.project_override(root, "review.plan_falsifiability", None)
+    if raw is None or str(raw).strip() == "":
+        return PLAN_FALSIFIABILITY_DEFAULT
+    # YAML 1.1 SPELLS `off` AS A BOOLEAN, and `off` is the spelling this tooling itself prints,
+    # so a project writing the mode exactly as documented arrives here as `False`. That is `off`
+    # - the only thing it can honestly mean - while `True` is refused, because `on` is not one of
+    # the three and guessing which of `report` or `block` it meant is the silent default this
+    # refusal exists to prevent. Quoting the value also works and needs no special case.
+    if isinstance(raw, bool):
+        if raw is False:
+            return "off"
+        raise ValueError(
+            "review.plan_falsifiability is `on` (YAML reads it as the boolean true), which is "
+            f"not one of {', '.join(PLAN_FALSIFIABILITY_MODES)}. Quote the mode you meant - "
+            "`plan_falsifiability: 'report'` - rather than leaving it to be guessed")
+    mode = str(raw).strip().lower()
+    if mode not in PLAN_FALSIFIABILITY_MODES:
+        raise ValueError(
+            f"review.plan_falsifiability is {raw!r}, which is not one of "
+            f"{', '.join(PLAN_FALSIFIABILITY_MODES)}. Refused by name rather than defaulted: a "
+            f"project that typed this asked for something, and silently giving it the default "
+            f"is how a hard bar gets switched off by a typo nobody sees")
+    return mode
+
+
+def _falsifiability_probe(root, unit_ids) -> dict:
+    """Drive the plan probe over the batch. `{"records": [...], "driven": bool, "why": str}`.
+
+    The ONE seam between the plan and the probe, so the plan holds no second opinion about what
+    a criterion's class is. A tree whose `verify_ac` carries no probe is reported as not driven
+    rather than read as a clean batch: a gate that goes quiet when its instrument is missing is
+    a gate switched off by absence.
+    """
+    import verify_ac  # noqa: PLC0415 - deferred sibling, as `build_plan` above imports it
+    probe = getattr(verify_ac, "testplan_probe", None)
+    if probe is None:
+        return {"records": [], "driven": False,
+                "why": "this tree's verify_ac.py carries no `testplan probe`, so no criterion "
+                       "was classified"}
+    records: list = []
+    try:
+        for uid in unit_ids:
+            res = probe(root, uid) or {}
+            # THE PROBE'S OWN CLASS, carried across unchanged. The plan decides which classes
+            # BLOCK - `unreadable` blocks a plan and is not a finding for the probe's own exit
+            # status - but it never decides what class a criterion is. One reader, one answer.
+            for row in res.get("criteria", []):
+                records.append({"unit": res.get("unit") or uid,
+                                "criterion": row.get("ac"),
+                                "class": row.get("state"),
+                                "ruled": bool(row.get("ruled"))})
+    except Exception as exc:  # noqa: BLE001 - an instrument that fails has measured nothing
+        # NOT DRIVEN, never an empty finding set. The probe runs artefact-authored verifiers, so
+        # it is the part of this gate most able to fail on input nobody anticipated - and a gate
+        # that read its own instrument's failure as a clean batch would be at its quietest
+        # exactly when the tree is at its strangest.
+        return {"records": [], "driven": False,
+                "why": f"the probe failed on this batch: {type(exc).__name__}: {exc}"}
+    return {"records": records, "driven": True, "why": ""}
+
+
+def falsifiability_findings(records) -> list:
+    """The probe's records that are findings, taken FROM THE PROBE'S OWN CLASS.
+
+    Never re-derived from a verifier's exit status. `unreadable` and `red` both exit non-zero
+    and only one of them is a finding, so a second reader of the same question decides the
+    opposite thing on the one class this gate exists to catch - and it is the reader nobody
+    runs by hand. A RULED criterion is reported by the probe and is not a finding: a ruling is
+    the recorded answer to one, and re-refusing it would make the ruling a note.
+    """
+    return [r for r in records
+            if str(r.get("class", "")) in PLAN_FALSIFIABILITY_FINDINGS and not r.get("ruled")]
+
+
+def _falsifiability_lines(findings, mode: str) -> list:
+    """The message, one line per finding: the unit, the criterion, the class, why, the fix."""
+    lines = []
+    for f in findings:
+        cls = str(f.get("class", ""))
+        lines.append(
+            f"  {f.get('unit', '?')} {f.get('criterion', '?')}: {cls} - "
+            f"{PLAN_FALSIFIABILITY_WHY.get(cls, 'the probe classified it as a finding')}")
+    lines.append(
+        "  fix the criterion so it CAN fail, or record a ruling for it with `verify_ac.py "
+        "testplan rule` (the unit, the criterion and a reason) - a ruled criterion is reported "
+        "and never refused; `review.plan_falsifiability: report` plans over the whole set while "
+        f"the finding is still recorded (this run: `{mode}`)")
+    return lines
+
+
+def plan_falsifiability_gate(root, unit_ids) -> dict:
+    """`{mode, driven, findings, refused, lines}` - the gate, decided in ONE place.
+
+    Raises ValueError when the mode is unreadable, which the plan turns into a refusal naming
+    the key and the accepted set.
+    """
+    mode = plan_falsifiability_mode(root)
+    if mode == "off":
+        # NOT DRIVEN AT ALL. The probe executes artefact-authored verifiers, so `off` has to
+        # mean nothing runs, not "runs and is ignored".
+        return {"mode": mode, "driven": False, "findings": [], "refused": False, "lines": []}
+    probed = _falsifiability_probe(root, unit_ids)
+    findings = falsifiability_findings(probed["records"])
+    if not probed["driven"]:
+        return {"mode": mode, "driven": False, "findings": [], "refused": mode == "block",
+                "lines": [f"  the probe was not driven: {probed['why']}"]}
+    return {"mode": mode, "driven": True, "findings": findings,
+            "refused": bool(findings) and mode == "block",
+            "lines": _falsifiability_lines(findings, mode) if findings else []}
+
+
 def _report_ungroomed(bd: dict, count: int) -> None:
     """The recorded opt-out (`sprint.breakdown: judgement`): the lane still REPORTS, it just
     does not block. An opt-out that also went quiet would be the disease, not the cure."""
@@ -9264,6 +9420,22 @@ def cmd_plan(args: argparse.Namespace) -> int:
             _report_ungroomed(bd, data["count"])
         if bd["oversized"]:
             _report_oversized(bd, data["count"])
+    # THE FALSIFIABILITY GATE, beside the breakdown gate and for the same reason: the batch is
+    # known, nothing has been written, and no run has been opened, so a refusal leaves no trace.
+    # The grooming gate above asks whether a criterion EXISTS; this asks whether it can FAIL.
+    try:
+        fals = plan_falsifiability_gate(args.root, [u["id"] for u in data["batch"]])
+    except ValueError as exc:
+        print(f"plan refused: {exc}", file=sys.stderr)
+        return 2
+    if fals["lines"]:
+        head = ("plan refused: " if fals["refused"] else "plan falsifiability (advisory): ")
+        print(f"{head}{len(fals['findings'])} criterion/criteria cannot fail as written"
+              if fals["driven"] else f"{head}the falsifiability probe did not run",
+              file=sys.stderr)
+        print("\n".join(fals["lines"]), file=sys.stderr)
+    if fals["refused"]:
+        return 2
     _print_test_strategy(args, data)
     rc = _origin_drift_preflight(args, data)
     if rc is not None:

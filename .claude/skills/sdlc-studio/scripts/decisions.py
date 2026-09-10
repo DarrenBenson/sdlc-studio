@@ -465,7 +465,7 @@ def resolve_prose(args: argparse.Namespace, keys: tuple[str, ...] = PROSE_KEYS) 
     fields = file_finding.resolve_prose_fields(
         getattr(args, "fields_file", None),
         {k: getattr(args, k, None) for k in keys}, allowed=keys)
-    missing = [k for k in keys if not str(fields.get(k) or "").strip()]
+    missing = [k for k in keys if not file_finding.prose_value(fields, k)]
     if missing:
         raise ValueError(f"no {'/'.join(missing)} - pass --{missing[0]}, or a "
                          f"\"{missing[0]}\" key in the --fields-file document")

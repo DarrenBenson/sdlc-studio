@@ -3160,5 +3160,90 @@ class ChecklistHonestyTests(unittest.TestCase):
         self.assertEqual("ran", state)
 
 
+
+class ChecklistRosterTests(unittest.TestCase):
+    """BG0612: the close checklist roster was asserted by COUNT ALONE, so deleting an entry
+    moved the number and the test simply reported a different one - a roster nobody could lose
+    an item from without noticing was exactly what the test did not give. And an entry naming a
+    resolver this module does not define failed only when the close REACHED that item, minutes
+    into a close, on the one run that needed it."""
+
+    #: The roster's exact membership, in order. Named rather than counted: a count answers "how
+    #: many" and the question is "which", and the two differ precisely when one entry is dropped
+    #: and another added in the same change.
+    EXPECTED = (
+        "reconciled-before-plan", "goal-seat-reviewed", "batch-groomed", "run-opened",
+        "batch-boundary-review", "closing-review", "tick-verification", "goal-judged",
+        "retro", "lessons", "signoff", "handoff", "planned-vs-delivered", "not-delivered",
+        "scope-creep", "coverage-consistency", "doc-surface", "mutation-survivors",
+        "review-attribution", "impediments", "known-issues", "cost",
+    )
+
+    def test_the_roster_asserts_its_exact_names_and_count(self) -> None:
+        """AC2. MUTANT: drop the `known-issues` entry from the CHECKLIST literal.
+
+        A count alone cannot see a swap, and it reports a dropped entry as a number rather than
+        as the item that went missing. The names are the assertion; the count is stated beside
+        them so a reader sees both move together."""
+        got = tuple(item["id"] for item in sr.CHECKLIST)
+        self.assertEqual(self.EXPECTED, got,
+                         "the close checklist roster changed - add the new entry here "
+                         "deliberately, or restore the one that went missing")
+        self.assertEqual(len(self.EXPECTED), len(sr.CHECKLIST))
+
+    def _import_with_resolver(self, replacement: str):
+        """Import a COPY of the shipped module whose first roster entry names `replacement`.
+
+        A real import, because the check under test is a module-level loop and nothing else can
+        say whether it runs. Re-implementing the loop here would be a private copy of the thing
+        under test - the defect this repository has now shipped twice - and it would pass with
+        the loop deleted."""
+        import importlib.util  # noqa: PLC0415
+        script = Path(__file__).resolve().parents[1] / "sprint_report.py"
+        text = script.read_text(encoding="utf-8")
+        original = '"resolver": "_ck_reconciled"'
+        assert text.count(original) == 1, "the roster's first resolver is no longer unique"
+        copy_dir = Path(tempfile.mkdtemp(prefix="roster_"))
+        self.addCleanup(shutil.rmtree, copy_dir, ignore_errors=True)
+        copy = copy_dir / "sprint_report_probe.py"
+        copy.write_text(text.replace(original, f'"resolver": "{replacement}"'), encoding="utf-8")
+        sys.path.insert(0, str(script.parent))
+        try:
+            spec = importlib.util.spec_from_file_location("sr_probe", copy)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+        finally:
+            sys.path.remove(str(script.parent))
+            sys.modules.pop("sr_probe", None)
+        return mod
+
+    def test_an_undefined_or_uncallable_resolver_refuses_at_import(self) -> None:
+        """AC3. MUTANTS: delete the module-level loop that walks CHECKLIST and resolves each
+        name; narrow the import-time validation to a `hasattr` test, so an attribute that is
+        not callable passes it.
+
+        Two distinct typos one line apart, and a presence test catches only the first. An entry
+        naming a resolver this module does not define fails only when the close REACHES that
+        item - minutes into a close, on the one run that needed it."""
+        for label, bad in (("undefined", "_ck_does_not_exist"), ("uncallable", "CHECKLIST")):
+            with self.subTest(case=label), self.assertRaises(RuntimeError) as ctx:
+                self._import_with_resolver(bad)
+            self.assertIn(bad, str(ctx.exception),
+                          f"the refusal does not name the resolver it could not use: "
+                          f"{ctx.exception}")
+
+    def test_a_fully_defined_roster_imports_normally(self) -> None:
+        """AC4, the paired control. MUTANT: raise unconditionally from the import-time
+        validation.
+
+        A check that refused every roster would satisfy the row above perfectly and make the
+        module unimportable - which is the shipped state, so this row is what says it is not."""
+        import importlib.util  # noqa: PLC0415
+        script = Path(__file__).resolve().parents[1] / "sprint_report.py"
+        spec = importlib.util.spec_from_file_location("sr_probe_ok", script)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)          # the shipped roster, imported for real
+        self.assertEqual(len(self.EXPECTED), len(mod.CHECKLIST))
+
 if __name__ == "__main__":
     unittest.main()

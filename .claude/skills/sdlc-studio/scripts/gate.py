@@ -2030,6 +2030,19 @@ def _elide(names: list[str]) -> str:
     return ", ".join(names[:_MAX_NAMED]) + more
 
 
+def _identities(ids: list[str]) -> str:
+    """`[ids: US0021::AC1 US0040::AC3]` - the machine-readable half of a clause.
+
+    Every identity, whitespace-separated, NEVER elided. `_elide` bounds the human list at ten
+    and appends a count of the rest, which is right for a line somebody reads and fatal for one
+    a lane parses: the eleventh identity is unrecoverable from `(+10 more)`, so a baseline that
+    records identities off that list records a truncation and calls it a record. Bracketed so a
+    reader stops at the clause boundary instead of running on into the next clause, and kept as
+    its own expression so the bounded job and the complete one cannot be collapsed back into one.
+    """
+    return f"[ids: {' '.join(ids)}]"
+
+
 #: The verify lane's DECLARED cost budget, in seconds. Not a timeout - the lane always
 #: finishes - but a number the run is measured against and reports exceeding, so "the release
 #: gate is slow again" is a verdict the gate states rather than something an operator discovers
@@ -2105,6 +2118,11 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
     pytest_collected = (verify_ac.pytest_batch_collected(pytest_cache)
                         if pytest_cache else None)
     red: list[str] = []
+    # The same failures as `red`, stripped to the bare `<record>::<AC>` address. The human list
+    # carries each verifier expression beside the id, which is what a reader needs and what a
+    # baseline must not store: the expression changes whenever a test is renamed, so an identity
+    # recorded with it drifts for reasons that are not the criterion going red or green.
+    red_ids: list[str] = []
     unbuilt: list[str] = []
     blocked: list[str] = []
     unspecified: list[str] = []
@@ -2134,6 +2152,7 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
                 blocked.append(name)
             elif claims_done:
                 red.append(name)
+                red_ids.append(f"{story_id}::{f['ac']}")
             else:
                 # COUNTED SEPARATELY, NOT DROPPED. A red criterion on a story nobody claims is
                 # finished is unbuilt behaviour, and on a `design` rung it is the RUNG'S OWN
@@ -2155,7 +2174,11 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
                      f"- an omitted verifier is not a passed one; author one or mark it "
                      f"`Verify: manual`): {_elide(unspecified)}")
     if red:
-        parts.append(f"{len(red)} red AC(s): {_elide(red)}")
+        # The bounded human list AND the complete machine-readable one, in that order. The corpus
+        # lane records WHICH criteria are red, not merely how many, so an equal-sized swap - one
+        # repaired and one introduced in the same window - stops being silent; it cannot do that
+        # from a list that ends at ten.
+        parts.append(f"{len(red)} red AC(s): {_elide(red)} {_identities(red_ids)}")
     if unbuilt:
         # REPORTED, and deliberately not folded into the red count. Every suppression is also a
         # blindfold: a criterion excluded from the metric but printed nowhere is one nobody can

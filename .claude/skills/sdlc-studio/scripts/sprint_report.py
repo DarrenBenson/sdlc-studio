@@ -2626,5 +2626,26 @@ def main(argv: list[str] | None = None) -> int:
     return args.func(args)
 
 
+# EVERY ROSTER ENTRY RESOLVES, CHECKED AT IMPORT. Placed at the END of the module rather
+# than beside the roster, because the resolvers are defined below it - run there, this check
+# refuses the module's own first entry. An entry naming a resolver this module does
+# not define fails only when the close reaches that item - minutes into a close, on the one run
+# that needed it - and an entry naming an attribute that exists but is not CALLABLE fails the
+# same way, one line later. Both are typos, both are cheap to find here, and neither is
+# something a reader of the roster can see by looking at it.
+for _item in CHECKLIST:
+    _name = _item.get("resolver") or ""
+    _fn = globals().get(_name)
+    if _fn is None:
+        raise RuntimeError(
+            f"checklist item {_item.get('id')!r} names resolver {_name!r}, which this module "
+            f"does not define - the close would fail on that item and nowhere earlier")
+    if not callable(_fn):
+        raise RuntimeError(
+            f"checklist item {_item.get('id')!r} names resolver {_name!r}, which exists but is "
+            f"not callable - an attribute that merely EXISTS satisfies a presence test and "
+            f"still cannot resolve the item")
+del _item, _name, _fn
+
 if __name__ == "__main__":
     raise SystemExit(main())

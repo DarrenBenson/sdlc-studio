@@ -53,3 +53,4 @@ Add the two missing verbs and a test that fails on their absence. Pin the CHECKL
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-25 | sdlc-studio | Filed |
+| 2026-09-10 | Claude Opus 5 | Delivered. Five mutants, five killed. The vocabulary gains four restorative verbs, measured 61 entries before and 65 after. The roster is named rather than counted - 22 entries, listed in order - and the import-time resolver check sits at the END of the module rather than beside the roster, because the resolvers are defined below it and the check placed there refuses the module's own first entry. AC3's verifier imports a COPY of the shipped module with one roster entry rewritten, rather than re-running the check's logic in the test: a helper that rebuilds the thing under test passes with the thing deleted, which this repository has now shipped twice |

@@ -45,12 +45,11 @@ Scope the invocation to the lane under test. `gate.py --only release-rehearsal -
 | AC1 | in .claude/skills/sdlc-studio/scripts/tests/test_gate.py, widen the reporting check's `--only` value to name a second boundary lane | Given the reporting check for the release-rehearsal lane, when it drives the gate, then the output carries that lane and NEITHER of the other two the push boundary binds |
 | AC2 | in .claude/skills/sdlc-studio/scripts/tests/test_gate.py, replace `release-rehearsal` in that `--only` argument with `duplicate-id` | Given the same check scoped, when it runs, then the lane still FAILS, still names the half that broke and still records its duration |
 | AC3 | in .claude/skills/sdlc-studio/scripts/tests/test_gate.py, delete the `--only` argument from the sibling binding check's `_gate` call | Given every test module in both suites, when they are scanned, then NO test drives the boundary gate without scoping it to a lane |
+| AC4 | in `.claude/skills/sdlc-studio/scripts/tests/test_gate.py`, replace the `yield` in `_boundary_calls` with `continue` so the scan reports nothing | Given a fixture holding one unscoped gate invocation and one properly scoped one, when the scan runs over it, then it sees BOTH and names only the unscoped one |
 
 ## Impact
 
 Main was red for two days on a timeout that says nothing about the code, and the green-run noise gate never ran because the suite errored before it - so a second defect could have ridden in unseen behind the first. The pre-push red-CI read (D0181) is what surfaced it, on the first push in 34 commits.
-
-| AC4 | in .claude/skills/sdlc-studio/scripts/tests/test_gate.py, replace the `yield` in `_boundary_calls` with `continue` so the scan reports nothing | Given a fixture holding one unscoped gate invocation and one properly scoped one, when the scan runs over it, then it sees BOTH and names only the unscoped one |
 
 ## Revision History
 
