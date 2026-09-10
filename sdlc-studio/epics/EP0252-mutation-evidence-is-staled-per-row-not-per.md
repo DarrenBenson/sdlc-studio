@@ -1,7 +1,7 @@
 # EP0252: Mutation evidence is staled per row, not per file
 
 > **Status:** Draft
-> **Derived Point Total:** 8
+> **Derived Point Total:** 0
 > **Parent:** CR0570
 > **Created:** 2026-09-09
 > **Created-by:** sdlc-studio new

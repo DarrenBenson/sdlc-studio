@@ -16411,11 +16411,26 @@ class DryRunScratchParityTests(unittest.TestCase):
 
     # ---- BG0601: the sweep compares the whole answer, and resolves its roster at run time ----
 
+    def _answer(self, fn, ctx):
+        """A resolver's WHOLE return, which is what the comparison is over.
+
+        THE ONE PLACE the comparison's WIDTH is decided. The slice that used to stand at each
+        call site took `(state, value)` while the comment beside it claimed `(state, detail)`,
+        so a probe differing only in WHY was read as agreeing. With the width decided at five
+        separate call sites - three of them inside the sweep - reverting any one of them left
+        the rest green, which is how three independent seats found the whole delivery
+        revertible with its own criteria still passing.
+        """
+        return fn(ctx)
+
     def _parity(self, root, scratch):
         """The sweep's own comparison, over every `_ck_` resolver the module carries NOW.
 
-        One helper, called by all three criteria below, because two copies of the comparison is
-        how the sweep and its own tests came to disagree about which fields were compared.
+        ONE implementation, called by the sweep AND by all three criteria below. The first cut
+        of this helper was a SECOND copy: the sweep kept its own roster walk and its own
+        comparison, so the criteria pinned the helper while the sweep was pinned by nothing.
+        That is the defect the comment at the head of this class forbids, met here a second
+        time and found by three independent seats.
         """
         base = {"retro_id": None, "units": [], "run": {}}
         real = dict(base, root=root, read_root=root)
@@ -16425,7 +16440,7 @@ class DryRunScratchParityTests(unittest.TestCase):
         differing = []
         for name, fn in probes:
             try:
-                x, y = fn(real), fn(copy)
+                x, y = self._answer(fn, real), self._answer(fn, copy)
             except Exception:      # a probe that raises alike on both answers the same either way
                 continue
             if x != y:
@@ -16473,6 +16488,27 @@ class DryRunScratchParityTests(unittest.TestCase):
             self.assertEqual([], differing,
                              "these probes answer differently inside a preview from outside "
                              "one:\n" + "\n".join(differing))
+
+    def test_the_sweep_goes_through_the_same_comparison_its_criteria_do(self) -> None:
+        """MUTANT: give the sweep back its own roster walk and its own comparison.
+
+        The property no other row here can see. Every criterion in this class drives `_parity`;
+        if the sweep keeps a SECOND copy, they pin the copy and the sweep is pinned by nothing -
+        which is how the whole delivery came to revert with all eleven of them green, and the
+        second time this class has shipped that shape. Asserted by BEHAVIOUR: the sweep is run
+        with the shared helper spied on, and it has to have gone through it."""
+        calls = []
+        original = type(self)._parity
+
+        def spy(inner_self, root, scratch):
+            calls.append((root, scratch))
+            return original(inner_self, root, scratch)
+
+        with unittest.mock.patch.object(type(self), "_parity", spy):
+            self.test_every_read_only_probe_honours_the_read_root()
+        self.assertEqual(1, len(calls),
+                         "the sweep did not go through the comparison its own criteria drive, "
+                         "so it carries a second copy and nothing pins it")
 
     def test_a_resolver_added_after_the_sweep_is_swept_too(self) -> None:
         """MUTANT: hard-code the probe roster as a literal tuple instead of reading the module.
@@ -16553,12 +16589,12 @@ class DryRunScratchParityTests(unittest.TestCase):
                 # `(state, value)` while this comment claimed it took `(state, detail)` - so a
                 # probe reading the scratch and differing only in WHY was read as agreeing. The
                 # comparison is the resolver's whole return, and the comment now names it.
-                a = sprint_report._ck_doc_surface(real)
-                b = sprint_report._ck_doc_surface(blind)
+                a = self._answer(sprint_report._ck_doc_surface, real)
+                b = self._answer(sprint_report._ck_doc_surface, blind)
                 self.assertNotEqual(a, b,
                                     "the probe answers the same with and without a real tree, "
                                     "so this fixture cannot discriminate")
-                c = sprint_report._ck_doc_surface(copy)
+                c = self._answer(sprint_report._ck_doc_surface, copy)
                 self.assertEqual(a, c,
                                  f"the doc-surface probe answers differently inside a preview "
                                  f"({c}) from outside one ({a}), on a surface that lives outside "
@@ -16574,20 +16610,15 @@ class DryRunScratchParityTests(unittest.TestCase):
                 # this code was written is swept by the same walk; an enumerated roster exempts
                 # whichever probe is added next, which is the shape this repository keeps
                 # meeting. The synthetic probe below proves the walk really is what selects.
-                probes = [(n, f) for n, f in vars(sprint_report).items()
-                          if n.startswith("_ck_") and callable(f)]
+                # THROUGH THE SHARED HELPER, not a second walk of its own. This sweep kept
+                # its own copy of the roster and the comparison, so the three criteria below
+                # pinned the helper while the sweep was pinned by nothing - the whole delivery
+                # reverted with every test in this class green, which is exactly what the
+                # comment at the head of the class forbids.
+                probes, differing = self._parity(root, scratch)
                 self.assertGreater(len(probes), 15,
                                    f"only {len(probes)} checklist probes were found - the sweep "
                                    f"resolved nothing and measures nothing")
-                differing = []
-                for name, fn in probes:
-                    try:
-                        x = fn(real)
-                        y = fn(copy)
-                    except Exception:      # a probe that raises alike on both is not this test's
-                        continue           # subject; it answers the same either way
-                    if x != y:
-                        differing.append(f"{name}: real={x} preview={y}")
                 self.assertEqual([], differing,
                                  "these checklist probes answer differently inside a preview "
                                  "from outside one, so the close and its own preview disagree:\n"

@@ -27,6 +27,10 @@ from __future__ import annotations
 import re
 import json
 import unittest
+import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -467,28 +471,76 @@ class PracticeRulesLaneTests(unittest.TestCase):
         self.assertIn("best_practice_rules.py", text,
                       "no pre-commit lane names the practice-rules checker, so it guards nothing")
 
-    def test_the_lane_runs_the_checker_and_carries_its_exit(self) -> None:
-        """MUTANT: swap the lane body for a bare `echo` mentioning the module path.
-
-        Naming a script is not running it. The lane's own `run` helper is what carries an exit
-        code into the gate, so the assertion is that the checker is its COMMAND rather than a
-        word inside a message."""
+    def _lane_argv(self) -> list:
+        """The practice-rules lane's own command, taken from the hook rather than retyped."""
         text = self.HOOK.read_text(encoding="utf-8")
         i = text.index("best_practice_rules.py")
         line = text[text.rindex("\n", 0, i) + 1:text.index("\n", i)].strip()
         self.assertTrue(line.startswith("--"),
                         f"the checker is named outside a lane's command position:\n{line}")
-        # The ARGV, not a word in a message. `-- echo "tools/best_practice_rules.py"` also
-        # begins with the separator and names the module, and runs nothing at all - which is
-        # exactly the dead-lane shape this criterion exists to refuse.
-        argv = line[2:].split()
-        self.assertEqual("python3", argv[0],
-                         f"the lane's command is not an interpreter invoking the checker:\n{line}")
-        self.assertIn("best_practice_rules.py", argv[1],
-                      f"the checker is not the script the lane runs:\n{line}")
         block = text[text.rindex('run "', 0, i):i]
         self.assertTrue(block.startswith('run "practice-rules"'),
                         f"the checker is not the command of a named lane:\n{block}")
+        return line[2:].split()
+
+    def _tree(self, name: str, *, practice: bool):
+        d = Path(tempfile.mkdtemp(prefix=f"bpr_{name}_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        bp = d / ".claude" / "skills" / "sdlc-studio" / "best-practices"
+        bp.mkdir(parents=True)
+        if practice:
+            shutil.copy2(self.REPO / ".claude" / "skills" / "sdlc-studio" / "best-practices"
+                         / "testing.md", bp / "testing.md")
+        return d
+
+    def test_the_lane_runs_the_checker_and_carries_its_exit(self) -> None:
+        """MUTANTS: swap the lane body for a bare echo naming the module path; give the checker
+        `--help` so the lane runs it and guards nothing; point the lane at a fixed root so it
+        answers the same whatever tree it is run against.
+
+        DRIVEN, not read. The first cut of this row only inspected the hook's text, so every one
+        of those mutants satisfied it - three seats found the same hole. The lane's OWN argv is
+        taken from the hook and executed against two trees that the checker is known to judge
+        differently, so a command that cannot tell them apart fails here whatever it is named."""
+        argv = self._lane_argv()
+        good = self._tree("good", practice=True)
+        bad = self._tree("bad", practice=False)
+        env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+        runs = {}
+        for name, tree in (("good", good), ("bad", bad)):
+            # The lane's command resolves its paths from the working directory, which is what
+            # the hook gives it - so the tree under test is supplied the same way.
+            shutil.copytree(self.REPO / "tools", tree / "tools",
+                            ignore=shutil.ignore_patterns("__pycache__"))
+            runs[name] = subprocess.run(argv, cwd=tree, capture_output=True, text=True,
+                                        check=False, env=env, timeout=300)
+        self.assertEqual(0, runs["good"].returncode,
+                         f"the lane refused a tree the checker accepts:\n"
+                         f"{runs['good'].stdout}{runs['good'].stderr}")
+        self.assertNotEqual(0, runs["bad"].returncode,
+                            f"the lane accepted a tree the checker refuses, so it guards "
+                            f"nothing:\n{runs['bad'].stdout}{runs['bad'].stderr}")
+
+    def test_the_hooks_run_helper_carries_a_lanes_failure(self) -> None:
+        """MUTANT: discard the command's exit inside the hook's `run` helper.
+
+        The other half of the criterion, and the half no assertion about the lane's argv can
+        reach: a lane whose command refuses correctly still guards nothing if the helper that
+        invokes it drops the exit. The hook's OWN definition is executed - extracted from the
+        file, never retyped - against a command that fails and one that does not."""
+        text = self.HOOK.read_text(encoding="utf-8")
+        start = text.index("run() {")
+        helper = text[start:text.index("\n}\n", start) + 3]
+        outcomes = {}
+        for name, cmd in (("failing", "false"), ("passing", "true")):
+            script = f"{helper}\nfail=0\nrun 'x' 'what' 'fix' -- {cmd}\nexit $fail\n"
+            outcomes[name] = subprocess.run(["bash", "-c", script], capture_output=True,
+                                            text=True, check=False, timeout=60).returncode
+        self.assertNotEqual(0, outcomes["failing"],
+                            "the hook's run helper does not carry a lane's failure, so every "
+                            "lane it invokes guards nothing")
+        self.assertEqual(0, outcomes["passing"],
+                         "the hook's run helper reports a failure for a command that succeeded")
 
 
 if __name__ == "__main__":

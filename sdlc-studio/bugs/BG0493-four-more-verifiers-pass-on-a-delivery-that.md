@@ -56,14 +56,8 @@ verifiers named here would still pass over a delivery that had been made inert.
 - [ ] **AC5** Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_lane_runs_the_checker_and_carries_its_exit
   - **Verified:** yes (2026-09-09)
-
-## Steps to Reproduce
-
-For each, apply the named mutant with `__pycache__` purged and python3 -B, and observe the declared verifiers stay green.
-
-## Proposed Fix
-
-Point each verifier at the behaviour: run the hook, run the command, or parse the call graph. `tools/best_practice_rules.py` should fail loudly on an absent practice file and be wired into a lane that runs.
+- [ ] **AC6** Given the hook's own `run` helper, when it invokes a command that FAILS, then the hook's failure flag is set - and when the command succeeds, it is not. The other half of AC5, and the half no assertion about the lane's argv can reach: a lane whose command refuses correctly still guards nothing if the helper that invokes it drops the exit. The helper is extracted from the hook and executed rather than retyped
+  - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_hooks_run_helper_carries_a_lanes_failure
 
 ## Impact
 
@@ -79,9 +73,20 @@ Four more criteria that cannot fail. Individually small; together they are why f
 | AC4 | in .githooks/pre-commit, delete the block that invokes the practice-rules module | Given the shipped gate, when its lanes are enumerated, then one of them NAMES `best_practice_rules.py`. It is referenced by nothing in `.githooks/` or `package.json` today, so it guards nothing |
 | AC5 | in .githooks/pre-commit, swap the lane body for a bare echo mentioning the module path | Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing |
 
+| AC6 | in .githooks/pre-commit, delete the assignment that raises the failure flag inside the run helper | Given the hook's own run helper, when it invokes a command that FAILS, then the hook's failure flag is set - and when the command succeeds, it is not |
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-09 | Claude Fable 5.1 | Delivered, and TWO of the five tests failed to kill their own mutant on the first measurement. AC5's asserted the lane's command position began with the separator, which an echo naming the module also does - it reads the argv now, so a mention is told from an invocation. AC2's asserted an or-true fallback was present in the examined block, which the 600-character slice still contained by luck once a lane was added above it - it asserts where the block BEGINS now, at the guard's own call. Both were found by running the mutant rather than by reading it, which is the discipline this whole batch was re-groomed for |
+| 2026-09-10 | Claude Opus 5 | Delivery review, all three seats REJECT on the same two holes, both of them tests that read text where their criterion demands behaviour. AC5 says the lane is DRIVEN as a subprocess against a tree the checker refuses and one it accepts; its verifier only inspected the hook's argv, so a lane running the checker with `--help`, a lane pointed at a fixed root, and a bare echo naming the module all satisfied it - and so did discarding the lane's exit inside the hook's own `run` helper. The lane's argv is now taken from the hook and EXECUTED against two trees the checker is known to judge differently (0 and 2), and a second row executes the hook's own `run` definition - extracted, never retyped - against a failing command and a passing one. Four mutants, four killed. AC2 asserted properties of the HOOK rather than of US0606's assertion, so reverting that assertion to the fixed window left it green; it now RUNS US0606's own test method against a fixture hook built so the two readings disagree - an unrelated pipeline carrying the token inside the window, the lane's own block past it and able to fail a commit - and the mutant dies |
+
+## Steps to Reproduce
+
+For each, apply the named mutant with `__pycache__` purged and python3 -B, and observe the declared verifiers stay green.
+
+## Proposed Fix
+
+Point each verifier at the behaviour: run the hook, run the command, or parse the call graph. `tools/best_practice_rules.py` should fail loudly on an absent practice file and be wired into a lane that runs.

@@ -656,7 +656,12 @@ def close_owed_advisory(repo_root: Path | str) -> str | None:
     if not ids:
         return (f"a sprint close is owed: {len(vel)} retro(s) closed with no velocity row - "
                 f"record it with `retro.py accuracy --id RETROxxxx --write`")
-    shown = ", ".join(ids[:5]) + ("..." if len(ids) > 5 else "")
+    # EVERY id, not the first five. This advisory and `close_owed.py detect` are the two
+    # surfaces this unit exists to make agree, and `detect` names the whole blocking set - so a
+    # five-id truncation here made them disagree on the SET the moment a sixth unit blocked,
+    # while both still agreed a close was owed. The count leads the line, so a reader who wants
+    # the number has it without reading the list; a reader who acts on the list needs all of it.
+    shown = ", ".join(ids)
     tail = (f", and {len(vel)} retro(s) with no velocity row" if vel else "")
     return (f"a sprint close is owed: {len(ids)} delivery unit(s) reached terminal with no retro "
             f"({shown}){tail} - run the retro, then `gate --require-retro RETROxxxx`")

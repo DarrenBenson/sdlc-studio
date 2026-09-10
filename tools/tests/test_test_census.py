@@ -291,7 +291,10 @@ class RealRepoTests(unittest.TestCase):
     #: attribution moved because a file MENTIONED one more module, and is filed as BG0578.
     #: LOWERED 38 -> 33 when BG0578 gave attribution two DECLARED routes - a module-level
     #: subject marker and a unit's `Affects` naming this file beside exactly one script.
-    #: Five files gained a home; none was placed by loosening the counting rule.
+    #: FOUR files gained a home, not five: the constant moved by five, but the tree measured 37
+    #: against a declared 38 before the change, so one of those five was slack in the baseline
+    #: rather than a file that gained an owner. Measured at the parent commit and at head, on
+    #: the same walk this row runs. None was placed by loosening the counting rule.
     UNATTRIBUTED_BASELINE = 33
 
     def test_this_repos_test_files_are_mostly_attributed(self) -> None:
@@ -925,15 +928,51 @@ class AttributionTests(unittest.TestCase):
         routes are consulted.
 
         A tie already NAMES its tied candidates today, so asserting the wording alone passes on
-        unmodified code. What is false at HEAD is that the file gets an owner at all."""
+        unmodified code. What is false at HEAD is that the file gets an owner at all.
+
+        THE FIXTURE HAS TO TIE. The first cut's body mentioned alpha once and beta once - but
+        the marker LINE names alpha too, so the counts were two against one and the mutant's
+        branch was never reached. The control below carries the same counting profile with the
+        marker replaced by an ordinary comment, and must come back unattributed ON A TIE: that
+        is what shows this row reaches the branch it is about."""
         with tempfile.TemporaryDirectory() as d:
             root = self._tree(d)
+            body = "alpha beta beta\n"
+            control = self._test_file(root, "test_eta.py", f"# subject is pkg/alpha.py\n{body}")
+            tied_mod, tied_how = tc.attribute(root, control)
+            self.assertIsNone(tied_mod,
+                              f"the fixture does not TIE, so the branch this row is about is "
+                              f"never reached: {tied_how}")
+            self.assertIn("equally", tied_how,
+                          f"the fixture is unattributed for some reason other than a tie: "
+                          f"{tied_how}")
             rel = self._test_file(root, "test_zeta.py",
-                                  "# test-census-subject: pkg/alpha.py\nalpha beta\n")
+                                  f"# test-census-subject: pkg/alpha.py\n{body}")
             mod, how = tc.attribute(root, rel)
             self.assertEqual("pkg/alpha.py", mod,
                              "a tie with a declared owner was still reported unattributed")
             self.assertEqual("marker", how)
+
+    def test_a_marker_inside_a_fixture_string_cannot_claim_the_subject(self) -> None:
+        """MUTANT: search the whole text for the marker instead of the file's head.
+
+        The guarantee the pattern cannot give on its own. `re.M` anchors at every line start,
+        including the lines of a triple-quoted fixture, and this module's own tests carry marker
+        text in exactly that position - so a file whose fixture mentions the marker would have
+        its OWNER decided by the fixture. The comment claimed this for a whole release while the
+        code did not implement it, and no row here noticed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._tree(d)
+            deep = self._test_file(
+                root, "test_theta.py",
+                "import alpha\n# alpha is what this file actually covers\n"
+                + "# padding\n" * 60
+                + 'FIXTURE = """\n# test-census-subject: pkg/beta.py\n"""\n')
+            mod, how = tc.attribute(root, deep)
+            self.assertNotEqual("pkg/beta.py", mod,
+                                f"a marker inside a fixture string claimed the subject: {how}")
+            self.assertEqual("pkg/alpha.py", mod,
+                             f"the file was not placed by what it actually references: {how}")
 
     def test_one_more_mention_cannot_move_the_grammar_module(self) -> None:
         """MUTANT: remove the marker branch so mention frequency decides the file again.
@@ -977,13 +1016,33 @@ class AttributionTests(unittest.TestCase):
                             ignore=shutil.ignore_patterns("__pycache__", ".local"))
             files = [f for f in tc.test_files(root)]
             self.assertGreater(len(files), 20, "the copied tree carries no test files")
-            before = {f.as_posix(): tc.attribute(root, f)[0] for f in files}
+            # THROUGH THE SHIPPED ENTRY POINT, which is what the criterion says and what the
+            # declared mutant edits. The first cut called `attribute` in a loop, so dropping the
+            # per-file owner from the payload changed nothing it looked at and the mutant
+            # survived - three seats found the same hole.
+            before = self._owner_map(root, files)
             target = dst / "tests" / "test_cli_grammar.py"
             target.write_text(target.read_text(encoding="utf-8")
                               + "\n# sprint sprint sprint sprint\n", encoding="utf-8")
-            after = {f.as_posix(): tc.attribute(root, f)[0] for f in files}
-        moved = {k: (before[k], after[k]) for k in before if before[k] != after[k]}
+            after = self._owner_map(root, files)
+        # NOT VACUOUS. An entry point that reports no owners at all makes both maps empty and
+        # "nothing moved" trivially true, which is precisely the mutant this row names.
+        self.assertGreater(len(before), 20,
+                           f"the entry point reported owners for {len(before)} file(s), so a "
+                           f"comparison over them cannot show a move")
+        moved = {k: (before[k], after.get(k)) for k in before if before[k] != after.get(k)}
         self.assertEqual({}, moved, f"a prose-only edit moved these files' owners: {moved}")
+
+    def _owner_map(self, root: Path, files: list) -> dict:
+        """The per-file owner map AS THE SHIPPED ENTRY POINT REPORTS IT.
+
+        `census` takes a completed run's junit report, so one is synthesised naming every test
+        file in the tree - the map is what is under test, not the timings."""
+        cases = "".join(
+            f'<testcase classname="{tc.dotted(f)}" name="t" time="0.01"></testcase>'
+            for f in files)
+        report = tc.census(f'<testsuite name="s">{cases}</testsuite>', root)
+        return {tf: row["module"] for row in report["modules"] for tf in row["test_files"]}
 
 
 

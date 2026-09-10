@@ -10,6 +10,8 @@ import contextlib
 import io
 import shutil
 import json
+import re
+import os
 import sys
 import tempfile
 import unittest
@@ -1470,21 +1472,44 @@ class CloseOwedAgreementTests(unittest.TestCase):
             self.assertIn("velocity", adv)
 
     def test_the_two_commands_name_the_same_blocking_set(self) -> None:
-        """MUTANT: delete the line that names the blocking set, leaving the raw enumeration.
+        """MUTANTS: delete the line that names the blocking set, leaving the raw enumeration;
+        truncate either surface's named set to a fixed number of ids.
 
-        `detect` enumerated only the raw owed list, so there was nothing for a second reader to
-        compare against - which is how the two surfaces came to disagree at all."""
-        import close_owed
+        BOTH COMMANDS, DRIVEN. The first cut of this row compared `close_owed.render` against
+        `close_owed.blocking` - one module talking to itself - on a one-story fixture, so it
+        could not see `status` at all and could never reach a set larger than the five ids
+        `status` truncated at. Three seats found it, and the criterion was not merely unpinned:
+        it was FALSE of the delivered code the moment a sixth unit blocked. Eight here, so the
+        truncation is inside the fixture rather than beyond it."""
+        import subprocess  # noqa: PLC0415
+        scripts = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as d:
             root = self._baselined(d)
-            self._story(root, "US0005", "Done")
-            report = close_owed.owed(root)
-            rendered = close_owed.render(report)
-            named = [ln for ln in rendered.splitlines() if "BLOCKING" in ln]
-            self.assertTrue(named, f"the renderer names no blocking set:\n{rendered}")
-            for cid, _t in close_owed.blocking(report)["units"]:
-                self.assertIn(cid, named[0],
-                              f"{cid} holds the close and is not on the blocking line")
+            for n in range(5, 13):                      # eight more, all blocking
+                self._story(root, f"US{n:04d}", "Done")
+            env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+            detect = subprocess.run(
+                [sys.executable, "-B", str(scripts / "close_owed.py"),
+                 "--root", str(root), "detect"],
+                capture_output=True, text=True, check=False, env=env)
+            status = subprocess.run(
+                [sys.executable, "-B", str(scripts / "status.py"), "--root", str(root)],
+                capture_output=True, text=True, check=False, env=env)
+            # 1 is detect's OWED exit, and asserting it pins that this fixture reaches the
+            # state the criterion is about rather than agreeing by both surfaces being empty.
+            self.assertEqual(1, detect.returncode, detect.stdout + detect.stderr)
+            blocking_line = next(
+                (ln for ln in detect.stdout.splitlines() if "BLOCKING" in ln), None)
+            self.assertIsNotNone(
+                blocking_line, f"detect names no blocking set:\n{detect.stdout}{detect.stderr}")
+            ids = re.findall(r"US\d{4}", blocking_line)
+            self.assertGreater(len(ids), 5,
+                               f"the fixture does not reach past the truncation: {ids}")
+            owed_line = [ln for ln in status.stdout.splitlines() if "close is owed" in ln]
+            self.assertTrue(owed_line, f"status names no owed close:\n{status.stdout}")
+            self.assertEqual(sorted(ids), sorted(re.findall(r"US\d{4}", owed_line[0])),
+                             f"the two surfaces name different blocking sets.\n"
+                             f"detect: {ids}\nstatus: {owed_line[0]}")
 
 
 if __name__ == "__main__":

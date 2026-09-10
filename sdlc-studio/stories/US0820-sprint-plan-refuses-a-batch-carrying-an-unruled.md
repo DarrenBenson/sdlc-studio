@@ -1,6 +1,6 @@
 # US0820: sprint plan refuses a batch carrying an unruled green or unknown criterion
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0569
 > **Created:** 2026-09-09
 > **Created-by:** sdlc-studio new

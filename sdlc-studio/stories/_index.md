@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 128 |
-| Ready | 20 |
+| Draft | 124 |
+| Ready | 24 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -258,10 +258,10 @@
 | [US0816](US0816-the-fixed-and-done-gates-refuse-a-unit.md) | The Fixed and Done gates refuse a unit with uncovered added lines unless each is ruled equivalent with a reason, and the ruling is in the depth field | Done | EP0247 | 2026-09-07 | 2026-09-07 |
 | [US0817](US0817-a-unit-whose-affects-names-a-gate-lane.md) | A unit whose Affects names a gate lane, a hook or the suite runner cannot reach Fixed or Done without a recorded green self-run of the affected lane on this repository | Ready | EP0248 | 2026-09-07 | 2026-09-07 |
 | [US0818](US0818-mutation-py-register-replaces-the-live-row-when.md) | mutation.py register replaces the live row when unit, criterion, row, target, hash, verdict and test all match, refuses a disagreeing verdict or test naming retract, and says so | Done | EP0249 | 2026-09-07 | 2026-09-07 |
-| [US0819](US0819-the-plan-probe-runs-each-criterion-against-the.md) | The plan probe runs each criterion against the tree and reports a pass as the finding | Draft | EP0250 | 2026-09-09 | 2026-09-09 |
-| [US0820](US0820-sprint-plan-refuses-a-batch-carrying-an-unruled.md) | sprint plan refuses a batch carrying an unruled green or unknown criterion | Draft | EP0250 | 2026-09-09 | 2026-09-09 |
-| [US0821](US0821-the-plan-ruling-is-recorded-hashed-against-what.md) | The plan ruling is recorded, hashed against what it excuses, and withdrawable | Draft | EP0251 | 2026-09-09 | 2026-09-09 |
-| [US0822](US0822-a-ledger-row-records-the-anchor-it-was.md) | A ledger row records the anchor it was applied to, and staleness is judged from it | Draft | EP0252 | 2026-09-09 | 2026-09-09 |
+| [US0819](US0819-the-plan-probe-runs-each-criterion-against-the.md) | The plan probe runs each criterion against the tree and reports a pass as the finding | Ready | EP0250 | 2026-09-09 | 2026-09-09 |
+| [US0820](US0820-sprint-plan-refuses-a-batch-carrying-an-unruled.md) | sprint plan refuses a batch carrying an unruled green or unknown criterion | Ready | EP0250 | 2026-09-09 | 2026-09-09 |
+| [US0821](US0821-the-plan-ruling-is-recorded-hashed-against-what.md) | The plan ruling is recorded, hashed against what it excuses, and withdrawable | Ready | EP0251 | 2026-09-09 | 2026-09-09 |
+| [US0822](US0822-a-ledger-row-records-the-anchor-it-was.md) | A ledger row records the anchor it was applied to, and staleness is judged from it | Ready | EP0252 | 2026-09-09 | 2026-09-09 |
 
 ## Archived Releases
 

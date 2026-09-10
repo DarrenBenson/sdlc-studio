@@ -358,13 +358,50 @@ class DocstringMatchesTheCodeTests(unittest.TestCase):
         """MUTANT: reinsert the absolute phrasing while the tree walk stays in the resolver."""
         text = self.SRC.read_text(encoding="utf-8")
         doc = text.split('"""', 2)[1]
-        walks = "rglob" in text
-        self.assertTrue(walks, "the tree walk is gone, so this pin no longer measures anything")
+        # THE WALK, EXECUTED - not the word `rglob` found somewhere in the file. A substring
+        # search over the whole module is satisfied by the comment that explains the walk, so
+        # deleting the walk itself left this pin green: the guard measured its own prose, which
+        # is the very shape the sibling class here exists to refuse.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            nested = root / "docs" / "specs" / "deep"
+            nested.mkdir(parents=True)
+            (nested / "TRD.md").write_text("# TRD\n\n> **Version:** 3.2.1\n", encoding="utf-8")
+            found = check_versions.discover_spec_homes(root)
+        self.assertIn("docs/specs/deep/TRD.md", [Path(f).as_posix() for f in found],
+                      f"a declaring file nested three directories down was not discovered, so "
+                      f"the resolver is not walking the tree and this pin measures nothing: "
+                      f"{found}")
         self.assertNotIn("never by repo-wide grep", doc,
                          "the docstring denies a repo-wide walk the module performs")
         self.assertNotIn("exactly five places", doc,
                          "the docstring claims a fixed set of homes while the homes are "
                          "discovered by walking the repo")
+
+    def test_the_by_structure_never_by_prose_claim_is_true(self) -> None:
+        """MUTANT: restore either prose fallback in `from_readme`.
+
+        The replacement docstring swapped one false absolute for another. It promised "by
+        structure, never by prose" while `from_readme` fell back to `version X.Y.Z` and to a
+        bare `vX.Y.Z` anywhere in the head - so "back in the version 9.9.9 era" was read as a
+        declaration of 9.9.9, and the home list four lines below the promise described the
+        fallback. Executed rather than read: a prose mention must yield nothing, and both
+        BOLDED shapes a README declares a version in must still be found."""
+        cv = check_versions
+        for prose in ("back in the version 9.9.9 era", "the v8.8.8 wheel",
+                      "upgrading from version 7.7.7 is supported"):
+            with self.subTest(prose=prose), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                (root / "README.md").write_text(f"# T\n\n{prose}\n", encoding="utf-8")
+                self.assertIsNone(cv.from_readme(root),
+                                  f"an incidental version in prose was read as a declaration: "
+                                  f"{prose!r}")
+        for declared in ("**Version:** 1.2.3", "**Version 1.2.3**"):
+            with self.subTest(declared=declared), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                (root / "README.md").write_text(f"# T\n\n{declared}\n", encoding="utf-8")
+                self.assertEqual("1.2.3", cv.from_readme(root),
+                                 f"a bolded declaration was not read: {declared!r}")
 
 
 if __name__ == "__main__":

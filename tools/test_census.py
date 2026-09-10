@@ -29,16 +29,28 @@ design:
   writes no file at all, because a half-written record is what makes pruning quietly
   become coverage loss.
 
-Attribution is by convention, in two passes, and it says which pass placed each module
-so a reader can disagree with it:
+Attribution is in FOUR passes, DECLARED first and derived after, and it says which pass
+placed each module so a reader can disagree with it:
 
+- `marker`: the file's own `# test-census-subject: <path>` line, read from its first 40
+  lines. The author naming what the file covers, which nothing derived overrules. Read
+  from the HEAD only, so a marker line inside a fixture's own string cannot claim a
+  subject for the file that holds the fixture.
+- `affects`: no marker, but exactly one unit's `Affects` names this test file beside
+  exactly one script. Several declaring units, or one naming several scripts, decide
+  nothing.
 - `name`: `<dir>/tests/test_foo.py` covers `<dir>/foo.py` (or `foo.sh`; hyphens and
   underscores are folded, because `test_lint_style.py` covers `lint-style.sh`).
 - `reference`: no matching name, but the test text mentions exactly one sibling module
   more often than any other. `test_two_backlogs.py` is not named after anything.
 
+The two declared routes exist because counting is not stable: a file's owner moved from
+one module to unattributed because somebody added one more mention of a sibling in
+prose (BG0578). Counting is the fallback, not the rule.
+
 Anything else is unattributed. A tie between two modules is a guess, and a guess in a
-cost report is how an area gets pruned on another area's evidence.
+cost report is how an area gets pruned on another area's evidence - and a tie no longer
+buries a file that DECLARED its owner, because the declared routes are consulted first.
 
 Subcommands:
   report          per-module test count and seconds, dearest first, plus the unattributed
@@ -133,14 +145,26 @@ def _sibling_modules(root: Path, rel: Path) -> list[Path]:
 
 
 #: `# test-census-subject: <path>` on its own line - the author naming the module this file
-#: covers. One spelling, checked at the head of the file only, so a mention of the marker
-#: inside a fixture's string cannot claim a subject.
+#: covers. One spelling, and read from the HEAD of the file only, so a marker line sitting
+#: inside a fixture's own string cannot claim a subject for the file that holds the fixture.
+#: The pattern alone cannot give that guarantee: `re.M` anchors at every line start, including
+#: the lines of a triple-quoted fixture hundreds of lines down, and this module's own tests
+#: carry marker text in exactly that position. The comment claimed the guarantee for a whole
+#: release while the code did not implement it.
 _SUBJECT_RE = re.compile(r"^#\s*test-census-subject:\s*(\S+)\s*$", re.M)
+#: How far into a file the marker is read. A module-level declaration sits above the code, in
+#: the import block or the header comment; the only one in this corpus is on line 16. Beyond
+#: that a `#` at a line start is as likely to be fixture content as a declaration.
+_SUBJECT_HEAD_LINES = 40
 
 
 def _declared_subject(text: str) -> str:
-    """The module a test file declares it covers, or "" when it declares none."""
-    m = _SUBJECT_RE.search(text)
+    """The module a test file declares it covers, or "" when it declares none.
+
+    Read from the file's HEAD, which is the guarantee the pattern cannot give on its own.
+    """
+    head = "\n".join(text.splitlines()[:_SUBJECT_HEAD_LINES])
+    m = _SUBJECT_RE.search(head)
     return m.group(1) if m else ""
 
 

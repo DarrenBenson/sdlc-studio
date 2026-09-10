@@ -48,8 +48,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0657` | Medium | The scheduled corpus lane is red at 23 against a baseline of 20, and the baseline records only a COUNT, so no reader can tell which three are new |
 | `BG0658` | Medium | testplan derive writes its rows unescaped and reads them back by splitting on a raw pipe, so a mutant naming a piped command is silently truncated |
 | `BG0659` | Medium | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row |
+| `BG0660` | Medium | the rehearsal-lane test drives the WHOLE boundary gate to check one lane's reporting, and times out on CI - main was red two days and nothing read it |
+| `BG0661` | Medium | revert-check cannot see a unit whose fix and evidence share one file - it reverts the tests with the change and reports green |
 
-18 findings: 18 Medium, 0 Low.
+20 findings: 20 Medium, 0 Low.
 
 ## Not carried
 

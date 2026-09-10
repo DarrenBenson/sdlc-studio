@@ -43,6 +43,7 @@ def _fake(count: int, blocking: bool = True):
     return lambda root: {"count": count, "blocking": blocking, "detail": str(count)}
 
 
+import ast
 import pathlib
 import unittest
 
@@ -6436,9 +6437,9 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
                          "a scoped boundary run is refused - the lane is BOUND again")
         self.assertIn("duplicate-id", out, "the scoped run printed no lane at all")
 
-    def test_the_rehearsal_lane_names_its_failing_half_and_records_its_cost(self) -> None:
-        """The lane must say WHICH path broke. `the rehearsal failed` sends a reader to run it
-        themselves to find out, and the two halves have entirely different owners."""
+    def _scoped_failing_run(self):
+        """Drive the gate at the push boundary, SCOPED to the rehearsal lane, over a clone whose
+        harness fails its greenfield half - and return the lane's line and the whole output."""
         import shutil, tempfile  # noqa: PLC0415
         repo = self._repo()
         with tempfile.TemporaryDirectory() as d:
@@ -6455,15 +6456,147 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
             shutil.copytree(repo / ".claude" / "skills" / "sdlc-studio",
                             clone / ".claude" / "skills" / "sdlc-studio",
                             ignore=shutil.ignore_patterns("__pycache__", ".local"))
-            r = self._gate("--boundary", "push", root=clone)
-            line = next((ln for ln in (r.stdout + r.stderr).splitlines()
-                         if "release-rehearsal" in ln), "")
-            self.assertTrue(line, f"no rehearsal lane in the output:\n{r.stdout}{r.stderr}")
+            # SCOPED to the lane under test. An unscoped `--boundary push` pays every lane the
+            # boundary binds - `module-alone` alone is over four hundred seconds here and five
+            # times that on a CI runner - to observe one lane's REPORTING. It exceeded its own
+            # 1800-second timeout on CI and errored the whole suite, leaving main red for two
+            # days with the green-run noise gate never reaching the end of the run (BG0660).
+            # The sibling row above already proves the lane BINDS at both boundaries, and
+            # `--boundary push --only <lane>` is proven acceptable by the row above that.
+            r = self._gate("--boundary", "push", "--only", "release-rehearsal", root=clone)
+            out = r.stdout + r.stderr
+            line = next((ln for ln in out.splitlines() if "release-rehearsal" in ln), "")
+            self.assertTrue(line, f"no rehearsal lane in the output:\n{out}")
             self.assertIn("[FAIL]", line, "a failing rehearsal did not fail the lane")
             self.assertIn("greenfield", line, "the lane did not name which half failed")
             self.assertRegex(line, r"\[\d+\.\d+s\]",
                              "the lane's duration is not recorded beside the other lanes")
+            # AND NOTHING ELSE. The assertions above pass just as well on an unscoped run, so
+            # they cannot say whether this check pays for one lane or for all of them - which
+            # is the whole of BG0660. The other two boundary lanes must not appear.
+            return line, out
 
+    def test_the_rehearsal_lane_names_its_failing_half_and_records_its_cost(self) -> None:
+        """AC2, the paired control. MUTANT: scope the run to a lane the rehearsal is not.
+
+        A scope so narrow that the lane never runs satisfies the scoping row perfectly and
+        measures nothing, so this row is what says the lane still did its job."""
+        self._scoped_failing_run()
+
+    def test_the_check_pays_for_one_lane_and_not_the_whole_boundary(self) -> None:
+        """AC1. MUTANT: drop the lane scope so the check drives every boundary lane.
+
+        Every assertion in the control above passes on an unscoped run too, so none of them can
+        say whether this check pays for one lane or for all of them - which is the whole of
+        BG0660. Unscoped it exceeded its own 1800-second timeout on CI and errored the suite."""
+        _line, out = self._scoped_failing_run()
+        for other in ("revert-check", "module-alone"):
+            self.assertNotIn(other, out,
+                             f"the check ran {other} as well, so it is paying every boundary "
+                             f"lane to observe one lane's reporting:\n{out}")
+
+
+
+class BoundaryGateIsNeverDrivenUnscopedTests(unittest.TestCase):
+    """BG0660: a test that drives `gate.py --boundary push` unscoped pays EVERY lane the
+    boundary binds. That cost has quadrupled since the one test that did it was written -
+    `revert-check` and `module-alone` joined `release-rehearsal` there - and on a CI runner it
+    exceeded the test's own 1800-second timeout, errored the suite and left main red for two
+    days, with the green-run noise gate never reaching the end of the run.
+
+    The CLASS, not the one test: the next such invocation costs the same hour, and an
+    enumerated exemption list would exempt whichever one is added next."""
+
+    ROOTS = (
+        pathlib.Path(__file__).resolve().parent,
+        pathlib.Path(__file__).resolve().parents[5] / "tools" / "tests",
+    )
+
+    @staticmethod
+    def _boundary_calls(tree):
+        """Every call whose arguments include a literal `--boundary`, with its own literals."""
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            # An ASSERTION mentioning the flag is not an invocation of it. `assertIn("--boundary",
+            # help_text)` names the flag to check it is documented and costs nothing.
+            called = (node.func.attr if isinstance(node.func, ast.Attribute)
+                      else node.func.id if isinstance(node.func, ast.Name) else "")
+            if called.startswith("assert"):
+                continue
+            # Direct arguments AND the elements of a list or tuple argument. `self._gate(
+            # "--boundary", "push")` writes them one way and `subprocess.run(["gate.py",
+            # "--boundary", "push"])` the other, and reading only the first shape would exempt
+            # every test that used the second - the enumerated-exemption failure this class is
+            # itself about.
+            flat = []
+            for arg in node.args:
+                flat.extend(arg.elts if isinstance(arg, (ast.List, ast.Tuple)) else [arg])
+            literals = [a.value for a in flat
+                        if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+            if "--boundary" not in literals:
+                continue
+            # THE GATE's boundary flag, not every flag spelled the same. `critic.py supersede`
+            # takes a `--boundary` naming a trust boundary - "operator console" - and has
+            # nothing to do with the lanes this guard is about.
+            if "gate" not in called and not any("gate.py" in v for v in literals):
+                continue
+            yield node, literals
+
+    def _scan(self, roots):
+        """(offenders, invocations seen) over every `test_*.py` under `roots`."""
+        offenders, seen = [], 0
+        for root in roots:
+            for path in sorted(pathlib.Path(root).glob("test_*.py")):
+                try:
+                    tree = ast.parse(path.read_text(encoding="utf-8"))
+                except SyntaxError:                     # not this guard's subject
+                    continue
+                for node, literals in self._boundary_calls(tree):
+                    seen += 1
+                    if "--only" not in literals:
+                        offenders.append(f"{path.name}:{node.lineno}")
+        return offenders, seen
+
+    def test_no_test_drives_the_boundary_gate_without_scoping_it(self) -> None:
+        """MUTANT: drop `--only release-rehearsal` from any boundary invocation in the suite.
+
+        Asserted over the SOURCE deliberately: the rule is about what a test invokes, and the
+        only behavioural way to check it is to pay the hour it exists to prevent."""
+        offenders, seen = self._scan(self.ROOTS)
+        self.assertGreater(seen, 0,
+                           "no boundary invocation was found at all, so this guard is looking "
+                           "in the wrong place and measures nothing")
+        self.assertEqual([], offenders,
+                         "these tests drive the boundary gate unscoped, paying every lane the "
+                         "boundary binds to observe one of them: " + ", ".join(offenders))
+
+    def test_the_scan_finds_an_unscoped_invocation_when_there_is_one(self) -> None:
+        """MUTANT: make the scan yield nothing, or accept a call carrying no `--only`.
+
+        The row above is green on a clean tree whatever the scan does - a scanner that reports
+        nothing passes it perfectly. This one plants one offender and one properly scoped call
+        in a fixture and requires the scan to tell them apart, which is the only way to know
+        the guard above would fire."""
+        import tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            planted = pathlib.Path(d)
+            (planted / "test_offender.py").write_text(
+                "import subprocess\n"
+                "def probe():\n"
+                '    subprocess.run(["gate.py", "--boundary", "push"])\n', encoding="utf-8")
+            (planted / "test_innocent.py").write_text(
+                "import subprocess\n"
+                "def probe():\n"
+                '    subprocess.run(["gate.py", "--boundary", "push", "--only", "docs"])\n',
+                encoding="utf-8")
+            offenders, seen = self._scan([planted])
+        self.assertEqual(2, seen, f"the scan did not see both invocations: {seen}")
+        self.assertEqual(1, len(offenders),
+                         f"the scan cannot tell a scoped invocation from an unscoped one: "
+                         f"{offenders}")
+        self.assertTrue(offenders[0].startswith("test_offender.py"),
+                        f"the scan named the wrong file: {offenders}")
 
 
 class RevertCheckReportingTests(unittest.TestCase):
@@ -7334,25 +7467,56 @@ class LaneCheckAnchorTests(unittest.TestCase):
 
     HOOK = Path(__file__).resolve().parents[5] / ".githooks" / "pre-commit"
 
-    def test_the_assertion_is_anchored_on_the_guards_own_call(self) -> None:
-        """MUTANT: revert the assertion to slicing the first 600 characters after the keyword.
+    #: A hook on which the two readings DISAGREE, which is the only shape that can tell them
+    #: apart. The first mention of the keyword sits in a comment; an unrelated pipeline carrying
+    #: `|| true` follows it inside the fixed window; and the lane's own block, past the window,
+    #: carries none - so it CAN fail a commit. An assertion anchored on the guard's own call
+    #: sees that and fails; one slicing a fixed window from the first mention finds the other
+    #: pipeline's `|| true` and passes.
+    DISAGREEING_HOOK = (
+        "#!/usr/bin/env bash\n"
+        "# The lane-check detector is described here, above the code that runs it.\n"
+        # An UNRELATED pipeline, inside the fixed window, carrying the token the sliced
+        # reading goes looking for.
+        + 'ids="$(git diff --cached --name-only | sort -u)" || true\n'
+        # Padding that pushes the lane's own call PAST the window, so the anchored reading and
+        # the sliced one are looking at different text.
+        + "# padding so the fixed window ends inside this commentary and never reaches the\n"
+          "# lane's own call site, which is the whole shape this pin exists to tell apart.\n" * 6
+        + "if [ -n \"$ids\" ]; then\n"
+          '  python3 "$SKILL/verify_ac.py" lane-check --units "$ids"\n'
+          "fi\n")
 
-        Asserted on WHERE THE BLOCK BEGINS, not on what it contains: adding any lane above the
-        guard lets a fixed window pass again by luck, which is exactly what happened when the
-        practice-rules lane was added in this same unit."""
-        text = self.HOOK.read_text(encoding="utf-8")
-        first = text.index("lane-check")
-        call = text.index('verify_ac.py" lane-check')
-        self.assertGreater(call, first,
-                           "the guard's call is the first mention, so this fixture cannot show "
-                           "the difference between anchoring and slicing")
-        window = text[first:first + 600]
-        self.assertNotIn('verify_ac.py" lane-check', window,
-                         "a 600-character window from the first mention now reaches the call, "
-                         "so the two readings agree here and the pin measures nothing")
-        block = text[call:text.index("\nfi\n", call)]
-        self.assertIn("|| true", block,
-                      f"the lane can fail the commit - it ships advisory:\n{block}")
+    def test_the_assertion_is_anchored_on_the_guards_own_call(self) -> None:
+        """MUTANT: revert US0606's assertion to slicing a fixed window from the first mention.
+
+        DRIVEN, not restated. The first cut of this row asserted properties of the HOOK, so
+        reverting the assertion it is about left it green and its own declared mutant survived -
+        found by three independent seats. US0606's own test method is RUN here, against a
+        fixture hook built so the two readings disagree: the anchored reading must fail it,
+        because the lane's own block carries no `|| true` and so can fail a commit."""
+        import unittest.mock  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            hook = Path(d) / "pre-commit"
+            hook.write_text(self.DISAGREEING_HOOK, encoding="utf-8")
+            text = self.DISAGREEING_HOOK
+            first = text.index("lane-check")
+            call = text.index('verify_ac.py" lane-check')
+            self.assertNotIn('verify_ac.py" lane-check', text[first:first + 600],
+                             "the fixture's fixed window reaches the call, so the two readings "
+                             "agree on it and it cannot tell them apart")
+            self.assertNotIn("|| true", text[call:text.index("\nfi\n", call)],
+                             "the fixture's lane block is advisory, so the anchored reading "
+                             "passes it and there is nothing to detect")
+            case = LaneCheckLaneTests("test_the_lane_runs_and_does_not_block")
+            result = unittest.TestResult()
+            with unittest.mock.patch.object(LaneCheckLaneTests, "HOOK", hook):
+                case.run(result)
+        self.assertFalse(
+            result.wasSuccessful(),
+            "US0606's assertion passed a hook whose lane CAN fail a commit, so it is reading a "
+            "`|| true` from some other pipeline inside a fixed window rather than the guard's "
+            "own block")
 
 
 if __name__ == "__main__":

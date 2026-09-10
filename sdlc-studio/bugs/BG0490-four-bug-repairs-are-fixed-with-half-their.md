@@ -66,6 +66,22 @@ blast radius across every loading-guide cell, and that is engineering rather tha
 - [ ] **AC5** Given `check_versions.py`, when its module docstring is read beside its code, then it does not claim the version is read 'never by repo-wide grep' while an `rglob` fallback stands. Today it does, so the docstring overstates the guarantee a reader relies on
   - **Verify:** pytest tools/tests/test_check_versions.py::DocstringMatchesTheCodeTests::test_the_never_by_grep_claim_is_true
   - **Verified:** yes (2026-09-09)
+- [ ] **AC6** Given a README whose head mentions a version only in PROSE, when `from_readme` reads it, then it finds none - and given one declaring a version in either BOLDED shape, it finds that. The module's replacement docstring promised "by structure, never by prose" while the resolver fell back to a bare `version X.Y.Z` and to a bare `vX.Y.Z` anywhere in the head, so "back in the version 9.9.9 era" was read as a declaration. The home list four lines below the promise described that fallback, so the sentence was refuted by its own docstring
+  - **Verify:** pytest tools/tests/test_check_versions.py::DocstringMatchesTheCodeTests::test_the_by_structure_never_by_prose_claim_is_true
+
+## Impact
+
+Four false Fixed records. The cost is not the individual defects - it is that a Fixed status stops meaning the title is no longer true, and every later reader who trusts the ledger inherits the error. The repo's close ceremony reads these statuses.
+
+| AC6 | in tools/check_versions.py, restore either prose fallback in from_readme | Given a README whose head mentions a version only in PROSE, when from_readme reads it, then it finds none - and given one declaring a version in either BOLDED shape, it finds that |
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-09-10 | Claude Opus 5 | Delivery review: engineering and QA APPROVE, product REJECT, and the product seat was right. The replacement docstring swapped one false absolute for another - it promised extraction BY STRUCTURE and never by prose, while `from_readme` fell back to a bare `version X.Y.Z` and to a bare `vX.Y.Z` anywhere in the head. Executed: a README reading `back in the version 9.9.9 era` returned 9.9.9. The claim is now TRUE rather than softened: both prose fallbacks are gone and the structured pattern covers the second bolded shape, `**Version X.Y.Z**`, which is what this repository's own README uses and which the first pattern missed - so the checker still resolves 5.0.1 here. Both fallback mutants killed. Also fixed, from QA's non-blocking note: AC5's vacuity guard tested that the word `rglob` appeared anywhere in the module, and one of its two occurrences is the comment explaining the walk - so deleting the walk left the pin green. It now EXECUTES discovery against a file nested three directories down |
+| 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-09 | Claude Fable 5.1 | Delivered. AC4's mutant was corrected at delivery: it made the invocation branch report only when no script token was found, which is not a change on this criterion's own fixture, so it survived. It now reports unconditionally, which is the careless implementation the control exists to catch. The shipped exemption test was AMENDED as AC3 said it would be: its command names a script that now exists, so it asserts an exemption rather than asserting that a guide row may promise a file the tree does not have |
 
 ## Test Plan
 
@@ -94,14 +110,3 @@ blast radius across every loading-guide cell, and that is engineering rather tha
 ## Proposed Fix
 
 For each: either deliver the remaining half, or narrow the bug explicitly and file the residue as its own artefact, the way BG0433 and BG0448 did. A bug closed Fixed with its title still true of the tree is a false record, and the next reader takes the title as the statement of what was done.
-
-## Impact
-
-Four false Fixed records. The cost is not the individual defects - it is that a Fixed status stops meaning the title is no longer true, and every later reader who trusts the ledger inherits the error. The repo's close ceremony reads these statuses.
-
-## Revision History
-
-| Date | Author | Change |
-| --- | --- | --- |
-| 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
-| 2026-09-09 | Claude Fable 5.1 | Delivered. AC4's mutant was corrected at delivery: it made the invocation branch report only when no script token was found, which is not a change on this criterion's own fixture, so it survived. It now reports unconditionally, which is the careless implementation the control exists to catch. The shipped exemption test was AMENDED as AC3 said it would be: its command names a script that now exists, so it asserts an exemption rather than asserting that a guide row may promise a file the tree does not have |

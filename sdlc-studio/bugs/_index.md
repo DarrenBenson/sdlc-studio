@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-09
+**Last Updated:** 2026-09-10
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 20 |
 | In Progress | 0 |
 | Fixed | 539 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **659** |
+| **Total** | **661** |
 
 ## All Bugs
 
@@ -199,6 +199,8 @@
 | [BG0657](BG0657-the-scheduled-corpus-lane-is-red-at-23.md) | The scheduled corpus lane is red at 23 against a baseline of 20, and the baseline records only a COUNT, so no reader can tell which three are new | Open | Medium | 2026-09-08 | 2026-09-08 |
 | [BG0658](BG0658-testplan-derive-writes-its-rows-unescaped-and-reads.md) | testplan derive writes its rows unescaped and reads them back by splitting on a raw pipe, so a mutant naming a piped command is silently truncated | Open | Medium | 2026-09-09 | 2026-09-09 |
 | [BG0659](BG0659-a-code-span-whose-value-ends-in-a.md) | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row | Open | Medium | 2026-09-09 | 2026-09-09 |
+| [BG0660](BG0660-the-rehearsal-lane-test-drives-the-whole-boundary.md) | the rehearsal-lane test drives the WHOLE boundary gate to check one lane's reporting, and times out on CI - main was red two days and nothing read it | Open | Medium | 2026-09-10 | 2026-09-10 |
+| [BG0661](BG0661-revert-check-cannot-see-a-unit-whose-fix.md) | revert-check cannot see a unit whose fix and evidence share one file - it reverts the tests with the change and reports green | Open | Medium | 2026-09-10 | 2026-09-10 |
 
 ## Archived Releases
 

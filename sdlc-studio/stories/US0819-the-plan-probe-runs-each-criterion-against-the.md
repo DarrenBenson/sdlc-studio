@@ -1,6 +1,6 @@
 # US0819: The plan probe runs each criterion against the tree and reports a pass as the finding
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0569
 > **Created:** 2026-09-09
 > **Created-by:** sdlc-studio new

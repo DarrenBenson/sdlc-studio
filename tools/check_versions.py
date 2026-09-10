@@ -13,7 +13,8 @@ set of files` is not, and the docstring used to claim both.
 1. package.json                          -> "version"
 2. templates/version.yaml                -> skill_version
 3. SKILL.md frontmatter                  -> metadata.version
-4. README.md                             -> first "**Version:** X.Y.Z" or "version X.Y.Z" match in the head
+4. README.md                             -> first BOLDED declaration in the head, in either
+                                            shape: "**Version:** X.Y.Z" or "**Version X.Y.Z**"
 5. CHANGELOG.md                          -> topmost released "## [X.Y.Z]" heading
                                             (an [Unreleased] section above it is fine)
 
@@ -82,9 +83,17 @@ def from_readme(root: Path) -> str | None:
         head = (root / "README.md").read_text(encoding="utf-8")[:4000]
     except OSError:
         return None
+    # A BOLDED DECLARATION, in either of the two shapes a README writes one: the label bold
+    # with the number outside it, or the whole phrase bold. Both are the author declaring the
+    # version rather than mentioning it.
+    #
+    # The two PROSE fallbacks that used to sit here are gone, and they were the reason this
+    # module's own docstring was false: `[Vv]ersion\s+v?<semver>` reads "back in the version
+    # 9.9.9 era" as a declaration, and a bare `v<semver>` reads "the v8.8.8 wheel" as one. The
+    # sentence promising "by structure, never by prose" was refuted four lines below itself, by
+    # the home list that described the fallback.
     m = re.search(rf"\*\*Version:?\*\*:?\s*v?{SEMVER}", head) or \
-        re.search(rf"[Vv]ersion\s+v?{SEMVER}", head) or \
-        re.search(rf"\bv{SEMVER}\b", head)
+        re.search(rf"\*\*Version:?\s+v?{SEMVER}\s*\*\*", head)
     return m.group(1) if m else None
 
 
