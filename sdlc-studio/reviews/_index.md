@@ -37,3 +37,4 @@ The volatile project-state pointer lives in `LATEST.md` (not a numbered review).
 | [RV-0024](RV0024-run-01kymjem-two-independent-adversarial-passes-nineteen-majors.md) | RUN-01KYMJEM - two independent adversarial passes, nineteen majors, and the two the sprint had already learned | 2026-07-28 |
 | [RV-0025](RV0025-run-01kyy52d-the-review-learned-to-discriminate.md) | RUN-01KYY52D closing review - the review learned to discriminate, and then failed its own new rule | 2026-08-01 |
 | [RV-0026](RV0026-run-01kyzky5-closing-review-thirty-eight-passes-three.md) | RUN-01KYZKY5 closing review - thirty-eight passes, three stop-ship defects, and a sprint that could not close because nobody had reviewed it | 2026-08-02 |
+| [RV-0027](RV0027-run-01m20rwx-closing-review-sixty-six-seat-verdicts.md) | RUN-01M20RWX closing review: sixty-six seat verdicts, forty-four rejections, and one shape found nine times | 2026-09-10 |

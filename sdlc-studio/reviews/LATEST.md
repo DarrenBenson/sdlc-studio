@@ -3,6 +3,7 @@
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
+> Closing review of record: [RV0027](RV0027-run-01m20rwx-closing-review-sixty-six-seat-verdicts.md).
 > **Run of record:** RUN-01M20RWX - every Medium open at the base ref, disposed of. Twenty-two
 > units, 72 points, 174 mutants registered killed and none surviving. Goal **achieved**: 18 bugs
 > at Fixed with their own verifiers passing, 4 stories at Done, and the three findings this run
