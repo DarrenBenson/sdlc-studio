@@ -39,7 +39,7 @@ BARRED = ("Critical", "High")
 #: Pointed at v5.0.0 until v5.0.1 shipped, which made the guard demand that a HISTORICAL record
 #: be rewritten every time a bug closed. A released version's notes state what THAT version
 #: shipped with and must not move; only the current one tracks the corpus.
-NOTES_REL = "docs/release-notes-v5.1.md"
+NOTES_REL = "docs/release-notes-v5.1.0.md"
 
 #: Titles are the finding's own H1. Long ones are elided rather than wrapped, because a table
 #: cell that wraps to five lines is a table nobody reads to the bottom of.
