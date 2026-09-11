@@ -1,6 +1,7 @@
 # BG0663: the release cut turns main red: `changelog.py check` cannot name an artefact once the fragments are composed
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first: three mutants declared, three killed, each reddening its own criterion's node)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py
@@ -29,16 +30,27 @@ Drop `changelog.py check` from `ROOT_EFFECT_VERBS`. Membership is earned by MEAS
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a tree whose `changelog.d/` is EMPTY - the state every release cut leaves - when the root-effect control runs over the whole inventory, then it PASSES. The control is about whether each listed verb reads the tree, and a verb whose output is empty on a correct tree cannot answer that question
+- [ ] **AC1** Given the root-effect control run against the real tree, when it runs, then it PASSES - and it does so in EVERY `changelog.d/` state, because the verb whose output that directory decides is no longer listed. The state-dependence is the finding: with the row reinstated an independent seat measured the control failing on an emptied `changelog.d/` and PASSING with one realistic pending fragment present, so a row whose verdict oscillates with the release cycle cannot hold a place in an inventory whose membership is earned by measurement
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py::RootIsReadNotJustParsed::test_every_listed_verb_can_actually_fail_the_guard
 - [ ] **AC2** Given the inventory, when it is read, then `changelog.py check` is absent from it and the reason is recorded beside the list. Without the recorded reason the next author re-adds it: it looks like an obvious omission, and it passes on any tree that happens to carry a pending fragment
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py::RootIsReadNotJustParsed::test_the_inventory_records_why_a_verb_was_withdrawn
+  - **Verified:** yes (2026-09-11)
 - [ ] **AC3** Given the inventory after the removal, when the subset check runs, then it still holds - the list is non-empty and strictly smaller than the invocable surface. A repair that empties the guard satisfies the row above perfectly
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py::RootIsReadNotJustParsed::test_the_inventory_is_a_measured_subset_and_never_the_whole_surface
+  - **Verified:** yes (2026-09-11)
 
 ## Impact
 
 Every release cut turns main red on the next push, and the red is indistinguishable from a real regression until somebody reads the log. It also blocks the tag: `release_cut.py tag-check` refuses a commit whose CI run is not a success, so the cut cannot become a release.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `.claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py`, add `("changelog.py", ("check",))` back into the `ROOT_EFFECT_VERBS` tuple, measured on a tree whose `changelog.d/` is empty | The control passes in every fragment state |
+| AC2 | in `.claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py`, replace the `WITHDRAWN_ROOT_EFFECT_VERBS` initialiser with an empty dict literal, keeping the binding | A withdrawal is recorded, not merely absent |
+| AC2 | in `.claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py`, replace the withdrawal reason for that verb with a five-word string | The reason carries enough to act on |
+| AC3 | in `.claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py`, extend `ROOT_EFFECT_VERBS` with every remaining invocable `--root` verb, so the inventory equals the surface | The inventory stays a measured subset |
 
 ## Revision History
 

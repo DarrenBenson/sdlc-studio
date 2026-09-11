@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.1.0] - 2026-09-10
 
+### Breaking
+
+- **`mutation.py register` now REQUIRES `--anchor`.** Every invocation without it exits 2,
+  including one a consuming project already has in a script or a runner. Pass the exact text the
+  mutant REPLACED, quoted with enough surrounding context to occur exactly once in the target:
+  `--anchor '<the text it replaced>'`. An anchor occurring zero times or more than once is
+  refused, because it cannot say which site the verdict was about. The flag is what lets a row be
+  judged on its own site rather than on a hash of the whole file, so an edit elsewhere in a shared
+  target stops staling it - measured on this project's ledger, one line moving in a shared file
+  demanded seven units' evidence be re-measured by hand. Rows written before this carry no anchor
+  and keep the whole-file rule unchanged; there is no backfill, because deriving an anchor for a
+  row nobody re-measured would assert a site for a measurement never taken there. `--anchor` is
+  required on every verdict including `equivalent`, which previously needed no `--line` either.
+
 ### Added
 
 - **A plan ruling is recorded, pinned to what it excuses, and withdrawable.** The probe reports

@@ -71,9 +71,15 @@ SDLC Studio dogfoods itself - it is built with its own lifecycle. A few non-nego
 - **Setup:** Node (for the markdown lint suite) + Python 3.10+ (for the scripts and their tests).
   Run `npm install` once; the Python scripts are pure stdlib (nothing to pip install). Then
   **`bash tools/enable-hooks.sh`** to turn on the pre-commit gate.
-- **Gate every commit - automated by the hook.** `bash tools/enable-hooks.sh` installs a
-  `pre-commit` hook that runs the whole gate and blocks a breaking commit, explaining each failure
-  in detail (what it enforces, the offending line, the fix). To run it by hand, all three must pass:
+- **Gate every commit - automated by the hook.** `bash tools/enable-hooks.sh` installs three
+  hooks - `pre-commit`, `commit-msg` and `pre-push` - that run the gate and block a breaking
+  commit, explaining each failure in detail (what it enforces, the offending line, the fix). It
+  also sets this clone's `core.sshCommand` to an ssh carrying a keepalive: the pre-push gate runs
+  for minutes before git writes a byte, and a connection idle that long is dropped before the
+  push starts - so the gate passes, the push fails, and the retry pays the gate again. An
+  `core.sshCommand` you have already set at any scope is left exactly as you set it, and the
+  script names the scope it found it in; if yours carries no keepalive, add one, because the
+  script will not write over your choice. To run it by hand, all three must pass:
   `npm run lint && npm test && python3 .claude/skills/sdlc-studio/scripts/gate.py --root .`
   Lint covers markdown, house style, links, SKILL.md, versions, budgets, and the neutrality guard;
   the gate covers conformance, reconcile drift, validation, integrity, duplicate ids, and docs. The

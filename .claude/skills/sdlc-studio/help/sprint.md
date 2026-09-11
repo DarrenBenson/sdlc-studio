@@ -144,6 +144,31 @@ The refusal names each unit, what it lacks, and the fix. `sprint breakdown <batc
 same census read-only. Opt out only as a recorded decision: `sprint.breakdown: judgement` in
 `sdlc-studio/.config.yaml` makes the lane report instead of block.
 
+## The falsifiability gate: can these criteria FAIL?
+
+Beside the breakdown gate, `sprint plan` asks something nothing else in the toolchain asks:
+**can each criterion in this batch actually fail?** A criterion the tree already satisfies states
+what the tree already does, and every gate downstream is built on the assumption that somebody
+checked.
+
+It runs each criterion's `Verify:` selector against the tree as it is. A criterion that already
+PASSES is the finding, so is one whose every selected test is skipped, and so is one whose answer
+the runner could not be trusted to give. Everything else is a state a plan is allowed to be in -
+`red` is what a plan SHOULD look like before the code exists.
+
+**This costs what your verifiers cost.** Measured on the project that built it, roughly 8-12
+seconds per unit, so a sixteen-unit batch adds a few minutes to `sprint plan`. It NEVER executes
+a `shell`, `eval` or `http` verifier: those are named `not-probed` and nothing is run for them,
+so planning cannot run shell somebody else authored into an artefact.
+
+Default `report` - it names each finding and plans anyway. `block` refuses the batch; `off` does
+not probe at all. See `review.plan_falsifiability` in the
+[configuration reference](../reference-config.md#plan-falsifiability).
+
+Answer a finding you mean to plan over with `verify_ac.py testplan rule` (all four of `--unit`,
+`--criterion`, `--reason` and `--author` are required); a ruled criterion is reported and never
+refused. Probe one unit on its own with `verify_ac.py testplan probe --unit <id>`.
+
 ## What happens
 
 1. **Plan** - `sprint plan` selects + orders the batch, refusing an ungroomed one.

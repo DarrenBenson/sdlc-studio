@@ -204,5 +204,78 @@ class GracefulDegradeTests(unittest.TestCase):
                           "the warn half of warn-and-default must still happen")
 
 
+class ReviewKeysAreDeclaredTests(unittest.TestCase):
+    """BG0665: `config.py` calls `templates/config-defaults.yaml` the single source of truth for
+    skill defaults, and seven of thirteen `review.*` keys the shipped code reads were absent from
+    it - two of them NAMED to the user in a refusal. A reader told which setting put their unit in
+    scope, who then looked it up, found nothing anywhere."""
+
+    #: Read by the code but deliberately NOT declared, each with the reason. An exemption with no
+    #: reason is the one the next author deletes or silently re-adds.
+    DELIBERATELY_ABSENT = {
+        "max_rounds": "one key read by two consumers with different defaults - splitting it is "
+                      "the open work, and re-adding the single key is the repair to avoid",
+    }
+
+    def _keys_the_code_reads(self) -> set:
+        scripts = Path(__file__).resolve().parent.parent
+        found = set()
+        for path in scripts.glob("*.py"):
+            for m in re.finditer(r"""["']review\.([a-z_]+)["']""",
+                                 path.read_text(encoding="utf-8", errors="replace")):
+                found.add(m.group(1))
+        return found
+
+    def test_every_review_key_the_code_reads_is_declared_in_the_defaults(self) -> None:
+        """AC1. MUTANT: delete a `review.*` key's line from the defaults file.
+
+        DERIVED from the scripts rather than from a list here: an inventory nobody updates
+        exempts whichever key is added next, which is the shape this repository keeps meeting."""
+        keys = self._keys_the_code_reads()
+        self.assertGreater(len(keys), 8,
+                           f"only {len(keys)} review keys were found - the scan is looking in the "
+                           f"wrong place and would pass on an empty defaults file")
+        declared = DEFAULTS.read_text(encoding="utf-8")
+        missing = sorted(k for k in keys
+                         if k not in self.DELIBERATELY_ABSENT
+                         and not re.search(rf"^\s*{re.escape(k)}:", declared, re.M))
+        self.assertEqual([], missing,
+                         f"the code reads these `review.*` settings and the file that calls "
+                         f"itself the single source of truth declares none of them: {missing}")
+
+    def test_the_two_cutoffs_document_the_kind_of_value_each_takes(self) -> None:
+        """AC2. MUTANT: drop the DATE/ID wording from either cutoff's documentation.
+
+        `test_plan_after` is a DATE compared against `Created`; `two_role_after` is an ID cutoff
+        that RAISES on a date. The shared suffix is exactly what makes the wrong guess natural,
+        and the shipped upgrade guide told consumers to set the id cutoff to a date."""
+        for doc in (DEFAULTS, REF_DOC):
+            body = doc.read_text(encoding="utf-8")
+            with self.subTest(doc=doc.name):
+                date_ctx = body[max(0, body.find("test_plan_after") - 400):
+                                body.find("test_plan_after") + 400]
+                id_ctx = body[max(0, body.find("two_role_after") - 400):
+                              body.find("two_role_after") + 400]
+                self.assertIn("DATE", date_ctx,
+                              "test_plan_after is documented without saying it takes a date")
+                self.assertIn("ID", id_ctx,
+                              "two_role_after is documented without saying it takes an id cutoff, "
+                              "which is the guess that RAISES")
+
+    def test_a_deliberately_absent_key_says_so(self) -> None:
+        """AC3. MUTANT: delete the note explaining why `max_rounds` is absent.
+
+        The paired control for the row above: a key simply missing and a key deliberately withheld
+        read identically, and the obvious repair to the first is the thing a recorded decision
+        forbids for the second."""
+        declared = DEFAULTS.read_text(encoding="utf-8")
+        for key in self.DELIBERATELY_ABSENT:
+            with self.subTest(key=key):
+                self.assertIn(key, declared,
+                              f"`review.{key}` is read by the code and neither declared nor "
+                              f"explained - an unexplained absence is indistinguishable from an "
+                              f"oversight, and the obvious repair is the one that is forbidden")
+
+
 if __name__ == "__main__":
     unittest.main()

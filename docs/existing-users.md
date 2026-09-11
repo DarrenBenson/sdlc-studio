@@ -13,6 +13,28 @@ conformance rule. Both have a one-line remedy, both are below, and the upgrade s
 this page are executed against a fixture on every boundary gate run - so if they stop
 working, this page reddens a build rather than misleading you.
 
+## Upgrading to v5.1: one breaking change
+
+**`mutation.py register` now requires `--anchor`.** If your project calls it - from a script, a
+mutation runner, or by hand - every call without the flag exits 2 the moment you upgrade. Pass
+the exact text the mutant REPLACED, quoted with enough context to occur exactly once in the file:
+
+```bash
+mutation.py register --unit <id> --criterion ACn --target <file> --line <n> \
+    --mutant '<the edit>' --anchor '<the text it replaced>' \
+    --test '<the command>' --verdict killed
+```
+
+That is the whole migration. Rows already in your ledger are untouched and keep being judged by
+the file's content hash exactly as before - there is no backfill and nothing to re-measure,
+because deriving an anchor for a row nobody re-ran would assert a site for a measurement never
+taken there. A row gains its anchor the next time somebody actually measures it, and from then
+on an edit elsewhere in the same file stops staling it.
+
+Nothing else in v5.1 changes what an existing project is held to. The new `testplan probe`,
+`testplan rule` and `testplan withdraw` verbs are additions, and the gate that drives the first
+of them ships in `report` mode.
+
 ## What v5 refuses on day one, and how to clear it
 
 | Gate | What it does on an upgraded project | Remedy |
@@ -20,8 +42,8 @@ working, this page reddens a build rather than misleading you.
 | `sprint.breakdown` (default `enforce`) | `sprint plan` refuses any batch holding a unit with no `Affects` or `Points`. Your existing backlog predates both fields, so this fires on the first plan. | Groom the units you are about to plan (`sprint breakdown --stories Ready --bugs Open` lists them), or record `sprint.breakdown: judgement` in `sdlc-studio/.config.yaml` as a deliberate decision. Omission is not an escape - an absent config blocks. |
 | `conformance.adopt_after` (default unset) | Unset judges EVERY story you have ever written, so `gate.py` fails on history written before the rule existed. | Set `conformance: { adopt_after: US0123 }` to the last id of your pre-v5 era. Ids at or below it are reported `exempt (pre-adoption)` and the gate judges forward only. |
 | `plan_review.enabled` (unset; schema v3) | An independent review of a story's acceptance criteria before it is implemented. Fires on most units. | Nothing to do on an upgrade: it already applied in v4. A project that has never closed a sprint gets a report instead of a refusal for its first run only. |
-| `review.two_role_after` (unset) | Dormant. Set it to a date to require adversarial evidence plus an independent sign-off before Done. | Opt in when you want it; an unset value changes nothing. |
-| `review.test_plan_after` (unset) | Dormant, same shape. | Opt in when you want it. |
+| `review.two_role_after` (unset) | Dormant. Set it to an **id cutoff** - a bare number (`57`) or a prefixed id (`US0103`) - to require adversarial evidence plus an independent sign-off before Done. Ids at or below it are legacy and exempt. A DATE here RAISES: the value is parsed as an id, not a date. | Opt in when you want it; an unset value changes nothing. |
+| `review.test_plan_after` (unset) | Dormant. Set it to a **date** (`"2026-01-01"`), compared against each unit's own `Created` field - the opposite kind of value to its neighbour above, despite the matching suffix. Units created on or after it owe a `## Test Plan`, at entry to implementation AND at the transition that makes the work permanent. | Opt in when you want it. |
 
 The last three are listed because operators ask; only the first two change what your
 project is held to the moment you upgrade.

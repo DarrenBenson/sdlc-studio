@@ -94,6 +94,42 @@ review:
   # (`verify_ac.py testplan rule`) is reported and never refused. Unrecognised values are
   # refused BY NAME. Quote it if you mean `off` - YAML 1.1 reads the bare word as a boolean.
   plan_falsifiability: report
+  # WHEN each review gate starts applying. A project adopting this skill mid-life does not want
+  # every gate turned on over its whole back catalogue at once, so each is scoped by a cutoff -
+  # and the two below take DIFFERENT KINDS OF VALUE despite the matching suffix.
+  #
+  # `test_plan_after` is a DATE, compared as a string against the unit's own `Created` field.
+  # `null` (the default) means the test-plan gate is OFF entirely. Set it to the day you adopt
+  # the gate - `"2026-01-01"` - and only units created on or after it owe a `## Test Plan`.
+  test_plan_after: null
+  # `two_role_after` is an ID CUTOFF, not a date: a bare number (`57`) or a prefixed id
+  # (`US0103`, `US-0103`). Ids at or below it are legacy and exempt; everything above owes both
+  # halves of the review bar. A DATE here RAISES rather than disabling the gate silently, so the
+  # wrong guess fails loud instead of quietly judging nothing.
+  two_role_after: null
+  # `line_coverage_after` is a DATE again, on the same terms as `test_plan_after`, and scopes the
+  # coverage gate above.
+  line_coverage_after: null
+  #
+  # Who may sign off as reviewer of record: `operator` (the default - a named human the author
+  # does not control) or `panel` (the seats recorded for the run). An unknown value is refused,
+  # never coerced.
+  signoff: operator
+  # The priority at or above which a finding BLOCKS. One word, not a list, and the floor is
+  # derived from the shared priority order - so a project filing High/Medium/Low and one filing
+  # P0..P3 are both covered. An unrecognised value falls back to this default rather than to an
+  # empty floor: a floor nobody configured must not silently become no floor at all.
+  blocking_priority: high
+  # Whether a recorded verdict must carry the fingerprint `critic.py brief` printed for the
+  # prompt its reviewer was given. `true` is the default and the point: a verdict with no
+  # provenance cannot be told from one produced by a hand-written prompt, which carries neither
+  # the seat charter nor the bounded diff scope.
+  require_brief_provenance: true
+  # `review.max_rounds` is DELIBERATELY ABSENT, and adding it back is the repair to avoid. One
+  # key was read by two consumers with different defaults - the close-attempt cap and the
+  # review-round ceiling - so no single value was correct for both, and setting it to suit one
+  # loosened or tightened the other. With the key absent each consumer takes its own default.
+  # Splitting it into two keys is the open work; re-adding the single key is not.
   # The repair-plan gate (EP0106 / RFC0053). OFF by default: an upgrading project's close does
   # not change until it opts in. When on, a REJECT is answered by a written plan reviewed before
   # any code. `repair_design_threshold` is the failed-round count past which a repeat-class

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 7 |
 | In Progress | 0 |
-| Fixed | 557 |
+| Fixed | 558 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **664** |
+| **Total** | **667** |
 
 ## All Bugs
 
@@ -202,8 +202,11 @@
 | [BG0660](BG0660-the-rehearsal-lane-test-drives-the-whole-boundary.md) | the rehearsal-lane test drives the WHOLE boundary gate to check one lane's reporting, and times out on CI - main was red two days and nothing read it | Fixed | Medium | 2026-09-10 | 2026-09-10 |
 | [BG0661](BG0661-revert-check-cannot-see-a-unit-whose-fix.md) | revert-check cannot see a unit whose fix and evidence share one file - it reverts the tests with the change and reports green | Open | Medium | 2026-09-10 | 2026-09-10 |
 | [BG0662](BG0662-nothing-checks-a-changelog-fragment-s-shape-until.md) | nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it | Open | Medium | 2026-09-10 | 2026-09-10 |
-| [BG0663](BG0663-the-release-cut-turns-main-red-changelog-py.md) | the release cut turns main red: `changelog.py check` cannot name an artefact once the fragments are composed | Open | Medium | 2026-09-11 | 2026-09-11 |
+| [BG0663](BG0663-the-release-cut-turns-main-red-changelog-py.md) | the release cut turns main red: `changelog.py check` cannot name an artefact once the fragments are composed | Fixed | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0664](BG0664-the-pre-push-boundary-gate-runs-no-boundary.md) | the pre-push boundary gate runs NO boundary-only test, so the marker's own promise is false at the boundary it names | Open | Medium | 2026-09-11 | 2026-09-11 |
+| [BG0665](BG0665-seven-of-thirteen-review-settings-are-absent-from.md) | seven of thirteen `review.*` settings are absent from the file that calls itself the single source of truth, and two of them are named in refusals users hit | Open | Medium | 2026-09-11 | 2026-09-11 |
+| [BG0666](BG0666-an-unauthored-test-plan-row-is-exempt-from.md) | an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, so leaving the placeholder buys a clean derive | Open | Medium | 2026-09-11 | 2026-09-11 |
+| [BG0667](BG0667-the-root-effect-control-s-real-tree-marker.md) | the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance | Open | Medium | 2026-09-11 | 2026-09-11 |
 
 ## Archived Releases
 
