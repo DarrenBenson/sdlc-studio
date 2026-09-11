@@ -37,8 +37,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0665` | Medium | seven of thirteen `review.*` settings are absent from the file that calls itself the single source of truth, and two of them are named in refusals... |
 | `BG0666` | Medium | an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, so leaving the placeholder buys a clean derive |
 | `BG0667` | Medium | the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance |
+| `BG0668` | Medium | tag-check refuses on a close the close-owed predicate says is not owed |
 
-7 findings: 7 Medium, 0 Low.
+8 findings: 8 Medium, 0 Low.
 
 ## Not carried
 

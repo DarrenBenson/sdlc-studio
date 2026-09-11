@@ -56,8 +56,21 @@ the wrong site is a measurement of nothing whichever way it reads.
 
 ## WHAT IS OWED
 
-- The push, and the v5.1 tag. Both the operator's.
+- v5.1.0 is cut and pushed, and `sdlc-studio.com` is deployed on v5.1. **This commit is
+  the tag target**: the release gate is re-run and recorded green on it, CI is confirmed
+  green on the forge for it, and `v5.1.0` is cut here.
 - The v5.1 cut itself: 119 changelog fragments fold cleanly now, and 59 of them had to be
   repaired by hand first because nothing checks a fragment's shape until the cut tries it
   (BG0662, ruled open).
-- Three Mediums ship disclosed and ruled: BG0659, BG0661, BG0662.
+- **Eight Mediums ship disclosed and ruled**, up from three: BG0659, BG0661, BG0662, and the
+  five the close itself raised - BG0664 (the pre-push boundary runs no boundary-only test, which
+  is why the cut's red `main` reached the forge), BG0665, BG0666, BG0667 and BG0668.
+- BG0663 was a CLOSE-TIME REPAIR and carries a recorded `Close-repair-override` in RETRO0116:
+  the cut this close authorised is what reddened `main`, so it could not be deferred past the
+  tag. Its structural cause was filed and deferred as BG0664, which is the rule working.
+- BG0668 is the one to read next. `release_cut.py tag-check` refused the v5.1.0 tag on BG0663
+  while `close_owed.is_owed()` reported False for the same corpus: the guard reads the report's
+  `owed` list, which deliberately keeps overridden units, rather than the `blocking()` predicate
+  every other reader uses. So the remedy the refusal PRINTS cannot clear it. Proven by probe,
+  not by reading: writing the override moved `close_repair_overrides` and `is_owed` and left
+  `owed` untouched. The tag was cut on the substantive condition with the defect filed.

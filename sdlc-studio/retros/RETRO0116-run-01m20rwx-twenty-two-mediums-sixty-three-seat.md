@@ -4,6 +4,7 @@
 > **Batch:** BG0490, BG0493, BG0567, BG0578, BG0591, BG0601, BG0608, BG0612, BG0627, BG0630, BG0633, BG0637, BG0654, BG0655, BG0656, BG0657, BG0658, BG0660, US0819, US0820, US0821, US0822
 > **Goal:** every Medium open at this run's base ref is disposed of - terminal with its own verifiers passing, or ruled open with a date and a reason - and so is any this run itself files
 > **Delivered:** 22 / 22   **Blocked:** 0
+> **Close-repair-override:** BG0663 - the release cut this close authorised is what turned `main` red, so the repair could not be deferred past it: `changelog.py check` is in the root-effect inventory and a cut leaves that verb naming nothing on the tree. Deferring would have meant tagging v5.1.0 over a red trunk, which the release bar forbids. The structural cause was FILED and deferred as BG0664, which is the rule working; only the trunk repair itself was taken.
 
 ## Delivered
 

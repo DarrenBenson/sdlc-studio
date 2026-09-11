@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 7 |
+| Open | 8 |
 | In Progress | 0 |
 | Fixed | 558 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **667** |
+| **Total** | **668** |
 
 ## All Bugs
 
@@ -207,6 +207,7 @@
 | [BG0665](BG0665-seven-of-thirteen-review-settings-are-absent-from.md) | seven of thirteen `review.*` settings are absent from the file that calls itself the single source of truth, and two of them are named in refusals users hit | Open | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0666](BG0666-an-unauthored-test-plan-row-is-exempt-from.md) | an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, so leaving the placeholder buys a clean derive | Open | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0667](BG0667-the-root-effect-control-s-real-tree-marker.md) | the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance | Open | Medium | 2026-09-11 | 2026-09-11 |
+| [BG0668](BG0668-tag-check-refuses-on-a-close-the-close.md) | tag-check refuses on a close the close-owed predicate says is not owed | Open | Medium | 2026-09-11 | 2026-09-11 |
 
 ## Archived Releases
 
