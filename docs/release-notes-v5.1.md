@@ -24,6 +24,29 @@ What holds instead is that nothing Critical or High is open, and that every Medi
 page carries a dated ruling naming why it ships rather than blocks (D0186, which
 supersedes D0185's count promise; the other two promises D0185 made still bind).
 
+## What you will notice first
+
+Two things that grated on a real backlog are gone.
+
+**`status` was taking about a minute.** Measured on the same machine, over 822 stories and
+667 bugs:
+
+| | 5.0.1 | 5.1 |
+| --- | ---: | ---: |
+| `status` | 59.6s | **0.9s** |
+| `status hint` | 59.5s | **0.8s** |
+
+**Fixing one bug no longer invalidates other people's evidence.** A mutation-ledger row was tied
+to a whole file, so an edit anywhere in a file another unit had touched staled that unit's rows
+as well - on this project, one line moving in a shared file forced seven units' evidence to be
+re-measured by hand before a commit could land. A row is now tied to the exact text its mutant
+replaced, so an edit elsewhere in the same file leaves it alone.
+
+**The other direction, stated plainly:** the checks that run on a commit take LONGER, not less.
+There are 536 more tests than 5.0.1 and the full suite moved from 286s to 331s on the same
+machine - about 7% more per test. That is the trade this release makes: more is checked, so more
+is caught. What got fast is what you run interactively.
+
 ## Upgrading: one breaking change
 
 **`mutation.py register` now requires `--anchor`.** If your project calls it from a script or a

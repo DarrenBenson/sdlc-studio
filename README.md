@@ -20,6 +20,35 @@ SDLC Studio is an open [Agent Skill](https://agentskills.io) - a plug-in for AI 
 
 One install works in **Claude Code, Cursor, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot**.
 
+## New in 5.1: it stops making you wait
+
+If you have run SDLC Studio against a real backlog, you know the two things that grated.
+
+**`status` took about a minute, every single time.** On a backlog of 822 stories and 667 bugs,
+measured on the same machine:
+
+| | 5.0.1 | 5.1 |
+| --- | ---: | ---: |
+| `status` | 59.6s | **0.9s** |
+| `status hint` | 59.5s | **0.8s** |
+
+**And fixing one bug meant redoing other people's work.** Mutation evidence was tied to a whole
+file, so editing anywhere in a file another unit had touched invalidated that unit's evidence
+too - one line moving forced seven units' checks to be re-run by hand before anyone could
+commit. Evidence is now tied to the exact spot a test covered, so an edit elsewhere in the same
+file leaves it alone.
+
+**Being straight about the other direction:** the checks that run when you commit take *longer*
+now, not less. There are 536 more tests than 5.0.1, and the full suite went from 286s to 331s.
+That is the trade - more is checked, so more is caught. The commands you run interactively are
+the ones that got fast.
+
+The rest of 5.1 is about trusting what the checks tell you: a new probe asks whether a criterion
+could ever FAIL before you build against it, `Done` refuses a unit whose own tests never ran a
+line it added, and the release gate asks the forge whether CI actually passed rather than
+believing a local file. Full detail in [the release notes](docs/release-notes-v5.1.md), and one
+breaking change is called out there.
+
 ## Quick start
 
 **Step 0 - install** (macOS / Linux, Claude Code, globally):
