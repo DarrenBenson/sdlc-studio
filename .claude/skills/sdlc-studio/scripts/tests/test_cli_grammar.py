@@ -345,12 +345,26 @@ class RepeatableFlagConformance(unittest.TestCase):
 #: depends on the tree being in a particular state is not a measurement, and leaving it here
 #: would have been a row that passes forever.
 ROOT_EFFECT_VERBS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("ac_scope.py", ("check",)), ("changelog.py", ("check",)),
+    ("ac_scope.py", ("check",)),
     ("critic.py", ("show",)),
     ("decisions.py", ("list",)), ("flow.py", ("compute",)),
     ("integrity.py", ("check",)), ("reconcile.py", ("detect",)), ("retro.py", ("estimator",)),
     ("status.py", ("backlog",)), ("validate.py", ("check",)),
 )
+
+#: Verbs WITHDRAWN from the inventory, with the measurement that withdrew each. Recorded rather
+#: than deleted, because an absence looks like an oversight and the obvious repair is to put it
+#: back - it passes on any tree that happens to be in the right state, which is most of them.
+WITHDRAWN_ROOT_EFFECT_VERBS: dict[str, str] = {
+    "changelog.py check": (
+        "it names PENDING changelog fragments, and a release cut composes every one of them - so "
+        "on the tree a cut leaves it prints `no stray fragments` and names no artefact. That is "
+        "the CORRECT state, and this control is boundary-only, so the moment it runs is the "
+        "moment the corpus cannot satisfy it. Measured: CI run 34539944618 on the v5.1.0 cut, "
+        "7010 tests, one failure, this row. Membership is earned against the real tree, and a "
+        "verb whose output is legitimately empty there cannot hold a permanent row"
+    ),
+}
 
 #: What a real-tree answer looks like: this repository's own artefact ids and run ids, plus its
 #: absolute path. An empty fixture cannot produce any of them.
@@ -443,6 +457,28 @@ class RootIsReadNotJustParsed(unittest.TestCase):
                         "the inventory has grown to the whole invocable surface - it is only "
                         "meaningful as the MEASURED discriminating subset, and a verb that "
                         "prints nothing either way passes this sweep forever")
+
+    def test_the_inventory_records_why_a_verb_was_withdrawn(self) -> None:
+        """AC2. MUTANT: delete the withdrawal record, leaving the inventory a bare list.
+
+        A verb REMOVED from the inventory looks exactly like one nobody thought of, and the
+        obvious repair is to put it back - where it passes on any tree that happens to be in the
+        right state. `changelog.py check` was withdrawn because a release cut empties the
+        population it names, so it asserts nothing at the one boundary this control runs at; the
+        reason has to travel with the list or the next author pays for the measurement again.
+        """
+        self.assertTrue(WITHDRAWN_ROOT_EFFECT_VERBS,
+                        "nothing is recorded as withdrawn, so a verb removed from the inventory "
+                        "is indistinguishable from one nobody considered")
+        listed = {f"{s} {' '.join(v)}".strip() for s, v in ROOT_EFFECT_VERBS}
+        for verb, why in WITHDRAWN_ROOT_EFFECT_VERBS.items():
+            with self.subTest(verb=verb):
+                self.assertNotIn(verb, listed,
+                                 f"{verb} is recorded as withdrawn AND listed - the record and "
+                                 f"the inventory disagree about the same verb")
+                self.assertGreater(len(why.split()), 20,
+                                   f"{verb}'s withdrawal reason is too thin to act on: a reason "
+                                   f"nobody can check is not a measurement, it is an assertion")
 
     @boundary_only("it runs every listed verb against the REAL tree at 83s. The guard it "
                    "controls - the fixture sweep - still runs on every commit; what defers is "

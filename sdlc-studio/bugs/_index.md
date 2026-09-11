@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-10
+**Last Updated:** 2026-09-11
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 3 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 557 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **662** |
+| **Total** | **664** |
 
 ## All Bugs
 
@@ -202,6 +202,8 @@
 | [BG0660](BG0660-the-rehearsal-lane-test-drives-the-whole-boundary.md) | the rehearsal-lane test drives the WHOLE boundary gate to check one lane's reporting, and times out on CI - main was red two days and nothing read it | Fixed | Medium | 2026-09-10 | 2026-09-10 |
 | [BG0661](BG0661-revert-check-cannot-see-a-unit-whose-fix.md) | revert-check cannot see a unit whose fix and evidence share one file - it reverts the tests with the change and reports green | Open | Medium | 2026-09-10 | 2026-09-10 |
 | [BG0662](BG0662-nothing-checks-a-changelog-fragment-s-shape-until.md) | nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it | Open | Medium | 2026-09-10 | 2026-09-10 |
+| [BG0663](BG0663-the-release-cut-turns-main-red-changelog-py.md) | the release cut turns main red: `changelog.py check` cannot name an artefact once the fragments are composed | Open | Medium | 2026-09-11 | 2026-09-11 |
+| [BG0664](BG0664-the-pre-push-boundary-gate-runs-no-boundary.md) | the pre-push boundary gate runs NO boundary-only test, so the marker's own promise is false at the boundary it names | Open | Medium | 2026-09-11 | 2026-09-11 |
 
 ## Archived Releases
 

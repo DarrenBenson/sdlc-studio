@@ -33,8 +33,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0659` | Medium | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row |
 | `BG0661` | Medium | revert-check cannot see a unit whose fix and evidence share one file - it reverts the tests with the change and reports green |
 | `BG0662` | Medium | nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it |
+| `BG0663` | Medium | the release cut turns main red: `changelog.py check` cannot name an artefact once the fragments are composed |
+| `BG0664` | Medium | the pre-push boundary gate runs NO boundary-only test, so the marker's own promise is false at the boundary it names |
 
-3 findings: 3 Medium, 0 Low.
+5 findings: 5 Medium, 0 Low.
 
 ## Not carried
 
