@@ -13,7 +13,34 @@ conformance rule. Both have a one-line remedy, both are below, and the upgrade s
 this page are executed against a fixture on every boundary gate run - so if they stop
 working, this page reddens a build rather than misleading you.
 
-## Upgrading to v5.1: one breaking change
+## Upgrading to v5.1: faster where you wait, one breaking change
+
+**`status` was taking about a minute on a real backlog, every time. It now takes under a
+second.** Measured on the same machine and the same corpus - 822 stories and 667 bugs - before
+and after:
+
+| | 5.0.1 | 5.1 |
+| --- | ---: | ---: |
+| `status` | 59.6s | **0.9s** |
+| `status hint` | 59.5s | **0.8s** |
+
+**Mutation evidence is no longer staled by an edit somewhere else in the same file.** It was
+keyed on the whole file's content hash, so one line moving in a file several units had touched
+staled every one of their rows at once: `transition.py` in this repository carries rows for
+seven units and `verify_ac.py` for ten, and every one of them had to be re-applied and
+re-registered by hand before the commit was let through. A row measured under v5.1 carries its
+own anchor and is judged at that site alone.
+
+**The cost, stated plainly:** the checks themselves got slower, not faster. There are 536 more
+tests than 5.0.1 and the full suite moved from 286s to 331s. What got fast is what you run
+interactively; what got slower is what runs while you wait for a commit to land. That is the
+trade, and it is the direction this project prefers to trade in.
+
+Nothing on this page's v5 gates changes in v5.1. The new `testplan probe`, `testplan rule` and
+`testplan withdraw` verbs are additions, and the gate that drives the first of them ships in
+`report` mode.
+
+### The one breaking change
 
 **`mutation.py register` now requires `--anchor`.** If your project calls it - from a script, a
 mutation runner, or by hand - every call without the flag exits 2 the moment you upgrade. Pass
@@ -30,10 +57,6 @@ the file's content hash exactly as before - there is no backfill and nothing to 
 because deriving an anchor for a row nobody re-ran would assert a site for a measurement never
 taken there. A row gains its anchor the next time somebody actually measures it, and from then
 on an edit elsewhere in the same file stops staling it.
-
-Nothing else in v5.1 changes what an existing project is held to. The new `testplan probe`,
-`testplan rule` and `testplan withdraw` verbs are additions, and the gate that drives the first
-of them ships in `report` mode.
 
 ## What v5 refuses on day one, and how to clear it
 
