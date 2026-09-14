@@ -201,12 +201,12 @@ so the two do not drift.
 
 | Path | Purpose |
 | --- | --- |
-| `.claude/skills/sdlc-studio/SKILL.md` | Always-loaded router (~200 lines, CI-budgeted under 500) |
+| `.claude/skills/sdlc-studio/SKILL.md` | Always-loaded router (~300 lines, CI-budgeted under 500) |
 | `.claude/skills/sdlc-studio/reference-philosophy.md` | Create vs Generate modes - read first |
 | `.claude/skills/sdlc-studio/reference-doctrine.md` | Project-agnostic operating doctrine |
 | `.claude/skills/sdlc-studio/reference-scripts.md` | **The script catalogue. Read before hand-doing a mechanical task** |
 | `.claude/skills/sdlc-studio/reference-*.md` | Domain workflows (50+ files); `help/references.md` indexes them |
-| `.claude/skills/sdlc-studio/help/` | Type-specific help (~40 files) |
+| `.claude/skills/sdlc-studio/help/` | Type-specific help (~45 files) |
 | `.claude/skills/sdlc-studio/lessons/` | Cross-project lessons registry |
 | `.claude/skills/sdlc-studio/personas/seats/` | The three amigo seats, in work and review renders |
 | `.claude/skills/sdlc-studio/scripts/` | 40+ helpers sharing `lib/sdlc_md.py` |
