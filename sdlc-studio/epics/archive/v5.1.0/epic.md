@@ -1,0 +1,45 @@
+# epic archive - v5.1.0
+
+Terminal rows archived from the live index. Artifact files are unchanged; these rows keep the census correct via parse_index's union.
+
+| ID | Title | Status | Stories | Deps | Created | Updated |
+| --- | --- | --- | --- | --- | --- | --- |
+| [EP0166](../../EP0166-the-persona-layer-becomes-load-bearing-the-registry.md) | The persona layer becomes load-bearing: the registry is resolved by the path that mints work, and the PRD names it | Done | 5 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0167](../../EP0167-derivable-spec-claims-are-checked-against-the-repo.md) | Derivable spec claims are checked against the repo, so the TRD and TSD cannot quietly stop being true | Done | 3 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0168](../../EP0168-make-the-spec-true-again-every-prd-trd.md) | Make the spec true again: every PRD, TRD and TSD claim the shipped code contradicts, repaired behind a guard that reddens on relapse | Done | 6 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0169](../../EP0169-evidence-that-can-fail-discriminating-verifiers-findings-that.md) | Evidence that can fail: discriminating verifiers, findings that become detectors, and no terminal artefact with open questions | Done | 6 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0170](../../EP0170-the-shipped-surface-is-the-documented-surface-grooming.md) | The shipped surface is the documented surface: grooming, the open run and the run lifecycle | Done | 3 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0172](../../EP0172-dead-surfaces-the-supersession-record-the-epic-index.md) | Dead surfaces: the supersession record, the epic-index columns and the flag that does nothing | Done | 4 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0173](../../EP0173-footprint-and-criterion-checks-bite-instead-of-accumulating.md) | Footprint and criterion checks bite instead of accumulating | Done | 2 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0174](../../EP0174-pay-down-the-debt-the-v5-scope-caps.md) | Pay down the debt the v5 scope caps baselined | Done | 5 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0175](../../EP0175-detectors-for-the-classes-the-audit-had-to.md) | Detectors for the classes the audit had to find by hand | Done | 3 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0176](../../EP0176-a-queue-of-planned-sprint-charters-plan-several.md) | A queue of planned sprint charters: plan several, run the next, and let the planner and the runner be different people | Done | 6 | -- | 2026-07-27 | 2026-07-27 |
+| [EP0177](../../EP0177-make-the-discipline-cheaper-than-the-sloppiness-it.md) | Make the discipline cheaper than the sloppiness it replaces: run the tests the change can reach, at the boundaries that matter | Done | 15 | -- | 2026-07-28 | 2026-07-28 |
+| [EP0181](../../EP0181-reconcile-s-sweeps-read-the-corpus-once-per.md) | reconcile's sweeps read the corpus once per run, not once per unit | Done | 3 | -- | 2026-07-28 | 2026-07-28 |
+| [EP0189](../../EP0189-the-close-costs-less-than-the-work-it.md) | The close costs less than the work it certifies: earn the gate verdict once, record a batch in one call, and refuse in one pass | Done | 7 | -- | 2026-07-29 | 2026-07-29 |
+| [EP0190](../../EP0190-the-review-happens-inside-the-sprint-batch-boundary.md) | The review happens inside the sprint: batch-boundary adversarial passes, so a finding is delivery work not close overhead | Done | 4 | -- | 2026-07-29 | 2026-07-29 |
+| [EP0191](../../EP0191-a-repair-is-held-by-a-mutant-it.md) | A repair is held by a mutant it kills: mutation is mandatory on a fix, gated on survivors at the transition | Done | 4 | -- | 2026-07-29 | 2026-07-29 |
+| [EP0193](../../EP0193-the-mutation-lane-tells-an-uncommitted-surface-apart.md) | The mutation lane tells an uncommitted surface apart from an untested one | Done | 1 | -- | 2026-07-30 | 2026-07-30 |
+| [EP0197](../../EP0197-the-close-checklist-fires-where-an-item-can.md) | The close checklist fires where an item can still be satisfied, and reads verdicts rather than counts | Done | 6 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0198](../../EP0198-a-sprint-closes-on-an-amigo-panel-s.md) | A sprint closes on an amigo panel's sign-off, so the operator is informed and never a step in the machine | Done | 7 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0199](../../EP0199-a-criterion-verified-only-through-the-library-is.md) | A criterion verified only through the library is visible, so a feature cannot pass its own gate while its lane is unwired | Done | 3 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0200](../../EP0200-a-sprint-close-gates-on-its-own-review.md) | A sprint close gates on its own review coverage, not on an unrelated periodic ceremony | Done | 2 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0201](../../EP0201-a-suite-verdict-is-a-fact-read-from.md) | A suite verdict is a fact read from a file, never a stream an agent interprets | Done | 2 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0202](../../EP0202-a-sprint-run-has-a-tool-runbook-it.md) | A sprint run has a tool runbook it is made to read, ordered by step rather than by script | Done | 2 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0203](../../EP0203-the-routine-backlog-question-is-answered-by-the.md) | The routine backlog question is answered by the tooling, and a review's findings never cross a shell | Done | 2 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0204](../../EP0204-the-close-converges-nothing-is-fixed-inside-it.md) | The close converges: nothing is fixed inside it, and the ledger can tell a close-time repair from an unaccounted unit | Done | 4 | -- | 2026-08-02 | 2026-08-02 |
+| [EP0205](../../EP0205-a-reject-whose-findings-were-repaired-has-a.md) | A REJECT whose findings were repaired has a route back to covered, so a repaired batch stops reading like an unreviewed one | Done | 5 | -- | 2026-08-02 | 2026-08-02 |
+| [EP0207](../../EP0207-a-unit-s-test-plan-is-written-and.md) | A unit's test plan is written and reviewed before its code, because reviewing the test is cheaper than reviewing the code | Done | 6 | -- | 2026-08-02 | 2026-08-02 |
+| [EP0208](../../EP0208-ceremony-proportional-to-blast-radius-the-close-converges.md) | Ceremony proportional to blast radius: the close converges and the risk band drives the review | Done | 5 | -- | 2026-08-05 | 2026-08-05 |
+| [EP0209](../../EP0209-the-reviewer-of-record-can-be-a-named.md) | The reviewer of record can be a named seat, and the operator leads from a derived summary | Done | 3 | -- | 2026-08-05 | 2026-08-05 |
+| [EP0211](../../EP0211-the-surface-is-enumerable-from-the-parsers-that.md) | The surface is enumerable from the parsers that define it, and the documentation gap is a reported number | Done | 8 | -- | 2026-08-07 | 2026-08-07 |
+| [EP0212](../../EP0212-mutation-evidence-reports-by-default-and-the-evidence.md) | Mutation evidence reports by default, and the evidence a measured run produces is the evidence the gate reads | Done | 2 | -- | 2026-08-07 | 2026-08-07 |
+| [EP0213](../../EP0213-a-project-s-first-run-meets-the-plan.md) | A project's first run meets the plan-review gate as a report, and every run after it as a refusal | Done | 2 | -- | 2026-08-09 | 2026-08-09 |
+| [EP0214](../../EP0214-the-two-paths-a-user-arrives-on-are.md) | The two paths a user arrives on are rehearsed through the shipped CLI, on a tree that must fail before the repairs land | Done | 3 | -- | 2026-08-10 | 2026-08-10 |
+| [EP0215](../../EP0215-a-verify-selector-that-resolves-to-nothing-is.md) | A Verify selector that resolves to nothing is refused where it is WRITTEN, and the existing corpus is swept | Done | 3 | -- | 2026-08-11 | 2026-08-11 |
+| [EP0216](../../EP0216-a-release-states-the-bar-it-was-held.md) | A release states the bar it was held to and discloses, by id, every finding it ships open | Done | 1 | -- | 2026-08-11 | 2026-08-11 |
+| [EP0247](../../EP0247-a-unit-s-own-verifiers-must-execute-every.md) | A unit's own verifiers must execute every line it adds, or the gate says which they missed | Done | 2 | -- | 2026-09-07 | 2026-09-07 |
+| [EP0249](../../EP0249-mutation-py-register-replaces-a-live-row-on.md) | mutation.py register replaces a live row on the same key instead of appending a duplicate | Done | 1 | -- | 2026-09-07 | 2026-09-07 |
+| [EP0250](../../EP0250-a-test-plan-is-checked-for-falsifiability-not.md) | A test plan is checked for falsifiability, not only for shape | Done | 2 | -- | 2026-09-09 | 2026-09-09 |
+| [EP0251](../../EP0251-a-plan-ruling-is-recorded-and-withdrawable-not.md) | A plan ruling is recorded and withdrawable, not hand-authored | Done | 1 | -- | 2026-09-09 | 2026-09-09 |
+| [EP0252](../../EP0252-mutation-evidence-is-staled-per-row-not-per.md) | Mutation evidence is staled per row, not per file | Done | 1 | -- | 2026-09-09 | 2026-09-09 |
