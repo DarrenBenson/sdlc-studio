@@ -1,6 +1,7 @@
 # CR-0540: Low-severity crs (consolidated)
 
 > **Status:** Proposed
+> **Size:** S
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-08-09

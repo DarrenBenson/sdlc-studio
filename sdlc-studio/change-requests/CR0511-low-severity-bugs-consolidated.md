@@ -1,6 +1,7 @@
 # CR-0511: Low-severity bugs (consolidated)
 
 > **Status:** Proposed
+> **Size:** S
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-31
