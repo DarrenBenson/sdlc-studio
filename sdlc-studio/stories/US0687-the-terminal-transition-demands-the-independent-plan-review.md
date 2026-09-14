@@ -33,3 +33,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-25 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - BG0630 fires the test-plan gate at Done/Fixed (AC1-AC4 hold via the shared _test_plan_gate), but the approval-staleness pin is undelivered: an approval of an earlier test plan still clears the gate after the criteria and plan are rewritten - at entry as well as at terminal. |

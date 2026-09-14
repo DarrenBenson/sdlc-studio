@@ -1,6 +1,6 @@
 # SC0005: v5 run 4: the twenty findings filed without criteria are given criteria, and the backlog becomes plannable
 
-> **Status:** Queued
+> **Status:** Spent
 > **Queue rank:** 4
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio new
@@ -67,3 +67,4 @@ _Not yet reviewed._
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: this charter's run already happened. RUN-01M05A5M (closed goal-reached 2026-08-17, RETRO0103) ran exactly its amended 12-unit scope (commit 734c775c); all 12 are groomed at HEAD. The standing aim is unmet again (124 ungroomed Draft/Ready stories) through later decompositions - new work for a new charter, not this one. Confirmed by an independent adversarial verifier. |

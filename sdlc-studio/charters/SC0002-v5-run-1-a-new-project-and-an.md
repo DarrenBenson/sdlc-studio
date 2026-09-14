@@ -1,6 +1,6 @@
 # SC0002: v5 run 1: a new project and an upgrading project both reach a first green run
 
-> **Status:** Queued
+> **Status:** Spent
 > **Queue rank:** 1
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio new
@@ -42,3 +42,4 @@ _Not yet reviewed._
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: this charter's run already happened. RUN-01KZM49Y (closed goal-reached 2026-08-10, RETRO0100) ran its goal word for word; it was planned by worklist without --charter, so spend_charter never fired and the queue kept heading with a spent goal. Its unmet upgrade half is SC0004's goal (CR0497). Confirmed by an independent adversarial verifier. |

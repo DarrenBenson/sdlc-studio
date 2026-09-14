@@ -25,3 +25,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - US0793 would compute killed-elsewhere for bugs too, but nothing wires that verdict into the bug's transition to Fixed: _planned_mutant_gate surfaces only not-run and survived rows. |

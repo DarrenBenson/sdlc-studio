@@ -1,6 +1,7 @@
 # US0571: a known issue carried past the close records its stop-ship ruling and who made it
 
 > **Status:** Done
+> **Supersedes:** US0719
 > **Delivers:** CR0505
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new

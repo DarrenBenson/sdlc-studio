@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 12 |
+| Proposed | 11 |
 | Approved | 0 |
 | In Progress | 36 |
 | Complete | 498 |
 | Rejected | 1 |
 | Deferred | 0 |
-| Superseded | 23 |
+| Superseded | 24 |
 | Blocked | 0 |
 | **Total** | **570** |
 
@@ -44,7 +44,7 @@
 | [CR-0535](CR0535-a-refusing-verb-cannot-state-its-contract-until.md) | a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand | In Progress | High | Improvement | 2026-08-06 | EP0210 |
 | [CR-0536](CR0536-the-spec-documents-do-not-learn-about-a.md) | the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail | In Progress | High | Improvement | 2026-08-06 | EP0234 |
 | [CR-0539](CR0539-lane-check-reports-181-units-whose-criteria-never.md) | lane-check reports 181 units whose criteria never enter a shipped entry point | In Progress | Medium | process | 2026-08-08 | EP0235 |
-| [CR-0540](CR0540-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-08-09 | -- |
+| [CR-0540](CR0540-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Superseded | Low | Improvement | 2026-08-09 | -- |
 | [CR-0543](CR0543-plan-review-has-no-adoption-cutoff-so-the.md) | plan_review has no adoption cutoff, so the one hard risk-proportional plan gate in the codebase cannot be turned on by any project with history - including this one | Proposed | High | enhancement | 2026-08-11 | -- |
 | [CR-0544](CR0544-nothing-reviews-a-repair-s-approach-or-a.md) | Nothing reviews a REPAIR's approach or a PROCEDURE's plan before it is executed, and that is where this session's most expensive findings were | Proposed | High | enhancement | 2026-08-11 | -- |
 | [CR-0545](CR0545-everything-after-the-tag-is-un-tooled-no.md) | Everything after the tag is un-tooled: no command publishes a release, so the runbook has no row for the step and the assets the install path verifies against have never been produced | Proposed | P1 | Improvement | 2026-08-12 | EP0236 |

@@ -1,6 +1,7 @@
 # SC0007: v5 run 8: the release is rehearsed, signed and cut
 
-> **Status:** Queued
+> **Status:** Superseded
+> **Superseded by:** the v5.0.0 tag at 71429377, cut under decisions D0138-D0141
 > **Queue rank:** 6
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio new
@@ -40,3 +41,4 @@ _Not yet reviewed._
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: goal met without a run opened from it. v5.0.0 was tagged at 71429377 on 2026-08-12 with release notes (docs/release-notes-v5.0.0.md, D0139). The gate that was green is the boundary release gate, in D0141's sense; `gate.py --release` was red at the cut and D0140 carried US0469/US0474/US0475 to v5.1. The goal names v5.0.0, so it cannot be re-run. Confirmed by an independent adversarial verifier. |

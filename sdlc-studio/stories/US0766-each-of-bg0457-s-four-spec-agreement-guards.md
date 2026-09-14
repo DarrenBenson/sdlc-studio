@@ -25,3 +25,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - BG0457 delivers the four guards' own mutants, but the general refusal of a Revision History row standing in for a stating passage is undelivered: test_trd_freshness::test_write_contract_is_acknowledged still passes on a history row alone. |

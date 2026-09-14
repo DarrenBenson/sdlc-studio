@@ -7,16 +7,16 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 124 |
+| Draft | 121 |
 | Ready | 20 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
 | Done | 660 |
-| Won't Implement | 2 |
+| Won't Implement | 4 |
 | Deferred | 0 |
-| Superseded | 2 |
-| Blocked | 14 |
+| Superseded | 5 |
+| Blocked | 12 |
 | **Total** | **822** |
 
 ## All Stories
@@ -45,8 +45,8 @@
 | [US0677](US0677-the-code-and-risk-subscores-are-computed-from.md) | The code and risk subscores are computed from the hunks a unit CHANGES against the base ref, not from every function in every declared file | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0678](US0678-a-unit-whose-diff-cannot-be-resolved-bands.md) | A unit whose diff cannot be resolved bands FULL and names the basis the estimate used | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0679](US0679-the-scope-subscore-stops-counting-a-test-file.md) | The scope subscore stops counting a test file present only because the Affects convention requires it | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0680](US0680-the-band-distribution-over-this-repository-s-corpus.md) | The band distribution over this repository's corpus is RE-MEASURED after the change and recorded, so the claim that the gate discriminates rests on a number | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0681](US0681-plan-gate-active-takes-a-scope-as-well.md) | _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0680](US0680-the-band-distribution-over-this-repository-s-corpus.md) | The band distribution over this repository's corpus is RE-MEASURED after the change and recorded, so the claim that the gate discriminates rests on a number | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0681](US0681-plan-gate-active-takes-a-scope-as-well.md) | _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0682](US0682-review-mutation-evidence-stays-independent-of-the-test.md) | review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0683](US0683-the-close-reports-which-units-the-test-plan.md) | The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0684](US0684-every-consumer-of-route-estimate-asks-for-the.md) | Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded | Blocked | EP0217 | 2026-08-24 | 2026-08-24 |
@@ -84,7 +84,7 @@
 | [US0716](US0716-the-design-rung-records-a-shape-census-for.md) | The design rung records a SHAPE CENSUS for any parser or matcher a unit adds, counted before implementation | Draft | EP0223 | 2026-08-27 | 2026-08-27 |
 | [US0717](US0717-the-close-gates-on-the-goal-verdict-and.md) | The close GATES on the goal verdict and the stop-ship ruling, and on nothing else | Draft | EP0224 | 2026-08-27 | 2026-08-27 |
 | [US0718](US0718-the-stop-ship-question-is-answered-per-defect.md) | The stop-ship question is answered per defect and the ruling records who made it | Draft | EP0224 | 2026-08-27 | 2026-08-27 |
-| [US0719](US0719-a-sprint-closes-with-open-defects-as-the.md) | A sprint closes WITH open defects as the normal case, needing no waiver | Draft | EP0224 | 2026-08-27 | 2026-08-27 |
+| [US0719](US0719-a-sprint-closes-with-open-defects-as-the.md) | A sprint closes WITH open defects as the normal case, needing no waiver | Superseded | EP0224 | 2026-08-27 | 2026-08-27 |
 | [US0720](US0720-a-verdict-is-judged-on-the-revision-it.md) | A verdict is judged on the revision it was given for, so a repaired REJECT does not gate for ever | Draft | EP0224 | 2026-08-27 | 2026-08-27 |
 | [US0721](US0721-the-close-s-own-cost-is-measured-and.md) | The close's own cost is measured and reported beside the delivery's | Draft | EP0224 | 2026-08-27 | 2026-08-27 |
 | [US0722](US0722-critic-py-brief-refuses-when-the-working-tree.md) | `critic.py brief` REFUSES when the working tree does not contain the unit, naming base found and base needed | Draft | EP0225 | 2026-08-27 | 2026-08-27 |
@@ -162,8 +162,8 @@
 | [US0794](US0794-a-row-whose-kill-node-is-named-reads.md) | A row whose kill node IS named reads `killed`, unchanged - the paired control | Draft | EP0241 | 2026-08-27 | 2026-08-27 |
 | [US0795](US0795-a-verify-line-naming-a-whole-file-is.md) | A `Verify:` line naming a whole file is compared at FILE granularity | Draft | EP0241 | 2026-08-27 | 2026-08-27 |
 | [US0796](US0796-the-corpus-count-of-killed-elsewhere-rows-is.md) | The corpus count of `killed-elsewhere` rows is recorded as a baseline before the check blocks | Draft | EP0241 | 2026-08-27 | 2026-08-27 |
-| [US0797](US0797-the-independent-element-the-gate-demands-is-stated.md) | The independent element the gate demands is STATED in the refusal when a bug reaches terminal | Draft | EP0242 | 2026-08-27 | 2026-08-27 |
-| [US0798](US0798-a-project-that-has-not-adopted-the-change.md) | A project that has not adopted the change is unaffected, bound behind a dated cutoff | Draft | EP0242 | 2026-08-27 | 2026-08-27 |
+| [US0797](US0797-the-independent-element-the-gate-demands-is-stated.md) | The independent element the gate demands is STATED in the refusal when a bug reaches terminal | Superseded | EP0242 | 2026-08-27 | 2026-08-27 |
+| [US0798](US0798-a-project-that-has-not-adopted-the-change.md) | A project that has not adopted the change is unaffected, bound behind a dated cutoff | Superseded | EP0242 | 2026-08-27 | 2026-08-27 |
 | [US0799](US0799-the-doctrine-states-which-types-are-independently-judged.md) | The doctrine STATES which types are independently judged and at which transition | Draft | EP0242 | 2026-08-27 | 2026-08-27 |
 | [US0800](US0800-a-bug-whose-declared-mutant-was-killed-by.md) | A bug whose declared mutant was killed by a test its criterion does not name is REPORTED | Draft | EP0242 | 2026-08-27 | 2026-08-27 |
 | [US0801](US0801-a-unit-whose-stamped-derived-half-no-longer.md) | A unit whose stamped derived half no longer matches a fresh derivation is REPORTED with both fingerprints | Draft | EP0243 | 2026-08-27 | 2026-08-27 |

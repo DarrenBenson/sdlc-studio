@@ -25,3 +25,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - partly delivered by US0571 (per-finding stop-ship ruling, who ruled, a stop-ship holds the close), but only for findings raised in the run: a defect already open when the run starts is never asked the stop-ship question (_open_findings filters on the batch window). |

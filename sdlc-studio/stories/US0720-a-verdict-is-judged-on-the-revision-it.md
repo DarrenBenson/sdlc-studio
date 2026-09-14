@@ -25,3 +25,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - a proposal to mark it superseded by CR0506 was REFUTED: only the author's critic.py repair retires a REJECT. A re-review APPROVE under the rejoinder brief (always a different fingerprint) leaves it unanswered, and nothing judges a verdict against the code revision it was given for. |

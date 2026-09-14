@@ -41,3 +41,4 @@ Generate it, and refuse a hand-edit to the derived half the way `_index.md` is r
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-19 | sdlc-studio | Raised |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: every acceptance criterion is delivered by US0675-US0676 (Done; all 14 Verify selectors pass). Complete is refused only because its status derives from EP0217, which still holds CR0549/CR0550's Blocked stories - re-parent those to reach Complete. |

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-11
+**Last Updated:** 2026-09-15
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 8 |
+| Open | 9 |
 | In Progress | 0 |
 | Fixed | 558 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **668** |
+| **Total** | **669** |
 
 ## All Bugs
 
@@ -27,6 +27,7 @@
 | [BG0666](BG0666-an-unauthored-test-plan-row-is-exempt-from.md) | an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, so leaving the placeholder buys a clean derive | Open | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0667](BG0667-the-root-effect-control-s-real-tree-marker.md) | the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance | Open | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0668](BG0668-tag-check-refuses-on-a-close-the-close.md) | tag-check refuses on a close the close-owed predicate says is not owed | Open | Medium | 2026-09-11 | 2026-09-11 |
+| [BG0669](BG0669-conformance-demands-acceptance-criteria-of-a-story-retired.md) | conformance demands acceptance criteria of a story retired unbuilt, so an ungroomed story cannot be Superseded or Won't Implement without a waiver | Open | Medium | 2026-09-15 | 2026-09-15 |
 
 ## Archived Releases
 

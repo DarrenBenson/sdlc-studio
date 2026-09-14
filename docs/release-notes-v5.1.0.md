@@ -70,7 +70,7 @@ evidence re-measured by hand for one line moving in a shared file.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1.0 discloses 8 open defects: 8 Medium, 0 Low.** Zero Critical, zero High.
+**v5.1.0 discloses 9 open defects: 9 Medium, 0 Low.** Zero Critical, zero High.
 
 ## What is in it
 

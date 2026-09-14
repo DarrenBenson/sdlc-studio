@@ -38,8 +38,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0666` | Medium | an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, so leaving the placeholder buys a clean derive |
 | `BG0667` | Medium | the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance |
 | `BG0668` | Medium | tag-check refuses on a close the close-owed predicate says is not owed |
+| `BG0669` | Medium | conformance demands acceptance criteria of a story retired unbuilt, so an ungroomed story cannot be Superseded or Won't Implement without a waiver |
 
-8 findings: 8 Medium, 0 Low.
+9 findings: 9 Medium, 0 Low.
 
 ## Not carried
 

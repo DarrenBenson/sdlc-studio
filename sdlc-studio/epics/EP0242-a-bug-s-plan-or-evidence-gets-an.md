@@ -14,8 +14,8 @@ Decomposed from CR0556. Delivers the work CR0556 requested.
 
 ## Story Breakdown
 
-- [ ] [US0797: The independent element the gate demands is STATED in the refusal when a bug reaches terminal](../stories/US0797-the-independent-element-the-gate-demands-is-stated.md)
-- [ ] [US0798: A project that has not adopted the change is unaffected, bound behind a dated cutoff](../stories/US0798-a-project-that-has-not-adopted-the-change.md)
+- [x] [US0797: The independent element the gate demands is STATED in the refusal when a bug reaches terminal](../stories/US0797-the-independent-element-the-gate-demands-is-stated.md)
+- [x] [US0798: A project that has not adopted the change is unaffected, bound behind a dated cutoff](../stories/US0798-a-project-that-has-not-adopted-the-change.md)
 - [ ] [US0799: The doctrine STATES which types are independently judged and at which transition](../stories/US0799-the-doctrine-states-which-types-are-independently-judged.md)
 - [ ] [US0800: A bug whose declared mutant was killed by a test its criterion does not name is REPORTED](../stories/US0800-a-bug-whose-declared-mutant-was-killed-by.md)
 

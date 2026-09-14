@@ -41,3 +41,4 @@ Wire it into the `transition -> Fixed/Done` gate beside the planned-mutant check
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-19 | sdlc-studio | Raised |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: every acceptance criterion is delivered by US0671-US0674 (Done; all 29 Verify selectors pass) with the lane advisory at the boundary per D0149. Complete is refused only because its status derives from EP0217, which still holds CR0549/CR0550's Blocked stories - re-parent those to reach Complete. |

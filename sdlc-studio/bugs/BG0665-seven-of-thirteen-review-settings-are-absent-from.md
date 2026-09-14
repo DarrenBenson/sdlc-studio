@@ -55,3 +55,4 @@ A gate refuses, names the setting that caused it, and the setting is undocumente
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-11 | Claude Opus 5 | Filed |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: delivered under its own id by 57704161 (config-defaults.yaml declares every non-exempt review.* key; ReviewKeysAreDeclaredTests pass; a deletion mutant is killed). Fixed is refused for want of a Verification depth, a coverage base ref and an independent test-plan approval - owed, not waived. |

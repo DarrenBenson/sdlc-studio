@@ -1,6 +1,7 @@
 # BG0568: an epic can never reach Done - the test-plan gate holds a container whose completion is derived, and nothing else checks its breakdown
 
 > **Status:** Fixed
+> **Supersedes:** CR0540
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/reference-scripts-create.md

@@ -1,6 +1,6 @@
 # US0681: _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone
 
-> **Status:** Blocked
+> **Status:** Won't Implement
 > **Delivers:** CR0550
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
@@ -37,3 +37,4 @@
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
 | 2026-08-24 | sdlc-studio | RE-GROOMED against CR0549's second and third corrections after a pre-code goal review REJECTED the first attempt: the declared basis now reads `Points` and `Affects` breadth rather than whole-file complexity, measured to move `light` from 13% to 33%. |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: premise no longer stands. AC1, AC4 and AC5 need a band read at entry, where no diff exists and only author-declared fields are available - the class D0150 forbids. AC2 already holds at HEAD (_test_plan_gate refuses a missing Test Plan at entry whatever the band) and the approval relief is carried by CR0555/US0685. A diff-derived band at terminal is not barred by D0150 but no live request asks for one. Confirmed by an independent adversarial verifier. |

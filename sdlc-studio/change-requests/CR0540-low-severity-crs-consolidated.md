@@ -1,6 +1,7 @@
 # CR-0540: Low-severity crs (consolidated)
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded by:** BG0568
 > **Size:** S
 > **Priority:** Low
 > **Type:** Improvement
@@ -28,3 +29,4 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-09 | sdlc-studio-authoring-session | Consolidation opened |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: superseded by BG0568 (Fixed, a9c8d692). This CR's only finding - an epic close caught by the test-plan gate - no longer reproduces: transition.py excludes epics from _test_plan_gate, and a fixture epic reaches Done with no Test Plan under review.test_plan_after while a story control is refused. Proposed by a sweep agent, confirmed by an independent adversarial verifier. |

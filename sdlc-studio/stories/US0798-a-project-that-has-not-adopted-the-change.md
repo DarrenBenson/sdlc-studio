@@ -1,6 +1,7 @@
 # US0798: A project that has not adopted the change is unaffected, bound behind a dated cutoff
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Superseded by:** BG0630
 > **Delivers:** CR0556
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: superseded by BG0630 (Fixed). The terminal firing for bugs sits inside _plan_gate_active behind the dated review.test_plan_after cutoff: unset, a bug reaches Fixed unrefused; set, it is refused. BG0630 AC4's test pins it. Confirmed by an independent adversarial verifier. |
