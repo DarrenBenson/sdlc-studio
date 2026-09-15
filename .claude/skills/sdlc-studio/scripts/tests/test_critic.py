@@ -7095,5 +7095,211 @@ class UnmatchedBriefFingerprintTests(unittest.TestCase):
             self.assertEqual(f"{self.INVENTED} unmatched", self._last(control)["brief"])
 
 
+class BriefRefusesMissingPracticeTests(unittest.TestCase):
+    """BG0671: `assert_brief_practices` and `assert_brief_claim_pass` were called by no production
+    path while reference-review.md said the brief verb refused a brief failing them.
+
+    The seam: patch the module's `_REVIEW_PRACTICES_BLOCK` or `_CLAIM_INVENTORY_BLOCK` and drive
+    `critic.main` in-process, on a fixture whose own text - unit, seat path, templates and the
+    quoted prior verdict alike - names no practice, no surface and no ruling word, so nothing but
+    the patched block can satisfy a check. `_assert_inert` proves that per render rather than
+    trusting it."""
+
+    PRIOR = "VERDICT: REJECT\nISSUES: the fix is incomplete\nBLOCKING: the fix is incomplete\n"
+    RULINGS = ("TRUE", "FALSE", "UNVERIFIABLE")
+
+    def _fixture(self, root: Path):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "US0001-x.md").write_text(
+            "# US0001: the thing\n\n> **Status:** In Progress\n"
+            "> **Affects:** src/a.py, src/b.py\n> **Points:** 3\n\n"
+            "## Acceptance Criteria\n\n### AC1: works\n\n- **Given** x\n- **When** y\n"
+            "- **Then** z\n- **Verify:** shell exit 0\n", encoding="utf-8")
+        seats = root / "sdlc-studio" / "personas" / "seats"
+        seats.mkdir(parents=True, exist_ok=True)
+        (seats / "qa.md").write_text("# Sam - QA seat\n\ncharter text\n", encoding="utf-8")
+        prior = root / "prior.txt"
+        prior.write_text(self.PRIOR, encoding="utf-8")
+        mod = _load()
+        # the derived tier is the default invocation, and the cases run without --tier rely on
+        # this fixture deriving full
+        self.assertEqual(mod.tier_for(root, "US0001"), "full")
+        self._assert_inert(mod, root)
+        return mod, str(prior)
+
+    def _assert_inert(self, mod, root: Path) -> None:
+        with unittest.mock.patch.object(mod, "_REVIEW_PRACTICES_BLOCK", ""), \
+                unittest.mock.patch.object(mod, "_CLAIM_INVENTORY_BLOCK", ""):
+            for text in (mod.brief(root, "US0001", "qa", "full"),
+                         mod.rejoinder_brief(root, "US0001", "qa", self.PRIOR, "full")):
+                self.assertEqual(mod.missing_practices(text),
+                                 [name for name, _i, _r in mod._BRIEF_PRACTICES])
+                self.assertEqual(mod.missing_claim_surfaces(text), list(mod.CLAIM_SURFACES))
+                for word in self.RULINGS:   # case-sensitive, as the check reads them
+                    self.assertIsNone(re.search(rf"\b{word}\b", text), word)
+
+    def _run(self, mod, root: Path, *argv: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["brief", "--unit", "US0001", "--seat", "qa", *argv,
+                           "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _assert_refused(self, rc: int, out: str, err: str, label: str) -> None:
+        self.assertEqual(rc, 2, f"{label}: {err}")
+        self.assertEqual(out, "", f"{label}: a refused brief reached stdout")
+        self.assertNotIn("brief fingerprint:", err, f"{label}: a refused brief printed a footer")
+        self.assertTrue(err.startswith("brief refused: "), f"{label}: {err}")
+
+    def _without_isolation(self, mod) -> str:
+        paras = mod._REVIEW_PRACTICES_BLOCK.split("\n\n")
+        kept = [p for p in paras if not p.startswith("When a mutant SURVIVES")]
+        self.assertEqual(len(kept), len(paras) - 1)
+        block = "\n\n".join(kept)
+        self.assertEqual(mod.missing_practices(mod._REVIEW_PRACTICES_BLOCK), [])
+        self.assertEqual(mod.missing_practices(block), ["isolation re-test of a survivor"])
+        return block
+
+    def _assert_names_practice(self, mod, err: str, label: str) -> None:
+        m = re.search(r"missing standing practice\(s\): (.*?) - each of (.*?) is a standing", err)
+        self.assertIsNotNone(m, f"{label}: {err}")
+        self.assertEqual(m.group(1).split("; "), ["isolation re-test of a survivor"], label)
+        for name, _i, _r in mod._BRIEF_PRACTICES:          # the roll-call follows the list
+            self.assertIn(name, m.group(2), label)
+
+    def _assert_names_surface(self, mod, err: str, label: str) -> None:
+        m = re.search(r"omits prose surface\(s\): (.*?) - all four \((.*?)\)", err)
+        self.assertIsNotNone(m, f"{label}: {err}")
+        self.assertEqual(m.group(1).split(", "), ["comments"], label)
+        self.assertEqual(m.group(2).split(", "), list(mod.CLAIM_SURFACES), label)
+
+    def test_a_brief_missing_a_practice_is_refused_by_the_cli(self) -> None:
+        """MUTANTS: call `assert_brief_practices` after `print(text)`, so the deficient brief
+        reaches stdout before the exit; name the whole roll-call as the missing list, so every
+        practice is reported absent whichever one is."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod, _prior = self._fixture(root)
+            with unittest.mock.patch.object(mod, "_REVIEW_PRACTICES_BLOCK",
+                                            self._without_isolation(mod)):
+                rc, out, err = self._run(mod, root, "--tier", "full")
+            self._assert_refused(rc, out, err, "--tier full")
+            self._assert_names_practice(mod, err, "--tier full")
+
+    def test_the_practice_check_binds_at_every_delivery_tier_and_on_a_rejoinder(self) -> None:
+        """MUTANTS: gate the practices check on the full tier; leave the rejoinder branch
+        unchecked; check the rejoinder after printing it; check the rejoinder's practices only
+        at full. The light rejoinder is the case only the last mutant fails, because at full the
+        fixture refuses whichever branch guards it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod, prior = self._fixture(root)
+            cases = (("--tier", "light"),
+                     ("--rejoinder", prior, "--tier", "light"),
+                     ("--rejoinder", prior, "--tier", "full"))
+            with unittest.mock.patch.object(mod, "_REVIEW_PRACTICES_BLOCK",
+                                            self._without_isolation(mod)):
+                for argv in cases:
+                    rc, out, err = self._run(mod, root, *argv)
+                    self._assert_refused(rc, out, err, " ".join(argv))
+                    self._assert_names_practice(mod, err, " ".join(argv))
+
+    def test_a_brief_missing_a_surface_is_refused_by_the_cli(self) -> None:
+        """MUTANTS: print the claim-pass refusal as a NOTE and return 0; name all four surfaces
+        as the omitted list; call `missing_claim_surfaces` in its place, so the ruling vocabulary
+        is never checked; restore the roll-call of all three ruling words to the vocabulary
+        refusal. Each refusal also runs with no --tier, the default invocation, which derives
+        full on this fixture: a check gated on the flag rather than the resolved tier passes
+        every explicit case and still prints this brief."""
+        block = _load()._CLAIM_INVENTORY_BLOCK
+        self.assertEqual(len(re.findall("comments", block, re.I)), 1)
+        no_comments = block.replace("docstrings, comments and CHANGELOG",
+                                    "docstrings and CHANGELOG")
+        self.assertEqual(len(re.findall(r"\bUNVERIFIABLE\b", block)), 2)
+        no_unverifiable = re.sub(r"\s*\bor UNVERIFIABLE\b", "", block).replace(
+            "is UNVERIFIABLE, reported", "is reported")
+        self.assertNotIn("UNVERIFIABLE", no_unverifiable)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod, prior = self._fixture(root)
+            self.assertEqual(mod.missing_claim_surfaces(no_comments), ["comments"])
+            self.assertEqual(mod.missing_claim_surfaces(no_unverifiable), [])
+            runs = (("--tier", "full"), (),
+                    ("--rejoinder", prior, "--tier", "full"), ("--rejoinder", prior))
+            with unittest.mock.patch.object(mod, "_CLAIM_INVENTORY_BLOCK", no_comments):
+                for argv in runs:
+                    label = "comments dropped: " + (" ".join(argv) or "(derived tier)")
+                    rc, out, err = self._run(mod, root, *argv)
+                    self._assert_refused(rc, out, err, label)
+                    self._assert_names_surface(mod, err, label)
+            with unittest.mock.patch.object(mod, "_CLAIM_INVENTORY_BLOCK", no_unverifiable):
+                for argv in runs:
+                    label = "UNVERIFIABLE dropped: " + (" ".join(argv) or "(derived tier)")
+                    rc, out, err = self._run(mod, root, *argv)
+                    self._assert_refused(rc, out, err, label)
+                    self.assertRegex(err, r"\bUNVERIFIABLE\b", label)
+                    for word in ("TRUE", "FALSE"):
+                        self.assertNotRegex(err, rf"\b{word}\b", f"{label}: names {word}")
+
+    def test_the_shipped_brief_prints(self) -> None:
+        """THE PAIRED CONTROLS, from the shipped blocks. MUTANTS: run the claim pass at every
+        tier, so a light brief is refused; hoist the checks onto the plan-review branch; return
+        straight after the checked brief is printed, dropping the footer; run the claim pass on
+        the rejoinder whatever the tier; run it on the prior verdict text rather than the
+        rendered rejoinder, so every full-tier re-review is refused."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod, prior = self._fixture(root)
+            full = mod.brief(root, "US0001", "qa", "full")
+            full_rejoinder = mod.rejoinder_brief(root, "US0001", "qa", self.PRIOR, "full")
+            cases = (
+                (("--tier", "full"), full),
+                (("--tier", "light"), mod.brief(root, "US0001", "qa", "light")),
+                (("--phase", "plan-review"),
+                 mod.brief(root, "US0001", "qa", phase="plan-review")),
+                (("--rejoinder", prior, "--tier", "light"),
+                 mod.rejoinder_brief(root, "US0001", "qa", self.PRIOR, "light")),
+                (("--rejoinder", prior, "--tier", "full"), full_rejoinder),
+                (("--phase", "plan-review", "--rejoinder", prior),
+                 mod.rejoinder_brief(root, "US0001", "qa", self.PRIOR, phase="plan-review")),
+            )
+            footers = {}
+            for argv, render in cases:
+                label = " ".join(argv)
+                rc, out, err = self._run(mod, root, *argv)
+                self.assertEqual(rc, 0, f"{label}: {err}")
+                self.assertEqual(out, render + "\n", label)
+                footers[label] = re.search(r"brief fingerprint: ([0-9a-f]+)", err)
+            m = footers["--tier full"]
+            self.assertIsNotNone(m, "the full-tier brief printed no fingerprint footer")
+            self.assertEqual(m.group(1), mod.brief_fingerprint(full))
+            m = footers[f"--rejoinder {prior} --tier full"]
+            self.assertIsNotNone(m, "the full-tier rejoinder printed no fingerprint footer")
+            self.assertEqual(m.group(1), mod.rejoinder_fingerprint(full_rejoinder, "delivery"))
+
+    def test_the_doctrine_states_where_each_check_binds(self) -> None:
+        """MUTANT: scope the practices refusal to full-tier briefs in the doctrine sentence, so a
+        light brief reads as unchecked while the verb refuses it."""
+        doc = _norm(REFERENCE_REVIEW.read_text(encoding="utf-8"))
+        start = doc.index("`critic.py brief` refuses")
+        para = doc[start:doc.index("by the author remembering it", start)]
+        sentences = re.split(r"(?<=\.) ", para)
+
+        def one(phrase: str) -> str:
+            hits = [s for s in sentences if phrase in s]
+            self.assertEqual(len(hits), 1, f"{phrase!r} in {para!r}")
+            return hits[0]
+
+        practices = one("missing any of these practices")
+        self.assertIn("delivery brief at every tier", practices)
+        self.assertNotRegex(practices, r"(?i)full[- ]tier|light")
+        claim = one("claim-inventory pass omits")
+        self.assertIn("full-tier delivery brief", claim)
+        plan = one("plan-review brief")
+        self.assertIn("carries neither", plan)
+        self.assertIn("not checked", plan)
+
+
 if __name__ == "__main__":
     unittest.main()

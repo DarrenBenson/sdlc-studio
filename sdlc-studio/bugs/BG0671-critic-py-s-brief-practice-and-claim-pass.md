@@ -1,6 +1,7 @@
 # BG0671: critic.py's brief-practice and claim-pass checks are called by no production path, while reference-review.md says the brief verb refuses a brief that fails them
 
 > **Status:** In Progress
+> **Verification depth:** functional [[derived: criteria 5; plan rows 16; executed 16; killed 16; survived 0; not-run 0; entry point 0 of 5 criteria through the shipped CLI, 5 in-process | fp fe688f80d5d3 ]]
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/reference-review.md
@@ -28,14 +29,19 @@ Where each check binds, measured 2026-09-15 against `brief()` at HEAD: the stand
 
 - [ ] **AC1** `critic.py brief --tier full`, with the isolation re-test paragraph dropped from the practices block, exits 2, prints nothing on stdout and no `brief fingerprint:` footer on stderr, and the practices its refusal names as missing - the list before the roll-call of every practice - are exactly `isolation re-test of a survivor`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefRefusesMissingPracticeTests::test_a_brief_missing_a_practice_is_refused_by_the_cli
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC2** The same dropped practice is refused, exit 2 and named exactly, with nothing on stdout and no fingerprint footer, on `critic.py brief --tier light` and on a delivery `critic.py brief --rejoinder` run at `--tier light` and again at `--tier full` - the practices block reaches all three renders, so the check binds to all three
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefRefusesMissingPracticeTests::test_the_practice_check_binds_at_every_delivery_tier_and_on_a_rejoinder
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC3** `critic.py brief --tier full`, with `comments` dropped from the claim-inventory block, exits 2 with nothing on stdout and no fingerprint footer, naming exactly `comments` as the omitted surface - the list before the roll-call of all four; with both occurrences of `UNVERIFIABLE` dropped instead it exits 2 and its refusal names `UNVERIFIABLE` while neither `TRUE` nor `FALSE` appears in it as a word; and a full-tier delivery `--rejoinder` with `comments` dropped is refused naming it, again with nothing on stdout and no footer
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefRefusesMissingPracticeTests::test_a_brief_missing_a_surface_is_refused_by_the_cli
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC4** From the shipped blocks, unpatched, each of `critic.py brief --tier full`, `--tier light`, `--phase plan-review`, a delivery `--rejoinder --tier light`, a delivery `--rejoinder --tier full` and a plan-review `--rejoinder` exits 0 with stdout equal to the matching `brief()` or `rejoinder_brief()` render; the full-tier first-round run also prints the footer carrying that render's `brief_fingerprint`, and the full-tier delivery rejoinder the footer carrying its render's `rejoinder_fingerprint` at phase delivery - the paired controls, the full rejoinder among them because a guard tested only by what it refuses passes on a build that refuses every full-tier re-review
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefRefusesMissingPracticeTests::test_the_shipped_brief_prints
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC5** reference-review.md's sentence on what `critic.py` refuses says the practices refusal covers a delivery brief at every tier, the claim-inventory refusal a full-tier delivery brief, and that a plan-review brief carries neither and is not checked
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefRefusesMissingPracticeTests::test_the_doctrine_states_where_each_check_binds
+  - **Verified:** yes (2026-09-15)
 
 ## Test Plan
 

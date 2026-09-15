@@ -30,13 +30,9 @@ evidence, the reproduction and the proposed fix in full.
 
 | Id | Severity | Finding |
 | --- | --- | --- |
-| `BG0659` | Medium | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row |
 | `BG0664` | Medium | the pre-push boundary gate runs NO boundary-only test, so the marker's own promise is false at the boundary it names |
 | `BG0666` | Medium | an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, so leaving the placeholder buys a clean derive |
-| `BG0667` | Medium | the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance |
 | `BG0671` | Medium | critic.py's brief-practice and claim-pass checks are called by no production path, while reference-review.md says the brief verb refuses a brief th... |
-| `BG0672` | Medium | critic record accepts a --brief fingerprint no brief produced, recording the row as briefed with only a stderr note |
-| `BG0673` | Medium | the repair-plan gate (EP0106) is wired into nothing: no command records a plan or verdict, and turning review.repair_plan_gate on refuses nothing a... |
 | `BG0675` | Medium | an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth |
 | `BG0676` | Medium | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 20 new ones passes locally |
 | `BG0677` | Medium | critic.py repair cannot close a finding whose text carries the closure separator early, so the rejection raising it can never be retired |
@@ -53,7 +49,7 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0688` | Medium | gate --require-close still counts close-owed's raw owed rows, refusing an override the tag guard and the detector now honour |
 | `BG0689` | Medium | The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag |
 
-22 findings: 22 Medium, 0 Low.
+18 findings: 18 Medium, 0 Low.
 
 ## Not carried
 

@@ -1,6 +1,6 @@
 # BG0659: a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 5; plan rows 12; executed 12; killed 12; survived 0; lines ruled 3; not-run 0; entry point 5 of 5 criteria through the shipped CLI, 0 in-process | fp c2946eba1922 ]]
 > **Severity:** Medium
 > **Points:** 5
@@ -76,6 +76,10 @@ Blocks commits, at a distance from whoever caused it, and silently narrows what 
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6520 | 9710ddd81b1c0402 | A skip: fires only when node_modules markdownlint or node is absent. Both are installed in this clone, so the MD038 corpus check ran rather than skipping. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6444 | 9710ddd81b1c0402 | Defensive: markdownlint printing output that is not JSON. node_modules/.bin/markdownlint (markdownlint-cli) is invoked with --json and emits JSON, so the handler is not reached on a working install. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/critic.py | 289 | 96238b789f9a9553 | an all-space span has no edge to judge and is admitted; the spec holds all-space spans out of every fixture and out of scope, so no criterion reaches it | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/critic.py | 289 | dcca627ee2a2afd5 | an all-space span has no edge to judge and is admitted; the spec holds all-space spans out of every fixture and out of scope, so no criterion reaches it | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6751 | d9a28d09aaa9ed32 | test harness: the handler for markdownlint returning output that is not JSON; the installed markdownlint always returns JSON | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6752 | d9a28d09aaa9ed32 | the failure message of the same non-JSON handler | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6827 | d9a28d09aaa9ed32 | skip when markdownlint is not installed; it is installed in this repository | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

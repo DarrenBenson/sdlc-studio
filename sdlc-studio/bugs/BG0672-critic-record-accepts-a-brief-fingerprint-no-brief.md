@@ -1,6 +1,6 @@
 # BG0672: critic record accepts a --brief fingerprint no brief produced, recording the row as briefed with only a stderr note
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 5; plan rows 12; executed 12; killed 12; survived 0; lines ruled 1; not-run 0; entry point 5 of 5 criteria through the shipped CLI, 0 in-process | fp 2e834ee654f5 ]]
 > **Severity:** Medium
 > **Points:** 5
@@ -66,6 +66,7 @@ What the marker means: the fingerprint matches no brief this repo can CURRENTLY 
 | --- | --- | --- | --- | --- | --- |
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6599 | 9710ddd81b1c0402 | withdrawn 2026-09-15: Withdrawn by its author to correct a factual slip in the reason text (the binary or directory it named was misstated); the same line is re-ruled at once with an accurate reason. (was: A skip: fires only when the shipped personas/seats directory holds no seat cards. The skill ships three seat cards, so the test always finds them and runs.) | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6599 | 9710ddd81b1c0402 | A skip: fires only when sdlc-studio/personas/seats holds no seat cards. This workspace carries three (engineering, product, qa), so the test finds them and runs. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6906 | d9a28d09aaa9ed32 | skip when the shipped seat cards are absent; they ship with the skill | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

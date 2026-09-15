@@ -449,9 +449,13 @@ Every closing brief carries each of these, paired with the reason it exists:
   finding** in the same round: an unpinned repair is one a later edit reverts with the suite
   still green, which is how a shipped repair was lost entirely and no suite said so.
 
-`critic.py` refuses to issue a brief missing any of these practices, or a claim-inventory
-pass that omits one of the four prose surfaces, so the discipline holds by construction rather
-than by the author remembering it.
+`critic.py brief` refuses a delivery brief at every tier, first-round or `--rejoinder`, that is
+missing any of these practices. It refuses a full-tier delivery brief, first-round or
+`--rejoinder`, whose claim-inventory pass omits one of the four prose surfaces or one of the
+three rulings; a light brief carries no claim inventory, so that check does not bind there. A
+plan-review brief carries neither block and is not checked. Each refusal exits non-zero, names
+only what is missing and prints no brief, so the discipline holds by construction rather than
+by the author remembering it.
 
 ### Where a delegated reviewer mutates {#mutation-isolation}
 

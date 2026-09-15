@@ -3417,10 +3417,12 @@ def assert_brief_claim_pass(brief_text: str) -> None:
                          f"all four ({', '.join(CLAIM_SURFACES)}) must be enumerated or the "
                          f"omitted one is exempt; refused")
     body = _normalise_brief(brief_text)
-    for word in ("TRUE", "FALSE", "UNVERIFIABLE"):
-        if not re.search(rf"\b{word}\b", body):
-            raise ValueError(f"claim-inventory pass never names the {word} ruling - each claim "
-                             f"is marked TRUE, FALSE or UNVERIFIABLE; refused")
+    # Only the missing words are named. A roll-call of all three names the present ones as if
+    # they were absent too, and the reader repairs a block that was never broken.
+    unnamed = [w for w in ("TRUE", "FALSE", "UNVERIFIABLE") if not re.search(rf"\b{w}\b", body)]
+    if unnamed:
+        raise ValueError(f"claim-inventory pass never names the ruling(s): {', '.join(unnamed)} "
+                         f"- a claim the pass cannot mark that way is left unruled; refused")
 
 
 def tier_for(repo_root: Path | str, unit: str) -> str:
@@ -4176,6 +4178,11 @@ def cmd_brief(args: argparse.Namespace) -> int:
                 return 0
             tier = args.tier or tier_for(args.root, args.unit)
             text = rejoinder_brief(args.root, args.unit, args.seat, prior, tier)
+            # The re-review brief carries the same blocks as the first one, so it is refused on
+            # the same terms and before anything reaches stdout.
+            assert_brief_practices(text)
+            if tier == "full":
+                assert_brief_claim_pass(text)
             print(text)
             # the footer the delivery rejoinder never printed: a re-review's verdict needs the
             # same provenance as the first one, and a fingerprint the matcher can reproduce
@@ -4210,6 +4217,14 @@ def cmd_brief(args: argparse.Namespace) -> int:
                 return 0
             tier = args.tier or tier_for(args.root, args.unit)
             text = brief(args.root, args.unit, args.seat, tier)
+            # The checks run here, in the verb, and never inside `brief()`, which the fingerprint
+            # matcher also renders through. The practices block reaches every delivery tier; the
+            # claim inventory only the full one, so a light brief is not asked for it. A plan
+            # review carries neither and returned above. Refused before printing, so a deficient
+            # brief never reaches a reviewer and never earns a fingerprint.
+            assert_brief_practices(text)
+            if tier == "full":
+                assert_brief_claim_pass(text)
             print(text)
             # On stderr so the brief itself stays pipeable, and stated as the next command so
             # a reviewer does not have to know the flag exists. The tier is carried INTO that

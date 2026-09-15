@@ -1,6 +1,6 @@
 # BG0673: the repair-plan gate (EP0106) is wired into nothing: no command records a plan or verdict, and turning review.repair_plan_gate on refuses nothing a delivery command runs
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 7; plan rows 16; executed 16; killed 16; survived 0; not-run 0; entry point 7 of 7 criteria through the shipped CLI, 0 in-process | fp cac488b1cd0f ]]
 > **Severity:** Medium
 > **Points:** 8

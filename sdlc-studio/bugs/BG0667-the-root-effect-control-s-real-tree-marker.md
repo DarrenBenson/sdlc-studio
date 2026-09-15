@@ -1,6 +1,6 @@
 # BG0667: the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 5; plan rows 13; executed 13; killed 13; survived 0; not-run 0; entry point 0 of 5 criteria through the shipped CLI, 5 in-process | fp 89169980c2b6 ]]
 > **Severity:** Medium
 > **Points:** 3
