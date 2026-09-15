@@ -10,8 +10,8 @@
 | Draft | 121 |
 | Ready | 16 |
 | Planned | 0 |
-| In Progress | 1 |
-| Review | 4 |
+| In Progress | 0 |
+| Review | 5 |
 | Done | 660 |
 | Won't Implement | 4 |
 | Deferred | 0 |
@@ -34,7 +34,7 @@
 | [US0590](US0590-the-doctrine-states-the-content-versus-tooling-line.md) | The doctrine states the content-versus-tooling line and names reference-scripts.md as the pre-task catalogue | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0625](US0625-the-doctrine-states-cr0526-s-rule-names-the.md) | the doctrine states CR0526's rule, names the one store a stop-ship ruling lives in, and who rules it | Review | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0626](US0626-an-unfinished-batch-unit-holds-the-close-through.md) | an unfinished batch unit holds the close through its stop-ship step, naming where its findings went, while Review and rung-end units do not | Review | EP0206 | 2026-08-02 | 2026-08-02 |
-| [US0627](US0627-a-story-or-bug-reaching-done-or-fixed.md) | a story or bug reaching Done or Fixed over an unanswered REJECT is refused until its findings are filed or the REJECT is repaired | In Progress | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0627](US0627-a-story-or-bug-reaching-done-or-fixed.md) | a story or bug reaching Done or Fixed over an unanswered REJECT is refused until its findings are filed or the REJECT is repaired | Review | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0628](US0628-a-unit-closed-over-a-reject-names-in.md) | a unit closed over a REJECT names, in its own record, the artefact its findings were filed to | Review | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0646](US0646-a-shared-contract-reporter-derives-a-verb-s.md) | A shared contract reporter derives a verb's demands by executing its own guard, never by restating them | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
 | [US0647](US0647-the-vocabularies-that-gate-a-caller-print-from.md) | The vocabularies that gate a caller print from the constant that enforces them | Ready | EP0210 | 2026-08-07 | 2026-08-07 |

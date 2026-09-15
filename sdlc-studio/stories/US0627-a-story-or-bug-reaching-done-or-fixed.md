@@ -1,6 +1,6 @@
 # US0627: a story or bug reaching Done or Fixed over an unanswered REJECT is refused until its findings are filed or the REJECT is repaired
 
-> **Status:** In Progress
+> **Status:** Review
 > **Delivers:** CR0526
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
