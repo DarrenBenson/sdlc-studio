@@ -10,9 +10,10 @@ and in each case the flaw was in the APPROACH and would have been visible in a w
 This module makes the repair a planned, reviewed step. A REJECT produces a written plan - one
 entry per finding, naming the change, the approach and what it might break. The plan is put to
 an independent pass BEFORE any code is written, briefed with the questions this loop keeps
-failing. The verdict is pinned to the findings it answered, so a later finding invalidates it.
-And a repair records which plan it executed, so a planned repair is distinguishable from one
-that was not.
+failing. The verdict is pinned to the whole plan it answered, so a later finding or a changed
+entry invalidates it. Every round of a unit's plan is kept, so the design threshold counts the
+rounds one unit burns. And a repair records which plan it executed, so a planned repair is
+distinguishable from one that was not.
 
 The gate is opt-in per project and OFF by default (US0315): an existing project's close does
 not change until it sets `review.repair_plan_gate: on`. When on, `transition.py` asks it at
@@ -66,6 +67,53 @@ def _plan_path(root: Path | str, plan_id: str) -> Path:
     return _plans_dir(root) / f"{plan_id}.json"
 
 
+def _round_path(root: Path | str, plan_id: str, n: int) -> Path:
+    """Where round `n` of a unit's plan is kept. Round one keeps the unit's own file name, so a
+    plan recorded before rounds were kept reads as its unit's first round; every later round
+    gets a file of its own beside it and none is ever written over."""
+    return _plan_path(root, plan_id) if n <= 1 else _plans_dir(root) / f"{plan_id}.r{n}.json"
+
+
+def _round_files(root: Path | str, plan_id: str) -> dict[int, Path]:
+    """`{round number: path}` for every recorded round of `plan_id`'s plan."""
+    d = _plans_dir(root)
+    if not d.is_dir():
+        return {}
+    later = re.compile(rf"{re.escape(plan_id)}\.r(\d+)\.json")
+    out = {}
+    for p in d.iterdir():
+        if p.name == f"{plan_id}.json":
+            out[1] = p
+        elif (m := later.fullmatch(p.name)) and int(m.group(1)) > 1:
+            out[int(m.group(1))] = p
+    return out
+
+
+def plan_rounds(root: Path | str, plan_id: str) -> list[Path]:
+    """Every recorded round of `plan_id`'s repair plan, oldest first."""
+    rounds = _round_files(root, plan_id)
+    return [rounds[n] for n in sorted(rounds)]
+
+
+def _read_plan(p: Path) -> dict | None:
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def plan_authors(root: Path | str, plan_id: str) -> list[str]:
+    """The author of every round of `plan_id`'s plan, oldest first and each once. The plan's
+    recorded author is ANY of them: a reviewer who wrote round one has not become independent
+    of the plan because somebody else re-recorded it."""
+    out: list[str] = []
+    for p in plan_rounds(root, plan_id):
+        author = str((_read_plan(p) or {}).get("author") or "")
+        if author and author not in out:
+            out.append(author)
+    return out
+
+
 def findings_fingerprint(findings) -> str:
     """A hash of the finding SET this plan answers, order- and whitespace-independent.
 
@@ -75,6 +123,18 @@ def findings_fingerprint(findings) -> str:
     """
     norm = sorted(" ".join(str(f).split()) for f in findings)
     return hashlib.sha256("\x00".join(norm).encode("utf-8")).hexdigest()[:16]
+
+
+def plan_fingerprint(plan: dict) -> str:
+    """A hash of the WHOLE plan - its findings and every entry, approach included - and the pin
+    an approval carries. Pinned to the findings alone, an approved plan could be re-recorded
+    with an approach nobody reviewed and keep its approval. Whitespace- and order-independent,
+    as `findings_fingerprint` is."""
+    findings = sorted(" ".join(str(f).split()) for f in plan.get("findings", []))
+    entries = sorted(json.dumps({k: " ".join(str(v).split()) for k, v in e.items()},
+                                sort_keys=True)
+                     for e in plan.get("entries", []) if isinstance(e, dict))
+    return hashlib.sha256(json.dumps([findings, entries]).encode("utf-8")).hexdigest()[:16]
 
 
 def _finding_class(finding: str) -> str:
@@ -124,9 +184,13 @@ def validate_brief(brief: dict) -> None:
 
 
 def repeat_rounds(root: Path | str, finding_class: str) -> int:
-    """How many prior recorded repair plans already answered a finding of this class. The
+    """How many prior recorded repair-plan ROUNDS already answered a finding of this class. The
     evidence behind the design-decision gate (US0343): two consecutive failures of one
-    approach can be bad luck; more is a signal about the design."""
+    approach can be bad luck; more is a signal about the design.
+
+    Rounds, not units: every round is its own file, so a class failing three rounds on ONE unit
+    counts three, exactly as it would across three units. Counted by unit, the rounds a single
+    repair burns never reach the threshold at all."""
     d = _plans_dir(root)
     if not d.is_dir():
         return 0
@@ -213,34 +277,41 @@ def record_repair_plan(root: Path | str, plan_id: str, verdict: str, findings,
                     f"a plan that RETAINS the design and proposes another instance is refused "
                     f"- {thr['basis']}. Change the approach, or record why retention is right "
                     f"in a way the reviewer must rule on")
+    # A NEW round, never the last one rewritten. A round written over its predecessor is a
+    # round the design threshold cannot count, so one unit could repeat a failed approach for
+    # ever; and an approval pinned to the plan it answered would find that plan gone.
     d = _plans_dir(root)
     d.mkdir(parents=True, exist_ok=True)
-    plan = {"plan_id": plan_id, "verdict": critic.REJECT, "author": author,
+    n = max(_round_files(root, plan_id), default=0) + 1
+    plan = {"plan_id": plan_id, "round": n, "verdict": critic.REJECT, "author": author,
             "findings": findings, "fingerprint": findings_fingerprint(findings),
             "entries": entries, "created": sdlc_md.now_iso8601()}
-    p = _plan_path(root, plan_id)
+    p = _round_path(root, plan_id, n)
     p.write_text(json.dumps(plan, indent=2), encoding="utf-8")
     return p
 
 
 def load_plan(root: Path | str, plan_id: str) -> dict | None:
-    p = _plan_path(root, plan_id)
-    if not p.exists():
+    """The CURRENT round of `plan_id`'s plan - its latest - or None when none is recorded."""
+    rounds = plan_rounds(root, plan_id)
+    if not rounds:
         return None
-    try:
-        return json.loads(p.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
+    return _read_plan(rounds[-1])
 
 
 def review_repair_plan(root: Path | str, plan_id: str, verdict: str, reviewer: str,
                        author: str) -> Path:
-    """Record an independent verdict on a repair plan, pinned to the findings it answered.
+    """Record an independent verdict on a repair plan's CURRENT round.
 
-    Refuses self-approval (US0312 AC2): the reviewer identity must differ from the plan's
-    author, on the same rule the story-plan gate applies, so independence is mechanical rather
-    than a convention the author is asked to honour. The verdict carries the findings
-    fingerprint (US0313 AC1), so a later finding invalidates it.
+    Refuses self-approval (US0312 AC2): the reviewer identity must differ from the author of
+    every round of the plan, on the same rule the story-plan gate applies, so independence is
+    mechanical rather than a convention the author is asked to honour.
+
+    Two hashes, for two different jobs. The Brief cell carries the first 12 hex characters of
+    the FINDINGS fingerprint - the key every round of one unit's plan shares, so an APPROVE of a
+    revised round retires the REJECT of an earlier one, and the length `critic.py record
+    --brief` accepts. The issues cell carries the WHOLE-plan hash as the pin (US0313 AC1): a
+    round re-recorded after its approval, even with only a new approach, no longer matches it.
     """
     plan = load_plan(root, plan_id)
     if plan is None:
@@ -248,22 +319,24 @@ def review_repair_plan(root: Path | str, plan_id: str, verdict: str, reviewer: s
     # THE authority, not a fifth hand-rolled copy. This compared `_clean(reviewer)` against the
     # plan author with its own normaliser and never asked `critic.independence`, so it ACCEPTED
     # the exact empty-reviewer row the independence work claims to have closed everywhere - a
-    # bad row written, even though the downstream `plan_reviewed` refuses it. Both identities
-    # the review must differ from are checked, which is this gate's own extra clause.
-    for other in (plan.get("author", ""), author):
+    # bad row written, even though the downstream `plan_reviewed` refuses it. Every identity
+    # the review must differ from is checked, which is this gate's own extra clause.
+    for other in (*plan_authors(root, plan_id), author):
         independent, why = critic.independence(reviewer, other)
         if not independent:
             raise ValueError(
                 f"the repair-plan review is not independent ({reviewer!r} vs {other!r}): {why}. "
                 "A plan's author cannot record its own review, and a delegate the author "
                 "controls does not satisfy it (US0312 AC2)")
-    fp = plan.get("fingerprint", "")
-    issues = f"plan={plan_id}; findings-hash={fp}"
+    fp = findings_fingerprint(plan.get("findings", []))
+    brief = fp[:12]
+    issues = f"plan={plan_id}; findings-hash={fp}; plan-hash={plan_fingerprint(plan)}"
     # Under the repair plan's OWN kind. Written as the default `spec` kind, this approval
     # discharged the unit's spec plan-review gate while nobody had read the spec, and an earlier
     # test-plan rejection on the same id hid it from `plan_reviewed`.
     return critic.record_verdict(root, plan_id, verdict, reviewer, author, issues,
-                                 phase="plan-review", kind=critic.REPAIR_PLAN_KIND)
+                                 phase="plan-review", brief=brief,
+                                 kind=critic.REPAIR_PLAN_KIND)
 
 
 def _clean(s: str) -> str:
@@ -271,37 +344,78 @@ def _clean(s: str) -> str:
 
 
 def plan_reviewed(root: Path | str, plan_id: str) -> dict:
-    """Is this repair plan independently approved against its CURRENT findings? Returns
-    {ok, reason}. A verdict pinned to a stale finding set does not count (US0313 AC2); the
-    same findings re-read in a different order still count (US0313 AC3)."""
+    """Is this repair plan's CURRENT round independently approved? Returns {ok, reason}.
+
+    Refused, each naming its own cause: no plan recorded for the id; a plan with no verdict; a
+    REJECT still standing; an approval that is not independent of the row's author or of the
+    author of ANY round; and an approval pinned to a different plan than the current round - a
+    finding added or removed, or an entry changed, since (US0313 AC2). The same plan re-read in
+    a different order still counts (US0313 AC3).
+    """
     plan = load_plan(root, plan_id)
     if plan is None:
-        return {"ok": False, "reason": f"no repair plan {plan_id!r}"}
+        return {"ok": False, "reason": f"no repair plan is recorded for {plan_id}"}
+    # EVERY REJECT, each answered by its OWN reviewer. `critic.verdict_for` retires a REJECT
+    # with any later APPROVE sharing its brief key, and a repair plan's key is its finding set
+    # alone - so another reviewer's approval of the same set retired a rejection its author
+    # never withdrew. A retired row is skipped exactly as `verdict_for` skips it: a REJECT only
+    # when a PRINCIPAL superseded it, since a correction the author could reach deletes the one
+    # record that blocks the unit.
+    want = sdlc_md.norm_id(plan_id)
+    rows = [r for r in critic.read_verdicts(root, "plan-review")
+            if sdlc_md.norm_id(r.get("unit", "")) == want
+            and (r.get("kind") or critic.DEFAULT_PLAN_KIND) == critic.REPAIR_PLAN_KIND]
+    live = [r for r in rows
+            if not (r.get("superseded")
+                    and (str(r.get("verdict") or "").upper() != critic.REJECT
+                         or critic._is_principal_superseded(root, plan_id, r)))]
+    for i, r in enumerate(live):
+        if str(r.get("verdict") or "").upper() != critic.REJECT:
+            continue
+        key = critic._brief_key(r)
+        if key and any(str(a.get("verdict") or "").upper() == critic.APPROVE
+                       and critic._brief_key(a) == key
+                       and critic.same_identity(a.get("reviewer", ""), r.get("reviewer", ""))
+                       for a in live[i + 1:]):
+            continue
+        return {"ok": False, "reason": (
+            f"{r.get('reviewer') or '-'}'s REJECT of {r.get('date') or '-'} on the repair plan "
+            f"for {plan_id} is unanswered: only an APPROVE of the same finding set by the same "
+            f"reviewer retires it, and a changed finding set or a different reviewer needs a "
+            f"principal supersession of the REJECT (`critic.py supersede`)")}
     # The repair plan's own kind and nothing else. Read kind-blind, a spec or test-plan verdict
     # on the same unit id answered for the plan, and an unanswered test-plan REJECT there hid
     # the plan's own APPROVE, so an independently approved plan could never open the gate.
     v = critic.verdict_for(root, plan_id, phase="plan-review", kind=critic.REPAIR_PLAN_KIND)
-    if not v or v.get("verdict") != critic.APPROVE:
+    if not v:
+        return {"ok": False, "reason": (f"the repair plan for {plan_id} has no verdict - put it "
+                                        f"to an independent review (`repair_plan.py review`)")}
+    if v.get("verdict") != critic.APPROVE:
         return {"ok": False, "reason": "no independent APPROVE on this repair plan"}
     if not critic.is_independent(v):
         return {"ok": False, "reason": "the recorded plan verdict is not independent "
                                        "(reviewer == author)"}
-    m = re.search(r"findings-hash=([0-9a-f]+)", v.get("issues", "") or "")
-    current = findings_fingerprint(plan.get("findings", []))
+    for other in plan_authors(root, plan_id):
+        independent, why = critic.independence(v.get("reviewer", ""), other)
+        if not independent:
+            return {"ok": False, "reason": (f"the recorded plan verdict is not independent of "
+                                            f"the plan's author {other!r}: {why}")}
+    m = re.search(r"plan-hash=([0-9a-f]+)", v.get("issues", "") or "")
     if not m:
-        # DECIDED, not passed over: a verdict carrying no findings-hash is NOT pinned. It
-        # answers no stated finding set, so nothing can show it answered THIS one, and a
-        # check that accepts it is asserting an absence is a match. `review_repair_plan`
-        # always writes the token, so this is the hand-edited or directly-recorded verdict -
-        # precisely the case the pin exists for. Re-review the plan to re-pin it.
-        return {"ok": False, "reason": ("the plan verdict carries no findings-hash, so nothing "
-                                        "pins it to the findings it answered - re-review the "
-                                        "plan with `review_repair_plan` to pin it")}
-    if m.group(1) != current:
-        return {"ok": False, "reason": ("the plan verdict answered a different finding set; a "
-                                        "finding added or removed since invalidates it "
-                                        "(US0313 AC2)")}
-    return {"ok": True, "reason": "independent APPROVE pinned to the current findings"}
+        # DECIDED, not passed over: a verdict carrying no plan-hash is NOT pinned. It answers
+        # no stated plan, so nothing can show it answered THIS one, and a check that accepts
+        # it is asserting an absence is a match. `review_repair_plan` always writes the token,
+        # so this is the hand-edited or directly-recorded verdict - precisely the case the pin
+        # exists for. Re-review the plan to re-pin it.
+        return {"ok": False, "reason": ("the plan verdict carries no plan-hash, so nothing pins "
+                                        "it to the plan it answered - re-review the plan with "
+                                        "`repair_plan.py review` to pin it")}
+    if m.group(1) != plan_fingerprint(plan):
+        return {"ok": False, "reason": ("the approval answered a different plan: a finding or "
+                                        "an entry of the current round has changed since it "
+                                        "was given, and re-recording a plan does not carry its "
+                                        "approval (US0313 AC2)")}
+    return {"ok": True, "reason": "independent APPROVE pinned to the current plan"}
 
 
 def repair_gate(root: Path | str, plan_id: str | None, repaired_at=None,

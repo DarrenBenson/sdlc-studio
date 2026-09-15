@@ -7526,5 +7526,166 @@ class PlanRulingTests(unittest.TestCase):
                              "`testplan withdraw` MUTATED the artefact")
 
 
+class PlaceholderRowsAreReportedTests(unittest.TestCase):
+    """BG0666: a plan row still holding the placeholder was exempt from the guard an authored row
+    must pass, and `derive` said nothing about it - so leaving the placeholder bought a clean
+    derive. Both surfaces a plan is read on before review now print ONE shared note naming the
+    criteria whose mutant nobody has written.
+
+    Every expected note is built here from the imported template with LITERAL ids and a LITERAL
+    count, never by calling the helper: a count mutant inside the helper would move the expected
+    value with it and survive. And a bare `"3"` check would pass on `AC3` alone.
+    """
+
+    PLACEHOLDER = "{{name the production change this test must fail on}}"
+
+    BODY = ("## Acceptance Criteria\n\n"
+            "- [ ] **AC1** Given an empty batch, when the planner runs, then it refuses the batch\n"
+            "- [ ] **AC2** Given a full batch, when the planner runs, then it accepts every unit\n"
+            "- [ ] **AC3** Given a batch of one, when the planner runs, then it prints that unit\n"
+            "- [ ] **AC4** Given a duplicated unit, when the planner runs, then it names both "
+            "copies\n\n")
+
+    # AC1 three authored rows, AC2 two placeholders, AC3 one authored beside one placeholder,
+    # AC4 NO row. Once derived: 4 authored rows, 4 placeholder rows, 4 criteria, 3 unauthored -
+    # so only a count of unauthored CRITERIA prints 3. Titles are stale, so the first derive
+    # takes the `->` write branch and the second the `unchanged` one.
+    MIXED = ("## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+             "| AC1 | in verify_ac.py, delete the emptiness guard | stale |\n"
+             "| AC1 | in verify_ac.py, invert the sort order of the queue | stale |\n"
+             "| AC1 | in verify_ac.py, hard-code the exit status to zero | stale |\n"
+             f"| AC2 | {PLACEHOLDER} | stale |\n"
+             f"| AC2 | {PLACEHOLDER} | stale |\n"
+             "| AC3 | in verify_ac.py, drop the trailing newline from the report | stale |\n"
+             f"| AC3 | {PLACEHOLDER} | stale |\n")
+
+    # Every row authored, AC2's by a well-formed `unnameable` declaration.
+    AUTHORED = ("## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+                "| AC1 | in verify_ac.py, delete the emptiness guard | stale |\n"
+                "| AC2 | unnameable: acceptance of a full batch is the planner's default path "
+                "and no single edit to production code singles it out | stale |\n"
+                "| AC3 | in verify_ac.py, drop the trailing newline from the report | stale |\n"
+                "| AC4 | in verify_ac.py, remove the second name from the duplicate message "
+                "| stale |\n")
+
+    SCRIPTS = Path(__file__).resolve().parents[1]
+
+    def _fixture(self, root: Path, plan: str) -> Path:
+        self.assertTrue(str(root).startswith(tempfile.gettempdir()),
+                        "the fixture root is not under tempfile")
+        (root / "sdlc-studio" / "personas" / "seats").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "personas" / "seats" / "qa.md").write_text(
+            "# Sam - QA amigo\n\nthe charter text\n", encoding="utf-8")
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "BG9001-x.md"
+        f.write_text("# BG9001: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                     "> **Points:** 2\n> **Affects:** scripts/verify_ac.py\n"
+                     "> **Created:** 2026-09-15\n\n## Summary\n\nA thing.\n\n"
+                     f"{self.BODY}{plan}\n## Revision History\n", encoding="utf-8")
+        return f
+
+    def _derive(self, root: Path) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, "-B", str(self.SCRIPTS / "verify_ac.py"),
+                               "testplan", "derive", "--unit", "BG9001", "--root", str(root)],
+                              capture_output=True, text=True, check=False)
+
+    def _brief(self, root: Path) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, "-B", str(self.SCRIPTS / "critic.py"), "brief",
+                               "--unit", "BG9001", "--seat", "qa", "--phase", "plan-review",
+                               "--root", str(root)], capture_output=True, text=True, check=False)
+
+    @staticmethod
+    def _note_lines(out: str) -> list:
+        """The lines that ARE the note - read by its fixed opening, so a check on one of them
+        is a check on the note and never on the criteria list or table beside it."""
+        head = verify_ac.TESTPLAN_UNAUTHORED_NOTE.split("{")[0]
+        return [ln for ln in out.splitlines() if ln.startswith(head)]
+
+    @staticmethod
+    def _fixed_wording() -> list:
+        """The note's wording that holds no id and no count - present in ANY rendering of it,
+        an empty criterion list included."""
+        return [p.strip() for p in re.split(r"\{\w+\}", verify_ac.TESTPLAN_UNAUTHORED_NOTE)
+                if p.strip()]
+
+    def _scan(self, f: Path) -> tuple:
+        """Independent reader: (authored rows, placeholder rows, criteria with a row)."""
+        rows = [ln for ln in f.read_text(encoding="utf-8").splitlines()
+                if re.match(r"^\|\s*AC\d+\s*\|", ln)]
+        ph = [ln for ln in rows if self.PLACEHOLDER in ln]
+        return (len(rows) - len(ph), len(ph),
+                sorted({re.match(r"^\|\s*(AC\d+)", ln).group(1) for ln in rows}))
+
+    def test_derive_names_only_the_criteria_whose_mutant_is_unauthored(self) -> None:
+        """AC1. MUTANTS (verify_ac.py): the note printed on the `->` branch only; moved inside
+        the `unchanged` block; the helper's `any` made `all`; every id listed whenever any row
+        is a placeholder; the placeholder exemption removed (exit 2, criterion on stderr); the
+        note sent to stderr; the helper fed the input `text` (AC4 unnamed on the first run);
+        the count taken from placeholder rows (4); the count taken from `res['authored']` (4)."""
+        expected = verify_ac.TESTPLAN_UNAUTHORED_NOTE.format(count=3, ids="AC2, AC3, AC4")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            f = self._fixture(root, self.MIXED)
+            self.assertEqual((4, 3, ["AC1", "AC2", "AC3"]), self._scan(f),
+                             "the fixture must start with AC4 holding no row at all")
+            first = self._derive(root)
+            self.assertEqual(0, first.returncode, first.stdout + first.stderr)
+            self.assertIn("BG9001 -> 8 row(s) for 4 criteria", first.stdout,
+                          "the first run did not take the `->` write branch")
+            self.assertEqual((4, 4, ["AC1", "AC2", "AC3", "AC4"]), self._scan(f),
+                             "the figures are not kept apart: 4 authored, 4 placeholder rows")
+            second = self._derive(root)
+            self.assertEqual(0, second.returncode, second.stdout + second.stderr)
+            self.assertIn("BG9001 unchanged - 8 row(s) already match its 4 criteria, and 4 "
+                          "authored mutant(s) were kept", second.stdout,
+                          "the second run did not take the `unchanged` branch")
+            for run, r in (("first", first), ("second", second)):
+                notes = self._note_lines(r.stdout)
+                self.assertEqual([expected], notes,
+                                 f"the {run} run's stdout does not carry the one shared note "
+                                 f"naming AC2, AC3 and AC4 with the count 3: {r.stdout!r}")
+                self.assertNotIn("AC1", notes[0], f"the {run} run's note names AC1")
+                self.assertIsNone(re.search(r"AC\d", r.stderr),
+                                  f"the {run} run named a criterion on stderr: {r.stderr!r}")
+
+    def test_an_authored_plan_is_reported_by_neither_surface(self) -> None:
+        """AC3. MUTANTS (verify_ac.py): the empty-list guard dropped (a note with no ids on
+        both surfaces); an `unnameable` row counted as unauthored; every `unnameable` row
+        refused by `testplan_row_faults` (exit 2, nothing on stdout). The absence is checked
+        on the note's FIXED wording, so an empty-list note cannot slip past it; the mixed plan
+        is the positive control, so the silence is not a surface that never prints."""
+        fixed = self._fixed_wording()
+        self.assertTrue(fixed and all(len(p) > 8 for p in fixed), fixed)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, self.AUTHORED)
+            dv, br = self._derive(root), self._brief(root)
+            self.assertEqual(0, dv.returncode, f"derive refused a fully authored plan: "
+                                               f"{dv.stdout}{dv.stderr}")
+            self.assertIn("BG9001 -> 4 row(s) for 4 criteria", dv.stdout)
+            self.assertEqual(0, br.returncode, br.stderr)
+            self.assertIn("unnameable: acceptance of a full batch", br.stdout,
+                          "the brief did not render the authored plan it is judged silent on")
+            for surface, out in (("derive", dv.stdout + dv.stderr), ("brief", br.stdout)):
+                for part in fixed:
+                    self.assertNotIn(part, out, f"{surface} printed the note's wording for a "
+                                                f"fully authored plan")
+        # Positive control: the same two commands on the mixed plan DO print it.
+        expected = verify_ac.TESTPLAN_UNAUTHORED_NOTE.format(count=3, ids="AC2, AC3, AC4")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, self.MIXED)
+            dv = self._derive(root)
+            br = self._brief(root)
+            self.assertEqual(0, dv.returncode, dv.stderr)
+            self.assertEqual(0, br.returncode, br.stderr)
+            self.assertEqual([expected], self._note_lines(dv.stdout))
+            self.assertEqual([expected], self._note_lines(br.stdout))
+            for part in fixed:
+                self.assertIn(part, dv.stdout)
+                self.assertIn(part, br.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

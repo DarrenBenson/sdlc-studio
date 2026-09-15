@@ -398,6 +398,82 @@ class PlanReviewBriefTests(unittest.TestCase):
             self.assertIn("no meaning on a plan review", err.getvalue())
 
 
+class PlanReviewBriefUnauthoredNoteTests(unittest.TestCase):
+    """BG0666 AC2: the plan-review brief renders a placeholder row exactly like a written one,
+    and a reviewer handed that judged a plan that named nothing. The brief now carries the note
+    `testplan derive` prints, from derive's own helper and sentence.
+
+    The expected note is built from the imported template with LITERAL ids and count, never by
+    calling the helper, and "not AC1" is read on the note line alone: the criteria list and the
+    table beside it name AC1 to AC4 whatever the note says.
+    """
+
+    PLACEHOLDER = "{{name the production change this test must fail on}}"
+    VERIFY_AC = SCRIPT.parent / "verify_ac.py"
+
+    def _fixture(self, root: Path) -> None:
+        (root / "sdlc-studio" / "personas" / "seats").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "personas" / "seats" / "qa.md").write_text(
+            "# Sam - QA amigo\n\nthe charter text\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
+        ph = self.PLACEHOLDER
+        (root / "sdlc-studio" / "bugs" / "BG9001-x.md").write_text(
+            "# BG9001: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Points:** 2\n> **Affects:** scripts/verify_ac.py\n"
+            "> **Created:** 2026-09-15\n\n## Summary\n\nA thing.\n\n"
+            "## Acceptance Criteria\n\n"
+            "- [ ] **AC1** Given an empty batch, when the planner runs, then it refuses the batch\n"
+            "- [ ] **AC2** Given a full batch, when the planner runs, then it accepts every unit\n"
+            "- [ ] **AC3** Given a batch of one, when the planner runs, then it prints that unit\n"
+            "- [ ] **AC4** Given a duplicated unit, when the planner runs, then it names both "
+            "copies\n\n"
+            "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
+            "| AC1 | in verify_ac.py, delete the emptiness guard | stale |\n"
+            "| AC1 | in verify_ac.py, invert the sort order of the queue | stale |\n"
+            "| AC1 | in verify_ac.py, hard-code the exit status to zero | stale |\n"
+            f"| AC2 | {ph} | stale |\n| AC2 | {ph} | stale |\n"
+            "| AC3 | in verify_ac.py, drop the trailing newline from the report | stale |\n"
+            f"| AC3 | {ph} | stale |\n\n## Revision History\n", encoding="utf-8")
+
+    def _brief(self, root: Path):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "BG9001",
+                               "--seat", "qa", "--phase", "plan-review", "--root", str(root)],
+                              capture_output=True, text=True, check=False)
+
+    def test_the_brief_names_only_the_criteria_whose_mutant_is_unauthored(self) -> None:
+        """MUTANTS (critic.py `_plan_review_brief`): the note line dropped; the shared helper
+        replaced by a local count of placeholder cells in its own wording; the note wrapped in an
+        `all(...)` over every table row, so a partly authored plan gets none."""
+        import subprocess  # noqa: PLC0415
+        import verify_ac  # noqa: PLC0415 - scripts/ is on the path; the template is derive's own
+        template = verify_ac.TESTPLAN_UNAUTHORED_NOTE
+        head = template.split("{")[0]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            # The stated rule, pinned: the note judges the ROWS the file holds, so before derive
+            # AC4 - which has no row yet - is not named, and the count is 2.
+            before = self._brief(root)
+            self.assertEqual(0, before.returncode, before.stderr)
+            self.assertEqual([template.format(count=2, ids="AC2, AC3")],
+                             [ln for ln in before.stdout.splitlines() if ln.startswith(head)],
+                             "a criterion with no row is judged by the brief's note")
+            dv = subprocess.run([sys.executable, "-B", str(self.VERIFY_AC), "testplan", "derive",
+                                 "--unit", "BG9001", "--root", str(root)],
+                                capture_output=True, text=True, check=False)
+            self.assertEqual(0, dv.returncode, dv.stdout + dv.stderr)
+            r = self._brief(root)
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertIn(f"| AC4 | {self.PLACEHOLDER} |", r.stdout,
+                          "the brief is not reading the plan as the first derive left it")
+            notes = [ln for ln in r.stdout.splitlines() if ln.startswith(head)]
+            self.assertEqual([template.format(count=3, ids="AC2, AC3, AC4")], notes,
+                             f"the brief does not carry the shared note naming AC2, AC3 and AC4: "
+                             f"{r.stdout!r}")
+            self.assertNotIn("AC1", notes[0], "the brief's note names the authored AC1")
+
+
 class PlanReviewKindTests(unittest.TestCase):
     """BG0510: a plan-review verdict was keyed by unit and phase only.
 

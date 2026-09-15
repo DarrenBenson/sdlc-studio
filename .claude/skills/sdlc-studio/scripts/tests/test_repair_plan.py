@@ -202,23 +202,36 @@ class UntokenedVerdictPinTests(unittest.TestCase):
             [_entry(f) for f in findings], "author-a")
 
     def test_an_untokened_verdict_is_not_treated_as_pinned(self) -> None:
-        # AC1: an APPROVE recorded with an issues field that carries no `findings-hash=`. Under
-        # the repair plan's own kind, the only kind `plan_reviewed` reads: recorded under the
-        # default kind it would be refused as no APPROVE at all, and the assertion on the
-        # REASON below is what keeps this test about the missing pin.
-        self._plan()
-        critic.record_verdict(self.r.tmp, "RP1", "APPROVE", "reviewer-b", "author-a",
-                              "plan=RP1", phase="plan-review", kind=critic.REPAIR_PLAN_KIND)
-        res = repair_plan.plan_reviewed(self.r.tmp, "RP1")
-        self.assertFalse(res["ok"], f"an untokened verdict was honoured: {res}")
-        # the REASON must name the missing pin, not some other refusal (independence, no
-        # APPROVE) - otherwise this would pass while the hole stayed open behind it
-        self.assertIn("findings-hash", res["reason"])
-        # and the gate built on it refuses the repair
-        _write_config(self.r.tmp, "on")
-        with self.assertRaises(ValueError) as cm:
-            repair_plan.repair_gate(self.r.tmp, "RP1")
-        self.assertIn("findings-hash", str(cm.exception))
+        # AC1: an APPROVE recorded with an issues field that carries no `plan-hash=`, the pin.
+        # Under the repair plan's own kind, the only kind `plan_reviewed` reads: recorded under
+        # the default kind it would be refused as no APPROVE at all, and the assertion on the
+        # REASON below is what keeps this test about the missing pin. The findings-only token
+        # an earlier build wrote is not a pin either: it answers the finding set, not the plan.
+        import json
+        plan = json.loads(self._plan().read_text(encoding="utf-8"))
+        issues = ("plan=RP1", f"plan=RP1; findings-hash={plan['fingerprint']}")
+        for n, cell in enumerate(issues):
+            with self.subTest(issues=cell):
+                root = self.r.tmp
+                if n:
+                    other = _Root()
+                    self.addCleanup(other.cleanup)
+                    root = other.tmp
+                    repair_plan.record_repair_plan(root, "RP1", "REJECT", ["F1"],
+                                                   [_entry("F1")], "author-a")
+                critic.record_verdict(root, "RP1", "APPROVE", "reviewer-b", "author-a",
+                                      cell, phase="plan-review",
+                                      kind=critic.REPAIR_PLAN_KIND)
+                res = repair_plan.plan_reviewed(root, "RP1")
+                self.assertFalse(res["ok"], f"an unpinned verdict was honoured: {res}")
+                # the REASON must name the missing pin, not some other refusal (independence,
+                # no APPROVE) - otherwise this would pass while the hole stayed open behind it
+                self.assertIn("plan-hash", res["reason"])
+                # and the gate built on it refuses the repair
+                _write_config(root, "on")
+                with self.assertRaises(ValueError) as cm:
+                    repair_plan.repair_gate(root, "RP1")
+                self.assertIn("plan-hash", str(cm.exception))
 
     def test_a_correctly_pinned_verdict_still_passes(self) -> None:
         # AC2: the positive control - the fix narrows only the untokened hole. A blanket
@@ -227,8 +240,11 @@ class UntokenedVerdictPinTests(unittest.TestCase):
         repair_plan.review_repair_plan(self.r.tmp, "RP1", "APPROVE", "reviewer-b", "author-a")
         v = critic.verdict_for(self.r.tmp, "RP1", phase="plan-review")
         import json
-        self.assertIn(f"findings-hash={json.loads(plan.read_text())['fingerprint']}",
-                      v["issues"])                       # pinned to THIS finding set
+        stored = json.loads(plan.read_text())
+        self.assertIn(f"findings-hash={stored['fingerprint']}",
+                      v["issues"])                       # records THIS finding set
+        self.assertIn(f"plan-hash={repair_plan.plan_fingerprint(stored)}",
+                      v["issues"])                       # and is pinned to THIS plan
         res = repair_plan.plan_reviewed(self.r.tmp, "RP1")
         self.assertTrue(res["ok"], res["reason"])
         _write_config(self.r.tmp, "on")
@@ -379,11 +395,11 @@ class RepairGateIsReachableTests(unittest.TestCase):
         self.addCleanup(r.cleanup)
         return r.tmp
 
-    def _bug(self, root: Path, gate: str | None) -> Path:
+    def _bug(self, root: Path, gate: str | None, bid: str = "BG0001") -> Path:
         bugs = root / "sdlc-studio" / "bugs"
         bugs.mkdir(parents=True, exist_ok=True)
-        path = bugs / "BG0001-x.md"
-        path.write_text(_BUG, encoding="utf-8")
+        path = bugs / f"{bid}-x.md"
+        path.write_text(_BUG.replace("BG0001", bid), encoding="utf-8")
         if gate is not None:
             _write_config(root, gate)
         return path
@@ -611,6 +627,330 @@ class RepairGateIsReachableTests(unittest.TestCase):
         self.assertEqual(rc, 0, out)
         self.assertEqual(self._status(bug), "Fixed")
         self.assertNotIn(repair_plan.GATE_KEY, out)
+
+    # --- BG0678: rounds, the brief key, the whole-plan pin and plan-author independence -------
+
+    def _round(self, root: Path, findings, entries, unit: str = "BG0001",
+               author: str = "author-a") -> tuple[int, str]:
+        """Record one round of `unit`'s plan through the shipped `record` verb."""
+        import json
+        doc = root / "plan.json"
+        doc.write_text(json.dumps({"verdict": "REJECT", "findings": list(findings),
+                                   "entries": list(entries)}), encoding="utf-8")
+        return _run(root, "repair_plan.py", "record", "--unit", unit, "--author", author,
+                    "--plan-file", str(doc))
+
+    def _ok_round(self, root: Path, findings, entries, **kw) -> None:
+        rc, out = self._round(root, findings, entries, **kw)
+        self.assertEqual(rc, 0, out)
+
+    def _review(self, root: Path, verdict: str, reviewer: str, unit: str = "BG0001") -> None:
+        rc, out = _run(root, "repair_plan.py", "review", "--unit", unit, "--verdict", verdict,
+                       "--reviewer", reviewer)
+        self.assertEqual(rc, 0, out)
+
+    def _gate(self, root: Path, unit: str = "BG0001") -> tuple[int, str]:
+        return _run(root, "repair_plan.py", "gate", "--unit", unit)
+
+    @staticmethod
+    def _key(findings) -> str:
+        """The Brief cell `repair_plan.py review` writes: the first 12 hex characters of the
+        findings fingerprint, the length `critic.py record --brief` accepts."""
+        return repair_plan.findings_fingerprint(findings)[:12]
+
+    def _repair_rows(self, root: Path, unit: str = "BG0001") -> list[dict]:
+        return [v for v in self._plan_rows(root, unit) if v["kind"] == critic.REPAIR_PLAN_KIND]
+
+    def _stored_rounds(self, root: Path) -> list[Path]:
+        """The round files on disk, counted straight off the directory rather than through
+        the module under test, so a counter that miscounts cannot also mis-report."""
+        return sorted((root / "sdlc-studio" / ".local" / "repair-plans").glob("*.json"))
+
+    def _critic_approve(self, root: Path, reviewer: str, author: str,
+                        unit: str = "BG0001") -> None:
+        """An APPROVE written through `critic.py record`, not `repair_plan.py review`, carrying
+        exactly the brief and pin `review` would write for the current round - so the only
+        thing that can refuse it is who reviewed it."""
+        plan = repair_plan.load_plan(root, unit)
+        fp = repair_plan.findings_fingerprint(plan["findings"])
+        rc, out = _run(root, "critic.py", "record", "--unit", unit, "--phase", "plan-review",
+                       "--kind", critic.REPAIR_PLAN_KIND, "--verdict", "APPROVE",
+                       "--reviewer", reviewer, "--author", author, "--brief", fp[:12],
+                       "--issues", f"plan={unit}; findings-hash={fp}; "
+                                   f"plan-hash={repair_plan.plan_fingerprint(plan)}")
+        self.assertEqual(rc, 0, out)
+        row = self._repair_rows(root, unit)[-1]
+        self.assertEqual((row["reviewer"], row["author"], row["brief"]),
+                         (reviewer, author, fp[:12]), "the row did not read back as written")
+
+    def _refused_at_fixed(self, root: Path, why: str) -> str:
+        bug = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+        rc, out = _run(root, "transition.py", "set", "BG0001", "Fixed")
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn(repair_plan.GATE_KEY, out)
+        self.assertIn(why, out)
+        self.assertEqual(self._status(bug), "In Progress", "the refused transition was written")
+        return out
+
+    def test_each_missing_plan_state_is_refused_by_unit_id(self) -> None:
+        """BG0678 AC1. Must fail on: the no-plan refusal worded as the unreviewed one, so the
+        two causes are not named apart; the transition asking for the most recently written
+        plan rather than the unit's own; `plan_reviewed` dropping `critic.is_independent`
+        (case 4, whose reviewer is the row's Author but not the plan's); dropping the stored
+        plan author, or reading only the newest round's (case 5, whose reviewer wrote round
+        one and whose row names round two's author)."""
+        no_plan, no_verdict = "no repair plan is recorded for BG0001", "has no verdict"
+        with self.subTest(case="1: nothing recorded for the unit"):
+            root = self._fresh()
+            self._bug(root, "on")
+            self.assertNotIn(no_verdict, self._refused_at_fixed(root, no_plan))
+        with self.subTest(case="2: only an approved plan for a DIFFERENT unit, written last"):
+            root = self._fresh()
+            self._bug(root, "on")
+            self._bug(root, None, "BG0002")
+            self._ok_round(root, ["F1"], [_entry("F1")], unit="BG0002")
+            self._review(root, "APPROVE", "reviewer-b", unit="BG0002")
+            self.assertTrue(repair_plan.plan_reviewed(root, "BG0002")["ok"],
+                            "the other unit's plan must be approved, or this proves nothing")
+            self._refused_at_fixed(root, no_plan)
+        with self.subTest(case="3: a plan with no verdict"):
+            root = self._fresh()
+            self._bug(root, "on")
+            self._ok_round(root, ["F1"], [_entry("F1")])
+            self.assertNotIn(no_plan, self._refused_at_fixed(root, no_verdict))
+        with self.subTest(case="4: reviewer = the row's Author, the plan's author a third"):
+            root = self._fresh()
+            bug = self._bug(root, "on")
+            self._ok_round(root, ["F1"], [_entry("F1")], author="author-a")
+            self._critic_approve(root, reviewer="bob", author="bob")
+            self._refused_at_fixed(root, "not independent")
+            # the same record naming a third identity, on the same plan: it passes
+            self._critic_approve(root, reviewer="zed", author="bob")
+            self.assertTrue(repair_plan.plan_reviewed(root, "BG0001")["ok"])
+            rc, out = _run(root, "transition.py", "set", "BG0001", "Fixed")
+            self.assertEqual((rc, self._status(bug)), (0, "Fixed"), out)
+        with self.subTest(case="5: reviewer wrote round one, the row names round two's author"):
+            root = self._fresh()
+            bug = self._bug(root, "on")
+            self._ok_round(root, ["F1"], [_entry("F1")], author="alice")
+            self._ok_round(root, ["F1"], [_entry("F1", design="retain")], author="erin")
+            self.assertEqual(repair_plan.plan_authors(root, "BG0001"), ["alice", "erin"])
+            self._critic_approve(root, reviewer="alice", author="erin")
+            self._refused_at_fixed(root, "not independent")
+            self._critic_approve(root, reviewer="zed", author="erin")
+            self.assertTrue(repair_plan.plan_reviewed(root, "BG0001")["ok"])
+            rc, out = _run(root, "transition.py", "set", "BG0001", "Fixed")
+            self.assertEqual((rc, self._status(bug)), (0, "Fixed"), out)
+
+    def test_an_approved_plan_passes_despite_an_earlier_test_plan_reject(self) -> None:
+        """BG0678 AC2. Must fail on: `plan_reviewed` reading every plan-review row (no kind),
+        or both verbs using kind `test-plan`, so the test-plan REJECT answers for the plan;
+        `review` writing no brief, the whole-plan hash as the brief, or the unsliced 16-hex
+        fingerprint - the first two leave the round-one REJECT standing, and all three fail the
+        read-back of the Brief cell."""
+        key = self._key(["F1"])
+        with self.subTest(fixture="an approved plan beside a standing test-plan REJECT"):
+            root = self._fresh()
+            bug = self._bug(root, "on")
+            self._test_plan_reject(root)
+            # beside it, the same fixture with no plan: refused, naming the gate
+            self._refused_at_fixed(root, "no repair plan is recorded for BG0001")
+            self._ok_round(root, ["F1"], [_entry("F1")])
+            self._review(root, "APPROVE", "reviewer-b")
+            self.assertEqual(critic.verdict_for(root, "BG0001", phase="plan-review",
+                                                kind="test-plan")["verdict"], "REJECT",
+                             "the test-plan REJECT must still stand, or this proves nothing")
+            self.assertEqual([r["brief"] for r in self._repair_rows(root)], [key])
+            rc, out = _run(root, "transition.py", "set", "BG0001", "Fixed")
+            self.assertEqual((rc, self._status(bug)), (0, "Fixed"), out)
+        with self.subTest(fixture="round one REJECTed, the revised round APPROVEd"):
+            root = self._fresh()
+            bug = self._bug(root, "on")
+            self._ok_round(root, ["F1"], [_entry("F1")])
+            self._review(root, "REJECT", "reviewer-b")
+            self._ok_round(root, ["F1"], [_entry("F1", change="rewrite the reader instead",
+                                                 design="retain")])
+            self._review(root, "APPROVE", "reviewer-b")
+            self.assertEqual([(r["verdict"], r["brief"]) for r in self._repair_rows(root)],
+                             [("REJECT", key), ("APPROVE", key)])
+            rc, out = _run(root, "transition.py", "set", "BG0001", "Fixed")
+            self.assertEqual((rc, self._status(bug)), (0, "Fixed"), out)
+
+    def test_every_round_is_kept_so_the_design_threshold_binds_on_one_unit(self) -> None:
+        """BG0678 AC3. Must fail on: `record` writing each round to `<unit>.json` in place;
+        `repeat_rounds` counting distinct unit ids rather than rounds; or the round file written
+        before the design-threshold check, so a refused round is left on disk."""
+        self._bug(self.root, None)
+        cls = "class:enumerate"
+        self._ok_round(self.root, [cls], [_entry(cls, approach="v1: enumerate spellings")])
+        first = self._stored_rounds(self.root)
+        self.assertEqual(len(first), 1)
+        round_one = first[0].read_bytes()
+        self._ok_round(self.root, [cls], [_entry(cls, approach="v2: a flag-aware split",
+                                                 design="retain")])
+        self.assertEqual(len(self._stored_rounds(self.root)), 2)
+        rc, out = self._round(self.root, [cls], [_entry(cls, approach="v3: a longer list",
+                                                        design="retain")])
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn("failed 2 round", out)
+        self.assertEqual(len(self._stored_rounds(self.root)), 2, "the refused round was written")
+        # beside it, the same third round changing the design: accepted, and kept as a third
+        self._ok_round(self.root, [cls], [_entry(cls, approach="v3: derive from the runner",
+                                                 design="change")])
+        rounds = self._stored_rounds(self.root)
+        self.assertEqual(len(rounds), 3)
+        self.assertEqual(first[0].read_bytes(), round_one, "round one was written over")
+        self.assertEqual(repair_plan.load_plan(self.root, "BG0001")["entries"][0]["approach"],
+                         "v3: derive from the runner", "the current round is the latest")
+
+    def test_a_re_record_after_approval_invalidates_the_approval(self) -> None:
+        """BG0678 AC4. Must fail on: the pin made the findings fingerprint alone, or findings
+        plus `design` without `approach`; or `load_plan` returning the first round, so the
+        gate judges the round that was approved rather than the current one."""
+        _write_config(self.root, "on")
+        self._bug(self.root, None)
+        entry = dict(finding="F1", change="rewrite the branch", risk="one manual",
+                     design="retain")
+        self._ok_round(self.root, ["F1"], [_entry(approach="derive from the runner", **entry)])
+        self._review(self.root, "APPROVE", "reviewer-b")
+        rc, out = self._gate(self.root)
+        self.assertEqual(rc, 0, out)
+        # the same findings, design, change and risk: ONLY the approach differs
+        self._ok_round(self.root, ["F1"], [_entry(approach="enumerate the spellings", **entry)])
+        self.assertEqual(critic.verdict_for(self.root, "BG0001", phase="plan-review",
+                                            kind=critic.REPAIR_PLAN_KIND)["verdict"], "APPROVE",
+                         "the round-one approval is still the latest verdict")
+        rc, out = self._gate(self.root)
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn("answered a different plan", out)
+        # a fresh independent approval of the new round passes it again
+        self._review(self.root, "APPROVE", "reviewer-b")
+        rc, out = self._gate(self.root)
+        self.assertEqual(rc, 0, out)
+
+    def test_a_reject_is_retired_only_by_an_approval_of_the_same_finding_set(self) -> None:
+        """BG0678 AC5. Must fail on: a Brief key every round of a unit shares whatever its
+        finding set (a hash of the unit id); `plan_reviewed` judging only the latest row's pin
+        and ignoring earlier REJECTs; or its REJECT scan counting a principal-superseded row."""
+        waived = "F2 waived under D0001: out of scope for this repair"
+        # unit A: F2 waived by DROPPING it from round two - the key changes, the REJECT stands
+        a = self._fresh()
+        self._bug(a, "on")
+        self._ok_round(a, ["F1", "F2"], [_entry("F1"), _entry("F2")])
+        self._review(a, "REJECT", "carol")
+        self._ok_round(a, ["F1"], [_entry("F1", change="rewrite the reader", design="retain")])
+        self._review(a, "APPROVE", "carol")
+        rc, out = self._gate(a)
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn("carol's REJECT", out)
+        self.assertIn("unanswered", out)
+        # unit B: the same path, F2 kept in the set with an entry naming the waiver - passes
+        b = self._fresh()
+        self._bug(b, "on")
+        self._ok_round(b, ["F1", "F2"], [_entry("F1"), _entry("F2")])
+        self._review(b, "REJECT", "carol")
+        self._ok_round(b, ["F1", "F2"], [
+            _entry("F1", change="rewrite the reader", design="retain"),
+            _entry("F2", change=f"none: {waived}", approach="answered by the waiver, no code",
+                   risk="the waived defect ships disclosed", design="retain")])
+        self._review(b, "APPROVE", "carol")
+        rc, out = self._gate(b)
+        self.assertEqual(rc, 0, out)
+        # the remedy for A: a principal supersession of the round-one REJECT
+        reject = next(r for r in self._repair_rows(a) if r["verdict"] == "REJECT")
+        rc, out = _run(a, "critic.py", "supersede", "--phase", "plan-review", "--unit", "BG0001",
+                       "--date", reject["date"], "--reason", "the finding set changed: F2 waived",
+                       "--reviewer", "carol", "--verdict", "REJECT", "--authorised-by", "pat",
+                       "--boundary", "operator terminal, outside the authoring session")
+        self.assertEqual(rc, 0, out)
+        rc, out = self._gate(a)
+        self.assertEqual(rc, 0, out)
+
+    def _carol_rejects_then(self, approver: str) -> Path:
+        """Round one REJECTed by carol, round two re-recorded against the same finding set and
+        APPROVEd by `approver`, all through `repair_plan.py`."""
+        root = self._fresh()
+        self._bug(root, "on")
+        self._ok_round(root, ["F1"], [_entry("F1")])
+        self._review(root, "REJECT", "carol")
+        self._ok_round(root, ["F1"], [_entry("F1", change="rewrite the reader", design="retain")])
+        self._review(root, "APPROVE", approver)
+        return root
+
+    def _carols_reject(self, root: Path) -> dict:
+        return next(r for r in self._repair_rows(root)
+                    if r["verdict"] == "REJECT" and r["reviewer"] == "carol")
+
+    def test_another_reviewers_approval_does_not_retire_a_reject(self) -> None:
+        """BG0678 AC6. Must fail on: the reviewer-identity comparison deleted from
+        `plan_reviewed`'s REJECT scan; the scan's retired-row filter removed; or that filter
+        widened to `critic.is_superseded`, or the scan replaced by `critic.unit_review_rounds`
+        - both drop a REJECT the plan's own author retired by hand."""
+        refused = "carol's REJECT"
+        with self.subTest(case="dave approves carol's rejected plan"):
+            root = self._carol_rejects_then("dave")
+            v = critic.verdict_for(root, "BG0001", phase="plan-review",
+                                   kind=critic.REPAIR_PLAN_KIND)
+            self.assertEqual((v["reviewer"], v["verdict"]), ("dave", "APPROVE"),
+                             "verdict_for must read dave's APPROVE as retiring carol's REJECT, "
+                             "or this proves nothing about plan_reviewed's own scan")
+            rc, out = self._gate(root)
+            self.assertNotEqual(rc, 0, out)
+            self.assertIn(refused, out)
+            self.assertIn("unanswered", out)
+            # the remedy: a principal supersession of carol's REJECT; the raw row still reads it
+            rc, out = _run(root, "critic.py", "supersede", "--phase", "plan-review",
+                           "--unit", "BG0001", "--date", self._carols_reject(root)["date"],
+                           "--reason", "carol's seat was renamed between rounds",
+                           "--reviewer", "carol", "--verdict", "REJECT",
+                           "--authorised-by", "pat", "--boundary", "operator terminal")
+            self.assertEqual(rc, 0, out)
+            row = self._carols_reject(root)
+            self.assertEqual((row["verdict"], row["superseded"]), ("REJECT", True))
+            rc, out = self._gate(root)
+            self.assertEqual(rc, 0, out)
+        with self.subTest(case="carol approves her own rejected plan"):
+            rc, out = self._gate(self._carol_rejects_then("carol"))
+            self.assertEqual(rc, 0, out)
+        with self.subTest(case="carol's REJECT retired by the plan's author, by hand"):
+            root = self._carol_rejects_then("dave")
+            row = self._carols_reject(root)
+            self.assertEqual(row["author"], repair_plan.load_plan(root, "BG0001")["author"],
+                             "the REJECT's Author cell must be the plan's author")
+            path = critic.verdicts_path(root, "plan-review")
+            path.write_text(
+                path.read_text(encoding="utf-8") + "\n" + critic.SUPERSEDE_HEADING + "\n\n"
+                + critic._SUPERSEDE_PREFIX
+                + f"unit=BG0001 row-date={row['date']} row-verdict=REJECT row-reviewer=carol "
+                  f"row-author={row['author']} authorised-by={row['author']} boundary=- "
+                  "reason=inconvenient recorded=2026-09-15\n", encoding="utf-8")
+            row = self._carols_reject(root)
+            self.assertTrue(critic.is_superseded(row), "the hand append did not parse")
+            self.assertFalse(critic._is_principal_superseded(root, "BG0001", row),
+                             "an author-authorised correction must read non-principal")
+            v = critic.verdict_for(root, "BG0001", phase="plan-review",
+                                   kind=critic.REPAIR_PLAN_KIND)
+            self.assertEqual((v["reviewer"], v["verdict"]), ("dave", "APPROVE"))
+            rc, out = self._gate(root)
+            self.assertNotEqual(rc, 0, out)
+            self.assertIn(refused, out)
+        with self.subTest(case="carol and erin reject, erin alone approves"):
+            root = self._fresh()
+            self._bug(root, "on")
+            self._ok_round(root, ["F1"], [_entry("F1")])
+            self._review(root, "REJECT", "carol")
+            self._review(root, "REJECT", "erin")
+            self._ok_round(root, ["F1"], [_entry("F1", change="rewrite the reader",
+                                                 design="retain")])
+            self._review(root, "APPROVE", "erin")
+            rc, out = self._gate(root)
+            self.assertNotEqual(rc, 0, out)
+            self.assertIn(refused, out)
+            self.assertNotIn("erin's REJECT", out)
+            # and once carol approves too, the gate passes
+            self._review(root, "APPROVE", "carol")
+            rc, out = self._gate(root)
+            self.assertEqual(rc, 0, out)
 
 
 def _write_config(root: Path, gate: str, extra: str = "") -> None:

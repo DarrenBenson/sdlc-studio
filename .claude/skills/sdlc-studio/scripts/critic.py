@@ -3472,6 +3472,14 @@ def _plan_review_brief(root, card, seat, unit_id, title, path, text, acs) -> str
     plan = (m.group(1).strip() if m else
             "(NO `## Test Plan` section - derive one first: "
             "`verify_ac.py testplan derive --unit " + unit_id + "`)")
+    # The table renders a placeholder row exactly like a written one, so the seat is told which
+    # criteria are still unauthored - by derive's own helper and sentence, so the two surfaces
+    # a plan is read on before review cannot disagree about it.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import verify_ac  # noqa: PLC0415 - sibling; the note is derive's own
+    note = verify_ac.testplan_unauthored_note(
+        verify_ac.testplan_unauthored(verify_ac.testplan_rows_by_criterion(text)))
+    unauthored = f"\n{note}\n" if note else ""
     return f"""You are the {seat} review seat, reviewing a TEST PLAN before any code exists.
 Read and adopt the charter at
 {card} (the review render). You did NOT author this plan; your job is independent
@@ -3494,7 +3502,7 @@ claim: a criterion that can be wrong in several distinct ways is exactly the one
 pinning several times. Every row names the production change that criterion's test must
 FAIL on, and every row is executed and accounted for on its own:
 {plan}
-
+{unauthored}
 Ask of each row, in this order:
 
 1. **Is the mutant a change to production code?** "The feature does not work" is a

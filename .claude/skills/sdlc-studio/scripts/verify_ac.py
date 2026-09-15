@@ -3224,6 +3224,43 @@ def testplan_rows_by_criterion(text: str) -> dict:
     return out
 
 
+#: The ONE sentence every surface prints for a plan still carrying the placeholder. Shared so
+#: `testplan derive` and the plan-review brief cannot disagree about the same plan, and imported
+#: by the tests so they assert this wording rather than a paraphrase of it.
+TESTPLAN_UNAUTHORED_NOTE = (
+    "UNAUTHORED: {count} criterion/criteria still carry the placeholder mutant ({ids}) - a "
+    "placeholder row names no production change, so the plan measures nothing for them until "
+    "a mutant is written in")
+
+
+def testplan_unauthored(by_ac: dict) -> list:
+    """The criteria of a `{ac: [mutant, ...]}` plan whose mutant nobody has written, in order.
+
+    A criterion is unauthored when ANY of its rows is still the placeholder: one authored row
+    beside it does not make it authored, because the placeholder row is a claim nobody has made.
+    A row declared `unnameable: <reason>` IS authored - it records a judgement, and whether that
+    judgement holds is `testplan_row_faults`'s question, not this one's.
+
+    Judged on ROWS only, so a criterion with no row at all is not named: it is absent from the
+    plan rather than unauthored in it. `derive` writes its placeholder, and from that run on it
+    is named. The brief reads the file as it stands, so a criterion added since the last derive
+    is missing from its table and from this note alike until `derive` runs again.
+    """
+    return [ac for ac, mutants in by_ac.items()
+            if any((m or "").strip() == _TESTPLAN_PLACEHOLDER for m in mutants)]
+
+
+def testplan_unauthored_note(unauthored: list) -> str:
+    """`TESTPLAN_UNAUTHORED_NOTE` for these criteria, or "" when there are none.
+
+    Silent on a fully authored plan by design: a note that fires on every plan is one nobody
+    reads, and the day it matters it reads like every other day.
+    """
+    if not unauthored:
+        return ""
+    return TESTPLAN_UNAUTHORED_NOTE.format(count=len(unauthored), ids=", ".join(unauthored))
+
+
 #: A criterion whose falsifying change nobody can name. A legitimate state - some criteria really
 #: are not mechanically falsifiable - but it must COST something to enter, or it becomes the state
 #: every awkward criterion ends up in. So it carries its reason, and a batch holding one is not
@@ -3723,9 +3760,16 @@ def testplan_derive(repo_root, unit: str, *, write: bool = True) -> dict:
     unchanged = rendered == text
     if write and not unchanged:
         path.write_text(rendered, encoding="utf-8")
+    # Unauthored criteria are judged on the rows THIS run derived, never on the text it read:
+    # a criterion with no row gets its placeholder here, and a note taken from the input would
+    # stay silent about it until some later run.
+    derived: dict = {}
+    for ac, _t, m in rows:
+        derived.setdefault(ac, []).append(m)
     return {"ok": True, "path": str(path), "rows": len(rows), "criteria": declared,
             "unchanged": unchanged, "authored": sum(1 for _i, _t, m in rows
-                                                    if m != _TESTPLAN_PLACEHOLDER)}
+                                                    if m != _TESTPLAN_PLACEHOLDER),
+            "unauthored": testplan_unauthored(derived)}
 
 
 def _replace_testplan(text: str, section: str) -> str:
@@ -3774,9 +3818,15 @@ def cmd_testplan(args: argparse.Namespace) -> int:
     if res.get("unchanged"):
         print(f"testplan derive: {args.unit} unchanged - {res['rows']} row(s) already match its "
               f"{res['criteria']} criteria, and {res['authored']} authored mutant(s) were kept")
-        return 0
-    print(f"testplan derive: {args.unit} -> {res['rows']} row(s) for {res['criteria']} "
-          f"criteria in {res['path']}")
+    else:
+        print(f"testplan derive: {args.unit} -> {res['rows']} row(s) for {res['criteria']} "
+              f"criteria in {res['path']}")
+    # On BOTH branches, and to stdout at exit 0. A placeholder is a legitimate state while a unit
+    # is being written, so this reports rather than refuses; the re-run is the one an author
+    # reads to learn whether the plan is finished, and it used to say nothing at all.
+    note = testplan_unauthored_note(res["unauthored"])
+    if note:
+        print(note)
     return 0
 
 
