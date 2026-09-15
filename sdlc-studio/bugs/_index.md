@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 9 |
+| Open | 15 |
 | In Progress | 0 |
 | Fixed | 558 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **669** |
+| **Total** | **675** |
 
 ## All Bugs
 
@@ -28,6 +28,12 @@
 | [BG0667](BG0667-the-root-effect-control-s-real-tree-marker.md) | the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance | Open | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0668](BG0668-tag-check-refuses-on-a-close-the-close.md) | tag-check refuses on a close the close-owed predicate says is not owed | Open | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0669](BG0669-conformance-demands-acceptance-criteria-of-a-story-retired.md) | conformance demands acceptance criteria of a story retired unbuilt, so an ungroomed story cannot be Superseded or Won't Implement without a waiver | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0670](BG0670-config-py-show-crashes-on-a-config-holding.md) | config.py show crashes on a config holding an unquoted YAML date, so the catalogued verb cannot print this repository's own configuration | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0671](BG0671-critic-py-s-brief-practice-and-claim-pass.md) | critic.py's brief-practice and claim-pass checks are called by no production path, while reference-review.md says the brief verb refuses a brief that fails them | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0672](BG0672-critic-record-accepts-a-brief-fingerprint-no-brief.md) | critic record accepts a --brief fingerprint no brief produced, recording the row as briefed with only a stderr note | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0673](BG0673-the-repair-plan-gate-ep0106-is-wired-into.md) | the repair-plan gate (EP0106) is wired into nothing: no command records a plan or verdict, and turning review.repair_plan_gate on refuses nothing a delivery command runs | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0674](BG0674-sprint-next-materialises-a-charter-s-discovery-items.md) | sprint next materialises a charter's discovery items (CRs) that sprint plan then refuses, so the charter at the head of the queue produces a batch nothing can plan | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0675](BG0675-an-author-declared-points-value-sets-a-unit.md) | an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth | Open | Medium | 2026-09-15 | 2026-09-15 |
 
 ## Archived Releases
 

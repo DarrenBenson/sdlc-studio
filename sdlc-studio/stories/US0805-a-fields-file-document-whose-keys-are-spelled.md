@@ -25,3 +25,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: a further instance - decisions.py add --fields-file refuses a 'status' key ('carries unknown field') although --status is a flag of the same verb, so CR0417's own AC1 never reached decisions.py. Hit while recording D0187-D0192. |

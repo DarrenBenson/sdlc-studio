@@ -25,3 +25,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: tools/tests/test_test_noise.py:166 also fails to parse under Python 3.10 ('f-string expression part cannot include a backslash'); repair it with sprint_report.py or US0811's lane lands red over the real tree. |

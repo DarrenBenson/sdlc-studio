@@ -26,3 +26,4 @@ _Not yet reviewed._
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-04 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: kept Queued (goal unmet - the close chain has ten blocking steps), but its scope query '--crs Proposed' no longer selects CR0507 (In Progress) and CR0510 is Complete. Re-point it at CR0507's decomposition (--epic EP0224) before next; BG0674 is the tool half. |

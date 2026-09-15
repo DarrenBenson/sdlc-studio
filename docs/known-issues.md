@@ -39,8 +39,14 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0667` | Medium | the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance |
 | `BG0668` | Medium | tag-check refuses on a close the close-owed predicate says is not owed |
 | `BG0669` | Medium | conformance demands acceptance criteria of a story retired unbuilt, so an ungroomed story cannot be Superseded or Won't Implement without a waiver |
+| `BG0670` | Medium | config.py show crashes on a config holding an unquoted YAML date, so the catalogued verb cannot print this repository's own configuration |
+| `BG0671` | Medium | critic.py's brief-practice and claim-pass checks are called by no production path, while reference-review.md says the brief verb refuses a brief th... |
+| `BG0672` | Medium | critic record accepts a --brief fingerprint no brief produced, recording the row as briefed with only a stderr note |
+| `BG0673` | Medium | the repair-plan gate (EP0106) is wired into nothing: no command records a plan or verdict, and turning review.repair_plan_gate on refuses nothing a... |
+| `BG0674` | Medium | sprint next materialises a charter's discovery items (CRs) that sprint plan then refuses, so the charter at the head of the queue produces a batch... |
+| `BG0675` | Medium | an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth |
 
-9 findings: 9 Medium, 0 Low.
+15 findings: 15 Medium, 0 Low.
 
 ## Not carried
 

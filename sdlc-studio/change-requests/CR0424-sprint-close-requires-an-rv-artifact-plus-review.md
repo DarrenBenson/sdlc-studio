@@ -27,3 +27,4 @@ Every two-role close pays a double-entry tax: the reviewer verdict is recorded o
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | sdlc-studio | Raised |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: residue confirmed by fixture - gate._batch_is_independently_covered reads only per-unit verdicts (critic.verdict_for), so a batch covered by a sprint-review APPROVE (what sprint review-batch, the close's own remedy, writes) still reads blocking in the review-current lane, while sprint.review_coverage accepts the same record. Per-unit coverage was fixed by US0608. Cheaper fix than deriving an RV: let the lane read sprint_review_for. |

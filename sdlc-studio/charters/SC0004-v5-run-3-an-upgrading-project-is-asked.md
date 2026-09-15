@@ -39,3 +39,4 @@ _Not yet reviewed._
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: kept Queued (goal unmet - a migrated v4 fixture still fails the gate on three lanes naming CR0497), but its scope query '--crs Proposed' no longer selects CR0497 (In Progress): sprint next materialises 11 unrelated Proposed CRs that sprint plan refuses (BG0674). Re-point the query at CR0497's decomposition (--epic EP0220) before next. |

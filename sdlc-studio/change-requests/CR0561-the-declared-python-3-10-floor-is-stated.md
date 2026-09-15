@@ -39,3 +39,4 @@ Add a floor lane that parses every tracked `.py` at the declared version and ref
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-26 | sdlc-studio | Raised |
+| 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: the premise is wider than filed. A second tracked file fails to parse under Python 3.10: tools/tests/test_test_noise.py:166 ('f-string expression part cannot include a backslash', last touched by BG0644) beside sprint_report.py. The floor lane lands red on its first run unless US0813's repair covers both. |
