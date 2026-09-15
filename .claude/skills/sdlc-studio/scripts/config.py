@@ -124,12 +124,22 @@ def feature_enabled(repo_root: Path | str, feature: str) -> bool:
     return bool(stated)
 
 
+def _json_default(value):
+    """ISO-8601 for the date and datetime values PyYAML makes of an unquoted YAML date, so a
+    config holding one prints rather than crashing. Anything else is still refused, as
+    json.dumps would refuse it."""
+    import datetime
+    if isinstance(value, (datetime.date, datetime.datetime)):
+        return value.isoformat()
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serialisable")
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     """Print the resolved config, or a single dotted key."""
     if args.key:
         print(json.dumps(get(args.root, args.key)))
     else:
-        print(json.dumps(load_config(args.root), indent=2))
+        print(json.dumps(load_config(args.root), indent=2, default=_json_default))
     return 0
 
 

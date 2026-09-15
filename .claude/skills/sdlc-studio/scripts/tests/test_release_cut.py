@@ -226,6 +226,88 @@ class TagRefusesAnOwedCloseTests(unittest.TestCase):
         self.assertIn("not the commit being tagged", reason)
 
 
+class TagCheckReadsTheBlockingPredicateTests(unittest.TestCase):
+    """BG0668. The tag guard read `close_owed`'s raw `owed` list, which keeps a close-time repair
+    a recorded override accounts for, so a tag was refused on a unit `close_owed.is_owed` called
+    not owed, and recording the override the refusal asked for could not clear it."""
+
+    def setUp(self) -> None:
+        self.mod = _load()
+
+    def _root(self, *, override: bool) -> Path:
+        """BG0005 goes terminal on the SAME day as the only retro, after a closed run, and no
+        retro's Batch names it. A later-day terminal would be a repair with no override at all,
+        so only the same-day case turns on the override line."""
+        import close_owed
+        d = Path(tempfile.mkdtemp(prefix="tagpredicate_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        ws = d / "sdlc-studio"
+        (ws / "bugs").mkdir(parents=True)
+        (ws / "retros" / "evidence").mkdir(parents=True)
+        (ws / ".local").mkdir(parents=True)
+        bug = ws / "bugs" / "BG0005-x.md"
+        bug.write_text("# BG0005: x\n\n> **Status:** In Progress\n> **Severity:** Medium\n"
+                       "> **Points:** 2\n", encoding="utf-8")
+        # Stamped while BG0005 is in flight, so the baseline cannot grandfather it.
+        close_owed.stamp_baseline(d, date="2026-01-01")
+        bug.write_text(bug.read_text(encoding="utf-8").replace("In Progress", "Fixed"),
+                       encoding="utf-8")
+        body = ("# RETRO0001: x\n\n> **Date:** 2026-02-01\n> **Batch:** BG0001\n> **Run:** RUN-A\n"
+                "> **Velocity-override:** the fixture records no velocity row\n")
+        if override:
+            body += ("\n**Close-repair-override:** BG0005 - found and fixed during this "
+                     "ceremony, after the account was written\n")
+        (ws / "retros" / "RETRO0001-x.md").write_text(body, encoding="utf-8")
+        (ws / "retros" / "evidence" / "actuals-2026-02-01.jsonl").write_text(
+            '{"id": "BG0005", "status": "Fixed"}\n', encoding="utf-8")
+        (ws / ".local" / "run-state.json").write_text(
+            '{"schema": 1, "run_id": "RUN-A", "started_at": "2026-02-01T00:00:00Z", '
+            '"ended_at": "2026-02-01T10:00:00Z", "outcome": "goal-reached", "goal": "x", '
+            '"batch": ["BG0001"], "plan": {}}', encoding="utf-8")
+        self.mod.record_green(d, "abc123")
+        return d
+
+    def test_an_overridden_close_repair_does_not_refuse_the_tag(self) -> None:
+        import close_owed
+        root = self._root(override=True)
+        report = close_owed.owed(root)
+        # The precondition the defect needs: the unit is still in the raw `owed` list, while the
+        # predicate the detector's exit code reads says nothing is owed.
+        self.assertIn("BG0005", [str(r[0]) for r in report["owed"]],
+                      "the fixture does not reach the defect - nothing is asserted")
+        self.assertFalse(close_owed.is_owed(report), report)
+        units, unknown = self.mod._close_owed_units(root)
+        self.assertEqual(([], None), (units, unknown))
+        allowed, reason = self.mod.tag_check(root, "abc123")
+        self.assertTrue(allowed, reason)
+        self.assertIn("no close is owed", reason)
+
+    def test_a_unit_no_retro_or_override_covers_still_refuses(self) -> None:
+        import close_owed
+        root = self._root(override=False)
+        self.assertTrue(close_owed.is_owed(close_owed.owed(root)))
+        units, unknown = self.mod._close_owed_units(root)
+        self.assertIsNone(unknown)
+        self.assertEqual(["BG0005"], units)
+        allowed, reason = self.mod.tag_check(root, "abc123")
+        self.assertFalse(allowed, reason)
+        self.assertIn("BG0005", reason)
+        self.assertIn("no retro behind them", reason)
+
+    def test_a_report_without_unaccounted_falls_back_to_owed(self) -> None:
+        import close_owed
+        real_owed = close_owed.owed
+        self.addCleanup(setattr, close_owed, "owed", real_owed)
+        close_owed.owed = lambda _root: {"baselined": True, "corrupt": False,
+                                         "owed": [("US0001", "story")], "unreadable": []}
+        root = self._root(override=True)
+        units, unknown = self.mod._close_owed_units(root)
+        self.assertEqual((["US0001"], None), (units, unknown))
+        allowed, reason = self.mod.tag_check(root, "abc123")
+        self.assertFalse(allowed, reason)
+        self.assertIn("US0001", reason)
+
+
 class ForgeCiTests(unittest.TestCase):
     """BG0576. Both v5 tags were cut over a CI that had been red for two days, because the tag
     guard read a locally recorded green and never asked the runner. These pin that a tag now

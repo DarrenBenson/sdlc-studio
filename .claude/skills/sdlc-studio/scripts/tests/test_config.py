@@ -277,5 +277,49 @@ class ReviewKeysAreDeclaredTests(unittest.TestCase):
                               f"oversight, and the obvious repair is the one that is forbidden")
 
 
+@unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+class ShowSerialisesDatesTests(unittest.TestCase):
+    """BG0670: `config.py show` printed `json.dumps(load_config())`, and PyYAML loads an unquoted
+    YAML date as `datetime.date`, so the verb crashed - on this repository's own config, whose
+    `gate_budget.baseline_date` is unquoted. The dates here are NESTED, as that one is, so a fix
+    that converts only top-level values cannot pass."""
+
+    CONFIG = ("gate_budget:\n"
+              "  baseline_date: 2026-07-26\n"
+              "  stamped_at: 2026-07-26T10:30:00\n")
+
+    def _show(self) -> tuple[int, str]:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            (Path(d) / "sdlc-studio" / ".config.yaml").write_text(self.CONFIG, encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = mod.main(["show", "--root", d])
+        return rc, out.getvalue()
+
+    def test_an_unquoted_date_prints_as_iso(self) -> None:
+        """AC1. MUTANT: `default=repr` in cmd_show's json.dumps - it exits 0 and prints
+        `datetime.date(2026, 7, 26)`, which the exact-value assertion refuses."""
+        import json
+        rc, out = self._show()
+        self.assertEqual(rc, 0, "show must print a config holding an unquoted date")
+        budget = json.loads(out)["gate_budget"]
+        self.assertEqual(budget["baseline_date"], "2026-07-26",
+                         "a nested date must print as its ISO-8601 string")
+        self.assertEqual(budget["stamped_at"], "2026-07-26T10:30:00",
+                         "a datetime must print in ISO-8601 form (a T, not the space str() gives)")
+
+    def test_the_output_is_valid_json(self) -> None:
+        """AC2. MUTANT: replace json.dumps with yaml.safe_dump - it exits 0 and keeps the date
+        ISO, but prints YAML, which json.loads refuses."""
+        import json
+        rc, out = self._show()
+        self.assertEqual(rc, 0)
+        parsed = json.loads(out)
+        self.assertIsInstance(parsed, dict, "show prints the merged configuration as one object")
+        self.assertIn("gate_budget", parsed)
+
+
 if __name__ == "__main__":
     unittest.main()

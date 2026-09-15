@@ -363,7 +363,13 @@ def _close_owed_units(root: Path | str) -> "tuple[list[str], str | None]":
     # history to hold this project to. Distinguished from unreadable, which is the whole point.
     if not report.get("baselined"):
         return [], None
-    return [str(row[0]) for row in (report.get("owed") or [])], None
+    # The blocking predicate, not the raw `owed` list. `owed` keeps every uncovered terminal unit,
+    # including a close-time repair a recorded Close-repair-override accounts for, so reading it
+    # refused a tag on a unit `close_owed` itself reports as not owed - and the remedy the
+    # refusal names could never clear it. `blocking` falls back to `owed` when a report carries
+    # no `unaccounted` key, so an older report is judged no more leniently.
+    import close_owed  # noqa: PLC0415 - already imported above; bound here for the reader
+    return [str(row[0]) for row in (close_owed.blocking(report)["units"] or [])], None
 
 
 def _cmd_cut(args: argparse.Namespace) -> int:

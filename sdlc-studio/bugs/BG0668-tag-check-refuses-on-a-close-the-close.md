@@ -1,6 +1,7 @@
 # BG0668: tag-check refuses on a close the close-owed predicate says is not owed
 
-> **Status:** Open
+> **Status:** In Progress
+> **Verification depth:** functional [[derived: criteria 3; plan rows 3; executed 3; killed 3; survived 0; not-run 0; entry point 0 of 3 criteria through the shipped CLI, 3 in-process | fp 7685bed880df ]]
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py
@@ -28,12 +29,23 @@ In `_close_owed_units`, return the blocking predicate rather than the raw list: 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a corpus whose only uncovered terminal unit is a close-time repair carrying a recorded Close-repair-override, when `tag_check` runs on the recorded green commit, then it does not refuse on that unit - the same corpus `close_owed.is_owed` reports False for
+- [ ] **AC1** Given a corpus whose only uncovered terminal unit is a SAME-DAY close-time repair carrying a recorded Close-repair-override (close_owed never counts a repair made on a later day than the retro as unaccounted, so a later-day fixture would test nothing), when `tag_check` runs on the recorded green commit, then it does not refuse on that unit - the same corpus `close_owed.is_owed` reports False for
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckReadsTheBlockingPredicateTests::test_an_overridden_close_repair_does_not_refuse_the_tag
-- [ ] **AC2** Given a corpus holding a terminal unit no retro covers and no override names, when `tag_check` runs, then it still refuses and names that unit - the guard is narrowed to the predicate, not switched off
+  - **Verified:** yes (2026-09-15)
+- [ ] **AC2** Given a corpus holding a terminal unit no retro covers and no override names - same-day, so it is genuinely unaccounted - when `tag_check` runs, then it still refuses and names that unit - the guard is narrowed to the predicate, not switched off
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckReadsTheBlockingPredicateTests::test_a_unit_no_retro_or_override_covers_still_refuses
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC3** Given a close-owed report carrying no `unaccounted` key at all, when `_close_owed_units` reads it, then it falls back to `owed` and refuses exactly as it does today, so a report written by an older `close_owed` is judged no more leniently
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckReadsTheBlockingPredicateTests::test_a_report_without_unaccounted_falls_back_to_owed
+  - **Verified:** yes (2026-09-15)
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `.claude/skills/sdlc-studio/scripts/release_cut.py` `_close_owed_units`, replace the `close_owed.blocking(report)['units']` read with `report.get('unaccounted') or report.get('owed')`, so an EMPTY unaccounted list falls through to the raw owed rows and the overridden repair is named again | Given a corpus whose only uncovered terminal unit is a SAME-DAY close-time repair carrying a recorded Close-repair-override (close_owed never counts a repair made on a later day than the retro as unaccounted, so a later-day fixture would test nothing), when `tag_check` runs on the recorded green commit, then it does not refuse on that unit - the same corpus `close_owed.is_owed` reports False for |
+| AC2 | in `.claude/skills/sdlc-studio/scripts/release_cut.py` `_close_owed_units`, return the rows of `report['close_time_repairs']` in place of `close_owed.blocking(report)['units']` - the wrong half of close_owed's split, empty for a unit that is simply uncovered | Given a corpus holding a terminal unit no retro covers and no override names - same-day, so it is genuinely unaccounted - when `tag_check` runs, then it still refuses and names that unit - the guard is narrowed to the predicate, not switched off |
+| AC3 | in `.claude/skills/sdlc-studio/scripts/release_cut.py` `_close_owed_units`, inline the read as `report.get('unaccounted', [])` instead of calling `close_owed.blocking`, so a report with no `unaccounted` key defaults to nothing owed | Given a close-owed report carrying no `unaccounted` key at all, when `_close_owed_units` reads it, then it falls back to `owed` and refuses exactly as it does today, so a report written by an older `close_owed` is judged no more leniently |
 
 ## Revision History
 
