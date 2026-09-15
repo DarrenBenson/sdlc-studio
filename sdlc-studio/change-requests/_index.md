@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 19 |
+| Proposed | 24 |
 | Approved | 0 |
 | In Progress | 36 |
 | Complete | 498 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 24 |
 | Blocked | 0 |
-| **Total** | **578** |
+| **Total** | **583** |
 
 ## All Changes
 
@@ -76,6 +76,11 @@
 | [CR-0576](CR0576-the-release-cut-does-not-list-the-not.md) | The release cut does not list the not-stop-ship and accepted-risk rulings carried since the previous tag | Proposed | Medium | Feature | 2026-09-15 | -- |
 | [CR-0577](CR0577-stakeholder-persona-consultation-is-advisory-with-no-gate.md) | Stakeholder persona consultation is advisory with no gate, so a story batch reaches delivery with no persona ever consulted | Proposed | High | Improvement | 2026-09-15 | -- |
 | [CR-0578](CR0578-plan-review-has-no-round-ceiling-in-the.md) | Plan review has no round ceiling in the tooling; D0204's three-round cap is a ruling nothing enforces | Proposed | High | Improvement | 2026-09-15 | -- |
+| [CR-0579](CR0579-revert-check-s-set-aside-report-merges-four.md) | revert-check's set-aside report merges four reasons under one token, repeats error text unbounded, and reads a declared but unedited file as the unit's production | Proposed | Medium | Improvement | 2026-09-15 | -- |
+| [CR-0580](CR0580-handoff-generate-outcome-goal-reached-or-closed-outstanding.md) | handoff generate --outcome goal-reached or closed-outstanding ends a run over an unanswered set, and close_owed credits it as a completed close | Proposed | High | Improvement | 2026-09-15 | -- |
+| [CR-0581](CR0581-a-forced-stop-leaves-no-trace-anyone-reads.md) | A forced stop leaves no trace anyone reads, needs no reason or principal, and shares the outcome word stopped with two other endings | Proposed | High | Improvement | 2026-09-15 | -- |
+| [CR-0582](CR0582-no-command-closes-a-plan-review-reject-s.md) | No command closes a plan-review REJECT's findings from the independent re-review that approved the repaired plan | Proposed | Medium | Improvement | 2026-09-15 | -- |
+| [CR-0583](CR0583-no-command-applies-a-unit-s-authored-test.md) | No command applies a unit's authored Test Plan mutants, runs each criterion's selector and registers the kills | Proposed | Medium | Improvement | 2026-09-15 | -- |
 
 ## Archived Releases
 

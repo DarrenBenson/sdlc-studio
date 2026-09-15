@@ -42,8 +42,25 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0687` | Medium | A criterion's second Verify line is recorded but never run, so a both-states requirement cannot be enforced by its selectors |
 | `BG0688` | Medium | gate --require-close still counts close-owed's raw owed rows, refusing an override the tag guard and the detector now honour |
 | `BG0689` | Medium | The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag |
+| `BG0690` | Medium | critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than... |
+| `BG0691` | Medium | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned |
+| `BG0692` | Medium | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test |
+| `BG0693` | Medium | testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row |
+| `BG0694` | Medium | tag-check's tests pin the override case, not the blocking predicate, so a later-day close-time repair can be refused again with the suite green |
+| `BG0695` | Medium | conformance's ungroomed nudge counts retired skeletons and tells the user to groom Superseded and Won't Implement stories before planning them to Done |
+| `BG0696` | Medium | critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never b... |
+| `BG0697` | Medium | The repair-plan gate fails open on a zero-finding plan, an unparseable config and an unreadable round file, and its refusals name no remedy or cras... |
+| `BG0698` | Medium | Repair-plan rounds can be overwritten by concurrent records, a re-record after approval counts as a failed round, and the escalation notice counts... |
+| `BG0699` | Medium | sprint queue show's not-materialised line is pinned by no test, and next, plan and queue show hold the discovery partition in separate copies |
+| `BG0700` | Medium | The doctrine stop-ship guard passes inverted sentences and a second rule under the same anchor |
+| `BG0701` | Medium | Run-ending routes still read different sets: stop records from the parked derivation, the boundary stop ignores --retro, and stop cannot see the re... |
+| `BG0702` | Medium | The unanswered set's ways out are picked by substring and offer dead ends for a stop-ship ruling, and the set is rendered and recorded in drifting... |
+| `BG0703` | Medium | The unanswered-set predicate's fail-closed handlers and the handoff behaviours around it survive mutants no test kills |
+| `BG0704` | Medium | The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the au... |
+| `BG0705` | Medium | The Findings-filed-to line survives a reopen, is not reported in text output, and names only the filed subset of a partial repair |
+| `BG0706` | Medium | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file |
 
-12 findings: 12 Medium, 0 Low.
+29 findings: 29 Medium, 0 Low.
 
 ## Not carried
 
