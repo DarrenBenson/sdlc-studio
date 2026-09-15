@@ -20,7 +20,7 @@ route.estimate weights `spec` at 0.25 (route.py:54) and derives it from the unit
 
 ## Proposed Fix
 
-Remove the author-declared input from the subscore wherever the band decides review depth, deriving `spec` from a signal the author does not declare (or from the diff once a diff basis exists). If D0150 was meant more narrowly than this, record that as a decision instead and close this as ruled.
+Remove the author-declared input from the subscore wherever the band decides review depth, deriving `spec` from a signal the author does not declare (or from the diff once a diff basis exists). Fixed in code, not ruled (operator ruling, 2026-09-15 sprint planning). Review tiers will shift for existing units: the delivery reports how many units change tier, measured over the corpus before and after.
 
 ## Acceptance Criteria
 
@@ -36,3 +36,4 @@ Remove the author-declared input from the subscore wherever the band decides rev
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | backlog sweep 2026-09-15 | Filed |
+| 2026-09-15 | sprint planning 2026-09-15 | Operator ruling at sprint planning: FIX in code, not by ruling D0150 narrower - a ruling would leave the goal's 'every defect fixed' false. The delivery reports the tier shift over the corpus. |

@@ -31,7 +31,7 @@ evidence, the reproduction and the proposed fix in full.
 | Id | Severity | Finding |
 | --- | --- | --- |
 | `BG0659` | Medium | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row |
-| `BG0661` | Medium | revert-check cannot see a unit whose fix and evidence share one file - it reverts the tests with the change and reports green |
+| `BG0661` | Medium | revert-check never names the units it set aside, and once one unit is examined their count vanishes from the lane line too |
 | `BG0662` | Medium | nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it |
 | `BG0664` | Medium | the pre-push boundary gate runs NO boundary-only test, so the marker's own promise is false at the boundary it names |
 | `BG0665` | Medium | seven of thirteen `review.*` settings are absent from the file that calls itself the single source of truth, and two of them are named in refusals... |
@@ -45,8 +45,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0673` | Medium | the repair-plan gate (EP0106) is wired into nothing: no command records a plan or verdict, and turning review.repair_plan_gate on refuses nothing a... |
 | `BG0674` | Medium | sprint next materialises a charter's discovery items (CRs) that sprint plan then refuses, so the charter at the head of the queue produces a batch... |
 | `BG0675` | Medium | an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth |
+| `BG0676` | Medium | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 20 new ones passes locally |
 
-15 findings: 15 Medium, 0 Low.
+16 findings: 16 Medium, 0 Low.
 
 ## Not carried
 

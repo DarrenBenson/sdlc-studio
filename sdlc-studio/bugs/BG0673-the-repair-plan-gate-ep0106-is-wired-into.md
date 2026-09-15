@@ -21,13 +21,13 @@
 
 ## Proposed Fix
 
-Either wire it: add record and review verbs, and call `repair_gate` from the transition that terminal-closes a repair unit when the setting is on. Or retire it: remove the setting and the dead functions under a recorded decision that points CR0544 at the replacement. Whichever is chosen, the setting must not be on-able while it refuses nothing.
+Wire it (operator ruling, 2026-09-15 sprint planning): add record and review verbs to repair_plan.py, and call `repair_gate` from the transition that terminal-closes a repair unit when the setting is on. CR0544 asks for exactly this capability, so this builds on RFC0053's shipped half rather than replacing it.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** With `review.repair_plan_gate` on, the transition that terminal-closes a repair unit with no reviewed plan is refused, naming the gate - or the setting no longer exists
+- [ ] **AC1** With `review.repair_plan_gate` on, the transition that terminal-closes a repair unit with no reviewed plan is refused, naming the gate
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_the_gate_refuses_at_the_terminal_transition
-- [ ] **AC2** A repair plan and its independent verdict can be recorded through a shipped command - or the functions are removed with the setting
+- [ ] **AC2** A repair plan and its independent verdict can be recorded through a shipped command
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_a_plan_and_verdict_record_through_the_cli
 - [ ] **AC3** With the setting off, the terminal transition of a repair unit is unchanged - the paired control
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_the_gate_off_changes_nothing
@@ -37,3 +37,4 @@ Either wire it: add record and review verbs, and call `repair_gate` from the tra
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | backlog sweep 2026-09-15 | Filed |
+| 2026-09-15 | sprint planning 2026-09-15 | Operator ruling at sprint planning: WIRE the gate, do not retire it. The retire alternatives are removed from the fix and the criteria. |

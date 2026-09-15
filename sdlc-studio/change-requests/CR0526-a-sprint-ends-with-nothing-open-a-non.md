@@ -54,3 +54,4 @@ rule**. That number is the argument for building it.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-15 | sprint planning 2026-09-15 | Groomed into the next batch at sprint planning: its AC2-AC4 are superseded in detail by the operator's D0193 (an unfinished unit feeds the stop-ship step, not a third gate) and D0194 (one stop-ship store; a stop-ship ruling holds rather than discharges), with answered states consolidated in D0196. EP0206's epic-level criteria carry the ruled form; its stories now cover bugs as well as stories and every route that ends a run (US0823). |

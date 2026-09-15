@@ -23,12 +23,18 @@
 
 ## Proposed Fix
 
-Decide the rule at the write, where the author can still act, the way parity was decided in BG0637. Two candidates, and the choice is the work: pad the span to CommonMark's own form for a leading or trailing space (one extra space at each end, which renders the value and satisfies MD038), or refuse the value naming the span and the space, as parity is refused. Padding keeps the reviewer's words and is invisible to them; refusing is consistent with the parity rule but makes some true statements unrecordable. Measure the corpus first: how many live rows already carry the shape, and whether either answer changes a rendered value.
+Refuse at the write, where the author can still act, the way parity was decided in BG0637: a finding carrying a code span whose interior begins or ends with a space is refused, naming the span and which edge carries the space, and nothing is written. The other candidate - padding the span to CommonMark's form - is REFUTED by execution (2026-09-15, the repository's own markdownlint 0.49.1 with `.markdownlint.json`): `` `budget: ` ``, `` ` budget:  ` ``, `` `  x` `` and `` `  x ` `` each raise MD038, and only a span with no edge space passes. Padding would have shipped a fix that still blocks the next commit. The refusal's remedy names the two ways that do lint: quote the value without the space and state the space in prose, or move the literal out of the span.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `critic._clean` neutralises pipes and newlines and refuses odd backtick parity, but it has nothing to say about a code span whose interior begins or ends with...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Decide the rule at the write, where the author can still act, the way parity was decided in BG0637.
+- [ ] **AC1** `critic.py record` refuses a finding whose code span ends in a space, naming the span and the trailing edge, and writes no row
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CodeSpanEdgeSpaceTests::test_a_trailing_space_span_is_refused_by_the_cli
+- [ ] **AC2** `critic.py record` refuses a finding whose code span begins with a space, naming the span and the leading edge, and writes no row
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CodeSpanEdgeSpaceTests::test_a_leading_space_span_is_refused_by_the_cli
+- [ ] **AC3** A finding whose code spans carry no edge space records byte for byte as today - the paired control
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CodeSpanEdgeSpaceTests::test_a_clean_span_records_unchanged
+- [ ] **AC4** Every span the writer admits passes markdownlint's MD038 under the repository's own config, measured through the linter rather than restated
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CodeSpanEdgeSpaceTests::test_every_admitted_span_passes_md038
 
 ## Impact
 
@@ -41,3 +47,4 @@ Blocks commits, at a distance from whoever caused it, and silently narrows what 
 | 2026-09-09 | Claude Opus 5 | Filed |
 | 2026-09-09 | Claude Opus 5 | Reproduced on the day it was filed, and it blocked this run's commit. Recording BG0608's three delivery verdicts wrote four rows quoting the budget command's own prefix - a code span whose value ends in a space, which is the whole of this bug - and markdownlint refused both ledgers. Repaired by hand to make the tree committable: the span was rewritten to name the dash in prose. That is a fifth reproduction of the class on top of BG0637's four, and the second time this week that a reviewer could not quote a literal the tool itself prints |
 | 2026-09-10 | Claude Opus 5 | Ruled OPEN for v5.1 on 2026-09-10, under D0186's disclosure half. It is a defect in what a reviewer can RECORD, not in what the tool decides: a value whose code span ends in a space is refused by markdownlint after `_clean` writes it, and the reviewer's remedy - trim the span or restate the value - costs one edit and loses nothing. Three points against a run already over its appetite, in the same function BG0637 has just been through twice; changing `_clean` again in the same week is how the third round of a repair gets shipped untested. It ships disclosed, and it is the first Medium on the next batch. |
+| 2026-09-15 | sprint planning 2026-09-15 | Groomed for the next batch: the design choice the bug left open is decided by execution. Padding a code span to CommonMark's form still raises MD038 under the repository's markdownlint 0.49.1, so the fix is to refuse at the write, naming the span and the edge, as parity is refused. Four real criteria replace the two tool-derived ones. |

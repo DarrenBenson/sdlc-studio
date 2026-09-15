@@ -40,3 +40,4 @@ Check during refine whether this SUBSUMES CR0505 rather than sitting beside it. 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-30 | Darren Benson (operator), from the RUN-01KYPZ1G close | Raised |
+| 2026-09-15 | sprint planning 2026-09-15 | Amended by D0193 (2026-09-15): AC1's two gates stand, and the question whether every batch unit is answered lives INSIDE the stop-ship gate rather than as a third. US0717 is to be read that way when it is groomed. |
