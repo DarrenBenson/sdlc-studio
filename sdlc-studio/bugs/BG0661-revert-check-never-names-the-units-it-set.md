@@ -1,6 +1,6 @@
 # BG0661: revert-check never names the units it set aside, and once one unit is examined their count vanishes from the lane line too
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 5; plan rows 11; executed 11; killed 11; survived 0; not-run 0; entry point 1 of 5 criteria through the shipped CLI, 4 in-process | fp 95d2a4aa84c6 ]]
 > **Severity:** Medium
 > **Points:** 3

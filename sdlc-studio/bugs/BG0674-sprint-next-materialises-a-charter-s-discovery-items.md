@@ -1,6 +1,6 @@
 # BG0674: sprint next materialises a charter's discovery items (CRs) that sprint plan then refuses, so the charter at the head of the queue produces a batch nothing can plan
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 4; plan rows 7; executed 7; killed 7; survived 0; not-run 0; entry point 4 of 4 criteria through the shipped CLI, 0 in-process | fp 0be8c7099333 ]]
 > **Severity:** Medium
 > **Points:** 3
@@ -58,6 +58,9 @@ Apply plan's discovery refusal when `next` materialises, so a charter whose quer
 | .claude/skills/sdlc-studio/scripts/sprint.py | 10928 | b874fa1b23bb88d6 | queue show mirrors next's not-materialised line from the same helper; no criterion names queue show, and the line was exercised by hand through sprint.py queue show in a throwaway charter fixture | sdlc-studio | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/sprint.py | 10929 | b874fa1b23bb88d6 | the print half of the same queue show mirror as the line above, exercised through the CLI by hand | sdlc-studio | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/tests/test_sprint.py | 14427 | b9bf107be9f0d8aa | fixture helper: removes a config left by an earlier case; each test builds a fresh tree, so the branch is defensive | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/sprint.py | 11141 | 1a7bc8d77b7232e0 | queue show mirrors next's not-materialised line from the same helper; no criterion names queue show; exercised by hand through sprint.py queue show (and by the BG0674 delivery review on a mixed, a discovery-only and an open-run head) | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/sprint.py | 11142 | 1a7bc8d77b7232e0 | the print half of the same queue show mirror, exercised through the CLI | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/tests/test_sprint.py | 14974 | c86aab6ff1f08f57 | fixture helper: removes a config left by an earlier case; each test builds a fresh tree, so the branch is defensive | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

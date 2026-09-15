@@ -68,6 +68,8 @@ Method: `critic.tier_for`'s chain (`plan_review._difficulty_band`, then `critic.
 | --- | --- | --- | --- | --- | --- |
 | tools/tests/test_tier_shift_record.py | 144 | 42ba2f649f5fa391 | A skip: the shallow-clone branch runs only where git rev-parse --is-shallow-repository prints true (the Lint job's default checkout). This clone is full, so the sha-bound checks ran instead. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | tools/tests/test_tier_shift_record.py | 190 | 42ba2f649f5fa391 | Script entry point under `if __name__ == '__main__'`; pytest imports the module so it never runs there. Exercised by hand: python3 tools/tests/test_tier_shift_record.py ran 1 test, OK, exit 0 on 2026-09-15. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
+| tools/tests/test_tier_shift_record.py | 155 | e9731270b1535095 | shallow-clone skip: only the sha-bound frame checks skip, and only where history is absent; this clone is full, so the branch never runs here | sdlc-studio | 2026-09-15 |
+| tools/tests/test_tier_shift_record.py | 201 | e9731270b1535095 | script entry point under the main guard; pytest imports the module so it never runs there; run by hand, 1 test passed | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

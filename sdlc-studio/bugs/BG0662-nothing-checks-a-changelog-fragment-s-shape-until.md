@@ -1,6 +1,6 @@
 # BG0662: nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 5; plan rows 13; executed 13; killed 13; survived 0; not-run 0; entry point 4 of 5 criteria through the shipped CLI, 1 in-process | fp fea9317f2f09 ]]
 > **Severity:** Medium
 > **Points:** 3

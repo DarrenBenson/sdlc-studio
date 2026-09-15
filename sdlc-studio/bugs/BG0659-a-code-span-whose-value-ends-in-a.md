@@ -75,6 +75,7 @@ Blocks commits, at a distance from whoever caused it, and silently narrows what 
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6445 | 9710ddd81b1c0402 | Defensive: the failure message inside the JSONDecodeError handler for markdownlint output that is not JSON; the installed binary emits JSON under --json, so no run reaches it. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6520 | 9710ddd81b1c0402 | A skip: fires only when node_modules markdownlint or node is absent. Both are installed in this clone, so the MD038 corpus check ran rather than skipping. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6444 | 9710ddd81b1c0402 | Defensive: markdownlint printing output that is not JSON. node_modules/.bin/markdownlint (markdownlint-cli) is invoked with --json and emits JSON, so the handler is not reached on a working install. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/critic.py | 289 | 96238b789f9a9553 | an all-space span has no edge to judge and is admitted; the spec holds all-space spans out of every fixture and out of scope, so no criterion reaches it | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

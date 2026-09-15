@@ -129,6 +129,17 @@ class TierShiftRecordTests(unittest.TestCase):
                         "a zero shift is accepted")
         self.assertTrue(parse_record("# BG0000: x\n\n## Revision History\n")[1],
                         "a bug with no section is accepted")
+        line = _sample().split("## Tier Shift\n\n", 1)[1].split("\n", 1)[0]
+        doubled = _sample().replace(line, line + "\n" + line)
+        self.assertIn("2 `Tier shift` lines", parse_record(doubled)[1][0],
+                      "a section carrying two Tier shift lines is accepted")
+        self.assertIn("recorded shape", parse_record(_sample().replace(" units change tier",
+                                                                       " units move"))[1][0],
+                      "a line of another shape is accepted")
+        self.assertTrue(any("A + B = " in p for p in parse_record(_sample(k=4))[1]),
+                        "a direction split that does not sum to K is accepted")
+        self.assertTrue(any("before L0 + F0" in p for p in parse_record(_sample(f0=7))[1]),
+                        "a before-pass that does not sum to M is accepted")
         self._frame_controls()
 
         # -- the record itself: present, one line, a real shift, a split that sums

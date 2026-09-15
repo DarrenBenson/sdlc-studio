@@ -447,6 +447,16 @@ class RepairGateIsReachableTests(unittest.TestCase):
         rc, out = self._record_plan(self.root, unit="BG0999")
         self.assertNotEqual(rc, 0, out)
         self.assertIn("names no artefact", out)
+        # a plan file that is not a JSON object is refused, naming the shape, and nothing stored
+        bad = self.root / "list.json"
+        bad.write_text(json.dumps(["F1"]), encoding="utf-8")
+        rc, out = _run(self.root, "repair_plan.py", "record", "--unit", "BG0001",
+                       "--author", "author-b", "--plan-file", str(bad))
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn("must be a JSON object", out)
+        kept = json.loads((self.root / "sdlc-studio" / ".local" / "repair-plans"
+                           / "BG0001.json").read_text(encoding="utf-8"))
+        self.assertEqual(kept["author"], "author-a", "a refused plan file overwrote the plan")
         # the plan's own author as reviewer: refused, naming independence, and nothing written
         rc, out = _run(self.root, "repair_plan.py", "review", "--unit", "BG0001",
                        "--verdict", "APPROVE", "--reviewer", "author-a")
@@ -592,6 +602,11 @@ class RepairGateIsReachableTests(unittest.TestCase):
         rc, out = _run(self.root, "repair_plan.py", "review", "--unit", "BG0001",
                        "--verdict", "APPROVE", "--reviewer", "reviewer-b")
         self.assertEqual(rc, 0, out)
+        # the shipped gate verb answers the same question the transition asks, by unit id and
+        # through its --plan alias
+        for flag in ("--unit", "--plan"):
+            rc, out = _run(self.root, "repair_plan.py", "gate", flag, "bg0001")
+            self.assertEqual(rc, 0, f"{flag}: {out}")
         rc, out = _run(self.root, "transition.py", "set", "BG0001", "Fixed")
         self.assertEqual(rc, 0, out)
         self.assertEqual(self._status(bug), "Fixed")
