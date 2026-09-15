@@ -1197,30 +1197,112 @@ def split_items(text: str) -> list[str]:
     return out
 
 
+#: An arrow INSIDE a finding, in the closure channel. A reviewer writes status transitions
+#: (`Fixed->Verified`) into findings, and the separator is the first `->`, so a finding's own
+#: arrow cut it there: the closure named a fragment nothing matched, or matched by prefix and
+#: pushed the rest of the finding into the evidence ahead of its disposition token. Evidence
+#: arrows stay bare - everything after the first unescaped arrow is evidence already.
+_ESCAPED_ARROW = "-\\>"
+
+#: What a refusal says when a typed finding may have been cut at its own arrow.
+_ARROW_HINT = ("A finding whose own text carries `->` is cut at it on --closed: type that "
+               "arrow as `-\\>`, or pass --closed-file a JSON list of {finding, evidence} "
+               "objects, which needs no separator.")
+
+
+def _scan_closure_items(text: str) -> list[tuple[str, str, str | None, int]]:
+    """Each closure in a channel string as `(item, finding, evidence, arrows)`.
+
+    ONE scan over the RAW text, recognising `\\\\`, `\\;` and `\\>`, splitting items at an
+    unescaped `;` and each item at its first `->` whose `>` is not escaped, and unescaping as it
+    goes. `evidence` is None when the item carries no separator; `arrows` counts the item's bare
+    arrows, the separator included.
+
+    Raw, not after `split_items`: once a doubled backslash has collapsed, the literal `-\\>` a
+    stored row carries as `-\\\\>` cannot be told from an escaped arrow.
+    """
+    out: list[tuple[str, str, str | None, int]] = []
+    head: list[str] = []
+    tail: list[str] | None = None
+    whole: list[str] = []
+    arrows, i, n = 0, 0, len(text or "")
+    while i <= n:
+        if i == n or text[i] == ";":
+            item = "".join(whole).strip()
+            if item:
+                out.append((item, "".join(head).strip(),
+                            None if tail is None else "".join(tail).strip(), arrows))
+            head, tail, whole, arrows = [], None, [], 0
+            i += 1
+            continue
+        buf = head if tail is None else tail
+        if text[i] == "\\" and i + 1 < n and text[i + 1] in ";\\>":
+            buf.append(text[i + 1])          # an escaped `;`, `\` or `>`
+            whole.append(text[i + 1])
+            i += 2
+            continue
+        if text.startswith(_CLOSURE_SPLIT, i):
+            arrows += 1
+            whole.append(_CLOSURE_SPLIT)
+            if tail is None:
+                tail = []                    # the first bare arrow is the separator
+            else:
+                tail.append(_CLOSURE_SPLIT)
+            i += len(_CLOSURE_SPLIT)
+            continue
+        buf.append(text[i])
+        whole.append(text[i])
+        i += 1
+    return out
+
+
 def unreadable_closures(closed: str) -> list[str]:
     """Items that are not `<finding> -> <evidence>`, for the WRITE path to refuse on.
 
     Separate from `parse_closures` on purpose: a reader must tolerate what is already on disk,
-    and a writer must not add more of it.
+    and a writer must not add more of it. Both read through `_scan_closure_items`, so the two
+    cannot disagree about where an item splits.
     """
-    bad = []
-    for item in split_items(closed):
-        finding, _, evidence = item.partition(_CLOSURE_SPLIT)
-        if not finding.strip() or not evidence.strip():
-            bad.append(item)
-    return bad
+    return [item for item, finding, evidence, _ in _scan_closure_items(closed)
+            if not finding or not evidence]
 
 
-def closures_from_document(doc) -> str:
-    """The `closed` channel string from a JSON list of `{finding, evidence}` objects.
+def _closure(finding: str, evidence: str) -> dict:
+    """One closure record, its disposition read from the evidence exactly as written.
+
+    `disposition` is `filed` when the evidence names an artefact id and says so, else `fixed`.
+    Both are legitimate under the operator's rule - a non-stop-ship finding becomes a bug and
+    the story closes - and what is NOT legitimate is being unable to tell them apart afterwards.
+    """
+    if tok := _DISPOSITION_TOKEN.match(evidence):
+        disposition = tok.group(1).lower()
+    else:
+        disposition = ("filed"
+                       if _FILED_HINT.search(evidence)
+                       and sdlc_md.ID_SEARCH_RE.search(evidence)
+                       else "fixed")
+    # EVERY id the evidence names is collected, whatever the disposition. The resolvable-id
+    # check reads this, and reading it only for `filed` meant a deferral the classifier had
+    # called a fix pointed at a non-existent bug with nothing checking - the misclassification
+    # disarming the guard beside it.
+    ids = [m.group(0) for m in sdlc_md.ID_SEARCH_RE.finditer(evidence)]
+    return {"finding": finding, "evidence": evidence,
+            "disposition": disposition,
+            "ids": ids,
+            "artefact": (ids[0] if disposition == "filed" and ids else "")}
+
+
+def structured_closures(doc) -> list[dict]:
+    """Closure records from a JSON list of `{finding, evidence}` objects, with no text between.
 
     THE POINT OF THE FILE PATH. Structured input needs no delimiter, so nothing a reviewer
-    writes can be read as one - which is the whole defect, rather than a shortcoming of the
-    escape above.
+    writes can be read as one. Serialising it to `<finding> -> <evidence>` and splitting it
+    again undid that: a finding carrying its own `->` was cut at it. The shape is checked here,
+    once, because this is the only door a structured closure comes in by.
     """
     if not isinstance(doc, list):
         raise ValueError("--closed-file JSON must be a LIST of {finding, evidence} objects")
-    items = []
+    out = []
     for i, row in enumerate(doc, 1):
         if not isinstance(row, dict):
             raise ValueError(f"--closed-file item {i} is not an object")
@@ -1229,29 +1311,43 @@ def closures_from_document(doc) -> str:
         if not finding or not evidence:
             raise ValueError(f"--closed-file item {i} needs both `finding` and `evidence` - a "
                              f"closure with no evidence is the paperwork this refuses")
+        out.append(_closure(finding, evidence))
+    return out
+
+
+def _serialise_closures(closures: list[dict]) -> str:
+    """The stored `closed` cell for closure records, readable back by `parse_closures`.
+
+    Backslash FIRST, or escaping the semicolon would then escape its own escape; the finding's
+    arrow LAST, or doubling would turn the escape's own backslash into a literal. Only the
+    finding's arrows are escaped: the reader splits at the first bare one.
+    """
+    items = []
+    for c in closures:
         # Bound OUTSIDE the f-string: a backslash inside an f-string EXPRESSION is only legal
         # from Python 3.12 (PEP 701), and this project's declared floor is 3.10.
-        # Backslash FIRST, or escaping the semicolon would then escape its own escape.
-        finding_esc = finding.replace("\\", _ESCAPED_BACKSLASH).replace(";", _ESCAPED_SEMI)
-        evidence_esc = evidence.replace("\\", _ESCAPED_BACKSLASH).replace(";", _ESCAPED_SEMI)
+        finding_esc = (c["finding"].replace("\\", _ESCAPED_BACKSLASH)
+                       .replace(";", _ESCAPED_SEMI).replace(_CLOSURE_SPLIT, _ESCAPED_ARROW))
+        evidence_esc = c["evidence"].replace("\\", _ESCAPED_BACKSLASH).replace(";", _ESCAPED_SEMI)
         items.append(f"{finding_esc} {_CLOSURE_SPLIT} {evidence_esc}")
     return "; ".join(items)
+
+
+def closures_from_document(doc) -> str:
+    """The `closed` channel string from a JSON list of `{finding, evidence}` objects - the
+    stored form, as `record_repair` writes it."""
+    return _serialise_closures(structured_closures(doc))
 
 
 def parse_closures(closed: str) -> list[dict]:
     """`[{finding, evidence, disposition}]` from a repair's `closed` text.
 
     One item per finding closed, `<finding> -> <evidence>`, semicolon separated - the same
-    channel shape `--issues` uses, so a writer keeps one convention rather than two.
-
-    `disposition` is `filed` when the evidence names an artefact id and says so, else `fixed`.
-    Both are legitimate under the operator's rule - a non-stop-ship finding becomes a bug and
-    the story closes - and what is NOT legitimate is being unable to tell them apart afterwards.
+    channel shape `--issues` uses, so a writer keeps one convention rather than two. An arrow
+    inside a finding is `-\\>`; a row carrying no `\\>` pair reads exactly as it always has.
     """
     out: list[dict] = []
-    for item in split_items(closed):
-        finding, _, evidence = item.partition(_CLOSURE_SPLIT)
-        finding, evidence = finding.strip(), evidence.strip()
+    for item, finding, evidence, _ in _scan_closure_items(closed):
         if not finding or not evidence:
             # REPORTED, not dropped. A chunk with no separator is either an author error or a
             # split that should not have happened, and both are worth saying out loud - but only
@@ -1269,22 +1365,31 @@ def parse_closures(closed: str) -> list[dict]:
                       f"skipped - {item[:70]!r}. Its evidence is NOT in the repair state "
                       f"computed from this row", file=sys.stderr)
             continue
-        if tok := _DISPOSITION_TOKEN.match(evidence):
-            disposition = tok.group(1).lower()
-        else:
-            disposition = ("filed"
-                           if _FILED_HINT.search(evidence)
-                           and sdlc_md.ID_SEARCH_RE.search(evidence)
-                           else "fixed")
-        # EVERY id the evidence names is collected, whatever the disposition. The resolvable-id
-        # check reads this, and reading it only for `filed` meant a deferral the classifier had
-        # called a fix pointed at a non-existent bug with nothing checking - the misclassification
-        # disarming the guard beside it.
-        ids = [m.group(0) for m in sdlc_md.ID_SEARCH_RE.finditer(evidence)]
-        out.append({"finding": finding, "evidence": evidence,
-                    "disposition": disposition,
-                    "ids": ids,
-                    "artefact": (ids[0] if disposition == "filed" and ids else "")})
+        out.append(_closure(finding, evidence))
+    return out
+
+
+def _cut_at_own_arrow(closed: str, every: list[str]) -> list[tuple[str, str]]:
+    """`(fragment, raised)` for each typed closure whose finding was cut at its own bare arrow.
+
+    Whether the text after a bare arrow "parses as evidence" is not decidable - any text is
+    evidence. The raised text is: when the fragment before the first bare arrow resolves only by
+    PREFIX to a raised finding that continues with `->` at exactly that point, and the item
+    carries a further bare arrow, the arrow was the finding's. Compared in match-key space,
+    because the ledger stores the raised text escaped (`test\\_the\\_thing`) and a raw index
+    lands in the wrong place.
+    """
+    out = []
+    for _item, finding, evidence, arrows in _scan_closure_items(closed):
+        if not evidence or arrows < 2 or _names_by_ordinal(finding):
+            continue
+        try:
+            raised = resolve_finding(finding, every)
+        except AmbiguousClosure:
+            continue          # refused below, by the resolution loop, with its own reason
+        key, whole = _match_key(finding), _match_key(raised)
+        if whole != key and whole[len(key):].lstrip().startswith(_CLOSURE_SPLIT):
+            out.append((finding, raised))
     return out
 
 
@@ -1300,7 +1405,7 @@ def _of_kind(row: dict, kinds: tuple[str, ...] | None) -> bool:
     return kinds is None or (row.get("kind") or DEFAULT_PLAN_KIND) in kinds
 
 
-def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
+def record_repair(repo_root: Path | str, unit: str, author: str, closed: str | list,
                   phase: str = "delivery") -> Path:
     """Append a REPAIR answering this unit's live REJECT.
 
@@ -1308,6 +1413,9 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
     what was done about it becomes visible next to it. A repair that replaced the verdict would
     destroy the only evidence the review happened, which is the failure this epic exists to end
     rather than to repeat from the other side.
+
+    `closed` is the `--closed` flag's text, or the `--closed-file` JSON list of `{finding,
+    evidence}` objects, which is taken as it is and never re-split.
 
     Refuses a repair with no live REJECT to answer, one naming a finding the verdict never
     raised, and one with no author - a repair is a claim about work somebody did, and an
@@ -1323,7 +1431,8 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
     if not row or str(row.get("verdict") or "").upper() != REJECT:
         raise ValueError(f"{sdlc_md.norm_id(unit)} carries no live REJECT to answer - a repair "
                          f"records what was done about a rejection, so there has to be one")
-    if bad := unreadable_closures(closed):
+    typed = closed is None or isinstance(closed, str)
+    if typed and (bad := unreadable_closures(closed)):
         raise ValueError(
             f"{len(bad)} closure(s) are not `<finding> -> <evidence>`: "
             f"{'; '.join(repr(b[:60]) for b in bad)}. Until BG0618 these were DROPPED silently, "
@@ -1331,7 +1440,7 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
             f"never reached the record. Escape a literal semicolon as `\\;`, or pass "
             f"--closed-file a JSON list of {{finding, evidence}} objects, which needs no "
             f"separator at all")
-    closures = parse_closures(closed)
+    closures = parse_closures(closed) if typed else structured_closures(closed)
     if not closures:
         raise ValueError("a repair needs at least one `<finding> -> <evidence>` closure - the "
                          "evidence is the re-applied mutant, the test that now reddens, or the "
@@ -1353,6 +1462,15 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
         for f in parse_findings(rejection.get("issues", "")):
             if f["text"] not in every:
                 every.append(f["text"])
+    # A TYPED finding cut at its own arrow resolves by prefix and pushes the rest of itself into
+    # the evidence, ahead of the disposition token - accepted, and recorded wrongly. Refused
+    # before any row is written. The structured list is never split, so it is never asked.
+    if typed and (cut := _cut_at_own_arrow(closed, every)):
+        fragment, raised = cut[0]
+        raise ValueError(
+            f"closure {fragment!r} stops where the finding it quotes carries its own `->` "
+            f"({raised[:90]!r}), so that arrow was read as the separator and the rest of the "
+            f"finding as evidence. {_ARROW_HINT}")
     for c in closures:
         # Resolved to EXACTLY ONE raised finding. Anything looser is a review bypass, not a
         # convenience - see `resolve_finding`.
@@ -1406,11 +1524,10 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
         rejection = next((r for r in rejections if str(r.get("date") or "") == when), row)
         raised_for = rejection.get("issues", "") if rejection else row.get("issues", "")
         outstanding = repair_outstanding(raised_for, group)
-        # Re-serialised through the SAME escaping the document path uses. Rebuilding the
-        # row with a bare join silently undid BG0618: an evidence clause carrying a
-        # semicolon was truncated at it and the rest never reached the record.
-        text = closures_from_document(
-            [{"finding": c["finding"], "evidence": c["evidence"]} for c in group])
+        # Serialised through the one escaping `parse_closures` reads back. Rebuilding the row
+        # with a bare join silently undid BG0618: an evidence clause carrying a semicolon was
+        # truncated at it, and a finding carrying an arrow was cut at that.
+        text = _serialise_closures(group)
         pending.append((sdlc_md.norm_id(unit), _clean(when),
                         _clean(author), sdlc_md.now_date(), _clean(text),
                         _clean("; ".join(outstanding) or "-"),
@@ -1503,7 +1620,7 @@ def resolve_finding(closure: str, raised: list[str]) -> str:
     raise AmbiguousClosure(
         f"closure {closure!r} names no finding this verdict raised. A disposition that matches "
         f"nothing is not a disposition. Name one by ordinal or quote at least {_MIN_QUOTE} "
-        f"characters of it. Raised: {listing}")
+        f"characters of it. {_ARROW_HINT} Raised: {listing}")
 
 
 def repair_outstanding(issues: str, closures: list[dict]) -> list[str]:
@@ -4373,17 +4490,19 @@ def cmd_repair(args: argparse.Namespace) -> int:
             print(f"repair refused: {exc}", file=sys.stderr)
             return 2
         # A JSON list is the shape with no delimiter, so nothing a reviewer writes can be read
-        # as one. Prose is still accepted, because every closure on disk was written that way.
+        # as one - and it goes to `record_repair` AS the list, because turning it back into
+        # `<finding> -> <evidence>` text cut a finding at its own arrow. Prose is still
+        # accepted, because every closure on disk was written that way.
         stripped = raw.lstrip()
         if stripped.startswith("["):
             try:
-                closed = closures_from_document(json.loads(raw))
-            except (ValueError, TypeError) as exc:
+                closed = json.loads(raw)
+            except ValueError as exc:
                 print(f"repair refused: {exc}", file=sys.stderr)
                 return 2
         else:
             closed = " ".join(raw.split())
-    if not (closed or "").strip():
+    if not isinstance(closed, list) and not (closed or "").strip():
         print("repair refused: --closed (or --closed-file) is required - a repair records "
               "which findings it closes and the evidence closing each, one per "
               "`<finding> -> <evidence>` item", file=sys.stderr)

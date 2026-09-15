@@ -5309,6 +5309,313 @@ class ClosureResolutionTests(unittest.TestCase):
                       "the later rejection's finding must be outstanding, not invisible")
 
 
+class ClosureArrowTests(unittest.TestCase):
+    """BG0677 - a finding carrying its own `->` could not be closed, or closed wrongly.
+
+    `--closed-file` serialised each structured item back to `<finding> -> <evidence>` and the
+    reader split at the FIRST arrow, so `AC2 - Fixed->Verified ...` became the closure
+    `AC2 - Fixed`, which names nothing: the repair stayed PARTIAL for ever and the entry gate
+    refused a unit whose repaired plan had been APPROVED. A finding whose arrow sat past the
+    24-character prefix minimum resolved, but pushed its own tail into the evidence ahead of the
+    `fixed:` token, and the disposition read `filed`.
+
+    The fixture is the shape the bug was hit in: two plan-review REJECTs under different briefs
+    on different days (round one is NOT the standing verdict, so an ordinal cannot name its
+    findings), then an APPROVE. Different days also keep `repair_state` from reading a closure
+    once per same-date rejection (BG0680); assertions are on membership and fields, never counts.
+    """
+
+    UNIT = "US0017"
+    #: AC1's finding - its arrow inside the first 24 characters.
+    EARLY = "AC2 - Fixed->Verified and Fixed->Closed on a bug already at Fixed are unpinned"
+    #: AC2's finding - its arrow past the prefix minimum.
+    LATE = "AC2 - no row covers a direct Verified close or Fixed->Verified->Closed as one hop"
+    #: AC7's third finding, which the ledger stores escaped (`test\_the\_thing`).
+    HELPER = "AC4 - test_the_thing names a helper -> which never runs"
+    #: Arrow-free findings, so every fixture has something plainly closeable beside the arrows.
+    PLAIN_R1 = "AC5 - the second round found the fixture never reaches its branch"
+    PLAIN_R2 = "AC6 - the refusal names no remedy for the operator to follow"
+
+    def _fixture(self, mod, root: Path, r1: list[str], r2: list[str]) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                          encoding="utf-8")
+        _bug_on_disk(root)
+        rounds = (("2026-09-01", "REJECT", "qa-seat-r1", r1, "aaaaaaaaaaaa"),
+                  ("2026-09-02", "REJECT", "eng-seat-r2", r2, "bbbbbbbbbbbb"),
+                  ("2026-09-03", "APPROVE", "qa-seat-r3", [], "cccccccccccc"))
+        for when, verdict, seat, findings, brief in rounds:
+            issues = "; ".join(f"[new] {f}" for f in findings) or "none"
+            with unittest.mock.patch.object(mod.sdlc_md, "now_date", return_value=when):
+                mod.record_verdict(root, self.UNIT, verdict, seat, "builder", issues,
+                                   "plan-review", brief)
+        standing = mod.verdict_for(root, self.UNIT, "plan-review")
+        self.assertEqual("bbbbbbbbbbbb", standing["brief"],
+                         "the fixture's premise: round two stands, round one does not")
+
+    def _repair(self, mod, root: Path, *args: str) -> tuple[int, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["repair", "--unit", self.UNIT, "--author", "builder",
+                           "--phase", "plan-review", *args, "--root", str(root)])
+        return rc, out.getvalue() + err.getvalue()
+
+    def _repair_file(self, mod, root: Path, doc) -> tuple[int, str]:
+        path = root / "closed.json"
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        return self._repair(mod, root, "--closed-file", str(path))
+
+    @staticmethod
+    def _record(mod, root: Path) -> bytes | None:
+        path = mod.repair_path(root)
+        return path.read_bytes() if path.exists() else None
+
+    def _closed(self, mod, root: Path) -> list[dict]:
+        return mod.repair_state(root, self.UNIT, "plan-review")["closed"]
+
+    def test_an_early_arrow_in_a_non_standing_finding_closes_through_the_cli(self) -> None:
+        """MUTANTS: in `critic.py`, give `parse_closures` the escape-aware split but leave the
+        serialiser writing a finding's arrows bare; or move the serialiser's `-\\>` escape onto
+        the evidence half. Either way the stored row is cut at the finding's first arrow on the
+        way back, the closure names nothing, and the repair reads `partial`."""
+        mod = _load()
+        control = self.EARLY.replace("->", " to ")
+        self.assertEqual("AC2 - Fixed to Verified and Fixed to Closed on a bug already at "
+                         "Fixed are unpinned", control)
+        for label, early in (("arrows", self.EARLY), ("control", control)):
+            with self.subTest(label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._fixture(mod, root, [early, self.PLAIN_R1], [self.PLAIN_R2])
+                rc, out = self._repair_file(mod, root, [
+                    {"finding": early, "evidence": "fixed: pinned by the new test"},
+                    {"finding": self.PLAIN_R1, "evidence": "fixed: pinned by the new test"},
+                    {"finding": self.PLAIN_R2, "evidence": "fixed: fixture rewritten"}])
+                self.assertEqual(0, rc, out)
+                st = mod.repair_state(root, self.UNIT, "plan-review")
+                self.assertEqual("complete", st["state"], st["outstanding"])
+                self.assertEqual([], st["outstanding"])
+                self.assertIn(early, [c["finding"] for c in st["closed"]])
+
+    def test_a_fixed_token_keeps_its_disposition_and_its_evidence_whole(self) -> None:
+        """MUTANTS: in `critic.py`, split a stored item at its LAST unescaped arrow; escape the
+        arrows of both halves but unescape only the finding's; or strip the leading `fixed:`
+        token from the structured evidence before it is stored. Each leaves the evidence read
+        back unequal to the evidence written, and the last reads the disposition as `filed`
+        (the evidence says `carried` and names BG0123)."""
+        mod = _load()
+        evidence = ("fixed: the Verified->Closed hop is now carried by a row, and BG0123 holds "
+                    "the residue")
+        for mark in ("_", "|", "`"):
+            self.assertNotIn(mark, evidence, "the ledger rewrites this character by design")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(mod, root, [self.LATE, self.PLAIN_R1], [self.PLAIN_R2])
+            rc, out = self._repair_file(mod, root, [
+                {"finding": self.LATE, "evidence": evidence},
+                {"finding": self.PLAIN_R1, "evidence": "fixed: pinned"},
+                {"finding": self.PLAIN_R2, "evidence": "fixed: pinned"}])
+            self.assertEqual(0, rc, out)
+            mine = [c for c in self._closed(mod, root) if c["finding"] == self.LATE]
+        self.assertTrue(mine, "the finding did not read back whole")
+        for c in mine:
+            self.assertEqual("fixed", c["disposition"])
+            self.assertEqual(evidence, c["evidence"])
+
+    def test_the_written_row_reads_back_to_what_was_written(self) -> None:
+        r"""MUTANTS: in `critic.py`, add the `-\>` escape to the serialiser but skip unescaping
+        it in `parse_closures` (resolution still succeeds, `_match_key` drops backslashes); keep
+        a joiner that leaves the finding's arrow bare; unescape with a plain `str.replace` of
+        `-\>` after `split_items` has collapsed doubled backslashes; or escape the arrow BEFORE
+        doubling backslashes. Each reads a finding back with a backslash added or lost."""
+        mod = _load()
+        bs = chr(92)
+        arrow = "AC3 - the transition runs Fixed->Verified with no row"
+        literal = "AC3 - the log prints -" + bs + "> where Fixed->Closed was meant"
+        written = {arrow: "fixed: the hop a -> b is pinned", literal: "fixed: pinned",
+                   self.PLAIN_R2: "fixed: pinned"}
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(mod, root, [arrow, literal], [self.PLAIN_R2])
+            rc, out = self._repair_file(
+                mod, root, [{"finding": f, "evidence": e} for f, e in written.items()])
+            self.assertEqual(0, rc, out)
+            cells = [r["closed"] for r in mod.repairs_for(root, self.UNIT, "plan-review")]
+            st = mod.repair_state(root, self.UNIT, "plan-review")
+        row = " ".join(cells)
+        # The stored form: the finding's arrow escaped, its literal backslash doubled, the
+        # evidence's arrow bare.
+        self.assertIn("AC3 - the transition runs Fixed-" + bs + ">Verified with no row -> "
+                      "fixed: the hop a -> b is pinned", row)
+        self.assertIn("AC3 - the log prints -" + bs + bs + "> where Fixed-" + bs
+                      + ">Closed was meant -> fixed: pinned", row)
+        for finding, evidence in written.items():
+            got = [c for c in st["closed"] if c["finding"] == finding]
+            self.assertTrue(got, f"{finding!r} did not read back exactly; read "
+                                 f"{[c['finding'] for c in st['closed']]}")
+            for c in got:
+                self.assertEqual(evidence, c["evidence"])
+        self.assertEqual("complete", st["state"], st["outstanding"])
+        self.assertEqual([], st["outstanding"])
+
+    def test_a_legacy_row_parses_exactly_as_today(self) -> None:
+        r"""MUTANTS: in `critic.py`, split at the last arrow (`rpartition`); or run the `-\>`
+        replacement over the items `split_items` returns instead of scanning the raw text, which
+        reads a legacy row's literal `-\\>` as an arrow. The expected values are the ones the
+        parser returned before this change, measured and written in as literals."""
+        mod = _load()
+        with quiet.diagnostics():
+            plain = mod.parse_closures("alpha broke -> fixed: first -> second")
+            doubled = mod.parse_closures(
+                r"the prompt reads C:\\> and a literal -\\> sequence here -> fixed: typed")
+            unreadable = (mod.unreadable_closures("alpha broke -> fixed: first -> second")
+                          + mod.unreadable_closures(
+                              r"the prompt reads C:\\> and a literal -\\> sequence here "
+                              r"-> fixed: typed"))
+        self.assertEqual([("alpha broke", "fixed: first -> second", "fixed")],
+                         [(c["finding"], c["evidence"], c["disposition"]) for c in plain])
+        self.assertEqual([(r"the prompt reads C:\> and a literal -\> sequence here",
+                           "fixed: typed", "fixed")],
+                         [(c["finding"], c["evidence"], c["disposition"]) for c in doubled])
+        self.assertEqual([], unreadable)
+
+    def test_the_closed_flag_takes_the_escape_and_names_it_on_refusal(self) -> None:
+        r"""MUTANTS: in `critic.py`, skip the `\>` escape when `record_repair` parses the flag's
+        text (the finding still resolves, `_match_key` drops the backslash, but reads back as
+        `Fixed-\>Verified`); or drop the escape hint from the refusal a closure naming nothing
+        raises."""
+        mod = _load()
+        bs = chr(92)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(mod, root, [self.EARLY, self.PLAIN_R1], [self.PLAIN_R2])
+            before = self._record(mod, root)
+            rc, out = self._repair(mod, root, "--closed", f"{self.EARLY} -> fixed: pinned")
+            self.assertEqual(2, rc, out)
+            self.assertIn("-" + bs + ">", out, "the refusal must name the escape")
+            self.assertIn("--closed-file", out)
+            self.assertEqual(before, self._record(mod, root))
+
+            typed = self.EARLY.replace("->", "-" + bs + ">")
+            self.assertEqual("AC2 - Fixed-" + bs + ">Verified and Fixed-" + bs + ">Closed on a "
+                             "bug already at Fixed are unpinned", typed)
+            rc, out = self._repair(mod, root, "--closed", f"{typed} -> fixed: pinned")
+            self.assertEqual(0, rc, out)
+            got = [c for c in self._closed(mod, root) if c["finding"] == self.EARLY]
+        self.assertTrue(got, "the escaped finding did not read back with `->` and no backslash")
+        for c in got:
+            self.assertEqual("fixed: pinned", c["evidence"])
+
+    def test_the_structured_route_keeps_the_id_and_shape_refusals(self) -> None:
+        """MUTANTS: in `critic.py`, drop `ids` from the structured closures `record_repair`
+        builds; skip the resolvable-id loop when it is handed a list; or drop the empty
+        `finding`/`evidence` refusal from the structured branch. Each lets a closure the text
+        round trip used to refuse reach the record."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(mod, root, [self.EARLY, self.PLAIN_R1], [self.PLAIN_R2])
+            self.assertFalse(mod.sdlc_md.find_by_id(root, "BG9999"))
+            before = self._record(mod, root)
+            rc, out = self._repair_file(
+                mod, root, [{"finding": self.PLAIN_R1, "evidence": "filed: the residue is BG9999"}])
+            self.assertEqual(2, rc, out)
+            self.assertIn("BG9999", out)
+            self.assertEqual(before, self._record(mod, root), "a refused repair wrote a row")
+
+            rc, out = self._repair_file(
+                mod, root, [{"finding": self.PLAIN_R1, "evidence": "filed: the residue is BG0123"}])
+            self.assertEqual(0, rc, out)
+            after = self._record(mod, root)
+            self.assertNotEqual(before, after)
+            self.assertIn("filed: the residue is BG0123", after.decode("utf-8").splitlines()[-1])
+
+            rc, out = self._repair_file(mod, root, [{"finding": self.PLAIN_R2, "evidence": ""}])
+            self.assertEqual(2, rc, out)
+            self.assertIn("item 1", out)
+            self.assertEqual(after, self._record(mod, root), "an empty-evidence item was written")
+            # a document that opens as a JSON list but does not parse: refused, nothing written
+            broken = root / "broken.json"
+            broken.write_text('[{"finding": "x", "evidence": "y"', encoding="utf-8")
+            rc, out = self._repair(mod, root, "--closed-file", str(broken))
+            self.assertEqual(2, rc, out)
+            self.assertIn("repair refused", out)
+            self.assertEqual(after, self._record(mod, root), "an unparseable file was written")
+
+    def test_a_typed_finding_cut_at_its_own_arrow_is_refused(self) -> None:
+        r"""MUTANTS: in `critic.py`, delete the arrow-continuation check; refuse any typed item
+        carrying a second bare arrow; index the raised text at `len(fragment)` instead of
+        comparing in match-key space; refuse whenever the raised finding carries an arrow
+        anywhere; run the check inside the append loop, after the first group's row is written;
+        or refuse whenever the finding continues with an arrow, dropping the further-arrow
+        condition.
+
+        The fixture raises AC1's finding, AC2's finding and the `test_the_thing` finding (which
+        the ledger stores escaped, so only a match-key comparison finds its cut), and also the
+        arrow-free finding control 2 quotes. Each refused set carries a closure for a round-one
+        finding too, so a check that runs after the first row is written leaves that row behind.
+        """
+        mod = _load()
+        bs = chr(92)
+        helper_quote = "AC4 - test_the_thing names a helper"
+
+        def fresh(d: str) -> Path:
+            root = Path(d)
+            self._fixture(mod, root, [self.EARLY, self.PLAIN_R1], [self.LATE, self.HELPER])
+            stored = mod.verdicts_path(root, "plan-review").read_text(encoding="utf-8")
+            self.assertIn("test" + bs + "_the" + bs + "_thing", stored,
+                          "the premise: the ledger stores the raised text escaped")
+            return root
+
+        round_one = f"{self.PLAIN_R1} -> fixed: pinned"
+        for label, cut in (("AC2", f"{self.LATE} -> fixed: pinned"),
+                           ("AC4", f"{self.HELPER} -> fixed: pinned")):
+            with self.subTest(refused=label), tempfile.TemporaryDirectory() as d:
+                root = fresh(d)
+                before = self._record(mod, root)
+                rc, out = self._repair(mod, root, "--closed", f"{round_one}; {cut}")
+                self.assertEqual(2, rc, out)
+                self.assertEqual(before, self._record(mod, root), "a refused repair wrote a row")
+                self.assertIn("-" + bs + ">", out)
+                self.assertIn("--closed-file", out)
+                self.assertNotIn("names no finding", out)
+
+        escaped = self.LATE.replace("->", "-" + bs + ">")
+        controls = (
+            ("escaped", ["--closed", f"{escaped} -> fixed: pinned"],
+             lambda f: f == self.LATE, "fixed: pinned"),
+            ("arrow-free prefix", ["--closed", "AC5 - the second round found -> fixed: ordered "
+                                               "a -> b"],
+             lambda f: f == "AC5 - the second round found", "fixed: ordered a -> b"),
+            ("arrow after the quote", ["--closed", "AC2 - no row covers a direct Verified close "
+                                                   "-> fixed: ordered a -> b"],
+             lambda f: f == "AC2 - no row covers a direct Verified close",
+             "fixed: ordered a -> b"),
+            ("at the arrow", ["--closed", f"{helper_quote} -> fixed: pinned"],
+             lambda f: f.replace(bs, "") == helper_quote, "fixed: pinned"),
+        )
+        for label, args, names, evidence in controls:
+            with self.subTest(control=label), tempfile.TemporaryDirectory() as d:
+                root = fresh(d)
+                rc, out = self._repair(mod, root, *args)
+                self.assertEqual(0, rc, out)
+                got = [c for c in self._closed(mod, root) if names(c["finding"])]
+                self.assertTrue(got, f"no closure read back: {self._closed(mod, root)}")
+                for c in got:
+                    self.assertEqual(evidence, c["evidence"])
+        # The refusal is the TEXT path's alone: a structured closure is never split, so the same
+        # quote with an arrow in its evidence is taken whole.
+        with tempfile.TemporaryDirectory() as d:
+            root = fresh(d)
+            rc, out = self._repair_file(
+                mod, root, [{"finding": helper_quote, "evidence": "fixed: ordered a -> b"}])
+            self.assertEqual(0, rc, out)
+            got = [c for c in self._closed(mod, root) if c["finding"].replace(bs, "")
+                   == helper_quote]
+        self.assertTrue(got)
+        for c in got:
+            self.assertEqual("fixed: ordered a -> b", c["evidence"])
+
+
 class ThreeStateCoverageTests(unittest.TestCase):
     """US0621 / CR0506: approved, repaired and unreviewed are three states, not two."""
 

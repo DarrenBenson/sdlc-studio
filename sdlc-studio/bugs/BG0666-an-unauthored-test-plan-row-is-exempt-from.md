@@ -1,6 +1,6 @@
 # BG0666: an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, so leaving the placeholder buys a clean derive
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
