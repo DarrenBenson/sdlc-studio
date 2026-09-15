@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0412: **Evidence hashed against whole-file bytes is voided by a neighbour's edit, not just your own.** Mutant rows and coverage rulings on...**
+- **L-0411: **An uncapped review loop converges on wording, not defects.** Plan review ran to five rounds on one unit and drew 47 REJECTs.**
+- **L-0410: **Seats judge the build against the author's criteria; only a stakeholder judges the criteria against the need.** Seventy plan-review...**
+- **L-0409: **Attribution by blame turns one commit into a shared charge.** The coverage gate charged all 455 of US0626's added sprint.py lines to...**
 - **L-0408: **Two readers of one rule will disagree, and the one that blocks is the one nobody tested.** `row_staleness` shipped with no production...**
 - **L-0407: **A guard's reach is the spelling its fixture used.** BG0660's scan could not see this repository's own `subprocess.run([sys.executable...**
 - **L-0406: **A mutant aimed at the wrong site is not weak evidence, it is none.** Three retractions this run.**

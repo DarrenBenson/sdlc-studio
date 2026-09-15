@@ -67,6 +67,7 @@ What the marker means: the fingerprint matches no brief this repo can CURRENTLY 
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6599 | 9710ddd81b1c0402 | withdrawn 2026-09-15: Withdrawn by its author to correct a factual slip in the reason text (the binary or directory it named was misstated); the same line is re-ruled at once with an accurate reason. (was: A skip: fires only when the shipped personas/seats directory holds no seat cards. The skill ships three seat cards, so the test always finds them and runs.) | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6599 | 9710ddd81b1c0402 | A skip: fires only when sdlc-studio/personas/seats holds no seat cards. This workspace carries three (engineering, product, qa), so the test finds them and runs. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6906 | d9a28d09aaa9ed32 | skip when the shipped seat cards are absent; they ship with the skill | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/tests/test_critic.py | 6982 | 5057f80808e19d85 | skip when the shipped seat cards are absent; the three seat cards ship with the skill in this workspace, so the test finds them and runs. Re-ruled at its new line: another batch unit's edit to the file voided the earlier ruling by whole-file hash (BG0706). | Claude Opus 5 (authoring session) | 2026-09-15 |
 
 ## Revision History
 

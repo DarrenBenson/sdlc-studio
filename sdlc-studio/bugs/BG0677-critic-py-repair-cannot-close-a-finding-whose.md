@@ -94,6 +94,7 @@ Implementer trap: on a fixture whose two REJECTs share a date, `repair_state` re
 | --- | --- | --- | --- | --- | --- |
 | .claude/skills/sdlc-studio/scripts/critic.py | 1339 | dcca627ee2a2afd5 | retained public helper: the CLI's --closed-file path now hands record_repair the structured list, and existing library tests (test_critic.py around 5022) still call it directly; its serialiser is the one AC3's read-back pins | sdlc-studio | 2026-09-15 |
 | .claude/skills/sdlc-studio/scripts/critic.py | 1358 | 28b3428787fccc76 | retained public helper: the CLI's --closed-file path hands record_repair the structured list, and existing library tests still call it directly; its serialiser is the one AC3's read-back pins | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/critic.py | 1369 | 4b1aeb1ba7d53f2d | retained public helper: the CLI's --closed-file path hands record_repair the structured list, and existing library tests still call this helper directly; its serialiser is the one AC3's read-back pins. Re-ruled at its new line: another batch unit's edit to the file voided the earlier ruling by whole-file hash (BG0706). | Claude Opus 5 (authoring session) | 2026-09-15 |
 
 ## Revision History
 
