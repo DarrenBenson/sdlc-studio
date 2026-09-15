@@ -8,9 +8,9 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 121 |
-| Ready | 21 |
+| Ready | 19 |
 | Planned | 0 |
-| In Progress | 0 |
+| In Progress | 2 |
 | Review | 0 |
 | Done | 660 |
 | Won't Implement | 4 |
@@ -32,10 +32,10 @@
 | [US0588](US0588-a-hand-rolled-action-carrying-a-filed-gap.md) | A hand-rolled action carrying a filed gap id is reported and does not block; one without is outstanding | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0589](US0589-a-run-that-uses-the-tools-throughout-reports.md) | A run that uses the tools throughout reports zero manual actions, so the detector cannot be one that never fires | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0590](US0590-the-doctrine-states-the-content-versus-tooling-line.md) | The doctrine states the content-versus-tooling line and names reference-scripts.md as the pre-task catalogue | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
-| [US0625](US0625-the-doctrine-states-cr0526-s-rule-names-the.md) | the doctrine states CR0526's rule, names the one store a stop-ship ruling lives in, and who rules it | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0625](US0625-the-doctrine-states-cr0526-s-rule-names-the.md) | the doctrine states CR0526's rule, names the one store a stop-ship ruling lives in, and who rules it | In Progress | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0626](US0626-an-unfinished-batch-unit-holds-the-close-through.md) | an unfinished batch unit holds the close through its stop-ship step, naming where its findings went, while Review and rung-end units do not | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0627](US0627-a-story-or-bug-reaching-done-or-fixed.md) | a story or bug reaching Done or Fixed over an unanswered REJECT is refused until its findings are filed or the REJECT is repaired | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
-| [US0628](US0628-a-unit-closed-over-a-reject-names-in.md) | a unit closed over a REJECT names, in its own record, the artefact its findings were filed to | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0628](US0628-a-unit-closed-over-a-reject-names-in.md) | a unit closed over a REJECT names, in its own record, the artefact its findings were filed to | In Progress | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0646](US0646-a-shared-contract-reporter-derives-a-verb-s.md) | A shared contract reporter derives a verb's demands by executing its own guard, never by restating them | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
 | [US0647](US0647-the-vocabularies-that-gate-a-caller-print-from.md) | The vocabularies that gate a caller print from the constant that enforces them | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
 | [US0648](US0648-the-four-verbs-whose-refusals-cost-most-in.md) | The four verbs whose refusals cost most in the measured session answer the contract reporter | Ready | EP0210 | 2026-08-07 | 2026-08-07 |

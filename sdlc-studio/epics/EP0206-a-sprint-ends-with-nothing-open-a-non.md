@@ -1,7 +1,7 @@
 # EP0206: A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it
 
 > **Status:** Draft
-> **Derived Point Total:** 17
+> **Derived Point Total:** 27
 > **Parent:** CR0526
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

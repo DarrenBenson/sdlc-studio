@@ -46,8 +46,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0674` | Medium | sprint next materialises a charter's discovery items (CRs) that sprint plan then refuses, so the charter at the head of the queue produces a batch... |
 | `BG0675` | Medium | an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth |
 | `BG0676` | Medium | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 20 new ones passes locally |
+| `BG0677` | Medium | critic.py repair cannot close a finding whose text carries the closure separator early, so the rejection raising it can never be retired |
+| `BG0678` | Medium | A wired repair-plan gate keeps no rounds, no brief and no approval pin, so a rejected plan can never be retired and a re-recorded plan keeps its ap... |
 
-16 findings: 16 Medium, 0 Low.
+18 findings: 18 Medium, 0 Low.
 
 ## Not carried
 
