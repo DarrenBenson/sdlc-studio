@@ -1,6 +1,7 @@
 # BG0666: an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, so leaving the placeholder buys a clean derive
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional [[derived: criteria 3; plan rows 15; executed 15; killed 15; survived 0; not-run 0; entry point 3 of 3 criteria through the shipped CLI, 0 in-process | fp 67b7ebe3c0f1 ]]
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -33,10 +34,13 @@ Count the unauthored criteria and REPORT them - by criterion - on the two surfac
 
 - [ ] **AC1** Given a MIXED plan of four criteria - AC1 three authored rows, AC2 two placeholder rows, AC3 one authored row plus one placeholder row, AC4 NO row at all - with stale titles, when `verify_ac.py testplan derive --unit` runs twice through the CLI (the first run writes AC4's placeholder itself and re-syncs the titles on the `->` write branch, the second takes the `unchanged` branch), then BOTH runs exit 0 and print on STDOUT the shared unauthored note naming AC2, AC3 and AC4, the count 3, and not AC1, while STDERR names no criterion. The first run must name AC4, whose row did not exist until that run wrote it. The fixture keeps the figures apart - 4 authored rows, 4 placeholder rows once derived, 4 criteria, 3 unauthored - so only a count of unauthored criteria prints 3. The test asserts the note's own sentence, imported from `verify_ac.py`, never the placeholder string or the existing `authored mutant(s)` count, which today's output already prints
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlaceholderRowsAreReportedTests::test_derive_names_only_the_criteria_whose_mutant_is_unauthored
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC2** Given the same mixed plan as AC1's first derive leaves it, when `critic.py brief --unit <id> --seat qa --phase plan-review` runs through the CLI, then the brief carries the same shared note, naming AC2, AC3 and AC4 and not AC1. The brief is what a reviewer judges from, and one that renders a placeholder as though it were a plan is what produced the rejection this bug was filed from; today's brief already renders the placeholder text inside the table, so only the note's own sentence can satisfy this
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewBriefUnauthoredNoteTests::test_the_brief_names_only_the_criteria_whose_mutant_is_unauthored
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC3** Given a plan whose every row is authored, one of them declared `unnameable: <reason>`, when `testplan derive` and `critic.py brief --phase plan-review` each run through the CLI, then `derive` exits 0 on it and neither output carries the shared note's sentence - a derive refusing the plan at exit 2 prints no note either, and would pass a silence-only check. Positive control beside it: the same two commands on AC1's mixed plan DO carry it, so the silence is not a surface that never prints. A checker that always warns is one nobody reads, and it would fire on every unit mid-authoring
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlaceholderRowsAreReportedTests::test_an_authored_plan_is_reported_by_neither_surface
+  - **Verified:** yes (2026-09-15)
 
 ## Impact
 

@@ -1,6 +1,6 @@
 # US0823: every other route that ends a run reads the same unanswered-unit predicate as the close, and stop --force records what it waived
 
-> **Status:** In Progress
+> **Status:** Review
 > **Created:** 2026-09-15
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

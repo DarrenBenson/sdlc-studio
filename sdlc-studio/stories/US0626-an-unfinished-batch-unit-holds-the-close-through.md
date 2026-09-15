@@ -1,6 +1,6 @@
 # US0626: an unfinished batch unit holds the close through its stop-ship step, naming where its findings went, while Review and rung-end units do not
 
-> **Status:** In Progress
+> **Status:** Review
 > **Delivers:** CR0526
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # BG0677: critic.py repair cannot close a finding whose text carries the closure separator early, so the rejection raising it can never be retired
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 7; plan rows 22; executed 22; killed 22; survived 0; not-run 0; entry point 3 of 7 criteria through the shipped CLI, 4 in-process | fp 0c8b257bddb1 ]]
 > **Severity:** Medium
 > **Points:** 5
@@ -93,6 +93,7 @@ Implementer trap: on a fixture whose two REJECTs share a date, `repair_state` re
 | File | Line | Hash | Reason | Author | Date |
 | --- | --- | --- | --- | --- | --- |
 | .claude/skills/sdlc-studio/scripts/critic.py | 1339 | dcca627ee2a2afd5 | retained public helper: the CLI's --closed-file path now hands record_repair the structured list, and existing library tests (test_critic.py around 5022) still call it directly; its serialiser is the one AC3's read-back pins | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/critic.py | 1358 | 28b3428787fccc76 | retained public helper: the CLI's --closed-file path hands record_repair the structured list, and existing library tests still call it directly; its serialiser is the one AC3's read-back pins | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

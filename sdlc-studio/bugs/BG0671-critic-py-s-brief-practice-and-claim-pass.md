@@ -1,6 +1,6 @@
 # BG0671: critic.py's brief-practice and claim-pass checks are called by no production path, while reference-review.md says the brief verb refuses a brief that fails them
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 5; plan rows 16; executed 16; killed 16; survived 0; not-run 0; entry point 0 of 5 criteria through the shipped CLI, 5 in-process | fp fe688f80d5d3 ]]
 > **Severity:** Medium
 > **Points:** 5

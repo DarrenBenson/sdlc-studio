@@ -1,6 +1,6 @@
 # US0628: a unit closed over a REJECT names, in its own record, the artefact its findings were filed to
 
-> **Status:** In Progress
+> **Status:** Review
 > **Delivers:** CR0526
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
