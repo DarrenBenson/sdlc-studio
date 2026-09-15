@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-09
+**Last Updated:** 2026-09-15
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 11 |
+| Proposed | 19 |
 | Approved | 0 |
 | In Progress | 36 |
 | Complete | 498 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 24 |
 | Blocked | 0 |
-| **Total** | **570** |
+| **Total** | **578** |
 
 ## All Changes
 
@@ -68,6 +68,14 @@
 | [CR-0565](CR0565-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook cannot reach Fixed without a recorded self-run on the repository | In Progress | High | Improvement | 2026-09-07 | EP0248 |
 | [CR-0566](CR0566-claim-drift-flags-a-numeric-claim-in-a.md) | claim-drift flags a numeric claim in a diff's prose that no measurement backs | Proposed | Medium | Improvement | 2026-09-07 | -- |
 | [CR-0567](CR0567-the-done-gate-demands-a-generated-mutation-run.md) | The done-gate demands a generated mutation run over the unit's Affects beside its self-reported rows | Proposed | Medium | Improvement | 2026-09-07 | -- |
+| [CR-0571](CR0571-a-known-issues-carried-ruling-is-not-checked.md) | A Known issues carried ruling is not checked against who may rule, so the stop-ship hold the doctrine gives the operator is self-releasable | Proposed | High | Improvement | 2026-09-15 | -- |
+| [CR-0572](CR0572-ruling-a-close-s-findings-means-hand-editing.md) | Ruling a close's findings means hand-editing one table row per finding; no bulk ruling command exists | Proposed | Medium | Feature | 2026-09-15 | -- |
+| [CR-0573](CR0573-us0627-s-reject-guard-applies-to-the-whole.md) | US0627's REJECT guard applies to the whole existing backlog with no cutoff and no adoption report | Proposed | Medium | Improvement | 2026-09-15 | -- |
+| [CR-0574](CR0574-units-abandoned-or-forced-past-an-unanswered-delivery.md) | Units abandoned or forced past an unanswered delivery REJECT within a run are not listed at the close | Proposed | Medium | Improvement | 2026-09-15 | -- |
+| [CR-0575](CR0575-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-09-15 | -- |
+| [CR-0576](CR0576-the-release-cut-does-not-list-the-not.md) | The release cut does not list the not-stop-ship and accepted-risk rulings carried since the previous tag | Proposed | Medium | Feature | 2026-09-15 | -- |
+| [CR-0577](CR0577-stakeholder-persona-consultation-is-advisory-with-no-gate.md) | Stakeholder persona consultation is advisory with no gate, so a story batch reaches delivery with no persona ever consulted | Proposed | High | Improvement | 2026-09-15 | -- |
+| [CR-0578](CR0578-plan-review-has-no-round-ceiling-in-the.md) | Plan review has no round ceiling in the tooling; D0204's three-round cap is a ruling nothing enforces | Proposed | High | Improvement | 2026-09-15 | -- |
 
 ## Archived Releases
 

@@ -1,6 +1,7 @@
 # BG0674: sprint next materialises a charter's discovery items (CRs) that sprint plan then refuses, so the charter at the head of the queue produces a batch nothing can plan
 
 > **Status:** In Progress
+> **Verification depth:** functional [[derived: criteria 4; plan rows 7; executed 7; killed 7; survived 0; not-run 0; entry point 4 of 4 criteria through the shipped CLI, 0 in-process | fp 0be8c7099333 ]]
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -27,12 +28,16 @@ Apply plan's discovery refusal when `next` materialises, so a charter whose quer
 
 - [ ] **AC1** In a fixture project with `two_backlog.enforce: true`, `sprint next` on a head charter whose query selects only discovery items (two Proposed CRs) exits non-zero; its stderr names each CR id and the decompose remedy (`refine.py apply --request`) - text none of `next`'s other refusals (no-query, bad-query, empty-scope, run-open) prints - and its stdout carries no `materialised N unit(s)` line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::NextRefusesDiscoveryItemsTests::test_a_discovery_only_query_is_refused_at_next
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC2** In a fixture project with `two_backlog.enforce: true`, `sprint next` on a head charter whose query selects only deliverable units (an Open bug and a Ready story) exits 0 and its `materialised` line lists both ids - the paired control, run with enforcement on so the discovery test is actually consulted
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::NextRefusesDiscoveryItemsTests::test_a_deliverable_query_materialises
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC3** In a fixture project with `two_backlog.enforce: true`, a head charter whose query selects both kinds (an Open bug and a Proposed CR) is not refused: `sprint next` exits 0, the ids on its `materialised` line are the bug's and never the CR's, and a separate line names the CR as a discovery item that was not materialised - the stories and bugs of a mixed query are materialised, its discovery items are named and left out, and the batch is not refused whole
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::NextRefusesDiscoveryItemsTests::test_a_mixed_query_names_what_it_dropped
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC4** In a project where `two_backlog.enforce` is off, `sprint next` materialises a CR-selecting charter as today - exit 0, the CR's id on its `materialised` line - so the refusal follows `sdlc_md.two_backlog_enforced`, the same condition `sprint plan`'s refusal reads
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::NextRefusesDiscoveryItemsTests::test_next_follows_the_two_backlog_condition_plan_reads
+  - **Verified:** yes (2026-09-15)
 
 ## Test Plan
 
@@ -45,6 +50,14 @@ Apply plan's discovery refusal when `next` materialises, so a charter whose quer
 | AC3 | in .claude/skills/sdlc-studio/scripts/sprint.py, delete request-typed entries from units and ids without keeping them anywhere the output can print | In a fixture project with `two_backlog.enforce: true`, a head charter whose query selects both kinds (an Open bug and a Proposed CR) is not refused: `sprint next` exits 0, the ids on its `materialised` line are the bug's and never the CR's, and a separate line names the CR as a discovery item that was not materialised - the stories and bugs of a mixed query are materialised, its discovery items are named and left out, and the batch is not refused whole |
 | AC3 | in .claude/skills/sdlc-studio/scripts/sprint.py, change the gate to any() and exit 2 as soon as one request-typed entry appears, discarding the deliverable entries with it | In a fixture project with `two_backlog.enforce: true`, a head charter whose query selects both kinds (an Open bug and a Proposed CR) is not refused: `sprint next` exits 0, the ids on its `materialised` line are the bug's and never the CR's, and a separate line names the CR as a discovery item that was not materialised - the stories and bugs of a mixed query are materialised, its discovery items are named and left out, and the batch is not refused whole |
 | AC4 | in .claude/skills/sdlc-studio/scripts/sprint.py, drop the two_backlog_enforced condition from the next path so discovery items are held back in every project | In a project where `two_backlog.enforce` is off, `sprint next` materialises a CR-selecting charter as today - exit 0, the CR's id on its `materialised` line - so the refusal follows `sdlc_md.two_backlog_enforced`, the same condition `sprint plan`'s refusal reads |
+
+## Coverage Rulings
+
+| File | Line | Hash | Reason | Author | Date |
+| --- | --- | --- | --- | --- | --- |
+| .claude/skills/sdlc-studio/scripts/sprint.py | 10928 | b874fa1b23bb88d6 | queue show mirrors next's not-materialised line from the same helper; no criterion names queue show, and the line was exercised by hand through sprint.py queue show in a throwaway charter fixture | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/sprint.py | 10929 | b874fa1b23bb88d6 | the print half of the same queue show mirror as the line above, exercised through the CLI by hand | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/tests/test_sprint.py | 14427 | b9bf107be9f0d8aa | fixture helper: removes a config left by an earlier case; each test builds a fresh tree, so the branch is defensive | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

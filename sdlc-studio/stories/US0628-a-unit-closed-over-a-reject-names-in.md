@@ -34,6 +34,7 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **Then** it exits 0, the story reads `Done`, and the detector's line in the story's own file names both BG0002 and BG0003
 - **Mutant:** the filed ids stay in the repair ledger alone
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_the_story_names_every_filed_artefact
+- **Verified:** yes (2026-09-15)
 
 ### AC2: the one-call close names them too
 
@@ -42,6 +43,7 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **Then** the detector's line still names BG0002 and BG0003 - an APPROVE with no brief fingerprint retires no REJECT (`critic._unanswered_rejects`), so `repair_state` still reads the filed closures while the ledger's LAST row is an APPROVE
 - **Mutant:** key the write on the latest ledger row being a REJECT
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_the_one_call_close_names_the_filed_artefacts
+- **Verified:** yes (2026-09-15)
 
 ### AC3: a bug names it at every delivered terminal
 
@@ -50,6 +52,7 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **Then** both land, and each copy's detector line names the CR
 - **Mutant:** write the line for stories only
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_a_bug_names_the_filed_artefact_at_every_delivered_terminal
+- **Verified:** yes (2026-09-15)
 
 ### AC4: a terminal walk writes the line once
 
@@ -58,6 +61,7 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **Then** every step lands and the file carries exactly ONE `Findings-filed-to` line (counted over the whole file), naming the CR
 - **Mutant:** insert a new line on every terminal step
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_a_terminal_walk_writes_the_line_once
+- **Verified:** yes (2026-09-15)
 
 ### AC5: a refused close writes no line
 
@@ -66,6 +70,7 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **Then** the first is refused with a message naming the Open Question and not the REJECT (so US0627's gate passed it), its status is unchanged and the detector returns `None`; the control lands at `Done` with the line naming both bugs
 - **Mutant:** stamp the field before the gated transition
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_a_refused_close_writes_no_line
+- **Verified:** yes (2026-09-15)
 
 ### AC6: an ordinary close writes no such line - paired with a close that does
 
@@ -74,6 +79,7 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **Then** all three land at `Done`; the detector finds the line naming BG0002 on (a), and returns `None` on (b) and (c); on (d) the detector's line names BG0002 and does NOT name BG0004 - the check scoped to that line alone, since the fixture's prose names both ids - a marker on every close is one no reader looks at, and a fix is not a filing
 - **Mutant:** write the field even when nothing was filed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_an_ordinary_close_writes_no_discharge_line
+- **Verified:** yes (2026-09-15)
 
 ## Test Plan
 

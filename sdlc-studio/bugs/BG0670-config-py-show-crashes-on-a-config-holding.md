@@ -1,6 +1,6 @@
 # BG0670: config.py show crashes on a config holding an unquoted YAML date, so the catalogued verb cannot print this repository's own configuration
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 3; plan rows 3; executed 3; killed 3; survived 0; lines ruled 1; not-run 0; entry point 2 of 3 criteria through the shipped CLI, 0 in-process; 1 undetermined (the named node could not be isolated) | fp d080cd22047c ]]
 > **Severity:** Medium
 > **Points:** 2

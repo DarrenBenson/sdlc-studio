@@ -1,6 +1,7 @@
 # BG0669: conformance demands acceptance criteria of a story retired unbuilt, so an ungroomed story cannot be Superseded or Won't Implement without a waiver
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional [[derived: criteria 7; plan rows 12; executed 12; killed 12; survived 0; not-run 0; entry point 1 of 7 criteria through the shipped CLI, 6 in-process | fp 616576db3704 ]]
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, sdlc-studio/decisions.md
@@ -28,18 +29,25 @@ Treat the story's abandonment terminals (Won't Implement, Superseded - the non-D
 
 - [ ] **AC1** A story carrying the refine ungroomed marker (`sdlc_md.UNGROOMED_AC_TOKEN`) and a parent Epic, retired to Superseded, is conformant: `detect_conformance` reports it judged (not exempt by cutoff), `conformant` true, and neither `specified` nor `verifiable` in its `missing` or its `waived`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::RetiredUnbuiltTests::test_a_superseded_skeleton_is_conformant
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC2** The same marker-shaped skeleton retired to Won't Implement is conformant on the same terms
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::RetiredUnbuiltTests::test_a_wont_implement_skeleton_is_conformant
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC3** A story at Done with no acceptance criteria is still non-conformant, and its `missing` names `specified` and `verifiable` each by name - the paired control, asserted on those two stages rather than on non-conformance, which the Done-only stages (`verified`, `critiqued`) would supply on their own
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::RetiredUnbuiltTests::test_a_done_story_without_criteria_is_still_refused
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC4** The exempt set is read from `sdlc_md`'s story terminal vocabulary at call time, not held as a list: with `sdlc_md.TERMINAL_STATUS["story"]` patched (for the test only) to drop `Superseded`, a Superseded marker skeleton is charged `specified` and `verifiable` by name; and with a new status `Cancelled` patched into both `sdlc_md.STATUS_VOCAB["story"]` and `sdlc_md.TERMINAL_STATUS["story"]`, a Cancelled marker skeleton is conformant with neither stage missing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::RetiredUnbuiltTests::test_the_exempt_set_is_derived_from_the_vocabulary
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC5** On the live log, each of D0187, D0188, D0189, D0190, D0191 and D0192 is present in `decisions.list_decisions` with status `superseded`, and each is named in the `supersedes` field of a later-numbered entry (the withdrawal `decisions.py add --supersedes` records); and `detect_conformance` over the live repo, narrowed with `scope_ids` to US0719, US0797 and US0798, reports each of the three conformant with `waived == []`, and no D0187-D0192 in `waivers_unattributed`. Positive control beside it: a fixture workspace holding a Superseded marker skeleton and an accepted `waiver: rule:conformance:specified:<that id>` row reports that decision in `waivers_unattributed`, so the absence asserted on the live log is one the assertion can see
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::RetiredUnbuiltTests::test_the_retired_skeletons_need_no_waiver
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC6** A story retired to Superseded whose `## Acceptance Criteria` section is absent altogether - no marker, no `{{...}}` scaffold, so `story_is_ungroomed` reads it false - is conformant on the same terms as AC1: the exemption turns on the status, not on the grooming shape
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::RetiredUnbuiltTests::test_a_retired_story_with_no_criteria_section_is_conformant
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC7** A marker skeleton retired to Superseded that carries no `Epic` field is still non-conformant with `decomposed` in its `missing` - the exemption lifts only the two criteria stages
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::RetiredUnbuiltTests::test_a_retired_story_still_owes_decomposed
+  - **Verified:** yes (2026-09-15)
 
 ## Test Plan
 
@@ -57,6 +65,12 @@ Treat the story's abandonment terminals (Won't Implement, Superseded - the non-D
 | AC5 | in .claude/skills/sdlc-studio/scripts/conformance.py, clear a retired story's two criteria stages by appending synthetic entries to its waived list rather than removing them from required, so the three skeletons read as waived | On the live log, each of D0187, D0188, D0189, D0190, D0191 and D0192 is present in `decisions.list_decisions` with status `superseded`, and each is named in the `supersedes` field of a later-numbered entry (the withdrawal `decisions.py add --supersedes` records); and `detect_conformance` over the live repo, narrowed with `scope_ids` to US0719, US0797 and US0798, reports each of the three conformant with `waived == []`, and no D0187-D0192 in `waivers_unattributed`. Positive control beside it: a fixture workspace holding a Superseded marker skeleton and an accepted `waiver: rule:conformance:specified:<that id>` row reports that decision in `waivers_unattributed`, so the absence asserted on the live log is one the assertion can see |
 | AC6 | in .claude/skills/sdlc-studio/scripts/conformance.py, add `and story_is_ungroomed(text)` to the retired-status exemption, so a retired story with no criteria heading at all is charged both stages | A story retired to Superseded whose `## Acceptance Criteria` section is absent altogether - no marker, no `{{...}}` scaffold, so `story_is_ungroomed` reads it false - is conformant on the same terms as AC1: the exemption turns on the status, not on the grooming shape |
 | AC7 | in .claude/skills/sdlc-studio/scripts/conformance.py, set required to an empty list for a retired status, dropping decomposed along with the two criteria stages | A marker skeleton retired to Superseded that carries no `Epic` field is still non-conformant with `decomposed` in its `missing` - the exemption lifts only the two criteria stages |
+
+## Coverage Rulings
+
+| File | Line | Hash | Reason | Author | Date |
+| --- | --- | --- | --- | --- | --- |
+| .claude/skills/sdlc-studio/scripts/tests/test_conformance.py | 1952 | fe4ffe3887faff40 | consuming-project skip: the live half reads this repository's own retired skeletons and rulings, which a consuming project does not hold; in this repository the skip never fires | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

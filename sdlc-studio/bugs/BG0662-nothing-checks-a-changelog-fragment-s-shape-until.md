@@ -1,9 +1,10 @@
 # BG0662: nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it
 
 > **Status:** In Progress
+> **Verification depth:** functional [[derived: criteria 5; plan rows 13; executed 13; killed 13; survived 0; not-run 0; entry point 4 of 5 criteria through the shipped CLI, 1 in-process | fp fea9317f2f09 ]]
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/changelog.py, .claude/skills/sdlc-studio/scripts/tests/test_changelog.py, .githooks/pre-commit, tools/tests/test_precommit_lane_order.py, AGENTS.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/changelog.py, .claude/skills/sdlc-studio/scripts/tests/test_changelog.py, .githooks/pre-commit, tools/tests/test_precommit_lane_order.py, AGENTS.md, tools/tests/test_message_first_gate.py, .claude/skills/sdlc-studio/reference-scripts-surface.md
 > **Evidence:** 2026-09-10, this tree at f763a89a: `changelog.py compose` refused at BG0581.md; a sweep of changelog.d found 59 of 119 fragments whose first line was not the marker. After repair, compose reports `would compose 119 fragment(s) into Added, Changed, Fixed`.
 > **Created:** 2026-09-10
 > **Created-by:** sdlc-studio file
@@ -29,14 +30,19 @@ Add a `changelog.py shape` verb that parses each given (or every pending) fragme
 
 - [ ] **AC1** Given one pending fragment of EACH shape `compose` refuses - no marker (first line `### Fixed`), an unknown section (`<!-- section: Misc -->`), a marker with no entry text after it, and an empty file - when `changelog.py shape --root <tree>` runs once over all four, then it exits 1 and names all four, each with the exact message `changelog.py compose --root` prints for that fragment ALONE. The expected text is taken from compose's own refusal on a single-fragment copy of the same tree, never retyped, and it is a message no stray listing prints, so today's `check` (which names every pending fragment) cannot satisfy it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::FragmentShapeCheckTests::test_every_malformed_shape_is_named_with_composes_own_message
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC2** Given a tree holding one well-formed fragment beside one malformed fragment, when `changelog.py shape --root <tree>` runs, then it exits 1 and its output names the malformed fragment and NOT the well-formed one; and given a tree of well-formed fragments only, it exits 0 and its output names no fragment. The mixed tree is the positive control for the silent one: a verb that says nothing about anything passes the second half alone, and a verb that refuses every fragment passes AC1 alone
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::FragmentShapeCheckTests::test_only_the_malformed_fragment_is_named_in_a_mixed_tree
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC3** Given a fixture git repository with a malformed fragment STAGED, when the hook's own `changelog-shape` lane - its `run` block and the `run` helper both taken from `.githooks/pre-commit`, never retyped - runs there, then the lane sets the hook's failure and names that fragment; it still fails after the working-tree copy is repaired and NOT re-staged, because the bytes judged are the staged blob; and the lane is a top-level `run` line that precedes the hook's suite selection (`suites_needed`), so it runs on every commit rather than only on one that stages a test-relevant file
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::ChangelogShapeLaneTests::test_the_lane_refuses_a_staged_malformed_fragment
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC4** Given a fixture git repository in each of three states - a well-formed fragment staged; ONLY fragment deletions and a `CHANGELOG.md` edit staged (the release cut's own commit); a well-formed fragment staged beside an UNTRACKED malformed draft - when the hook's own `changelog-shape` lane runs there, then it passes in all three. Positive control in the same repositories: staging one malformed fragment as well makes the lane fail naming only that fragment, so the passes are not a dead lane
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::ChangelogShapeLaneTests::test_the_lane_passes_the_release_cut_a_well_formed_fragment_and_an_untracked_draft
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC5** Given AGENTS.md's pre-commit lane roster (the paragraph opening "The pre-commit lanes, recorded here"), then that paragraph names `changelog.py shape`. The roster's own pinning test (`GateLaneTests` in `tools/tests/test_check_spec_claims.py`) skips a lane whose script is written `"$skill/x.py"`, which is how this lane's command will be spelt, so without this criterion the roster could omit it and pass
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::ChangelogShapeLaneTests::test_the_agents_roster_names_the_lane
+  - **Verified:** yes (2026-09-15)
 
 ## Impact
 
@@ -59,6 +65,25 @@ A release cut is refused by the accumulated shape drift of dozens of past commit
 | AC4 | in .claude/skills/sdlc-studio/scripts/changelog.py, drop `--diff-filter=d` from the staged-fragment `git diff --cached` listing, so the release cut's staged deletions are read and refused | Given a fixture git repository in each of three states - a well-formed fragment staged; ONLY fragment deletions and a `CHANGELOG.md` edit staged (the release cut's own commit); a well-formed fragment staged beside an UNTRACKED malformed draft - when the hook's own `changelog-shape` lane runs there, then it passes in all three. Positive control in the same repositories: staging one malformed fragment as well makes the lane fail naming only that fragment, so the passes are not a dead lane |
 | AC4 | in .claude/skills/sdlc-studio/scripts/changelog.py, list `_fragment_paths(root)` instead of the `git diff --cached` names under `--staged`, so an untracked draft refuses the commit | Given a fixture git repository in each of three states - a well-formed fragment staged; ONLY fragment deletions and a `CHANGELOG.md` edit staged (the release cut's own commit); a well-formed fragment staged beside an UNTRACKED malformed draft - when the hook's own `changelog-shape` lane runs there, then it passes in all three. Positive control in the same repositories: staging one malformed fragment as well makes the lane fail naming only that fragment, so the passes are not a dead lane |
 | AC5 | in AGENTS.md, delete the `changelog.py shape` entry from the pre-commit lane roster paragraph, leaving the lane undocumented | Given AGENTS.md's pre-commit lane roster (the paragraph opening "The pre-commit lanes, recorded here"), then that paragraph names `changelog.py shape`. The roster's own pinning test (`GateLaneTests` in `tools/tests/test_check_spec_claims.py`) skips a lane whose script is written `"$skill/x.py"`, which is how this lane's command will be spelt, so without this criterion the roster could omit it and pass |
+
+## Coverage Rulings
+
+| File | Line | Hash | Reason | Author | Date |
+| --- | --- | --- | --- | --- | --- |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 90 | e9c0bdad962fdad7 | git-failure refusal: exercised through the shipped CLI in a throwaway directory that is not a git repository (exit 2, git's first line named); no criterion names the git-failure path | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 91 | e9c0bdad962fdad7 | git-failure refusal: exercised through the shipped CLI in a throwaway directory that is not a git repository (exit 2, git's first line named); no criterion names the git-failure path | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 110 | e9c0bdad962fdad7 | git-failure refusal: exercised through the shipped CLI in a throwaway directory that is not a git repository (exit 2, git's first line named); no criterion names the git-failure path | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 391 | e9c0bdad962fdad7 | git-failure refusal: exercised through the shipped CLI in a throwaway directory that is not a git repository (exit 2, git's first line named); no criterion names the git-failure path | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 392 | e9c0bdad962fdad7 | git-failure refusal: exercised through the shipped CLI in a throwaway directory that is not a git repository (exit 2, git's first line named); no criterion names the git-failure path | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 393 | e9c0bdad962fdad7 | git-failure refusal: exercised through the shipped CLI in a throwaway directory that is not a git repository (exit 2, git's first line named); no criterion names the git-failure path | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 107 | e9c0bdad962fdad7 | subprocess OSError or timeout around git (binary missing or hung); fail-closed refusal with no fixture short of replacing subprocess, and the same refusal shape as the rc branch exercised through the CLI | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 108 | e9c0bdad962fdad7 | subprocess OSError or timeout around git (binary missing or hung); fail-closed refusal with no fixture short of replacing subprocess, and the same refusal shape as the rc branch exercised through the CLI | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 120 | e9c0bdad962fdad7 | subprocess OSError or timeout around git (binary missing or hung); fail-closed refusal with no fixture short of replacing subprocess, and the same refusal shape as the rc branch exercised through the CLI | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 121 | e9c0bdad962fdad7 | subprocess OSError or timeout around git (binary missing or hung); fail-closed refusal with no fixture short of replacing subprocess, and the same refusal shape as the rc branch exercised through the CLI | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 116 | e9c0bdad962fdad7 | a fragment nested below changelog.d/ is skipped because compose reads only the directory's own md files; defensive, no criterion stages a nested file | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 123 | e9c0bdad962fdad7 | git show failing on a path git diff --cached just listed needs the index to change between the two calls; fail-closed refusal, not reproducible in a fixture | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 127 | e9c0bdad962fdad7 | a staged fragment that is not UTF-8 text is refused rather than decoded lossily; defensive, no criterion stages binary content | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/changelog.py | 128 | e9c0bdad962fdad7 | a staged fragment that is not UTF-8 text is refused rather than decoded lossily; defensive, no criterion stages binary content | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

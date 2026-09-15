@@ -8,9 +8,9 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 121 |
-| Ready | 19 |
+| Ready | 17 |
 | Planned | 0 |
-| In Progress | 2 |
+| In Progress | 4 |
 | Review | 0 |
 | Done | 660 |
 | Won't Implement | 4 |
@@ -33,7 +33,7 @@
 | [US0589](US0589-a-run-that-uses-the-tools-throughout-reports.md) | A run that uses the tools throughout reports zero manual actions, so the detector cannot be one that never fires | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0590](US0590-the-doctrine-states-the-content-versus-tooling-line.md) | The doctrine states the content-versus-tooling line and names reference-scripts.md as the pre-task catalogue | Ready | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0625](US0625-the-doctrine-states-cr0526-s-rule-names-the.md) | the doctrine states CR0526's rule, names the one store a stop-ship ruling lives in, and who rules it | In Progress | EP0206 | 2026-08-02 | 2026-08-02 |
-| [US0626](US0626-an-unfinished-batch-unit-holds-the-close-through.md) | an unfinished batch unit holds the close through its stop-ship step, naming where its findings went, while Review and rung-end units do not | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
+| [US0626](US0626-an-unfinished-batch-unit-holds-the-close-through.md) | an unfinished batch unit holds the close through its stop-ship step, naming where its findings went, while Review and rung-end units do not | In Progress | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0627](US0627-a-story-or-bug-reaching-done-or-fixed.md) | a story or bug reaching Done or Fixed over an unanswered REJECT is refused until its findings are filed or the REJECT is repaired | Ready | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0628](US0628-a-unit-closed-over-a-reject-names-in.md) | a unit closed over a REJECT names, in its own record, the artefact its findings were filed to | In Progress | EP0206 | 2026-08-02 | 2026-08-02 |
 | [US0646](US0646-a-shared-contract-reporter-derives-a-verb-s.md) | A shared contract reporter derives a verb's demands by executing its own guard, never by restating them | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
@@ -181,7 +181,7 @@
 | [US0813](US0813-sprint-report-py-is-repaired-so-the-lane.md) | sprint_report.py is repaired, so the lane's first run over the real tree has something to find | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
 | [US0814](US0814-the-floor-lane-is-bound-into-the-pre.md) | The floor lane is bound into the pre-commit gate, so it runs in the command people actually run | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
 | [US0817](US0817-a-unit-whose-affects-names-a-gate-lane.md) | A unit whose Affects names a gate lane, a hook or the suite runner cannot reach Fixed or Done without a recorded green self-run of the affected lane on this repository | Ready | EP0248 | 2026-09-07 | 2026-09-07 |
-| [US0823](US0823-every-other-route-that-ends-a-run-reads.md) | every other route that ends a run reads the same unanswered-unit predicate as the close, and stop --force records what it waived | Ready | EP0206 | 2026-09-15 | 2026-09-15 |
+| [US0823](US0823-every-other-route-that-ends-a-run-reads.md) | every other route that ends a run reads the same unanswered-unit predicate as the close, and stop --force records what it waived | In Progress | EP0206 | 2026-09-15 | 2026-09-15 |
 
 ## Archived Releases
 

@@ -1,6 +1,7 @@
 # BG0661: revert-check never names the units it set aside, and once one unit is examined their count vanishes from the lane line too
 
 > **Status:** In Progress
+> **Verification depth:** functional [[derived: criteria 5; plan rows 11; executed 11; killed 11; survived 0; not-run 0; entry point 1 of 5 criteria through the shipped CLI, 4 in-process | fp 95d2a4aa84c6 ]]
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -30,14 +31,19 @@ The rendered form each criterion reads is `<uid> (reported)` for a unit `verify_
 
 - [ ] **AC1** With one unit examined and clean and one test-only unit in the batch, the revert-check lane's line still leads with `1 unit(s) examined` and names the test-only unit as `<uid> (reported)`, while the examined unit's id carries no set-aside token
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_a_reported_unit_is_named_beside_an_examined_one
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC2** With the examined unit REFUSED (green after the revert) and one test-only unit beside it, the line `gate.py --boundary push --only revert-check` prints on a two-unit fixture workspace names the refused unit as today and ALSO names the test-only unit as `<uid> (reported)`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_a_reported_unit_is_named_beside_a_refused_one
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC3** With one unit examined and one unit the check could not measure, the line names the errored unit as `<uid> (error` and never as `<uid> (reported)`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_an_errored_unit_is_named_beside_an_examined_one
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC4** On the two paths no criterion above reaches - zero units examined (one reported, one errored), and one unit whose check crashed beside one examined unit and one reported unit - the line names every set-aside unit by id with its reason, and the zero-examined line still leads with `no unit was examined`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_set_aside_units_are_named_on_the_absence_and_crash_paths
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC5** Over a batch of one clean unit, one reported unit and one errored unit, the examined figure handed to `_record_revert_yield` is exactly 1 and the line leads with `1 unit(s) examined` - the paired control, true today; it asserts the recorder's argument, never a substring that `11 unit(s)` would also carry
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_set_aside_units_are_not_counted_examined
+  - **Verified:** yes (2026-09-15)
 
 ## Impact
 

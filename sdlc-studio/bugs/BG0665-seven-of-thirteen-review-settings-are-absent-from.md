@@ -1,6 +1,7 @@
 # BG0665: seven of thirteen `review.*` settings are absent from the file that calls itself the single source of truth, and two of them are named in refusals users hit
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional [[derived: criteria 3; plan rows 5; executed 5; killed 5; survived 0; not-run 0; entry point 0 of 3 criteria through the shipped CLI, 3 in-process | fp 8e0a079ad9b0 ]]
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_config.py
@@ -33,10 +34,13 @@ Declare every `review.*` key the code reads in `templates/config-defaults.yaml` 
 
 - [ ] **AC1** Given every `review.*` key the shipped scripts read, when the defaults file is checked against them, then each key is declared there with its default. Derived from the code rather than from a list, so the next key added is caught rather than exempted by an inventory nobody updated
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::ReviewKeysAreDeclaredTests::test_every_review_key_the_code_reads_is_declared_in_the_defaults
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC2** Given `review.test_plan_after` and `review.two_role_after`, when their documentation is read, then it states that the first takes a DATE compared against `Created` and the second takes an ID cutoff - the shared suffix is exactly what makes the wrong guess natural, and one of the two raises on a date while the other silently accepts an id-shaped string
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::ReviewKeysAreDeclaredTests::test_the_two_cutoffs_document_the_kind_of_value_each_takes
+  - **Verified:** yes (2026-09-15)
 - [ ] **AC3** Given `review.max_rounds`, which is deliberately absent, when the defaults file is read, then its absence is stated with the reason, on both sides: no uncommented line declares `max_rounds:` as a live key, and the comment that mentions it gives the reason by naming both consumers that read it - the close-attempt cap and the review-round ceiling. The paired control: an unexplained absence is indistinguishable from an oversight, and the obvious repair is to add the key back - which is the thing a recorded decision forbids. The delivered test checks only that the string `max_rounds` appears, so delivering this criterion strengthens that test until each single-change AC3 mutant in the Test Plan fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::ReviewKeysAreDeclaredTests::test_a_deliberately_absent_key_says_so
+  - **Verified:** yes (2026-09-15)
 
 ## Impact
 
@@ -51,6 +55,13 @@ A gate refuses, names the setting that caused it, and the setting is undocumente
 | AC3 | in `.claude/skills/sdlc-studio/templates/config-defaults.yaml`, delete the note recording why `max_rounds` is absent | Given `review.max_rounds`, which is deliberately absent, when the defaults file is read, then its absence is stated with the reason, on both sides: no uncommented line declares `max_rounds:` as a live key, and the comment that mentions it gives the reason by naming both consumers that read it - the close-attempt cap and the review-round ceiling. The paired control: an unexplained absence is indistinguishable from an oversight, and the obvious repair is to add the key back - which is the thing a recorded decision forbids. The delivered test checks only that the string `max_rounds` appears, so delivering this criterion strengthens that test until each single-change AC3 mutant in the Test Plan fails it |
 | AC3 | in .claude/skills/sdlc-studio/templates/config-defaults.yaml, keep the note word for word and insert a live `max_rounds: 3` line under `review:` beneath it - the obvious wrong repair, which the delivered string-presence test survives | Given `review.max_rounds`, which is deliberately absent, when the defaults file is read, then its absence is stated with the reason, on both sides: no uncommented line declares `max_rounds:` as a live key, and the comment that mentions it gives the reason by naming both consumers that read it - the close-attempt cap and the review-round ceiling. The paired control: an unexplained absence is indistinguishable from an oversight, and the obvious repair is to add the key back - which is the thing a recorded decision forbids. The delivered test checks only that the string `max_rounds` appears, so delivering this criterion strengthens that test until each single-change AC3 mutant in the Test Plan fails it |
 | AC3 | in .claude/skills/sdlc-studio/templates/config-defaults.yaml, cut the five-line comment to the single line `# review.max_rounds is deliberately absent.`, dropping the two consumers and every word of why, while adding no key | Given `review.max_rounds`, which is deliberately absent, when the defaults file is read, then its absence is stated with the reason, on both sides: no uncommented line declares `max_rounds:` as a live key, and the comment that mentions it gives the reason by naming both consumers that read it - the close-attempt cap and the review-round ceiling. The paired control: an unexplained absence is indistinguishable from an oversight, and the obvious repair is to add the key back - which is the thing a recorded decision forbids. The delivered test checks only that the string `max_rounds` appears, so delivering this criterion strengthens that test until each single-change AC3 mutant in the Test Plan fails it |
+
+## Coverage Rulings
+
+| File | Line | Hash | Reason | Author | Date |
+| --- | --- | --- | --- | --- | --- |
+| .claude/skills/sdlc-studio/scripts/tests/test_config.py | 296 | 6a3f9d266da42440 | test helper branch reached only when a live max_rounds key exists, which is the AC3b mutant state the test is written to refuse; on the shipped defaults it never runs | sdlc-studio | 2026-09-15 |
+| .claude/skills/sdlc-studio/scripts/tests/test_config.py | 334 | 6a3f9d266da42440 | PyYAML-absent skip; every interpreter that runs this suite has PyYAML, which config.py itself requires | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

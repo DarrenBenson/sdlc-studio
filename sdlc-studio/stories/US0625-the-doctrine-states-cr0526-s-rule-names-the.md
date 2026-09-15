@@ -33,6 +33,7 @@ red on a gutted copy built in memory (its positive control).
 - **Then** one sentence says a finding ruled `not-stop-ship` is filed as its own bug or CR; one sentence says that finding's unit closes pointing at the filed id; one sentence says a finding ruled `stop-ship` holds the close, with `stop-ship` matched as a whole token so `not-stop-ship` never satisfies it; and the same test deletes the passage from a copy, re-homes its sentences in rule 21 and in a Revision History row, and asserts all three claims are then reported missing
 - **Mutant:** delete the sentence filing a `not-stop-ship` finding as its own bug or CR - the rule survives only as practice, the state LL0027 names
 - **Verify:** pytest tools/tests/test_doctrine_stop_ship.py::StopShipDoctrineTests::test_the_rule_names_both_outcomes
+- **Verified:** yes (2026-09-15)
 
 ### AC2: severity alone is not the ruling
 
@@ -41,6 +42,7 @@ red on a gutted copy built in memory (its positive control).
 - **Then** one sentence pairs `severity` with a negation and `ruling` (severity alone is not the ruling); and the same test builds a copy whose passage lacks that sentence while rule 21's `severity-rated bug` is left in place, and asserts the claim is reported missing
 - **Mutant:** delete the severity sentence from the `{#stop-ship}` rule, leaving rule 21's `severity-rated bug` in the file
 - **Verify:** pytest tools/tests/test_doctrine_stop_ship.py::StopShipDoctrineTests::test_severity_is_not_the_ruling
+- **Verified:** yes (2026-09-15)
 
 ### AC3: the passage names one store and no second one (D0194)
 
@@ -49,6 +51,7 @@ red on a gutted copy built in memory (its positive control).
 - **Then** exactly one sentence matches the recording shape (`is|are|be` + `recorded|stored|kept|logged`, or `live in|lives in`) and that sentence names `retro.KNOWN_ISSUES_SECTION`'s value with the word `only`; no term of the repository's other record stores (`ledger`, `decisions.md`, `decision log`, `handoff`, `LATEST.md`, `charter`) appears anywhere in the passage; the proposal and delegate sentences of AC4 use neither shape, so they cannot clash; and the same test refuses a copy given a second recording sentence naming a place outside the vocabulary (by the count alone) and a copy given a sentence naming the critic ledger with no recording verb (by the vocabulary alone)
 - **Mutant:** add a sentence to the passage recording a stop-ship ruling in the critic ledger as well - the ruling a reader follows is then one the close never reads
 - **Verify:** pytest tools/tests/test_doctrine_stop_ship.py::StopShipDoctrineTests::test_the_one_store_is_named_and_no_second
+- **Verified:** yes (2026-09-15)
 
 ### AC4: who rules, and a reviewer's proposal is not a ruling (D0194)
 
@@ -57,6 +60,7 @@ red on a gutted copy built in memory (its positive control).
 - **Then** one sentence names the operator AND a recorded delegate together as who rules; a separate sentence says a reviewer's proposal in a finding's text is not a ruling (`propos` with `not a ruling`); and the same test asserts a copy with `or a recorded delegate` cut reports ONLY the delegate claim missing, and a copy with the passage re-homed in a Revision History row reports both missing
 - **Mutant:** remove `or a recorded delegate` from the who-rules sentence, leaving the operator alone
 - **Verify:** pytest tools/tests/test_doctrine_stop_ship.py::StopShipDoctrineTests::test_the_ruler_and_the_proposal_are_named
+- **Verified:** yes (2026-09-15)
 
 ### AC5: the table and vocabulary the doctrine quotes are the ones the close reads
 
@@ -65,6 +69,7 @@ red on a gutted copy built in memory (its positive control).
 - **Then** the passage carries the section value as an exact backticked span; the set of code spans in the passage's vocabulary sentence - its one sentence with `one of` followed by code spans, so AC1's sentences quoting `stop-ship` cannot stand in for it - EQUALS `set(retro.KNOWN_ISSUE_RULINGS)` - equality, not subset, compared as whole tokens and never by substring; and the same test runs the comparison against the imported tuple plus one extra value AND against the tuple minus one value, and asserts a mismatch is reported for each - so a one-directional subset check cannot pass, then against the imported tuple and asserts none is
 - **Mutant:** in retro.py, change the value of KNOWN_ISSUES_SECTION to `Known issues ruled`, leaving the name - caught by the span assertion, never by an AttributeError
 - **Verify:** pytest tools/tests/test_doctrine_stop_ship.py::StopShipDoctrineTests::test_the_quoted_table_is_the_one_the_close_reads
+- **Verified:** yes (2026-09-15)
 
 ## Test Plan
 

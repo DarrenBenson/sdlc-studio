@@ -1,6 +1,6 @@
 # BG0676: the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 20 new ones passes locally
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 8
 > **Depends on:** BG0659, BG0661, BG0662, BG0664, BG0665, BG0666, BG0667, BG0668, BG0669, BG0670, BG0671, BG0672, BG0673, BG0674, BG0675, US0625, US0626, US0627, US0628, US0823

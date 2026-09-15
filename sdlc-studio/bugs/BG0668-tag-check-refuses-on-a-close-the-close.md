@@ -1,6 +1,6 @@
 # BG0668: tag-check refuses on a close the close-owed predicate says is not owed
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 3; plan rows 3; executed 3; killed 3; survived 0; not-run 0; entry point 0 of 3 criteria through the shipped CLI, 3 in-process | fp 7685bed880df ]]
 > **Severity:** Medium
 > **Points:** 2
