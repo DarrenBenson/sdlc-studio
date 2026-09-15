@@ -15,7 +15,10 @@ And a repair records which plan it executed, so a planned repair is distinguisha
 that was not.
 
 The gate is opt-in per project and OFF by default (US0315): an existing project's close does
-not change until it sets `review.repair_plan_gate: on`.
+not change until it sets `review.repair_plan_gate: on`. When on, `transition.py` asks it at
+the delivered close of repair work (a bug reaching Fixed, a story delivering a finding reaching
+Done). The CLI keys a plan to the UNIT it repairs, so that transition finds it by the unit's own
+id rather than by a free plan id it has no way to know.
 """
 from __future__ import annotations
 
@@ -256,8 +259,11 @@ def review_repair_plan(root: Path | str, plan_id: str, verdict: str, reviewer: s
                 "controls does not satisfy it (US0312 AC2)")
     fp = plan.get("fingerprint", "")
     issues = f"plan={plan_id}; findings-hash={fp}"
+    # Under the repair plan's OWN kind. Written as the default `spec` kind, this approval
+    # discharged the unit's spec plan-review gate while nobody had read the spec, and an earlier
+    # test-plan rejection on the same id hid it from `plan_reviewed`.
     return critic.record_verdict(root, plan_id, verdict, reviewer, author, issues,
-                                 phase="plan-review")
+                                 phase="plan-review", kind=critic.REPAIR_PLAN_KIND)
 
 
 def _clean(s: str) -> str:
@@ -271,7 +277,10 @@ def plan_reviewed(root: Path | str, plan_id: str) -> dict:
     plan = load_plan(root, plan_id)
     if plan is None:
         return {"ok": False, "reason": f"no repair plan {plan_id!r}"}
-    v = critic.verdict_for(root, plan_id, phase="plan-review")
+    # The repair plan's own kind and nothing else. Read kind-blind, a spec or test-plan verdict
+    # on the same unit id answered for the plan, and an unanswered test-plan REJECT there hid
+    # the plan's own APPROVE, so an independently approved plan could never open the gate.
+    v = critic.verdict_for(root, plan_id, phase="plan-review", kind=critic.REPAIR_PLAN_KIND)
     if not v or v.get("verdict") != critic.APPROVE:
         return {"ok": False, "reason": "no independent APPROVE on this repair plan"}
     if not critic.is_independent(v):
@@ -332,11 +341,58 @@ def _cmd_brief(args) -> int:
 
 def _cmd_gate(args) -> int:
     try:
-        res = repair_gate(args.root, args.plan)
+        res = repair_gate(args.root, sdlc_md.norm_id(args.plan) if args.plan else None)
     except ValueError as e:
         print(str(e), file=sys.stderr)
         return 1
     print(res["reason"])
+    return 0
+
+
+def _unit_key(root: str, unit: str) -> str:
+    """The plan key for `unit`: its normalised id, once it resolves to an artefact. A plan filed
+    under an id nothing carries is one no transition will ever ask for."""
+    key = sdlc_md.norm_id(unit or "")
+    if not key or not sdlc_md.find_by_id(root, key):
+        raise ValueError(f"{unit!r} names no artefact in this project - a repair plan is keyed "
+                         "to the unit it repairs, and the transition that closes that unit "
+                         "looks it up by the unit's own id")
+    return key
+
+
+def _cmd_record(args) -> int:
+    try:
+        key = _unit_key(args.root, args.unit)
+        raw = (sys.stdin.read() if args.plan_file == "-"
+               else Path(args.plan_file).read_text(encoding="utf-8"))
+        doc = json.loads(raw)
+        if not isinstance(doc, dict):
+            raise ValueError("the plan file must be a JSON object carrying `verdict`, "
+                             "`findings` and `entries`")
+        # The verdict is READ, never defaulted: a plan exists only for a REJECT, and a CLI that
+        # supplied one would launder a change nobody rejected past `record_repair_plan`'s check.
+        path = record_repair_plan(args.root, key, str(doc.get("verdict") or ""),
+                                  list(doc.get("findings") or []),
+                                  list(doc.get("entries") or []), args.author)
+    except (OSError, ValueError) as e:
+        print(f"record refused: {e}", file=sys.stderr)
+        return 1
+    print(f"repair plan recorded for {key} -> {path}")
+    return 0
+
+
+def _cmd_review(args) -> int:
+    try:
+        key = _unit_key(args.root, args.unit)
+        plan = load_plan(args.root, key)
+        # The author the plan was RECORDED with, unless one is named: the verdict row must carry
+        # the identity the reviewer had to differ from, and that is the plan's.
+        author = args.author or (plan or {}).get("author", "")
+        path = review_repair_plan(args.root, key, args.verdict, args.reviewer, author)
+    except (FileNotFoundError, ValueError) as e:
+        print(f"review refused: {e}", file=sys.stderr)
+        return 1
+    print(f"recorded {key} {args.verdict} [plan-review, {critic.REPAIR_PLAN_KIND}] -> {path}")
     return 0
 
 
@@ -347,8 +403,27 @@ def build_parser() -> argparse.ArgumentParser:
     b = sub.add_parser("brief", help="print the reviewer brief for a repair-plan review")
     b.add_argument("--prior", nargs="*", help="prior approaches this class has already tried")
     b.set_defaults(func=_cmd_brief)
+    r = sub.add_parser("record", help="record a repair plan answering a unit's REJECT")
+    r.add_argument("--unit", required=True, help="the unit the plan repairs; the plan is keyed "
+                                                 "to its id")
+    r.add_argument("--author", required=True, help="who wrote the plan")
+    r.add_argument("--plan-file", dest="plan_file", required=True, metavar="FILE|-",
+                   help="a JSON object: `verdict` (the REJECT being answered), `findings` (its "
+                        "findings) and `entries` (one per finding: `finding`, `change`, "
+                        "`approach`, `risk`, and `design` for a repeat class)")
+    r.set_defaults(func=_cmd_record)
+    v = sub.add_parser("review", help="record an independent verdict on a unit's repair plan")
+    v.add_argument("--unit", required=True, help="the unit whose repair plan was reviewed")
+    v.add_argument("--verdict", required=True, type=str.upper,
+                   choices=(critic.APPROVE, critic.REJECT))
+    v.add_argument("--reviewer", required=True,
+                   help="the reviewing identity; it must differ from the plan's author")
+    v.add_argument("--author", default="",
+                   help="the plan's author (default: the author the plan was recorded with)")
+    v.set_defaults(func=_cmd_review)
     g = sub.add_parser("gate", help="check whether a repair may be recorded")
-    g.add_argument("--plan", help="the repair plan id the repair executed")
+    g.add_argument("--unit", "--plan", dest="plan",
+                   help="the unit whose repair plan the repair executed")
     g.set_defaults(func=_cmd_gate)
     return ap
 

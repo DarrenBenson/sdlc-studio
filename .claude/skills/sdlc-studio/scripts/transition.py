@@ -1122,6 +1122,24 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             block = _planned_mutant_gate(root, sdlc_md.norm_id(artifact_id))
             if block:
                 blocks.append(f"{block} ({why}). Override with --force")
+    # THE REPAIR-PLAN GATE, at the verb that closes a repair. `review.repair_plan_gate` shipped
+    # with a library check nothing called, so a project that turned it on was refused by no
+    # command it ran. Asked of repair work only, read from the unit's own type and provenance
+    # exactly as the planned-mutant gate reads it, and at the same two statuses, Done and Fixed:
+    # a unit ruled `Won't Fix` repaired nothing, so there is no plan to ask for. A bug set
+    # straight to Verified or Closed is not asked yet. Keyed on the unit's own id, the key
+    # `repair_plan.py record` files the plan under.
+    #
+    # SILENT when the setting is off. `repair_gate` then returns ok with a reason naming the key,
+    # and echoing it would put a setting in front of every project that never chose it.
+    if not force and target_canon in _TERMINAL_FOR_PLAN:
+        repair, why = is_repair_unit(type_, text)
+        if repair:
+            import repair_plan  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+            try:
+                repair_plan.repair_gate(root, sdlc_md.norm_id(artifact_id))
+            except ValueError as exc:
+                blocks.append(f"{exc} ({why}). Override with --force")
     # THE MUTATION-EVIDENCE LANE, and it is deliberately NOT nested inside the condition above.
     # The two ask different questions - "was every PLANNED row executed" against "does this
     # repair's changed surface carry evidence" - and they are governed by different settings.

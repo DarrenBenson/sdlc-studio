@@ -63,9 +63,18 @@ UNKNOWN_BAND_TIER = "full"
 #: default for the next author, and two independent seats found it only by reading the source.
 _PLAN_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Kind | Issues |\n"
                "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+#: The plan written to answer a REJECT, judged before the repair is made (`repair_plan.py`). A
+#: kind of its own so an approval of the repair's APPROACH cannot discharge the gate asking for
+#: an approved spec or test plan, and neither of those can stand in for it.
+REPAIR_PLAN_KIND = "repair-plan"
 #: The artefacts a plan review can judge. An unknown value is REFUSED at write time: a misspelt
 #: kind creates a row no gate will ever match, which is a gate that can never be satisfied.
-PLAN_REVIEW_KINDS = ("spec", "test-plan")
+PLAN_REVIEW_KINDS = ("spec", "test-plan", REPAIR_PLAN_KIND)
+#: The plan-review kinds whose REJECT `critic.py repair` answers. A repair-plan REJECT is NOT
+#: one: it is answered by a revised plan, and its issues cell carries the plan's `plan=` and
+#: `findings-hash=` tokens rather than findings, so reading it here would count two tokens as
+#: outstanding findings and hold a spec or test-plan rejection's repair PARTIAL for ever.
+REPAIRABLE_PLAN_KINDS = tuple(k for k in PLAN_REVIEW_KINDS if k != REPAIR_PLAN_KIND)
 #: What a row written before the column existed means. Only one kind was ever reviewed, so this
 #: is a fact about those rows rather than an assumption about them.
 DEFAULT_PLAN_KIND = "spec"
@@ -582,9 +591,12 @@ def seat_verdicts(repo_root: Path | str, unit: str, phase: str = "delivery") -> 
 
 
 def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
-                kind: str | None = None):
+                kind: str | tuple[str, ...] | None = None):
     """The latest LIVE recorded verdict for a unit in `phase`, or None. Defaults to the
     delivery log, so the conformance `critiqued` gate is unaffected by plan-review rows.
+
+    `kind` narrows a plan-review lookup to one artefact, or to a tuple of them for a reader that
+    answers several (the repair ledger reads every kind but the repair plan's own).
 
     A superseded row is skipped: it records an event that a named authoriser has ruled did
     not happen, so acting on it would be acting on a known-false fact. A unit whose only row
@@ -605,13 +617,14 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
     target = sdlc_md.norm_id(unit)
     latest = None
     seen: list[dict] = []
+    kinds = (kind,) if isinstance(kind, str) else kind
     for v in read_verdicts(repo_root, phase):
         if sdlc_md.norm_id(v["unit"]) != target:
             continue
         # THE DISCRIMINATION. A gate asks for an approval of the artefact it cares about, so a
         # `spec` approval cannot discharge a `test-plan` gate. Asked only when a kind is named:
         # a caller that does not care sees every row, exactly as it did before the column.
-        if kind is not None and (v.get("kind") or DEFAULT_PLAN_KIND) != kind:
+        if kinds is not None and (v.get("kind") or DEFAULT_PLAN_KIND) not in kinds:
             continue
         if v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
                                     or _is_principal_superseded(repo_root, unit, v)):
@@ -1217,6 +1230,18 @@ def parse_closures(closed: str) -> list[dict]:
     return out
 
 
+def _repair_kinds(phase: str) -> tuple[str, ...] | None:
+    """The plan-review kinds a repair in `phase` answers, or None - every row - for delivery,
+    whose verdicts carry no kind."""
+    return REPAIRABLE_PLAN_KINDS if phase == "plan-review" else None
+
+
+def _of_kind(row: dict, kinds: tuple[str, ...] | None) -> bool:
+    """Is this verdict row of one of `kinds`? A row predating the Kind column reads as the
+    default kind, exactly as `verdict_for` reads it."""
+    return kinds is None or (row.get("kind") or DEFAULT_PLAN_KIND) in kinds
+
+
 def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
                   phase: str = "delivery") -> Path:
     """Append a REPAIR answering this unit's live REJECT.
@@ -1233,7 +1258,10 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
     if not (author or "").strip():
         raise ValueError("a repair needs --author - it is a claim about work somebody did, "
                          "and an unattributed claim cannot be questioned")
-    row = verdict_for(repo_root, unit, phase)
+    # A repair-plan REJECT is not one this command answers (see REPAIRABLE_PLAN_KINDS), so it
+    # is invisible here: a unit whose only rejection is of its repair plan has nothing to repair.
+    kinds = _repair_kinds(phase)
+    row = verdict_for(repo_root, unit, phase, kind=kinds)
     if not row or str(row.get("verdict") or "").upper() != REJECT:
         raise ValueError(f"{sdlc_md.norm_id(unit)} carries no live REJECT to answer - a repair "
                          f"records what was done about a rejection, so there has to be one")
@@ -1260,7 +1288,7 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str,
     # `repair_state` avoids by matching per rejection. Text identifies a finding wherever it was
     # raised; an ordinal only means something relative to one list.
     live = [r for r in read_verdicts(repo_root, phase)
-            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit)]
+            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit) and _of_kind(r, kinds)]
     standing = [f["text"] for f in parse_findings(row.get("issues", ""))]
     every: list[str] = list(standing)
     for rejection in _unanswered_rejects(live):
@@ -1572,10 +1600,15 @@ def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> d
     # deriving `outstanding` from the standing row alone left 118 findings invisible to this
     # function, to the conformance lane that calls it and to every checker built on either. A
     # gate that cannot see most of what it is meant to check is not a gate.
+    #
+    # Every rejection THIS LEDGER ANSWERS, which excludes a repair plan's: its REJECT is met by
+    # a revised plan, never by a row here, so counting it would hold the unit PARTIAL on two
+    # plan tokens no closure can name.
+    kinds = _repair_kinds(phase)
     live = [r for r in read_verdicts(repo_root, phase)
-            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit)]
-    rejections = _unanswered_rejects(live) or (
-        [verdict_for(repo_root, unit, phase)] if verdict_for(repo_root, unit, phase) else [])
+            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit) and _of_kind(r, kinds)]
+    standing = verdict_for(repo_root, unit, phase, kind=kinds)
+    rejections = _unanswered_rejects(live) or ([standing] if standing else [])
     rejections = [r for r in rejections
                   if str(r.get("verdict") or "").upper().startswith(REJECT)]
     if not rejections:
@@ -4588,7 +4621,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="PLAN-REVIEW ONLY: which pre-code artefact was judged (default "
                         f"{DEFAULT_PLAN_KIND}). A gate asks for an approval of ITS artefact, so "
                         "a spec approval cannot discharge a test-plan gate. Refused on the "
-                        "delivery phase, where a verdict judges the diff")
+                        "delivery phase, where a verdict judges the diff. A repair plan's "
+                        "verdict is normally recorded by `repair_plan.py review`, which also "
+                        "pins it to the findings the plan answers")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_record)
     b = sub.add_parser("brief", help="Print the assembled seat-review prompt for a unit "

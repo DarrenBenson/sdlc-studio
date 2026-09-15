@@ -202,10 +202,13 @@ class UntokenedVerdictPinTests(unittest.TestCase):
             [_entry(f) for f in findings], "author-a")
 
     def test_an_untokened_verdict_is_not_treated_as_pinned(self) -> None:
-        # AC1: an APPROVE recorded with an issues field that carries no `findings-hash=`.
+        # AC1: an APPROVE recorded with an issues field that carries no `findings-hash=`. Under
+        # the repair plan's own kind, the only kind `plan_reviewed` reads: recorded under the
+        # default kind it would be refused as no APPROVE at all, and the assertion on the
+        # REASON below is what keeps this test about the missing pin.
         self._plan()
         critic.record_verdict(self.r.tmp, "RP1", "APPROVE", "reviewer-b", "author-a",
-                              "plan=RP1", phase="plan-review")
+                              "plan=RP1", phase="plan-review", kind=critic.REPAIR_PLAN_KIND)
         res = repair_plan.plan_reviewed(self.r.tmp, "RP1")
         self.assertFalse(res["ok"], f"an untokened verdict was honoured: {res}")
         # the REASON must name the missing pin, not some other refusal (independence, no
@@ -332,6 +335,267 @@ class ApproachQuestionBriefTests(unittest.TestCase):
         first = repair_plan.build_brief()
         self.assertEqual(first["prior_approaches"], [])
         self.assertNotIn(repair_plan.APPROACH_QUESTION, first["questions"])
+
+
+_SCRIPTS = Path(__file__).resolve().parent.parent
+
+_BUG = ("# BG0001: b\n\n> **Status:** In Progress\n> **Severity:** medium\n"
+        "> **Verification depth:** functional\n\n## Summary\n\nx\n\n## Steps to Reproduce\n\n"
+        "1. x\n\n## Proposed Fix\n\ny\n\n## Acceptance Criteria\n\n"
+        "- [x] the defect no longer reproduces\n")
+
+
+def _story_text(sid: str, provenance: str) -> str:
+    # Review, one manual criterion stamped verified: the story passes the AC-verify gate, and
+    # with neither `review.two_role_after` nor `review.test_plan_after` set no other Done gate
+    # applies - so the only thing that can refuse it is the gate under test.
+    return (f"# {sid}: s\n\n> **Status:** Review\n> {provenance}\n\n## Acceptance Criteria\n\n"
+            f"### AC1\n- **Verify:** manual a human looked\n- **Verified:** yes (2026-01-01)\n")
+
+
+def _run(root: Path, script: str, *argv: str) -> tuple[int, str]:
+    """Drive a script through its SHIPPED ENTRY POINT, stdout and stderr merged: the wiring
+    between the command and the library is the thing these criteria are about."""
+    import subprocess
+    p = subprocess.run([sys.executable, str(_SCRIPTS / script), "--root", str(root), *argv],
+                       capture_output=True, text=True)
+    return p.returncode, p.stdout + p.stderr
+
+
+class RepairGateIsReachableTests(unittest.TestCase):
+    """BG0673: the repair-plan gate shipped with a library check nothing called. No command
+    recorded a plan or its verdict, and turning `review.repair_plan_gate` on refused nothing a
+    delivery command ran. Every test here goes in through the commands."""
+
+    def setUp(self):
+        self.r = _Root()
+        self.root = self.r.tmp
+
+    def tearDown(self):
+        self.r.cleanup()
+
+    def _fresh(self) -> Path:
+        r = _Root()
+        self.addCleanup(r.cleanup)
+        return r.tmp
+
+    def _bug(self, root: Path, gate: str | None) -> Path:
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        path = bugs / "BG0001-x.md"
+        path.write_text(_BUG, encoding="utf-8")
+        if gate is not None:
+            _write_config(root, gate)
+        return path
+
+    def _story(self, root: Path, sid: str, provenance: str) -> Path:
+        stories = root / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True, exist_ok=True)
+        path = stories / f"{sid}-x.md"
+        path.write_text(_story_text(sid, provenance), encoding="utf-8")
+        return path
+
+    @staticmethod
+    def _status(path: Path) -> str:
+        import re
+        return re.search(r"\*\*Status:\*\*\s*(.+)", path.read_text(encoding="utf-8")).group(1)
+
+    def _record_plan(self, root: Path, unit: str = "BG0001", author: str = "author-a"):
+        import json
+        doc = root / "plan.json"
+        doc.write_text(json.dumps({"verdict": "REJECT", "findings": ["F1"],
+                                   "entries": [_entry("F1")]}), encoding="utf-8")
+        return _run(root, "repair_plan.py", "record", "--unit", unit, "--author", author,
+                    "--plan-file", str(doc))
+
+    def _plan_rows(self, root: Path, unit: str = "BG0001") -> list[dict]:
+        return [v for v in critic.read_verdicts(root, "plan-review") if v["unit"] == unit]
+
+    def _test_plan_reject(self, root: Path, unit: str = "BG0001") -> None:
+        rc, out = _run(root, "critic.py", "record", "--unit", unit, "--phase", "plan-review",
+                       "--kind", "test-plan", "--verdict", "REJECT",
+                       "--issues", "the fixture cannot reach the branch",
+                       "--reviewer", "qa-seat", "--author", "author-a",
+                       "--brief", "0123456789ab")
+        self.assertEqual(rc, 0, out)
+
+    def test_the_gate_refuses_at_the_terminal_transition(self) -> None:
+        """AC1. Must fail on: the gate's ValueError returned as the advisory `gate_warn` so the
+        write proceeds; or the gate asked only at Done, so a bug reaching Fixed is never
+        checked. Either leaves the bug Fixed and the exit 0."""
+        bug = self._bug(self.root, "on")
+        rc, out = _run(self.root, "transition.py", "set", "BG0001", "Fixed")
+        self.assertNotEqual(rc, 0, out)
+        # THIS gate's key, not a refusal: other gates also refuse a bug going to Fixed
+        self.assertIn(repair_plan.GATE_KEY, out)
+        self.assertIn("blocked", out)
+        self.assertEqual(self._status(bug), "In Progress", "the refused transition was written")
+
+    def test_a_plan_and_verdict_record_through_the_cli(self) -> None:
+        """AC2. Must fail on: a `record` verb with no `review` verb; or a `review` verb that
+        writes through `critic.record_verdict` directly, skipping the independence check
+        against the plan's recorded author."""
+        import json
+        self._bug(self.root, None)
+        rc, out = self._record_plan(self.root)
+        self.assertEqual(rc, 0, out)
+        stored = json.loads((self.root / "sdlc-studio" / ".local" / "repair-plans"
+                             / "BG0001.json").read_text(encoding="utf-8"))
+        self.assertEqual((stored["plan_id"], stored["author"]), ("BG0001", "author-a"),
+                         "the plan is keyed to the unit it repairs")
+        # keyed to a unit that EXISTS: an id nothing carries is one no transition asks for
+        rc, out = self._record_plan(self.root, unit="BG0999")
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn("names no artefact", out)
+        # the plan's own author as reviewer: refused, naming independence, and nothing written
+        rc, out = _run(self.root, "repair_plan.py", "review", "--unit", "BG0001",
+                       "--verdict", "APPROVE", "--reviewer", "author-a")
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn("not independent", out)
+        self.assertEqual(self._plan_rows(self.root), [], "a self-review wrote a verdict row")
+        # the positive case: a different reviewer's verdict is written
+        rc, out = _run(self.root, "repair_plan.py", "review", "--unit", "BG0001",
+                       "--verdict", "APPROVE", "--reviewer", "reviewer-b")
+        self.assertEqual(rc, 0, out)
+        rows = self._plan_rows(self.root)
+        self.assertEqual([(v["verdict"], v["reviewer"], v["author"]) for v in rows],
+                         [("APPROVE", "reviewer-b", "author-a")])
+
+    def test_the_gate_off_changes_nothing(self) -> None:
+        """AC3. Must fail on: the transition calling `plan_reviewed` directly, bypassing the
+        `gate_enabled` check `repair_gate` makes; or echoing the gate-off reason, which names
+        the key, as a warning."""
+        for gate in ("off", None):                       # set off, and never set at all
+            with self.subTest(gate=gate):
+                root = self._fresh()
+                bug = self._bug(root, gate)
+                rc, out = _run(root, "transition.py", "set", "BG0001", "Fixed")
+                self.assertEqual(rc, 0, out)
+                self.assertEqual(self._status(bug), "Fixed")
+                self.assertNotIn(repair_plan.GATE_KEY, out)
+        # the pair: the SAME fixture with the setting on is refused, so the leg above is the
+        # setting's doing and not a transition that never asks the gate at all
+        bug = self._bug(self.root, "on")
+        rc, out = _run(self.root, "transition.py", "set", "BG0001", "Fixed")
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn(repair_plan.GATE_KEY, out)
+        self.assertEqual(self._status(bug), "In Progress")
+
+    def test_a_repair_plan_approval_is_not_a_spec_plan_review(self) -> None:
+        """AC4. Must fail on: `review_repair_plan` writing without the kind, so the approval
+        lands under the default `spec` kind; or writing twice, once under each."""
+        self._bug(self.root, None)
+        self.assertEqual(self._record_plan(self.root)[0], 0)
+        rc, out = _run(self.root, "repair_plan.py", "review", "--unit", "BG0001",
+                       "--verdict", "APPROVE", "--reviewer", "reviewer-b")
+        self.assertEqual(rc, 0, out)
+        self.assertIn(critic.REPAIR_PLAN_KIND, critic.PLAN_REVIEW_KINDS)
+        self.assertEqual([v["kind"] for v in self._plan_rows(self.root)],
+                         [critic.REPAIR_PLAN_KIND], "exactly one row, of the repair plan's kind")
+        for kind in ("spec", "test-plan"):
+            with self.subTest(kind=kind):
+                self.assertIsNone(critic.verdict_for(self.root, "BG0001", phase="plan-review",
+                                                     kind=kind),
+                                  f"a repair-plan approval answered the {kind} lookup")
+        v = critic.verdict_for(self.root, "BG0001", phase="plan-review",
+                               kind=critic.REPAIR_PLAN_KIND)
+        self.assertIsNotNone(v)
+        self.assertEqual(v["verdict"], "APPROVE")
+
+    def test_the_gate_holds_repair_stories_and_spares_decision_terminals(self) -> None:
+        """AC5. Must fail on: the gate asked of bugs only; asked at every terminal status
+        rather than Done and Fixed; asked of every unit reaching Done; or reading a story's
+        `Parent` and never its `Delivers`."""
+        repair_stories = (("US0001", "**Parent:** BG0002"), ("US0002", "**Delivers:** RV0001"))
+        root = self.root
+        _write_config(root, "on")
+        for sid, prov in repair_stories:
+            with self.subTest(story=sid, gate="on"):
+                path = self._story(root, sid, prov)
+                rc, out = _run(root, "transition.py", "set", sid, "Done")
+                self.assertNotEqual(rc, 0, out)
+                self.assertIn(repair_plan.GATE_KEY, out)
+                self.assertEqual(self._status(path), "Review")
+        with self.subTest(spared="a bug set to Won't Fix"):
+            self._bug(root, None)
+            rc, out = _run(root, "transition.py", "set", "BG0001", "Won't Fix")
+            self.assertNotIn(repair_plan.GATE_KEY, out)
+        with self.subTest(spared="a story whose Parent names an epic"):
+            path = self._story(root, "US0003", "**Parent:** EP0001")
+            rc, out = _run(root, "transition.py", "set", "US0003", "Done")
+            self.assertNotIn(repair_plan.GATE_KEY, out)
+            self.assertEqual((rc, self._status(path)), (0, "Done"), out)
+        # the same two repair stories reach Done with the setting off: each passes every other
+        # Done gate, so the refusals above are this gate's and nothing else's
+        off = self._fresh()
+        _write_config(off, "off")
+        for sid, prov in repair_stories:
+            with self.subTest(story=sid, gate="off"):
+                path = self._story(off, sid, prov)
+                rc, out = _run(off, "transition.py", "set", sid, "Done")
+                self.assertEqual((rc, self._status(path)), (0, "Done"), out)
+
+    def test_a_repair_plan_reject_does_not_hold_the_test_plan_repair_clause(self) -> None:
+        """AC6. Must fail on: `repair_state` reading every plan-review row, so the repair plan's
+        `plan=` and `findings-hash=` cells count as outstanding findings; or `record_repair`
+        looking up the live REJECT with no kind, so a closure is accepted against a repair-plan
+        rejection."""
+        for gate in ("on", "off"):
+            with self.subTest(gate=gate):
+                root = self._fresh()
+                self._bug(root, gate)
+                self._test_plan_reject(root)
+                rc, out = _run(root, "critic.py", "repair", "--unit", "BG0001",
+                               "--phase", "plan-review", "--author", "author-a",
+                               "--closed", "the fixture cannot reach the branch -> rewrote "
+                                           "the fixture so the branch is reached")
+                self.assertEqual(rc, 0, out)
+                self.assertEqual(critic.plan_review_repair_clears(root, "BG0001"), (True, ""))
+                self.assertEqual(self._record_plan(root)[0], 0)
+                rc, out = _run(root, "repair_plan.py", "review", "--unit", "BG0001",
+                               "--verdict", "REJECT", "--reviewer", "reviewer-b")
+                self.assertEqual(rc, 0, out)
+                self.assertEqual([v["kind"] for v in self._plan_rows(root)
+                                  if v["verdict"] == "REJECT"],
+                                 ["test-plan", critic.REPAIR_PLAN_KIND])
+                self.assertEqual(critic.plan_review_repair_clears(root, "BG0001"), (True, ""))
+        # a unit whose ONLY plan-review REJECT is a repair plan's: nothing for `repair` to answer
+        closure = ("--closed", "#1 -> revised the plan")
+        only = self._fresh()
+        self._bug(only, None)
+        self.assertEqual(self._record_plan(only)[0], 0)
+        self.assertEqual(_run(only, "repair_plan.py", "review", "--unit", "BG0001",
+                              "--verdict", "REJECT", "--reviewer", "reviewer-b")[0], 0)
+        rc, out = _run(only, "critic.py", "repair", "--unit", "BG0001", "--phase",
+                       "plan-review", "--author", "author-a", *closure)
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn("no live REJECT", out)
+        self.assertEqual(critic.repairs_for(only, "BG0001"), [], "a repair row was appended")
+        # the same command on a unit carrying a test-plan REJECT is accepted
+        tp = self._fresh()
+        self._bug(tp, None)
+        self._test_plan_reject(tp)
+        rc, out = _run(tp, "critic.py", "repair", "--unit", "BG0001", "--phase",
+                       "plan-review", "--author", "author-a", *closure)
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(len(critic.repairs_for(tp, "BG0001")), 1)
+
+    def test_the_gate_on_lets_an_independently_approved_plan_reach_fixed(self) -> None:
+        """AC7, the gate-on positive control. Must fail on: the transition handing
+        `repair_gate` None, or an `RP-` id derived from the unit id, rather than the unit's own
+        id; or `plan_reviewed` reading kind `spec`, or no kind at all, rather than the repair
+        plan's. The earlier test-plan REJECT on the bug is what a kind-blind read trips on."""
+        bug = self._bug(self.root, "on")
+        self._test_plan_reject(self.root)
+        rc, out = self._record_plan(self.root, author="author-a")
+        self.assertEqual(rc, 0, out)
+        rc, out = _run(self.root, "repair_plan.py", "review", "--unit", "BG0001",
+                       "--verdict", "APPROVE", "--reviewer", "reviewer-b")
+        self.assertEqual(rc, 0, out)
+        rc, out = _run(self.root, "transition.py", "set", "BG0001", "Fixed")
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(self._status(bug), "Fixed")
+        self.assertNotIn(repair_plan.GATE_KEY, out)
 
 
 def _write_config(root: Path, gate: str, extra: str = "") -> None:

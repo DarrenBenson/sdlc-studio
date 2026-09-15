@@ -39,7 +39,13 @@ records an independent verdict (self-approval refused), pinned to the findings b
 so a later finding invalidates it. `repair_gate(root, plan)` refuses an unplanned or
 after-the-fact repair when on. A repeat-class repair must declare the design retained or
 changed (`review.repair_design_threshold`). `brief` prints the reviewer questions the loop
-keeps failing; a repair records its plan via `critic.repair_provenance`.
+keeps failing; a repair records its plan via `critic.repair_provenance`. `record --unit <id>
+--author <who> --plan-file <json>` writes a plan keyed to the unit it repairs (the JSON carries
+`verdict`, `findings` and `entries`), and `review --unit <id> --verdict <APPROVE|REJECT>
+--reviewer <who>` records its verdict under the `repair-plan` plan-review kind, which no spec or
+test-plan gate reads and `critic.py repair` does not answer. With the gate on, `transition.py`
+asks `repair_gate` under the unit's own id when a bug reaches Fixed or a story whose `Parent` or
+`Delivers` names a BG/RV reaches Done; a decision terminal such as `Won't Fix` is not asked.
 
 ### `plan_review.py`
 
