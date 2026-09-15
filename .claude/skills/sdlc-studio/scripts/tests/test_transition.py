@@ -7011,6 +7011,125 @@ class RejectNeedsAnAnswerTests(unittest.TestCase):
         self.assertIn(self.UNANSWERED, row,
                       f"the Revision History row does not name the waived guard:\n{history}")
 
+    def _verdict(self, root: Path, verdict: str, reviewer: str, author: str, brief: str,
+                 on: str, issues: str = "") -> None:
+        """One delivery verdict, back-dated to `on`."""
+        import critic
+        with unittest.mock.patch.object(critic.sdlc_md, "now_date", return_value=on):
+            critic.record_verdict(root, "US0001", verdict, reviewer=reviewer, author=author,
+                                  brief=brief, issues=issues)
+
+    def test_only_a_principal_supersession_retires_the_reject(self) -> None:
+        """US0627 repair. MUTANT (in critic._live_verdict_rows, the one supersession rule
+        `verdict_for` and `standing_rejects` share): skip every superseded row, dropping the
+        principal-grade test - or give `standing_rejects` its own plain `is_superseded` filter.
+        Either way the WEAK copy, a REJECT retired by a hand-appended record its own author
+        authorised, reads as carrying no REJECT and lands at Done while `coverage_state` reads
+        it `unreviewed`. The PRINCIPAL copy, retired through the shipped `critic.py supersede`
+        by an operator in a separate boundary, has no REJECT left and lands."""
+        import critic
+        weak_root = self._root()
+        weak = self._story(weak_root)
+        self._reject(weak_root, "US0001")
+        with critic.verdicts_path(weak_root, "delivery").open("a", encoding="utf-8") as fh:
+            fh.write(f"\n{critic.SUPERSEDE_HEADING}\n\nSUPERSEDED unit=US0001 "
+                     f"row-date={self.REJECTED_ON} row-verdict=REJECT row-reviewer=qa "
+                     "row-author=dev authorised-by=dev boundary=the authoring session "
+                     "reason=the review never ran recorded=2026-01-06\n")
+        rows = critic.read_verdicts(weak_root, "delivery")
+        self.assertEqual([(r["verdict"], r["superseded"], r["superseded_by"]) for r in rows],
+                         [("REJECT", True, "dev")], "the premise: a weakly superseded REJECT")
+        self.assertEqual(critic.coverage_state(weak_root, "US0001", "delivery"),
+                         critic.COVERAGE_UNREVIEWED)
+        code, out = _cli(weak_root, "set", "--id", "US0001", "--status", "Done")
+        self.assertNotEqual(code, 0, f"an author-superseded REJECT reached Done: {out}")
+        self.assertEqual(self._status(weak), "Review")
+        self._assert_names_the_reject(out)
+
+        root = self._root()
+        path = self._story(root)
+        self._reject(root, "US0001")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = critic.main(["supersede", "--root", str(root), "--unit", "US0001",
+                              "--date", self.REJECTED_ON, "--reason", "filed on the wrong unit",
+                              "--authorised-by", "Darren Benson (operator)",
+                              "--boundary", "operator console"])
+        self.assertEqual(rc, 0, buf.getvalue())
+        self.assertIsNone(critic.verdict_for(root, "US0001"),
+                          "the premise: a principal supersession retires the REJECT")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertEqual(code, 0, f"a principal-superseded REJECT still refused: {out}")
+        self.assertEqual(self._status(path), "Done")
+        self.assertNotIn(self.UNANSWERED, out)
+
+    def test_the_refusal_names_each_unanswered_reject_and_no_answered_one(self) -> None:
+        """US0627 repair. MUTANTS (in critic.standing_rejects): return only the OLDEST
+        rejection (`[:1]`), only the latest (`[-1:]` on the unanswered list), or every REJECT
+        row whatever answered it. (a) two rejections on two briefs, neither answered: both are
+        named, each with its reviewer and date. (b) the first answered by an independent
+        APPROVE on its own brief: only the second is named. (c) both retired by approvals their
+        author recorded, so none is unanswered and `coverage_state` reads `unreviewed`: the
+        latest rejection is still named."""
+        import critic
+        first = ("qa", "2026-01-05")
+        second = ("product", "2026-01-07")
+
+        def refused(root: Path, path: Path) -> str:
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertNotEqual(code, 0, out)
+            self.assertEqual(self._status(path), "Review")
+            said = self._refusal(out)
+            self.assertTrue(said, f"nothing names the {self.UNANSWERED}:\n{out}")
+            return said
+
+        def two_rejects(root: Path) -> None:
+            self._verdict(root, "REJECT", first[0], "dev", self.BRIEF, first[1], self.FINDINGS)
+            self._verdict(root, "REJECT", second[0], "dev", self.OTHER_BRIEF, second[1],
+                          self.FINDINGS)
+
+        root = self._root()
+        path = self._story(root)
+        two_rejects(root)
+        said = refused(root, path)
+        for who, when in (first, second):
+            self.assertIn(f"{who}'s REJECT of {when}", said, f"(a) {who}'s REJECT unnamed: {said}")
+
+        root = self._root()
+        path = self._story(root)
+        two_rejects(root)
+        self._verdict(root, "APPROVE", first[0], "dev", self.BRIEF, "2026-01-08")
+        said = refused(root, path)
+        self.assertIn(f"{second[0]}'s REJECT of {second[1]}", said, f"(b) {said}")
+        self.assertNotIn(first[1], said, f"(b) the answered REJECT is named: {said}")
+
+        root = self._root()
+        path = self._story(root)
+        two_rejects(root)
+        self._verdict(root, "APPROVE", "dev", "dev", self.BRIEF, "2026-01-08")
+        self._verdict(root, "APPROVE", "dev", "dev", self.OTHER_BRIEF, "2026-01-09")
+        self.assertEqual(critic.coverage_state(root, "US0001", "delivery"),
+                         critic.COVERAGE_UNREVIEWED, "the premise: self-approvals answer nothing")
+        said = refused(root, path)
+        self.assertIn(f"{second[0]}'s REJECT of {second[1]}", said, f"(c) {said}")
+
+    def test_a_reject_itemising_no_findings_claims_no_closure(self) -> None:
+        """US0627 repair. MUTANT: the refusal's fallback says "every finding carries a closure"
+        for a REJECT that itemises no findings and has no repair, stating a repair nobody
+        recorded. AC4 and AC8 are the controls: an itemised REJECT names its findings."""
+        import critic
+        root = self._root()
+        path = self._story(root)
+        self._verdict(root, "REJECT", "qa", "dev", self.BRIEF, self.REJECTED_ON, "none")
+        self.assertEqual(critic.repair_state(root, "US0001", "delivery")["state"], "none")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertNotEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Review")
+        self._assert_names_the_reject(out)
+        said = self._refusal(out)
+        self.assertNotIn("carries a closure", said, f"a repair nobody recorded is claimed: {said}")
+        self.assertIn("itemises no findings", said, said)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -667,10 +667,30 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
     gates enforced different independence rules, and the weaker one was the one guarding the
     honesty check.
     """
+    seen = _live_verdict_rows(repo_root, unit, phase, kind)
+    latest = seen[-1] if seen else None
+    unanswered = _unanswered_rejects(seen)
+    # THE LATEST unanswered REJECT, and the tie-break is load-bearing rather than incidental:
+    # reporting the EARLIEST instead leaves 18 units non-conformant rather than 19, and the unit
+    # it drops is US0671 - the first one this bug's own Steps to Reproduce names as masked. The
+    # reading that gives the tidier number is the one that hides the example.
+    return unanswered[-1] if unanswered else latest
+
+
+def _live_verdict_rows(repo_root: Path | str, unit: str, phase: str = "delivery",
+                       kind: str | tuple[str, ...] | None = None) -> list[dict]:
+    """The unit's verdict rows a reader may act on, oldest first - THE supersession rule.
+
+    A superseded row is dropped, except a REJECT whose supersession is not principal-grade
+    (`verdict_for` states why). `verdict_for` and `standing_rejects` both read this, so the
+    reader that says whether a unit carries a rejection and the reader that says whether it is
+    answered cannot hold two copies of the rule: a second copy simplified to "is it superseded"
+    passed the whole suite and let an author-superseded REJECT through the transition guard
+    while `coverage_state` read the unit unreviewed.
+    """
     target = sdlc_md.norm_id(unit)
-    latest = None
-    seen: list[dict] = []
     kinds = (kind,) if isinstance(kind, str) else kind
+    out: list[dict] = []
     for v in read_verdicts(repo_root, phase):
         if sdlc_md.norm_id(v["unit"]) != target:
             continue
@@ -682,14 +702,8 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
         if v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
                                     or _is_principal_superseded(repo_root, unit, v)):
             continue
-        latest = v
-        seen.append(v)
-    unanswered = _unanswered_rejects(seen)
-    # THE LATEST unanswered REJECT, and the tie-break is load-bearing rather than incidental:
-    # reporting the EARLIEST instead leaves 18 units non-conformant rather than 19, and the unit
-    # it drops is US0671 - the first one this bug's own Steps to Reproduce names as masked. The
-    # reading that gives the tidier number is the one that hides the example.
-    return unanswered[-1] if unanswered else latest
+        out.append(v)
+    return out
 
 
 def _unanswered_rejects(rows: list[dict]) -> list[dict]:
@@ -759,13 +773,10 @@ def standing_rejects(repo_root: Path | str, unit: str, phase: str = "delivery") 
     answered". A same-brief APPROVE the unit's own author recorded retires the row here and in
     `verdict_for`, yet `coverage_state` reads the unit `unreviewed` - so a caller asks that for
     the answer and this for the name. A superseded REJECT counts unless the supersession is
-    principal-grade, exactly as `verdict_for` reads it.
+    principal-grade - read through `_live_verdict_rows`, the one copy of that rule
+    `verdict_for` reads too.
     """
-    target = sdlc_md.norm_id(unit)
-    live = [v for v in read_verdicts(repo_root, phase)
-            if sdlc_md.norm_id(v["unit"]) == target
-            and not (v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
-                                              or _is_principal_superseded(repo_root, unit, v)))]
+    live = _live_verdict_rows(repo_root, unit, phase)
     rejects = [v for v in live if str(v.get("verdict") or "").upper().startswith(REJECT)]
     return _unanswered_rejects(live) or rejects[-1:]
 

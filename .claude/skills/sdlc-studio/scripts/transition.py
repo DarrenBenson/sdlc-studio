@@ -1065,9 +1065,15 @@ def _unanswered_delivery_reject(root, uid: str) -> str | None:
     if outstanding:
         listed = "; ".join(outstanding[:4]) + (" ..." if len(outstanding) > 4 else "")
         detail = f"{len(outstanding)} finding(s) outstanding - {listed}"
-    else:
+    elif repair["state"] == "complete":
         detail = ("every finding carries a closure, yet the latest verdict is not an "
                   "independent APPROVE")
+    else:
+        # No repair, and a REJECT that itemises nothing: there is no finding to name and no
+        # closure to count, so saying "every finding carries a closure" would state a repair
+        # that was never recorded.
+        detail = ("the REJECT itemises no findings, no repair is recorded against it, and no "
+                  "independent re-review on its brief has answered it")
     return f"{uid} carries an {UNANSWERED_REJECT} ({who}): {detail}"
 
 

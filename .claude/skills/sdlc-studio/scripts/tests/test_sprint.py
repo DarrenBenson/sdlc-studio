@@ -6607,6 +6607,75 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
         self.assertEqual(("US0115", "qa"), (args.unit, args.seat))
 
 
+class AbandonedUnitIsNotFannedToDoneTests(unittest.TestCase):
+    """US0627 repair: the close pre-flight and the sign-off fan-out skip a batch unit already at
+    an ABANDONMENT terminal. Both once reached it - the fan-out moved a Won't Implement unit to
+    Done - and once `transition` refused a delivered terminal over an unanswered delivery
+    REJECT, an abandoned unit carrying one stopped the whole close."""
+
+    def _run(self, root: Path, second: tuple) -> dict:
+        """US0102 at `second` = (status, rejected), ahead of US0101, a Review story with
+        evidence and no REJECT - so a fan-out that stops at US0102 never reaches US0101."""
+        _ua_config(root, 100)
+        _ua_unit(root, "US0102", second[0])
+        _ua_unit(root, "US0101", "Review")
+        state = _close_state(root, batch=["US0102", "US0101"], run_id=_UA_RUN)
+        _ua_retro(root, batch=("US0102", "US0101"))
+        _ua_waive_all(root)
+        _ua_evidence(root, "US0101")
+        _ua_evidence(root, "US0102")
+        if second[1]:
+            _ua_reject(root, "US0102")
+        return state
+
+    def test_an_abandoned_unit_with_an_unrepaired_reject_does_not_stop_the_close(self) -> None:
+        """MUTANT: `_batch_story_units` keeps a unit at an abandonment terminal (the base-ref
+        fan-out), so the done-gate preview dry-runs Done on it and apply-signoff stops at it
+        over its unanswered delivery REJECT; or it keeps Superseded or Won't Fix by testing
+        one status word. The control is the same REJECT on a Review story, which the preview
+        still names and apply-signoff still stops at."""
+        mod = _load()
+        for kind_status in ("Won't Implement", "Superseded"):
+            with self.subTest(status=kind_status), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                state = self._run(root, (kind_status, True))
+                pre = mod._signoff_preflight(root, state)
+                self.assertEqual([], [b["detail"] for b in pre if "US0102" in b["detail"]],
+                                 "the pre-flight names an abandoned unit as owing a Done")
+                rc, out, err = _ua_close(mod, root, "--apply-signoff", "--principal", "Darren")
+                self.assertNotIn("STOPPED at US0102", err)
+                self.assertEqual(0, rc, err)
+                self.assertEqual(kind_status, _ua_status(root, "US0102"),
+                                 "the abandoned unit was moved off its ruling")
+                self.assertEqual("Done", _ua_status(root, "US0101"), err)
+                self.assertIn(f"US0102 is {kind_status}", out, "the skip is not named")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_config(root, 100)
+            _ua_unit(root, "BG0102", "Won't Fix")
+            _ua_unit(root, "US0101", "Review")
+            state = _close_state(root, batch=["BG0102", "US0101"], run_id=_UA_RUN)
+            _ua_reject(root, "BG0102")
+            self.assertEqual(["US0101"], mod._batch_story_units(root, state["batch"]),
+                             "a Won't Fix bug is still fanned")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = self._run(root, ("Review", True))
+            pre = mod._signoff_preflight(root, state)
+            gate = [b for b in pre if b["stage"] == "done-gate" and "US0102" in b["detail"]]
+            self.assertEqual(1, len(gate), f"the control's REJECT is not previewed: {pre}")
+            self.assertIn("unanswered delivery REJECT", gate[0]["detail"])
+            # The close's own checklist holds this unit before the fan-out runs (US0626), so the
+            # fan-out is driven directly: it must still stop at the delivered unit.
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod._apply_signoff(root, state, "Darren")
+            self.assertEqual(1, rc, out.getvalue())
+            self.assertIn("STOPPED at US0102", err.getvalue())
+            self.assertIn("unanswered delivery REJECT", err.getvalue())
+            self.assertEqual("Review", _ua_status(root, "US0102"))
+
+
 #: FileAndCloseTests.ADMIN's goal-verdict row alone: deferrable, so no hard blocker refuses
 #: first, and something to file, so --file-and-close does not refuse "nothing outstanding".
 _UA_GOAL_VERDICT_ONLY = {"ready": False, "blockers": [

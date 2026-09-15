@@ -6536,17 +6536,57 @@ def _batch_unfanned_units(root, batch) -> list[tuple[str, str, str]]:
 _SIGNOFF_TERMINAL = {"story": "Done", "bug": "Fixed"}
 
 
+def _abandoned_status(root, hit) -> str:
+    """The unit's status when it already sits at an ABANDONMENT terminal (Won't Implement,
+    Superseded, Won't Fix - reached by a ruling, not by building it), else `""`.
+
+    Read through `sdlc_md`'s own terminal predicates rather than a list of statuses here, so a
+    status added to a type's vocabulary lands on the correct side without an edit in this file.
+    """
+    kind = hit[1]
+    status = sdlc_md.canonical_status(
+        sdlc_md.extract_field(sdlc_md.read_text_safe(Path(hit[0])), "Status"),
+        sdlc_md.status_vocab(kind, root)) or ""
+    if sdlc_md.is_terminal_status(kind, status) and not sdlc_md.is_delivered_terminal(kind,
+                                                                                      status):
+        return status
+    return ""
+
+
+def _batch_abandoned_units(root, batch) -> list[tuple[str, str]]:
+    """The fan-out's types in the batch that sit at an abandonment terminal, as (id, status).
+
+    `_batch_story_units` leaves them out, and apply-signoff names them from this, so a unit the
+    fan-out does not reach is still said aloud rather than silently skipped.
+    """
+    out: list[tuple[str, str]] = []
+    for uid in batch:
+        hit = sdlc_md.find_by_id(Path(root), uid)
+        if hit and hit[1] in _SIGNOFF_TERMINAL:
+            status = _abandoned_status(root, hit)
+            if status:
+                out.append((sdlc_md.norm_id(uid), status))
+    return out
+
+
 def _batch_story_units(root, batch) -> list[str]:
     """The units in the batch the sign-off fan-out reaches, in batch order.
 
     Kept under its original name because callers and tests reach for it; the SET it returns is
     what changed. A type outside `_SIGNOFF_TERMINAL` is still counted and named by
     `_batch_unfanned_units` rather than assumed terminal.
+
+    A unit already at an ABANDONMENT terminal is not reached. The fan-out's whole job is a
+    sign-off ON a delivered terminal, and a unit ruled Won't Implement, Superseded or Won't Fix
+    was never built: reaching it moved a ruled-out unit to Done, and once the delivered close
+    refused an unanswered delivery REJECT, it stopped the whole close at a unit nobody will
+    build. The close pre-flight's sign-off and done-gate previews read this same list, so the
+    preview and the fan-out skip the same units.
     """
     out = []
     for uid in batch:
         hit = sdlc_md.find_by_id(Path(root), uid)
-        if hit and hit[1] in _SIGNOFF_TERMINAL:
+        if hit and hit[1] in _SIGNOFF_TERMINAL and not _abandoned_status(root, hit):
             out.append(sdlc_md.norm_id(uid))
     return out
 
@@ -6580,6 +6620,9 @@ def _apply_signoff(root, state, principal: str | None, author_default: str | Non
               "with no named principal is not a review", file=sys.stderr)
         return 2
     units = _batch_story_units(root, state.get("batch") or [])
+    for uid, status in _batch_abandoned_units(root, state.get("batch") or []):
+        print(f"apply-signoff: {uid} is {status} - ruled out, not built, so it is neither "
+              f"signed off nor moved to Done")
     signed, done, skipped = [], [], []
     for unit in units:
         hit = sdlc_md.find_by_id(Path(root), unit)
