@@ -259,10 +259,37 @@ def _excerpt(text: str, at: int) -> str:
     return ("..." if start else "") + text[start:end] + ("..." if end < len(text) else "")
 
 
+def _edge_whitespace_span(text: str) -> tuple[int, str, str] | None:
+    """The first code span markdownlint's MD038 refuses: its offset, the span, and the edge.
+
+    Every span is judged, not only the first. The interior is read after CommonMark's padding
+    rule - one space removed from each end when both ends are a space and the interior is not
+    all spaces - because that is what renders, and what MD038 measures. Whatever remains that
+    begins or ends in whitespace is refused, a tab included. An all-space interior is admitted:
+    MD038 passes it and CommonMark keeps its spaces, so it records what it says.
+
+    Padding the span is no remedy, which is why this is a refusal. One space each side is
+    stripped on render, so the edge space is lost; two or more each side still raises MD038.
+    """
+    for start, end in _scan_ticks(text)[0]:
+        width = _TICK_RUN.match(text, start).end() - start
+        interior = text[start + width:end - width]
+        if not interior.strip(" "):
+            continue
+        if interior.startswith(" ") and interior.endswith(" "):
+            interior = interior[1:-1]
+        first, last = interior[:1].isspace(), interior[-1:].isspace()
+        if first or last:
+            edge = ("leading and trailing edges" if first and last
+                    else "leading edge" if first else "trailing edge")
+            return start, text[start:end], edge
+    return None
+
+
 def _clean(value: str) -> str:
     """A free-text value as a ledger cell: escaped for its CONTEXT, and refused if unwritable.
 
-    Three rules, and each was learned from a blocked commit:
+    Four rules, and each was learned from a blocked commit:
 
     The underscore escape applies OUTSIDE code spans only. Markdown does not process a
     backslash inside a span, so escaping there wrote the backslash into the record - every
@@ -278,6 +305,10 @@ def _clean(value: str) -> str:
     be written as it stands - but rewriting a reviewer's words to make them fit is a worse
     answer than telling the author while they can still edit. Refusing also catches the caller
     that TRUNCATED a quotation mid-span, which balancing would have silently papered over.
+
+    A code span whose rendered interior begins or ends in whitespace is REFUSED for the same
+    reason: markdownlint's MD038 refuses it, and the next commit touching the ledger is blocked
+    by a row its committer did not write. Every writer that cleans through here inherits it.
     """
     text = str(value or "")
     # Parity over the DELIMITER backticks only. A backslash-escaped backtick is a literal
@@ -293,6 +324,17 @@ def _clean(value: str) -> str:
             f"what a reviewer wrote is worse than refusing it. The stray is at character "
             f"{at} of {len(text)}, here: {_excerpt(text, at)!r}")
     text = text.replace("|", "/").replace("\n", " ").strip()
+    # Judged AFTER the newline substitution: a span broken across lines renders the break as a
+    # space, so its edge is only visible once the row's own shape has been applied.
+    if (found := _edge_whitespace_span(text)) is not None:
+        at, span, edge = found
+        raise ValueError(
+            f"refused: the code span {span!r} carries whitespace on its {edge}, and "
+            f"markdownlint (MD038) refuses the file it is written into. Padding cannot carry "
+            f"that space either: CommonMark strips one space from each side of a padded span, "
+            f"so no code span holds a value whose first or last character is whitespace. "
+            f"Quote the value without the space and say in prose that it has one, or move the "
+            f"literal out of the span. The span starts at character {at} of {len(text)}.")
     return _escape_outside_spans(text)
 
 

@@ -6392,5 +6392,187 @@ class CleanSpanWidthAndRefusalTests(unittest.TestCase):
                     if r.startswith("| BG9001")]
             self.assertEqual(2, len(rows), f"the clean repair did not write both rows:\n{rows}")
 
+
+class CodeSpanEdgeSpaceTests(unittest.TestCase):
+    """BG0659: a code span whose rendered interior begins or ends in whitespace was written into
+    the ledger verbatim, and markdownlint's MD038 then refused the NEXT commit touching the file -
+    blocked by a row its committer did not write. Padding the span is no remedy (one space each
+    side is stripped on render, two still raise MD038), so the shared `_clean` refuses it.
+
+    The CLI fixtures stand brief provenance down in `.config.yaml` rather than pass `--brief`, so
+    no fingerprint matcher runs and nothing but the finding decides the outcome."""
+
+    _HEAD = ("# Critic Verdicts\n\n"
+             "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
+             "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    _SEEDED = "| US0001 | APPROVE | qa seat | author | 2026-09-14 | - | full | an earlier round |\n"
+    BIN = REPO_ROOT / "node_modules" / ".bin" / "markdownlint"
+    CONFIG = REPO_ROOT / ".markdownlint.json"
+
+    def _workspace(self, d: str) -> tuple[Path, Path]:
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+            "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n", encoding="utf-8")
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\nreview:\n  require_brief_provenance: false\n", encoding="utf-8")
+        ledger = root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
+        ledger.parent.mkdir(parents=True)
+        # SEEDED, header and one row: `record_verdict` writes the header before `_clean` runs,
+        # so an absent ledger cannot tell a refusal that wrote nothing from one that wrote it.
+        ledger.write_text(self._HEAD + self._SEEDED, encoding="utf-8")
+        return root, ledger
+
+    def _cli(self, root: Path, *argv: str):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run([sys.executable, "-B", str(SCRIPT), *argv, "--root", str(root)],
+                              capture_output=True, text=True, check=False, timeout=300)
+
+    def _record(self, root: Path, issues: str):
+        return self._cli(root, "record", "--unit", "US0001", "--verdict", "REJECT",
+                         "--reviewer", "qa seat", "--author", "author", "--tier", "full",
+                         "--issues", issues)
+
+    def _md038_lines(self, path: Path) -> list[int]:
+        import subprocess  # noqa: PLC0415
+        proc = subprocess.run(  # noqa: S603 - fixed local binary, generated fixture path
+            [str(self.BIN), "--config", str(self.CONFIG), "--json", str(path)],
+            capture_output=True, text=True, check=False, timeout=300)
+        out = (proc.stdout or "") + (proc.stderr or "")
+        try:
+            findings = json.loads(out or "[]")
+        except json.JSONDecodeError:
+            self.fail(f"markdownlint gave no JSON:\n{out}")
+        return sorted(f["lineNumber"] for f in findings if "MD038" in f["ruleNames"])
+
+    def test_a_trailing_space_span_is_refused_by_the_cli(self) -> None:
+        """MUTANTS: pad the span to CommonMark's form and write the row; drop the span from the
+        refusal so it names the edge alone; hard-code the edge word to `leading`; call
+        `_write_verdict_row` with the raw issues before `_clean` runs.
+
+        An ADMITTED span sits before the offending one, so a check that judges only the first
+        span in the value records this finding and fails."""
+        with tempfile.TemporaryDirectory() as d:
+            root, ledger = self._workspace(d)
+            before = ledger.read_bytes()
+            r = self._record(root, "[new] the reader `_read_rows` is admitted, but "
+                                   "`budget: ` ends in a space")
+            self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+            self.assertIn("`budget: `", r.stderr,
+                          f"the refusal does not quote the span it refused:\n{r.stderr}")
+            self.assertIn("trailing edge", r.stderr, r.stderr)
+            self.assertNotIn("leading", r.stderr.lower(),
+                             f"the refusal names an edge that carries no space:\n{r.stderr}")
+            self.assertEqual(before, ledger.read_bytes(),
+                             "the refused verdict changed the ledger")
+
+    def test_a_leading_space_span_is_refused_by_the_cli(self) -> None:
+        """MUTANTS: test only the LAST character of each interior, so a leading space is
+        written; make every refusal say `leading and trailing edge`."""
+        with tempfile.TemporaryDirectory() as d:
+            root, ledger = self._workspace(d)
+            before = ledger.read_bytes()
+            r = self._record(root, "[new] the reader `_read_rows` is admitted, but "
+                                   "` budget:` opens with a space")
+            self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+            self.assertIn("` budget:`", r.stderr,
+                          f"the refusal does not quote the span it refused:\n{r.stderr}")
+            self.assertIn("leading edge", r.stderr, r.stderr)
+            self.assertNotIn("trailing", r.stderr.lower(),
+                             f"the refusal names an edge that carries no space:\n{r.stderr}")
+            self.assertEqual(before, ledger.read_bytes(),
+                             "the refused verdict changed the ledger")
+
+    def test_a_clean_span_records_unchanged(self) -> None:
+        """MUTANTS: replace the per-interior check with a regex over the whole value (a backtick
+        beside a space), refusing prose round a span; refuse any interior that begins with a
+        space, refusing ` x `; strip the padding from single-backtick spans only, so the padded
+        double-backtick span is judged raw and refused.
+
+        The Issues cell is pinned to the literal HEAD writes for this finding. All-space spans
+        are held out: MD038 admits them and CommonMark keeps their spaces, so either answer is
+        lint-safe and none is pinned."""
+        with tempfile.TemporaryDirectory() as d:
+            root, ledger = self._workspace(d)
+            r = self._record(root, "[new] a bare _name beside `_read_rows`, ` x ` and "
+                                   "`` a `` all lint clean")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            text = ledger.read_text(encoding="utf-8")
+            self.assertTrue(text.startswith(self._HEAD + self._SEEDED), text)
+            added = text[len(self._HEAD + self._SEEDED):].splitlines()
+            self.assertEqual(1, len(added), f"expected one new row:\n{text}")
+            issues = added[0].rstrip().removesuffix("|").rstrip().rsplit(" | ", 1)[1]
+            self.assertEqual(
+                "[new] a bare \\_name beside `_read_rows`, ` x ` and `` a `` all lint clean",
+                issues)
+
+    def test_every_admitted_span_passes_md038(self) -> None:
+        """MUTANTS: exempt every interior that both begins and ends with a space, rather than
+        exactly one space round a non-space interior, so two-space and asymmetric paddings are
+        written; compare each edge with U+0020 instead of `str.isspace`, so a tab-edged span is
+        written.
+
+        Three halves, each closing a way this could pass without judging anything: the ledger
+        lints clean of MD038; the two admitted spans are IN it, so a writer refusing everything
+        fails; and every refused member, written raw past the writer, raises MD038 - so the
+        harness can see what it judges. MD010 on the tab rows is pre-existing and not read."""
+        if not self.BIN.is_file() or shutil.which("node") is None:
+            self.skipTest(f"markdownlint not installed at {self.BIN} (run `npm install`)")
+        refused = ["`budget: `", "` budget:`", "`  x  `", "`  x `", "` x  `",
+                   "`\tx`", "`x\t`", "`\tx\t`", "``budget: ``", "`` budget:``"]
+        admitted = ["` x `", "`` a ``"]
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            written = []
+            for member in refused + admitted:
+                try:
+                    mod.record_verdict(root, "US0001", "REJECT", reviewer="qa seat",
+                                       author="author", issues=f"[new] quoted {member} here",
+                                       tier="full")
+                except ValueError:
+                    continue
+                written.append(member)
+            ledger = mod.verdicts_path(root)
+            text = ledger.read_text(encoding="utf-8")
+            self.assertEqual([], self._md038_lines(ledger),
+                             f"the writer wrote a row MD038 refuses:\n{text}")
+            for member in admitted:
+                self.assertIn(f"quoted {member} here", text, f"{member!r} is not in the ledger")
+            self.assertEqual(admitted, written, "the writer admitted or refused the wrong spans")
+            raw = Path(d) / "raw.md"
+            raw.write_text(self._HEAD + "".join(
+                f"| US0001 | REJECT | qa seat | author | 2026-09-15 | - | full | "
+                f"[new] quoted {m} here |\n" for m in refused), encoding="utf-8")
+            first = self._HEAD.count("\n") + 1
+            self.assertEqual(set(range(first, first + len(refused))),
+                             set(self._md038_lines(raw)),
+                             "a refused member does not raise MD038 when written raw, so the "
+                             "harness cannot see what it judges")
+
+    def test_the_evidence_writer_inherits_the_refusal(self) -> None:
+        """MUTANT: move the edge check out of `_clean` into `record_verdict`, applied to its
+        issues only, so `record_evidence` writes the span. The trimmed value records - the
+        paired control, without which a writer refusing everything passes."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root, _ledger = self._workspace(d)
+            evidence = mod.evidence_path(root)
+            evidence.write_text(mod._EVIDENCE_HEADER + "| US0001 | qa seat | author | "
+                                "2026-09-14 | an earlier pass |\n", encoding="utf-8")
+            before = evidence.read_bytes()
+            r = self._cli(root, "evidence", "--unit", "US0001", "--reviewer", "qa seat",
+                          "--author", "author", "--findings", "probed `budget: ` and more")
+            self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+            self.assertIn("trailing edge", r.stderr, r.stderr)
+            self.assertEqual(before, evidence.read_bytes(),
+                             "the refused findings changed the evidence ledger")
+            ok = self._cli(root, "evidence", "--unit", "US0001", "--reviewer", "qa seat",
+                           "--author", "author", "--findings", "probed `budget:` and more")
+            self.assertEqual(0, ok.returncode, ok.stdout + ok.stderr)
+            self.assertIn("probed `budget:` and more",
+                          evidence.read_text(encoding="utf-8").splitlines()[-1])
+
+
 if __name__ == "__main__":
     unittest.main()
