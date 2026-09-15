@@ -45,7 +45,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint decision resolve --index 1 --choice a   # record the operator's ruling (run state + ledger)
 /sdlc-studio sprint close                            # scaffolds the retro, then stops for you to fill it
 /sdlc-studio sprint close --retro RETRO0001          # the close ceremony as one command (retro already filled)
-/sdlc-studio sprint close --retro RETRO0001 --file-and-close  # bounded exit: file the ceremony debt, close honestly (refused while a hard gate is red)
+/sdlc-studio sprint close --retro RETRO0001 --file-and-close  # bounded exit: file the ceremony debt, close honestly (refused while a hard gate is red or a batch unit is unanswered)
 /sdlc-studio sprint close --retro RETRO0001 --apply-signoff --principal "You"  # fan your approval into per-unit sign-offs + Done
 /sdlc-studio sprint plan --cycles 3 --goal done      # a standing policy: roll 3 cycles, regenerating the plan each time
 /sdlc-studio sprint boundary --retro RETRO0001       # close this cycle down and open the next from the live backlog
@@ -312,11 +312,17 @@ Dropping judges THIS batch; Deferred judges the work.
 
 ### Stopping, and what `--force` records
 
-`stop` ends a run that will not reach its goal, and refuses while any unit remains that the
-pending decisions do not account for - stopping over live work would leave the handoff naming
-units nobody ruled on. `--force` overrides that refusal and writes what could have proceeded
-onto the record, so the close reports a run stopped over work that was still moving rather than
-one that had run out.
+`stop` ends a run that will not reach its goal, and refuses while any batch unit is
+unanswered - the close's own test: unfinished and not ruled, dropped or parked on a pending
+decision, owed its adversarial pass, or carrying a standing REJECT. Stopping over live work
+would leave the handoff naming units nobody ruled on. `--force` overrides that refusal and
+answers nothing. It writes two lists onto the run record, and they answer different questions:
+`could_have_proceeded` is the work the stop parked, which the pending decisions did not block;
+`unanswered` is the stop-ship questions it waived, the set the close would have refused on.
+Each is printed under its own label. Every route that ends a run records `unanswered` the same
+way - a boundary stop and `handoff generate --outcome` too - and `close --file-and-close`
+refuses rather than record it, because filing defers ceremony debt and a stop-ship question is
+answered, never filed.
 
 ### When a unit's `Affects` contradicts its own content
 

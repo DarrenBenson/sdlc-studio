@@ -175,7 +175,12 @@ independent critic plus the gate - the check's output states this scoping.
    a retro gap) is filed as a real artefact linked to the run, the deferrals are named in
    the retro and the review anchor, and the run closes with outcome `closed-outstanding` -
    stated plainly, nothing waived. A HARD blocker (a red gate lane, a refusing Done gate)
-   refuses the whole exit: filing is for ceremony debt, never for a failing test. Every
+   refuses the whole exit: filing is for ceremony debt, never for a failing test. So does
+   an UNANSWERED batch unit - one the close's checklist step would hold (unfinished and
+   unruled, or carrying a standing REJECT) - before anything is filed: a stop-ship question
+   is answered, never filed. The refusal names each unit and the ways out; the operator's
+   ruling in the retro's `## Known issues carried` table is one, and `stop --force` ends the
+   run over them as a recorded waiver that answers none. Every
    close attempt also records its outstanding count, and a re-run reports the trend
    (shrinking / growing), so a spiral is visible rather than inferred.
 6. **Closing gate - the sprint review.** Every run ends with a mandatory

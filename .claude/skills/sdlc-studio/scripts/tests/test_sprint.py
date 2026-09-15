@@ -5069,6 +5069,17 @@ class FileAndCloseTests(unittest.TestCase):
         root = Path(d)
         _close_state(root)
         _close_retro(root, batch="US0101")
+        # US0101 is planned with no artefact on disk and no ruling: an unanswered unit, which
+        # --file-and-close's hold refuses before filing anything. The operator's way through is
+        # a `deferred` ruling in the retro's carried table, so that is what the harness records
+        # - the batch is kept, and the only blockers these tests exercise are the deferrable
+        # ones they patch in.
+        retro = root / "sdlc-studio" / "retros" / "RETRO0001-widget-sprint.md"
+        retro.write_text(retro.read_text(encoding="utf-8")
+                         + "\n## Known issues carried\n\n| Issue | Ruling | Ruled by | Date |\n"
+                         "| --- | --- | --- | --- |\n"
+                         "| US0101 | deferred | the operator | 2026-07-16 |\n",
+                         encoding="utf-8")
         (root / "sdlc-studio" / "reviews").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / "reviews" / "LATEST.md").write_text(
             "# Reviews - LATEST (anchor)\n\n## Where the pipeline is\n\nfine.\n",
@@ -5854,6 +5865,9 @@ _UA_AC5_UNITS = ("US0101", "US0102", "US0103", "US0104", "BG0101", "US0105", "US
                  "US0115", "US0116", "US0117")
 _UA_AC5_SET = {"US0101", "US0103", "US0109", "US0110", "US0111", "US0112", "US0115", "US0117",
                "BG0101"}
+#: US0823's ANSWERED RUN: only AC5's answered shapes, none of `_UA_AC5_SET` planned or dropped.
+_UA_ANSWERED_UNITS = ("US0102", "US0104", "US0105", "US0106", "US0107", "US0108", "BG0102",
+                      "US0113", "US0114", "US0116")
 
 
 def _ua_unit(root: Path, uid: str, status: str, depends: str = "") -> None:
@@ -5992,11 +6006,20 @@ def _ua_status(root: Path, uid: str) -> str:
     return text.split("> **Status:** ", 1)[1].splitlines()[0].strip()
 
 
-def _ua_ac5_run(root: Path, mod) -> dict:
+def _ua_ac5_run(root: Path, mod, only: tuple | None = None) -> dict:
     """US0626 AC5's run, built through the shipped commands where one exists (defer, drop), and
     returned as the run state they leave. Reused as THE RUN by the routes that must read the
-    same predicate."""
+    same predicate.
+
+    `only` restricts every step - the planned batch, its artefacts, rulings, evidence, verdicts,
+    repairs, parks and drops - to the named units, so the same builder makes US0823's ANSWERED
+    RUN (`_UA_ANSWERED_UNITS`) with each shape exactly as THE RUN builds it."""
     import critic
+    units = tuple(u for u in _UA_AC5_UNITS if only is None or u in only)
+
+    def ours(*ids: str) -> list[str]:
+        return [u for u in ids if u in units]
+
     _ua_config(root, 100)
     statuses = {"US0101": "In Progress", "US0102": "Review", "US0103": "Review",
                 "US0104": "Review", "BG0101": "Fixed", "US0105": "In Progress",
@@ -6005,29 +6028,32 @@ def _ua_ac5_run(root: Path, mod) -> dict:
                 "US0112": "In Progress", "BG0102": "Won't Fix", "US0113": "Superseded",
                 "US0114": "Won't Implement", "US0115": "Review", "US0116": "Review",
                 "US0117": "In Progress"}
-    for uid in _UA_AC5_UNITS:
+    for uid in units:
         _ua_unit(root, uid, statuses[uid], depends="US0107" if uid == "US0108" else "")
-    _close_state(root, batch=list(_UA_AC5_UNITS), run_id=_UA_RUN)
-    _ua_retro(root, rulings=(("US0105", "not-stop-ship"), ("US0112", "not-stop-ship")),
-              batch=_UA_AC5_UNITS)
+    _close_state(root, batch=list(units), run_id=_UA_RUN)
+    _ua_retro(root, rulings=tuple((u, "not-stop-ship") for u in ours("US0105", "US0112")),
+              batch=units)
     _ua_waive(root, "known-issues")
-    for uid in ("US0102", "US0103", "US0104", "US0110"):
+    for uid in ours("US0102", "US0103", "US0104", "US0110"):
         _ua_evidence(root, uid)
-    for uid in ("US0103", "US0104", "BG0101", "US0109", "US0110", "US0111", "US0112",
-                "BG0102", "US0113", "US0114", "US0117"):
+    for uid in ours("US0103", "US0104", "BG0101", "US0109", "US0110", "US0111", "US0112",
+                    "BG0102", "US0113", "US0114", "US0117"):
         _ua_reject(root, uid)
-    critic.record_repair(root, "US0104", _UA_AUTHOR,
-                         "alpha broke -> fixed: the mutant is killed; "
-                         "beta broke -> fixed: the test now reddens")
-    _ua_bug_on_disk(root, "BG0903")
-    critic.record_repair(root, "US0110", _UA_AUTHOR, "alpha broke -> filed: BG0903")
-    critic.record_sprint_review(root, ["US0116"], reviewer="an independent seat",
-                                author=_UA_AUTHOR, verdict="APPROVE",
-                                findings="full-diff pass over the unit; none blocking")
-    _ua_defer(mod, root, "US0107")
-    _ua_defer(mod, root, "US0109")
-    _ua_drop(mod, root, "US0106")
-    _ua_drop(mod, root, "US0117")
+    if ours("US0104"):
+        critic.record_repair(root, "US0104", _UA_AUTHOR,
+                             "alpha broke -> fixed: the mutant is killed; "
+                             "beta broke -> fixed: the test now reddens")
+    if ours("US0110"):
+        _ua_bug_on_disk(root, "BG0903")
+        critic.record_repair(root, "US0110", _UA_AUTHOR, "alpha broke -> filed: BG0903")
+    if ours("US0116"):
+        critic.record_sprint_review(root, ["US0116"], reviewer="an independent seat",
+                                    author=_UA_AUTHOR, verdict="APPROVE",
+                                    findings="full-diff pass over the unit; none blocking")
+    for uid in ours("US0107", "US0109"):
+        _ua_defer(mod, root, uid)
+    for uid in ours("US0106", "US0117"):
+        _ua_drop(mod, root, uid)
     return mod.run_state.read(root)
 
 
@@ -6579,6 +6605,266 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
         cmd = re.search(r"`critic\.py (brief [^`]*)`", way).group(1).replace("<id>", "US0115")
         args = critic.build_parser().parse_args(shlex.split(cmd))
         self.assertEqual(("US0115", "qa"), (args.unit, args.seat))
+
+
+#: FileAndCloseTests.ADMIN's goal-verdict row alone: deferrable, so no hard blocker refuses
+#: first, and something to file, so --file-and-close does not refuse "nothing outstanding".
+_UA_GOAL_VERDICT_ONLY = {"ready": False, "blockers": [
+    {"stage": "goal-verdict", "detail": "the Sprint Goal is unjudged",
+     "remedy": "`sprint.py goal-verdict ...`"}]}
+_UA_SECTION = "## Unanswered stop-ship questions"
+
+
+def _ua_close_extras(root: Path) -> None:
+    """FileAndCloseTests._fixture's empty change-request index and review anchor."""
+    (root / "sdlc-studio" / "reviews").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-studio" / "reviews" / "LATEST.md").write_text(
+        "# Reviews - LATEST (anchor)\n\n## Where the pipeline is\n\nfine.\n", encoding="utf-8")
+    (root / "sdlc-studio" / "change-requests").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-studio" / "change-requests" / "_index.md").write_text(
+        "# Change Requests\n\n| ID | Title | Status |\n| --- | --- | --- |\n", encoding="utf-8")
+
+
+def _ua_file_and_close(mod, root: Path) -> tuple:
+    """`sprint.py close --retro RETRO0001 --file-and-close` through `main`, the pre-flight
+    patched to the single goal-verdict blocker."""
+    import copy
+    with unittest.mock.patch.object(mod, "close_preflight",
+                                    return_value=copy.deepcopy(_UA_GOAL_VERDICT_ONLY)):
+        return _ua_cli(mod, root, "close", "--retro", "RETRO0001", "--file-and-close")
+
+
+def _ua_rolling(mod, root: Path) -> None:
+    """A rolling policy with one cycle unrun, so `boundary` reaches its close-down."""
+    mod.run_state.update(root, policy={"cycles": 2, "sprint_goal": "make the close honest",
+                                       "order": "priority", "stop_conditions": []},
+                         cycle={"index": 1, "remaining": 1, "policy_run_id": _UA_RUN})
+
+
+def _ua_boundary(mod, root: Path) -> tuple:
+    """`sprint.py boundary --retro RETRO0001 --no-fetch` through `main`, the close-down patched to
+    fail so the boundary stops with cause `close-gate`."""
+    with unittest.mock.patch.object(mod, "_boundary_close_down",
+                                    return_value=(1, "close STOPPED at checklist")):
+        return _ua_cli(mod, root, "boundary", "--retro", "RETRO0001", "--no-fetch")
+
+
+def _ua_handoff_cli(root: Path, *argv: str) -> tuple:
+    import handoff
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = handoff.main(["generate", *argv, "--root", str(root)])
+    return rc, out.getvalue(), err.getvalue()
+
+
+def _ua_handoff_text(mod, root: Path, hid: str | None) -> str:
+    """The handoff document `hid` names - exactly one file, or the test has no document."""
+    want = mod.sdlc_md.norm_id(hid or "")
+    docs = [p for p in sorted((root / "sdlc-studio" / "handoffs").glob("*.md"))
+            if want and mod.sdlc_md.norm_id(mod.sdlc_md.stem_record_id(p.stem) or "") == want]
+    assert len(docs) == 1, f"handoff {hid!r}: {docs}"
+    return docs[0].read_text(encoding="utf-8")
+
+
+def _ua_section_ids(text: str, universe) -> set:
+    """The ids of `universe` that THE SECTION alone names: Delivered and Remaining name batch ids
+    too, so a whole-document match would pass with the section gone."""
+    assert text.count(_UA_SECTION) == 1, f"THE SECTION is not in the document once:\n{text}"
+    return _ua_ids(text.split(_UA_SECTION, 1)[1].split("\n## ", 1)[0], universe)
+
+
+def _ua_record_ids(record: dict) -> set:
+    """THE RECORD's `unanswered` unit ids - tolerating a bare-id list or a handoff row, so a
+    mutant that stores either fails the comparison rather than crashing before it."""
+    held = record.get("unanswered")
+    assert isinstance(held, list), f"THE RECORD carries no `unanswered` list: {record}"
+    return {(h.get("unit") or h.get("id")) if isinstance(h, dict) else str(h) for h in held}
+
+
+class EveryRunEndReadsThePredicateTests(unittest.TestCase):
+    """US0823 (D0193): every route that can end a run - --file-and-close, stop --force, a
+    boundary stop, handoff generate --outcome - reads `sprint.unanswered_units` and nothing else.
+    --file-and-close refuses over an unanswered unit; the others end the run and record the set
+    on the archived run record, and the handoff names it in a section of its own.
+
+    THE RUN is US0626 AC5's `_ua_ac5_run`, whose predicate set is `_UA_AC5_SET`; THE ANSWERED RUN
+    is the same builder restricted to `_UA_ANSWERED_UNITS`, whose set is empty."""
+
+    def test_file_and_close_refuses_an_unanswered_unit(self) -> None:
+        """MUTANT: delete the `unanswered_units` call and its refusal from `_file_and_close`;
+        feed the refusal `_remaining_units` (it still refuses, but misses BG0101 Fixed and names
+        US0102) or `blocked_by_pending`'s `unblocked`; move the refusal below the filing loop,
+        so the CRs and the retro section are written before it returns 2."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_ac5_run(root, mod)
+            _ua_close_extras(root)
+            rc, _out, err = _ua_file_and_close(mod, root)
+            refusals = [ln for ln in err.splitlines() if ln.startswith(
+                "file-and-close REFUSED: unanswered stop-ship question(s)")]
+            crs = sorted((root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+            retro = (root / "sdlc-studio" / "retros" / "RETRO0001-widget-sprint.md").read_text(
+                encoding="utf-8")
+            outcome = mod.run_state.read(root)["outcome"]
+        self.assertEqual(2, rc, err)
+        self.assertEqual(1, len(refusals), f"no single unanswered refusal line:\n{err}")
+        self.assertEqual({"US0101", "US0103", "US0109", "US0110", "US0111", "US0112", "US0115",
+                          "US0117", "BG0101"}, _ua_ids(refusals[0], set(_UA_AC5_UNITS)),
+                         refusals[0])
+        self.assertEqual([], crs, "a CR was filed before the refusal")
+        self.assertNotIn("## Deferred at close", retro, "the retro was written before it")
+        self.assertEqual("running", outcome)
+
+    def test_stop_force_records_the_waived_units(self) -> None:
+        """MUTANT: drop the `unanswered` field from `cmd_stop`'s write; fill it from
+        `blocked_by_pending`'s `unblocked` or from `_remaining_units`; return 1 under --force
+        whenever `unanswered_units` is non-empty.
+
+        Compared with the literal only: `could_have_proceeded` and `awaiting_signoff` differ
+        from it in both directions, and US0101, US0112 and US0115 sit in both."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_ac5_run(root, mod)
+            rc, _out, err = _ua_cli(mod, root, "stop", "--force", "--reason",
+                                    "operator parks the run")
+            record = mod.run_state.read_archived(root, _UA_RUN)
+        self.assertEqual(0, rc, err)
+        self.assertEqual("stopped", record.get("outcome"), record)
+        self.assertEqual({"US0101", "US0103", "US0109", "US0110", "US0111", "US0112", "US0115",
+                          "US0117", "BG0101"}, _ua_record_ids(record))
+        held = {h["unit"]: h for h in record["unanswered"]}
+        self.assertEqual(len(held), len(record["unanswered"]), "a unit recorded twice")
+        for uid, entry in held.items():
+            self.assertEqual({"unit", "status", "why", "filed"}, set(entry), uid)
+        self.assertIn("adversarial pass owed", held["US0115"]["why"])
+        self.assertEqual(["BG0903"], held["US0110"]["filed"])
+        self.assertNotIn("unanswered", record["stop"],
+                         "a top-level field of THE RECORD, not a field inside `stop`")
+
+    def test_handoff_outcome_records_and_names_the_unanswered_units(self) -> None:
+        """MUTANT: delete the `unanswered` write from `generate`'s --outcome path; record
+        `report["remaining"]` in place of `report["unanswered"]`; drop THE SECTION from
+        `render_body`; raise ValueError in `generate` over a non-empty set before `close_run`;
+        write the field after `close_run`, so the archive is taken before it."""
+        mod = _load()
+        universe = set(_UA_AC5_UNITS)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_ac5_run(root, mod)
+            rc, _out, err = _ua_handoff_cli(root, "--title", "run ended early",
+                                            "--outcome", "budget-spent")
+            record = mod.run_state.read_archived(root, _UA_RUN)
+            self.assertEqual(0, rc, err)
+            text = _ua_handoff_text(mod, root, record.get("handoff"))
+        self.assertEqual("budget-spent", record.get("outcome"), record)
+        literal = {"US0101", "US0103", "US0109", "US0110", "US0111", "US0112", "US0115",
+                   "US0117", "BG0101"}
+        self.assertEqual(literal, _ua_record_ids(record))
+        self.assertEqual(literal, _ua_section_ids(text, universe), text)
+
+    def test_a_boundary_stop_records_and_names_the_unanswered_units(self) -> None:
+        """MUTANT: leave `_boundary_stop` writing only the stop record; fill `unanswered` from
+        `_remaining_units`; return 2 before `close_run` over a non-empty set, leaving the run
+        open; write the field after `close_run`, so the archive is taken before it."""
+        mod = _load()
+        universe = set(_UA_AC5_UNITS)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_ac5_run(root, mod)
+            _ua_rolling(mod, root)
+            rc, _out, err = _ua_boundary(mod, root)
+            record = mod.run_state.read_archived(root, _UA_RUN)
+            stop = record.get("stop") or {}
+            self.assertEqual(1, rc, err)
+            self.assertEqual("blocked", record.get("outcome"),
+                             f"the stop did not complete:\n{err}")
+            self.assertEqual("close-gate", stop.get("cause"), record)
+            text = _ua_handoff_text(mod, root, stop.get("handoff"))
+        literal = {"US0101", "US0103", "US0109", "US0110", "US0111", "US0112", "US0115",
+                   "US0117", "BG0101"}
+        self.assertEqual(literal, _ua_record_ids(record))
+        self.assertEqual(literal, _ua_section_ids(text, universe), text)
+
+    def test_an_answered_batch_ends_by_every_route(self) -> None:
+        """MUTANT: a route reads its own reader - `_file_and_close` refuses whenever
+        `handoff.remaining_count` is non-zero; `cmd_stop` records every batch unit whose ledger
+        holds a REJECT verdict word; `_boundary_stop` records the handoff's remaining ids;
+        `generate` records `sprint._remaining_units`. Each holds a unit this batch answered."""
+        mod = _load()
+        universe = set(_UA_AC5_UNITS)
+        ends = {"file-and-close": "closed-outstanding", "stop": "stopped",
+                "boundary": "blocked", "generate": "budget-spent"}
+        for route, outcome in ends.items():
+            with self.subTest(route=route), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                state = _ua_ac5_run(root, mod, only=_UA_ANSWERED_UNITS)
+                _ua_close_extras(root)
+                # The control is not vacuous: the predicate is empty while every other reader
+                # still holds answered units, and none of THE RUN's nine is walked.
+                self.assertEqual([], mod.unanswered_units(root, state)["unanswered"])
+                self.assertLessEqual({"US0102", "US0104", "US0105", "US0107", "US0116"},
+                                     set(mod._remaining_units(root, state)))
+                walked = set(state["batch"]) | {c.get("id") for c in state["batch_changes"]}
+                self.assertEqual(set(), walked & _UA_AC5_SET)
+                text = None
+                if route == "file-and-close":
+                    rc, _out, err = _ua_file_and_close(mod, root)
+                    self.assertEqual(0, rc, err)
+                    crs = sorted((root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+                    self.assertEqual(1, len(crs), crs)
+                    self.assertIn("goal-verdict", crs[0].read_text(encoding="utf-8"))
+                elif route == "stop":
+                    rc, _out, err = _ua_cli(mod, root, "stop", "--force", "--reason",
+                                            "operator parks the run")
+                    self.assertEqual(0, rc, err)
+                elif route == "boundary":
+                    _ua_rolling(mod, root)
+                    rc, _out, err = _ua_boundary(mod, root)
+                    self.assertEqual(1, rc, err)
+                else:
+                    rc, _out, err = _ua_handoff_cli(root, "--title", "run ended early",
+                                                    "--outcome", "budget-spent")
+                    self.assertEqual(0, rc, err)
+                record = mod.run_state.read_archived(root, _UA_RUN)
+                self.assertEqual(outcome, record.get("outcome"), err)
+                self.assertEqual([], record.get("unanswered", "absent"), record)
+                if route == "boundary":
+                    text = _ua_handoff_text(mod, root, (record.get("stop") or {}).get("handoff"))
+                elif route == "generate":
+                    text = _ua_handoff_text(mod, root, record.get("handoff"))
+                if text is not None:
+                    self.assertEqual(set(), _ua_section_ids(text, universe), text)
+
+    def test_the_section_survives_refresh_and_a_mid_run_generate_records_nothing(self) -> None:
+        """MUTANT: append THE SECTION to the body `generate` passes to `artifact.meta_new`
+        instead of rendering it in `render_body`, so `refresh`'s re-render drops it; move the
+        `unanswered` write out of `generate`'s `if outcome:` branch onto the shared update."""
+        mod = _load()
+        import handoff
+        universe = set(_UA_AC5_UNITS)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = _ua_ac5_run(root, mod)
+            rc, _out, err = _ua_handoff_cli(root, "--title", "run ended early",
+                                            "--outcome", "budget-spent")
+            self.assertEqual(0, rc, err)
+            hid = mod.run_state.read(root)["handoff"]
+            self.assertIsNotNone(handoff.refresh(root, hid, batch=state["batch"]),
+                                 "refresh found no document to re-render")
+            refreshed = _ua_handoff_text(mod, root, hid)
+        self.assertEqual({"US0101", "US0103", "US0109", "US0110", "US0111", "US0112", "US0115",
+                          "US0117", "BG0101"}, _ua_section_ids(refreshed, universe), refreshed)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_ac5_run(root, mod)
+            rc, _out, err = _ua_handoff_cli(root, "--title", "mid-run snapshot")
+            live = mod.run_state.read(root)
+        self.assertEqual(0, rc, err)
+        self.assertEqual("running", live["outcome"])
+        self.assertIn("handoff_remaining", live, "generate's shared state update did not run")
+        self.assertNotIn("unanswered", live, "a generate that ends no run recorded the set")
 
 
 class StopRecordTests(unittest.TestCase):

@@ -5907,13 +5907,30 @@ def unanswered_units(root, state, retro_id=None) -> dict:
     return {"unanswered": out, "rulings_from": rid}
 
 
+def unanswered_rows(held: list[dict]) -> str:
+    """Each held unit as `<id> (<status>) - <why> - findings filed to <artefacts>`, or
+    `NONE filed`, joined by `; ` - the one row shape every route that names the set prints."""
+    return "; ".join(f"{h['unit']} ({h['status']}) - {h['why']} - findings "
+                     + (f"filed to {', '.join(h['filed'])}" if h.get("filed") else "NONE filed")
+                     for h in held)
+
+
 def unanswered_line(held: list[dict]) -> str:
     """The held units as ONE line, each with its status, why, and where its findings went.
     The ways out go on a line of their own, so this line carries the held units' ids alone."""
     return (f"known-issues: {len(held)} batch unit(s) the run cannot end over: "
-            + "; ".join(f"{h['unit']} ({h['status']}) - {h['why']} - findings "
-                        + (f"filed to {', '.join(h['filed'])}" if h["filed"] else "NONE filed")
-                        for h in held))
+            + unanswered_rows(held))
+
+
+def unanswered_record(ua: dict | None, error: str = "") -> dict:
+    """The run-record fields a route that ends a run writes before `close_run` archives it: the
+    predicate's `unanswered` list as returned (`[]` when none) and the retro whose carried table
+    it read. A predicate that could not be computed records None and the reason - never `[]`,
+    which would read as a run that ended over nothing."""
+    if ua is None:
+        return {"unanswered": None, "unanswered_rulings_from": None,
+                "unanswered_error": error or "not computed"}
+    return {"unanswered": ua["unanswered"], "unanswered_rulings_from": ua["rulings_from"]}
 
 
 def unanswered_ways_out(held: list[dict], rulings_from: str | None,
@@ -8235,11 +8252,35 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
         for b in hard:
             print(f"  [{b['stage']}] {b['detail']}\n      -> {b['remedy']}", file=sys.stderr)
         return 2
+    retro_id = (args.retro or "").strip()
+    # THE UNANSWERED-UNIT HOLD, read before anything is filed. Filing defers ceremony debt; it
+    # cannot answer whether an unfinished unit stops the ship, so this exit reads the close's
+    # own predicate, with the close's own retro, and refuses on the set the checklist step
+    # would. Above "nothing outstanding", so a run whose only problem is an unanswered unit
+    # hears the real reason rather than being sent to a close that will refuse it anyway.
+    try:
+        ua = unanswered_units(root, state, retro_id or None)
+    except Exception as exc:  # noqa: BLE001 - a hold that cannot be computed must not pass
+        print(f"file-and-close refused: the unanswered-unit hold could not be computed: "
+              f"{type(exc).__name__}: {exc}", file=sys.stderr)
+        return 2
+    held = ua["unanswered"]
+    if held:
+        print(f"file-and-close REFUSED: unanswered stop-ship question(s) on {len(held)} batch "
+              f"unit(s): " + unanswered_rows(held), file=sys.stderr)
+        # The answering paths first, `stop --force` last and named as the override it is. A
+        # ruling is the operator's to make: printed to an agent as a bare instruction, it is
+        # the session writing the row that releases its own unit.
+        print(f"  {unanswered_ways_out(held, ua['rulings_from'], state.get('run_id'))}; a "
+              f"ruling there is the operator's act at the close, never the session's. "
+              f"file-and-close files ceremony debt - a stop-ship question is answered, never "
+              f"filed; `stop --force` ends the run over them and records them as waived - it "
+              f"answers none", file=sys.stderr)
+        return 2
     if not blockers:
         print("file-and-close: nothing outstanding - run the close without --file-and-close",
               file=sys.stderr)
         return 2
-    retro_id = (args.retro or "").strip()
     retro_path = retro_mod.find_retro(root, retro_id) if retro_id else None
     if retro_path is None:
         print("file-and-close refused: --retro RETROxxxx is required - the deferrals are "
@@ -8304,8 +8345,11 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
         anchor_note = "retro and review anchor"
     else:
         anchor_note = "retro (NO review anchor found to annotate)"
+    # `unanswered` rides on the same write, before `close_run` archives the record: every route
+    # that ends a run leaves the predicate's set on it, empty when nothing was unanswered.
     run_state.update(root, deferred_blockers=[
-        {"id": fid, "stage": b["stage"], "detail": b["detail"]} for fid, b in filed])
+        {"id": fid, "stage": b["stage"], "detail": b["detail"]} for fid, b in filed],
+        **unanswered_record(ua))
     run_state.close_run(root, run_state.CLOSED_OUTSTANDING, handoff=state.get("handoff"))
     print(f"file-and-close: {len(filed)} blocker(s) filed ({', '.join(f for f, _ in filed)}) "
           f"and named in the {anchor_note}.")
@@ -10121,9 +10165,22 @@ def _boundary_stop(root, cause: str, detail: str, remedy: str) -> int:
     if rc != 0:
         print(f"warning: the boundary handoff could NOT be written ({out}) - the stop is "
               f"recorded on run-state, but there is no document to return to", file=sys.stderr)
+    # The handoff above is generated without --outcome, so its record of the unanswered units
+    # never reaches this stop: the stop records the predicate's set itself, before the close
+    # below archives the record. Reported, never a refusal - a boundary that has already failed
+    # its close-down must still end recorded.
+    ua, ua_error = None, ""
+    try:
+        ua = unanswered_units(root, run_state.read(root))
+    except Exception as exc:  # noqa: BLE001 - the stop is recorded whatever this raises
+        ua_error = f"{type(exc).__name__}: {exc}"
+        print(f"warning: the unanswered-unit set could NOT be computed ({ua_error}) - the stop "
+              f"records it as unknown, never as none", file=sys.stderr)
+    held = ua["unanswered"] if ua else None
     run_state.update(root, stop={"cause": cause, "detail": detail, "remedy": remedy,
                                  "cycle": index, "cycles_unrun": unrun, "handoff": hid,
-                                 "stopped_at": sdlc_md.now_iso8601()})
+                                 "stopped_at": sdlc_md.now_iso8601()},
+                     **unanswered_record(ua, ua_error))
     # A cycle whose close completed is ALREADY closed, with the outcome its goal-verdict
     # earned; overwriting that with `blocked` would relabel delivered work as a failure. Only
     # a run still running is closed here - and then `blocked` is the honest word.
@@ -10134,6 +10191,9 @@ def _boundary_stop(root, cause: str, detail: str, remedy: str) -> int:
     print(f"boundary STOPPED ({cause}) after cycle {index}: {detail}", file=sys.stderr)
     print(f"  {unrun} cycle(s) of the policy were not run; handoff {hid or '(none)'}",
           file=sys.stderr)
+    if held:
+        print(f"  {len(held)} stop-ship question(s) left unanswered: {unanswered_rows(held)}",
+              file=sys.stderr)
     print(f"remedy: {remedy}", file=sys.stderr)
     return 1
 
@@ -10547,7 +10607,8 @@ def _render_stop_cost(out: dict) -> None:
     without ever seeing what they were stopping."""
     if out["unblocked"]:
         print(f"stop: {len(out['unblocked'])} unit(s) that NOTHING pending blocks are being "
-              f"parked with it: {', '.join(out['unblocked'])}", file=sys.stderr)
+              f"parked with it: {', '.join(out['unblocked'])} (work parked, not a stop-ship "
+              f"question)", file=sys.stderr)
     if out["blocked"]:
         print(f"stop: blocked by the pending question(s): {', '.join(out['blocked'])}",
               file=sys.stderr)
@@ -10581,7 +10642,8 @@ def cmd_stop(args) -> int:
 
     `--force` is the operator's override, and it PRICES itself: the units that could have
     proceeded are named individually on the record and on screen, so a parked run can be told
-    from a finished one and the cost of parking it is written down rather than inferred.
+    from a finished one and the cost of parking it is written down rather than inferred. The
+    unanswered units it waived go on the run record as `unanswered`, `[]` when there were none.
     """
     root = Path(args.root)
     try:
@@ -10633,7 +10695,15 @@ def cmd_stop(args) -> int:
             "blocked": out["blocked"], "could_have_proceeded": out["unblocked"],
             "awaiting_signoff": out.get("awaiting_signoff", []),
             "pending": len(out["pending"]), "stopped_at": sdlc_md.now_iso8601()}
-    run_state.update(root, stop=stop)
+    # What --force WAIVED is the predicate's set, not `could_have_proceeded`: that list reads
+    # the pending-decision walk, which cannot see a ruling, a standing REJECT or an owed pass.
+    # The two answer different questions - what work was parked, and which stop-ship question
+    # was left open - so each is printed under its own label. A field of the run record beside
+    # `stop`, so every route that ends a run records it alike.
+    if held:
+        print(f"stop: forced over {len(held)} unanswered stop-ship question(s), recorded as "
+              f"waived: {unanswered_rows(held)}", file=sys.stderr)
+    run_state.update(root, stop=stop, **unanswered_record(ua))
     if out["pending"]:
         # The run is now WAITING, and the clock says so. This gap opens at the same instant
         # `close_run` below stamps `ended_at`, so it lies ENTIRELY OUTSIDE the measured window
@@ -10646,7 +10716,8 @@ def cmd_stop(args) -> int:
     run_state.close_run(root, run_state.STOPPED)
     el = run_elapsed(root)
     print(f"run stopped ({cause}): {stop['detail'] or 'no reason given'}; "
-          f"{len(out['blocked'])} blocked, {len(out['unblocked'])} could have proceeded")
+          f"{len(out['blocked'])} blocked, {len(out['unblocked'])} could have proceeded, "
+          f"{len(held)} stop-ship question(s) waived")
     if el["hours"] is not None:
         outside = round(el["recorded_idle_hours"] - el["idle_hours"], 3)
         print(f"  elapsed {el['hours']}h working ({el['raw_hours']}h wall-clock less "
@@ -11533,14 +11604,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     st = sub.add_parser(
         "stop",
-        help="Stop the open run. REFUSED while any unit the pending question does not block "
-             "remains - one undecidable unit costs one unit of progress, never the batch. "
-             "--force records what could have proceeded, so the cost of parking is on the "
-             "record rather than inferred.")
+        help="Stop the open run. REFUSED while any batch unit is unanswered - unfinished, "
+             "unruled, unparked and undropped, or carrying a standing REJECT - by the close's "
+             "own predicate. --force records what could have proceeded and the stop-ship "
+             "questions it waived, so the cost of parking is on the record rather than "
+             "inferred.")
     st.add_argument("--reason", default=None, help="why the run is stopping")
     st.add_argument("--force", action="store_true",
-                    help="stop anyway (the operator's override) - the units that could have "
-                         "proceeded are named individually on the record")
+                    help="stop anyway (the operator's override, which answers nothing) - the "
+                         "work that could have proceeded and the unanswered stop-ship "
+                         "questions are named individually on the record")
     st.add_argument("--root", default=".", help="Repo root (default: .)")
     st.set_defaults(func=cmd_stop)
 

@@ -12,6 +12,7 @@ already exists rather than new instrumentation:
   the lifecycle stage a unit stalled at   <- conformance.detect_conformance
   the approved batch and the run's shape  <- .local/run-state.json, .local/sprint-plan.json
   difficulty band (the suitability seed)  <- route.estimate
+  units the run cannot end over           <- sprint.unanswered_units (the close's predicate)
 
 Two properties are load-bearing:
 
@@ -466,9 +467,11 @@ def remaining_count(repo_root: Path | str, batch: list[str] | None = None) -> in
 
 
 def build(repo_root: Path | str, batch: list[str] | None = None,
-          outcome: str | None = None) -> dict:
+          outcome: str | None = None, retro: str | None = None) -> dict:
     """The JOIN: what was delivered, what remains, and what decisions are still owed.
 
+    `retro` names the retro whose carried table answers the unanswered-unit predicate, as the
+    close names it to its checklist step; None reads the latest retro carrying the run id.
     Read-only. Raises ValueError when there is no batch to hand over."""
     root = Path(repo_root)
     ids, source = _batch_source(root, batch)
@@ -485,6 +488,19 @@ def build(repo_root: Path | str, batch: list[str] | None = None,
     remaining = [u for u in units if not u["terminal"]]
     state = run_state.read(root)
     tags = {t: sum(1 for u in remaining if u["suitability"]["tag"] == t) for t in TAGS}
+    # The units the run cannot end over, by the close's own predicate - never by `remaining`,
+    # which cannot see a ruling, a standing REJECT or an owed adversarial pass. Computed here so
+    # `generate` and `refresh` render the same section, and walked over THIS document's batch:
+    # a refresh scoped to the run being closed must not name the units of whichever run is open.
+    # None when it cannot be computed: the handoff is still written, and says so, rather than
+    # reporting an empty set it never read.
+    import sprint  # noqa: PLC0415 - deferred sibling; sprint imports this module lazily too
+    ua, ua_error = None, ""
+    try:
+        ua = sprint.unanswered_units(root, {**state, "batch": list(ids)}, retro)
+    except Exception as exc:  # noqa: BLE001 - a report degrades; the handoff is still written
+        ua_error = f"{type(exc).__name__}: {exc}"
+    unanswered = ua["unanswered"] if ua else None
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "run": state or None,
@@ -494,6 +510,15 @@ def build(repo_root: Path | str, batch: list[str] | None = None,
         "delivered": delivered,
         "dropped": dropped,
         "remaining": remaining,
+        "unanswered": unanswered,
+        "unanswered_error": ua_error,
+        "unanswered_rulings_from": ua["rulings_from"] if ua else None,
+        "unanswered_ways_out": (sprint.unanswered_ways_out(unanswered, ua["rulings_from"],
+                                                           state.get("run_id"))
+                                if unanswered else ""),
+        # The fields a generate that ENDS the run writes onto it - the same shape every other
+        # route that ends a run records.
+        "unanswered_record": sprint.unanswered_record(ua, ua_error),
         "open_decisions": _open_decisions(root, ids),
         "appetite": _appetite(root, state, ids, len(delivered)),
         "summary": {"total": len(units), "delivered": len(delivered),
@@ -618,18 +643,65 @@ def _appetite_body(report: dict) -> str:
     return "\n".join(out) + "\n"
 
 
+def _unanswered_body(report: dict) -> str:
+    """The batch units the run cannot end over, one bullet each with its status, why it is held
+    and where its findings went, then which retro's rulings were read and the ways out. Its own
+    section: Delivered and Remaining name batch ids too, so a reader must be able to tell a
+    stop-ship question from a list of open work. A predicate that failed, or a tree with no run,
+    never reads as "none"."""
+    held = report.get("unanswered")
+    if held is None:
+        return ("**Could not be computed** "
+                f"({report.get('unanswered_error') or 'no reason recorded'}). This is not a "
+                "clean result: no batch unit was judged answered, and the close and "
+                "`sprint.py stop` refuse until the set can be read.\n")
+    run_id = (report.get("run") or {}).get("run_id")
+    rid = report.get("unanswered_rulings_from")
+    if not run_id:
+        read = ("No run is recorded (`sprint plan --write` opens one), so no retro is tied to "
+                "this batch and no ruling was read.")
+    elif rid:
+        read = f"Rulings read from {rid}'s `## Known issues carried` for {run_id}."
+    else:
+        read = (f"No retro's carried table could be read for {run_id}, so no ruling answers "
+                f"any unit.")
+    if not held:
+        if not run_id:
+            return f"{read} No batch unit is held, but this is not a run's account.\n"
+        return ("None: every batch unit is delivered, abandoned, ruled, dropped, parked or "
+                f"awaiting only a signature. {read}\n")
+    rows = [f"- **{h['unit']}** ({h['status']}) - {h['why']} - findings "
+            + (f"filed to {', '.join(h['filed'])}" if h.get("filed") else "NONE filed")
+            for h in held]
+    return "\n".join(rows) + f"\n\n{read}\n\n{report.get('unanswered_ways_out') or ''}\n"
+
+
+def _unanswered_note(report: dict) -> str:
+    """One id-free sentence under `Where to pick up` when the set is non-empty, so a pickup that
+    reads "nothing remains" cannot sit above a stop-ship question the worklist does not carry."""
+    held = report.get("unanswered")
+    if not held:
+        return ""
+    return (f"\n{len(held)} stop-ship question(s) were left unanswered - see below; a Done or "
+            f"Fixed unit among them is not in the worklist.\n")
+
+
 def render_body(report: dict) -> str:
     """The generated body. Every section is filled from the join - there is no authoring
     scaffold here, and so no `{{placeholder}}` that a renderer could fail to substitute.
 
     `Closed without delivery` is rendered only when there IS one: a unit dropped
     (Won't Implement / Rejected / Withdrawn) is neither remaining work nor a success, and
-    folding it into Delivered would be the tool claiming an outcome it did not reach."""
+    folding it into Delivered would be the tool claiming an outcome it did not reach.
+    `Unanswered stop-ship questions` is rendered always, directly after the pickup, so its
+    absence never reads as none."""
     s = report["summary"]
     dropped = (f"\n## Closed without delivery ({s['dropped']})\n\n"
                + _unit_table(report["dropped"], "")) if s["dropped"] else ""
     return (
-        "## Where to pick up\n\n" + _pickup_body(report) + _appetite_body(report) +
+        "## Where to pick up\n\n" + _pickup_body(report) + _unanswered_note(report) +
+        "\n## Unanswered stop-ship questions\n\n" + _unanswered_body(report) +
+        _appetite_body(report) +
         f"\n## Delivered ({s['delivered']})\n\n"
         + _unit_table(report["delivered"], "_Nothing was delivered in this run._")
         + dropped +
@@ -713,7 +785,9 @@ def generate(repo_root: Path | str, title: str, batch: list[str] | None = None,
     run state with its outcome."""
     root = Path(repo_root)
     title = _heading_title(title)   # strip trailing punctuation so the H1 passes MD026
-    report = build(root, batch=batch, outcome=outcome)
+    # The named retro reaches the predicate too, so the close's handoff step reads the carried
+    # table its checklist step read.
+    report = build(root, batch=batch, outcome=outcome, retro=retro)
     retro_path = _find_retro(root, retro) if retro else None  # refuse before any write
     if dry_run:
         return {"id": None, "path": None, "dry_run": True, "indexed": None,
@@ -730,6 +804,10 @@ def generate(repo_root: Path | str, title: str, batch: list[str] | None = None,
     run_state.update(root, handoff_worklist=str(WORKLIST_REL),
                      handoff_remaining=report["summary"]["remaining"])
     if outcome:
+        # This call ENDS the run, so it records what the run ended over - before `close_run`
+        # archives the record. Reported, never a refusal. A mid-run snapshot ends nothing and
+        # records nothing, so the field always means "the set this run ended with".
+        run_state.update(root, **report["unanswered_record"])
         run_state.close_run(root, outcome, handoff=res["id"])
     else:
         run_state.update(root, handoff=res["id"])

@@ -751,6 +751,25 @@ def _brief_key(row: dict) -> str:
     return "" if UNMATCHED_MARK in cell.split() else cell
 
 
+def standing_rejects(repo_root: Path | str, unit: str, phase: str = "delivery") -> list[dict]:
+    """The REJECT rows a reader should NAME for this unit, oldest first, or `[]` for none.
+
+    Every rejection no later same-brief APPROVE retired; and when one did retire them all, the
+    latest REJECT still, because this answers "which rejection is this about", never "is it
+    answered". A same-brief APPROVE the unit's own author recorded retires the row here and in
+    `verdict_for`, yet `coverage_state` reads the unit `unreviewed` - so a caller asks that for
+    the answer and this for the name. A superseded REJECT counts unless the supersession is
+    principal-grade, exactly as `verdict_for` reads it.
+    """
+    target = sdlc_md.norm_id(unit)
+    live = [v for v in read_verdicts(repo_root, phase)
+            if sdlc_md.norm_id(v["unit"]) == target
+            and not (v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
+                                              or _is_principal_superseded(repo_root, unit, v)))]
+    rejects = [v for v in live if str(v.get("verdict") or "").upper().startswith(REJECT)]
+    return _unanswered_rejects(live) or rejects[-1:]
+
+
 # --- Supersession (a verdict row retired by addition) ----------------------------------
 # A verdict row can record an event that did not happen - a reviewer mis-entered, a verdict
 # filed against the wrong unit. The log's authority comes from nobody editing it, so the
@@ -1760,6 +1779,21 @@ def unattributable_repairs(repo_root: Path | str) -> list[dict]:
     return out
 
 
+def _closure_still_resolves(repo_root: Path | str, closure: dict) -> bool:
+    """Whether a closure still points somewhere a reader can follow, judged on EVERY read.
+
+    A `fixed:` closure's evidence is the work itself, so it always counts. A `filed:` closure
+    discharges its finding only while the artefact it names resolves: `record_repair` checks the
+    id when the row is written, but a bug deleted or renumbered afterwards leaves a discharge
+    nobody can follow, and a check made only at write time goes on counting it for ever.
+    Resolved through `sdlc_md.find_by_id`, which a sweep's `corpus_cache` window memoises.
+    """
+    if closure.get("disposition") != "filed":
+        return True
+    artefact = str(closure.get("artefact") or "")
+    return bool(artefact) and bool(sdlc_md.find_by_id(repo_root, artefact))
+
+
 def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> dict:
     """`{state, closed, outstanding, filed, fixed}` for a unit's repair, or state `none`.
 
@@ -1767,6 +1801,11 @@ def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> d
     not, and `none` when no repair was recorded. PARTIAL is what stops the route back to covered
     being opened by recording any repair at all - a worse gate than the one being replaced,
     because it would convert every REJECT into an APPROVE for the cost of one command.
+
+    A `filed:` closure whose artefact no longer resolves closes nothing: its finding reads
+    outstanding and the closure is left out of `closed`. The check lives HERE rather than in one
+    caller, so review-coverage, conformance, the close and the transition gate, which all read
+    this, cannot disagree about whether a finding was answered.
     """
     rows = repairs_for(repo_root, unit, phase)
     # EVERY unanswered rejection, not just the standing one. Before the fingerprint-keyed
@@ -1799,7 +1838,8 @@ def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> d
         when = str(rejection.get("date") or "")
         mine = [r for r in rows if str(r.get("verdict_date") or "") == when]
         answering += mine
-        theirs = [c for r in mine for c in parse_closures(r.get("closed", ""))]
+        theirs = [c for r in mine for c in parse_closures(r.get("closed", ""))
+                  if _closure_still_resolves(repo_root, c)]
         closures += theirs
         outstanding += repair_outstanding(rejection.get("issues", ""), theirs)
     if not answering:

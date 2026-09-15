@@ -6667,6 +6667,351 @@ class ClosedOverRejectNamesTheBugTests(unittest.TestCase):
         self.assertEqual(_ids_on(lines["d"]), {"BG0002"}, lines["d"])
 
 
+class RejectNeedsAnAnswerTests(unittest.TestCase):
+    """US0627. A story or bug reaching a delivered terminal over an unanswered delivery REJECT is
+    refused until the REJECT is answered, as `critic.coverage_state` reads it: `approved` (a
+    later independent APPROVE on the same brief) or `repaired` (a complete repair whose `filed:`
+    closures name artefacts that still resolve).
+
+    Every fixture records its REJECT through `critic.record_verdict` in the DELIVERY phase -
+    reviewer `qa`, author `dev`, a brief fingerprint, two findings - BACK-DATED to a fixed day,
+    so a guard printing today's date cannot pass for one naming the verdict's. Each otherwise
+    clears every other gate: no config, so neither `review.two_role_after` nor
+    `review.test_plan_after` applies, and each criterion is verified. A refusal is asserted on
+    `unanswered delivery REJECT`, text no other gate emits, and every case runs WITHOUT
+    `--force` except AC13, which pins what `--force` does."""
+
+    BRIEF = "a1b2c3d4e5f6"
+    OTHER_BRIEF = "0f9e8d7c6b5a"
+    REJECTED_ON = "2026-01-05"
+    FIRST = "the parser drops a trailing row"
+    SECOND = "the refusal names no remedy"
+    FINDINGS = f"[new] {FIRST}; [new] {SECOND}"
+    UNANSWERED = "unanswered delivery REJECT"
+    STORY_STATUSES = ("Review", "Done", "Won't Implement", "Superseded")
+    BUG_STATUSES = ("Open", "In Progress", "Fixed", "Verified", "Closed", "Won't Fix")
+
+    @staticmethod
+    def _index(d: Path, title: str, rows: list, statuses: tuple) -> None:
+        counts = "".join(f"| {s} | {sum(1 for _, st in rows if st == s)} |\n" for s in statuses)
+        table = "".join(f"| [{i}]({i}-x.md) | t | {st} |\n" for i, st in rows)
+        (d / "_index.md").write_text(
+            f"# {title}\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n{counts}\n## All\n\n"
+            f"| ID | Title | Status |\n| --- | --- | --- |\n{table}", encoding="utf-8")
+
+    def _root(self, bug_status: str | None = None) -> Path:
+        """A fresh root holding BG0002-BG0004, the bugs a closure files to - and BG0001, the
+        unit under test, when `bug_status` names its starting status."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True)
+        rows = []
+        for bid in ("BG0002", "BG0003", "BG0004"):
+            (bd / f"{bid}-x.md").write_text(
+                f"# {bid}: filed\n\n> **Status:** Open\n> **Severity:** medium\n",
+                encoding="utf-8")
+            rows.append((bid, "Open"))
+        if bug_status:
+            (bd / "BG0001-x.md").write_text(
+                f"# BG0001: b\n\n> **Status:** {bug_status}\n> **Severity:** medium\n"
+                "> **Verification depth:** conversational (walked through by hand)\n\n"
+                "## Acceptance Criteria\n\n- [x] the defect no longer reproduces\n",
+                encoding="utf-8")
+            rows.append(("BG0001", bug_status))
+        self._index(bd, "Bugs", rows, self.BUG_STATUSES)
+        return root
+
+    def _story(self, root: Path, status: str = "Review") -> Path:
+        """US0001 at `status`, its one criterion verified by hand, with a Revision History for
+        a forced override's row to land in."""
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        path = sd / "US0001-x.md"
+        path.write_text(
+            f"# US0001: s\n\n> **Status:** {status}\n\n"
+            "## Acceptance Criteria\n\n### AC1\n- **Verify:** manual a human looked\n"
+            "- **Verified:** yes (2026-01-01)\n\n"
+            "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
+            "| 2026-01-01 | dev | Created |\n", encoding="utf-8")
+        self._index(sd, "Stories", [("US0001", status)], self.STORY_STATUSES)
+        return path
+
+    def _bug_path(self, root: Path) -> Path:
+        return root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+
+    def _reject(self, root: Path, uid: str, phase: str = "delivery") -> None:
+        """The delivery REJECT every criterion starts from, back-dated to REJECTED_ON."""
+        import critic
+        with unittest.mock.patch.object(critic.sdlc_md, "now_date",
+                                        return_value=self.REJECTED_ON):
+            critic.record_verdict(root, uid, "REJECT", reviewer="qa", author="dev",
+                                  brief=self.BRIEF, issues=self.FINDINGS, phase=phase)
+
+    def _repair(self, root: Path, uid: str, closed: str) -> None:
+        """A repair written through the SHIPPED `critic.py repair`, whose write-time check
+        refuses an id that resolves to nothing."""
+        import critic
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            code = critic.main(["repair", "--root", str(root), "--unit", uid,
+                                "--author", "dev", "--closed", closed])
+        self.assertEqual(code, 0, f"the fixture's repair was refused: {buf.getvalue()}")
+
+    def _status(self, path: Path) -> str:
+        return sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or ""
+
+    def _refusal(self, out: str) -> str:
+        """The output lines carrying the guard's phrase - what the guard itself said."""
+        return "\n".join(ln for ln in out.splitlines() if self.UNANSWERED in ln)
+
+    def _assert_names_the_reject(self, out: str) -> None:
+        said = self._refusal(out)
+        self.assertTrue(said, f"nothing names the {self.UNANSWERED}:\n{out}")
+        self.assertRegex(said, r"\bqa\b", f"the REJECT's reviewer is not named: {said}")
+        self.assertIn(self.REJECTED_ON, said, f"the REJECT's verdict date is not named: {said}")
+
+    def test_a_recorded_reject_blocks_done(self) -> None:
+        """AC1. MUTANTS: stop reading the unit's delivery verdict (the guard never refuses);
+        drop the reviewer and date so the refusal names only the unit. The REJECT is back-dated,
+        so a refusal printing today's date does not pass for one naming the verdict's. The
+        control is the same story with no REJECT, which lands - so the refusal is this gate's."""
+        root = self._root()
+        path = self._story(root)
+        self._reject(root, "US0001")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertNotEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Review", "a refused close moved the status")
+        self._assert_names_the_reject(out)
+
+        ctl_root = self._root()
+        ctl = self._story(ctl_root)
+        code, out = _cli(ctl_root, "set", "--id", "US0001", "--status", "Done")
+        self.assertEqual(code, 0, f"the control, carrying no REJECT, did not land: {out}")
+        self.assertEqual(self._status(ctl), "Done")
+        self.assertNotIn(self.UNANSWERED, out)
+
+    def test_a_recorded_reject_blocks_every_delivered_terminal_for_a_bug(self) -> None:
+        """AC2. MUTANTS: gate the story route only; gate Done and Fixed by name; skip a bug
+        already at Fixed. Five routes, each from a fresh root; each from-Fixed route has a
+        control carrying no REJECT that lands, so the depth and soak gates pass it."""
+        routes = (("In Progress", "Fixed"), ("In Progress", "Verified"),
+                  ("In Progress", "Closed"), ("Fixed", "Verified"), ("Fixed", "Closed"))
+        for start, target in routes:
+            with self.subTest(start=start, target=target):
+                root = self._root(bug_status=start)
+                self._reject(root, "BG0001")
+                code, out = _cli(root, "set", "--id", "BG0001", "--status", target)
+                self.assertNotEqual(code, 0, f"{start} -> {target} landed: {out}")
+                self.assertEqual(self._status(self._bug_path(root)), start)
+                self._assert_names_the_reject(out)
+                ctl_root = self._root(bug_status=start)
+                code, out = _cli(ctl_root, "set", "--id", "BG0001", "--status", target)
+                self.assertEqual(code, 0, f"control {start} -> {target} did not land: {out}")
+                self.assertEqual(self._status(self._bug_path(ctl_root)), target)
+
+    def test_a_filed_artefact_id_discharges_the_reject(self) -> None:
+        """AC3. MUTANT (in critic.repair_state): count every `filed:` closure as outstanding even
+        when its id resolves. Both findings are filed through `critic.py repair` to bugs that
+        exist, so the unit reads `repaired` and lands."""
+        import critic
+        root = self._root()
+        path = self._story(root)
+        self._reject(root, "US0001")
+        self._repair(root, "US0001", "#1 -> filed: BG0002; #2 -> filed: BG0003")
+        self.assertEqual(critic.coverage_state(root, "US0001", "delivery"),
+                         critic.COVERAGE_REPAIRED, "the premise: a complete filed repair")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Done")
+        self.assertNotIn(self.UNANSWERED, out)
+
+    def test_an_id_naming_no_artefact_is_refused(self) -> None:
+        """AC4. MUTANT: accept any filed id `record_repair` accepted at write time. The repair is
+        written through `critic.py repair` while both bugs exist; BG0003 is then deleted, so the
+        finding it closed - the second - is outstanding again and named, and the first is not."""
+        root = self._root()
+        path = self._story(root)
+        self._reject(root, "US0001")
+        self._repair(root, "US0001", "#1 -> filed: BG0002; #2 -> filed: BG0003")
+        (root / "sdlc-studio" / "bugs" / "BG0003-x.md").unlink()
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertNotEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Review")
+        said = self._refusal(out)
+        self.assertTrue(said, f"nothing names the {self.UNANSWERED}:\n{out}")
+        self.assertIn(self.SECOND, said,
+                      "the finding the deleted id had closed is not named as outstanding")
+        self.assertNotIn(self.FIRST, said,
+                         "the finding a still-resolving filing closed is named as outstanding")
+
+    def test_a_complete_repair_answers_the_reject_as_review_coverage_does(self) -> None:
+        """AC7. MUTANTS: demand a re-review APPROVE beside the complete repair; count only
+        `filed:` closures as answers. One finding is fixed, one filed, and nobody re-reviewed:
+        review-coverage reads it `repaired`, so the transition must too."""
+        import critic
+        root = self._root()
+        path = self._story(root)
+        self._reject(root, "US0001")
+        self._repair(root, "US0001",
+                     "#1 -> fixed: the trailing row is kept and a test pins it; "
+                     "#2 -> filed: BG0002")
+        state = critic.repair_state(root, "US0001", "delivery")
+        self.assertEqual((state["state"], state["fixed"], state["filed"]), ("complete", 1, 1))
+        self.assertEqual(critic.coverage_counts(root, ["US0001"])[critic.COVERAGE_REPAIRED],
+                         ["US0001"], "the premise: review-coverage counts it repaired")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Done")
+        self.assertNotIn(self.UNANSWERED, out)
+
+    def test_a_partly_filed_reject_is_refused(self) -> None:
+        """AC8. MUTANT: count any filed closure as an answer. One of two findings is filed, so
+        repair_state reads `partial` with one filed closure, and the other finding is named."""
+        import critic
+        root = self._root()
+        path = self._story(root)
+        self._reject(root, "US0001")
+        self._repair(root, "US0001", "#1 -> filed: BG0002")
+        state = critic.repair_state(root, "US0001", "delivery")
+        self.assertEqual((state["state"], state["filed"]), ("partial", 1))
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertNotEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Review")
+        said = self._refusal(out)
+        self.assertIn(self.SECOND, said, f"the outstanding finding is not named: {said}")
+        self.assertNotIn(self.FIRST, said, f"the filed finding is named as outstanding: {said}")
+
+    def test_a_same_brief_approve_answers_the_reject(self) -> None:
+        """AC9. MUTANTS: read the REJECT rows directly and refuse any without a complete repair;
+        accept any later APPROVE whatever its brief; key the guard on `critic.verdict_for`
+        returning a REJECT. Three copies: an independent APPROVE on the REJECT's own brief
+        (lands); one on a different brief (refused - another seat's approval does not retire
+        this seat's rejection); and one on the same brief recorded by the REJECT's author, `dev`
+        as both reviewer and author (refused - `verdict_for` returns that APPROVE, while
+        `coverage_state` reads it `unreviewed`, so the refusal must name `qa`'s REJECT)."""
+        import critic
+        approvals = {"same": ("qa", "dev", self.BRIEF),
+                     "different": ("product", "dev", self.OTHER_BRIEF),
+                     "self": ("dev", "dev", self.BRIEF)}
+        results = {}
+        for name, (reviewer, author, brief) in approvals.items():
+            root = self._root()
+            path = self._story(root)
+            self._reject(root, "US0001")
+            critic.record_verdict(root, "US0001", "APPROVE", reviewer=reviewer, author=author,
+                                  brief=brief)
+            results[name] = (root, path, critic.coverage_state(root, "US0001", "delivery"))
+        self.assertEqual(results["same"][2], critic.COVERAGE_APPROVED)
+        self.assertEqual(results["different"][2], critic.COVERAGE_UNREVIEWED)
+        self.assertEqual(results["self"][2], critic.COVERAGE_UNREVIEWED)
+        self.assertEqual(critic.verdict_for(results["self"][0], "US0001")["verdict"], "APPROVE",
+                         "the premise: verdict_for reads the self-approval as the standing row")
+
+        root, path, _ = results["same"]
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Done")
+        self.assertNotIn(self.UNANSWERED, out)
+        for name in ("different", "self"):
+            with self.subTest(copy=name):
+                root, path, _ = results[name]
+                code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+                self.assertNotEqual(code, 0, out)
+                self.assertEqual(self._status(path), "Review")
+                self._assert_names_the_reject(out)
+
+    def test_a_plan_review_reject_alone_does_not_block(self) -> None:
+        """AC10. MUTANT: read the plan-review phase as well. The plan-review copy's delivery
+        coverage reads `unreviewed` too (it has no delivery verdict), so it is also the control
+        that stops a guard refusing on `unreviewed` alone."""
+        import critic
+        plan_root = self._root()
+        plan = self._story(plan_root)
+        self._reject(plan_root, "US0001", phase="plan-review")
+        self.assertEqual(critic.coverage_state(plan_root, "US0001", "plan-review"),
+                         critic.COVERAGE_UNREVIEWED, "the premise: an unrepaired plan REJECT")
+        self.assertEqual(critic.read_verdicts(plan_root, "delivery"), [])
+        code, out = _cli(plan_root, "set", "--id", "US0001", "--status", "Done")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._status(plan), "Done")
+        self.assertNotIn(self.UNANSWERED, out)
+
+        root = self._root()
+        path = self._story(root)
+        self._reject(root, "US0001")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertNotEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Review")
+        self._assert_names_the_reject(out)
+
+    def test_a_stop_ship_ruling_does_not_discharge_the_reject(self) -> None:
+        """AC11. MUTANTS: let a carried-table ruling - `stop-ship`, or any of the other three -
+        discharge the REJECT. The ruling sits where `retro.find_retro` and every reader of the
+        carried table look, `sdlc-studio/retros/RETRO0001-run.md`, so a guard that globbed that
+        directory and read `retro.carried_issues` would find it. Each row reads back `ok`, so a
+        refusal is never a malformed row's doing."""
+        import retro
+        for ruling in ("stop-ship", "not-stop-ship", "accepted-risk", "deferred"):
+            with self.subTest(ruling=ruling):
+                root = self._root()
+                path = self._story(root)
+                self._reject(root, "US0001")
+                rd = root / retro.RETRO_DIR
+                rd.mkdir(parents=True)
+                body = (f"# RETRO0001: run\n\n## {retro.KNOWN_ISSUES_SECTION}\n\n"
+                        "| Issue | Ruling | Ruled by | Date |\n| --- | --- | --- | --- |\n"
+                        f"| US0001 | {ruling} | Darren Benson (operator) | 2026-01-06 |\n")
+                (rd / "RETRO0001-run.md").write_text(body, encoding="utf-8")
+                self.assertEqual(retro.find_retro(root, "RETRO0001"), rd / "RETRO0001-run.md")
+                rows = retro.carried_issues(body)
+                self.assertEqual([(r["id"], r["ruling"], r["ok"]) for r in rows],
+                                 [("US0001", ruling, True)], rows)
+                code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+                self.assertNotEqual(code, 0, out)
+                self.assertEqual(self._status(path), "Review")
+                self._assert_names_the_reject(out)
+                self.assertIn("does not discharge", self._refusal(out),
+                              "the refusal does not say a carried ruling is no answer")
+
+    def test_an_abandonment_terminal_names_the_reject(self) -> None:
+        """AC12. MUTANTS: refuse abandonment too; say nothing. Won't Implement and Superseded for
+        the story, Won't Fix for the bug, each landing with the REJECT named."""
+        cases = (("story", "Won't Implement"), ("story", "Superseded"), ("bug", "Won't Fix"))
+        for kind, target in cases:
+            with self.subTest(kind=kind, target=target):
+                if kind == "story":
+                    root = self._root()
+                    path, uid = self._story(root), "US0001"
+                else:
+                    root = self._root(bug_status="In Progress")
+                    path, uid = self._bug_path(root), "BG0001"
+                self._reject(root, uid)
+                code, out = _cli(root, "set", "--id", uid, "--status", target)
+                self.assertEqual(code, 0, out)
+                self.assertEqual(self._status(path), target)
+                self._assert_names_the_reject(out)
+
+    def test_force_waives_the_guard_and_the_record_names_it(self) -> None:
+        """AC13. MUTANTS: make the guard unforceable; check it outside `_pre_write_gates`, where
+        `_force_bypassed` cannot re-derive it, so the forced close records no override."""
+        root = self._root()
+        path = self._story(root)
+        self._reject(root, "US0001")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done", "--force")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Done")
+        text = path.read_text(encoding="utf-8")
+        forced = sdlc_md.extract_field(text, "Forced-override") or ""
+        self.assertIn(self.UNANSWERED, forced,
+                      f"the Forced-override field does not name the waived guard: {forced!r}")
+        history = text.split("## Revision History", 1)[1]
+        row = next((ln for ln in history.splitlines() if "--force" in ln), "")
+        self.assertIn(self.UNANSWERED, row,
+                      f"the Revision History row does not name the waived guard:\n{history}")
+
+
 if __name__ == "__main__":
     unittest.main()
 

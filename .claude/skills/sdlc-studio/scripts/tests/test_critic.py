@@ -7377,5 +7377,82 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
         self.assertIn("not checked", plan)
 
 
+class RepairStateResolvesFiledIdsTests(unittest.TestCase):
+    """US0627. A `filed:` closure discharges its finding only while the artefact it names still
+    resolves, and that is checked in `critic.repair_state` on every read - so review-coverage,
+    conformance and the transition gate, which all read it, stop counting a discharge nobody can
+    follow, not only the write-time check in `record_repair`."""
+
+    FIRST = "the parser drops a trailing row"
+    SECOND = "the refusal names no remedy"
+    THIRD = "the summary miscounts a torn row"
+
+    def _root(self, bugs=("BG0002", "BG0003")) -> Path:
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True)
+        for bid in bugs:
+            (bd / f"{bid}-x.md").write_text(f"# {bid}: filed\n\n> **Status:** Open\n",
+                                            encoding="utf-8")
+        return root
+
+    def test_a_filed_id_deleted_after_recording_stops_answering_both_readers(self) -> None:
+        """AC5. MUTANTS: check resolvability in `coverage_state` alone, leaving `repair_state`
+        reading complete; check it at write time alone. Read once before the delete and once
+        after, each inside its OWN `corpus_cache` window, so the second read cannot be served
+        from an index built before the file went."""
+        mod = _load()
+        root = self._root()
+        mod.record_verdict(root, "US0001", "REJECT", reviewer="qa", author="dev",
+                           brief="a1b2c3d4e5f6", issues=f"[new] {self.FIRST}; [new] {self.SECOND}")
+        mod.record_repair(root, "US0001", "dev", "#1 -> filed: BG0002; #2 -> filed: BG0003")
+        with mod.sdlc_md.corpus_cache():
+            before = mod.repair_state(root, "US0001", "delivery")
+            before_cov = mod.coverage_state(root, "US0001", "delivery")
+        self.assertEqual((before["state"], before["filed"], before["outstanding"]),
+                         ("complete", 2, []), "the positive control: both filings resolve")
+        self.assertEqual(before_cov, mod.COVERAGE_REPAIRED)
+
+        (root / "sdlc-studio" / "bugs" / "BG0003-x.md").unlink()
+        with mod.sdlc_md.corpus_cache():
+            after = mod.repair_state(root, "US0001", "delivery")
+            after_cov = mod.coverage_state(root, "US0001", "delivery")
+        self.assertEqual(after["state"], "partial",
+                         "repair_state still reads a filing to a deleted bug as an answer")
+        self.assertEqual(after["outstanding"], [self.SECOND],
+                         "the finding the deleted id had closed is not outstanding")
+        self.assertEqual([c["artefact"] for c in after["closed"]], ["BG0002"],
+                         "the closure naming the deleted bug is still counted as closed")
+        self.assertEqual(after["filed"], 1)
+        self.assertEqual(after_cov, mod.COVERAGE_UNREVIEWED,
+                         "coverage_state still reads the unit repaired")
+
+    def test_filed_ids_resolve_through_the_cached_lookup(self) -> None:
+        """AC6. MUTANT: resolve each id by walking the artefact directories directly. A spy on
+        `sdlc_md.find_by_id` must see every filed id, and the open `corpus_cache` window must
+        hold the by-id index afterwards - an uncached lookup walks the corpus per id."""
+        import os
+        mod = _load()
+        root = self._root(bugs=("BG0002", "BG0003", "BG0004"))
+        mod.record_verdict(root, "US0001", "REJECT", reviewer="qa", author="dev",
+                           brief="a1b2c3d4e5f6",
+                           issues=f"[new] {self.FIRST}; [new] {self.SECOND}; [new] {self.THIRD}")
+        mod.record_repair(root, "US0001", "dev",
+                          "#1 -> filed: BG0002; #2 -> filed: BG0003; #3 -> filed: BG0004")
+        real = mod.sdlc_md.find_by_id
+        with mod.sdlc_md.corpus_cache() as cache, \
+                unittest.mock.patch.object(mod.sdlc_md, "find_by_id", wraps=real) as spy:
+            state = mod.repair_state(root, "US0001", "delivery")
+            index = cache.get(("byid", os.path.abspath(root)))
+        self.assertEqual((state["state"], state["filed"]), ("complete", 3))
+        seen = {sdlc_md_norm(str(c.args[1])) for c in spy.call_args_list if len(c.args) > 1}
+        self.assertLessEqual({"BG0002", "BG0003", "BG0004"}, seen,
+                             f"find_by_id did not resolve every filed id: saw {sorted(seen)}")
+        self.assertIsNotNone(index, "the corpus_cache window holds no by-id index afterwards")
+        self.assertLessEqual({"BG0002", "BG0003", "BG0004"}, set(index))
+
+
 if __name__ == "__main__":
     unittest.main()

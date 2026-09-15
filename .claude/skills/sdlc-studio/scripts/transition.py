@@ -1017,6 +1017,60 @@ def line_coverage_lane(root, unit: str, text: str, type_: str, path, *,
     return out
 
 
+#: The phrase every refusal and warning of the unanswered-REJECT guard carries, and no other
+#: gate emits, so a reader - or a test - can tell this refusal from its neighbours.
+UNANSWERED_REJECT = "unanswered delivery REJECT"
+#: The units a delivery REJECT is recorded against and that reach a delivered terminal.
+_REJECT_GUARDED_TYPES = ("story", "bug")
+#: The ways out, named in the refusal: a gate that says only "no" costs a round-trip to learn
+#: what yes looks like, and the likeliest wrong move - ruling the unit in the retro's carried
+#: table - is named as not being one.
+_REJECT_EXITS = (
+    "Answer it with `critic.py repair` closing each finding (`filed:` to an artefact that "
+    "exists, or `fixed:` with the evidence), or with an independent re-review recorded against "
+    "the same brief; a ruling in a retro's `Known issues carried` table does not discharge it, "
+    "and a `--force` waiver is recorded in the artefact's `Forced-override` field")
+
+
+def _unanswered_delivery_reject(root, uid: str) -> str | None:
+    """What stands against this unit's delivered close: its unanswered delivery REJECT, named by
+    reviewer and date with the findings still outstanding - or None when it carries none, or
+    carries one that is answered.
+
+    ANSWERED is `critic.coverage_state` reading `approved` (a later independent APPROVE on the
+    same brief) or `repaired` (a complete repair whose `filed:` closures still resolve) - the one
+    reader review-coverage and conformance already use, so a unit this passes is one they count
+    as reviewed, and a unit that passes the close cannot then stop at its own Done inside
+    apply-signoff. The DELIVERY phase only: a plan-review rejection is the plan gate's to answer.
+    Nothing in a retro's carried table is read, because a ruling rules on the close, not on the
+    reviewer's findings.
+    """
+    import critic  # noqa: PLC0415 - deferred sibling; only a terminal transition pays for it
+    standing = critic.standing_rejects(root, uid, "delivery")
+    if not standing:
+        return None
+    state = critic.coverage_state(root, uid, "delivery")
+    if state in (critic.COVERAGE_APPROVED, critic.COVERAGE_REPAIRED):
+        return None
+    who = "; ".join(f"{r.get('reviewer') or '(no reviewer)'}'s REJECT of "
+                    f"{r.get('date') or '(undated)'}" for r in standing)
+    repair = critic.repair_state(root, uid, "delivery")
+    if repair["state"] == "partial":
+        outstanding = repair["outstanding"]
+    elif repair["state"] == "none":
+        outstanding = [f["text"] for r in standing
+                       for f in critic.parse_findings(r.get("issues", ""))]
+    else:
+        outstanding = []
+    if outstanding:
+        listed = "; ".join(outstanding[:4]) + (" ..." if len(outstanding) > 4 else "")
+        detail = f"{len(outstanding)} finding(s) outstanding - {listed}"
+    else:
+        detail = ("every finding carries a closure, yet the latest verdict is not an "
+                  "independent APPROVE")
+    return f"{uid} carries an {UNANSWERED_REJECT} ({who}): {detail}"
+
+
 def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                      target_canon, from_canon, force, dry_run, triaged_by,
                      coverage_opts: dict | None = None) -> str | None:
@@ -1168,6 +1222,26 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             blocks.append(f"{block}. Override with --force")
         if cov["warning"]:
             gate_warn = f"{gate_warn}; {cov['warning']}" if gate_warn else cov["warning"]
+    # AN UNANSWERED DELIVERY REJECT holds every DELIVERED terminal - Done, Fixed, Verified,
+    # Closed - by whatever route, and whatever status is being left: a bug reaches Verified or
+    # Closed without passing Fixed, and one already at Fixed must not walk on past a rejection
+    # nobody answered. No dated cutoff: a REJECT is outlived by the unit that earned it in the
+    # old backlog as much as the new, and forgiving it silently is what this exists to end.
+    # Forceable like its neighbours, so `_force_bypassed` re-derives it and the override is
+    # recorded. An ABANDONMENT terminal proceeds and names the REJECT instead: the code it judged
+    # will not ship, so refusing would demand filings about work nobody will do, and saying
+    # nothing would drop the rejection from view.
+    if type_ in _REJECT_GUARDED_TYPES and target_canon:
+        delivered = sdlc_md.is_delivered_terminal(type_, target_canon)
+        abandoned = sdlc_md.is_terminal_status(type_, target_canon) and not delivered
+        standing = (_unanswered_delivery_reject(root, sdlc_md.norm_id(artifact_id))
+                    if delivered or abandoned else None)
+        if standing and delivered and not force:
+            blocks.append(f"{standing}. {_REJECT_EXITS}. Override with --force")
+        elif standing and abandoned:
+            warn = (f"{standing} - it stays unanswered on the record, and closing the unit "
+                    f"{target_canon} over it is the operator's call")
+            gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
     if type_ == "story" and target_canon == "Done":
         parity = _story_target_parity(text)
         if parity:

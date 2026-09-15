@@ -41,13 +41,21 @@ python3 <skill>/scripts/sprint.py plan \
    pointer - the failing AC, the check it stalled at, the blocker that stopped it, or its
    own file. A batch id with no artefact on disk is listed too, as remaining-and-missing. A
    handoff that quietly loses an item is worse than no handoff.
-3. **Tags each one `copilot-tail` or `judgement`,** seeded deterministically from the
+3. **Names the stop-ship questions the run ended over,** in `## Unanswered stop-ship
+   questions` directly under the pickup: every batch unit the close's own predicate holds
+   (unfinished and unruled, or carrying a standing REJECT), with its status, why it is held
+   and where its findings were filed, then the retro whose `## Known issues carried` table was
+   read and the ways out. It is its own list because Remaining cannot see a ruling or a
+   REJECT: a Done unit with an unrepaired REJECT is held here and is not in the worklist. The
+   section is always written; a set that could not be computed says so and never reads as
+   none. `--retro` names the carried table it reads, else the latest retro carrying the run id.
+4. **Tags each one `copilot-tail` or `judgement`,** seeded deterministically from the
    difficulty band, the quarantine reason, and the stage reached (see below), with the
    reasons printed alongside so the tag can be argued with.
-4. **Creates the artefact through the tool machinery** - a tool-allocated `HO` id and an
+5. **Creates the artefact through the tool machinery** - a tool-allocated `HO` id and an
    index row, like a retro - and **links it from the retro**, which is what the next person
    actually reads.
-5. **Emits a worklist** (`sdlc-studio/.local/handoff-worklist.txt`) that
+6. **Emits a worklist** (`sdlc-studio/.local/handoff-worklist.txt`) that
    `sprint plan --worklist` reads back as a batch, and **closes the run state** with its
    outcome.
 
@@ -72,6 +80,10 @@ reads `judgement`, never a confidently-wrong `copilot-tail`.
 `sdlc-studio/.local/run-state.json`; `handoff generate --outcome <how it ended>` closes it.
 Outcomes: `goal-reached`, `budget-spent`, `blocked`, `stopped`. A run nobody opened still
 gets a handoff - the document says the run was not opened rather than inventing a start time.
+
+`--outcome` also writes the unanswered set onto the run record as `unanswered` (`[]` when
+none, beside `unanswered_rulings_from`) before the run is archived. It reports and never
+refuses. A `generate` without `--outcome` ends no run and records neither field.
 
 ## The gate
 
