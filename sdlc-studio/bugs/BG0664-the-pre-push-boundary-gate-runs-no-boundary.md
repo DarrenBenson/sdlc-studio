@@ -1,6 +1,6 @@
 # BG0664: the pre-push boundary gate runs NO boundary-only test, so the marker's own promise is false at the boundary it names
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 3; plan rows 11; executed 11; killed 11; survived 0; lines ruled 4; not-run 0; entry point 2 of 3 criteria through the shipped CLI, 1 in-process | fp 6f73dedfbd48 ]]
 > **Severity:** Medium
 > **Points:** 5
@@ -69,6 +69,7 @@ The whole point of the pre-push gate is that a red main is prevented rather than
 | tools/tests/test_boundary_marker.py | 151 | e97ea59d3080d112 | Defensive: the return inside the shlex ValueError handler. Every live pre-push and workflow command tokenises, so this refusal is unreachable on the real files. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | tools/tests/test_boundary_marker.py | 154 | e97ea59d3080d112 | Defensive: no token matches the head pattern. Hook commands reach this only after a regex naming gate.py --boundary matched them, and every live CI suite command carries a bash, python or coverage token. | Claude Opus 5 (mutation-registration subagent) | 2026-09-15 |
 | tools/tests/test_pre_push_hook.py | 163 | 3d93f41d2ab197d5 | test scaffolding: the direct-hook helper is exercised by the tag-first-order test in this module, which sits outside BG0664's own Verify selectors | sdlc-studio | 2026-09-15 |
+| tools/tests/test_pre_push_hook.py | 163 | 22a433ae90a866b0 | test scaffolding: the direct-hook helper is exercised by the tag-first-order test in this module, which sits outside BG0664's own Verify selectors | sdlc-studio | 2026-09-15 |
 
 ## Revision History
 

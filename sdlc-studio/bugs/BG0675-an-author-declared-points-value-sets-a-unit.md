@@ -4,7 +4,7 @@
 > **Verification depth:** functional [[derived: criteria 4; plan rows 13; executed 13; killed 13; survived 0; lines ruled 2; not-run 0; entry point 0 of 4 criteria through the shipped CLI, 4 in-process | fp 6c9ba025a2f5 ]]
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/scripts/tests/test_route.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, tools/tests/test_tier_shift_record.py, sdlc-studio/bugs/BG0675-an-author-declared-points-value-sets-a-unit.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/scripts/tests/test_route.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, tools/tests/test_tier_shift_record.py, sdlc-studio/bugs/BG0675-an-author-declared-points-value-sets-a-unit.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-scripts-domain.md
 > **Created:** 2026-09-15
 > **Created-by:** sdlc-studio file
 > **Raised-by:** backlog sweep 2026-09-15; agent; v1

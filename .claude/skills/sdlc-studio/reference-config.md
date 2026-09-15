@@ -448,7 +448,8 @@ routing:
 
 The difficulty score is deterministic (`scripts/route.py estimate`): blast-radius cognitive
 complexity + churn-weighted risk (`complexity.assess`), file scope, unresolved-path novelty,
-AC count and story points. A signal that does not resolve defaults its subscore to 0.5 (never
+and AC count (a declared Points value is not read: it sizes the work, it does not measure its
+difficulty). A signal that does not resolve defaults its subscore to 0.5 (never
 0 - unknown difficulty is never minimal) and lowers confidence; low confidence bumps the
 picked tier up one step. See `reference-sprint.md#model-tier-routing` for the policy.
 

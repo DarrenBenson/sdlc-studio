@@ -5811,16 +5811,18 @@ def unanswered_units(root, state, retro_id=None) -> dict:
     "filed"}], "rulings_from": <retro id or None>}`.
 
     ONE predicate, read by the close's checklist step and by `stop`, so the two can never name
-    different sets. It walks the live batch and every id a recorded drop took out of it.
+    different sets. It walks the live batch and every id a recorded drop took out of it that
+    the live batch no longer holds (a unit dropped and re-added is walked as live, not dropped).
 
-    A unit carrying a standing delivery REJECT is held at every non-abandoned status, whatever
-    else would answer it - evidence, a drop, a park or a ruling - unless `critic.coverage_state`
-    reads it approved or repaired. Otherwise a unit is answered by its status: delivered-terminal
-    or abandoned (a terminal reached by a ruling, derived and never listed), at Review awaiting
-    nothing but a signature (`_awaits_signoff`, called rather than restated), at its run's
-    rung-end status off the build rung, dropped, parked on a pending decision or depending on
-    one, or ruled not-stop-ship, accepted-risk or deferred in the carried table. A stop-ship
-    ruling holds it. `filed` names where its findings went, from every `filed:` closure.
+    A stop-ship ruling holds its unit whatever its status, abandoned included. A unit carrying
+    a standing delivery REJECT is held at every non-abandoned status, whatever else would answer
+    it - evidence, a drop, a park or a ruling - unless `critic.coverage_state` reads it approved
+    or repaired. Otherwise a unit is answered by its status: delivered-terminal or abandoned (a
+    terminal reached by a ruling, derived and never listed), at Review awaiting nothing but a
+    signature (`_awaits_signoff`, called rather than restated), at its run's rung-end status off
+    the build rung, dropped, parked on a pending decision or depending on one (`_parked_units`,
+    the closure `blocked_by_pending` reads), or ruled not-stop-ship, accepted-risk or deferred
+    in the carried table. `filed` names where its findings went, from every `filed:` closure.
     """
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     import retro as retro_mod  # noqa: PLC0415
@@ -5848,21 +5850,28 @@ def unanswered_units(root, state, retro_id=None) -> dict:
         raw = sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]), "Status") or ""
         info[uid] = (hit[1], sdlc_md.canonical_status(raw, sdlc_md.status_vocab(hit[1], root))
                      or raw.strip())
-    pending = [p for p in (state.get("pending_decisions") or []) if isinstance(p, dict)]
-    parked = _pending_blocked(root, pending, [u for u in live if info[u][0] and not
-                                              sdlc_md.is_terminal_status(*info[u])])
+    # The stop's own closure over the stop's own unit set, never a second one: a unit parked
+    # before its artefact exists is parked for both readers, and so are its dependants.
+    _pending, _remaining, parked = _parked_units(root, state)
     out: list[dict] = []
     for uid in walked:
         kind, status = info[uid]
+        rulings = ruled.get(uid, set())
+        # A STOP-SHIP ruling holds its unit WHATEVER its status - Done, awaiting only a
+        # signature, parked, dropped, abandoned or at its rung's end - because the close's own
+        # stop-ship branch refuses on it at every one, and a reader of this predicate alone
+        # (`stop`, and every route that reads it) must refuse the same state.
+        stop_ship = retro_mod.STOP_SHIP in rulings
         terminal = bool(kind) and sdlc_md.is_terminal_status(kind, status)
-        if terminal and not sdlc_md.is_delivered_terminal(kind, status):
+        abandoned = terminal and not sdlc_md.is_delivered_terminal(kind, status)
+        if abandoned and not stop_ship:
             continue                      # abandoned by a ruling: nothing left to answer
         row = critic.verdict_for(root, uid)
-        rejected = (bool(row) and str(row.get("verdict") or "").upper() == critic.REJECT
+        rejected = (not abandoned and bool(row)
+                    and str(row.get("verdict") or "").upper() == critic.REJECT
                     and critic.coverage_state(root, uid) not in (critic.COVERAGE_APPROVED,
                                                                  critic.COVERAGE_REPAIRED))
         why = [WHY_REJECT] if rejected else []
-        rulings = ruled.get(uid, set())
         review_why = ""
         if critic.is_awaiting_signoff(status):
             passed = (bool(critic.evidence_for(root, uid))
@@ -5874,13 +5883,14 @@ def unanswered_units(root, state, retro_id=None) -> dict:
                 review_why = WHY_AT_REVIEW
             else:
                 review_why = None         # nothing but a signature is outstanding
-        answered = (terminal or uid in dropped or uid in parked
-                    or (rung_end is not None and kind
-                        and status == _terminal_in_type_vocab(root, rung, kind, rung_end))
-                    or review_why is None
-                    or (retro_mod.STOP_SHIP not in rulings and bool(rulings & answering)))
+        answered = not stop_ship and (
+            terminal or uid in dropped or uid in parked
+            or (rung_end is not None and kind
+                and status == _terminal_in_type_vocab(root, rung, kind, rung_end))
+            or review_why is None
+            or bool(rulings & answering))
         if not answered:
-            if retro_mod.STOP_SHIP in rulings:
+            if stop_ship:
                 why.append(f"ruled {retro_mod.STOP_SHIP} in {rid}")
             elif review_why:
                 why.append(review_why)
@@ -5918,7 +5928,8 @@ def unanswered_ways_out(held: list[dict], rulings_from: str | None,
                     "'<finding> -> filed: <artefact>'` or a same-brief independent re-review - "
                     "no ruling or drop answers a standing REJECT")
     if WHY_PASS_OWED in whys:
-        ways.append("dispatch the owed adversarial pass (`critic.py brief --unit <id>`)")
+        ways.append("dispatch the owed adversarial pass (`critic.py brief --unit <id> "
+                    "--seat qa`)")
     if WHY_AT_REVIEW in whys:
         ways.append("record what a Review unit still owes, then its Done transition "
                     "(`transition.py set <id> Done`) - one already signed off lacks only that")
@@ -7589,6 +7600,22 @@ def _checklist_blockers(root: Path, retro_id: str, state: dict) -> list[dict]:
                                   f"(`decisions.py waive --subject "
                                   f"{sprint_report.WAIVER_SUBJECT}:{item_id} "
                                   f"--rationale '<why>'`)")})
+    # THE UNFINISHED-UNIT HOLD, asked of the predicate chain step 6 reads and rendered by the
+    # same two helpers, so the pre-flight cannot read ready over a unit the checklist step then
+    # stops on. No waiver reaches it here either. A hold that cannot be computed is a blocker,
+    # as it is at the step: an unanswerable question must not read as a pass.
+    try:
+        ua = unanswered_units(root, state, retro_id)
+    except Exception as exc:  # noqa: BLE001 - a hold that cannot be computed must not pass
+        out.append({"stage": "checklist",
+                    "detail": f"known-issues: the unanswered-unit hold could not be computed: "
+                              f"{type(exc).__name__}: {exc}",
+                    "remedy": "fix the error above, then re-run the pre-flight"})
+    else:
+        if ua["unanswered"]:
+            out.append({"stage": "checklist", "detail": unanswered_line(ua["unanswered"]),
+                        "remedy": unanswered_ways_out(ua["unanswered"], ua["rulings_from"],
+                                                      (state or {}).get("run_id"))})
     return out
 
 
@@ -10352,9 +10379,7 @@ def blocked_by_pending(repo_root: Path | str) -> dict:
     """
     root = Path(repo_root)
     state = run_state.read(root)
-    pending = [p for p in (state.get("pending_decisions") or []) if isinstance(p, dict)]
-    remaining = _remaining_units(root, state)
-    blocked = _pending_blocked(root, pending, remaining)
+    pending, remaining, blocked = _parked_units(root, state)
     # A unit standing at Review, on a project past `review.two_role_after`, is not work this
     # session declined to do - Done needs a reviewer-of-record sign-off the authoring session
     # is explicitly refused. Reporting it as `could have proceeded` pushed the operator to
@@ -10370,12 +10395,23 @@ def blocked_by_pending(repo_root: Path | str) -> dict:
                                 if u not in blocked and u not in set(awaiting))}
 
 
+def _parked_units(root: Path, state: dict) -> tuple[list[dict], list[str], set]:
+    """`(pending decisions, remaining units, parked units)` for one run state.
+
+    ONE computation, read by `blocked_by_pending` and `unanswered_units` alike, so the stop's
+    pending-decision exit and the close's hold cannot disagree about which unit is parked: the
+    same closure over the same unit set. That set is `_remaining_units`, which COUNTS a unit
+    with no artefact on disk - so a unit parked before its file exists is parked here too, and
+    so is every unit declaring an edge onto it.
+    """
+    pending = [p for p in (state.get("pending_decisions") or []) if isinstance(p, dict)]
+    remaining = _remaining_units(root, state)
+    return pending, remaining, _pending_blocked(root, pending, remaining)
+
+
 def _pending_blocked(root: Path, pending: list[dict], units: list[str]) -> set:
     """The units in `units` a pending operator question parks: each deferred unit, and every
-    unit declaring a `Depends on:` edge onto one, transitively.
-
-    ONE closure, read by `blocked_by_pending` and `unanswered_units` alike, so the stop's
-    pending-decision exit and the close's hold cannot disagree about which unit is parked.
+    unit declaring a `Depends on:` edge onto one, transitively. Called through `_parked_units`.
     """
     deferred = {sdlc_md.norm_id(p.get("unit")) for p in pending if p.get("unit")}
     deps: dict[str, set] = {}

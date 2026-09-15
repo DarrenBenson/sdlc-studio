@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 11 |
-| In Progress | 7 |
-| Fixed | 569 |
+| In Progress | 6 |
+| Fixed | 570 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
@@ -22,7 +22,7 @@
 | [BG0659](BG0659-a-code-span-whose-value-ends-in-a.md) | a code span whose value ends in a space cannot be recorded in any review ledger - markdownlint MD038 refuses the row | Fixed | Medium | 2026-09-09 | 2026-09-09 |
 | [BG0661](BG0661-revert-check-never-names-the-units-it-set.md) | revert-check never names the units it set aside, and once one unit is examined their count vanishes from the lane line too | Fixed | Medium | 2026-09-10 | 2026-09-10 |
 | [BG0662](BG0662-nothing-checks-a-changelog-fragment-s-shape-until.md) | nothing checks a changelog fragment's SHAPE until the release cut, and 59 of 119 had drifted past it | Fixed | Medium | 2026-09-10 | 2026-09-10 |
-| [BG0664](BG0664-the-pre-push-boundary-gate-runs-no-boundary.md) | the pre-push boundary gate runs NO boundary-only test, so the marker's own promise is false at the boundary it names | In Progress | Medium | 2026-09-11 | 2026-09-11 |
+| [BG0664](BG0664-the-pre-push-boundary-gate-runs-no-boundary.md) | the pre-push boundary gate runs NO boundary-only test, so the marker's own promise is false at the boundary it names | Fixed | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0665](BG0665-seven-of-thirteen-review-settings-are-absent-from.md) | seven of thirteen `review.*` settings are absent from the file that calls itself the single source of truth, and two of them are named in refusals users hit | Fixed | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0666](BG0666-an-unauthored-test-plan-row-is-exempt-from.md) | an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, so leaving the placeholder buys a clean derive | In Progress | Medium | 2026-09-11 | 2026-09-11 |
 | [BG0667](BG0667-the-root-effect-control-s-real-tree-marker.md) | the root-effect control's real-tree marker is bound to an id range this project has already outgrown, so its evidence window closes as ids advance | Fixed | Medium | 2026-09-11 | 2026-09-11 |

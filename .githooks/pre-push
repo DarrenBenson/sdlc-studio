@@ -146,7 +146,7 @@ fi
 python3 tools/gate_timing.py record --suite "boundary-$boundary" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
 if [ "$rc" -ne 0 ]; then
   echo "pre-push: the $boundary boundary gate refused this push - see the lane named above." >&2
-  echo "  re-run: python3 $skill/gate.py --boundary $boundary" >&2
+  echo "  re-run: SDLC_STUDIO_BOUNDARY_SUITE=1 python3 $skill/gate.py --boundary $boundary" >&2
   echo "  bypass once (emergency only): git push --no-verify" >&2
   exit "$rc"
 fi

@@ -356,7 +356,7 @@ A library, not a command - the writers are `sprint.py` and `handoff.py`.
 
 ### `route.py`
 
-Difficulty-aware model-tier routing, **advisory - no gate reads a tier**, no model API ever called (ids are opaque strings the orchestrator passes to its own spawn mechanism). `estimate --unit` scores 0-100 from blast-radius cognitive/risk (`complexity.assess`), file scope, unresolved-path novelty, ACs and points - an unresolved signal defaults its subscore to 0.5 (never 0) and lowers confidence. `pick --unit --role author|critic` applies band->tier, kind floors, the low-confidence upward bump, and the critic rule (never smaller than the author; code units floor the critic at medium). `escalate --tier` steps to the next declared tier; `tiers` prints the resolved map (upward-only sparse degradation). Config: `reference-config.md#routing`.
+Difficulty-aware model-tier routing, **advisory - no gate reads a tier**, no model API ever called (ids are opaque strings the orchestrator passes to its own spawn mechanism). `estimate --unit` scores 0-100 from blast-radius cognitive/risk (`complexity.assess`), file scope, unresolved-path novelty and ACs (a declared Points value is not read) - an unresolved signal defaults its subscore to 0.5 (never 0) and lowers confidence. `pick --unit --role author|critic` applies band->tier, kind floors, the low-confidence upward bump, and the critic rule (never smaller than the author; code units floor the critic at medium). `escalate --tier` steps to the next declared tier; `tiers` prints the resolved map (upward-only sparse degradation). Config: `reference-config.md#routing`.
 
 ### `config.py`
 

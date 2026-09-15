@@ -679,6 +679,9 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
                     self.assertIn(MARKED_SENTINEL, fail_line,
                                   f"the module-alone refusal does not carry the marked test's own failure, "
                                   f"so it did not execute at {boundary}:\n{r.stderr}")
+                    # the re-run the refusal prints must reach the same test, or it reads green
+                    self.assertIn(f"re-run: SDLC_STUDIO_BOUNDARY_SUITE=1 python3", r.stderr,
+                                  f"the {boundary} refusal's re-run line would skip the marked test")
             self.assertEqual(["--boundary push", "--boundary release"], fx.gate_calls(),
                              "the shim did not record one push and one release invocation from the hook")
             self.assertEqual(0, fx.remote_count(), "the remote advanced despite the refusal")

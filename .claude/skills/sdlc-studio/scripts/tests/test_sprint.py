@@ -5957,8 +5957,8 @@ def _ua_drop(mod, root: Path, uid: str) -> None:
     assert rc == 0, err
 
 
-def _ua_close(mod, root: Path, *extra: str) -> tuple:
-    """`sprint.py close --retro RETRO0001` through `main`, every chain step patched to pass
+def _ua_close(mod, root: Path, *extra: str, retro: str = "RETRO0001") -> tuple:
+    """`sprint.py close --retro <retro>` through `main`, every chain step patched to pass
     EXCEPT `checklist`, so the real `_close_checklist` runs where `_patch_close_steps` would
     patch it out."""
     with contextlib.ExitStack() as stack:
@@ -5967,7 +5967,7 @@ def _ua_close(mod, root: Path, *extra: str) -> tuple:
                 stack.enter_context(unittest.mock.patch.object(
                     mod, "_close_" + name.replace("-", "_"),
                     lambda *_a, **_k: (True, "ok", "")))
-        return _ua_cli(mod, root, "close", "--retro", "RETRO0001", *extra)
+        return _ua_cli(mod, root, "close", "--retro", retro, *extra)
 
 
 def _ua_known_issues_lines(detail: str) -> list[str]:
@@ -6389,6 +6389,196 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                     self.assertEqual(0, rc, err)
                     self.assertEqual([], mod.unanswered_units(
                         root, mod.run_state.read(root))["unanswered"])
+
+    # ---- the delivery-review repair: each test names the build the review rejected ----
+
+    def test_a_parked_unit_with_no_artefact_on_disk_is_answered_with_its_dependants(
+            self) -> None:
+        """MUTANT: hand `_pending_blocked` only the batch units with an artefact on disk (the
+        rejected build) - a unit parked by `sprint.py decision defer` before its file exists,
+        and every unit declaring an edge onto it, is then held, and `stop` exits 1 where it
+        exited 0 with cause pending-decision. The unparked control kills the other shape: a unit
+        with no artefact answered by a bare `continue`."""
+        mod = _load()
+        for tree in ("parked", "control"):
+            with self.subTest(tree=tree), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _ua_unit(root, "US0102", "Ready", depends="US0101")
+                _ua_unit(root, "US0103", "Ready", depends="US0102")
+                _close_state(root, batch=["US0101", "US0102", "US0103"], run_id=_UA_RUN)
+                _ua_retro(root, batch=("US0101", "US0102", "US0103"))
+                self.assertIsNone(mod.sdlc_md.find_by_id(root, "US0101"))
+                if tree == "parked":
+                    _ua_defer(mod, root, "US0101")
+                got = mod.unanswered_units(root, mod.run_state.read(root))
+                blocked = mod.blocked_by_pending(root)["blocked"]
+                rc, _out, err = _ua_cli(mod, root, "stop", "--reason", "waiting on the operator")
+                state = mod.run_state.read(root)
+                if tree == "parked":
+                    self.assertEqual([], got["unanswered"], got)
+                    self.assertEqual(["US0101", "US0102", "US0103"], blocked,
+                                     "the stop's closure and the predicate's must be one")
+                    self.assertEqual(0, rc, err)
+                    self.assertEqual("pending-decision", state["stop"]["cause"])
+                    continue
+                self.assertEqual({"US0101": "no artefact on disk", "US0102": "Ready",
+                                  "US0103": "Ready"},
+                                 {h["unit"]: h["status"] for h in got["unanswered"]}, got)
+                self.assertEqual(1, rc, err)
+                self.assertIn("US0101 (no artefact on disk)", _ua_stop_refused_line(err))
+
+    def test_a_unit_dropped_then_re_added_is_walked_from_the_live_batch(self) -> None:
+        """MUTANT: delete `and u not in live` from the dropped-ids clause - a unit dropped and
+        then re-added with `sprint.py batch add` still reads as dropped, so an In Progress unit
+        back in the batch is released by the close and by `stop`. The plain drop is the
+        control, and it answers the unit."""
+        mod = _load()
+        for tree in ("re-added", "dropped"):
+            with self.subTest(tree=tree), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _ua_unit(root, "US0101", "In Progress")
+                _close_state(root, batch=["US0101"], run_id=_UA_RUN)
+                _ua_retro(root, batch=("US0101",))
+                _ua_waive_all(root)
+                _ua_drop(mod, root, "US0101")
+                if tree == "re-added":
+                    rc, _out, err = _ua_cli(mod, root, "batch", "add", "US0101",
+                                            "--reason", "back in this run")
+                    self.assertEqual(0, rc, err)
+                state = mod.run_state.read(root)
+                self.assertEqual(["drop", "add"] if tree == "re-added" else ["drop"],
+                                 [c["action"] for c in state["batch_changes"]])
+                got = mod.unanswered_units(root, state)
+                ok, detail, _remedy = mod._close_checklist(root, "RETRO0001", state)
+                rc, _out, err = _ua_cli(mod, root, "stop", "--reason", "x")
+                if tree == "dropped":
+                    self.assertEqual([], got["unanswered"], got)
+                    self.assertTrue(ok, detail)
+                    self.assertEqual(0, rc, err)
+                    continue
+                self.assertEqual(["US0101"], state["batch"])
+                self.assertEqual([("US0101", "In Progress")],
+                                 [(h["unit"], h["status"]) for h in got["unanswered"]], got)
+                self.assertFalse(ok, detail)
+                self.assertTrue([ln for ln in _ua_known_issues_lines(detail)
+                                 if "US0101 (In Progress)" in ln], detail)
+                self.assertEqual(1, rc, err)
+                self.assertIn("US0101 (In Progress)", _ua_stop_refused_line(err))
+
+    def test_the_close_reads_the_retro_it_names_though_that_retro_carries_no_run_id(
+            self) -> None:
+        """MUTANT: `_close_checklist` calls `unanswered_units` without the close's `--retro`;
+        `_carried_rulings` ignores `retro_id`. Either way the rulings come from the latest
+        retro carrying the run id - RETRO0001, which rules nothing - and the unit the named
+        RETRO0002 rules `deferred` is held. RETRO0002 carries no run id (the retro template has
+        no Run field), so the named path and the fallback cannot agree by construction."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_config(root, 100)
+            _ua_unit(root, "US0101", "In Progress")
+            state = _close_state(root, batch=["US0101"], run_id=_UA_RUN)
+            _ua_retro(root, "RETRO0001", batch=("US0101",))
+            _ua_retro(root, "RETRO0002", carries=None, rulings=(("US0101", "deferred"),),
+                      batch=("US0101",))
+            _ua_waive_all(root)
+            self.assertNotIn(_UA_RUN, (root / "sdlc-studio" / "retros"
+                                       / "RETRO0002-widget-sprint.md").read_text(encoding="utf-8"))
+            named = mod.unanswered_units(root, state, "RETRO0002")
+            fallback = mod.unanswered_units(root, state)
+            # The control first: it refuses, so the run stays open for the named close.
+            rc_control, _out, err_control = _ua_close(mod, root, retro="RETRO0001")
+            rc, out, err = _ua_close(mod, root, retro="RETRO0002")
+        self.assertEqual({"unanswered": [], "rulings_from": "RETRO0002"}, named)
+        self.assertEqual("RETRO0001", fallback["rulings_from"])
+        self.assertEqual(["US0101"], [h["unit"] for h in fallback["unanswered"]], fallback)
+        self.assertEqual(1, rc_control, err_control)
+        self.assertTrue([ln for ln in _ua_known_issues_lines(err_control)
+                         if "US0101 (In Progress)" in ln], err_control)
+        self.assertIn("checklist: ok", out, f"the close over its named retro refused:\n{err}")
+        self.assertEqual(0, rc, err)
+
+    def test_a_stop_ship_ruling_holds_its_unit_whatever_its_status(self) -> None:
+        """MUTANT: read a stop-ship ruling only inside the ruling route of the answered test
+        (the rejected build) - a Done unit, a Review unit awaiting only its signature, or a
+        parked, dropped, abandoned or rung-end unit ruled stop-ship then reads as answered, and
+        `stop` exits 0 on a state the close refuses through its own stop-ship branch. The
+        control rules each `not-stop-ship` and leaves it answered, so the ruling and not the
+        shape is what holds."""
+        mod = _load()
+        shapes = {"Done": "Done", "awaiting-signature": "Review", "parked": "Ready",
+                  "dropped": "In Progress", "abandoned": "Won't Implement", "rung-end": "Ready"}
+        for shape, status in shapes.items():
+            for ruling in ("stop-ship", "not-stop-ship"):
+                with self.subTest(shape=shape, ruling=ruling), \
+                        tempfile.TemporaryDirectory() as d:
+                    root = Path(d)
+                    _ua_config(root, 100)
+                    _ua_unit(root, "US0101", status)
+                    _close_state(root, batch=["US0101"], run_id=_UA_RUN,
+                                 goal="design" if shape == "rung-end" else "done")
+                    _ua_retro(root, rulings=(("US0101", ruling),), batch=("US0101",))
+                    if shape == "awaiting-signature":
+                        _ua_evidence(root, "US0101")
+                    elif shape == "parked":
+                        _ua_defer(mod, root, "US0101")
+                    elif shape == "dropped":
+                        _ua_drop(mod, root, "US0101")
+                    got = mod.unanswered_units(root, mod.run_state.read(root))
+                    rc, _out, err = _ua_cli(mod, root, "stop", "--reason", "x")
+                    if ruling == "not-stop-ship":
+                        self.assertEqual([], got["unanswered"], got)
+                        self.assertEqual(0, rc, err)
+                        continue
+                    self.assertEqual(["US0101"], [h["unit"] for h in got["unanswered"]], got)
+                    self.assertIn("stop-ship", got["unanswered"][0]["why"])
+                    self.assertEqual(1, rc, err)
+                    self.assertRegex(_ua_stop_refused_line(err),
+                                     r"US0101 \([^)]*\) - [^;]*stop-ship")
+
+    def test_the_preflight_names_the_hold_the_checklist_step_refuses_on(self) -> None:
+        """MUTANT: `_checklist_blockers` never asks `unanswered_units` - `sprint.py preflight`
+        then says nothing of an In Progress unit the chain's checklist step stops on, every
+        other checklist row being waived. The control stands the unit at Done."""
+        mod = _load()
+        import gate
+        for status in ("In Progress", "Done"):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _ua_config(root, 100)
+                _ua_unit(root, "US0101", status)
+                state = _close_state(root, batch=["US0101"], run_id=_UA_RUN)
+                _ua_retro(root, batch=("US0101",))
+                _ua_waive_all(root)
+                _ok, detail, _remedy = mod._close_checklist(root, "RETRO0001", state)
+                with unittest.mock.patch.object(gate, "run_gate",
+                                                lambda *_a, **_k: {"ok": True, "checks": []}):
+                    rc, out, err = _ua_cli(mod, root, "preflight", "--retro", "RETRO0001",
+                                           "--format", "json")
+                blockers = json.loads(out)["blockers"]
+                hold = [b for b in blockers if b["stage"] == "checklist"
+                        and b["detail"].startswith("known-issues:")]
+                if status == "Done":
+                    self.assertEqual([], hold, blockers)
+                    continue
+                self.assertEqual(1, rc, err)
+                self.assertEqual(_ua_known_issues_lines(detail), [b["detail"] for b in hold])
+                self.assertIn("US0101 (In Progress)", hold[0]["detail"])
+                self.assertTrue(hold[0].get("blocking", True), hold[0])
+                self.assertIn("ways out:", hold[0]["remedy"])
+
+    def test_the_owed_pass_remedy_is_a_brief_command_that_parses(self) -> None:
+        """MUTANT: the remedy prints `critic.py brief --unit <id>` with no `--seat`, which
+        `critic.py brief` refuses as printed."""
+        mod = _load()
+        import critic
+        import re
+        import shlex
+        way = mod.unanswered_ways_out([{"unit": "US0115", "status": "Review",
+                                        "why": mod.WHY_PASS_OWED, "filed": []}], "RETRO0001")
+        cmd = re.search(r"`critic\.py (brief [^`]*)`", way).group(1).replace("<id>", "US0115")
+        args = critic.build_parser().parse_args(shlex.split(cmd))
+        self.assertEqual(("US0115", "qa"), (args.unit, args.seat))
 
 
 class StopRecordTests(unittest.TestCase):
