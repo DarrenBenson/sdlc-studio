@@ -1,6 +1,6 @@
 # BG0675: an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional [[derived: criteria 4; plan rows 13; executed 13; killed 13; survived 0; lines ruled 2; not-run 0; entry point 0 of 4 criteria through the shipped CLI, 4 in-process | fp 6c9ba025a2f5 ]]
 > **Severity:** Medium
 > **Points:** 3

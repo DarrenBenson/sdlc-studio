@@ -128,10 +128,16 @@ jobs:
     runs-on: ubuntu-latest
     # The release verify lane alone runs ~28 minutes; the default 360-minute job cap is generous
     # but the step needs its own ceiling, because a lane killed by a timeout exits 124 and reads
-    # exactly like a failure if nobody checks the code.
-    timeout-minutes: 75
+    # exactly like a failure if nobody checks the code. The red pass measured 55 minutes here at
+    # the 120 s per-verifier ceiling, and the longer ceiling below can only lengthen it.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          # Full history: criteria that replay a pinned commit skip in a depth-1 clone, and the
+          # lane reads a skip as red. Measured in a depth-1 clone: the claim-drift replays and
+          # the pinned upgrade baseline skipped, naming the missing commit; a full clone ran them.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
@@ -139,7 +145,10 @@ jobs:
           python-version: '3.12'
 
       - name: Install Python deps
-        run: python -m pip install --quiet pyyaml pytest
+        # `coverage` for the same reason the ci job installs it: criteria that measure a unit's
+        # added lines run `verify_ac run --coverage`, and without the package every one of them
+        # reads red here while passing on any machine that has it.
+        run: python -m pip install --quiet pyyaml pytest 'coverage>=7.10'
 
       # markdownlint is NOT optional here, though nothing in this lane lints markdown. Two test
       # modules refuse to collect without it, and a module that cannot be collected makes every
@@ -157,6 +166,12 @@ jobs:
         run: npm ci
 
       - name: Corpus verification (dead stamps + red criteria, against the baseline)
+        # The per-verifier ceiling, above the slowest criteria: GateRealWrapperTests and the
+        # precommit-selection run tests take 97 to 136 s on a developer machine. At gate.py's
+        # 120 s default a slower runner times them out, and the baseline cannot tell a timeout
+        # from a regression.
+        env:
+          SDLC_VERIFY_TIMEOUT: 300
         run: bash tools/verify-corpus.sh full
 
   windows-smoke:

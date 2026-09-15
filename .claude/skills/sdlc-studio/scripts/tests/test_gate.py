@@ -7773,5 +7773,61 @@ class LaneCheckAnchorTests(unittest.TestCase):
             "own block")
 
 
+class VerifyTimeoutOverrideTests(unittest.TestCase):
+    """The release verify lane takes its per-verifier ceiling from `SDLC_VERIFY_TIMEOUT` when it
+    RUNS. A runner slower than the machine the default was measured on read three criteria as
+    red for want of time, and the lane cannot tell a timeout from a regression."""
+
+    STORY = ("# US9300: s\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+             "### AC1: it behaves\n\n- **Then** it behaves\n"
+             "- **Verify:** shell sleep 3 && test -d sdlc-studio\n")
+
+    def test_the_release_lane_hands_the_override_to_a_verifier(self) -> None:
+        """MUTANTS: read the override into a local in `main()` that the release registry's
+        lambda never passes, so the lane keeps the 120 s default; read it from
+        `SDLC_VERIFY_TIMEOUT_S`; hand it to the pytest and jest batch caches only, leaving each
+        per-criterion `verify_story` call on the default. Each leaves the 1 s run green.
+
+        Through the shipped entry point, because the wiring is the defect: a library call with
+        `timeout=1` passes while the registered lane never sees the variable. The bound release
+        lanes ride along in `--only` (the selection guard refuses to drop them) and fail on a
+        bare fixture, so the verdict is read from the verify lane's own line, never the exit.
+        """
+        import subprocess  # noqa: PLC0415 - the point is to leave this process
+        base = dict(os.environ)
+        base.pop("SDLC_VERIFY_TIMEOUT", None)
+        base.pop("PYTEST_CURRENT_TEST", None)
+        base["PYTHONDONTWRITEBYTECODE"] = "1"
+        cases = {"1": dict(base, SDLC_VERIFY_TIMEOUT="1"),
+                 "10": dict(base, SDLC_VERIFY_TIMEOUT="10"),
+                 "unset": base}
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / "stories" / "US9300-x.md").write_text(
+                self.STORY, encoding="utf-8")
+            argv = [sys.executable, "-B", str(SCRIPT), "--root", str(root), "--release",
+                    "--only", "verify,review-legs,versions,changelog-fragments"]
+            # Concurrently: the three runs share nothing but the read-only fixture, and the
+            # sleep is the cost, so paying it once keeps this off the gate's critical path.
+            procs = {k: subprocess.Popen(argv, env=env, stdout=subprocess.PIPE,
+                                         stderr=subprocess.STDOUT, text=True)
+                     for k, env in cases.items()}
+            pages = {k: p.communicate(timeout=120)[0] for k, p in procs.items()}
+        lanes = {k: [ln.strip() for ln in page.splitlines() if "] verify [" in ln]
+                 for k, page in pages.items()}
+        for k, found in lanes.items():
+            self.assertEqual(len(found), 1, f"SDLC_VERIFY_TIMEOUT={k}: expected one verify lane "
+                                            f"line:\n{pages[k]}")
+        self.assertTrue(lanes["1"][0].startswith("[FAIL] verify"),
+                        f"a 1 s ceiling did not reach the 3 s verifier:\n{pages['1']}")
+        self.assertIn("US9300::AC1", lanes["1"][0], pages["1"])
+        self.assertIn("[ids: US9300::AC1]", lanes["1"][0], pages["1"])
+        self.assertTrue(lanes["10"][0].startswith("[PASS] verify"),
+                        f"a 10 s ceiling failed a 3 s verifier:\n{pages['10']}")
+        self.assertTrue(lanes["unset"][0].startswith("[PASS] verify"),
+                        f"the 120 s default failed a 3 s verifier:\n{pages['unset']}")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -2031,7 +2031,22 @@ LESSONS_CLOSE_CHECKS = {
 
 
 VERIFY_TIMEOUT = 120  # per-verifier seconds; matches the verify_ac default
+#: The operator's per-verifier ceiling for the executing verify lane, in whole seconds. A slower
+#: machine reads a criterion that outlives the default as red, and the lane cannot tell a
+#: timeout from a regression, so a runner that needs longer says so here rather than banking
+#: the difference into a baseline.
+VERIFY_TIMEOUT_ENV = "SDLC_VERIFY_TIMEOUT"
 _MAX_NAMED = 10       # failing ACs listed by name before the detail is elided
+
+
+def _verify_timeout() -> int:
+    """The per-verifier ceiling in force for THIS run: the override when it is a positive
+    integer, else the default. Read when the lane runs, never when it is registered."""
+    try:
+        seconds = int(os.environ.get(VERIFY_TIMEOUT_ENV) or VERIFY_TIMEOUT)
+    except ValueError:
+        return VERIFY_TIMEOUT
+    return seconds if seconds > 0 else VERIFY_TIMEOUT
 
 
 def _elide(names: list[str]) -> str:
@@ -2066,7 +2081,7 @@ def _identities(ids: list[str]) -> str:
 VERIFY_LANE_BUDGET_S = 600
 
 
-def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool = False,
+def _verify_acs(root: str, timeout: int | None = None, allow_external: bool = False,
                 batch: bool = False) -> dict:
     """Blocking release-gate lane: EXECUTE every story's `Verify:` expression now, and fail
     on any AC that is red OR unproven, naming each one.
@@ -2116,6 +2131,10 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
                   f"lane does not walk, so this pass says nothing about them."
                   if skipped else "")
     started = time.time()
+    # One ceiling for every verifier this run executes - the batch runs and each per-criterion
+    # fallback alike - so a criterion cannot pass in the batch and time out on its own spawn.
+    if timeout is None:
+        timeout = _verify_timeout()
     jest_cache = verify_ac.jest_batch_cache(rr, timeout) if batch else None
     # Without batching this lane pays a cold pytest start PER CRITERION. 694 of this
     # workspace's 1,223 Verify lines are pytest and a bare start costs ~1.26s, so the spawns

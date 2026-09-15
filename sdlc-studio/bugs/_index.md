@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 11 |
-| In Progress | 6 |
-| Fixed | 570 |
+| In Progress | 5 |
+| Fixed | 571 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
@@ -33,7 +33,7 @@
 | [BG0672](BG0672-critic-record-accepts-a-brief-fingerprint-no-brief.md) | critic record accepts a --brief fingerprint no brief produced, recording the row as briefed with only a stderr note | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0673](BG0673-the-repair-plan-gate-ep0106-is-wired-into.md) | the repair-plan gate (EP0106) is wired into nothing: no command records a plan or verdict, and turning review.repair_plan_gate on refuses nothing a delivery command runs | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0674](BG0674-sprint-next-materialises-a-charter-s-discovery-items.md) | sprint next materialises a charter's discovery items (CRs) that sprint plan then refuses, so the charter at the head of the queue produces a batch nothing can plan | Fixed | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0675](BG0675-an-author-declared-points-value-sets-a-unit.md) | an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth | In Progress | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0675](BG0675-an-author-declared-points-value-sets-a-unit.md) | an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0676](BG0676-the-scheduled-corpus-verify-lane-is-red-on.md) | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 20 new ones passes locally | In Progress | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0677](BG0677-critic-py-repair-cannot-close-a-finding-whose.md) | critic.py repair cannot close a finding whose text carries the closure separator early, so the rejection raising it can never be retired | In Progress | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0678](BG0678-a-wired-repair-plan-gate-keeps-no-rounds.md) | A wired repair-plan gate keeps no rounds, no brief and no approval pin, so a rejected plan can never be retired and a re-recorded plan keeps its approval | In Progress | Medium | 2026-09-15 | 2026-09-15 |
