@@ -116,6 +116,10 @@ _COLS_BY_PHASE = {"delivery": _DELIVERY_COLS, "plan-review": _PLAN_COLS}
 #: What `brief_fingerprint` produces: sha256 truncated to 12 lowercase hex characters.
 _FINGERPRINT_LEN = 12
 _FINGERPRINT_RE = re.compile(r"[0-9a-f]{%d}" % _FINGERPRINT_LEN)
+#: Written beside a fingerprint in the Brief cell when `record` finds no brief this repo can
+#: currently produce for that unit and phase - invented or stale, the two are not separable.
+#: An unmarked cell holds the fingerprint alone.
+UNMATCHED_MARK = "unmatched"
 
 
 _REJOINDER_MARK = "\n\n--- RE-REVIEW (rejoinder) ---"
@@ -133,9 +137,13 @@ def rejoinder_fingerprint(text: str, phase: str = "delivery") -> str:
 
 
 def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str,
-                               phase: str = "delivery"):
+                               phase: str = "delivery", tier: str | None = None):
     """Seats whose CURRENT brief for `unit` - first-round or rejoinder - fingerprints to
     `fingerprint`.
+
+    `tier` is the one the verdict is being recorded at, tried beside the default and the
+    derived one: a seat briefed at an explicit `--tier light` on a unit deriving full was
+    handed a light brief, and a matcher that never rendered one could not recognise it.
 
     Returns None when the question cannot be asked at all - no unit, no seat cards, an
     unreadable tree. None means UNKNOWN and must not be read as "no match", because reporting
@@ -149,7 +157,8 @@ def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str,
     if not seats:
         return None
     matched, asked = [], False
-    # the tiers a delivery brief could have been rendered at: the default and the derived one
+    # the tiers a delivery brief could have been rendered at: the default, the derived one,
+    # and the one the verdict names
     tiers = ["full"]
     try:
         derived = tier_for(repo_root, unit)
@@ -157,6 +166,8 @@ def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str,
             tiers.append(derived)
     except Exception:  # noqa: BLE001 - an underivable tier narrows the search, never ends it
         pass
+    if tier and tier not in tiers:
+        tiers.append(tier)
     for seat in seats:
         for tier in tiers:
             try:
@@ -728,11 +739,16 @@ def _brief_key(row: dict) -> str:
 
     The ledger writes `-` for an absent brief (`_clean(brief) or '-'` at the write site), so the
     empty string this check was originally written against is a state `record` has never
-    produced and `if not fp` never fired. `.strip(" -")` is the normalisation the panel
-    ratification check already applies to the same cell (`critic.py`:1552), so the two
-    readings of an absent brief cannot drift apart.
+    produced and `if not fp` never fired.
+
+    A cell `record` MARKED unmatched is not provenance either: its fingerprint matches no brief
+    this repo can currently produce, whether the value was invented or went stale. Reading it as
+    briefed would let an invented value retire a rejection it shares, and let a panel ratify a
+    review nothing shows was briefed. This is the one reading of the cell - the panel interlock
+    calls it too - so the two cannot drift apart.
     """
-    return str(row.get("brief") or "").strip(" -")
+    cell = str(row.get("brief") or "").strip(" -")
+    return "" if UNMATCHED_MARK in cell.split() else cell
 
 
 # --- Supersession (a verdict row retired by addition) ----------------------------------
@@ -1894,11 +1910,12 @@ def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str
         # signing exactly the units most worth their attention, which is the opposite of
         # human-in-the-lead.
         verdict = verdict_for(repo_root, unit)
-        if not (verdict or {}).get("brief", "").strip(" -"):
+        if not _brief_key(verdict or {}):
             raise ValueError(
                 f"the adversarial verdict on {sdlc_md.norm_id(unit)} carries no brief "
-                f"provenance, so a panel cannot ratify it - nothing distinguishes that review "
-                f"from one run off a hand-written prompt.\n"
+                f"provenance (no fingerprint, or one `record` marked {UNMATCHED_MARK}), so a "
+                f"panel cannot ratify it - nothing distinguishes that review from one run off "
+                f"a hand-written prompt.\n"
                 f"  Re-run it briefed:  critic.py brief --unit {sdlc_md.norm_id(unit)} "
                 f"--seat <seat>\n"
                 f"  This is a TOOLING failure, not a judgement call: fix the provenance and "
@@ -4231,20 +4248,26 @@ def cmd_record(args: argparse.Namespace) -> int:
               "reviewer's returned block", file=sys.stderr)
         return 2
 
+    phase = (getattr(args, "phase", None) or "delivery").strip().lower()
     brief = (getattr(args, "brief", "") or "").strip()
     if not brief and getattr(args, "brief_file", None):
         try:
-            brief = brief_fingerprint(Path(args.brief_file).read_text(encoding="utf-8"))
+            saved = Path(args.brief_file).read_text(encoding="utf-8")
         except OSError as exc:
             print(f"record refused: {exc}", file=sys.stderr)
             return 2
+        # Hashed the way the footer that printed it was. A saved REJOINDER's footer carries its
+        # base brief plus the phase, never the prior verdict quoted beneath, so hashing the
+        # whole file recorded a value no footer printed. A first-round brief is hashed whole,
+        # as its footer is.
+        brief = (rejoinder_fingerprint(saved, phase) if _REJOINDER_MARK in saved
+                 else brief_fingerprint(saved))
     # The origin axis asks what THIS UNIT'S DIFF did - regression, new, or already true of the
     # tree. A PLAN review happens before any diff exists, so there is nothing to classify
     # against and the question is unanswerable rather than merely unanswered. Demanding a tag
     # there trains the reviewer to pick one at random to get past the refusal, which is worse
     # than no axis at all: an invented `[new]` on a plan finding is a false statement about a
     # diff nobody has written. Applied to delivery reviews only, where the base ref exists.
-    phase = (getattr(args, "phase", None) or "delivery").strip().lower()
     if phase != "plan-review" and (unclassified := unclassified_findings(args.issues)):
         listed = "; ".join(f"  - {f[:90]}" for f in unclassified)
         print("record refused: these findings carry no origin, and an unsorted finding is the "
@@ -4292,15 +4315,24 @@ def cmd_record(args: argparse.Namespace) -> int:
         # separable here, so it is surfaced rather than judged: refusing would reject the
         # ordinary case, and silence would let an invented value pass unremarked. Per unit,
         # because `--unit` is repeatable and a batch can span several.
+        #
+        # And MARKED on the row, not only noted on stderr. The note is gone once the command
+        # returns, and a row carrying an invented fingerprint was otherwise indistinguishable
+        # from a briefed one to every reader that counts provenance. Unknown (None, no seat
+        # cards to ask) is not unmatched, so it is never marked.
+        recorded = brief
         if brief:
-            seats = _seats_whose_brief_matches(args.root, unit, brief, args.phase)
+            seats = _seats_whose_brief_matches(args.root, unit, brief, args.phase,
+                                               tier=getattr(args, "tier", None))
             if seats is not None and not seats:
                 print(f"NOTE: {brief} matches no brief this repo can currently produce for "
                       f"{sdlc_md.norm_id(unit)}. Either the unit changed after the seat was "
-                      f"briefed, or the value did not come from `critic.py brief`.",
-                      file=sys.stderr)
+                      f"briefed, or the value did not come from `critic.py brief`. The row is "
+                      f"marked {UNMATCHED_MARK} and no reader counts it as briefed; re-brief "
+                      f"the seat to clear it.", file=sys.stderr)
+                recorded = f"{brief} {UNMATCHED_MARK}"
         path = record_verdict(args.root, unit, args.verdict, args.reviewer,
-                              args.author, args.issues, args.phase, brief,
+                              args.author, args.issues, args.phase, recorded,
                               kind=getattr(args, "kind", None),
                               tier=getattr(args, "tier", None),
                               tier_explicit=getattr(args, "tier_explicit", False))
