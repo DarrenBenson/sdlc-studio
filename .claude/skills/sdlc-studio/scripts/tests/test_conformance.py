@@ -1794,5 +1794,213 @@ class UnevaluableTests(unittest.TestCase):
             self.assertEqual([], b, "a partial tree still scored a verification failure")
 
 
+class RetiredUnbuiltTests(unittest.TestCase):
+    """BG0669: a story retired unbuilt (Superseded, Won't Implement) owes `decomposed` alone.
+
+    The AC-stage exemption covered only the pre-groomed statuses, so retiring a refine skeleton
+    moved it OUT of the exemption and the gate demanded criteria of work nobody will do - the
+    commit carrying the retirement was refused, and three skeletons closed only under waivers.
+    """
+
+    REPO = Path(__file__).resolve().parents[5]
+    LIVE_IDS = ("US0719", "US0797", "US0798")
+    WITHDRAWN = ("D0187", "D0188", "D0189", "D0190", "D0191", "D0192")
+
+    @staticmethod
+    def _retired(root: Path, num: int, status: str, *, epic: bool = True,
+                 criteria: str = "marker") -> None:
+        """A story at `status`: `marker` carries the refine ungroomed marker as its criteria,
+        `none` has no `## Acceptance Criteria` section at all."""
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        lines = [f"# US{num:04d}: sample", "", f"> **Status:** {status}"]
+        if epic:
+            lines.append("> **Epic:** [EP0001: x](../epics/EP0001-x.md)")
+        lines.append("")
+        if criteria == "marker":
+            lines += ["## Acceptance Criteria", "", _load().sdlc_md.UNGROOMED_AC_MARKER]
+        else:
+            lines += ["## Summary", "", "Retired before anyone groomed it."]
+        (d / f"US{num:04d}-sample.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    @staticmethod
+    def _unit(mod, root: Path, rid: str) -> dict:
+        return {u["id"]: u for u in mod.detect_conformance(root)["units"]}[rid]
+
+    def _assert_retired_clean(self, u: dict, status: str) -> None:
+        self.assertEqual(status, u["status"])
+        # Judged, not waved through by an adoption cutoff or a scope.
+        self.assertFalse(u["exempt"], "the fixture was exempted by a cutoff, so nothing was judged")
+        self.assertFalse(u["scoped_out"])
+        # The fixture genuinely lacks both criteria stages, so conformance can only come from
+        # the exemption and not from the story having been specified after all.
+        self.assertFalse(u["stages"]["specified"])
+        self.assertFalse(u["stages"]["verifiable"])
+        self.assertTrue(u["conformant"], u["missing"])
+        for stage in ("specified", "verifiable"):
+            self.assertNotIn(stage, u["missing"])
+            self.assertNotIn(stage, [w["stage"] for w in u["waived"]])
+        self.assertEqual([], u["waived"])
+
+    def test_a_superseded_skeleton_is_conformant(self) -> None:
+        """AC1. Mutant: the exemption adds only Won't Implement, so a Superseded skeleton is
+        still charged `specified` and `verifiable`."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._retired(root, 1, "Superseded")
+            u = self._unit(mod, root, "US0001")
+            self.assertTrue(u["ungroomed"], "the fixture is not the refine marker shape")
+            self._assert_retired_clean(u, "Superseded")
+            # Through the shipped entry point too: the lane passes the retirement.
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mod.main(["check", "--root", str(root)])
+            self.assertEqual(0, rc, buf.getvalue())
+
+    def test_a_wont_implement_skeleton_is_conformant(self) -> None:
+        """AC2. Mutant: the pre-groomed tuple is extended with Superseded alone, so a Won't
+        Implement skeleton is still charged the criteria stages."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._retired(root, 1, "Won't Implement")
+            u = self._unit(mod, root, "US0001")
+            self.assertTrue(u["ungroomed"], "the fixture is not the refine marker shape")
+            self._assert_retired_clean(u, "Won't Implement")
+
+    def test_a_done_story_without_criteria_is_still_refused(self) -> None:
+        """AC3, the paired control. Mutant: the exemption reads the unfiltered story terminal
+        set, so Done is exempted from the criteria stages too. Asserted on `specified` and
+        `verifiable` by name: `verified` and `critiqued` would make a Done story non-conformant
+        on their own, so non-conformance alone would pass that mutant."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done", ac=False, verify=False)   # no criteria section
+            self._retired(root, 2, "Done")                            # the marker, at Done
+            for rid in ("US0001", "US0002"):
+                u = self._unit(mod, root, rid)
+                self.assertEqual("Done", u["status"])
+                self.assertFalse(u["exempt"])
+                self.assertFalse(u["conformant"], rid)
+                self.assertIn("specified", u["missing"], rid)
+                self.assertIn("verifiable", u["missing"], rid)
+
+    def test_the_exempt_set_is_derived_from_the_vocabulary(self) -> None:
+        """AC4. Mutants: a hard-coded status tuple; a set computed once at import; an exemption
+        built from `is_decision_terminal` alone. The patches land AFTER the module is loaded, so
+        an import-time constant cannot see them."""
+        from unittest import mock
+        mod = _load()
+        sm = mod.sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._retired(root, 1, "Superseded")
+            self._retired(root, 2, "Cancelled")
+            # Unpatched: Superseded is exempt, and Cancelled is no status at all.
+            self.assertTrue(self._unit(mod, root, "US0001")["conformant"])
+            self.assertEqual("Unknown", self._unit(mod, root, "US0002")["status"])
+
+            dropped = sm.TERMINAL_STATUS["story"] - {"Superseded"}
+            with mock.patch.dict(sm.TERMINAL_STATUS, {"story": dropped}):
+                u = self._unit(mod, root, "US0001")
+                self.assertEqual("Superseded", u["status"])
+                self.assertFalse(u["conformant"])
+                self.assertIn("specified", u["missing"])
+                self.assertIn("verifiable", u["missing"])
+
+            vocab = sm.STATUS_VOCAB["story"] + ["Cancelled"]
+            terminal = sm.TERMINAL_STATUS["story"] | {"Cancelled"}
+            with mock.patch.dict(sm.STATUS_VOCAB, {"story": vocab}), \
+                    mock.patch.dict(sm.TERMINAL_STATUS, {"story": terminal}):
+                u = self._unit(mod, root, "US0002")
+                self.assertEqual("Cancelled", u["status"])
+                self.assertTrue(u["conformant"], u["missing"])
+                self.assertNotIn("specified", u["missing"])
+                self.assertNotIn("verifiable", u["missing"])
+                self.assertEqual([], u["waived"])
+
+            # Restored: the patches did not leak.
+            self.assertTrue(self._unit(mod, root, "US0001")["conformant"])
+
+    def _covering(self, mod, result: dict, ids) -> list[dict]:
+        """The unattributed waivers explicitly scoped to any of `ids`."""
+        return [w for w in result["waivers_unattributed"]
+                if w["scope"] and any(mod._scope_covers(w["scope"], rid) for rid in ids)]
+
+    def test_the_retired_skeletons_need_no_waiver(self) -> None:
+        """AC5. Mutants: the six waivers left accepted with no superseding row; the six rows
+        deleted outright; their Status flipped by hand with no superseding row; the criteria
+        stages cleared by synthetic `waived` entries rather than dropped from `required`."""
+        mod = _load()
+        # Positive control first, in a fixture: an accepted waiver scoped to a retired skeleton
+        # it no longer covers IS reported unattributed, so the absence asserted on the live log
+        # below is one this assertion can see.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._retired(root, 1, "Superseded")
+            did = _waive(root, "rule:conformance:specified:US0001")
+            res = mod.detect_conformance(root, scope_ids={"US0001"})
+            self.assertIn(did, [w["decision"] for w in res["waivers_unattributed"]])
+            self.assertEqual([did], [w["decision"] for w in self._covering(mod, res, ["US0001"])])
+            self.assertEqual([], {u["id"]: u for u in res["units"]}["US0001"]["waived"])
+
+        # This suite ships to consuming projects, which hold none of these units or rulings.
+        stories = self.REPO / "sdlc-studio" / "stories"
+        if not all(sorted(stories.glob(f"{rid}-*.md")) for rid in self.LIVE_IDS):
+            self.skipTest("the retired skeletons are specific to this repository")
+        dec = _decisions_mod()
+        rows = {r["id"]: r for r in dec.list_decisions(self.REPO)}
+        num = mod.sdlc_md.id_number
+        for did in self.WITHDRAWN:
+            self.assertIn(did, rows, f"{did} is gone from the log - withdrawn with no record")
+            self.assertEqual("superseded", rows[did]["status"], did)
+            later = [r["id"] for r in rows.values()
+                     if r["supersedes"] == did and num(r["id"]) > num(did)]
+            self.assertTrue(later, f"no later decision names {did} in its Supersedes cell")
+
+        res = mod.detect_conformance(self.REPO, scope_ids=set(self.LIVE_IDS))
+        units = {u["id"]: u for u in res["units"]}
+        for rid in self.LIVE_IDS:
+            u = units[rid]
+            self.assertEqual("Superseded", u["status"], rid)
+            self.assertFalse(u["exempt"], f"{rid} is exempt by cutoff, so nothing was judged")
+            self.assertTrue(u["conformant"], (rid, u["missing"]))
+            self.assertEqual([], u["waived"], rid)
+        unattributed = {w["decision"] for w in res["waivers_unattributed"]}
+        self.assertEqual(set(), unattributed & set(self.WITHDRAWN))
+        # And no FRESH accepted waiver, under a new id, scoped to any of the three.
+        self.assertEqual([], self._covering(mod, res, self.LIVE_IDS))
+
+    def test_a_retired_story_with_no_criteria_section_is_conformant(self) -> None:
+        """AC6. Mutant: the exemption also requires `story_is_ungroomed`, so a retired story with
+        no criteria heading at all is charged both stages."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._retired(root, 1, "Superseded", criteria="none")
+            u = self._unit(mod, root, "US0001")
+            self.assertFalse(mod.story_is_ungroomed(
+                (root / "sdlc-studio" / "stories" / "US0001-sample.md").read_text(encoding="utf-8")),
+                "the fixture reads as ungroomed, so it cannot tell status from grooming shape")
+            self.assertFalse(u["ungroomed"])
+            self._assert_retired_clean(u, "Superseded")
+
+    def test_a_retired_story_still_owes_decomposed(self) -> None:
+        """AC7. Mutant: `required` is emptied for a retired status, dropping `decomposed` with
+        the two criteria stages."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._retired(root, 1, "Superseded", epic=False)
+            u = self._unit(mod, root, "US0001")
+            self.assertEqual("Superseded", u["status"])
+            self.assertFalse(u["exempt"])
+            self.assertFalse(u["conformant"])
+            self.assertIn("decomposed", u["missing"])
+            self.assertEqual(["decomposed"], u["missing"])
+
+
 if __name__ == "__main__":
     unittest.main()

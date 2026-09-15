@@ -6989,8 +6989,13 @@ class RevertCheckLaneTests(unittest.TestCase):
                          f"which evidence stayed green: {line}")
         self.assertEqual(0, r.returncode, "the advisory lane failed the gate")
 
-    def _fixture_root(self, *, green_after_revert: bool):
-        """A throwaway workspace with its own git history, one unit and an open run."""
+    def _fixture_root(self, *, green_after_revert: bool, test_only: tuple = (),
+                      batch: list | None = None):
+        """A throwaway workspace with its own git history, one unit and an open run.
+
+        `test_only` adds a unit per id whose `Affects` names only a test file, which the check
+        sets aside as `reported`; `batch` replaces the run's batch, so an id with no artefact
+        on disk can stand in for a unit the check could not measure (`error`)."""
         import subprocess  # noqa: PLC0415
         import shutil, tempfile  # noqa: PLC0415
         sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
@@ -7017,7 +7022,17 @@ class RevertCheckLaneTests(unittest.TestCase):
             "> **Affects:** scripts/prod.py\n\n## Acceptance Criteria\n\n"
             f"- [ ] **AC1** a claim\n  - **Verify:** grep {pattern} scripts/prod.py\n",
             encoding="utf-8")
-        run_state.open_run(root, batch=["US9200"], goal="fixture")
+        if test_only:
+            (root / "tests").mkdir(exist_ok=True)
+            (root / "tests" / "test_prod.py").write_text("def test_shipped():\n    pass\n",
+                                                        encoding="utf-8")
+        for uid in test_only:
+            (stories / f"{uid}-test-only.md").write_text(
+                f"# {uid}: test-only fixture\n\n> **Status:** Draft\n"
+                "> **Affects:** tests/test_prod.py\n\n## Acceptance Criteria\n\n"
+                "- [ ] **AC1** a claim\n  - **Verify:** grep test_shipped tests/test_prod.py\n",
+                encoding="utf-8")
+        run_state.open_run(root, batch=batch or ["US9200", *test_only], goal="fixture")
         state = run_state.read(root) or {}
         state[run_state.BASE_REF] = base
         run_state.write(root, state)
@@ -7055,6 +7070,136 @@ class RevertCheckLaneTests(unittest.TestCase):
         self.assertIn("/.local/", gate_mod._REVERT_YIELD_REL,
                       f"the yield is written to {gate_mod._REVERT_YIELD_REL}, which is not "
                       f"under .local/ - it would dirty the tree on every boundary run")
+
+
+class RevertCheckSetAsideUnitsTests(unittest.TestCase):
+    """BG0661: every unit the revert-check sets aside rather than judges is NAMED on the lane's
+    line, as `<uid> (reported)` or `<uid> (error...)`, on every path.
+
+    The lane counted them and never named them, and once one unit was examined even the count
+    vanished - so a test-only unit left the boundary line without trace, and two review seats
+    and a hand check had to rediscover it. The fixtures are real: a test-only unit is set aside
+    by `verify_ac.revert_check` itself, and an id with no artefact is the unmeasurable one. Only
+    a crash is injected, because nothing in a fixture makes the check raise.
+    """
+
+    REPORTED = "US9201 (reported)"
+
+    def _root(self, **kw):
+        # The lane class registers its cleanup on ITS instance, which never runs here.
+        import shutil as _shutil  # noqa: PLC0415
+        self._lane_case = RevertCheckLaneTests("test_a_reported_unit_is_not_counted_as_examined")
+        kw.setdefault("green_after_revert", False)
+        root = self._lane_case._fixture_root(**kw)
+        self.addCleanup(_shutil.rmtree, root, True)
+        return root
+
+    def _run(self, root, *, crash: tuple = ()):
+        """The lane in-process over the REAL check, with `crash` ids made to raise."""
+        import gate as gate_mod  # noqa: PLC0415 - local: the tests import by path
+        import verify_ac as _va  # noqa: PLC0415 - the lane imports it deferred
+        from unittest import mock as _mock  # noqa: PLC0415
+        real = _va.revert_check
+
+        def check(r, uid, base, *a, **k):
+            if uid in crash:
+                raise RuntimeError(f"the check exploded on {uid}")
+            return real(r, uid, base, *a, **k)
+        with _mock.patch.object(_va, "revert_check", side_effect=check), \
+             _mock.patch.object(gate_mod, "_record_revert_yield") as recorder:
+            res = gate_mod._revert_check(str(root))
+        return res, recorder
+
+    def test_a_reported_unit_is_named_beside_an_examined_one(self) -> None:
+        """AC1. MUTANTS: (1) name the set-aside ids only in the zero-examined `absence`, leaving
+        the `elif examined:` detail bare; (2) print the bare uid with no reason; (3) append every
+        batch uid to the set-aside list before the status test, so the examined unit is tagged."""
+        res, _ = self._run(self._root(test_only=("US9201",)))
+        detail = res["detail"]
+        self.assertTrue(detail.startswith("1 unit(s) examined"), detail)
+        self.assertIn(self.REPORTED, detail,
+                      f"the test-only unit was set aside and not named with its reason: {detail}")
+        self.assertNotRegex(detail, r"US9200 \(",
+                            f"the examined unit carries a set-aside token: {detail}")
+        self.assertEqual(0, res["count"], res)
+
+    def test_a_reported_unit_is_named_beside_a_refused_one(self) -> None:
+        """AC2. MUTANTS: (1) add the set-aside tokens only inside `if not refused:`, leaving the
+        refused-path detail built as today; (2) replace `_first_three(named)` on the refused path
+        with `_first_three(set_aside)`, losing the refused unit's finding.
+
+        Driven through the shipped `gate.py --boundary push --only revert-check` on a two-unit
+        fixture, then in-process with a crash beside the refusal, because the refused path's
+        `if crashed:` appends after the set-aside tokens and must not displace them."""
+        root = self._root(green_after_revert=True, test_only=("US9201",))
+        r = self._lane_case._gate("--boundary", "push", "--only", "revert-check", root=root)
+        line = next((ln for ln in r.stdout.splitlines() if "revert-check" in ln), "")
+        self.assertIn("1 examined, 1 would be refused - US9200: green after the revert - AC1",
+                      line, r.stdout + r.stderr)
+        self.assertIn(self.REPORTED, line,
+                      f"the refused line dropped the set-aside unit: {line}")
+        self.assertEqual(0, r.returncode, "the advisory lane failed the gate")
+        # Refused, crashed and reported together.
+        root = self._root(green_after_revert=True, test_only=("US9201",),
+                          batch=["US9200", "US9201", "US9202"])
+        res, _ = self._run(root, crash=("US9202",))
+        detail = res["detail"]
+        self.assertEqual(1, res["count"], res)
+        self.assertIn("US9200: green after the revert", detail)
+        self.assertIn(self.REPORTED, detail)
+        self.assertIn("1 could not be examined - US9202: the check exploded on US9202", detail)
+
+    def test_an_errored_unit_is_named_beside_an_examined_one(self) -> None:
+        """AC3. MUTANTS: (1) append to the set-aside list only for `reported`, so an `error`
+        unit is counted but never named; (2) hard-code the token's reason as `reported`."""
+        res, _ = self._run(self._root(batch=["US9200", "US9299"]))
+        detail = res["detail"]
+        self.assertTrue(detail.startswith("1 unit(s) examined"), detail)
+        self.assertIn("US9299 (error", detail,
+                      f"the unit the check could not measure is not named: {detail}")
+        self.assertNotIn("US9299 (reported)", detail, detail)
+
+    def test_set_aside_units_are_named_on_the_absence_and_crash_paths(self) -> None:
+        """AC4. MUTANTS: (1) leave the `absence` string with its bare "(N reported, N in error)"
+        counts; (2) set the crashed branch's `tail` to `f"{examined} examined and clean"` with
+        no set-aside tokens; (3) route the tokens through `_first_three`, naming three and
+        printing `(+N more)` - hence the five-unit batch."""
+        with self.subTest(path="zero examined"):
+            res, _ = self._run(self._root(test_only=("US9201",), batch=["US9201", "US9299"]))
+            detail = res["detail"]
+            self.assertTrue(detail.startswith("no unit was examined"), detail)
+            self.assertIn("(1 reported, 1 in error)", detail)
+            self.assertIn(self.REPORTED, detail)
+            self.assertIn("US9299 (error", detail)
+        with self.subTest(path="a crash beside an examined and a reported unit"):
+            root = self._root(test_only=("US9201",), batch=["US9200", "US9201", "US9202"])
+            res, _ = self._run(root, crash=("US9202",))
+            detail = res["detail"]
+            self.assertTrue(detail.startswith("1 unit(s) could not be examined at all"), detail)
+            self.assertIn("1 examined and clean", detail)
+            self.assertIn(self.REPORTED, detail,
+                          f"a run with a crash named its reported unit nowhere: {detail}")
+        with self.subTest(path="every one of five set-aside units"):
+            units = ("US9201", "US9202", "US9203")
+            res, _ = self._run(self._root(test_only=units, batch=[*units, "US9298", "US9299"]))
+            detail = res["detail"]
+            self.assertTrue(detail.startswith("no unit was examined"), detail)
+            for token in (*(f"{u} (reported)" for u in units), "US9298 (error", "US9299 (error"):
+                self.assertIn(token, detail, f"a set-aside unit went unnamed: {detail}")
+            self.assertNotIn("more)", detail, detail)
+
+    def test_set_aside_units_are_not_counted_examined(self) -> None:
+        """AC5, the paired control. MUTANTS: (1) delete the `continue` after
+        `skipped[res["status"]] += 1`; (2) narrow the set-aside test to `== "reported"`, so an
+        `error` unit falls through to `examined += 1`."""
+        res, recorder = self._run(self._root(test_only=("US9201",),
+                                             batch=["US9200", "US9201", "US9299"]))
+        recorder.assert_called_once()
+        self.assertEqual(1, recorder.call_args.args[1],
+                         f"the recorder was handed a set-aside unit as examined: "
+                         f"{recorder.call_args}")
+        self.assertEqual(0, recorder.call_args.args[2], recorder.call_args)
+        self.assertTrue(res["detail"].startswith("1 unit(s) examined"), res)
 
 
 _DEPTH_FIXTURE = """\

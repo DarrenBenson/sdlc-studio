@@ -6410,6 +6410,263 @@ class SurvivorFilerTests(unittest.TestCase):
                              "the gate counted a withdrawn row as a survivor")
 
 
+_FINDINGS_FILED_RE = re.compile(r"^>\s*\*\*Findings-filed-to:\*\*.*$", re.M)
+
+
+def _findings_filed_line(path) -> str | None:
+    """THE detector for a closed unit's discharge: the `> **Findings-filed-to:** ...` metadata
+    line in the file at `path`, matched as a line whatever its value, or None.
+
+    An empty value is still a line, so a build that stamps the field on every close is seen
+    here rather than read as absent. Every fixture below names its filed ids in its own prose
+    too, so a whole-file id search passes with no line written; only this line counts."""
+    m = _FINDINGS_FILED_RE.search(Path(path).read_text(encoding="utf-8"))
+    return m.group(0) if m else None
+
+
+def _ids_on(line: str) -> set[str]:
+    """The artefact ids a detector line names, read from its value alone."""
+    value = line.split(":**", 1)[1]
+    return {m.group(0).upper() for m in sdlc_md.ID_SEARCH_RE.finditer(value)}
+
+
+class ClosedOverRejectNamesTheBugTests(unittest.TestCase):
+    """US0628. A story or bug closed over a delivery REJECT names, in its OWN record, the
+    artefact its findings were filed to - so the discharge is visible on the artefact rather than
+    only in a verdict ledger nobody opens.
+
+    Every close goes through `transition.py set`, the command that writes the status. Every
+    discharge is a `filed:` closure recorded through `critic.record_repair` against the REJECT and
+    naming an artefact that exists, and is read back through `critic.repair_state`."""
+
+    #: Prose naming every id the fixtures file, fix or cite, so no assertion can be answered by
+    #: a whole-file search: only the detector's line is evidence of the write.
+    PROSE = ("## Summary\n\nThe delivery review's findings went to BG0002 and BG0003; the "
+             "regression test BG0004 asked for pinned a fix, and CR0001 took the residue.\n\n")
+    BRIEF = "f" * 12
+    #: Origin-tagged, because `critic.py record` refuses an untagged finding: a fixture the
+    #: shipped recorder could not have written is not evidence about the ledger it writes.
+    TWO_FINDINGS = "[new] the parser drops a trailing row; [new] the refusal names no remedy"
+
+    def _workspace(self) -> Path:
+        """A fresh root holding the artefacts the closures file to or cite: BG0002, BG0003 and
+        BG0004 (bugs) and CR0001 (a change request), so `record_repair` accepts every id."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True)
+        rows = ""
+        for bid in ("BG0002", "BG0003", "BG0004"):
+            (bd / f"{bid}-x.md").write_text(
+                f"# {bid}: filed\n\n> **Status:** Open\n> **Severity:** medium\n",
+                encoding="utf-8")
+            rows += f"| [{bid}]({bid}-x.md) | filed | Open |\n"
+        (bd / "_index.md").write_text(
+            "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | 3 |\n\n"
+            "## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n" + rows, encoding="utf-8")
+        cd = root / "sdlc-studio" / "change-requests"
+        cd.mkdir(parents=True)
+        (cd / "CR0001-x.md").write_text("# CR0001: residue\n\n> **Status:** Proposed\n",
+                                        encoding="utf-8")
+        return root
+
+    def _story(self, extra: str = "") -> tuple[Path, Path]:
+        """US0001 at Review, its one criterion verified by hand, clearing every other close
+        gate - so a refusal or a missing line is this unit's doing, not a neighbour's."""
+        root = self._workspace()
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        path = sd / "US0001-x.md"
+        path.write_text(
+            "# US0001: s\n\n> **Status:** Review\n\n" + self.PROSE + extra +
+            "## Acceptance Criteria\n\n### AC1\n- **Verify:** manual a human looked\n"
+            "- **Verified:** yes (2026-01-01)\n", encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Review | 1 |\n"
+            "| Done | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Review |\n", encoding="utf-8")
+        return root, path
+
+    def _bug(self) -> tuple[Path, Path]:
+        """BG0001 In Progress at `conversational` depth (so Verified passes the depth gate) and
+        not production-affecting (so Closed needs no soak), its one finding filed to CR0001."""
+        root = self._workspace()
+        bd = root / "sdlc-studio" / "bugs"
+        path = bd / "BG0001-x.md"
+        path.write_text(
+            "# BG0001: b\n\n> **Status:** In Progress\n> **Severity:** medium\n"
+            "> **Verification depth:** conversational (walked through by hand)\n\n"
+            + self.PROSE + "## Acceptance Criteria\n\n- [x] the defect no longer reproduces\n",
+            encoding="utf-8")
+        idx = bd / "_index.md"
+        idx.write_text(idx.read_text(encoding="utf-8").replace("| Open | 3 |", "| Open | 3 |\n"
+                       "| In Progress | 1 |") + "| [BG0001](BG0001-x.md) | b | In Progress |\n",
+                       encoding="utf-8")
+        import critic
+        critic.record_verdict(root, "BG0001", "REJECT", reviewer="qa", author="dev",
+                              brief=self.BRIEF, issues="[new] the fix leaves the residue unowned")
+        critic.record_repair(root, "BG0001", "dev", "#1 -> filed: CR0001")
+        return root, path
+
+    def _reject_and_repair(self, root: Path, closed: str, issues: str | None = None) -> None:
+        import critic
+        critic.record_verdict(root, "US0001", "REJECT", reviewer="qa", author="dev",
+                              brief=self.BRIEF, issues=issues or self.TWO_FINDINGS)
+        critic.record_repair(root, "US0001", "dev", closed)
+
+    def _status(self, path: Path) -> str:
+        return sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or ""
+
+    def test_the_story_names_every_filed_artefact(self) -> None:
+        """AC1. MUTANTS: drop the write, so the filed ids stay in the repair ledger alone; take
+        only the first closure's artefact (`closed[0]`); write into each filed artefact's file
+        instead of the closing unit's. Each leaves the detector's line on the STORY missing or
+        short of BG0003."""
+        import critic
+        root, path = self._story()
+        self._reject_and_repair(root, "#1 -> filed: BG0002; #2 -> filed: BG0003")
+        state = critic.repair_state(root, "US0001", "delivery")
+        self.assertEqual((state["state"], state["filed"]), ("complete", 2),
+                         "the fixture's premise: two findings, each closed filed:")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Done")
+        line = _findings_filed_line(path)
+        self.assertIsNotNone(line, "the story closed over a REJECT carries no Findings-filed-to "
+                                   "line - the discharge is visible only in the repair ledger")
+        self.assertEqual(_ids_on(line), {"BG0002", "BG0003"},
+                         f"the line does not name exactly the two filed bugs: {line!r}")
+
+    def test_the_one_call_close_names_the_filed_artefacts(self) -> None:
+        """AC2. MUTANT: key the write on the unit's latest ledger row being a REJECT. The one-call
+        close appends its APPROVE BEFORE the transition runs, so that reading sees an APPROVE and
+        writes nothing - while `repair_state` still reads the filed closures, because an APPROVE
+        carrying no brief fingerprint retires no REJECT."""
+        import critic
+        root, path = self._story()
+        self._reject_and_repair(root, "#1 -> filed: BG0002; #2 -> filed: BG0003")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done",
+                         "--verdict", "APPROVE", "--reviewer", "qa-r2", "--author", "dev")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._status(path), "Done")
+        rows = [r for r in critic.read_verdicts(root, "delivery")
+                if sdlc_md.norm_id(r["unit"]) == "US0001"]
+        self.assertEqual(rows[-1]["verdict"].upper(), "APPROVE",
+                         "the premise: the ledger's LAST row is the one-call close's APPROVE")
+        self.assertEqual(critic.repair_state(root, "US0001", "delivery")["filed"], 2,
+                         "the premise: repair_state still reads both filed closures")
+        line = _findings_filed_line(path)
+        self.assertIsNotNone(line, "the one-call close wrote no Findings-filed-to line")
+        self.assertEqual(_ids_on(line), {"BG0002", "BG0003"}, line)
+
+    def test_a_bug_names_the_filed_artefact_at_every_delivered_terminal(self) -> None:
+        """AC3. MUTANTS: write the line for stories only; key it on `_TERMINAL_FOR_PLAN` (Done,
+        Fixed), so a bug set straight to Verified - a route that never passes Fixed - gets
+        nothing."""
+        for target in ("Fixed", "Verified"):
+            with self.subTest(target=target):
+                root, path = self._bug()
+                code, out = _cli(root, "set", "--id", "BG0001", "--status", target)
+                self.assertEqual(code, 0, out)
+                self.assertEqual(self._status(path), target)
+                line = _findings_filed_line(path)
+                self.assertIsNotNone(line, f"a bug set to {target} carries no line")
+                self.assertEqual(_ids_on(line), {"CR0001"}, line)
+
+    def test_a_terminal_walk_writes_the_line_once(self) -> None:
+        """AC4. MUTANT: insert a new line on every terminal step (`_insert_after_status` in place
+        of the upsert), so Fixed -> Verified -> Closed leaves three. A second copy is set straight
+        to Closed, so a condition naming only Done, Fixed and Verified - which the walk alone
+        cannot see, having written its line at Fixed - fails here too."""
+        root, path = self._bug()
+        for step in ("Fixed", "Verified", "Closed"):
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", step)
+            self.assertEqual(code, 0, f"{step}: {out}")
+            self.assertEqual(self._status(path), step)
+        body = path.read_text(encoding="utf-8")
+        count = sum(1 for ln in body.splitlines() if "Findings-filed-to" in ln)
+        self.assertEqual(count, 1, f"the walk left {count} Findings-filed-to lines:\n{body}")
+        self.assertEqual(_ids_on(_findings_filed_line(path)), {"CR0001"})
+
+        direct_root, direct = self._bug()
+        code, out = _cli(direct_root, "set", "--id", "BG0001", "--status", "Closed")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._status(direct), "Closed")
+        line = _findings_filed_line(direct)
+        self.assertIsNotNone(line, "a bug set straight to Closed carries no line")
+        self.assertEqual(_ids_on(line), {"CR0001"}, line)
+
+    def test_a_refused_close_writes_no_line(self) -> None:
+        """AC5. MUTANT: stamp the field in `cmd_set` before `transition()` runs, mirroring the
+        `--depth` stamp, so a close the ladder refuses keeps the line. The control lands, and its
+        `--dry-run` first writes nothing - a close that did not happen names no discharge."""
+        question = "should the parser keep the trailing row?"
+        root, path = self._story(f"## Open Questions\n\n- [ ] {question}\n\n")
+        self._reject_and_repair(root, "#1 -> filed: BG0002; #2 -> filed: BG0003")
+        before = path.read_text(encoding="utf-8")
+        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+        self.assertNotEqual(code, 0, out)
+        self.assertIn("Open Question", out)
+        self.assertNotIn("unanswered delivery REJECT", out,
+                         "the refusal is the REJECT gate's, not the Open Question's")
+        self.assertEqual(self._status(path), "Review")
+        self.assertIsNone(_findings_filed_line(path), "a refused close left a discharge line")
+        self.assertEqual(path.read_text(encoding="utf-8"), before)
+
+        ctl_root, ctl = self._story(f"## Resolved Questions\n\n- [x] {question} Ruled: keep it.\n\n")
+        self._reject_and_repair(ctl_root, "#1 -> filed: BG0002; #2 -> filed: BG0003")
+        ctl_before = ctl.read_text(encoding="utf-8")
+        code, out = _cli(ctl_root, "set", "--id", "US0001", "--status", "Done", "--dry-run")
+        self.assertEqual(code, 0, out)
+        self.assertIn("would set US0001", out)
+        self.assertIsNone(_findings_filed_line(ctl), "a dry run wrote a discharge line")
+        self.assertEqual(ctl.read_text(encoding="utf-8"), ctl_before)
+        code, out = _cli(ctl_root, "set", "--id", "US0001", "--status", "Done")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._status(ctl), "Done")
+        line = _findings_filed_line(ctl)
+        self.assertIsNotNone(line, "the landed control carries no line")
+        self.assertEqual(_ids_on(line), {"BG0002", "BG0003"}, line)
+
+    def test_an_ordinary_close_writes_no_discharge_line(self) -> None:
+        """AC6. MUTANTS: stamp the field (empty) on every delivered-terminal close; take each
+        closure's `ids` for its `artefact`, so a fix naming an id - or a filing's evidence naming
+        a second id - is written as a filing. (d) files BG0002 with evidence naming US0001 too,
+        and fixes a finding under BG0004, so its line must name BG0002 and nothing else."""
+        import critic
+        fixed = "fixed: pinned by the regression test BG0004 asked for"
+        copies = {
+            "a": "#1 -> filed: BG0002",
+            "b": None,
+            "c": f"#1 -> {fixed}; #2 -> fixed: the remedy BG0003 proposed, now in the refusal",
+            "d": f"#1 -> filed: BG0002, raised against US0001; #2 -> {fixed}",
+        }
+        lines = {}
+        for name, closed in copies.items():
+            root, path = self._story()
+            if closed is not None:
+                self._reject_and_repair(root, closed,
+                                        issues="[new] the parser drops a trailing row"
+                                        if name == "a" else None)
+                self.assertEqual(critic.repair_state(root, "US0001", "delivery")["state"],
+                                 "complete", f"({name}) the premise: a complete repair")
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertEqual(code, 0, f"({name}) {out}")
+            self.assertEqual(self._status(path), "Done", f"({name}) did not land at Done")
+            lines[name] = _findings_filed_line(path)
+        self.assertIsNotNone(lines["a"], "(a) a filed REJECT closed with no line")
+        self.assertEqual(_ids_on(lines["a"]), {"BG0002"}, lines["a"])
+        self.assertIsNone(lines["b"], "(b) a close with no REJECT at all carries a line")
+        self.assertIsNone(lines["c"], "(c) a fix naming an id was written as a filing")
+        self.assertIsNotNone(lines["d"], "(d) a mixed repair's filing wrote no line")
+        self.assertNotIn("BG0004", _ids_on(lines["d"]),
+                         f"(d) the fixed closure's id was written as a filing: {lines['d']!r}")
+        self.assertNotIn("US0001", _ids_on(lines["d"]),
+                         f"(d) a filing's second id was written as a destination: {lines['d']!r}")
+        self.assertEqual(_ids_on(lines["d"]), {"BG0002"}, lines["d"])
+
+
 if __name__ == "__main__":
     unittest.main()
 

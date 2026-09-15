@@ -282,6 +282,32 @@ rules, the agents/services) live in that project's agent-instructions file
     distrusting - so the mechanisms are named above, and a guard asserts each one is reached
     from the gate ladder rather than merely defined.
 
+22. **An unrepaired finding is ruled, and the ruling decides where its work goes.** {#stop-ship}
+    The code ships at the end of the sprint, so a review finding its unit did not repair needs a
+    home that outlasts the sprint: left attached to an open unit, it is backlog that nothing
+    tracks and no plan selects. A finding ruled `not-stop-ship` is filed as its own bug or CR,
+    where the next plan can select it. Its unit then closes pointing at the filed id, so a reader
+    of the unit learns where the work went without opening the retro. Several such findings may
+    share one artefact. A finding ruled `stop-ship` holds the close, and the ruling never
+    discharges a REJECT: it holds the close in the REJECT's place. A unit whose findings are
+    all ruled, or dropped from the batch with a reason, or parked, is answered and carries into
+    the next plan: the sprint ends with nothing unanswered, which is not the same as nothing
+    open.
+
+    **Severity alone is not the ruling.** A High finding the ruler judges safe to ship is filed
+    and carried; a Low one that would mislead every user can stop the release. Severity says how
+    bad a defect is, not whether this release can live with it, and reading one for the other
+    hands the release decision to whoever set the label.
+
+    The retro's `Known issues carried` table is the only store a ruling is recorded in, one row
+    per finding naming its id, the ruling, who ruled and the date, and the close reads rulings
+    from that table and nowhere else. A ruling is one of `stop-ship`, `not-stop-ship`,
+    `accepted-risk` or `deferred`; any other word in that column is refused rather than guessed
+    at. The ruling is made by the operator or a recorded delegate, at the close, and never by
+    the session that did the work: a delegate stands in a separate trust boundary from it. A
+    reviewer may propose a ruling in a finding's text, but a proposal is not a ruling: only a
+    row in that table rules.
+
 ## Project constitution {#constitution}
 
 A project may declare its inviolable principles in an optional

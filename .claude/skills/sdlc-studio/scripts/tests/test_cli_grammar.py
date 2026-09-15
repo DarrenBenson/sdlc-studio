@@ -19,20 +19,24 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(DIR))
 sys.path.insert(0, str(DIR / "lib"))
 import surface  # noqa: E402 - the shared enumerator this module used to duplicate
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from boundary import boundary_only  # noqa: E402 - the per-commit / boundary split
+from boundary import BOUNDARY_ENV, boundary_only  # noqa: E402 - the per-commit / boundary split
 
 
 def _load(name: str, rel: str):
@@ -366,9 +370,44 @@ WITHDRAWN_ROOT_EFFECT_VERBS: dict[str, str] = {
     ),
 }
 
-#: What a real-tree answer looks like: this repository's own artefact ids and run ids, plus its
-#: absolute path. An empty fixture cannot produce any of them.
-_REAL_TREE_MARKER = re.compile(r"\b(?:BG05\d\d|US06\d\d|RUN-01K\w+)")
+#: The id SHAPES a real-tree answer can carry - candidates only, never evidence on their own.
+#: The marker these replace was a frozen alternation (`BG05xx`, `US06xx`, `RUN-01K...`), the
+#: ranges this project minted the day it was written; as ids advanced it recognised less and
+#: less of what a verb printed, and the control built on it passed or failed according to which
+#: ids happened to be in the tree. A shape does not go stale; what makes it evidence is below.
+_ARTEFACT_ID_SHAPE = re.compile(r"\b(?:BG|US|CR|RFC|EP)\d{4,}\b")
+_RUN_ID_SHAPE = re.compile(r"\bRUN-[0-9A-Z]{8,}\b")
+
+#: The frozen marker, kept ONLY so the tests below can prove a leak they plant lies outside it -
+#: an in-range id would let a guard still on this pattern pass. Nothing else may read it.
+_FROZEN_MARKER = re.compile(r"\b(?:BG05\d\d|US06\d\d|RUN-01K\w+)")
+
+
+def _real_tree_ids(text: str, root) -> list[str]:
+    """The ids in `text` that name something which EXISTS in the tree at `root`, sorted.
+
+    What a real-tree answer looks like: an artefact id `sdlc_md.find_by_id` resolves, or a run id
+    a retro under `sdlc-studio/retros/` records - every closed run's retro carries its id, and the
+    retros are tracked, so a clean clone resolves them too. An id-shaped string naming nothing is
+    not evidence, and nor is a `changelog.d/` fragment or a file under `.claude/worktrees/`: those
+    are not the homes `find_by_id` reads, so a stray file cannot make an id real.
+
+    MUTANT: resolve against a fixed tree whatever `root` is handed - the fixture guard hands the
+    real one and the tests below a populated fixture, and only a resolver that reads its argument
+    answers both."""
+    root = Path(root)
+    found: set[str] = set()
+    artefacts = set(_ARTEFACT_ID_SHAPE.findall(text))
+    if artefacts:
+        with sdlc_md.corpus_cache():  # one corpus walk for the whole answer, not one per id
+            found |= {rid for rid in artefacts if sdlc_md.find_by_id(root, rid)}
+    runs = set(_RUN_ID_SHAPE.findall(text))
+    if runs:
+        recorded: set[str] = set()
+        for retro in sdlc_md.walk_glob(root / "sdlc-studio" / "retros", "*.md"):
+            recorded |= set(_RUN_ID_SHAPE.findall(sdlc_md.read_text_safe(retro)))
+        found |= runs & recorded
+    return sorted(found)
 
 
 class RootIsReadNotJustParsed(unittest.TestCase):
@@ -415,13 +454,16 @@ class RootIsReadNotJustParsed(unittest.TestCase):
 
     def test_no_verb_answers_about_the_real_tree_when_pointed_at_a_fixture(self) -> None:
         """THE guard. Run each proven-discriminating verb against an empty fixture from inside
-        this repository; none may name one of this repository's artefacts."""
+        this repository; none may name one of this repository's artefacts.
+
+        What leaked is resolved against the REAL tree, never the fixture: the fixture is empty,
+        so nothing ever resolves there and the guard would pass every leak."""
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / "sdlc-studio").mkdir()
             for script, verb in ROOT_EFFECT_VERBS:
                 with self.subTest(verb=f"{script} {' '.join(verb)}".strip()):
                     out = self._run(script, verb, d)
-                    leaked = sorted(set(_REAL_TREE_MARKER.findall(out)))
+                    leaked = _real_tree_ids(out, self.REPO)
                     self.assertFalse(
                         leaked or str(self.REPO) in out,
                         f"{script} {' '.join(verb)}: --root pointed at an empty fixture and the "
@@ -495,12 +537,238 @@ class RootIsReadNotJustParsed(unittest.TestCase):
                 # The ROOT PATH is NOT evidence. Accepting it let six verbs that emit only an
                 # error naming their own argument pass this control, and one that CRASHES - a
                 # traceback contains file paths too. Only a real artefact id proves the tree was
-                # read, which is what the guard above needs to mean anything.
+                # read, which is what the guard above needs to mean anything - and only one that
+                # RESOLVES here, so the evidence window moves with the ids rather than expiring.
                 self.assertTrue(
-                    _REAL_TREE_MARKER.search(out),
+                    _real_tree_ids(out, self.REPO),
                     f"{script} {' '.join(verb)}: pointed at the real tree it named no artefact "
                     f"of it, so its row in the guard above asserts nothing - re-measure it in a "
                     f"CLEAN worktree, or remove it")
+
+
+def _test_body(method):
+    """The function a test method runs, in either shape `boundary_only` leaves it.
+
+    `boundary_only` is `unittest.skipUnless(at_boundary(), ...)`, decided at import. Per commit
+    the test is a `functools.wraps` skip wrapper whose `__wrapped__` is the body; at the boundary
+    `skipUnless` hands the function back untouched, with no `__wrapped__` at all, so a bare
+    `.__wrapped__` reach raises in every boundary run."""
+    return getattr(method, "__wrapped__", method)
+
+
+def _highest_bug_id(repo: Path) -> str:
+    """The highest-numbered bug id among the file names in `repo`'s bugs home, by PARSED number -
+    never `ls | tail -1`, which yields `_index.md` or `archive`."""
+    ids = [m.group(0) for p in (repo / "sdlc-studio" / "bugs").iterdir()
+           if (m := re.match(r"BG\d{4,}", p.name))]
+    return max(ids, key=lambda rid: int(rid[2:]))
+
+
+def _verb_label(script: str, argv) -> str:
+    return f"{script} {' '.join(argv)}".strip()
+
+
+class RealTreeMarkerTests(unittest.TestCase):
+    """The marker that tells a real-tree answer from any answer, and the two tests it serves.
+
+    It must recognise an id this corpus has not reached yet, refuse an id-shaped string naming
+    nothing, and be what the fixture guard AND its boundary control both read - fixing one of
+    them leaves the other on an evidence window that closes as ids advance."""
+
+    REPO = RootIsReadNotJustParsed.REPO
+    GUARD = "test_no_verb_answers_about_the_real_tree_when_pointed_at_a_fixture"
+    CONTROL = "test_every_listed_verb_can_actually_fail_the_guard"
+
+    #: One artefact per family, numbered beyond every range the corpus holds. One PER FAMILY
+    #: because the inventory's verbs do not share one: `flow compute` names only US ids and
+    #: `ac_scope check` only US and EP.
+    BEYOND = {"bug": "BG9001", "story": "US9001", "cr": "CR9001", "rfc": "RFC9001",
+              "epic": "EP9001"}
+    RUN = "RUN-01ZZZZZZ"
+
+    #: Left out of AC4's copy, none of them an artefact home. `.claude/worktrees` is most of a
+    #: working tree's bytes. The VCS entry is, in a linked worktree, a pointer file that would aim
+    #: any git a verb runs in the copy at the REAL tree's index - the tree this test must never
+    #: touch - and, in a primary clone, the largest directory there is. Leaving it out can only
+    #: turn a verb that needs git red, never green.
+    LEAVE_OUT = frozenset({".claude/worktrees", "node_modules", ".git"})
+
+    def _populate(self, root: Path) -> None:
+        for type_, rid in self.BEYOND.items():
+            home = root / sdlc_md.type_home(type_)[0]
+            home.mkdir(parents=True, exist_ok=True)
+            (home / f"{rid}-fixture.md").write_text(
+                f"# {rid}: fixture\n\n> **Status:** Draft\n", encoding="utf-8")
+        retros = root / "sdlc-studio" / "retros"
+        retros.mkdir(parents=True)
+        (retros / "RETRO0001-fixture.md").write_text(
+            f"# RETRO-0001: fixture\n\n> **Run:** {self.RUN}\n", encoding="utf-8")
+
+    def _leak(self, repo: Path) -> str:
+        """A real-tree answer lying OUTSIDE every frozen range: the highest bug id `repo` holds."""
+        leak = _highest_bug_id(repo)
+        self.assertIsNone(_FROZEN_MARKER.search(leak),
+                          f"{leak} lies inside a frozen range, so a guard still on the frozen "
+                          f"marker would catch it too and this test could not tell them apart")
+        self.assertTrue(sdlc_md.find_by_id(repo, leak), f"{leak} names no artefact in {repo}")
+        return leak
+
+    def _run_isolated(self, method_name: str, body=None, answer=None, repo=None):
+        """Run a `RootIsReadNotJustParsed` test on a SEPARATE instance through its own
+        `TestResult` - never on `self`, because pytest records subtests natively and the inner
+        test's subtest failures would land on this one. `body` replaces the method; `answer`
+        replaces the verb runner with one that returns it; `repo` repoints the instance."""
+        inst = RootIsReadNotJustParsed(method_name)
+        calls: list[tuple[str, Path]] = []
+        if answer is not None:
+            def fake_run(script, argv, root):
+                calls.append((_verb_label(script, argv), Path(root)))
+                return answer
+            inst._run = fake_run
+        if repo is not None:
+            inst.REPO = repo
+        if body is not None:
+            setattr(inst, method_name, types.MethodType(body, inst))
+        result = unittest.TestResult()
+        # One corpus index for the whole inner run rather than one per verb: the answers are
+        # identical, because the sweep writes nothing, and the index is most of the cost.
+        with sdlc_md.corpus_cache():
+            inst.run(result)
+        return result, calls
+
+    @staticmethod
+    def _verdict(result) -> str:
+        return (f"run={result.testsRun} failures={len(result.failures)} "
+                f"errors={len(result.errors)} skipped={len(result.skipped)}: "
+                + " | ".join(f"{t}: {tb.strip().splitlines()[-1]}"
+                             for t, tb in result.failures + result.errors)
+                + " | ".join(f"{t}: {why}" for t, why in result.skipped))
+
+    def _assert_green(self, result, what: str) -> None:
+        self.assertEqual((1, 0, 0, 0), (result.testsRun, len(result.failures),
+                                        len(result.errors), len(result.skipped)),
+                         f"{what}: {self._verdict(result)}")
+
+    def _failed_verbs(self, result) -> list[str]:
+        return sorted(str(t.params.get("verb")) for t, _ in result.failures)
+
+    def test_an_id_beyond_every_range_the_corpus_holds_is_recognised(self) -> None:
+        """AC1. MUTANTS: keep the frozen alternation as the candidate pattern; narrow the shape to
+        BG and US; drop the RUN- alternative; resolve against the real tree whatever root is
+        handed. Each loses at least one of the six, which lie beyond every range minted so far."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._populate(root)
+            named = sorted([*self.BEYOND.values(), self.RUN])
+            text = "answer: " + ", ".join(f"| {rid} |" for rid in named)
+            self.assertEqual(named, _real_tree_ids(text, root),
+                             "an id beyond every range this corpus holds, in one of the families "
+                             "the inventory's verbs name, was not recognised as real")
+
+    def test_an_id_shaped_string_that_resolves_to_nothing_is_refused(self) -> None:
+        """AC2. MUTANTS: accept any id-shaped string; resolve by `root.rglob`, so a changelog
+        fragment or a file under `.claude/worktrees/` makes an id real; accept any RUN- id without
+        reading the retros. BG9001 rides in the same call as the positive control."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._populate(root)
+            (root / "changelog.d").mkdir()
+            (root / "changelog.d" / "BG9003.md").write_text(
+                "<!-- section: Fixed -->\n\n- BG9003 is named only by this fragment.\n",
+                encoding="utf-8")
+            stray = root / ".claude" / "worktrees" / "w" / "sdlc-studio" / "bugs"
+            stray.mkdir(parents=True)
+            (stray / "BG9004-x.md").write_text("# BG9004: x\n\n> **Status:** Open\n",
+                                               encoding="utf-8")
+            text = "BG9001 BG9002 RUN-01YYYYYY BG9003 BG9004"
+            self.assertEqual(["BG9001"], _real_tree_ids(text, root),
+                             "an id-shaped string naming no artefact in an artefact home, or a "
+                             "run no retro records, was accepted as a real-tree answer")
+
+    def test_the_fixture_guard_resolves_leaked_ids_against_the_real_tree(self) -> None:
+        """AC3. MUTANTS: hand the guard's resolver the fixture root; keep only its repo-path
+        check; leave it on the frozen marker. Each passes an answer naming a real, recent id."""
+        leak = self._leak(self.REPO)
+        verbs = sorted(_verb_label(s, v) for s, v in ROOT_EFFECT_VERBS)
+        result, calls = self._run_isolated(self.GUARD, answer=leak)
+        self.assertEqual((0, 0), (len(result.errors), len(result.skipped)), self._verdict(result))
+        self.assertEqual(verbs, self._failed_verbs(result),
+                         f"the guard let a verb answer {leak} - an artefact of this repository - "
+                         f"from an empty fixture: {self._verdict(result)}")
+        for _t, tb in result.failures:
+            self.assertIn(leak, tb, "the guard failed without naming what leaked")
+        self.assertEqual(verbs, sorted(label for label, _ in calls))
+        self.assertTrue(all(root != self.REPO for _, root in calls),
+                        "the guard pointed a verb at the real tree, not a fixture")
+        result, _ = self._run_isolated(self.GUARD, answer="BG9999")
+        self.assertIsNone(sdlc_md.find_by_id(self.REPO, "BG9999"))
+        self._assert_green(result, "an answer naming only an id that resolves nowhere")
+
+    @boundary_only("it copies the repository and runs the 83s control over it twice. The marker "
+                   "it depends on is pinned per commit by the four tests beside it; what defers "
+                   "is only the proof that the live inventory stays green as fragments come and "
+                   "go, which a release cut exercises at the boundary this runs at")
+    def test_the_control_is_green_in_either_fragment_state(self) -> None:
+        """AC4. MUTANT: put `changelog.py check` back in the inventory - it names a fragment only
+        while `changelog.d/` holds one, so the emptied state turns it red."""
+        body = _test_body(getattr(RootIsReadNotJustParsed, self.CONTROL))
+        before = sorted(p.name for p in (self.REPO / "changelog.d").iterdir())
+
+        def leave_out(directory, names):
+            rel = Path(directory).relative_to(self.REPO)
+            return [n for n in names if (rel / n).as_posix() in self.LEAVE_OUT]
+
+        with tempfile.TemporaryDirectory() as d:
+            copy = Path(d) / "repo"
+            shutil.copytree(self.REPO, copy, symlinks=True, ignore=leave_out)
+            fragments = copy / "changelog.d"
+            for p in fragments.iterdir():
+                p.unlink()
+            minted = self._leak(copy)
+            for state in ("emptied", "one minted fragment"):
+                if state != "emptied":
+                    (fragments / f"{minted}.md").write_text(
+                        "<!-- section: Fixed -->\n\n- A fragment the control's test minted.\n",
+                        encoding="utf-8")
+                want = [] if state == "emptied" else [f"{minted}.md"]
+                self.assertEqual(want, sorted(p.name for p in fragments.iterdir()), state)
+                result, _ = self._run_isolated(self.CONTROL, body=body, repo=copy)
+                self._assert_green(result, f"the control over the copy, changelog.d/ {state}")
+        self.assertEqual(before, sorted(p.name for p in (self.REPO / "changelog.d").iterdir()),
+                         "the working tree's changelog.d/ changed - the test touched the real tree")
+
+    def test_the_boundary_control_resolves_ids_rather_than_matching_a_frozen_range(self) -> None:
+        """AC5. MUTANTS: leave the control on the frozen marker; add a resolving helper beside it
+        that the control never calls. The control's OWN body runs here, so either is caught."""
+        def dummy(_self):
+            return None
+
+        per_commit = unittest.skipUnless(False, "the per-commit shape")(dummy)
+        at_boundary = unittest.skipUnless(True, "the boundary shape")(dummy)
+        self.assertFalse(hasattr(at_boundary, "__wrapped__"),
+                         "the boundary shape carries no __wrapped__, so a bare reach would raise")
+        for flag in ("", "1"):
+            with mock.patch.dict(os.environ, {BOUNDARY_ENV: flag}):
+                shaped = boundary_only("the reach must work whichever shape the marker takes")(dummy)
+            for label, got in ((f"boundary_only with {BOUNDARY_ENV}={flag!r}", shaped),
+                               ("skipUnless False", per_commit), ("skipUnless True", at_boundary)):
+                self.assertIs(dummy, _test_body(got), f"{label}: the reach missed the body")
+                self.assertFalse(getattr(_test_body(got), "__unittest_skip__", False), label)
+
+        body = _test_body(RootIsReadNotJustParsed.test_every_listed_verb_can_actually_fail_the_guard)
+        self.assertFalse(getattr(body, "__unittest_skip__", False),
+                         "the reach returned the skip wrapper, so the run would record a skip")
+        leak = self._leak(self.REPO)
+        verbs = sorted(_verb_label(s, v) for s, v in ROOT_EFFECT_VERBS)
+        result, calls = self._run_isolated(self.CONTROL, body=body, answer=leak)
+        self._assert_green(result, f"the control, every verb answering the real, recent {leak}")
+        self.assertEqual([(v, self.REPO) for v in verbs], sorted(calls),
+                         "the control did not run every listed verb against the real tree")
+        result, _ = self._run_isolated(self.CONTROL, body=body, answer="BG9999")
+        self.assertEqual((0, 0), (len(result.errors), len(result.skipped)), self._verdict(result))
+        self.assertEqual(verbs, self._failed_verbs(result),
+                         f"an answer naming only an id that resolves nowhere must fail every "
+                         f"listed verb: {self._verdict(result)}")
 
 
 if __name__ == "__main__":

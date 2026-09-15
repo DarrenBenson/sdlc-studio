@@ -57,7 +57,7 @@ _GIT_ENV_VARS = (
 #: itself.
 EXPECTED_LANES = (
     "style", "links", "skill-spec", "versions", "verify-ratchet",
-    "stamps-staged", "warning-ratchet", "runbook",
+    "stamps-staged", "changelog-shape", "warning-ratchet", "runbook",
     "lens-signatures",
     "spec-claims",
     # BG0493: the practice-rules checker was wired into nothing and guarded nothing. Added to

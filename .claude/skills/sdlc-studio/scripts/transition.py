@@ -1413,6 +1413,29 @@ def _post_write_sync_and_record(root, type_, path, new_text, result, current, ne
     return result
 
 
+#: The metadata line naming the artefacts a closed unit's review findings were filed to.
+FINDINGS_FILED_FIELD = "Findings-filed-to"
+
+
+def _findings_filed_to(root, uid: str) -> list[str]:
+    """The artefact ids this unit's delivery repair FILED its findings to, first seen first.
+
+    Read through `critic.repair_state`, the reader review-coverage and conformance share, never
+    from the ledger's latest row: the one-call close appends its APPROVE before the transition
+    runs, and an APPROVE carrying no brief fingerprint retires no REJECT, so a latest-row reading
+    would see the APPROVE and drop a discharge that still stands. Only a `filed:` closure's
+    `artefact` counts. A `fixed:` closure whose evidence happens to name an id is a fix, not a
+    filing, and the other ids a filed closure's evidence mentions are context, not destinations.
+    """
+    import critic  # noqa: PLC0415 - deferred sibling; only a delivered-terminal close pays for it
+    out: list[str] = []
+    for closure in critic.repair_state(root, uid, "delivery")["closed"]:
+        artefact = closure["artefact"] if closure["disposition"] == "filed" else ""
+        if artefact and artefact not in out:
+            out.append(artefact)
+    return out
+
+
 RETRACTED = sdlc_md.RETRACTED_DEPTH
 
 
@@ -1524,6 +1547,16 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         # still pass. Invalidating the entry forces a re-run rather than leaving the overturned
         # verdict readable as current.
         _invalidate_verify_report(root, result["id"])
+    # A unit closed over a REJECT names, in its OWN record, where the findings went. The verdict
+    # and repair ledgers already hold it, but a later reader of the closed artefact does not open
+    # them, so a discharge visible only there reads as no discharge at all. Written here, past
+    # every gate, so a close the ladder refuses leaves no line; upserted, so a terminal walk
+    # (Fixed -> Verified -> Closed) keeps one line rather than one per step.
+    if sdlc_md.is_delivered_terminal(type_, target_canon or ""):
+        filed_to = _findings_filed_to(root, sdlc_md.norm_id(artifact_id))
+        if filed_to:
+            new_text = _upsert_field(new_text, FINDINGS_FILED_FIELD, ", ".join(filed_to))
+            result["findings_filed_to"] = filed_to
     if force:
         # `--force` advertised the bypass as recorded and recorded nothing, so a forced close of
         # a red-AC story was byte-indistinguishable from a verified one. A force that waived

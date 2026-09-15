@@ -7,8 +7,10 @@ changelog-empty documentation check.
 """
 import contextlib
 import io
+import os
 import pathlib
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -299,6 +301,96 @@ class StructureCheckTests(unittest.TestCase):
             unreleased = text.split("## [4.1.0]")[0]
             order = re.findall(r"^### ([A-Za-z]+)\s*$", unreleased, re.M)
             self.assertEqual(order, ["Breaking", "Added", "Fixed", "Security"])
+
+
+SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "changelog.py"
+
+
+def _cli(*args):
+    """The shipped entry point, in a fresh interpreter - never the library behind it."""
+    return subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True,
+                          check=False, timeout=120,
+                          env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
+
+
+#: One fragment of EACH shape compose refuses: no marker, an unknown section, a marker with no
+#: entry text after it, and an empty file.
+MALFORMED = (
+    ("BG0101.md", "### Fixed\n- a heading where the marker belongs\n"),
+    ("BG0102.md", "<!-- section: Misc -->\n- a section compose does not know\n"),
+    ("BG0103.md", "<!-- section: Fixed -->\n\n"),
+    ("BG0104.md", ""),
+)
+
+
+class FragmentShapeCheckTests(unittest.TestCase):
+    """Nothing opened a fragment until the release cut, where compose refuses the WHOLE fold on
+    the first bad one - 59 of 119 had drifted past it. `shape` runs compose's own parser over
+    every fragment and names all of them, and is silent about the well-formed."""
+
+    def _compose_message(self, name, body):
+        """What `changelog.py compose` prints for this fragment ALONE, from its fragment name
+        onward. The split point is the fragment's name, which this test chose, so compose's own
+        prefix is read from compose rather than retyped here."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=[(name, body)])
+            r = _cli("compose", "--root", str(root))
+            self.assertEqual(r.returncode, 2,
+                             f"compose did not refuse {name}, so it is no malformed fragment:\n"
+                             f"{r.stdout}{r.stderr}")
+            line = r.stderr.strip()
+            self.assertIn(f"{name}: ", line)
+            return line[line.index(f"{name}: "):]
+
+    def test_every_malformed_shape_is_named_with_composes_own_message(self):
+        """MUTANTS: parse with a bare `_MARKER.match` on the first line (an unknown section, an
+        entry-less marker and an empty file then pass); skip a fragment on `FragmentError`;
+        stop at the first one, as compose does; print the verb's own wording in place of the
+        `FragmentError` text. Each leaves at least one of the four expected messages absent."""
+        expected = {name: self._compose_message(name, body) for name, body in MALFORMED}
+        self.assertEqual(len(set(expected.values())), 4, expected)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=MALFORMED)
+            r = _cli("shape", "--root", str(root))
+            out = r.stdout + r.stderr
+            self.assertEqual(r.returncode, 1, out)
+            lines = [ln.rstrip() for ln in out.splitlines()]
+            for name, message in expected.items():
+                with self.subTest(fragment=name):
+                    self.assertTrue(any(ln.endswith(message) for ln in lines),
+                                    f"{name} is not named with compose's own message "
+                                    f"{message!r}:\n{out}")
+            # No stray listing satisfies this: `check` names every pending fragment and prints
+            # none of compose's messages, which is why the messages are what is asserted.
+            listing = _cli("check", "--root", str(root))
+            self.assertEqual(listing.returncode, 1)
+            for message in expected.values():
+                self.assertNotIn(message, listing.stdout + listing.stderr)
+
+    def test_only_the_malformed_fragment_is_named_in_a_mixed_tree(self):
+        """MUTANTS: name every path handed in once any one raises (the good one is then named
+        beside the bad); exit 1 whenever `check()` returns a path, the stray rule (a tree of
+        good fragments then refuses). The all-good tree carries a lower-case marker compose
+        accepts, so a stricter re-implemented parser refuses it here."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=[("US0201.md", FRAG_ADDED),
+                                         ("BG0202.md", "- a bare bullet, no marker\n")])
+            r = _cli("shape", "--root", str(root))
+            out = r.stdout + r.stderr
+            self.assertEqual(r.returncode, 1, out)
+            self.assertIn("BG0202.md", out)
+            self.assertNotIn("US0201", out)
+        good = [("US0301.md", FRAG_ADDED), ("US0302.md", FRAG_CHANGED),
+                ("BG0303.md", "<!-- section: fixed -->\n- **A repair (BG0303).** Mended.\n")]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=good)
+            # the positive control on the fixture itself: compose folds every one of these
+            self.assertEqual(_cli("compose", "--root", str(root)).returncode, 0)
+            r = _cli("shape", "--root", str(root))
+            out = r.stdout + r.stderr
+            self.assertEqual(r.returncode, 0, out)
+            for name, _body in good:
+                self.assertNotIn(name.removesuffix(".md"), out)
 
 
 class ParallelLaneRuleTests(unittest.TestCase):

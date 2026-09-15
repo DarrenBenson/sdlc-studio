@@ -1387,7 +1387,7 @@ def _revert_check(root: str) -> dict:
     if not base or not batch:
         return {"count": 0, "blocking": False,
                 "detail": "N/A (no open run with a base ref and a batch to examine)"}
-    examined, refused, named, crashed = 0, [], [], []
+    examined, refused, named, crashed, set_aside = 0, [], [], [], []
     skipped = {"reported": 0, "error": 0}   # units the check could not MEASURE - counted, so an
     for uid in batch:                        # absence can say why rather than merely that
         try:
@@ -1403,6 +1403,13 @@ def _revert_check(root: str) -> dict:
             continue
         if res.get("status") in ("error", "reported"):
             skipped[res["status"]] += 1
+            # NAMED, not only counted. A count says the method set something aside; only the id
+            # says which unit a reader must judge by other means - every test-only unit lands
+            # here, and a line that drops them hands that blind spot to nobody.
+            reason = res["status"]
+            first = (str((res.get("errors") or [""])[0]).removeprefix(f"{uid}: ")
+                     if reason == "error" else "")
+            set_aside.append(f"{uid} ({reason}: {first})" if first else f"{uid} ({reason})")
             continue  # not a measurement of this unit's evidence; `revert-check` reports it
         examined += 1
         if res.get("status") == "refused":
@@ -1413,22 +1420,25 @@ def _revert_check(root: str) -> dict:
     # stayed green" and "0 examined and clean" are both literally true over nothing and both
     # read as a clean bill; the lane says what happened instead - that it measured nothing,
     # and why - and a crash still leads, on the crashed branch's own reasoning.
+    # Every set-aside unit is named on every path, each with its reason, and never truncated:
+    # the examined count excludes them, so this is the only place a reader learns which.
+    aside = (f"; set aside, not judged: {', '.join(set_aside)}" if set_aside else "")
     absence = (f"no unit was examined, so this lane measured nothing "
-               f"({skipped['reported']} reported, {skipped['error']} in error)")
+               f"({skipped['reported']} reported, {skipped['error']} in error){aside}")
     if not refused:
         if crashed:
             # The failure leads. Appending it after the reassuring half of a sentence still
             # lets a reader skim past a run that measured nothing.
-            tail = f"{examined} examined and clean" if examined else absence
+            tail = f"{examined} examined and clean{aside}" if examined else absence
             detail = (f"{len(crashed)} unit(s) could not be examined at all - "
                       + _first_three(crashed) + f"; {tail}")
         elif examined:
-            detail = f"{examined} unit(s) examined, none stayed green without its change"
+            detail = f"{examined} unit(s) examined, none stayed green without its change{aside}"
         else:
             detail = absence
         return {"count": 0, "blocking": False, "detail": detail}
     detail = (f"{examined} examined, {len(refused)} would be refused - "
-              + _first_three(named))
+              + _first_three(named) + aside)
     if crashed:
         detail += f"; {len(crashed)} could not be examined - " + _first_three(crashed)
     return {"count": len(refused), "blocking": False, "detail": detail}

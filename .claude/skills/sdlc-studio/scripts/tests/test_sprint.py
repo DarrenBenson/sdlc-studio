@@ -14395,6 +14395,206 @@ class SprintNextTests(unittest.TestCase):
             self.assertIn(expect, str(caught.exception))
 
 
+class NextRefusesDiscoveryItemsTests(unittest.TestCase):
+    """BG0674. `sprint next` materialised whatever the head charter's query selected, CRs
+    included, and the `sprint plan` that follows refused those same units as DISCOVERY items - so
+    the charter at the head of the queue produced a batch nothing could plan. With
+    `two_backlog.enforce` on, `next` now reads plan's discovery gate per unit: an all-discovery
+    scope is refused with the ids and the decompose remedy, a mixed scope materialises its stories
+    and bugs and names its discovery items on a line of their own.
+
+    Every test enters `sprint.py next` through `main`, the shipped entry point.
+
+    MUTANTS (in sprint.py's next path):
+      1. print the discovery items as a warning and still return 0 with them materialised
+         -> AC1's exit code and absent materialised line.
+      2. filter discovery units out before the empty-scope check -> AC1 falls through to the
+         empty-scope refusal, which names neither the CRs nor the refine remedy.
+      3. invert the `is_discovery` partition -> AC2's bug and story are held back.
+      4. gate with all() over the selection -> AC3 materialises the CR beside the bug.
+      5. drop request-typed entries without keeping them -> AC3's separate line is missing.
+      6. gate with any() -> AC3's mixed batch is refused whole.
+      7. drop the `two_backlog_enforced` condition -> AC4's unenforced project refuses its CR.
+    """
+
+    REMEDY = "refine.py apply --request"
+
+    def _project(self, root: Path, enforce: bool | None) -> None:
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        cfg = root / "sdlc-studio" / ".config.yaml"
+        if enforce is None:
+            if cfg.exists():
+                cfg.unlink()
+            return
+        cfg.write_text(f"two_backlog:\n  enforce: {'true' if enforce else 'false'}\n",
+                       encoding="utf-8")
+
+    def _charter(self, root: Path, query: str, title: str = "a planned run",
+                 goal: str = "the goal") -> None:
+        d = root / "sdlc-studio" / "charters"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "SC0001-x.md").write_text(
+            f"# SC0001: {title}\n\n> **Status:** Queued\n> **Scope query:** {query}\n\n"
+            f"## Sprint Goal\n\n{goal}\n\n## Scope rule\n\nthe prose a human reads\n",
+            encoding="utf-8")
+
+    def _unit(self, root: Path, folder: str, uid: str, status: str) -> None:
+        d = root / "sdlc-studio" / folder
+        d.mkdir(parents=True, exist_ok=True)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / f"{uid}.py").write_text("", encoding="utf-8")
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: u\n\n> **Status:** {status}\n> **Severity:** Medium\n"
+            f"> **Points:** 2\n> **Affects:** src/{uid}.py\n\n## Acceptance Criteria\n\n"
+            f"### AC1: it behaves\n\n- **Given** a thing\n- **Verify:** shell true\n",
+            encoding="utf-8")
+
+    def _next(self, root: Path, *extra: str) -> tuple[int, str, str]:
+        sprint = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sprint.main(["next", "--skip-personas", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    @staticmethod
+    def _materialised(out: str) -> list[tuple[str, list[str]]]:
+        """Every `materialised N unit(s)` line, with the ids it lists."""
+        import re
+        found = []
+        for line in out.splitlines():
+            m = re.search(r"\bmaterialised \d+ unit\(s\)[^:]*: (.*)$", line)
+            if m and not line.lstrip().startswith("not materialised"):
+                found.append((line, [s.strip() for s in m.group(1).split(",") if s.strip()]))
+        return found
+
+    def test_a_discovery_only_query_is_refused_at_next(self) -> None:
+        """AC1. MUTANTS 1 and 2: a warning with exit 0 leaves the materialised line and the exit
+        code; a filter ahead of the empty-scope check reaches a refusal naming neither CR nor the
+        remedy. The remedy is asserted DISTINCT by driving each of `next`'s other four refusals
+        and checking none prints it - otherwise an empty-scope fall-through could carry it too."""
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root, enforce=True)
+            self.assertTrue(sdlc_md.two_backlog_enforced(root), "the fixture is not enforced")
+            self._charter(root, "--crs Proposed")
+            self._unit(root, "change-requests", "CR0001", "Proposed")
+            self._unit(root, "change-requests", "CR0002", "Proposed")
+            rc, out, err = self._next(root, "--dry-run")
+            self.assertNotEqual(rc, 0, f"an all-discovery charter materialised:\n{out}{err}")
+            for cid in ("CR0001", "CR0002"):
+                self.assertIn(cid, err, f"the refusal never named {cid}:\n{err}")
+            self.assertIn(self.REMEDY, err, f"the refusal never named the decompose remedy:\n{err}")
+            self.assertEqual(self._materialised(out), [],
+                             f"a refused charter still printed a materialised line:\n{out}")
+
+        # The four other refusals, each driven through the same entry point: none prints the
+        # remedy, so its presence above is this refusal and not one of them.
+        def empty_scope(root: Path) -> None:
+            self._charter(root, "--crs Proposed")
+
+        def no_query(root: Path) -> None:
+            (root / "sdlc-studio" / "charters").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "charters" / "SC0001-x.md").write_text(
+                "# SC0001: intent\n\n> **Status:** Queued\n\n## Sprint Goal\n\ng\n",
+                encoding="utf-8")
+
+        def bad_query(root: Path) -> None:
+            self._charter(root, "--widgets Proposed")
+
+        def run_open(root: Path) -> None:
+            self._charter(root, "--crs Proposed")
+            self._unit(root, "change-requests", "CR0001", "Proposed")
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps({"run_id": "RUN-OPEN", "outcome": "running", "batch": []}),
+                encoding="utf-8")
+
+        others = {"empty-scope": empty_scope, "no-query": no_query,
+                  "bad-query": bad_query, "run-open": run_open}
+        for name, build in others.items():
+            with self.subTest(refusal=name), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._project(root, enforce=True)
+                build(root)
+                rc, out, err = self._next(root, "--dry-run")
+                self.assertEqual(rc, 2, f"{name} was not refused:\n{out}{err}")
+                self.assertNotIn(self.REMEDY, err, f"{name} prints the remedy too:\n{err}")
+
+    def test_a_deliverable_query_materialises(self) -> None:
+        """AC2, the paired control, with enforcement ON so the discovery partition is consulted.
+        MUTANT 3: an inverted `is_discovery` holds the bug and the story back and refuses."""
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root, enforce=True)
+            self.assertTrue(sdlc_md.two_backlog_enforced(root), "the fixture is not enforced")
+            self._charter(root, "--bugs Open --stories Ready")
+            self._unit(root, "bugs", "BG0001", "Open")
+            self._unit(root, "stories", "US0001", "Ready")
+            rc, out, err = self._next(root, "--dry-run")
+            self.assertEqual(rc, 0, f"a deliverable charter was refused:\n{out}{err}")
+            lines = self._materialised(out)
+            self.assertEqual(len(lines), 1, f"expected one materialised line:\n{out}")
+            self.assertEqual(sorted(lines[0][1]), ["BG0001", "US0001"], lines[0][0])
+            self.assertNotIn("not materialised", out, "a deliverable unit was reported held back")
+
+    def test_a_mixed_query_names_what_it_dropped(self) -> None:
+        """AC3. MUTANTS 4, 5 and 6: all() materialises the CR beside the bug; a silent drop leaves
+        no line naming it; any() refuses the batch whole.
+
+        The charter's title and goal both NAME the CR - as the live SC0004 goal names CR0497 - so
+        "CR0001 appears somewhere off the materialised line" would pass under the silent drop.
+        The assertion is therefore one line carrying the id AND the discovery wording together,
+        and a positive control proves the fixture does print the id elsewhere without it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root, enforce=True)
+            self._charter(root, "--bugs Open --crs Proposed",
+                          title="ship what CR0001 asks for", goal="deliver what CR0001 asks for")
+            self._unit(root, "bugs", "BG0001", "Open")
+            self._unit(root, "change-requests", "CR0001", "Proposed")
+            rc, out, err = self._next(root)
+            self.assertEqual(rc, 0, f"a mixed charter was refused whole:\n{out}{err}")
+            lines = self._materialised(out)
+            self.assertEqual(len(lines), 1, f"expected one materialised line:\n{out}")
+            mat_line, ids = lines[0]
+            self.assertEqual(ids, ["BG0001"], mat_line)
+            self.assertNotIn("CR0001", mat_line, "the CR was materialised")
+            # the control: the id reaches the output on lines that say nothing about discovery
+            self.assertTrue(any("CR0001" in ln and "discovery" not in ln.lower()
+                                for ln in out.splitlines()),
+                            f"the fixture's title and goal no longer print the CR id:\n{out}")
+            named = [ln for ln in out.splitlines()
+                     if ln != mat_line and "CR0001" in ln and "discovery" in ln.lower()
+                     and "not materialised" in ln]
+            self.assertEqual(len(named), 1,
+                             f"no separate line names CR0001 as a discovery item left out:\n{out}")
+
+    def test_next_follows_the_two_backlog_condition_plan_reads(self) -> None:
+        """AC4. MUTANT 7: dropping the `two_backlog_enforced` condition holds the CR back in a
+        project that never opted in. Off both ways - the key absent and set false - and the same
+        fixture flipped on is refused, so the condition is what decides."""
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._charter(root, "--crs Proposed")
+            self._unit(root, "change-requests", "CR0001", "Proposed")
+            for enforce in (None, False):
+                with self.subTest(enforce=enforce):
+                    self._project(root, enforce=enforce)
+                    self.assertFalse(sdlc_md.two_backlog_enforced(root))
+                    rc, out, err = self._next(root, "--dry-run")
+                    self.assertEqual(rc, 0, f"an unenforced project refused its CR:\n{out}{err}")
+                    lines = self._materialised(out)
+                    self.assertEqual(len(lines), 1, f"expected one materialised line:\n{out}")
+                    self.assertEqual(lines[0][1], ["CR0001"], lines[0][0])
+            self._project(root, enforce=True)
+            self.assertTrue(sdlc_md.two_backlog_enforced(root))
+            rc, out, err = self._next(root, "--dry-run")
+            self.assertNotEqual(rc, 0, "the same fixture enforced still materialised its CR")
+            self.assertIn(self.REMEDY, err)
+
+
 class QueueCrudTests(unittest.TestCase):
     """US0489. A queue somebody planned five runs ago must be correctable without hand-editing
     state or throwing the whole thing away.

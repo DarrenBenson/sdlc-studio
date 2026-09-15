@@ -262,19 +262,88 @@ class ReviewKeysAreDeclaredTests(unittest.TestCase):
                               "two_role_after is documented without saying it takes an id cutoff, "
                               "which is the guess that RAISES")
 
+    #: The readers each deliberately absent key's note must name. The reason the absence is
+    #: deliberate IS that more than one consumer reads the key, so a note naming neither is a bare
+    #: assertion, and the next author re-adds the key.
+    ABSENT_KEY_CONSUMERS = {
+        "max_rounds": ("close-attempt cap", "review-round ceiling"),
+    }
+
+    @staticmethod
+    def _comment_runs(text: str) -> list:
+        """Each run of consecutive comment lines, joined into one normalised string. A note's
+        phrases wrap across lines, so a line-by-line match would miss a phrase split by a wrap."""
+        runs, current = [], []
+        for line in text.splitlines():
+            if line.strip().startswith("#"):
+                current.append(line.strip().lstrip("#"))
+            elif current:
+                runs.append(current)
+                current = []
+        if current:
+            runs.append(current)
+        return [" ".join(" ".join(run).lower().replace("-", " ").split()) for run in runs]
+
+    @staticmethod
+    def _live_paths(node, key: str, prefix: str = "") -> list:
+        """Every dotted path at which `key` is a live key of the PARSED file - quoting, spacing
+        and flow style all parse to the same mapping, so none of them slips past."""
+        found = []
+        if isinstance(node, dict):
+            for k, v in node.items():
+                path = f"{prefix}.{k}" if prefix else str(k)
+                if str(k) == key:
+                    found.append(path)
+                found += ReviewKeysAreDeclaredTests._live_paths(v, key, path)
+        elif isinstance(node, list):
+            for item in node:
+                found += ReviewKeysAreDeclaredTests._live_paths(item, key, prefix)
+        return found
+
     def test_a_deliberately_absent_key_says_so(self) -> None:
-        """AC3. MUTANT: delete the note explaining why `max_rounds` is absent.
+        """AC3. MUTANTS, each a single change the old string-presence test survived:
+        (a) delete the note explaining why `max_rounds` is absent;
+        (b) keep the note word for word and add a live `max_rounds: 3` under `review:`;
+        (c) cut the note to `# review.max_rounds is deliberately absent.`, naming no consumer.
 
         The paired control for the row above: a key simply missing and a key deliberately withheld
         read identically, and the obvious repair to the first is the thing a recorded decision
-        forbids for the second."""
+        forbids for the second. Both sides are held: the note states the absence AND its reason,
+        and the parsed file declares no such key."""
         declared = DEFAULTS.read_text(encoding="utf-8")
+        runs = self._comment_runs(declared)
         for key in self.DELIBERATELY_ABSENT:
-            with self.subTest(key=key):
-                self.assertIn(key, declared,
-                              f"`review.{key}` is read by the code and neither declared nor "
-                              f"explained - an unexplained absence is indistinguishable from an "
-                              f"oversight, and the obvious repair is the one that is forbidden")
+            with self.subTest(key=key, side="note"):
+                consumers = self.ABSENT_KEY_CONSUMERS.get(key)
+                self.assertIsNotNone(consumers,
+                                     f"`review.{key}` is exempted with no named consumers - the "
+                                     f"test cannot tell a reasoned note from a bare one")
+                notes = [r for r in runs if re.search(rf"\b{re.escape(key)}\b", r)]
+                self.assertTrue(notes,
+                                f"`review.{key}` is read by the code and neither declared nor "
+                                f"explained - an unexplained absence is indistinguishable from "
+                                f"an oversight, and the obvious repair is the one that is forbidden")
+                wanted = ["deliberately absent"] + [" ".join(c.replace("-", " ").split())
+                                                    for c in consumers]
+                self.assertTrue(
+                    any(all(w in note for w in wanted) for note in notes),
+                    f"no comment mentioning `review.{key}` both states it is deliberately absent "
+                    f"and names the consumers that read it ({', '.join(consumers)}) - a note "
+                    f"with no reason is the one the next author overrides:\n" + "\n".join(notes))
+        if not HAVE_YAML:
+            self.skipTest("PyYAML not installed - the no-live-key side reads the parsed mapping")
+        import yaml
+        parsed = yaml.safe_load(declared) or {}
+        self.assertIsInstance(parsed.get("review"), dict,
+                              "the defaults file has no `review` mapping - the live-key side "
+                              "would pass vacuously")
+        for key in self.DELIBERATELY_ABSENT:
+            with self.subTest(key=key, side="no live key"):
+                self.assertNotIn(key, parsed["review"],
+                                 f"`review.{key}` is declared live in the defaults despite the "
+                                 f"note forbidding it - the recorded decision was overridden")
+                self.assertEqual([], self._live_paths(parsed, key),
+                                 f"`{key}` is declared as a live key elsewhere in the defaults")
 
 
 @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")

@@ -80,6 +80,9 @@ EXPECTED_LANES = {
     # nothing. Added to the roster in the same commit that added the lane, because a roster
     # that is not updated is how a lane is dropped silently.
     "practice-rules",
+    # BG0662: nothing opened a changelog fragment until the release cut, where compose refused
+    # the whole fold; 59 of 119 had drifted past a green gate.
+    "changelog-shape",
     "script-tests", "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "markdown", "markdown-payload",
@@ -541,6 +544,173 @@ class PracticeRulesLaneTests(unittest.TestCase):
                             "lane it invokes guards nothing")
         self.assertEqual(0, outcomes["passing"],
                          "the hook's run helper reports a failure for a command that succeeded")
+
+
+def _load_gitutil():
+    """The shipped git-fixture helper, which confines every fixture git call to the fixture.
+    Loaded rather than re-implemented, so this module carries no second copy of its list."""
+    import importlib.util
+    import sys
+    path = REPO / ".claude/skills/sdlc-studio/scripts/tests/gitutil.py"
+    spec = importlib.util.spec_from_file_location("_lane_order_gitutil", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+gitutil = _load_gitutil()
+
+GOOD_FRAGMENT = "<!-- section: Fixed -->\n- **A repair (BG0001).** Mended.\n"
+BAD_FRAGMENT = "### Fixed\n- a heading where the marker belongs\n"
+
+
+class ChangelogShapeLaneTests(unittest.TestCase):
+    """Nothing opened a changelog fragment until the release cut, where compose refuses the
+    WHOLE fold on the first bad one: 59 of 119 had drifted past a green gate. The lane judges
+    each fragment on the commit that writes it.
+
+    DRIVEN, not read: the lane's `run` block and the hook's `run` helper are both taken from
+    `.githooks/pre-commit` and executed in throwaway git repositories, so a lane that is
+    present, named and inert fails here whatever it is called."""
+
+    KEY = "changelog-shape"
+    SKILL = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"
+
+    def _lane_block(self) -> str:
+        """The lane's `run` block, from its `run "<key>"` line through its `--` command line."""
+        lines = _text().splitlines()
+        start = next((i for i, ln in enumerate(lines)
+                      if re.match(rf'\s*run\s+"{re.escape(self.KEY)}"', ln)), None)
+        self.assertIsNotNone(start, f'the hook has no `run "{self.KEY}"` lane')
+        end = next(i for i in range(start, len(lines)) if lines[i].strip().startswith("-- "))
+        return "\n".join(lines[start:end + 1])
+
+    def _run_lane(self, repo: Path) -> tuple[int, str]:
+        text = _text()
+        start = text.index("run() {")
+        helper = text[start:text.index("\n}\n", start) + 3]
+        script = (f"{helper}\nR= G= Y= B= N=\nskill='{self.SKILL}'\nfail=0\n"
+                  f"{self._lane_block()}\nexit $fail\n")
+        r = subprocess.run(["bash", "-c", script], cwd=repo, capture_output=True, text=True,
+                           check=False, timeout=120,
+                           env=gitutil.git_env(PYTHONDONTWRITEBYTECODE="1"))
+        return r.returncode, r.stdout + r.stderr
+
+    def _repo(self, committed: dict | None = None) -> Path:
+        """A throwaway git repository holding CHANGELOG.md and `committed` fragments."""
+        root = Path(tempfile.mkdtemp(prefix="clshape_"))
+        self.addCleanup(shutil.rmtree, root, ignore_errors=True)
+        gitutil.git(["init", "-q", "-b", "main"], cwd=root)
+        (root / "changelog.d").mkdir()
+        (root / "CHANGELOG.md").write_text("# Changelog\n\n## [Unreleased]\n\n",
+                                           encoding="utf-8")
+        for name, body in (committed or {}).items():
+            (root / "changelog.d" / name).write_text(body, encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-q", "-m", "seed"], cwd=root)
+        return root
+
+    def _stage(self, root: Path, name: str, body: str) -> None:
+        (root / "changelog.d").mkdir(exist_ok=True)   # `git rm` of every fragment removes it
+        (root / "changelog.d" / name).write_text(body, encoding="utf-8")
+        gitutil.git(["add", "--", f"changelog.d/{name}"], cwd=root)
+
+    def test_the_lane_refuses_a_staged_malformed_fragment(self) -> None:
+        """MUTANTS: an advisory `if` block that prints through `|| true` and never sets `fail`;
+        the lane moved inside the suites-selected block; each staged fragment read from disk
+        rather than from its index blob; the lane pointed at `changelog.py structure`.
+
+        Two staged fragments are judged: a NEW one, and a TRACKED one committed well formed
+        then edited into a bad shape, so a listing of added files alone misses the second."""
+        root = self._repo({"BG0010.md": GOOD_FRAGMENT})
+        self._stage(root, "BG0011.md", BAD_FRAGMENT)                 # added
+        self._stage(root, "BG0010.md", "- a bare bullet, no marker\n")  # modified
+        rc, out = self._run_lane(root)
+        self.assertNotEqual(0, rc, f"the lane passed a staged malformed fragment:\n{out}")
+        for name in ("BG0011.md", "BG0010.md"):
+            self.assertIn(name, out, f"the lane did not name {name}:\n{out}")
+
+        # Repaired on disk and NOT re-staged: the commit still records the bad bytes.
+        for name in ("BG0011.md", "BG0010.md"):
+            (root / "changelog.d" / name).write_text(GOOD_FRAGMENT, encoding="utf-8")
+        rc, out = self._run_lane(root)
+        self.assertNotEqual(0, rc, "the lane judged the working tree, not the staged blob, so "
+                                   f"a bad blob repaired but left unstaged commits:\n{out}")
+        for name in ("BG0011.md", "BG0010.md"):
+            self.assertIn(name, out)
+
+        # Top-level, and above the suite selection: every commit is judged, not only one that
+        # stages a test-relevant file.
+        lane = _lane_line(self.KEY)
+        run_line = _text().splitlines()[lane - 1]
+        self.assertTrue(run_line.startswith("run "),
+                        f"the lane is nested inside a block rather than top-level:\n{run_line}")
+        self.assertLess(lane, _line_matching(r"^\s*suites_needed=", HOOK),
+                        "the lane runs after the suite selection, so a commit staging no "
+                        "test-relevant file can skip it")
+
+    def test_the_lane_passes_the_release_cut_a_well_formed_fragment_and_an_untracked_draft(
+            self) -> None:
+        """MUTANTS: drop `--diff-filter=d` from the staged listing (the release cut's staged
+        deletions are then read, and refused); list the working tree's fragments rather than
+        the staged names (the untracked draft then refuses the commit). Positive control in
+        the SAME repositories: one malformed fragment staged as well fails the lane, naming
+        only that fragment."""
+        # 1. a well-formed fragment staged
+        well = self._repo()
+        self._stage(well, "BG0020.md", GOOD_FRAGMENT)
+        # 2. the release cut's own commit: ONLY fragment deletions and a CHANGELOG.md edit.
+        # One of the deleted fragments is malformed at HEAD, so a lane reading deletions from
+        # any ref refuses it.
+        cut = self._repo({"BG0030.md": GOOD_FRAGMENT, "BG0031.md": BAD_FRAGMENT})
+        gitutil.git(["rm", "-q", "--", "changelog.d/BG0030.md", "changelog.d/BG0031.md"],
+                    cwd=cut)
+        (cut / "CHANGELOG.md").write_text("# Changelog\n\n## [Unreleased]\n\n## [9.9.9]\n\n"
+                                          "### Fixed\n\n- folded\n", encoding="utf-8")
+        gitutil.git(["add", "--", "CHANGELOG.md"], cwd=cut)
+        staged = gitutil.git(["diff", "--cached", "--name-status"], cwd=cut,
+                             text=True).stdout.split()
+        self.assertEqual(staged, ["M", "CHANGELOG.md", "D", "changelog.d/BG0030.md",
+                                  "D", "changelog.d/BG0031.md"])
+        # 3. a well-formed fragment staged beside an UNTRACKED malformed draft
+        draft = self._repo()
+        self._stage(draft, "BG0040.md", GOOD_FRAGMENT)
+        (draft / "changelog.d" / "BG0041.md").write_text(BAD_FRAGMENT, encoding="utf-8")
+
+        states = {"well-formed": (well, ["BG0020"]),
+                  "release cut": (cut, ["BG0030", "BG0031"]),
+                  "untracked draft": (draft, ["BG0040", "BG0041"])}
+        for state, (root, others) in states.items():
+            with self.subTest(state=state):
+                rc, out = self._run_lane(root)
+                self.assertEqual(0, rc, f"the lane refused the {state} commit:\n{out}")
+        for state, (root, others) in states.items():
+            with self.subTest(state=state, control="malformed staged as well"):
+                self._stage(root, "BG0099.md", BAD_FRAGMENT)
+                rc, out = self._run_lane(root)
+                self.assertNotEqual(0, rc, f"the lane passed a staged malformed fragment in "
+                                           f"the {state} repository, so it is dead:\n{out}")
+                self.assertIn("BG0099.md", out)
+                for other in others:
+                    self.assertNotIn(other, out,
+                                     f"the lane named {other}, which this commit does not "
+                                     f"record as a fragment:\n{out}")
+
+    def test_the_agents_roster_names_the_lane(self) -> None:
+        """MUTANT: delete the `changelog.py shape` entry from AGENTS.md's lane roster.
+
+        The roster's own pinning test skips a lane whose script is spelt `"$skill/x.py"`, as
+        this one is, so it cannot see this lane go missing from the paragraph."""
+        agents = (REPO / "AGENTS.md").read_text(encoding="utf-8")
+        opening = "The pre-commit lanes, recorded here"
+        self.assertIn(opening, agents, "AGENTS.md's pre-commit lane roster moved or vanished")
+        start = agents.index(opening)
+        end = agents.find("\n\n", start)
+        paragraph = agents[start:end if end != -1 else len(agents)]
+        self.assertIn("changelog.py shape", paragraph,
+                      "AGENTS.md's pre-commit lane roster does not name the changelog-shape "
+                      "lane - a guard nobody has written down is one nobody notices losing")
 
 
 if __name__ == "__main__":

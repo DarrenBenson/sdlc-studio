@@ -16,13 +16,20 @@ Fragment format (first line declares the section, the rest is the entry):
 
     <!-- section: Added -->
     - **The thing (USxxxx).** What shipped, in CHANGELOG voice.
+
+`shape` checks that format when a fragment is WRITTEN rather than when it is folded: it names
+every fragment `compose` would refuse, with compose's own message, and `shape --staged` judges
+the index blobs a commit will record. Compose stops at the first bad fragment, correctly, since
+a partial fold is worse than none; that makes the release cut the costliest place to learn of
+the drift, and the commit that wrote the fragment the cheapest.
 """
 from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
@@ -51,23 +58,96 @@ def _fragment_paths(root: Path) -> list[Path]:
     return sorted(d.glob("*.md")) if d.is_dir() else []
 
 
-def _parse(path: Path) -> tuple[str, str]:
-    """(section, entry_text) - refuses a missing marker or unknown section."""
-    lines = path.read_text(encoding="utf-8").splitlines()
+class StagedReadError(RuntimeError):
+    """`shape --staged` could not read what the commit will record. Refused, never read as
+    nothing staged."""
+
+
+def _parse(name: str, text: str) -> tuple[str, str]:
+    """(section, entry_text) - refuses a missing marker or unknown section.
+
+    Takes the fragment's TEXT rather than its path, so the working-tree reader (compose) and the
+    index reader (`shape --staged`) share one parser and one set of messages."""
+    lines = text.splitlines()
     if not lines:
-        raise FragmentError(f"{path.name}: empty fragment")
+        raise FragmentError(f"{name}: empty fragment")
     m = _MARKER.match(lines[0].strip())
     if not m:
-        raise FragmentError(f"{path.name}: first line must be '<!-- section: <name> -->' "
+        raise FragmentError(f"{name}: first line must be '<!-- section: <name> -->' "
                             f"(one of {', '.join(SECTIONS)})")
     section = m.group(1).capitalize() if m.group(1).capitalize() in SECTIONS else m.group(1)
     if section not in SECTIONS:
-        raise FragmentError(f"{path.name}: unknown section {section!r} - "
+        raise FragmentError(f"{name}: unknown section {section!r} - "
                             f"one of {', '.join(SECTIONS)}")
     entry = "\n".join(lines[1:]).strip("\n")
     if not entry.strip():
-        raise FragmentError(f"{path.name}: no entry text after the section marker")
+        raise FragmentError(f"{name}: no entry text after the section marker")
     return section, entry
+
+
+def _first_line(raw: bytes) -> str:
+    """git's own reason, without the usage screen it prints after it."""
+    lines = raw.decode("utf-8", "replace").strip().splitlines()
+    return lines[0] if lines else "(no message)"
+
+
+def _staged_fragments(root: Path) -> list[tuple[str, str]]:
+    """(name, staged text) for every fragment the index adds, modifies or renames.
+
+    Deletions are excluded (`--diff-filter=d`): the release cut's own commit stages the deletion
+    of every fragment it folded, and a deleted fragment is not composed by anybody. The text is
+    the INDEX blob, never the working tree, so an untracked draft is not judged and a bad blob
+    repaired on disk but not re-staged still is. A git call that fails, or a blob that cannot be
+    read, is refused rather than skipped."""
+    try:
+        cp = subprocess.run(["git", "-c", "core.quotepath=false", "diff", "--cached",
+                             "--name-only", "-z", "--diff-filter=d", "--",
+                             f"{FRAGMENT_DIR}/*.md"],
+                            cwd=str(root), capture_output=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise StagedReadError(f"git could not list the staged fragments: {exc}") from exc
+    if cp.returncode != 0:
+        raise StagedReadError("git could not list the staged fragments (rc "
+                              f"{cp.returncode}): {_first_line(cp.stderr)}")
+    out = []
+    for rel in sorted(r for r in cp.stdout.decode("utf-8", "replace").split("\0") if r):
+        # compose reads only the directory's own *.md, so a nested file is nobody's fragment
+        if PurePosixPath(rel).parent.name != FRAGMENT_DIR:
+            continue
+        try:
+            blob = subprocess.run(["git", "show", f":{rel}"], cwd=str(root),
+                                  capture_output=True, timeout=60)
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise StagedReadError(f"git could not read the staged blob of {rel}: {exc}") from exc
+        if blob.returncode != 0:
+            raise StagedReadError(f"git could not read the staged blob of {rel} (rc "
+                                  f"{blob.returncode}): {_first_line(blob.stderr)}")
+        try:
+            out.append((PurePosixPath(rel).name, blob.stdout.decode("utf-8")))
+        except UnicodeDecodeError as exc:
+            raise StagedReadError(f"the staged blob of {rel} is not UTF-8 text") from exc
+    return out
+
+
+def shape(root, *, staged: bool = False) -> tuple[int, list[str]]:
+    """(fragments judged, compose's message for EVERY one it would refuse).
+
+    The same parser compose uses, run over every fragment rather than stopping at the first:
+    compose refuses the whole fold on one bad fragment, which is right for a destructive action
+    and wrong for a check, whose job is to name all of them in one pass. `staged` judges the
+    index blobs a commit will record; otherwise every pending fragment in the working tree."""
+    root = Path(root)
+    if staged:
+        frags = _staged_fragments(root)
+    else:
+        frags = [(p.name, p.read_text(encoding="utf-8")) for p in _fragment_paths(root)]
+    faults = []
+    for name, text in frags:
+        try:
+            _parse(name, text)
+        except FragmentError as exc:
+            faults.append(str(exc))
+    return len(frags), faults
 
 
 def check(root) -> list[Path]:
@@ -93,7 +173,8 @@ def compose(root, *, apply: bool = False) -> dict:
     frags = _fragment_paths(root)
     if not frags:
         return {"composed": 0, "would_compose": 0, "sections": [], "applied": apply}
-    parsed = [(p, *_parse(p)) for p in frags]  # refuses before any write, in dry-run too
+    # refuses before any write, in dry-run too
+    parsed = [(p, *_parse(p.name, p.read_text(encoding="utf-8"))) for p in frags]
     if not apply:
         # DRY RUN: report what a release cut would fold, touch nothing. The pending set survives.
         return {"composed": 0, "would_compose": len(parsed), "applied": False,
@@ -274,7 +355,12 @@ def build_parser() -> argparse.ArgumentParser:
     k = sub.add_parser("check", help="list stray (uncomposed) fragments; exit 1 if any")
     s = sub.add_parser("structure", help="check [Unreleased] headings are in order, "
                        "unrepeated and non-empty; exit 1 on a fault")
-    for p in (c, k, s):
+    sh = sub.add_parser("shape", help="name EVERY fragment compose would refuse, with compose's "
+                        "own message; exit 1 only on a malformed fragment, never on a pending one")
+    sh.add_argument("--staged", action="store_true",
+                    help="judge the fragments this commit adds, modifies or renames, read from "
+                         "the index (never the working tree; deletions are not judged)")
+    for p in (c, k, s, sh):
         p.add_argument("--root", default=".", help="Repo root (default: .)")
     # Uniform family grammar: `--root` valid before OR after the verb, with the
     # per-subcommand copies re-pointed to SUPPRESS so a value given first is not
@@ -297,6 +383,23 @@ def main(argv=None) -> int:
                 print(e, file=sys.stderr)
             return 1
         print("[Unreleased] headings are well-formed")
+        return 0
+    if args.cmd == "shape":
+        where = "staged" if args.staged else "pending"
+        try:
+            judged, faults = shape(args.root, staged=args.staged)
+        except StagedReadError as exc:
+            print(f"shape refused: {exc}", file=sys.stderr)
+            return 2
+        if faults:
+            print(f"{len(faults)} of {judged} {where} fragment(s) cannot be composed - the "
+                  "release cut's compose refuses the whole fold on any one of them:",
+                  file=sys.stderr)
+            for f in faults:
+                print(f"  {f}", file=sys.stderr)
+            return 1
+        # names no fragment: a clean run has nothing to point at
+        print(f"{judged} {where} fragment(s) well-formed")
         return 0
     if args.cmd == "compose":
         try:

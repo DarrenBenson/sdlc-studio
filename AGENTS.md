@@ -78,7 +78,10 @@ and was wired into nothing until BG0493),
 `validate.py` (the warning ratchet), `stamps-staged` (`verify_ac.py stamps --staged`, which refuses a
 commit that stages a rename or deletion of a test node a stamped `Verify:` selector names, judging
 the staged blobs by AST - the write-time guard cannot see a rename, and the scheduled corpus lane that
-can was red three weeks unread, BG0653), plus `gate.py`'s
+can was red three weeks unread, BG0653), `changelog-shape` (`changelog.py shape --staged`, which
+refuses a commit that stages a `changelog.d/` fragment the release cut's `compose` could not fold,
+naming every one with compose's own message and judging the staged blob - nothing opened a
+fragment before the cut, and 59 of 119 had drifted past it, BG0662), plus `gate.py`'s
 own block (conformance, reconcile, validate, integrity, duplicate-id, docs,
 derived-depth, evidence-drift) and markdownlint.
 One of those, `evidence-drift`, is BLOCKING and guards the mutation ledger: a commit whose staged

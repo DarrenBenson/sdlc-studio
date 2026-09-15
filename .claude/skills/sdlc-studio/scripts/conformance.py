@@ -56,6 +56,22 @@ ALWAYS_STAGES = ("decomposed", "specified", "verifiable")
 #: not the AC stages (specified/verifiable), so a fresh refine output with placeholder ACs is
 #: conformant until it is groomed to Ready.
 _PRE_GROOMED_STORY_STATUS = ("Proposed", "Draft")
+
+
+def retired_story_statuses() -> set[str]:
+    """The story statuses that retire a story UNBUILT: the members of its terminal set reached by
+    a ruling rather than by delivery (Won't Implement, Superseded - not Done).
+
+    Such a story owes `decomposed` alone, like a pre-groomed one: there is nothing to specify or
+    verify for work nobody will do, and demanding criteria of it refused the very commit that
+    retired an ungroomed refine skeleton. Read from `sdlc_md` at call time rather than held here
+    as a list, so a terminal status `is_decision_terminal` recognises moves this set when it is
+    added or dropped. A new terminal word that predicate does not recognise (Retired, say) is
+    charged every stage until the predicate is taught it.
+    Done is untouched - a delivered story still owes every stage."""
+    return {s for s in sdlc_md.terminal_statuses("story") if sdlc_md.is_decision_terminal(s)}
+
+
 DONE_STAGES = ("verified", "reconciled", "critiqued", "documented", "promoted")
 STAGES = ALWAYS_STAGES + DONE_STAGES
 
@@ -640,6 +656,9 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
     # waiver that cleared nothing made the gate recommend a no-op. Independent of the diff
     # scope, because a close runs on a clean tree and that is exactly when it is needed.
     waivers = stage_waivers(root)
+    # Read once per run, from the vocabulary as it stands now: a story retired unbuilt owes no
+    # criteria stages, whatever its grooming shape.
+    retired = retired_story_statuses()
     units: list[dict] = []
     ok = 0
     #: Units whose stamped verifiers name files this tree does not hold - reported in
@@ -707,9 +726,11 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
         # Definition-of-Ready bar, so an ungroomed story (Proposed/Draft - a fresh refine output
         # whose ACs are still placeholders) is conformant on `decomposed` alone. The AC stages
         # apply once it is Ready or beyond, so a large refined backlog does not read as
-        # non-conformant before it is groomed.
+        # non-conformant before it is groomed. A story retired unbuilt (Superseded, Won't
+        # Implement) is held to the same `decomposed`-only bar: the exemption turns on the
+        # status, not on whether it happened to be groomed before it was retired.
         required = ["decomposed"]
-        if status not in _PRE_GROOMED_STORY_STATUS:
+        if status not in _PRE_GROOMED_STORY_STATUS and status not in retired:
             required += ["specified", "verifiable"]
         if status == "Done":
             required += list(DONE_STAGES)

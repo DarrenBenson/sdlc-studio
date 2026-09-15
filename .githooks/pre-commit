@@ -255,6 +255,15 @@ run "stamps-staged" \
   "repoint the selector named above at the renamed node, or restore the test - the write-time guard cannot see a rename, and the scheduled corpus lane that can was red three weeks unread (BG0653)" \
   -- python3 "$skill/verify_ac.py" stamps --staged
 
+# A fragment is written by the same commit as the code, so this is the moment its author is still
+# here to fix it. Nothing else opens one until the release cut, where compose refuses the WHOLE
+# fold on the first bad fragment: 59 of 119 had drifted past it, every one through a green gate.
+# Top-level and above the suite selection, so a docs-only commit carrying a fragment is judged too.
+run "changelog-shape" \
+  "every changelog.d/ fragment this commit stages parses the way the release cut's compose reads it: first line '<!-- section: <name> -->', a known section, entry text below it" \
+  "rewrite each fragment named above - first line '<!-- section: Added|Changed|Fixed -->', the entry below it - and stage it again; the staged bytes are what is judged, not the working tree" \
+  -- python3 "$skill/changelog.py" shape --staged
+
 run "warning-ratchet" \
   "no NEW Affects/Verify warning instance: the tolerated set may only shrink" \
   "repair the instance named above, or record it with a reason in sdlc-studio/.validate-warning-baseline.json (validate.py warning-ratchet --stamp --reason ...) - a repaired entry is reported stale and removable, never re-spendable" \

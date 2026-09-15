@@ -8,6 +8,7 @@ was not, which is the failure these assertions exist to make impossible for this
 
 Every suppression is also a blindfold, so the blindfold is what gets checked here.
 """
+# test-census-subject: tools/run-suite.sh
 from __future__ import annotations
 
 import pathlib

@@ -1421,11 +1421,17 @@ def resolve_head_charter(repo_root: Path | str, order: str = "priority",
     runnable instead of what the head would select, and suppressed the charter's goal review with
     it, both sitting inside the same success branch.
 
-    Three refusals, each leaving the queue exactly as it was, because a charter that cannot be
+    Four refusals, each leaving the queue exactly as it was, because a charter that cannot be
     run is not a charter that should be silently dropped:
       - the head charter carries no parseable scope query
       - the query does not parse
       - the scope resolves to no units against the backlog as it stands
+      - under `two_backlog.enforce`, the scope resolves to DISCOVERY items only
+
+    The last is `sprint plan`'s discovery gate, read here so the head never materialises a batch
+    the plan that follows refuses. A mixed scope is not refused whole: its stories and bugs are
+    the resolution, and its discovery items travel beside them under `discovery` so the caller
+    names what was left out rather than dropping it silently.
     """
     root = Path(repo_root)
     queue = queued_charters(root)
@@ -1448,10 +1454,42 @@ def resolve_head_charter(repo_root: Path | str, order: str = "priority",
                 "detail": f"{head['id']}'s scope selects no unit against the backlog as it "
                           f"stands - the work it was written for is delivered, or was never "
                           f"created. The charter is left Queued, not dropped."}
+    # THE DISCOVERY GATE, on the same condition `sprint plan` reads, so the two cannot disagree
+    # about what a charter may select. Partitioned per unit, never gated on the whole selection.
+    held: list[dict] = []
+    if sdlc_md.two_backlog_enforced(root):
+        kept = []
+        for u in units:
+            (held if sdlc_md.is_discovery(u["type"]) else kept).append(u)
+        if not kept:
+            return {"ok": False, "reason": "discovery-only", "charter": head["id"],
+                    "discovery": held,
+                    "detail": f"{head['id']}'s scope selects only DISCOVERY items "
+                              f"({', '.join(u['id'] for u in held)}), which `sprint plan` refuses: "
+                              f"an RFC, a CR or an Issue has no executable criteria to close on. "
+                              f"{_DISCOVERY_REMEDY} The charter is left Queued, not dropped."}
+        units = kept
     review = charter_review_state(sdlc_md.read_text_safe(Path(head["path"])) or "", runner)
     return {"ok": True, "charter": head["id"], "title": head["title"], "goal": head["goal"],
             "query": head["query"], "units": units, "review": review,
-            "ids": [u["id"] for u in units], "queued": len(queue)}
+            "ids": [u["id"] for u in units], "discovery": held, "queued": len(queue)}
+
+
+# The decompose path both `next` and `queue show` name for a discovery item the head's scope
+# selects - the same two commands `sprint plan`'s refusal names.
+_DISCOVERY_REMEDY = ("Decompose each into the delivery units it produces and point the charter's "
+                     "scope query at those: a request (RFC/CR) with `refine.py apply --request <id> "
+                     "--epic-title ... --story ...`, an Issue with `triage.py apply --issue <id> "
+                     "--bug 'title|points|severity'`.")
+
+
+def _discovery_left_out(held: list[dict]) -> str:
+    """The line naming the discovery items a mixed scope selected and the batch left out."""
+    named = ", ".join(f"{u['id']} ({u['type']})" for u in held)
+    return (f"  not materialised: {len(held)} DISCOVERY item(s) the scope also selects, which "
+            f"`sprint plan` refuses - {named}. "
+            f"Decompose each (`refine.py apply --request <id>`, or `triage.py apply --issue <id>`) "
+            f"and plan what it produces.")
 
 
 def materialise_next(repo_root: Path | str, order: str = "priority",
@@ -10887,6 +10925,8 @@ def cmd_queue(args: argparse.Namespace) -> int:
                 print(f"  goal review: {hr['review']['detail']}")
                 print(f"  resolves to {len(hr['ids'])} unit(s) against the backlog as it stands "
                       f"now: {', '.join(hr['ids'])}")
+                if hr.get("discovery"):
+                    print(_discovery_left_out(hr["discovery"]))
             elif hr:
                 print(f"  resolves to NOTHING runnable: {hr['detail']}")
             return 0
@@ -10928,6 +10968,8 @@ def cmd_next(args: argparse.Namespace) -> int:
     print(f"  goal review: {res['review']['detail']}")
     print(f"  materialised {len(res['ids'])} unit(s) against the backlog as it stands now: "
           f"{', '.join(res['ids'])}")
+    if res.get("discovery"):
+        print(_discovery_left_out(res["discovery"]))
     if args.dry_run:
         print(f"  dry run - nothing opened, {res['charter']} stays Queued "
               f"({res['queued']} charter(s) in the queue)")
