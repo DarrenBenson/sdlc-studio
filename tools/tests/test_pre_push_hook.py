@@ -24,6 +24,8 @@ HOOK = REPO / ".githooks" / "pre-push"
 ENABLE = REPO / "tools" / "enable-hooks.sh"
 GATE_TIMING = REPO / "tools" / "gate_timing.py"
 AGENTS = REPO / "AGENTS.md"
+TRACKED_SCRIPTS = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"
+BOUNDARY_MARKER = "SDLC_STUDIO_BOUNDARY_SUITE"
 
 STUB_GH = textwrap.dedent('''
     #!/usr/bin/env python3
@@ -77,6 +79,10 @@ def _git(cwd: Path, *args: str, check: bool = True, env: dict | None = None) -> 
     for k in _GIT_ENV_VARS:
         base.pop(k, None)
     base.pop("SDLC_PUSH_ACK_RED", None)      # a profile-exported acknowledgement is the caller's, never the fixture's
+    # The boundary marker is the HOOK's to set, never the caller's: CI and `tools/run-suite.sh`
+    # export it around this very module, and an inherited marker lets a hook that sets nothing
+    # execute every marked test anyway.
+    base.pop(BOUNDARY_MARKER, None)
     if env:
         base.update(env)
     return subprocess.run(["git", "-C", str(cwd), *args], check=check, capture_output=True,
@@ -154,7 +160,8 @@ class _Clone:
     def hook_direct(self, rows: str, rc: int = 0) -> subprocess.CompletedProcess:
         """Run the hook itself with hand-written stdin rows, in the order WRITTEN: git always hands
         the branch row before the tag row, so only a direct call can reach the tag-first order."""
-        base = {k: v for k, v in os.environ.items() if k not in _GIT_ENV_VARS and k != "SDLC_PUSH_ACK_RED"}
+        base = {k: v for k, v in os.environ.items()
+                if k not in _GIT_ENV_VARS and k not in ("SDLC_PUSH_ACK_RED", BOUNDARY_MARKER)}
         path = self.stub_path(getattr(self, "gh_mode", "empty"))     # never the caller's PATH: no fixture reaches the live forge
         base.update({"STUB_ARGV": str(self.argv), "STUB_RC": str(rc), "PATH": str(path),
                      "STUB_GH_MODE": self.gh_mode, "STUB_GH_ARGV": str(self.tmp / "gh-argv.txt")})
@@ -590,6 +597,106 @@ class KeepaliveTests(unittest.TestCase):
                                 f"an unacknowledged red main did not refuse the push:\n{r.stderr}")
             self.assertIn("ServerAliveInterval", r.stderr,
                           f"the refused push never saw the keepalive advice:\n{r.stderr}")
+        finally:
+            fx.cleanup()
+
+
+#: The marked test's failure text. Printed only by a marked test that EXECUTED: a skipped one
+#: prints its skip reason, which never contains this.
+MARKED_SENTINEL = "MARKED-TEST-EXECUTED-7f3a91"
+
+#: The gate at the hook's path: record the argv the hook handed it, then exec the TRACKED gate
+#: with that argv plus only the root and the one lane, so the chain under test is the real one.
+FORWARDING_SHIM = textwrap.dedent('''
+    import os, sys
+    from pathlib import Path
+    Path(os.environ["STUB_ARGV"]).open("a").write(" ".join(sys.argv[1:]) + "\\n")
+    os.execv(sys.executable, [sys.executable, {gate!r}, *sys.argv[1:],
+                              "--root", {root!r}, "--only", "module-alone"])
+''').lstrip()
+
+MARKED_RED = textwrap.dedent('''
+    import unittest
+    from boundary import boundary_only
+
+
+    class MarkedTests(unittest.TestCase):
+        @boundary_only("a fixture deferral whose only job is to prove the push boundary executes it")
+        def test_marked(self):
+            self.fail({sentinel!r})
+''').lstrip()
+
+MARKED_GREEN = textwrap.dedent('''
+    import unittest
+    from pathlib import Path
+    from boundary import boundary_only
+
+
+    class MarkedTests(unittest.TestCase):
+        @boundary_only("a fixture deferral whose only job is to prove the push boundary executes it")
+        def test_marked(self):
+            Path({ran!r}).write_text("ran\\n", encoding="utf-8")
+''').lstrip()
+
+
+class BoundaryMarkerReachesThePushTests(unittest.TestCase):
+    """BG0664 AC1: a `@boundary_only` test executes at the push and release boundaries."""
+
+    def test_a_red_boundary_only_test_refuses_the_push(self) -> None:
+        """The REAL chain, marker removed from every fixture push: the tracked hook, a shim at the
+        hook's gate path forwarding to the tracked gate (`--only module-alone`), and a clone whose
+        skill tests directory holds the tracked `boundary.py` and one marked test.
+
+        MUTANTS: (1) the marker on the release invocation only - the branch push is accepted;
+        (2) on the push invocation only - the tag push is accepted; (3) `=true`, which
+        `at_boundary()` does not accept - both accepted; (4) a misspelt name - both accepted;
+        (5) `_module_alone` pops the marker from its per-module environment - both accepted.
+        Each of those skips the marked test, so the red run pushes and the sentinel is absent."""
+        fx = _Clone()
+        try:
+            self.assertFalse((fx.stub_path("empty") / "env").exists(),
+                             "the fixture PATH must hold no `env`, so the hook reaches it only as /usr/bin/env")
+            (fx.clone / "sdlc-studio").mkdir(exist_ok=True)       # the tracked gate refuses a root with none
+            scripts = fx.clone / ".claude" / "skills" / "sdlc-studio" / "scripts"
+            (scripts / "gate.py").write_text(
+                FORWARDING_SHIM.format(gate=str(TRACKED_SCRIPTS / "gate.py"), root=str(fx.clone)),
+                encoding="utf-8")
+            tests = scripts / "tests"
+            tests.mkdir()
+            shutil.copy(TRACKED_SCRIPTS / "tests" / "boundary.py", tests / "boundary.py")
+            marked = tests / "test_marked_fixture.py"
+            marked.write_text(MARKED_RED.format(sentinel=MARKED_SENTINEL), encoding="utf-8")
+            _git(fx.clone, "tag", "v0.0.1")
+
+            for refspec, boundary in (("main", "push"), ("v0.0.1", "release")):
+                with self.subTest(boundary=boundary):
+                    r = fx.push(refspec, gh_mode="empty")
+                    self.assertNotEqual(0, r.returncode,
+                                        f"a red marked test did not refuse the {boundary} push - it was "
+                                        f"skipped, not executed:\n{r.stderr}")
+                    fail_line = next((ln for ln in r.stderr.splitlines() if "[FAIL] module-alone" in ln), "")
+                    self.assertTrue(fail_line, f"no `[FAIL] module-alone` line on the {boundary} refusal:\n{r.stderr}")
+                    self.assertIn(MARKED_SENTINEL, fail_line,
+                                  f"the module-alone refusal does not carry the marked test's own failure, "
+                                  f"so it did not execute at {boundary}:\n{r.stderr}")
+            self.assertEqual(["--boundary push", "--boundary release"], fx.gate_calls(),
+                             "the shim did not record one push and one release invocation from the hook")
+            self.assertEqual(0, fx.remote_count(), "the remote advanced despite the refusal")
+            self.assertEqual("", _git(fx.remote, "tag", "-l").stdout.strip(), "the remote gained the tag")
+
+            # The positive control on the same fixture: the marked test green, leaving a file
+            # behind, deleted between the pushes so EACH boundary proves its own execution.
+            ran = fx.clone / "marked-test-ran.txt"
+            marked.write_text(MARKED_GREEN.format(ran=str(ran)), encoding="utf-8")
+            for refspec, boundary in (("main", "push"), ("v0.0.1", "release")):
+                with self.subTest(control=boundary):
+                    ran.unlink(missing_ok=True)
+                    r = fx.push(refspec, gh_mode="empty")
+                    self.assertEqual(0, r.returncode, f"the green control's {boundary} push was refused:\n{r.stderr}")
+                    self.assertIn("[PASS] module-alone", r.stderr, r.stderr)
+                    self.assertTrue(ran.exists(), f"the marked test was skipped at {boundary}, not executed")
+            self.assertEqual(1, fx.remote_count(), "the green control's branch push did not land")
+            self.assertIn("v0.0.1", _git(fx.remote, "tag", "-l").stdout, "the green control's tag did not land")
         finally:
             fx.cleanup()
 

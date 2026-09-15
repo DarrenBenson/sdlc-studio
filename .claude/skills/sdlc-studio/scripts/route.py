@@ -3,7 +3,7 @@
 
 Deterministically estimate a work unit's difficulty from signals already on disk
 (blast-radius cognitive complexity + churn-weighted risk via complexity.py, file scope,
-unresolved-path novelty, AC count, story points) and recommend an abstract model tier
+unresolved-path novelty, AC count) and recommend an abstract model tier
 (tiny/small/medium/large/xlarge) that the project maps to its own model identifiers in
 `.config.yaml` `routing.models`. **Advisory only - no gate reads a tier**, and the skill
 never calls a model API: model ids are opaque strings the orchestrating agent passes to
@@ -27,6 +27,12 @@ The fix is to ask whether a signal APPLIES, not merely whether it resolved: when
 unit touches can carry a code-complexity score (`complexity.assess` reports `applicable: False`),
 the `code` and `risk` signals are treated as MISSING - 0.5, listed in `missing`, confidence
 dropped, tier bumped up. A non-code change is not an easy change; it is an unmeasured one.
+
+THE SIZE FIELD IS NOT A SIGNAL. `Points` (and its old spelling `Story Points`) is declared by the
+author, and the band this score produces sets a unit's review depth (`critic.tier_for`), so a
+number the author writes would choose how hard the author's work is reviewed. The `spec` subscore
+is therefore the criterion count alone, missing when the unit carries no criterion; the size field
+is not read here at all, so it cannot come back as a fallback.
 
 Subcommands:
   estimate   Difficulty score/band + signals for one unit.
@@ -94,21 +100,11 @@ def estimate(repo_root: Path | str, unit_path: Path | str) -> dict:
     cognitive_high = _pos((cfg.get("complexity") or {}).get("cognitive_high"), 15)
     sizing = ((cfg.get("story_quality") or {}).get("sizing") or {})
     max_ac = _pos(sizing.get("max_ac"), 10)
-    max_points = _pos(sizing.get("max_points"), 13)
 
     declared = sdlc_md.affects_files(text)
     resolved = [str(r) for p in declared if (r := sdlc_md.resolve_affects(root, p))]
     new_files = len(declared) - len(resolved)
     ac_count = sdlc_md.count_acs(text)
-    # The canonical size field is `Points` (`sdlc_md.POINTS_FIELD`) - one vocabulary, one
-    # parser. `Story Points` is the same vocabulary under its old spelling, still on the stories
-    # already written, so it is read as a fallback rather than silently scoring them unsized.
-    points_raw = (sdlc_md.extract_field(text, sdlc_md.POINTS_FIELD)
-                  or sdlc_md.extract_field(text, "Story Points"))
-    try:
-        story_points = int(str(points_raw).strip().split()[0]) if points_raw else None
-    except (ValueError, IndexError):
-        story_points = None
 
     # The code signals are read ONLY when they are applicable - see the missing-signal doctrine
     # in the module docstring. A markdown file resolves on disk and scores 0, and that 0 is an
@@ -143,12 +139,8 @@ def estimate(repo_root: Path | str, unit_path: Path | str) -> dict:
         if max_cognitive is not None else None)
     sub("risk", min(risk_score, 2.0) / 2.0 if risk_score is not None else None)
     sub("scope", min(len(declared) / SCOPE_FULL, 1.0) if declared else None)
-    if story_points is not None:
-        sub("spec", min(story_points / max_points, 1.0))
-    elif ac_count:
-        sub("spec", min(ac_count / max_ac, 1.0))
-    else:
-        sub("spec", None)
+    # The criterion count only - never the author-declared size field (module docstring).
+    sub("spec", min(ac_count / max_ac, 1.0) if ac_count else None)
     sub("novel", new_files / max(len(declared), 1) if declared else None)
 
     score = round(100 * sum(WEIGHTS[k] * subscores[k] for k in WEIGHTS))
@@ -166,7 +158,7 @@ def estimate(repo_root: Path | str, unit_path: Path | str) -> dict:
         "code_inapplicable": code_inapplicable,
         "signals": {"max_cognitive": max_cognitive, "risk_score": risk_score,
                      "files_affected": len(declared), "new_files": new_files,
-                     "ac_count": ac_count, "story_points": story_points},
+                     "ac_count": ac_count},
         "subscores": subscores,
     }
 

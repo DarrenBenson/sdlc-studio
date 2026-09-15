@@ -814,8 +814,9 @@ def _banded_unit(root: Path, uid: str, *, heavy: bool) -> None:
     """A unit that bands LOW or HIGH under `route.estimate`, on disk.
 
     Two knobs move the band without touching the estimator: the number of resolvable Affects
-    paths (the scope subscore) and the declared Points (the spec subscore). A heavy unit
-    declares five real files and 13 points; a light one declares a single doc file and 1 point.
+    paths (the scope subscore) and the criterion count (the spec subscore; the declared Points
+    does not score). A heavy unit declares five real files and nine criteria; a light one
+    declares a single doc file and one criterion.
     Both are ordinary artefacts - nothing here supplies the band itself, which would make every
     assertion below a statement about the fixture rather than about `route.estimate`.
     """
@@ -1297,6 +1298,45 @@ class BriefTierTests(unittest.TestCase):
         self.assertGreater(tiers.count("full"), 0,
                            f"every unit in {len(tiers)} bands light - the tiering is a no-op "
                            f"in the dangerous direction")
+
+
+class TierIgnoresDeclaredFieldsTests(unittest.TestCase):
+    """No author-declared field may gate review depth (D0150), and `Points` is one. The review
+    tier comes from `route.estimate`'s band, so a `Points` value the author writes must not move
+    it - read through `tier_for`, the function a brief asks, not through the estimator alone."""
+
+    @staticmethod
+    def _unit(root: Path, *, points: int, acs: int) -> None:
+        """US0001 on two existing markdown Affects files with `acs` criteria and `Points`."""
+        for rel in ("docs/a.md", "docs/b.md"):
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_text("a note\n", encoding="utf-8")
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        criteria = "".join(f"### AC{i}: does thing {i}\n\n- **Given** x\n- **When** y\n"
+                           f"- **Then** z\n\n" for i in range(1, acs + 1))
+        (d / "US0001-x.md").write_text(
+            "# US0001: the thing\n\n> **Status:** In Progress\n"
+            f"> **Affects:** docs/a.md, docs/b.md\n> **Points:** {points}\n\n"
+            f"## Acceptance Criteria\n\n{criteria}", encoding="utf-8")
+
+    def test_points_alone_does_not_move_the_tier(self) -> None:
+        """Mutants: gate the Points removal behind a keyword that still counts Points by default,
+        so `plan_review`'s unchanged call scores it (8 reads full); score `spec` as missing when a
+        size was parsed (40, medium, full at both); score it zero when sized (six criteria read
+        28, light, and the control reddens)."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            for points in (1, 8):
+                with self.subTest(points=points):
+                    self._unit(root, points=points, acs=1)
+                    self.assertEqual(mod.tier_for(root, "US0001"), "light",
+                                     f"Points {points} alone moved the review tier")
+            # the control: the same unit reaches the deeper tier through its criterion count
+            self._unit(root, points=1, acs=6)
+            self.assertEqual(mod.tier_for(root, "US0001"), "full",
+                             "six criteria read light - the fixture cannot reach full, so the "
+                             "light assertions above prove nothing")
 
 
 class BoundedBriefTests(unittest.TestCase):

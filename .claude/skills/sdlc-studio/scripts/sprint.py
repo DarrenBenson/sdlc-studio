@@ -5764,6 +5764,173 @@ def mutation_evidence_note(root) -> tuple[bool, str]:
     return (True, f"mutation evidence: `{mode}` ({stated}) - {explain}")
 
 
+#: Why a batch unit is unanswered. Fixed wording, because the close and `stop` print the same
+#: `why` and an operator reading either must be able to act on it.
+WHY_REJECT = "unanswered delivery REJECT"
+WHY_PASS_OWED = "adversarial pass owed"
+WHY_AT_REVIEW = "remaining work at Review"
+
+
+def _carried_rulings(root: Path, state: dict, retro_id: str | None) -> tuple:
+    """`(retro id or None, carried rows or None, why unreadable)` for the unanswered-unit hold.
+
+    The NAMED retro when the caller has one (the close's `--retro`). Otherwise the latest retro,
+    by id, whose text carries the run's recorded `run_id` - never simply the newest, because a
+    later run's retro ruling this run's unit would answer a question it was never asked. No
+    such retro means the rulings are UNREADABLE, which answers nothing.
+    """
+    import retro as retro_mod  # noqa: PLC0415 - deferred, as everywhere else in this module
+    if retro_id:
+        path = retro_mod.find_retro(root, retro_id)
+        if path is None:
+            return None, None, f"{retro_id} not found"
+        return (sdlc_md.norm_id(retro_id),
+                retro_mod.carried_issues(sdlc_md.read_text_safe(path)), "")
+    run_id = str((state or {}).get("run_id") or "").strip()
+    if not run_id:
+        return None, None, "the run records no run_id, so no retro can be tied to it"
+    carries = re.compile(rf"(?<![\w-]){re.escape(run_id)}(?![\w-])")
+    best: tuple | None = None
+    for path in sorted((Path(root) / retro_mod.RETRO_DIR).glob("*.md")):
+        rid = sdlc_md.norm_id(sdlc_md.stem_record_id(path.stem) or "")
+        if not rid.startswith("RETRO") or not carries.search(sdlc_md.read_text_safe(path)):
+            continue
+        # Latest BY ID: a sequential id by its number, and a v3 id (time-ordered, no ordinal)
+        # above every sequential one and by its own sort order among its kind.
+        num = sdlc_md.id_number(rid)
+        key = (num is None, num or 0, rid)
+        if best is None or key > best[0]:
+            best = (key, rid, path)
+    if best is None:
+        return None, None, f"no retro carries {run_id}"
+    return best[1], retro_mod.carried_issues(sdlc_md.read_text_safe(best[2])), ""
+
+
+def unanswered_units(root, state, retro_id=None) -> dict:
+    """The batch units this run cannot end over: `{"unanswered": [{"unit", "status", "why",
+    "filed"}], "rulings_from": <retro id or None>}`.
+
+    ONE predicate, read by the close's checklist step and by `stop`, so the two can never name
+    different sets. It walks the live batch and every id a recorded drop took out of it.
+
+    A unit carrying a standing delivery REJECT is held at every non-abandoned status, whatever
+    else would answer it - evidence, a drop, a park or a ruling - unless `critic.coverage_state`
+    reads it approved or repaired. Otherwise a unit is answered by its status: delivered-terminal
+    or abandoned (a terminal reached by a ruling, derived and never listed), at Review awaiting
+    nothing but a signature (`_awaits_signoff`, called rather than restated), at its run's
+    rung-end status off the build rung, dropped, parked on a pending decision or depending on
+    one, or ruled not-stop-ship, accepted-risk or deferred in the carried table. A stop-ship
+    ruling holds it. `filed` names where its findings went, from every `filed:` closure.
+    """
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    import retro as retro_mod  # noqa: PLC0415
+    root = Path(root)
+    state = state or {}
+    live = [u for u in (sdlc_md.norm_id(str(x)) for x in (state.get("batch") or [])) if u]
+    dropped = [sdlc_md.norm_id(str(c.get("id"))) for c in (state.get("batch_changes") or [])
+               if isinstance(c, dict) and c.get("action") == "drop" and c.get("id")]
+    dropped = [u for u in dropped if u and u not in live]
+    walked = list(dict.fromkeys(live + dropped))
+    rid, rows, unreadable = _carried_rulings(root, state, retro_id)
+    ruled: dict[str, set] = {}
+    for row in rows or []:
+        if row.get("ok"):
+            ruled.setdefault(row["id"], set()).add(row["ruling"])
+    answering = {r for r in retro_mod.KNOWN_ISSUE_RULINGS if r != retro_mod.STOP_SHIP}
+    rung = run_rung(state)
+    rung_end = RUNG_TERMINALS.get(rung, (None,))[0] if rung not in COMPLETING_RUNGS else None
+    info: dict[str, tuple[str, str]] = {}
+    for uid in walked:
+        hit = sdlc_md.find_by_id(root, uid)
+        if hit is None:
+            info[uid] = ("", "")
+            continue
+        raw = sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]), "Status") or ""
+        info[uid] = (hit[1], sdlc_md.canonical_status(raw, sdlc_md.status_vocab(hit[1], root))
+                     or raw.strip())
+    pending = [p for p in (state.get("pending_decisions") or []) if isinstance(p, dict)]
+    parked = _pending_blocked(root, pending, [u for u in live if info[u][0] and not
+                                              sdlc_md.is_terminal_status(*info[u])])
+    out: list[dict] = []
+    for uid in walked:
+        kind, status = info[uid]
+        terminal = bool(kind) and sdlc_md.is_terminal_status(kind, status)
+        if terminal and not sdlc_md.is_delivered_terminal(kind, status):
+            continue                      # abandoned by a ruling: nothing left to answer
+        row = critic.verdict_for(root, uid)
+        rejected = (bool(row) and str(row.get("verdict") or "").upper() == critic.REJECT
+                    and critic.coverage_state(root, uid) not in (critic.COVERAGE_APPROVED,
+                                                                 critic.COVERAGE_REPAIRED))
+        why = [WHY_REJECT] if rejected else []
+        rulings = ruled.get(uid, set())
+        review_why = ""
+        if critic.is_awaiting_signoff(status):
+            passed = (bool(critic.evidence_for(root, uid))
+                      or critic.sprint_covers_independently(
+                          root, uid, critic.sprint_review_for(root, uid)))
+            if not passed:
+                review_why = WHY_PASS_OWED
+            elif not _awaits_signoff(root, uid):
+                review_why = WHY_AT_REVIEW
+            else:
+                review_why = None         # nothing but a signature is outstanding
+        answered = (terminal or uid in dropped or uid in parked
+                    or (rung_end is not None and kind
+                        and status == _terminal_in_type_vocab(root, rung, kind, rung_end))
+                    or review_why is None
+                    or (retro_mod.STOP_SHIP not in rulings and bool(rulings & answering)))
+        if not answered:
+            if retro_mod.STOP_SHIP in rulings:
+                why.append(f"ruled {retro_mod.STOP_SHIP} in {rid}")
+            elif review_why:
+                why.append(review_why)
+            elif rows is None:
+                why.append(f"ruling unreadable: {unreadable}")
+            else:
+                why.append(f"unfinished and not ruled in {rid}'s carried table")
+        if not why:
+            continue
+        filed = [c["artefact"] for c in critic.repair_state(root, uid)["closed"]
+                 if c.get("disposition") == "filed" and c.get("artefact")]
+        out.append({"unit": uid, "status": status or "no artefact on disk",
+                    "why": " + ".join(why), "filed": list(dict.fromkeys(filed))})
+    return {"unanswered": out, "rulings_from": rid}
+
+
+def unanswered_line(held: list[dict]) -> str:
+    """The held units as ONE line, each with its status, why, and where its findings went.
+    The ways out go on a line of their own, so this line carries the held units' ids alone."""
+    return (f"known-issues: {len(held)} batch unit(s) the run cannot end over: "
+            + "; ".join(f"{h['unit']} ({h['status']}) - {h['why']} - findings "
+                        + (f"filed to {', '.join(h['filed'])}" if h["filed"] else "NONE filed")
+                        for h in held))
+
+
+def unanswered_ways_out(held: list[dict], rulings_from: str | None,
+                        run_id: str | None = None) -> str:
+    """What answers a held unit, named for the reasons actually present - one line, no ids."""
+    whys = " ".join(h["why"] for h in held)
+    table = (f"{rulings_from}'s `## Known issues carried`" if rulings_from
+             else "the run's retro (`## Known issues carried`)")
+    ways = []
+    if WHY_REJECT in whys:
+        ways.append("close each finding of a REJECT with `critic.py repair --unit <id> --closed "
+                    "'<finding> -> filed: <artefact>'` or a same-brief independent re-review - "
+                    "no ruling or drop answers a standing REJECT")
+    if WHY_PASS_OWED in whys:
+        ways.append("dispatch the owed adversarial pass (`critic.py brief --unit <id>`)")
+    if WHY_AT_REVIEW in whys:
+        ways.append("record what a Review unit still owes, then its Done transition "
+                    "(`transition.py set <id> Done`) - one already signed off lacks only that")
+    if "ruling unreadable" in whys:
+        ways.append("rule it in a retro whose text carries the run id"
+                    + (f" {run_id}" if run_id else "") + ", or name the retro with --retro")
+    ways += [f"finish it, or rule it not-stop-ship, accepted-risk or deferred in {table}",
+             "or `sprint.py batch drop <id> --reason '<why>'`, which answers only a unit "
+             "carrying no standing REJECT"]
+    return "ways out: " + "; ".join(ways)
+
+
 def _close_checklist(root, retro, state, read_root=None):
     """The compulsory checklist, as a chain step. Refuses on an unanswered item, naming it.
 
@@ -5793,23 +5960,45 @@ def _close_checklist(root, retro, state, read_root=None):
     past = ("; " + f"{len(expired)} past their window, reported not held: "
             + ", ".join(f"{r['id']} (enforce at `{sprint_report._window(r)}`)" for r in expired)
             if expired else "")
+    # THE UNFINISHED-UNIT HOLD, read before any return below so it is named on every refusal
+    # path and holds even where nothing else is outstanding. It is part of the stop-ship step,
+    # not a gate of its own, and NO checklist waiver reaches it: a waiver never expires, so one
+    # standing waiver of the known-issues row would release every later run's unfinished units.
+    try:
+        ua = unanswered_units(root, state, retro)
+    except Exception as exc:  # noqa: BLE001 - a hold that cannot be computed must not pass
+        return (False, f"known-issues: the unanswered-unit hold could not be computed: "
+                       f"{type(exc).__name__}: {exc}",
+                "fix the error above, then re-run the close")
+    held_line = unanswered_line(ua["unanswered"]) if ua["unanswered"] else ""
+    held_way = (unanswered_ways_out(ua["unanswered"], ua["rulings_from"],
+                                    (state or {}).get("run_id")) if held_line else "")
+
+    def _with_hold(detail: str, remedy: str) -> tuple:
+        return (False, detail + (f"\n{held_line}" if held_line else ""),
+                remedy + (f"\n{held_way}" if held_way else ""))
+
     if ck["stop_ship"]:
         # ANSWERED, and the answer stops the ship. Held separately from the unanswered items
         # because the remedy is the opposite one: an unanswered item needs somebody to look, a
         # stop-ship ruling needs the defect fixed or the ruling revised by whoever made it.
-        return (False,
-                "known-issues: " + ", ".join(ck["stop_ship"]) + " "
-                + ("is" if len(ck["stop_ship"]) == 1 else "are")
-                + " ruled STOP-SHIP in the retro's carried-issues table" + past,
-                "fix the finding, or have the ruler revise the ruling in the retro - a close "
-                "that proceeds over a stop-ship ruling makes every future ruling a note")
+        return _with_hold(
+            "known-issues: " + ", ".join(ck["stop_ship"]) + " "
+            + ("is" if len(ck["stop_ship"]) == 1 else "are")
+            + " ruled STOP-SHIP in the retro's carried-issues table" + past,
+            "fix the finding, or have the ruler revise the ruling in the retro - a close "
+            "that proceeds over a stop-ship ruling makes every future ruling a note")
     mode_ok, mode_note = mutation_evidence_note(root)
     if not mode_ok:
-        return (False, mode_note,
-                "name one of report, block or off - refused rather than defaulted, because a "
-                "project that typed this asked for something and guessing which is how a hard "
-                "bar gets switched off by a typo nobody sees")
+        return _with_hold(
+            mode_note,
+            "name one of report, block or off - refused rather than defaulted, because a "
+            "project that typed this asked for something and guessing which is how a hard "
+            "bar gets switched off by a typo nobody sees")
     if not ck["outstanding"]:
+        if held_line:
+            return (False, f"{len(ck['items'])} compulsory item(s), none outstanding{past}"
+                           f"; {mode_note}\n{held_line}", held_way)
         pending = (f"; {len(ck['pending_in_close'])} item(s) this close discharges itself"
                    if ck.get("pending_in_close") else "")
         return (True,
@@ -5818,13 +6007,13 @@ def _close_checklist(root, retro, state, read_root=None):
     named = [r for r in ck["items"] if r["id"] in set(ck["outstanding"])]
     detail = "\n".join(f"  {r['id']}: {r['title']} - {r['value']}"
                        + (f"\n      {r['detail']}" if r["detail"] else "") for r in named)
-    return (False,
-            f"{len(named)} compulsory checklist item(s) unanswered{past}; {mode_note}:"
-            f"\n{detail}",
-            "answer each item by running the stage it names, or record a waiver naming it and "
-            "why (`decisions.py waive --subject "
-            f"{sprint_report.WAIVER_SUBJECT}:<item> --rationale '<why>'`) - closing without an "
-            "item and forgetting it must be different events in the record")
+    return _with_hold(
+        f"{len(named)} compulsory checklist item(s) unanswered{past}; {mode_note}:"
+        f"\n{detail}",
+        "answer each item by running the stage it names, or record a waiver naming it and "
+        "why (`decisions.py waive --subject "
+        f"{sprint_report.WAIVER_SUBJECT}:<item> --rationale '<why>'`) - closing without an "
+        "item and forgetting it must be different events in the record")
 
 
 # Chain order is the ceremony's order; cmd_close resolves each step through globals() at
@@ -10165,29 +10354,7 @@ def blocked_by_pending(repo_root: Path | str) -> dict:
     state = run_state.read(root)
     pending = [p for p in (state.get("pending_decisions") or []) if isinstance(p, dict)]
     remaining = _remaining_units(root, state)
-    deferred = {sdlc_md.norm_id(p.get("unit")) for p in pending if p.get("unit")}
-    deps: dict[str, set] = {}
-    for uid in remaining:
-        hit = sdlc_md.find_by_id(root, uid)
-        if hit is None:
-            deps[uid] = set()
-            continue
-        try:
-            text = hit[0].read_text(encoding="utf-8")
-        except OSError:  # noqa: PERF203
-            deps[uid] = set()
-            continue
-        raw = (sdlc_md.extract_field(text, "Depends on")
-               or sdlc_md.extract_field(text, "Depends On") or "")
-        deps[uid] = _dep_ids(raw)
-    blocked = {u for u in remaining if u in deferred}
-    changed = True
-    while changed:                       # transitive closure over DECLARED edges only
-        changed = False
-        for uid in remaining:
-            if uid not in blocked and deps[uid] & blocked:
-                blocked.add(uid)
-                changed = True
+    blocked = _pending_blocked(root, pending, remaining)
     # A unit standing at Review, on a project past `review.two_role_after`, is not work this
     # session declined to do - Done needs a reviewer-of-record sign-off the authoring session
     # is explicitly refused. Reporting it as `could have proceeded` pushed the operator to
@@ -10201,6 +10368,39 @@ def blocked_by_pending(repo_root: Path | str) -> dict:
             "awaiting_signoff": awaiting,
             "unblocked": sorted(u for u in remaining
                                 if u not in blocked and u not in set(awaiting))}
+
+
+def _pending_blocked(root: Path, pending: list[dict], units: list[str]) -> set:
+    """The units in `units` a pending operator question parks: each deferred unit, and every
+    unit declaring a `Depends on:` edge onto one, transitively.
+
+    ONE closure, read by `blocked_by_pending` and `unanswered_units` alike, so the stop's
+    pending-decision exit and the close's hold cannot disagree about which unit is parked.
+    """
+    deferred = {sdlc_md.norm_id(p.get("unit")) for p in pending if p.get("unit")}
+    deps: dict[str, set] = {}
+    for uid in units:
+        hit = sdlc_md.find_by_id(root, uid)
+        if hit is None:
+            deps[uid] = set()
+            continue
+        try:
+            text = hit[0].read_text(encoding="utf-8")
+        except OSError:  # noqa: PERF203
+            deps[uid] = set()
+            continue
+        raw = (sdlc_md.extract_field(text, "Depends on")
+               or sdlc_md.extract_field(text, "Depends On") or "")
+        deps[uid] = _dep_ids(raw)
+    blocked = {u for u in units if u in deferred}
+    changed = True
+    while changed:                       # transitive closure over DECLARED edges only
+        changed = False
+        for uid in units:
+            if uid not in blocked and deps[uid] & blocked:
+                blocked.add(uid)
+                changed = True
+    return blocked
 
 
 def _awaits_signoff(root: Path, uid: str) -> bool:
@@ -10341,7 +10541,7 @@ def cmd_reopen(args) -> int:
 
 
 def cmd_stop(args) -> int:
-    """Stop the run - refused while any unit the pending questions do not block remains.
+    """Stop the run - refused while any batch unit is unanswered (`unanswered_units`).
 
     `--force` is the operator's override, and it PRICES itself: the units that could have
     proceeded are named individually on the record and on screen, so a parked run can be told
@@ -10363,13 +10563,26 @@ def cmd_stop(args) -> int:
         return 2
     out = blocked_by_pending(root)
     forced = bool(getattr(args, "force", False))
-    if out["unblocked"] and not forced:
-        print(f"stop REFUSED: {len(out['unblocked'])} unit(s) remain that no pending question "
-              f"blocks: {', '.join(out['unblocked'])}", file=sys.stderr)
+    # The refusal reads the close's own predicate, so a stop and a close over one state name
+    # the same units. `stop` takes no --retro, so the rulings come from the latest retro that
+    # carries this run's id.
+    try:
+        ua = unanswered_units(root, state)
+    except Exception as exc:  # noqa: BLE001 - a hold that cannot be computed must not pass
+        print(f"stop refused: the unanswered-unit hold could not be computed: "
+              f"{type(exc).__name__}: {exc}", file=sys.stderr)
+        return 2
+    held = ua["unanswered"]
+    if held and not forced:
+        print(f"stop REFUSED: {len(held)} unit(s) remain unanswered: "
+              + "; ".join(f"{h['unit']} ({h['status']}) - {h['why']}" for h in held),
+              file=sys.stderr)
         print(f"  build them. One undecidable unit costs one unit of progress, not the batch. "
               f"Park the undecidable one with `sprint decision defer --unit <id> --question "
               f"\"...\" --option \"a|...\" --option \"b|...\"`, or stop deliberately with "
               f"--force, which records what could have proceeded.", file=sys.stderr)
+        print(f"  {unanswered_ways_out(held, ua['rulings_from'], state.get('run_id'))}",
+              file=sys.stderr)
         return 1
     if out.get("awaiting_signoff"):
         # Stated, never silent. These units are dropped from the refusal because nothing this

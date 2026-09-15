@@ -243,6 +243,81 @@ class PickTests(unittest.TestCase):
             self.assertNotIn("code", est["missing"])
 
 
+#: The two spellings of the one size field: canonical first, then the legacy spelling still on
+#: stories already written. `_story` writes only the second, so these fixtures do not use it.
+SIZE_SPELLINGS = (route.sdlc_md.POINTS_FIELD, "Story Points")
+
+
+def _sized_unit(tmp: Path, *, field: str | None, points: int | None, acs: int,
+                name: str = "US0001-sized.md") -> Path:
+    """A unit on two existing markdown Affects files, with `acs` criteria and the size field
+    written under the spelling named by `field` - or no size field at all when `field` is None."""
+    for rel in ("docs/a.md", "docs/b.md"):
+        f = tmp / rel
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("a note\n", encoding="utf-8")
+    lines = ["# US0001: sized unit", "", "> **Status:** Ready",
+             "> **Affects:** docs/a.md, docs/b.md"]
+    if field is not None:
+        lines.append(f"> **{field}:** {points}")
+    if acs:
+        lines += ["", "## Acceptance Criteria", ""]
+        for i in range(1, acs + 1):
+            lines += [f"### AC{i}: thing {i}", f"- **Given** x{i}", ""]
+    d = tmp / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / name
+    p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    if field is not None:  # the fixture really declares the size, under that spelling
+        assert route.sdlc_md.extract_field(p.read_text(encoding="utf-8"), field) == str(points)
+    return p
+
+
+class DeclaredFieldsDoNotScoreTests(unittest.TestCase):
+    """An author-declared size field must not score. The band sets a unit's review depth, so a
+    `Points` value the author writes would otherwise choose how hard the author's work is read."""
+
+    def _read(self, tmp: Path, **kw) -> tuple[int, str, int]:
+        est = route.estimate(tmp, _sized_unit(tmp, **kw))
+        return est["difficulty_score"], est["difficulty_band"], est["signals"]["ac_count"]
+
+    def test_points_alone_does_not_move_the_score(self) -> None:
+        """Mutants: keep the legacy `Story Points` fallback feeding `spec` while dropping only the
+        canonical read; keep the canonical read while dropping the fallback; read `ac_count` first
+        with Points as the fallback when no criterion is counted. Each spelling and the zero-AC
+        variant is its own case, because each mutant moves exactly one of them."""
+        for acs in (1, 0):
+            for field in SIZE_SPELLINGS:
+                with self.subTest(spelling=field, acs=acs), tempfile.TemporaryDirectory() as d:
+                    tmp = Path(d)
+                    unsized = self._read(tmp, field=None, points=None, acs=acs)
+                    self.assertEqual(unsized[2], acs, "the fixture counts the wrong criteria")
+                    at_1 = self._read(tmp, field=field, points=1, acs=acs)
+                    at_8 = self._read(tmp, field=field, points=8, acs=acs)
+                    # score AND band, at 1, at 8 and with no size field at all
+                    self.assertEqual(at_1[:2], unsized[:2], f"{field}: 1 moved the estimate")
+                    self.assertEqual(at_8[:2], unsized[:2], f"{field}: 8 moved the estimate")
+        # the control: the same unit's score CAN move, through the criterion count the fix keeps
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            one = self._read(tmp, field=route.sdlc_md.POINTS_FIELD, points=1, acs=1)
+            six = self._read(tmp, field=route.sdlc_md.POINTS_FIELD, points=1, acs=6)
+            self.assertNotEqual(one[0], six[0], "one AC and six score the same - the fixture's "
+                                                "score cannot move, so the equalities prove nothing")
+
+    def test_ac_count_still_moves_the_spec_subscore(self) -> None:
+        """Mutants: drop `ac_count` from `spec` along with Points, or score a sized unit's `spec`
+        as zero - either way six criteria read no higher than one. Points 3 is on the fixture
+        because every real unit carries Points."""
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            field = route.sdlc_md.POINTS_FIELD
+            one = route.estimate(tmp, _sized_unit(tmp, field=field, points=3, acs=1))
+            six = route.estimate(tmp, _sized_unit(tmp, field=field, points=3, acs=6))
+            self.assertEqual((one["signals"]["ac_count"], six["signals"]["ac_count"]), (1, 6))
+            self.assertGreater(six["subscores"]["spec"], one["subscores"]["spec"])
+
+
 class EscalateTests(unittest.TestCase):
     def test_escalate_steps_to_next_declared_tier(self) -> None:
         models = {"tiny": "a", "medium": "b", "xlarge": "c"}

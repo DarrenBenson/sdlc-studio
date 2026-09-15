@@ -123,18 +123,24 @@ echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2
 # scrub is written out on each invocation so the list is pinned where it is used. The gate's
 # stdout is sent to stderr: git shows a pusher the hook's stderr, and the refusal below says
 # "see the lane named above", so the lane name has to be on the stream the refusal is on.
+#
+# SDLC_STUDIO_BOUNDARY_SUITE=1 on BOTH invocations, and only here: it is what makes a
+# `@boundary_only` test execute rather than skip (scripts/tests/boundary.py), and module-alone's
+# per-module interpreters inherit it from the gate. Without it the push boundary ran none of the
+# tests deferred to it, and CI was the first thing to see one go red. The cost is the two marked
+# tests' own run time inside module-alone, whose slowest module already carries one of them.
 t0=$SECONDS
 if [ "$boundary" = "release" ]; then
   /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
      -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
      -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
-     -u GIT_PREFIX python3 "$skill/gate.py" --boundary release 1>&2
+     -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 python3 "$skill/gate.py" --boundary release 1>&2
   rc=$?
 else
   /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
      -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
      -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
-     -u GIT_PREFIX python3 "$skill/gate.py" --boundary push 1>&2
+     -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 python3 "$skill/gate.py" --boundary push 1>&2
   rc=$?
 fi
 python3 tools/gate_timing.py record --suite "boundary-$boundary" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
