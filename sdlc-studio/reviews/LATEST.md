@@ -62,3 +62,29 @@ raised it. RFC0058 decides where that input belongs.
 - **BG0709 is the one to read next.** The pre-push red-main check trusts the forge's ordering,
   and a stale row had it demand acknowledgement of a run from July while main was green. Taking
   the printed remedy would have banked a false "red read" and inverted D0181.
+
+## WHAT THE NEXT RUN IS, AND WHY IT LOOKS LIKE THIS
+
+Planned at this close, not after it. Four epics: EP0253 (the push boundary runs the modules
+the push changed), EP0254 (the corpus lane runs in shards), EP0255 (a run ends with one
+derived report, and signing it is a transaction), EP0256 (stakeholder feedback arrives while
+it is still cheap to act on). Twenty-two stories, all owing acceptance criteria - grooming is
+the next task and it is not priced by the points.
+
+They were CONSULTED BEFORE GROOMING, under D0210, and that is the part worth reading. Three
+personas in fresh contexts all returned Concerns: 17 actionable findings, four of them
+defects in the authoring session's own breakdown, and four verified by execution - a script
+two stories declared does not exist, two epics carried no epic-level criteria, one predicate
+narrows the release boundary as well as the push, and a story named another epic's file. One
+finding was over-claimed and is recorded as such.
+
+Three findings landed in the batch as new stories: US0843 prints the per-module timings
+`module-alone` already computes and discards, so a 14-point narrowing is measured before it
+is built; US0844 stamps the token meter the report's headline row needs; US0845 reads the
+fingerprint nothing was reading. D0211 rules the rest: refine must produce a consult or a
+written skip, the batch carries a detection unit against the 33% change failure rate, and a
+blanket ruling must name the predicate it applied.
+
+The measured cost of this run sets the next one's expectation: 62,715 tokens per point,
+6,459,675 tokens over 103 points, against an estimator that forecasts 25,000. Read the plan's
+forecast as the constant's, not the project's.
