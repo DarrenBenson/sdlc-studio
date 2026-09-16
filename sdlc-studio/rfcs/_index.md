@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 2 |
-| In Review | 0 |
+| Draft | 0 |
+| In Review | 2 |
 | Accepted | 52 |
 | Superseded | 2 |
 | Withdrawn | 3 |
@@ -19,8 +19,8 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [RFC-0056](RFC0056-keep-the-trd-and-tsd-true-mechanical-claim.md) | Keep the TRD and TSD true: mechanical claim-drift detection and a consumption path | High | Accepted | Claude Fable 5 | 2026-07-27 | EP0167 |
 | [RFC-0057](RFC0057-a-queue-of-planned-sprints-so-the-planner.md) | A queue of planned sprints, so the planner and the runner can be different people | High | Accepted | Claude Fable 5 (operator-raised, RUN-01KYHVWK resume discussion) | 2026-07-27 | EP0176 |
-| [RFC-0058](RFC0058-stakeholder-feedback-shapes-the-work-when-how-often.md) | Stakeholder feedback shapes the work: when, how often and at what cost the stakeholder personas are consulted | High | Draft | sdlc-studio | 2026-09-15 | -- |
-| [RFC-0059](RFC0059-a-run-ends-with-one-signed-report-the.md) | A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts | High | Draft | sdlc-studio | 2026-09-16 | -- |
+| [RFC-0058](RFC0058-stakeholder-feedback-shapes-the-work-when-how-often.md) | Stakeholder feedback shapes the work: when, how often and at what cost the stakeholder personas are consulted | High | In Review | sdlc-studio | 2026-09-15 | EP0256 |
+| [RFC-0059](RFC0059-a-run-ends-with-one-signed-report-the.md) | A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts | High | In Review | sdlc-studio | 2026-09-16 | EP0255 |
 
 ## Archived Releases
 

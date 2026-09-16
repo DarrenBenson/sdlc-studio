@@ -1,6 +1,7 @@
 # RFC-0059: A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts
 
-> **Status:** Draft
+> **Status:** In Review
+> **Decomposed-into:** EP0255
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** operator request, RUN-01M2JA6J 2026-09-16 ("I would like a proper report producing at the end of a run for sign off ... when I say signed off it should be a very simple and quick action")

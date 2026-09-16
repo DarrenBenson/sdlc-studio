@@ -1,6 +1,7 @@
 # RFC-0058: Stakeholder feedback shapes the work: when, how often and at what cost the stakeholder personas are consulted
 
-> **Status:** Draft
+> **Status:** In Review
+> **Decomposed-into:** EP0256
 > **Created:** 2026-09-15
 > **Created-by:** sdlc-studio new
 > **Raised-by:** operator request, RUN-01M2JA6J 2026-09-15 ("We need an RFC to increase use of feedback from stakeholders")
@@ -85,7 +86,7 @@ The seats measure correctness against criteria the author wrote. If the criteria
 
 ## Recommendation
 
-Leaning **C + E, enforced by A**: consult the stakeholders on the epic or CR at refine time, where their feedback is cheapest to act on; require a per-story consult only when an E trigger fires; gate both in `sprint plan` (A), with a sanctioned skip that costs a reason and is reported at the close. Keep D as an optional delivery-time check for units whose intent changed during delivery. Reject B: it puts stakeholder verdicts in the loop that most needs fewer rounds, not more.
+**RULED: C + E** (D1, D2 above; the operator did not take A's second gate at plan). The recommendation as written was **C + E, enforced by A**: consult the stakeholders on the epic or CR at refine time, where their feedback is cheapest to act on; require a per-story consult only when an E trigger fires; gate both in `sprint plan` (A), with a sanctioned skip that costs a reason and is reported at the close. Keep D as an optional delivery-time check for units whose intent changed during delivery. Reject B: it puts stakeholder verdicts in the loop that most needs fewer rounds, not more.
 
 Record every consult as an artefact under `sdlc-studio/reviews/` naming the units it covered, each persona's verdict, and a disposition per finding (folded into delivery, filed as an id, or declined with a reason), so the same ledger discipline the seats follow applies here and yield can be measured.
 
@@ -93,10 +94,10 @@ Record every consult as an artefact under `sdlc-studio/reviews/` naming the unit
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Where the default consult point sits: refine/epic (C), plan (A only), or both | Open |
-| D2 | The risk trigger (E): which signals, derived from what, and whether a project can extend it | Open |
+| D1 | **RULED 2026-09-16 (operator):** at REFINE, per epic or CR - one consult over the epic and its stories before grooming, where feedback becomes criteria rather than rework. `plan` does not carry a second gate; a unit filed outside refine is reached by D2's trigger instead | Settled |
+| D2 | **RULED 2026-09-16 (operator):** RISK-TRIGGERED - a unit is consulted when it touches the running system, changes what a user reads or is told, originates in a stakeholder concern, or belongs to an epic no consult has covered. Derived from `Affects` and the unit type, so most bugs (defects against settled intent) skip without a reason | Settled |
 | D3 | What a consult artefact must carry for the gate to count it (units covered, verdicts, per-finding disposition) | Open |
-| D4 | Whether a stakeholder Reject holds anything, or only informs (the non-goal says inform; CR0571 bears on who then rules) | Open |
+| D4 | **RULED 2026-09-16 (operator):** INFORMS, and the operator rules. A stakeholder Reject holds no gate, but it must be ANSWERED in writing - folded into delivery, filed with an id, or declined with a reason - and an unanswered one is reported at the close. Consistent with D0194: the operator rules, the personas inform | Settled |
 | D5 | Persona validity: synthetic personas speak for real users only as well as they were authored; how often they are refreshed against real feedback, and whether a real stakeholder can stand in for a persona | Open |
 | D6 | How consult yield is measured (findings per consult, share folded or filed, cost against seat rounds) and when the requirement is revisited | Open |
 
@@ -112,3 +113,4 @@ Record every consult as an artefact under `sdlc-studio/reviews/` naming the unit
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-15 | Claude Opus 5 (authoring session) | Context, goals, five options weighed, recommendation and six open decisions written on the operator's request; filed under an operator-named triage session because the run's finding cap was reached |
+| 2026-09-16 | Claude Opus 5 (authoring session) | D1, D2 and D4 ruled by the operator at the RUN-01M2JA6J close: consult at refine per epic or CR, a risk trigger derived from Affects and unit type, and a Reject that informs and must be answered but holds no gate. D3, D5 and D6 remain open for refine. |

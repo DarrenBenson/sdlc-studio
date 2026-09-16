@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-09-15
+**Last Updated:** 2026-09-16
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 121 |
+| Draft | 143 |
 | Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 5 |
 | Blocked | 12 |
-| **Total** | **823** |
+| **Total** | **845** |
 
 ## All Stories
 
@@ -182,6 +182,28 @@
 | [US0814](US0814-the-floor-lane-is-bound-into-the-pre.md) | The floor lane is bound into the pre-commit gate, so it runs in the command people actually run | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
 | [US0817](US0817-a-unit-whose-affects-names-a-gate-lane.md) | A unit whose Affects names a gate lane, a hook or the suite runner cannot reach Fixed or Done without a recorded green self-run of the affected lane on this repository | Ready | EP0248 | 2026-09-07 | 2026-09-07 |
 | [US0823](US0823-every-other-route-that-ends-a-run-reads.md) | every other route that ends a run reads the same unanswered-unit predicate as the close, and stop --force records what it waived | Done | EP0206 | 2026-09-15 | 2026-09-15 |
+| [US0824](US0824-module-alone-at-the-push-boundary-runs-the.md) | module-alone at the push boundary runs the changed modules and everything that imports them | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
+| [US0825](US0825-the-lane-line-names-its-selection-and-the.md) | the lane line names its selection and the rule that produced it, so a narrowed lane is never read as a full one | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
+| [US0826](US0826-the-full-133-module-sweep-runs-on-the.md) | the full 133-module sweep runs on the schedule, and a week with no scheduled run is reported rather than silently skipped | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
+| [US0827](US0827-a-module-the-selection-omitted-and-the-sweep.md) | a module the selection omitted and the sweep later finds red is recorded as a miss, so the rule is judged on evidence | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
+| [US0828](US0828-the-red-criteria-pass-runs-as-n-shards.md) | the red-criteria pass runs as N shards over a deterministic partition, every criterion in exactly one | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
+| [US0829](US0829-one-collector-unions-the-shard-identities-and-judges.md) | one collector unions the shard identities and judges them against the single baseline, naming NEW, went-green and VANISHED as the serial lane does | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
+| [US0830](US0830-a-shard-that-dies-fails-the-lane-by.md) | a shard that dies fails the lane by name, so a lost shard can never read as a corpus that got smaller | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
+| [US0831](US0831-per-shard-wall-clock-is-recorded-and-the.md) | per-shard wall clock is recorded and the job cap is set from the measured figure | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
+| [US0832](US0832-close-splits-into-prepare-which-does-everything-that.md) | close splits into PREPARE, which does everything that can change facts, and SEAL, which does not | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0833](US0833-sign-writes-the-principal-the-date-and-the.md) | sign writes the principal, the date and the report fingerprint against the run, and nothing else runs after it | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0834](US0834-prepare-refuses-to-produce-a-report-while-any.md) | PREPARE refuses to produce a report while any batch unit is non-terminal, any review unanswered or any index drifted | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0835](US0835-the-report-json-of-record-is-derived-from.md) | the report JSON of record is derived from the run's own artefacts, every figure carrying its source | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0836](US0836-the-markdown-twin-and-the-html-rendering-are.md) | the Markdown twin and the HTML rendering are generated from the shipped templates, and a section with no data renders NOT MEASURED by name | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0837](US0837-the-report-opens-with-the-sprint-goal-verbatim.md) | the report opens with the sprint goal verbatim and carries DORA's four keys with this project's mapping stated | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0838](US0838-refine-runs-a-stakeholder-consult-over-the-epic.md) | refine runs a stakeholder consult over the epic and its stories and records it as an artefact naming the units it covered | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
+| [US0839](US0839-a-risk-trigger-derived-from-affects-and-unit.md) | a risk trigger derived from Affects and unit type names which units still owe a consult, and most bugs skip without a reason | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
+| [US0840](US0840-a-consult-artefact-carries-each-persona-s-verdict.md) | a consult artefact carries each persona's verdict and a disposition per finding, so a consult can be counted rather than remembered | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
+| [US0841](US0841-an-unanswered-stakeholder-reject-is-reported-at-the.md) | an unanswered stakeholder Reject is reported at the close, holding nothing, and the operator rules it | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
+| [US0842](US0842-consult-yield-is-measured-findings-per-consult-and.md) | consult yield is measured - findings per consult and the share folded or filed - so the requirement is revisited on evidence | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
+| [US0843](US0843-module-alone-prints-the-per-module-wall-clock.md) | module-alone prints the per-module wall clock it already computes, so a narrowing can be judged before it is built | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
+| [US0844](US0844-the-run-level-token-meter-is-stamped-at.md) | the run-level token meter is stamped at run open and at report time, and the total names the sessions it covers | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0845](US0845-a-report-whose-fingerprint-no-longer-matches-the.md) | a report whose fingerprint no longer matches the tree renders INVALIDATED wherever it is shown | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
 
 ## Archived Releases
 

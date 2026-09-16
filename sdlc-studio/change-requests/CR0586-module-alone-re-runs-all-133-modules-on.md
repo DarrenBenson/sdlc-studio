@@ -1,6 +1,7 @@
 # CR-0586: module-alone re-runs all 133 modules on every push, 551 s of a 749 s gate, for a signal that changes only when a module's imports do
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0253
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

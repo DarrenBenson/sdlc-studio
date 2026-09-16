@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-09-09
+**Last Updated:** 2026-09-16
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 35 |
+| Draft | 39 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 217 |
-| **Total** | **252** |
+| **Total** | **256** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -59,6 +59,10 @@
 | [EP0245](EP0245-filing-a-finding-leaves-the-disclosure-true.md) | Filing a finding leaves the disclosure true | Draft | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0246](EP0246-the-declared-python-floor-is-a-gate-not.md) | The declared Python floor is a gate, not a sentence in six documents | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0248](EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Draft | 1 | -- | 2026-09-07 | 2026-09-07 |
+| [EP0253](EP0253-the-push-boundary-runs-the-modules-the-push.md) | The push boundary runs the modules the push changed, and says which | Draft | 5 | -- | 2026-09-16 | 2026-09-16 |
+| [EP0254](EP0254-the-corpus-lane-runs-in-shards-and-judges.md) | The corpus lane runs in shards and judges one union | Draft | 4 | -- | 2026-09-16 | 2026-09-16 |
+| [EP0255](EP0255-a-run-ends-with-one-derived-report-and.md) | A run ends with one derived report, and signing it is a transaction | Draft | 8 | -- | 2026-09-16 | 2026-09-16 |
+| [EP0256](EP0256-stakeholder-feedback-arrives-while-it-is-still-cheap.md) | Stakeholder feedback arrives while it is still cheap to act on | Draft | 5 | -- | 2026-09-16 | 2026-09-16 |
 
 ## Archived Releases
 

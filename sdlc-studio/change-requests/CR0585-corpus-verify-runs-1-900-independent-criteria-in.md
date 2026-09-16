@@ -1,6 +1,7 @@
 # CR-0585: corpus-verify runs 1,900 independent criteria in one serial job, so a weekly signal costs 85 minutes and sits under its own cap
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0254
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
