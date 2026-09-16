@@ -3,74 +3,62 @@
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-> Closing review of record: [RV0027](RV0027-run-01m20rwx-closing-review-sixty-six-seat-verdicts.md).
-> **Run of record:** RUN-01M20RWX - every Medium open at the base ref, disposed of. Twenty-two
-> units, 72 points, 174 mutants registered killed and none surviving. Goal **achieved**: 18 bugs
-> at Fixed with their own verifiers passing, 4 stories at Done, and the three findings this run
-> itself filed ruled open with a date and a reason. The push and the v5.1 tag stay the operator's.
+> Closing review of record: RETRO0117 (`sdlc-studio/retros/RETRO0117-run-01m2ja6j-a-sprint-that-ends-with-nothing.md`).
+> **Run of record:** RUN-01M2JA6J - a sprint that ends with nothing unanswered. Twenty-three
+> units: 18 bugs to Fixed and 5 stories to Done, 70 plan-review verdicts and 48 delivery
+> verdicts, and a corpus-verify lane that passes in CI against a baseline measured in CI.
 
-## THE HEADLINE: THE REVIEW FOUND ONE SHAPE NINE TIMES
+## THE HEADLINE: A RUN CAN NO LONGER END OVER A QUESTION NOBODY ANSWERED
 
-Sixty-three seat verdicts across plan and delivery, forty-four of them REJECT, and almost every
-blocking finding was the same defect: **a criterion whose words go further than its fixture.**
-AC5 named three grep failures by name and tested none of them, so a selector that was simply a
-typo classified as healthy on 126 verifiers. AC8 said it judged a printed remedy by RUNNING it
-and read the source instead, which is how four remedies came to tell a reader to run a command
-the tool now refuses - one of them printed by the very command that does the refusing. AC7
-required its values to round-trip and asserted that the WORD "pipe" survived a writer that
-replaced the character with a slash. AC4's control was built on a class the shipped code never
-emits. In each case the criterion read as met and measured something narrower than it said.
+Five stories closed the routes by which a run could end quietly. An unfinished batch unit now
+holds the close through its stop-ship step and names where its findings went (US0626). No story
+or bug reaches Done or Fixed over a delivery REJECT whose findings were neither filed nor
+repaired (US0627). A unit closed over a REJECT names, in its own record, the artefact its
+findings were filed to (US0628). Every other route that ends a run - `stop`, `file-and-close`,
+the boundary stop, the handoff - reads the same predicate as the close, and `stop --force`
+records what it waived (US0823). The doctrine states the rule, the one store a stop-ship ruling
+lives in, and who rules it (US0625).
 
-The sharpest finding was a product seat's census rather than a reading: US0819's probe, which
-exists to ask whether a criterion can fail, classified a unit as a finding unless a commit
-SUBJECT named it - and a repo-wide run showed every one of its 25 findings was a unit the same
-commit had delivered. The test could not see it, because it patched the reader out.
+## WHAT THE CORPUS LANE WAS ACTUALLY SAYING
 
-## WHAT LANDED
+BG0676 is the unit the whole batch was ordered around. The scheduled lane had been red on main
+at 40 red criteria against a baseline of 20, and every one of the 21 it named as new passed on a
+developer machine. It was not a corpus regression: the job installed no `coverage`, cloned one
+commit deep, and gave every verifier gate.py's 120 s default while its slowest criterion needs
+136. With those three corrected the same lane reads 19, one fewer than the baseline it started
+from, and that improvement is BANKED rather than left to the tolerance.
 
-- **US0819/US0820/US0821** - the falsifiability probe. `testplan probe` runs each criterion
-  against the tree and reports a PASS as the finding; `sprint plan` refuses a batch carrying an
-  unruled one (three modes, default `report`); a ruling is recorded against the criterion's title
-  AND selector, and reported STALE when either moves.
-- **US0822** - a ledger row is judged by the site its mutant was applied to. The reviewer found
-  the benefit was unreachable: `plan_execution`, the join the terminal gate reads, still keyed on
-  the whole file's hash, so the anchors reached the commit lane and stopped. 26 rows across three
-  units went from `not-run` to counted the moment that was fixed.
-- **Eighteen Mediums**, from `check_versions` extracting a version by structure only, through the
-  test-plan gate firing at the terminal transition by whatever route reached it, to the corpus
-  lane reporting what rose, what went green and what VANISHED by id.
-- **D0186** - the v5.1 bar is the RULING, not the count, superseding D0185's first promise.
+The number was measured three times in CI before it was written down, and the reviews found the
+cap before the lane did: the job's own ceiling was 90 minutes against a pass that now takes 85.6,
+and a job killed at its cap is marked failure, indistinguishable from the red it exists to
+report. That is BG0676's own defect class, and it was caught inside BG0676's own fix.
 
-## WHAT THE SEATS GOT WRONG
+## WHAT THE REVIEWS COST AND BOUGHT
 
-Two blocking findings were REFUTED by execution and recorded as OVER-CLAIMED rather than
-repaired: BG0657's dead-stamps count (the shipped lane exits 0 here with identities matching, and
-two other seats read the same) and BG0630's `--force` regression (the gate's entry call site has
-never carried a force guard either, so making one firing waivable would let the same fact be
-waived or refused by which route a caller took). A review is evidence, not an instruction.
+Plan review ran to 70 verdicts, 47 of them REJECT, before a line of code; one unit was rejected
+five times. Delivery review, capped at two rounds by D0146, ran to 48 verdicts with 4 REJECTs,
+and every one of the four was real: two regressions the authors' own suites passed, and a pair
+of surviving mutants that would have restored the very defect the unit was fixing. D0204 now
+caps plan review at three rounds, and CR0578 will encode it.
 
-Three of my own mutant verdicts were RETRACTED for the same reason in reverse: each was applied
-to the wrong site - a spy test instead of the sweep, a fixture whose route could not reach the
-branch, an edit that killed on a TypeError rather than on its criterion - and a mutant aimed at
-the wrong site is a measurement of nothing whichever way it reads.
+One stakeholder consult, run only because the operator asked when personas are consulted, found
+the batch's largest design gap in a single pass: nothing checks who wrote a stop-ship ruling, so
+the session that did the work can release its own hold (CR0571). Seventy seat verdicts had not
+raised it. RFC0058 decides where that input belongs.
 
 ## WHAT IS OWED
 
-- v5.1.0 is cut and pushed, and `sdlc-studio.com` is deployed on v5.1. **This commit is
-  the tag target**: the release gate is re-run and recorded green on it, CI is confirmed
-  green on the forge for it, and `v5.1.0` is cut here.
-- The v5.1 cut itself: 119 changelog fragments fold cleanly now, and 59 of them had to be
-  repaired by hand first because nothing checks a fragment's shape until the cut tries it
-  (BG0662, ruled open).
-- **Eight Mediums ship disclosed and ruled**, up from three: BG0659, BG0661, BG0662, and the
-  five the close itself raised - BG0664 (the pre-push boundary runs no boundary-only test, which
-  is why the cut's red `main` reached the forge), BG0665, BG0666, BG0667 and BG0668.
-- BG0663 was a CLOSE-TIME REPAIR and carries a recorded `Close-repair-override` in RETRO0116:
-  the cut this close authorised is what reddened `main`, so it could not be deferred past the
-  tag. Its structural cause was filed and deferred as BG0664, which is the rule working.
-- BG0668 is the one to read next. `release_cut.py tag-check` refused the v5.1.0 tag on BG0663
-  while `close_owed.is_owed()` reported False for the same corpus: the guard reads the report's
-  `owed` list, which deliberately keeps overridden units, rather than the `blocking()` predicate
-  every other reader uses. So the remedy the refusal PRINTS cannot clear it. Proven by probe,
-  not by reading: writing the override moved `close_repair_overrides` and `is_owed` and left
-  `owed` untouched. The tag was cut on the substantive condition with the defect filed.
+- **Nothing is unanswered.** Every open finding this run filed carries a ruling in RETRO0117's
+  carried table, made by the operator at the close review.
+- **32 findings were filed at the close** - BG0690 to BG0709, CR0579 to CR0586, and three Lows
+  folded into CR0511 - each one deferred, none worked inside the close.
+- **The test-cost work is filed and measured, not asserted**: CR0584 (386 criteria select a whole
+  test module, which both over-claims and costs most of the 84-minute corpus pass), CR0585 (shard
+  a serial lane whose criteria are independent), CR0586 (module-alone pays 551 s of every 749 s
+  push). Read CR0584 first: it is a quality repair that happens to be the largest speed-up.
+- **Two ceilings sit inside their 5% tolerance** and will redden main on the next line added to
+  either: `reference-config.md` at 104.89% and `reference-review.md` at 100.49%. This run learned
+  that the hard way - `reference-sprint.md` crossed its own ceiling and turned main red.
+- **BG0709 is the one to read next.** The pre-push red-main check trusts the forge's ordering,
+  and a stale row had it demand acknowledgement of a run from July while main was green. Taking
+  the printed remedy would have banked a false "red read" and inverted D0181.
