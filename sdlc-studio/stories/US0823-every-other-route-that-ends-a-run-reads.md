@@ -1,6 +1,6 @@
 # US0823: every other route that ends a run reads the same unanswered-unit predicate as the close, and stop --force records what it waived
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-09-15
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -27,6 +27,7 @@ Every route reads US0626's `sprint.unanswered_units(root, state, retro_id=None)`
 - **Then** it exits 2 and stderr carries a line beginning `file-and-close REFUSED: unanswered stop-ship question(s)` - a phrase none of the route's other refusals (hard blocker, already filed, nothing outstanding, no retro) emits - whose unit ids equal the literal set, compared with the literal; no CR file exists under `sdlc-studio/change-requests/`, RETRO0001 carries no `## Deferred at close` section, and the live run's outcome is still `running`
 - **Mutant:** feed the refusal from `_remaining_units` - it still refuses, on the In Progress unit, and misses the bug rejected after Fixed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_file_and_close_refuses_an_unanswered_unit
+- **Verified:** yes (2026-09-16)
 
 ### AC2: stop --force still stops THE RUN, and records the predicate's set as what it waived
 
@@ -37,6 +38,7 @@ THE WAIVED LISTS, read from `cmd_stop` and `_awaits_signoff` at HEAD and probed 
 - **Then** it exits 0, THE RECORD's outcome is `stopped`, and THE RECORD's `unanswered` unit ids equal the literal set - compared with the literal, never with the stop record's other lists, which differ from it in both directions (THE WAIVED LISTS above), so the test asserts no unit's absence from them
 - **Mutant:** fill the waived record from `blocked_by_pending`'s `unblocked` list, the source `could_have_proceeded` already reads
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_stop_force_records_the_waived_units
+- **Verified:** yes (2026-09-16)
 
 ### AC3: handoff generate --outcome reports THE RUN's unanswered units and still closes it
 
@@ -45,6 +47,7 @@ THE WAIVED LISTS, read from `cmd_stop` and `_awaits_signoff` at HEAD and probed 
 - **Then** it exits 0 - it reports and never refuses; THE RECORD's outcome is `budget-spent` and its `unanswered` unit ids equal the literal set; and the handoff document it wrote carries THE SECTION, whose ids - parsed from that section alone - equal the literal set
 - **Mutant:** fill the record from the handoff report's own Remaining list, `_classify`'s non-terminal units
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_handoff_outcome_records_and_names_the_unanswered_units
+- **Verified:** yes (2026-09-16)
 
 ### AC4: a boundary stop reports THE RUN's unanswered units and still closes it
 
@@ -53,6 +56,7 @@ THE WAIVED LISTS, read from `cmd_stop` and `_awaits_signoff` at HEAD and probed 
 - **Then** the stop completes rather than refusing: THE RECORD's outcome is `blocked`, its `stop.cause` is `close-gate`, and its `unanswered` unit ids equal the literal set; and the handoff named by `stop.handoff` carries THE SECTION, whose ids equal the literal set
 - **Mutant:** leave `_boundary_stop` writing only the stop record - it generates its handoff without `--outcome` and closes the run itself, so generate's write never reaches it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_a_boundary_stop_records_and_names_the_unanswered_units
+- **Verified:** yes (2026-09-16)
 
 ### AC5: THE ANSWERED RUN ends by every route as today - the paired control
 
@@ -61,6 +65,7 @@ THE WAIVED LISTS, read from `cmd_stop` and `_awaits_signoff` at HEAD and probed 
 - **Then** --file-and-close exits 0, files exactly one CR for the goal-verdict blocker and closes `closed-outstanding`; stop --force exits 0 at `stopped`; the boundary closes `blocked`; generate exits 0 at `budget-spent`; in all four THE RECORD's `unanswered` equals `[]`; and THE SECTION in the boundary's and generate's handoffs names no batch id
 - **Mutant:** let a route read its own reader - each of the four holds a unit this batch has answered (US0102, US0104 and US0116 at Review awaiting only a signature, US0105 ruled, US0107 parked)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_an_answered_batch_ends_by_every_route
+- **Verified:** yes (2026-09-16)
 
 ### AC6: THE SECTION survives handoff.refresh, and a generate that ends no run records no unanswered set
 
@@ -69,6 +74,7 @@ THE WAIVED LISTS, read from `cmd_stop` and `_awaits_signoff` at HEAD and probed 
 - **Then** in (i) the refreshed document still carries THE SECTION, whose ids - parsed from that section alone - equal the literal set; in (ii) generate exits 0, the run's outcome is still `running`, the live run state (`run_state.read`) carries `handoff_remaining` - the positive control that generate's shared state update ran - and carries no `unanswered` key, so the field is written only on a path that ends the run
 - **Mutant:** render the section only inside the body `generate` builds, so the re-render after the close's sign-offs drops it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_the_section_survives_refresh_and_a_mid_run_generate_records_nothing
+- **Verified:** yes (2026-09-16)
 
 ## Test Plan
 

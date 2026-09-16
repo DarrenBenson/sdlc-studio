@@ -1,12 +1,12 @@
 # CR-0526: a sprint ends with nothing open - a non-stop-ship finding becomes a bug and its story closes
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0206
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
 > **Provenance:** human
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/close_guard.py, .claude/skills/sdlc-studio/scripts/transition.py
+> **Affects:** .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/critic.py
 > **Priority:** Critical
 > **Type:** Improvement
 > **Size:** M
@@ -55,3 +55,4 @@ rule**. That number is the argument for building it.
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-15 | sprint planning 2026-09-15 | Groomed into the next batch at sprint planning: its AC2-AC4 are superseded in detail by the operator's D0193 (an unfinished unit feeds the stop-ship step, not a third gate) and D0194 (one stop-ship store; a stop-ship ruling holds rather than discharges), with answered states consolidated in D0196. EP0206's epic-level criteria carry the ruled form; its stories now cover bugs as well as stories and every route that ends a run (US0823). |
+| 2026-09-16 | Claude Opus 5 (authoring session) | Affects corrected at the RUN-01M2JA6J close: `close_guard.py` was a speculative filename at authoring time and no such module was ever written - the guard landed in `sprint.py`, `transition.py` and `critic.py`, which the five delivered children (US0625-US0628, US0823) declare. Named here because the warning ratchet reads an unresolvable `Affects` path as a new instance the moment the request reaches a terminal. |

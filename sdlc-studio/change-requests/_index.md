@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 27 |
 | Approved | 0 |
-| In Progress | 36 |
-| Complete | 498 |
+| In Progress | 35 |
+| Complete | 499 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 24 |
@@ -34,7 +34,7 @@
 | [CR-0515](CR0515-an-agent-customises-content-never-tooling-hand-rolled.md) | An agent customises content, never tooling: hand-rolled work is detected from the run diff, reported at the close, and escapes only by filing the gap | In Progress | High | Feature | 2026-08-01 | EP0196 |
 | [CR-0523](CR0523-the-unreviewed-span-is-reported-during-the-run.md) | the unreviewed span is reported DURING the run, not discovered at the close | Proposed | High | Improvement | 2026-08-02 | EP0226 |
 | [CR-0524](CR0524-a-review-verdict-separates-a-broken-feature-from.md) | a review verdict separates a broken feature from evidence that cannot fail | Proposed | High | Improvement | 2026-08-02 | EP0227 |
-| [CR-0526](CR0526-a-sprint-ends-with-nothing-open-a-non.md) | a sprint ends with nothing open - a non-stop-ship finding becomes a bug and its story closes | In Progress | Critical | Improvement | 2026-08-02 | EP0206 |
+| [CR-0526](CR0526-a-sprint-ends-with-nothing-open-a-non.md) | a sprint ends with nothing open - a non-stop-ship finding becomes a bug and its story closes | Complete | Critical | Improvement | 2026-08-02 | EP0206 |
 | [CR-0528](CR0528-the-installed-copy-is-only-reconciled-at-a.md) | the installed copy is only reconciled at a close, so a fix believed shipped is in force nowhere for the length of a run | In Progress | Medium | Improvement | 2026-08-04 | EP0228 |
 | [CR-0529](CR0529-the-prior-art-check-is-scoped-to-the.md) | the prior-art check is scoped to the reviewer, so an author rediscovers by being rejected what one command would have told them | In Progress | Medium | Improvement | 2026-08-04 | EP0229 |
 | [CR-0530](CR0530-the-planner-reports-shared-file-clusters-not-the.md) | the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all | In Progress | Medium | Improvement | 2026-08-04 | EP0230 |

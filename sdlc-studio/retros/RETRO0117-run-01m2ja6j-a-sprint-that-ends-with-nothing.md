@@ -218,7 +218,7 @@ sprints fits noise.
 
 **0 of 23 unit(s) measured; 21 of 23 forecast at plan time.**
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Velocity: 3.02 points/elapsed-hour** (79 points ACCEPTED over 26.159h, run-state - a CALENDAR SPAN with no idle deducted, since the run recorded no gap; it is not working time, ceremony included). It WROTE 103 point(s): 24 more shipped and were not accepted (US0626, US0627, US0628, US0823), so this rate measures acceptance, not output. This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
@@ -226,9 +226,9 @@ Review passes, by phase - read from the two verdict ledgers:
 
   test-plan review: 70 pass(es) over 23 unit(s), 47 rejected
 
-  code review: 56 pass(es) over 22 unit(s), 8 rejected
+  code review: 58 pass(es) over 23 unit(s), 10 rejected
 
-  ratio: 0.80 code-review pass(es) per test-plan pass - the claim EP0207 is judged on, as a number
+  ratio: 0.83 code-review pass(es) per test-plan pass - the claim EP0207 is judged on, as a number
 Unmeasured: US0625, US0626, US0627, US0628, US0823, BG0659, BG0661, BG0662, BG0664, BG0665, BG0666, BG0667, BG0668, BG0669, BG0670, BG0671, BG0672, BG0673, BG0674, BG0675, BG0676. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 Unforecast: BG0677, BG0678. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
@@ -319,3 +319,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: captured from the harness at the close (`accuracy --tokens-from-harness`) · Duration: one day, 2026-09-15, 26 commits · Critic rejects: 47 of 70 plan-review verdicts, 4 of 48 delivery verdicts
+
+## Handoff
+
+- [HO-0071](../handoffs/HO0071-nothing-is-left-open-silently-the-sixteen-bugs.md) - 6 remaining item(s): 0 copilot-tail, 6 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

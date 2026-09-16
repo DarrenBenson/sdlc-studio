@@ -1,6 +1,7 @@
 # US0627: a story or bug reaching Done or Fixed over an unanswered REJECT is refused until its findings are filed or the REJECT is repaired
 
-> **Status:** Review
+> **Status:** Done
+> **Findings-filed-to:** BG0704
 > **Delivers:** CR0526
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -27,6 +28,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** it exits non-zero with the status unchanged, and the refusal carries `unanswered delivery REJECT`, naming the REJECT's reviewer and verdict date
 - **Mutant:** stop reading the delivery ledger, or name only the unit
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_recorded_reject_blocks_done
+- **Verified:** yes (2026-09-16)
 
 ### AC2: and every delivered terminal of a bug, from any status
 
@@ -35,6 +37,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** all five are refused with `unanswered delivery REJECT` - the guard keys on `sdlc_md.is_delivered_terminal`, not on named statuses nor on the status being left, since a bug reaches Verified or Closed without passing Fixed and 16 bugs at Fixed carry an unanswered delivery REJECT
 - **Mutant:** gate the story route only, gate Done and Fixed by name, or skip a bug already at Fixed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_recorded_reject_blocks_every_delivered_terminal_for_a_bug
+- **Verified:** yes (2026-09-16)
 
 ### AC3: findings all filed through `critic repair` discharge it
 
@@ -43,6 +46,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** it exits 0 at Done and prints no `unanswered delivery REJECT` - the finding survives as its own tracked artefact (CR0506's disposition, not a new store)
 - **Mutant:** refuse every filed id
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_filed_artefact_id_discharges_the_reject
+- **Verified:** yes (2026-09-16)
 
 ### AC4: a filed id that stops resolving after it was recorded no longer answers the transition
 
@@ -51,6 +55,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** it is refused with `unanswered delivery REJECT`, naming as outstanding the finding the deleted id had closed - a discharge nobody can follow is not one
 - **Mutant:** accept any filed id that was accepted at write time
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_an_id_naming_no_artefact_is_refused
+- **Verified:** yes (2026-09-16)
 
 ### AC5: and no longer answers review-coverage either - the check lives in `critic.repair_state`
 
@@ -59,6 +64,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** before the delete they read `complete` and `repaired` (the positive control); after it `partial`, with the deleted id's finding in `outstanding`, and `unreviewed` - so review-coverage and conformance, which read the same pair, stop counting it too, not only the write-time check in `record_repair`
 - **Mutant:** check resolvability in coverage_state alone, or at write time alone
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairStateResolvesFiledIdsTests::test_a_filed_id_deleted_after_recording_stops_answering_both_readers
+- **Verified:** yes (2026-09-16)
 
 ### AC6: a filed id resolves through `sdlc_md.find_by_id`, which `corpus_cache` memoises
 
@@ -67,6 +73,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** a spy on `sdlc_md.find_by_id` sees all three ids and the cache holds its by-id index afterwards - an uncached lookup costs ~33 ms an id, and the corpus's 670 ids cost 22 s on every sweep
 - **Mutant:** resolve each id by walking the artefact directories directly
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairStateResolvesFiledIdsTests::test_filed_ids_resolve_through_the_cached_lookup
+- **Verified:** yes (2026-09-16)
 
 ### AC7: a complete repair answers it with no re-review
 
@@ -75,6 +82,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** it exits 0 at Done, read through `critic.coverage_state` (on this corpus it agrees with review-coverage and conformance on all 163 REJECT-carrying units - one reader, L-0408) - otherwise the unit passes the close and then stops at its own Done inside apply-signoff, after the run has closed
 - **Mutant:** require a re-review APPROVE as well, or accept only filed closures
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_complete_repair_answers_the_reject_as_review_coverage_does
+- **Verified:** yes (2026-09-16)
 
 ### AC8: a partly filed REJECT is refused
 
@@ -83,6 +91,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** it is refused with `unanswered delivery REJECT`, naming the one outstanding finding
 - **Mutant:** count any filed closure as an answer
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_partly_filed_reject_is_refused
+- **Verified:** yes (2026-09-16)
 
 ### AC9: a REJECT retired by a later same-brief APPROVE is answered, and only by the same brief
 
@@ -91,6 +100,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** the same-brief unit exits 0 at Done; the different-brief unit and the self-approved unit are each refused with `unanswered delivery REJECT`, naming the REJECT's reviewer and date - another seat's approval does not retire this seat's rejection, and an author cannot retire a rejection of their own work
 - **Mutant:** read every REJECT row directly, or accept any later APPROVE
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_same_brief_approve_answers_the_reject
+- **Verified:** yes (2026-09-16)
 
 ### AC10: the guard reads the delivery phase only
 
@@ -99,6 +109,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** the plan-review unit exits 0 at Done and the delivery unit is refused with `unanswered delivery REJECT` - 41 units carry a standing unrepaired plan-review REJECT, and a plan rejection is the plan gate's to answer
 - **Mutant:** read the plan-review phase as well
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_plan_review_reject_alone_does_not_block
+- **Verified:** yes (2026-09-16)
 
 ### AC11: no carried-table ruling discharges a REJECT (D0194)
 
@@ -107,6 +118,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** all four are refused with `unanswered delivery REJECT` - a stop-ship ruling holds the close rather than being the cheapest route to Done, and the other three rule on the close, not on the reviewer's findings
 - **Mutant:** let a ruling discharge the REJECT
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_stop_ship_ruling_does_not_discharge_the_reject
+- **Verified:** yes (2026-09-16)
 
 ### AC12: an abandonment terminal names the REJECT and proceeds
 
@@ -115,6 +127,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** all three exit 0 at the new status and the output carries `unanswered delivery REJECT` with the REJECT's reviewer and date - the code it judged will not ship, so refusing would force filings about work nobody will do, and silence would drop the REJECT from view
 - **Mutant:** refuse abandonment too, or say nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_an_abandonment_terminal_names_the_reject
+- **Verified:** yes (2026-09-16)
 
 ### AC13: `--force` waives the guard and the forced-override record names it
 
@@ -123,6 +136,7 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **Then** it exits 0 at Done and the artefact's `Forced-override` field and its Revision History row name `unanswered delivery REJECT` among the waived gates - forceable like its neighbours, and visible afterwards on the same terms
 - **Mutant:** make the guard unforceable, or check it where `_force_bypassed` cannot re-derive it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_force_waives_the_guard_and_the_record_names_it
+- **Verified:** yes (2026-09-16)
 
 ## Test Plan
 

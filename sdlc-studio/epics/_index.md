@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 36 |
+| Draft | 35 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 216 |
+| Done | 217 |
 | **Total** | **252** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -26,7 +26,7 @@
 | [EP0171](EP0171-in-flight-sprint-controls-and-a-close-review.md) | In-flight sprint controls and a close review derived from one recorded entry | Draft | 7 | -- | 2026-07-27 | 2026-07-27 |
 | [EP0194](EP0194-a-unit-review-is-bounded-briefed-by-the.md) | A unit review is bounded, briefed by the tool, and blocks only on what the unit broke | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0196](EP0196-hand-rolled-work-is-visible-the-close-names.md) | Hand-rolled work is visible: the close names what an agent did by hand instead of by tool | Draft | 5 | -- | 2026-08-01 | 2026-08-01 |
-| [EP0206](EP0206-a-sprint-ends-with-nothing-open-a-non.md) | A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it | Draft | 5 | -- | 2026-08-02 | 2026-08-02 |
+| [EP0206](EP0206-a-sprint-ends-with-nothing-open-a-non.md) | A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it | Done | 5 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0210](EP0210-a-refusing-verb-can-be-asked-what-it.md) | A refusing verb can be asked what it demands, before it refuses | Draft | 6 | -- | 2026-08-07 | 2026-08-07 |
 | [EP0217](EP0217-the-instruments-that-judge-a-unit-are-measured.md) | The instruments that judge a unit are measured from the change, not asserted about the file | Draft | 14 | -- | 2026-08-21 | 2026-08-21 |
 | [EP0218](EP0218-the-plan-review-binds-where-the-code-is.md) | The plan review binds where the code is, so a unit takes one review round instead of two | Draft | 6 | -- | 2026-08-25 | 2026-08-25 |

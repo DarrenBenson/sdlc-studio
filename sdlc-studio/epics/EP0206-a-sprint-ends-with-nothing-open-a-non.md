@@ -1,6 +1,6 @@
 # EP0206: A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 27
 > **Parent:** CR0526
 > **Created:** 2026-08-02
@@ -14,11 +14,11 @@ Decomposed from CR0526. Delivers the work CR0526 requested.
 
 ## Story Breakdown
 
-- [ ] [US0625: the doctrine states CR0526's rule, names the one store a stop-ship ruling lives in, and who rules it](../stories/US0625-the-doctrine-states-cr0526-s-rule-names-the.md)
-- [ ] [US0626: an unfinished batch unit holds the close through its stop-ship step, naming where its findings went, while Review and rung-end units do not](../stories/US0626-an-unfinished-batch-unit-holds-the-close-through.md)
-- [ ] [US0627: a story or bug reaching Done or Fixed over an unanswered REJECT is refused until its findings are filed or the REJECT is repaired](../stories/US0627-a-story-or-bug-reaching-done-or-fixed.md)
-- [ ] [US0628: a unit closed over a REJECT names, in its own record, the artefact its findings were filed to](../stories/US0628-a-unit-closed-over-a-reject-names-in.md)
-- [ ] [US0823: every other route that ends a run reads the same unanswered-unit predicate as the close, and stop --force records what it waived](../stories/US0823-every-other-route-that-ends-a-run-reads.md)
+- [x] [US0625: the doctrine states CR0526's rule, names the one store a stop-ship ruling lives in, and who rules it](../stories/US0625-the-doctrine-states-cr0526-s-rule-names-the.md)
+- [x] [US0626: an unfinished batch unit holds the close through its stop-ship step, naming where its findings went, while Review and rung-end units do not](../stories/US0626-an-unfinished-batch-unit-holds-the-close-through.md)
+- [x] [US0627: a story or bug reaching Done or Fixed over an unanswered REJECT is refused until its findings are filed or the REJECT is repaired](../stories/US0627-a-story-or-bug-reaching-done-or-fixed.md)
+- [x] [US0628: a unit closed over a REJECT names, in its own record, the artefact its findings were filed to](../stories/US0628-a-unit-closed-over-a-reject-names-in.md)
+- [x] [US0823: every other route that ends a run reads the same unanswered-unit predicate as the close, and stop --force records what it waived](../stories/US0823-every-other-route-that-ends-a-run-reads.md)
 
 ## Acceptance Criteria (Epic Level)
 

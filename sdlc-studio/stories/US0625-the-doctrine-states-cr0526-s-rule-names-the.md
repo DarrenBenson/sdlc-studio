@@ -1,6 +1,6 @@
 # US0625: the doctrine states CR0526's rule, names the one store a stop-ship ruling lives in, and who rules it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0526
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
