@@ -152,6 +152,12 @@ ruling HOLDS the close, which is the point of being able to make one.
 | CR0581 | not-stop-ship | Darren Benson (operator, RUN-01M2JA6J close review: not-stop-ship for every carried item; row drafted by the authoring session) | 2026-09-15 |
 | CR0582 | not-stop-ship | Darren Benson (operator, RUN-01M2JA6J close review: not-stop-ship for every carried item; row drafted by the authoring session) | 2026-09-15 |
 | CR0583 | not-stop-ship | Darren Benson (operator, RUN-01M2JA6J close review: not-stop-ship for every carried item; row drafted by the authoring session) | 2026-09-15 |
+| BG0707 | not-stop-ship | Darren Benson (operator, RUN-01M2JA6J close review: not-stop-ship for every carried item; row drafted by the authoring session) - AC4's own dispatch settles the provenance this guard cannot | 2026-09-16 |
+| BG0708 | not-stop-ship | Darren Benson (operator, RUN-01M2JA6J close review: not-stop-ship for every carried item; row drafted by the authoring session) - the coupling is more permissive in CI, so it cannot redden a run today | 2026-09-16 |
+| BG0709 | not-stop-ship | Darren Benson (operator, RUN-01M2JA6J close review: not-stop-ship for every carried item; row drafted by the authoring session) - the stale row was refused rather than acknowledged, so nothing false was banked | 2026-09-16 |
+| CR0584 | not-stop-ship | Darren Benson (operator, RUN-01M2JA6J close review: not-stop-ship for every carried item; row drafted by the authoring session) - the test-cost work this run's measurements argue for, deferred to refine | 2026-09-16 |
+| CR0585 | not-stop-ship | Darren Benson (operator, RUN-01M2JA6J close review: not-stop-ship for every carried item; row drafted by the authoring session) - deferred to refine; the cap it would retire is raised to 150 in the meantime | 2026-09-16 |
+| CR0586 | not-stop-ship | Darren Benson (operator, RUN-01M2JA6J close review: not-stop-ship for every carried item; row drafted by the authoring session) - deferred to refine; the full sweep still runs at every push until then | 2026-09-16 |
 
 ## Estimate vs actual
 
@@ -289,6 +295,12 @@ every EXAMPLE row; a row left in place is reported at the close, and a retro sti
 | The operator's triage session cap counts a Low folded into CR0511 as a filing | declined: a fold still adds a finding to CR0511's scope, so counting it is the cap doing its job as a volume brake; the operator's session name is the sanctioned escape |
 | The harness killed background suite waiters under a memory limit real memory never reached | declined: harness behaviour outside this repository; foreground polling with a 600 s timeout avoided it for the rest of the run |
 | 45 stale review worktrees (1.9 GB) slowed the suites | declined: session hygiene, not a tool defect; worktrees are now removed as soon as their patch is saved |
+| BG0676's AC4 test judges the baseline's CI-run line by shape, so a hand-typed id reads as a re-measure | BG0707 |
+| gate.py reads SDLC_VERIFY_TIMEOUT per call, coupling three previously hermetic test_gate cases to the ambient environment | BG0708 |
+| The pre-push red-main check trusts the forge's ordering, so a stale row demands acknowledgement of a two-month-old red and would bank it | BG0709 |
+| 386 acceptance criteria select a whole test module, over-claiming and costing most of the corpus pass | CR0584 |
+| corpus-verify runs ~1,900 independent criteria serially, 84 minutes in one job under its own cap | CR0585 |
+| module-alone re-runs all 133 modules at every push, 551 s of a 749 s gate | CR0586 |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
 

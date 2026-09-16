@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 30 |
+| Open | 31 |
 | In Progress | 1 |
 | Fixed | 575 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **708** |
+| **Total** | **709** |
 
 ## All Bugs
 
@@ -67,6 +67,7 @@
 | [BG0706](BG0706-the-coverage-gate-charges-another-unit-s-added.md) | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0707](BG0707-the-corpus-baseline-s-ci-run-line-is.md) | the corpus baseline's CI-run line is judged by shape alone, so a hand-typed run id reads as a re-measure | Open | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0708](BG0708-gate-py-reads-sdlc-verify-timeout-per-call.md) | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets | Open | Medium | 2026-09-16 | 2026-09-16 |
+| [BG0709](BG0709-the-pre-push-red-main-check-trusts-the.md) | the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red | Open | Medium | 2026-09-16 | 2026-09-16 |
 
 ## Archived Releases
 

@@ -61,8 +61,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0706` | Medium | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file |
 | `BG0707` | Medium | the corpus baseline's CI-run line is judged by shape alone, so a hand-typed run id reads as a re-measure |
 | `BG0708` | Medium | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets |
+| `BG0709` | Medium | the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red |
 
-31 findings: 31 Medium, 0 Low.
+32 findings: 32 Medium, 0 Low.
 
 ## Not carried
 
