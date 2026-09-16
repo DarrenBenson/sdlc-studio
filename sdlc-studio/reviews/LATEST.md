@@ -50,12 +50,6 @@ raised it. RFC0058 decides where that input belongs.
 
 - **Nothing is unanswered.** Every open finding this run filed carries a ruling in RETRO0117's
   carried table, made by the operator at the close review.
-- **32 findings were filed at the close** - BG0690 to BG0709, CR0579 to CR0586, and three Lows
-  folded into CR0511 - each one deferred, none worked inside the close.
-- **The test-cost work is filed and measured, not asserted**: CR0584 (386 criteria select a whole
-  test module, which both over-claims and costs most of the 84-minute corpus pass), CR0585 (shard
-  a serial lane whose criteria are independent), CR0586 (module-alone pays 551 s of every 749 s
-  push). Read CR0584 first: it is a quality repair that happens to be the largest speed-up.
 - **Two ceilings sit inside their 5% tolerance** and will redden main on the next line added to
   either: `reference-config.md` at 104.89% and `reference-review.md` at 100.49%. This run learned
   that the hard way - `reference-sprint.md` crossed its own ceiling and turned main red.
@@ -63,28 +57,20 @@ raised it. RFC0058 decides where that input belongs.
   and a stale row had it demand acknowledgement of a run from July while main was green. Taking
   the printed remedy would have banked a false "red read" and inverted D0181.
 
-## WHAT THE NEXT RUN IS, AND WHY IT LOOKS LIKE THIS
+## THE NEXT RUN
 
-Planned at this close, not after it. Four epics: EP0253 (the push boundary runs the modules
-the push changed), EP0254 (the corpus lane runs in shards), EP0255 (a run ends with one
-derived report, and signing it is a transaction), EP0256 (stakeholder feedback arrives while
-it is still cheap to act on). Twenty-two stories, all owing acceptance criteria - grooming is
-the next task and it is not priced by the points.
+Four epics, planned at this close and CONSULTED BEFORE GROOMING under D0210: EP0253 (the push
+boundary runs the modules the push changed), EP0254 (the corpus lane runs in shards), EP0255
+(a run ends with one derived report, and signing it is a transaction), EP0256 (stakeholder
+feedback arrives while it is still cheap). Twenty-two stories owe criteria; grooming is the
+next task and is not priced by the points.
 
-They were CONSULTED BEFORE GROOMING, under D0210, and that is the part worth reading. Three
-personas in fresh contexts all returned Concerns: 17 actionable findings, four of them
-defects in the authoring session's own breakdown, and four verified by execution - a script
-two stories declared does not exist, two epics carried no epic-level criteria, one predicate
-narrows the release boundary as well as the push, and a story named another epic's file. One
-finding was over-claimed and is recorded as such.
+The consult is the part to read: three personas in fresh contexts, all Concerns, 17 actionable
+findings - four of them defects in the authoring session's own breakdown, four verified by
+execution, one over-claimed and recorded as such. Three became stories: US0843 measures the
+narrowing before it is built, US0844 stamps the token meter, US0845 reads the fingerprint
+nothing was reading. D0211 rules the rest. Full account:
+`reviews/consult-EP0253-EP0256-stakeholders-2026-09-16.md`.
 
-Three findings landed in the batch as new stories: US0843 prints the per-module timings
-`module-alone` already computes and discards, so a 14-point narrowing is measured before it
-is built; US0844 stamps the token meter the report's headline row needs; US0845 reads the
-fingerprint nothing was reading. D0211 rules the rest: refine must produce a consult or a
-written skip, the batch carries a detection unit against the 33% change failure rate, and a
-blanket ruling must name the predicate it applied.
-
-The measured cost of this run sets the next one's expectation: 62,715 tokens per point,
-6,459,675 tokens over 103 points, against an estimator that forecasts 25,000. Read the plan's
-forecast as the constant's, not the project's.
+This run's measured rate sets the next one's expectation: 62,715 tokens per point over 103
+points, against an estimator that forecasts 25,000.
