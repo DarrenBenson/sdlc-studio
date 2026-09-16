@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 27 |
+| Proposed | 28 |
 | Approved | 0 |
 | In Progress | 35 |
 | Complete | 499 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 24 |
 | Blocked | 0 |
-| **Total** | **586** |
+| **Total** | **587** |
 
 ## All Changes
 
@@ -84,6 +84,7 @@
 | [CR-0584](CR0584-386-acceptance-criteria-select-a-whole-test-module.md) | 386 acceptance criteria select a whole test module, so each one over-claims and costs minutes | Proposed | High | Improvement | 2026-09-16 | -- |
 | [CR-0585](CR0585-corpus-verify-runs-1-900-independent-criteria-in.md) | corpus-verify runs 1,900 independent criteria in one serial job, so a weekly signal costs 85 minutes and sits under its own cap | Proposed | High | Improvement | 2026-09-16 | -- |
 | [CR-0586](CR0586-module-alone-re-runs-all-133-modules-on.md) | module-alone re-runs all 133 modules on every push, 551 s of a 749 s gate, for a signal that changes only when a module's imports do | Proposed | Medium | Improvement | 2026-09-16 | -- |
+| [CR-0587](CR0587-the-goal-review-asks-whether-a-sprint-goal.md) | the goal review asks whether a Sprint Goal is achievable, not whether it states value, so a shopping list passes | Proposed | High | Improvement | 2026-09-16 | -- |
 
 ## Archived Releases
 

@@ -218,7 +218,9 @@ sprints fits noise.
 
 **0 of 23 unit(s) measured; 21 of 23 forecast at plan time.**
 
-**Velocity: 3.02 points/elapsed-hour** (79 points ACCEPTED over 26.159h, run-state - a CALENDAR SPAN with no idle deducted, since the run recorded no gap; it is not working time, ceremony included). It WROTE 103 point(s): 24 more shipped and were not accepted (US0626, US0627, US0628, US0823), so this rate measures acceptance, not output. This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+**Sprint tokens/point: 62,715** (6,459,675 tokens over 103 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity: 3.94 points/elapsed-hour** (103 points ACCEPTED over 26.159h, run-state - a CALENDAR SPAN with no idle deducted, since the run recorded no gap; it is not working time, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 

@@ -1,0 +1,363 @@
+<title>Sprint Report {{run_id}}</title>
+<!-- Rendered by `sprint.py report`. Placeholders are filled from the report JSON;
+     every figure must arrive with a source, and a section with no data renders as
+     NOT MEASURED by name rather than being dropped. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --paper:#f2f5f4; --surface:#fbfcfb; --ink:#111a1d; --muted:#57676c; --line:#d5dedb;
+  --accent:#125f54; --accent-soft:#e2efec; --warn:#8a5605; --warn-soft:#f6ecdc; --stop:#95302a;
+  --shadow:0 1px 2px rgba(17,26,29,.06), 0 8px 24px -16px rgba(17,26,29,.4);
+  --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --body:"Source Sans 3", system-ui, -apple-system, Segoe UI, sans-serif;
+  --display:"Newsreader", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper:#0e1416; --surface:#151d20; --ink:#e7efec; --muted:#93a5a9; --line:#243033;
+  --accent:#4eb5a3; --accent-soft:#12312c; --warn:#d69b46; --warn-soft:#2e2517; --stop:#dc8078;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -16px #000;
+} }
+:root[data-theme="dark"] {
+  --paper:#0e1416; --surface:#151d20; --ink:#e7efec; --muted:#93a5a9; --line:#243033;
+  --accent:#4eb5a3; --accent-soft:#12312c; --warn:#d69b46; --warn-soft:#2e2517; --stop:#dc8078;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -16px #000;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--body);
+  font-size:16px; line-height:1.55; padding-block:clamp(24px,5vw,56px); padding-left:16px; padding-right:16px; }
+.wrap { max-width:1080px; margin:0 auto; display:flex; flex-direction:column; gap:clamp(28px,4vw,44px); }
+.eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+h1 { font-family:var(--display); font-weight:600; font-size:clamp(30px,5vw,44px); line-height:1.08;
+  margin:.25em 0 0; text-wrap:balance; letter-spacing:-.01em; }
+h2 { font-family:var(--display); font-weight:600; font-size:clamp(20px,2.6vw,26px); margin:0; text-wrap:balance; }
+h3 { font-family:var(--body); font-weight:600; font-size:15px; margin:0 0 6px; }
+p { margin:0; }
+section { display:flex; flex-direction:column; gap:14px; }
+.head { border-bottom:2px solid var(--ink); padding-bottom:18px; display:flex; flex-direction:column; gap:10px; }
+.goal { font-family:var(--display); font-size:clamp(17px,2.2vw,20px); line-height:1.45; color:var(--ink); max-width:62ch; }
+.verdictline { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:baseline; }
+.stamp { font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--accent); border:1px solid var(--accent); padding:3px 9px; border-radius:2px; }
+.sig { background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--warn);
+  padding:18px 20px; display:flex; flex-direction:column; gap:10px; box-shadow:var(--shadow); }
+.sig .row { display:flex; flex-wrap:wrap; gap:6px 24px; font-family:var(--mono); font-size:12.5px; color:var(--muted); }
+.sig code { font-family:var(--mono); font-size:13px; background:var(--accent-soft); color:var(--ink);
+  padding:6px 10px; display:block; overflow-x:auto; white-space:nowrap; border-radius:2px; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px; background:var(--line);
+  border:1px solid var(--line); }
+.tile { background:var(--surface); padding:16px 18px; display:flex; flex-direction:column; gap:4px; }
+.tile .v { font-family:var(--mono); font-size:27px; font-weight:500; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+.tile .v.gap { color:var(--warn); font-size:19px; }
+.tile .k { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+.tile .s { font-size:13px; color:var(--muted); line-height:1.35; }
+.scroll { overflow-x:auto; border:1px solid var(--line); background:var(--surface); }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+thead th { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); font-weight:500; white-space:nowrap; background:var(--surface); position:sticky; top:0; }
+tbody tr:last-child td, tbody tr:last-child th { border-bottom:0; }
+.num { font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+.mono { font-family:var(--mono); font-size:12.5px; }
+.sub { color:var(--muted); }
+.uid { font-family:var(--mono); font-weight:500; display:block; }
+.ttl { display:block; font-weight:400; color:var(--muted); font-size:12.5px; line-height:1.3; max-width:46ch; }
+th[scope="row"] { font-weight:600; }
+.pill { font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  padding:2px 7px; border-radius:2px; white-space:nowrap; }
+.pill.done { background:var(--accent-soft); color:var(--accent); }
+.pill.open { background:var(--warn-soft); color:var(--warn); }
+.pill.stop { background:var(--warn-soft); color:var(--stop); }
+.rej { font-family:var(--mono); font-size:10.5px; color:var(--stop); }
+.chart { width:120px; }
+.bar { display:inline-flex; gap:2px; vertical-align:middle; }
+.bar i { width:6px; height:13px; background:var(--stop); opacity:.75; display:block; }
+.chart .n { font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:7px; }
+.np-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+.np { border-left:3px solid var(--warn); background:var(--surface); padding:14px 16px;
+  display:flex; flex-direction:column; gap:7px; }
+.np p { font-size:13.5px; color:var(--muted); line-height:1.5; }
+.tag { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--warn); }
+.note { font-size:13px; color:var(--muted); max-width:42ch; }
+.lede { max-width:66ch; color:var(--muted); font-size:15px; }
+.prov { font-family:var(--mono); font-size:12px; color:var(--muted); display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:6px 24px; }
+footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:13px; max-width:70ch; }
+.filing { display:flex; flex-wrap:wrap; gap:4px 20px; font-family:var(--mono); font-size:12px; color:var(--muted); }
+.accuracy { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); }
+.accuracy > div { background:var(--surface); padding:14px 16px; display:flex; flex-direction:column; gap:3px; }
+.accuracy .k { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+.accuracy .fig { font-family:var(--mono); font-size:22px; font-variant-numeric:tabular-nums; }
+.accuracy .fig.warn { color:var(--warn); }
+.accuracy .s { font-size:12.5px; color:var(--muted); line-height:1.4; }
+.people { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); }
+.person { background:var(--surface); padding:15px 17px; display:flex; flex-direction:column; gap:8px; }
+.person .pt { display:flex; flex-direction:column; gap:1px; }
+.person h3 { margin:0; font-size:15.5px; }
+.person .role { font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.person p { font-size:13px; color:var(--muted); line-height:1.5; }
+.person .count { font-family:var(--mono); font-size:11px; color:var(--accent); margin-top:auto; }
+.person.human { border-left:3px solid var(--accent); }
+.person.agent { border-left:3px solid var(--line); }
+.person.stake { border-left:3px solid var(--warn); }
+.verdict-reject { color:var(--stop); }
+.verdict-concerns { color:var(--warn); }
+.guard { border:1px solid var(--accent); border-left:4px solid var(--accent); background:var(--accent-soft);
+  padding:14px 17px; display:flex; flex-direction:column; gap:5px; }
+.guard .gk { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
+.guard p { font-size:14px; line-height:1.5; max-width:70ch; }
+.bad { color:var(--stop); }
+.signoff { border-top:2px solid var(--ink); padding-top:20px; }
+.siggrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px 40px; }
+.siggrid .k { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:26px; }
+.siggrid .rule { display:block; border-bottom:1px solid var(--ink); }
+@media (max-width:640px) { .chart { display:none; } .ttl { display:none; } }
+</style>
+<div class="wrap">
+<header class="head">
+  <span class="eyebrow">Sprint report &middot; for sign-off</span>
+  <h1>{{run_id}}</h1>
+  <div class="filing">
+    <span>Run 2026-09-15 &rarr; 2026-09-16</span><span>{{unit_count}} units &middot; {{points_delivered}} points</span>
+    <span>Retro {{retro_id}}</span><span>Verified on {{verified_sha}}</span><span>Fingerprint {{report_fingerprint}}</span>
+  </div>
+</header>
+
+<section>
+  <h2>Sprint goal</h2>
+  <p class="goal">Nothing is left open silently: the sixteen bugs open at planning (BG0659, BG0661, BG0662, BG0664-BG0676) reach Fixed on their own verifiers; a corpus-verify run dispatched on the commit BG0676 closes on - delivered last, carrying the whole batch - passes against a baseline measured in CI; and a run can no longer end silently over an unanswered unit or an unanswered REJECT - an unfinished batch unit holds the close through its stop-ship step and is named by every route that ends a run (D0193, D0196), a stop-ship ruling lives in the one table the close reads (D0194), and no story or bug reaches a delivered terminal over a REJECT whose findings were neither filed nor repaired, save by a recorded override.</p>
+  <div class="verdictline">
+    <span class="stamp">Judged achieved</span>
+    <span class="mono sub">outcome goal-reached &middot; all three limbs met by execution</span>
+  </div>
+  <div class="guard">
+    <span class="gk">Ship guardrail</span>
+    <p><strong>Green on the commit that carries the batch.</strong> The corpus lane read 40 red criteria against a baseline of 20 when this run opened; it reads 19 now, and run 35085712929 concluded success on <span class="mono">{{verified_sha}}</span>, main's HEAD. Nothing merged on a local pass.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Delivered</h2>
+  <div class="tiles">
+    <div class="tile"><span class="k">Points delivered</span><span class="v">{{points_delivered}}</span><span class="s">23 of {{unit_count}} units terminal: 18 bugs Fixed, 5 stories Done</span></div>
+    <div class="tile"><span class="k">Cost &middot; {{model}}</span><span class="v">{{tokens_per_point}}<span class="sub" style="font-size:14px">/pt</span></span><span class="s">{{tokens_total}} tokens over {{points_delivered}} points in {{duration_hours}}h. One model throughout, main thread and every subagent. A lower bound: two delegated totals supplied, earlier reviews invisible.</span></div>
+    <div class="tile"><span class="k">Rework rate</span><span class="v">13%</span><span class="s">3 of {{unit_count}} units needed a repair round after delivery review: BG0676, US0626, US0627. The stability signal, not the volume one.</span></div>
+    <div class="tile"><span class="k">Carried risk</span><span class="v">0<span class="sub" style="font-size:15px"> stop-ship</span></span><span class="s">32 findings filed and 76 ruled by the operator; no unit ended over an unanswered rejection</span></div>
+  </div>
+  <div class="accuracy">
+    <div><span class="k">Forecast</span><span class="fig">{{forecast_tokens}}</span><span class="s">sum of per-unit plan-time estimates at 25,000 tokens/point</span></div>
+    <div><span class="k">Actual</span><span class="fig">{{tokens_total}}</span><span class="s">session meter at close less the 4,271,975 stamped when the run opened</span></div>
+    <div><span class="k">Ratio</span><span class="fig warn">0.48</span><span class="s">the plan forecast under half the true cost - 25,000/pt against a measured {{tokens_per_point}}/pt</span></div>
+  </div>
+  <p class="lede">Per-unit accuracy stays <strong>unmeasured for all {{unit_count}} units</strong>: the meter is per session and cumulative, so a run total is honest where a per-unit split would not be.</p>
+</section>
+
+<section>
+  <h2>Evidence by unit</h2>
+  <p class="lede">Confidence is a profile, not a score. Mutants prove the tests can fail; ruled lines are what no test reaches; entry-point depth is how many criteria run through the shipped command rather than in-process.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Unit</th><th scope="col" class="num">Pts</th><th scope="col">Status</th>
+    <th scope="col" class="num">ACs</th><th scope="col" class="num">Mutants</th><th scope="col" class="num">Ruled</th>
+    <th scope="col" class="num">Entry</th><th scope="col" class="num">Delivery</th><th scope="col">Plan rejects</th></tr></thead>
+    <tbody><tr><th scope="row"><a class="uid">US0625</a><span class="ttl">the doctrine states CR0526&#x27;s rule, names the one store a stop-ship ruling lives in, and </span></th>
+<td class="num">3</td><td><span class="pill done">Done</span></td>
+<td class="num">0</td><td class="num">0<span class="sub">/0</span></td>
+<td class="num">-</td><td class="num">-</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">US0626</a><span class="ttl">an unfinished batch unit holds the close through its stop-ship step, naming where its fi</span></th>
+<td class="num">8</td><td><span class="pill done">Done</span></td>
+<td class="num">0</td><td class="num">0<span class="sub">/0</span></td>
+<td class="num">-</td><td class="num">-</td>
+<td class="num">2 <span class="rej">2 REJ</span></td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i><i></i></span><span class="n">3</span></td></tr><tr><th scope="row"><a class="uid">US0627</a><span class="ttl">a story or bug reaching Done or Fixed over an unanswered REJECT is refused until its fin</span></th>
+<td class="num">8</td><td><span class="pill done">Done</span></td>
+<td class="num">0</td><td class="num">0<span class="sub">/0</span></td>
+<td class="num">-</td><td class="num">-</td>
+<td class="num">2 <span class="rej">2 REJ</span></td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">US0628</a><span class="ttl">a unit closed over a REJECT names, in its own record, the artefact its findings were fil</span></th>
+<td class="num">3</td><td><span class="pill done">Done</span></td>
+<td class="num">0</td><td class="num">0<span class="sub">/0</span></td>
+<td class="num">-</td><td class="num">-</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">US0823</a><span class="ttl">every other route that ends a run reads the same unanswered-unit predicate as the close,</span></th>
+<td class="num">5</td><td><span class="pill done">Done</span></td>
+<td class="num">0</td><td class="num">0<span class="sub">/0</span></td>
+<td class="num">15</td><td class="num">-</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">BG0659</a><span class="ttl">a code span whose value ends in a space cannot be recorded in any review ledger - markdo</span></th>
+<td class="num">5</td><td><span class="pill done">Fixed</span></td>
+<td class="num">5</td><td class="num">12<span class="sub">/12</span></td>
+<td class="num">13</td><td class="num">5/5</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">BG0661</a><span class="ttl">revert-check never names the units it set aside, and once one unit is examined their cou</span></th>
+<td class="num">3</td><td><span class="pill done">Fixed</span></td>
+<td class="num">5</td><td class="num">11<span class="sub">/11</span></td>
+<td class="num">-</td><td class="num">1/5</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i></span><span class="n">1</span></td></tr><tr><th scope="row"><a class="uid">BG0662</a><span class="ttl">nothing checks a changelog fragment&#x27;s SHAPE until the release cut, and 59 of 119 had dri</span></th>
+<td class="num">3</td><td><span class="pill done">Fixed</span></td>
+<td class="num">5</td><td class="num">13<span class="sub">/13</span></td>
+<td class="num">14</td><td class="num">4/5</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i></span><span class="n">1</span></td></tr><tr><th scope="row"><a class="uid">BG0664</a><span class="ttl">the pre-push boundary gate runs NO boundary-only test, so the marker&#x27;s own promise is fa</span></th>
+<td class="num">5</td><td><span class="pill done">Fixed</span></td>
+<td class="num">3</td><td class="num">11<span class="sub">/11</span></td>
+<td class="num">6</td><td class="num">2/3</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">BG0665</a><span class="ttl">seven of thirteen `review.*` settings are absent from the file that calls itself the sin</span></th>
+<td class="num">3</td><td><span class="pill done">Fixed</span></td>
+<td class="num">3</td><td class="num">5<span class="sub">/5</span></td>
+<td class="num">2</td><td class="num">0/3</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i></span><span class="n">1</span></td></tr><tr><th scope="row"><a class="uid">BG0666</a><span class="ttl">an UNAUTHORED Test Plan row is exempt from the quality guard an authored one must pass, </span></th>
+<td class="num">3</td><td><span class="pill done">Fixed</span></td>
+<td class="num">3</td><td class="num">15<span class="sub">/15</span></td>
+<td class="num">-</td><td class="num">3/3</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">BG0667</a><span class="ttl">the root-effect control&#x27;s real-tree marker is bound to an id range this project has alre</span></th>
+<td class="num">3</td><td><span class="pill done">Fixed</span></td>
+<td class="num">5</td><td class="num">13<span class="sub">/13</span></td>
+<td class="num">22</td><td class="num">0/5</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="n">5</span></td></tr><tr><th scope="row"><a class="uid">BG0668</a><span class="ttl">tag-check refuses on a close the close-owed predicate says is not owed</span></th>
+<td class="num">2</td><td><span class="pill done">Fixed</span></td>
+<td class="num">3</td><td class="num">3<span class="sub">/3</span></td>
+<td class="num">-</td><td class="num">0/3</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"></span><span class="n">0</span></td></tr><tr><th scope="row"><a class="uid">BG0669</a><span class="ttl">conformance demands acceptance criteria of a story retired unbuilt, so an ungroomed stor</span></th>
+<td class="num">2</td><td><span class="pill done">Fixed</span></td>
+<td class="num">7</td><td class="num">12<span class="sub">/12</span></td>
+<td class="num">1</td><td class="num">1/7</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">BG0670</a><span class="ttl">config.py show crashes on a config holding an unquoted YAML date, so the catalogued verb</span></th>
+<td class="num">2</td><td><span class="pill done">Fixed</span></td>
+<td class="num">3</td><td class="num">3<span class="sub">/3</span></td>
+<td class="num">1</td><td class="num">2/3</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"></span><span class="n">0</span></td></tr><tr><th scope="row"><a class="uid">BG0671</a><span class="ttl">critic.py&#x27;s brief-practice and claim-pass checks are called by no production path, while</span></th>
+<td class="num">5</td><td><span class="pill done">Fixed</span></td>
+<td class="num">5</td><td class="num">16<span class="sub">/16</span></td>
+<td class="num">-</td><td class="num">0/5</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="n">4</span></td></tr><tr><th scope="row"><a class="uid">BG0672</a><span class="ttl">critic record accepts a --brief fingerprint no brief produced, recording the row as brie</span></th>
+<td class="num">5</td><td><span class="pill done">Fixed</span></td>
+<td class="num">5</td><td class="num">12<span class="sub">/12</span></td>
+<td class="num">4</td><td class="num">5/5</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">BG0673</a><span class="ttl">the repair-plan gate (EP0106) is wired into nothing: no command records a plan or verdic</span></th>
+<td class="num">8</td><td><span class="pill done">Fixed</span></td>
+<td class="num">7</td><td class="num">16<span class="sub">/16</span></td>
+<td class="num">-</td><td class="num">7/7</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i><i></i></span><span class="n">3</span></td></tr><tr><th scope="row"><a class="uid">BG0674</a><span class="ttl">sprint next materialises a charter&#x27;s discovery items (CRs) that sprint plan then refuses</span></th>
+<td class="num">3</td><td><span class="pill done">Fixed</span></td>
+<td class="num">4</td><td class="num">7<span class="sub">/7</span></td>
+<td class="num">9</td><td class="num">4/4</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i></span><span class="n">1</span></td></tr><tr><th scope="row"><a class="uid">BG0675</a><span class="ttl">an author-declared Points value sets a unit&#x27;s review tier: route.estimate&#x27;s spec subscor</span></th>
+<td class="num">3</td><td><span class="pill done">Fixed</span></td>
+<td class="num">4</td><td class="num">13<span class="sub">/13</span></td>
+<td class="num">4</td><td class="num">0/4</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">BG0676</a><span class="ttl">the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of </span></th>
+<td class="num">8</td><td><span class="pill done">Fixed</span></td>
+<td class="num">5</td><td class="num">15<span class="sub">/15</span></td>
+<td class="num">12</td><td class="num">1/4</td>
+<td class="num">1 <span class="rej">2 REJ</span></td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i></span><span class="n">2</span></td></tr><tr><th scope="row"><a class="uid">BG0677</a><span class="ttl">critic.py repair cannot close a finding whose text carries the closure separator early, </span></th>
+<td class="num">5</td><td><span class="pill done">Fixed</span></td>
+<td class="num">7</td><td class="num">22<span class="sub">/22</span></td>
+<td class="num">3</td><td class="num">3/7</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i><i></i></span><span class="n">3</span></td></tr><tr><th scope="row"><a class="uid">BG0678</a><span class="ttl">A wired repair-plan gate keeps no rounds, no brief and no approval pin, so a rejected pl</span></th>
+<td class="num">8</td><td><span class="pill done">Fixed</span></td>
+<td class="num">6</td><td class="num">23<span class="sub">/23</span></td>
+<td class="num">25</td><td class="num">4/6</td>
+<td class="num">1</td>
+<td class="chart"><span class="bar" aria-hidden="true"><i></i><i></i><i></i></span><span class="n">3</span></td></tr></tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Not proven</h2>
+  <p class="lede">What this run did not establish, stated as a section rather than an omission.</p>
+  <div class="np-grid"><article class="np"><h3>Per-unit token cost</h3><p>The run total is measured; the split is not. The harness meter is per session and cumulative, so every unit reads UNMEASURED rather than carrying a share nobody can defend.</p><span class="tag">measurement</span></article><article class="np"><h3>Delegated spend</h3><p>{{tokens_total}} is a LOWER BOUND. The session transcript records main-thread usage only, so a subagent&#x27;s cost is invisible unless it is supplied - two were, for the BG0676 reviews; every earlier review is missing.</p><span class="tag">measurement</span></article><article class="np"><h3>131 lines no test reaches</h3><p>Ruled equivalent across {{unit_count}} units, each with a written reason: defensive branches, refusal paths no criterion names, and helper controls outside any Verify selector.</p><span class="tag">coverage</span></article><article class="np"><h3>2 files one line from red</h3><p>reference-config.md sits at 104.89% of its ceiling and reference-review.md at 100.49%, both inside the 5% tolerance. The next line added to either reddens main, as reference-sprint.md did in this run.</p><span class="tag">budget</span></article><article class="np"><h3>Mutation sampling</h3><p>The gate&#x27;s own summary sampled 3 of 804 enumerated mutants (0.4%) and was taken on a different tree. The 337 killed below are registered per unit, not from that sample.</p><span class="tag">instrumentation</span></article><article class="np"><h3>53.3% of verbs documented</h3><p>127 of 272 CLI verbs carry no invocable form in the docs. Advisory, unchanged by this run.</p><span class="tag">documentation</span></article></div>
+</section>
+
+<section>
+  <h2>DORA</h2>
+  <p class="lede">The four keys, mapped to a trunk-based repository where a push to <span class="mono">main</span> IS the deployment: there is no separate deploy step, and CI on that commit is what decides whether the change stood up. Benchmarks are the published elite bands, shown so a figure can be read against something.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Key</th><th scope="col">This run</th><th scope="col">Elite band</th><th scope="col">How it was derived</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Deployment frequency</th><td class="num">3</td><td class="mono sub">on demand</td>
+        <td class="note">Three pushes to main in {{duration_hours}}hours, carrying 26 commits: 013b9fa8, d8659180, {{verified_sha}}. No release tag was cut.</td></tr>
+      <tr><th scope="row">Lead time for changes</th><td class="num">{{duration_hours}}h</td><td class="mono sub">&lt; 1 day</td>
+        <td class="note">First commit of the batch to the last one on main. Per-commit lead time is not derived: the work was committed locally across two days and pushed in three batches.</td></tr>
+      <tr><th scope="row">Change failure rate</th><td class="num"><span class="bad">33%</span></td><td class="mono sub">0-15%</td>
+        <td class="note">One push of three turned main red: 013b9fa8 failed CI on the reference-sprint.md budget ceiling. The other two were green.</td></tr>
+      <tr><th scope="row">Time to restore</th><td class="num">1 h 41 m</td><td class="mono sub">&lt; 1 hour</td>
+        <td class="note">Red at 06:29Z (run 35063958245), green at 08:10Z (run 35072343530): diagnosis, a four-line prose repair, a deliberate ceiling move, and a full gate before the fix could be pushed.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="lede">The failure rate is the honest finding here. One in three deployments broke the trunk, and the cause was this run's own work crossing a documentation budget nothing checked until CI ran it - a guard whose tolerance hid the breach locally. Two files still sit inside that tolerance, which is why they are named under Not proven.</p>
+</section>
+
+<section>
+  <h2>Carried open, and the work behind it</h2>
+  <div class="tiles">
+    <div class="tile"><span class="k">Filed this run</span><span class="v">32</span><span class="s">BG0690-BG0709, CR0579-CR0586, and three Lows folded into CR0511</span></div>
+    <div class="tile"><span class="k">Ruled</span><span class="v">76</span><span class="s">Every open finding carries a dated ruling by the operator in {{retro_id}}</span></div>
+    <div class="tile"><span class="k">Mutants killed</span><span class="v">337</span><span class="s">0 survived across 85 criteria - evidence the tests can fail, not a headline</span></div>
+    <div class="tile"><span class="k">Seat verdicts</span><span class="v">120</span><span class="s">47 of 70 rejected at plan, 6 of 50 at delivery</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Goal judgement</h2>
+  <p class="lede">All three limbs hold by execution. (1) The eighteen bugs open at planning reach Fixed on their own verifiers - the sixteen named in the goal (BG0659, BG0661, BG0662, BG0664-BG0676) plus BG0677 and BG0678, added by the operator mid-run. (2) The corpus condition: Lint run 35085712929, a workflow_dispatch on {{verified_sha}} - the commit carrying the whole batch, delivered last - concluded success on its corpus-verify job against a baseline re-measured in CI by run 35072360410 (19 red, none new, US0666::AC2 banked as green). The same lane read 40 against a baseline of 20 before the fix. (3) No run can end silently over an unanswered unit or an unanswered REJECT: US0626 holds the close through its stop-ship step, US0627 refuses a delivered terminal over an unrepaired REJECT, US0628 names where the findings went, US0823 makes every other run-ending route read the same predicate, and US0625 states the</p>
+</section>
+
+<section>
+  <h2>Who judged this</h2>
+  <p class="lede">Every unit was reviewed by a fresh context that did not write it, and approved by a reviewer of record outside the authoring session. The seats judge whether the work is built right; the stakeholder personas judge whether it serves anyone.</p>
+  <div class="people"><article class="person human"><div class="pt"><h3>Darren Benson</h3><span class="role">Operator &middot; reviewer of record</span></div>
+<p>Ruled the round cap (D0204), the waiver withdrawals (D0205), the handoff side door (D0206), the report design (D0207), and every one of the 76 carried findings. Signs this report.</p><span class="count">{{unit_count}} units signed off</span></article><article class="person agent"><div class="pt"><h3>Sam Eriksson</h3><span class="role">QA seat &middot; independent subagent</span></div>
+<p>Plan review across six rounds, then delivery review on every unit. Found the two surviving AC1 mutants on BG0676 that the engineering seat missed - moving the coverage install below the lane it equips, and guarding it `if: false`.</p><span class="count">70 plan + 25 delivery verdicts &middot; {{model}}</span></article><article class="person agent"><div class="pt"><h3>Dani Okafor</h3><span class="role">Engineering seat &middot; independent subagent</span></div>
+<p>Delivery review on every unit, and the 90-minute job cap against an 85m38s measured run - the blocking finding both seats reached independently.</p><span class="count">25 delivery verdicts &middot; {{model}}</span></article><article class="person agent"><div class="pt"><h3>Adversarial review subagent</h3><span class="role">Design rung &middot; fresh context</span></div>
+<p>The design-rung pass on CR0526's four stories, recorded as REJECT on US0625, US0626, US0627 and US0628 before delivery began.</p><span class="count">4 design verdicts &middot; {{model}}</span></article><article class="person agent"><div class="pt"><h3>Claude Opus 5</h3><span class="role">Authoring session</span></div>
+<p>Wrote every unit, drove the close, and recorded {{tokens_total}} main-thread tokens against it. Never the reviewer of record: a delegate the author controls does not satisfy the independence bar.</p><span class="count">26 commits &middot; {{model}} &middot; {{tokens_total}} tokens</span></article></div>
+</section>
+
+<section>
+  <h2>Stakeholder consult</h2>
+  <p class="lede">One consult, on CR0526's four stories, run because the operator asked when personas are last consulted. It returned one Reject and two Concerns, and found the design gap seventy seat verdicts had not: CR0571.</p>
+  <div class="people"><article class="person stake"><div class="pt"><h3>Maya Okafor</h3><span class="role">Solo founder-engineer &middot; Primary</span></div>
+<p>“The last time a sprint closed, 19 rejected units sat in Review and were then moved to Ready, and nothing stopped it.”</p><span class="count verdict-concerns">Concerns</span></article><article class="person stake"><div class="pt"><h3>Jonah Reyes</h3><span class="role">Team lead, brownfield adoption &middot; Secondary</span></div>
+<p>Asked where a reader sees every unit abandoned or forced past a rejection during the run - which the close report now answers.</p><span class="count verdict-concerns">Concerns</span></article><article class="person stake"><div class="pt"><h3>Trevor Hale</h3><span class="role">Enterprise delivery manager &middot; Negative</span></div>
+<p>Found that a stop-ship ruling is not checked against who may rule it, so the session that did the work can release its own hold. Filed as CR0571; no seat round had raised it.</p><span class="count verdict-reject">Reject</span></article></div>
+</section>
+
+<section>
+  <h2>Provenance</h2>
+  <div class="prov">
+    <span>points, status &rarr; unit artefacts</span><span>mutants &rarr; .local/mutation-runs.json</span>
+    <span>verdicts &rarr; reviews/critic-verdicts.md</span><span>rulings &rarr; each unit's Coverage Rulings table</span>
+    <span>carried issues &rarr; {{retro_id}} Known issues carried</span><span>CI &rarr; forge run ids, workflow Lint</span>
+    <span>forecast &rarr; .local/run-state.json, retro accuracy block</span><span>entry depth &rarr; Verification depth field</span>
+    <span>cost &rarr; session meter 10,842,294 less baseline 4,271,975</span><span>rework &rarr; delivery REJECTs in critic-verdicts.md</span>
+    <span>guardrail &rarr; Lint runs 34830172971, 35033638477, 35063993893, 35072360410, 35085712929</span><span>model &rarr; harness capture, {{model}}</span>
+  </div>
+</section>
+
+<section class="signoff">
+  <h2>Sign-off</h2>
+  <div class="siggrid">
+    <div><span class="k">Reviewer of record</span><span class="rule"></span></div>
+    <div><span class="k">Date</span><span class="rule"></span></div>
+  </div>
+  <p class="lede">Signing records the principal, the date and this report's fingerprint against {{run_id}}. The facts above are frozen: nothing in the run changes after this page is produced.</p>
+</section>
+
+<footer>Every figure is derived from {{run_id}}'s own artefacts by <span class="mono">build_report.py</span> - unit files, the mutation ledger, the critic ledgers, {{retro_id}} and the forge. Nothing here was typed by hand. Prepared for RFC0059.</footer>
+</div>
