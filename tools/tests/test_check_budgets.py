@@ -238,7 +238,11 @@ class DriftTests(unittest.TestCase):
             "reference-test-best-practices.md": 788,
             "reference-config.md": 695,
             "reference-review.md": 819,
-            "reference-sprint.md": 855,
+            # 855 -> 859: US0823's close-refusal doctrine in step 5c, hand-written prose for a
+            # delivered behaviour rather than a generated guide, and tightened by four lines
+            # before the ceiling moved. The mutant this criterion is about - a ceiling raised to
+            # fit a GENERATOR - still fails here, because the value is still pinned.
+            "reference-sprint.md": 859,
             "reference-consult.md": 634,
             "reference-prd.md": 660,
         }
