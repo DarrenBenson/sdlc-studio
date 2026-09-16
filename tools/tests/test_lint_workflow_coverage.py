@@ -20,8 +20,11 @@ BASELINE = REPO / "tools" / "verify-corpus-baseline.txt"
 BUGS = REPO / "sdlc-studio" / "bugs"
 CORPUS_JOB = "corpus-verify"
 LANE = "tools/verify-corpus.sh"
-#: The slowest criterion the corpus lane executes, measured on a developer machine:
-#: GateRealWrapperTests, about 136 s, against gate.py's 120 s default ceiling.
+#: The slowest criterion the corpus lane executes, against gate.py's 120 s default ceiling.
+#: Re-measured on a developer machine at BG0676's delivery review: the precommit-selection run
+#: tests behind US0220 take 104-136 s, and GateRealWrapperTests behind US0031 and US0284 about
+#: 97 s for all 23 - the figure below is the higher of the two, which is what a ceiling needs,
+#: and the 136 was attributed to the wrong criterion when it was first written down.
 SLOWEST_CRITERION_S = 136
 #: The red-criteria row's identities at 3f73ab64, the commit the re-measure is judged from. A
 #: literal, so an id the re-measure ADDS is judged against a fixed prior set rather than against
@@ -40,11 +43,32 @@ def _job(name: str) -> dict:
     return yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))["jobs"][name]
 
 
+#: A step guarded into never running. `if: false` is a bool to YAML, `if: ${{ false }}` a
+#: string, and either one installs nothing while leaving the step's text in the file for a
+#: reader that only greps.
+_DEAD_IF = {False, "false", "${{ false }}", "${{false}}"}
+
+
+def _live(step: dict) -> bool:
+    guard = step.get("if", True)
+    return not (guard in _DEAD_IF or (isinstance(guard, str) and guard.strip().lower() in _DEAD_IF))
+
+
+def _step_index(job: dict, needle: str) -> int:
+    """Where a step running `needle` sits in the job, or -1. Position is the assertion: an
+    install that runs AFTER the lane it equips is the defect this bug was filed for."""
+    for i, step in enumerate(job.get("steps", [])):
+        if _live(step) and needle in str(step.get("run", "")):
+            return i
+    return -1
+
+
 def _commands(job: dict) -> list[list[str]]:
     """Every live shell command in one job's `run:` steps, as argv. A line YAML keeps inside a
-    block but the shell reads as a comment carries nothing, and a trailing comment is cut."""
+    block but the shell reads as a comment carries nothing, and a trailing comment is cut. A
+    step guarded `if: false` carries nothing either, however complete its text."""
     out: list[list[str]] = []
-    for step in job.get("steps", []):
+    for step in (s for s in job.get("steps", []) if _live(s)):
         for line in str(step.get("run", "")).replace("\\\n", " ").splitlines():
             argv: list[str] = []
             for tok in shlex.split(line, comments=True):
@@ -151,8 +175,18 @@ class CorpusJobEnvironmentTests(unittest.TestCase):
     def test_the_corpus_job_installs_coverage(self) -> None:
         """MUTANTS: drop `'coverage>=7.10'` from the corpus-verify install while the ci job's
         keeps it; install plain `coverage`, unversioned; leave the install at `pyyaml pytest`
-        and add `# pip install 'coverage>=7.10'` under the job as a comment."""
+        and add `# pip install 'coverage>=7.10'` under the job as a comment; MOVE the install
+        step below the lane step it equips; guard the install step with `if: false`. The last
+        two restore this bug's exact defect - a job whose verifiers run without coverage - and
+        an install read by presence alone survives both."""
         job = _job(CORPUS_JOB)
+        install, lane = _step_index(job, "pip install"), _step_index(job, LANE)
+        self.assertNotEqual(install, -1, f"no live install step in the {CORPUS_JOB} job - a step "
+                                         f"guarded `if: false` installs nothing")
+        self.assertNotEqual(lane, -1, f"no live step runs {LANE} in the {CORPUS_JOB} job")
+        self.assertLess(install, lane, f"the {CORPUS_JOB} job installs coverage AFTER the step "
+                                       f"that runs {LANE}, so the lane's verifiers run without "
+                                       f"it - the defect BG0676 was filed for")
         reqs = _coverage_requirements(job)
         self.assertTrue(reqs, f"no live `pip install` in the {CORPUS_JOB} job names coverage: "
                               f"{_commands(job)}")

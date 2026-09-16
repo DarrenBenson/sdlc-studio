@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-15
+**Last Updated:** 2026-09-16
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 28 |
+| Open | 30 |
 | In Progress | 1 |
 | Fixed | 575 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **706** |
+| **Total** | **708** |
 
 ## All Bugs
 
@@ -34,7 +34,7 @@
 | [BG0673](BG0673-the-repair-plan-gate-ep0106-is-wired-into.md) | the repair-plan gate (EP0106) is wired into nothing: no command records a plan or verdict, and turning review.repair_plan_gate on refuses nothing a delivery command runs | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0674](BG0674-sprint-next-materialises-a-charter-s-discovery-items.md) | sprint next materialises a charter's discovery items (CRs) that sprint plan then refuses, so the charter at the head of the queue produces a batch nothing can plan | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0675](BG0675-an-author-declared-points-value-sets-a-unit.md) | an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth | Fixed | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0676](BG0676-the-scheduled-corpus-verify-lane-is-red-on.md) | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 20 new ones passes locally | In Progress | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0676](BG0676-the-scheduled-corpus-verify-lane-is-red-on.md) | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 21 new ones passes locally | In Progress | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0677](BG0677-critic-py-repair-cannot-close-a-finding-whose.md) | critic.py repair cannot close a finding whose text carries the closure separator early, so the rejection raising it can never be retired | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0678](BG0678-a-wired-repair-plan-gate-keeps-no-rounds.md) | A wired repair-plan gate keeps no rounds, no brief and no approval pin, so a rejected plan can never be retired and a re-recorded plan keeps its approval | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0679](BG0679-with-review-repair-plan-gate-on-a-repair.md) | With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate | Open | Medium | 2026-09-15 | 2026-09-15 |
@@ -65,6 +65,8 @@
 | [BG0704](BG0704-the-done-guard-reads-a-filed-closure-naming.md) | The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the author's own | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0705](BG0705-the-findings-filed-to-line-survives-a-reopen.md) | The Findings-filed-to line survives a reopen, is not reported in text output, and names only the filed subset of a partial repair | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0706](BG0706-the-coverage-gate-charges-another-unit-s-added.md) | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0707](BG0707-the-corpus-baseline-s-ci-run-line-is.md) | the corpus baseline's CI-run line is judged by shape alone, so a hand-typed run id reads as a re-measure | Open | Medium | 2026-09-16 | 2026-09-16 |
+| [BG0708](BG0708-gate-py-reads-sdlc-verify-timeout-per-call.md) | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets | Open | Medium | 2026-09-16 | 2026-09-16 |
 
 ## Archived Releases
 

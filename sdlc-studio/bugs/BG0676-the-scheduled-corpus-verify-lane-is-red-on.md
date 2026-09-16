@@ -1,4 +1,4 @@
-# BG0676: the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 20 new ones passes locally
+# BG0676: the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 21 new ones passes locally
 
 > **Status:** In Progress
 > **Severity:** Medium
@@ -12,7 +12,7 @@
 
 ## Summary
 
-Lint run 34830172971 (schedule, 2026-09-14, main at 28682ce2) failed `corpus-verify`: 'red-criteria: 40, baseline 20 - the SET moved', naming 20 NEW red criteria: US0031 AC3, US0220 AC2, US0284 AC1, US0597 AC1-AC3, US0663 AC2, US0674 AC1, US0815 AC1-AC6, US0816 AC1-AC4 and AC7-AC9 (and US0666 AC2 went green). Run locally at 51f264db with raw pytest, every one of the 20 passes: the seven non-coverage selectors individually, and all 82 tests behind US0815, US0816 and US0674 together (coverage 7.15 installed). So the lane is reporting an environment difference, not a regression (LL0011), and a scheduled red nobody reads is the BG0653 shape. Three candidate causes, unproven: (1) the corpus job installs only `pyyaml pytest`, not `coverage` - the package US0815/US0816's criteria need; (2) its checkout is shallow (actions/checkout default depth 1), which history-replaying criteria (US0597's claim-drift replays) may need; (3) the red pass runs `gate.py --release`, whose verifiers take the 120 s default timeout, and GateRealWrapperTests (US0031, US0284) take ~136 s locally. The push hook reads push-triggered runs only, so nothing blocks on it - which is how it stays unread.
+Lint run 34830172971 (schedule, 2026-09-14, main at 28682ce2) failed `corpus-verify`: 'red-criteria: 40, baseline 20 - the SET moved', naming 21 NEW red criteria: US0031 AC3, US0220 AC2, US0284 AC1, US0597 AC1-AC3, US0663 AC2, US0674 AC1, US0815 AC1-AC6, US0816 AC1-AC4 and AC7-AC9 (and US0666 AC2 went green). Run locally at 51f264db with raw pytest, every one of the 21 passes: the seven non-coverage selectors individually, and all 82 tests behind US0815, US0816 and US0674 together (coverage 7.15 installed). So the lane is reporting an environment difference, not a regression (LL0011), and a scheduled red nobody reads is the BG0653 shape. Three candidate causes, unproven: (1) the corpus job installs only `pyyaml pytest`, not `coverage` - the package US0815/US0816's criteria need; (2) its checkout is shallow (actions/checkout default depth 1), which history-replaying criteria (US0597's claim-drift replays) may need; (3) the red pass runs `gate.py --release`, whose verifiers take the 120 s default timeout, and GateRealWrapperTests (US0031, US0284) take ~136 s locally. The push hook reads push-triggered runs only, so nothing blocks on it - which is how it stays unread.
 
 ## Steps to Reproduce
 

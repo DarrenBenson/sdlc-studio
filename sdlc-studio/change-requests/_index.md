@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-15
+**Last Updated:** 2026-09-16
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 24 |
+| Proposed | 27 |
 | Approved | 0 |
 | In Progress | 36 |
 | Complete | 498 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 24 |
 | Blocked | 0 |
-| **Total** | **583** |
+| **Total** | **586** |
 
 ## All Changes
 
@@ -81,6 +81,9 @@
 | [CR-0581](CR0581-a-forced-stop-leaves-no-trace-anyone-reads.md) | A forced stop leaves no trace anyone reads, needs no reason or principal, and shares the outcome word stopped with two other endings | Proposed | High | Improvement | 2026-09-15 | -- |
 | [CR-0582](CR0582-no-command-closes-a-plan-review-reject-s.md) | No command closes a plan-review REJECT's findings from the independent re-review that approved the repaired plan | Proposed | Medium | Improvement | 2026-09-15 | -- |
 | [CR-0583](CR0583-no-command-applies-a-unit-s-authored-test.md) | No command applies a unit's authored Test Plan mutants, runs each criterion's selector and registers the kills | Proposed | Medium | Improvement | 2026-09-15 | -- |
+| [CR-0584](CR0584-386-acceptance-criteria-select-a-whole-test-module.md) | 386 acceptance criteria select a whole test module, so each one over-claims and costs minutes | Proposed | High | Improvement | 2026-09-16 | -- |
+| [CR-0585](CR0585-corpus-verify-runs-1-900-independent-criteria-in.md) | corpus-verify runs 1,900 independent criteria in one serial job, so a weekly signal costs 85 minutes and sits under its own cap | Proposed | High | Improvement | 2026-09-16 | -- |
+| [CR-0586](CR0586-module-alone-re-runs-all-133-modules-on.md) | module-alone re-runs all 133 modules on every push, 551 s of a 749 s gate, for a signal that changes only when a module's imports do | Proposed | Medium | Improvement | 2026-09-16 | -- |
 
 ## Archived Releases
 

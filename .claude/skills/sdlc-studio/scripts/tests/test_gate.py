@@ -7800,6 +7800,11 @@ class VerifyTimeoutOverrideTests(unittest.TestCase):
         base["PYTHONDONTWRITEBYTECODE"] = "1"
         cases = {"1": dict(base, SDLC_VERIFY_TIMEOUT="1"),
                  "10": dict(base, SDLC_VERIFY_TIMEOUT="10"),
+                 # The two REFUSAL branches, each one the default rather than the value read:
+                 # a word is not a ceiling, and a zero would time every verifier out at once.
+                 # Without these, `_verify_timeout` returning 1 on either path stays green.
+                 "abc": dict(base, SDLC_VERIFY_TIMEOUT="abc"),
+                 "0": dict(base, SDLC_VERIFY_TIMEOUT="0"),
                  "unset": base}
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
@@ -7827,6 +7832,11 @@ class VerifyTimeoutOverrideTests(unittest.TestCase):
                         f"a 10 s ceiling failed a 3 s verifier:\n{pages['10']}")
         self.assertTrue(lanes["unset"][0].startswith("[PASS] verify"),
                         f"the 120 s default failed a 3 s verifier:\n{pages['unset']}")
+        for bad in ("abc", "0"):
+            self.assertTrue(lanes[bad][0].startswith("[PASS] verify"),
+                            f"SDLC_VERIFY_TIMEOUT={bad} was READ rather than refused - an "
+                            f"unusable override must fall back to the default, not become a "
+                            f"ceiling of its own:\n{pages[bad]}")
 
 
 if __name__ == "__main__":

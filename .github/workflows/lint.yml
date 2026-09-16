@@ -126,11 +126,14 @@ jobs:
   corpus-verify:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    # The release verify lane alone runs ~28 minutes; the default 360-minute job cap is generous
-    # but the step needs its own ceiling, because a lane killed by a timeout exits 124 and reads
-    # exactly like a failure if nobody checks the code. The red pass measured 55 minutes here at
-    # the 120 s per-verifier ceiling, and the longer ceiling below can only lengthen it.
-    timeout-minutes: 90
+    # The step needs its own ceiling, because a lane killed by a timeout exits 124 and reads
+    # exactly like a failure if nobody checks the code - and this job's conclusion is what
+    # BG0676 AC5 reads, so a cap kill would be indistinguishable from a corpus regression.
+    # MEASURED, not estimated: 56.9 min at the 120 s per-verifier ceiling (run 34830172971),
+    # then 75.9 min (35063993893) and 85.6 min (35072360410) once the 300 s ceiling below let
+    # slow criteria finish instead of being killed. The 90 the cap held was sized on the first
+    # of those figures and left 4 min against a 9.7-min spread between the last two.
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:

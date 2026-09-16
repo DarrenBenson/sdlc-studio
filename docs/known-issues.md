@@ -30,7 +30,7 @@ evidence, the reproduction and the proposed fix in full.
 
 | Id | Severity | Finding |
 | --- | --- | --- |
-| `BG0676` | Medium | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 20 new ones passes locally |
+| `BG0676` | Medium | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 21 new ones passes locally |
 | `BG0679` | Medium | With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate |
 | `BG0680` | Medium | repair_state counts a repair row once per rejection sharing its date, so closed and fixed counts are doubled |
 | `BG0681` | Medium | config.py show --key crashes on a key whose value holds an unquoted YAML date, the path BG0670 left |
@@ -59,8 +59,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0704` | Medium | The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the au... |
 | `BG0705` | Medium | The Findings-filed-to line survives a reopen, is not reported in text output, and names only the filed subset of a partial repair |
 | `BG0706` | Medium | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file |
+| `BG0707` | Medium | the corpus baseline's CI-run line is judged by shape alone, so a hand-typed run id reads as a re-measure |
+| `BG0708` | Medium | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets |
 
-29 findings: 29 Medium, 0 Low.
+31 findings: 31 Medium, 0 Low.
 
 ## Not carried
 
