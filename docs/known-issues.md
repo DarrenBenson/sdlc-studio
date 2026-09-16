@@ -30,7 +30,6 @@ evidence, the reproduction and the proposed fix in full.
 
 | Id | Severity | Finding |
 | --- | --- | --- |
-| `BG0676` | Medium | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 21 new ones passes locally |
 | `BG0679` | Medium | With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate |
 | `BG0680` | Medium | repair_state counts a repair row once per rejection sharing its date, so closed and fixed counts are doubled |
 | `BG0681` | Medium | config.py show --key crashes on a key whose value holds an unquoted YAML date, the path BG0670 left |
@@ -63,7 +62,7 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0708` | Medium | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets |
 | `BG0709` | Medium | the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red |
 
-32 findings: 32 Medium, 0 Low.
+31 findings: 31 Medium, 0 Low.
 
 ## Not carried
 

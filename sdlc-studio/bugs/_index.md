@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 31 |
-| In Progress | 1 |
-| Fixed | 575 |
+| In Progress | 0 |
+| Fixed | 576 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
@@ -34,7 +34,7 @@
 | [BG0673](BG0673-the-repair-plan-gate-ep0106-is-wired-into.md) | the repair-plan gate (EP0106) is wired into nothing: no command records a plan or verdict, and turning review.repair_plan_gate on refuses nothing a delivery command runs | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0674](BG0674-sprint-next-materialises-a-charter-s-discovery-items.md) | sprint next materialises a charter's discovery items (CRs) that sprint plan then refuses, so the charter at the head of the queue produces a batch nothing can plan | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0675](BG0675-an-author-declared-points-value-sets-a-unit.md) | an author-declared Points value sets a unit's review tier: route.estimate's spec subscore reads Points, which D0150 rules out of review depth | Fixed | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0676](BG0676-the-scheduled-corpus-verify-lane-is-red-on.md) | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 21 new ones passes locally | In Progress | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0676](BG0676-the-scheduled-corpus-verify-lane-is-red-on.md) | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 21 new ones passes locally | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0677](BG0677-critic-py-repair-cannot-close-a-finding-whose.md) | critic.py repair cannot close a finding whose text carries the closure separator early, so the rejection raising it can never be retired | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0678](BG0678-a-wired-repair-plan-gate-keeps-no-rounds.md) | A wired repair-plan gate keeps no rounds, no brief and no approval pin, so a rejected plan can never be retired and a re-recorded plan keeps its approval | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0679](BG0679-with-review-repair-plan-gate-on-a-repair.md) | With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate | Open | Medium | 2026-09-15 | 2026-09-15 |

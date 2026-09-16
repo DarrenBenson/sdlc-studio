@@ -172,6 +172,29 @@ class CorpusJobEnvironmentTests(unittest.TestCase):
     pinned against that job's own block, never the whole file, because the ci job already
     carries the same install and a whole-file search finds it there."""
 
+    def test_the_readers_refuse_what_they_must(self) -> None:
+        """The refusal paths of the helpers above, over synthetic jobs and pages: a reader that
+        cannot say NO is a reader that says YES to everything, and each of these branches is
+        the one a real defect would land on.
+
+        MUTANTS: `_step_index` returning 0 rather than -1 when nothing matches, so an absent
+        install reads as the first step; `_commands` keeping one argv across `&&`, so a
+        separator hides the command after it; `_baseline_problems` returning [] for a page with
+        no red-criteria row, or for a row whose count field is not a number."""
+        self.assertEqual(_step_index({"steps": [{"run": "echo hi"}]}, "pip install"), -1,
+                         "a job with no matching step did not report -1")
+        self.assertEqual(_step_index({"steps": [{"run": "pip install x", "if": "false"},
+                                                {"run": "pip install y"}]}, "pip install"), 1,
+                         "a dead step was taken as the live one")
+        self.assertEqual(_commands({"steps": [{"run": "a && b || c ; d | e"}]}),
+                         [["a"], ["b"], ["c"], ["d"], ["e"]],
+                         "a shell separator did not split the command that follows it")
+        self.assertEqual(_baseline_problems("# re-measured from CI run 7\n", Path("/nonexistent")),
+                         ["no red-criteria row"])
+        self.assertIn("not `metric|count|prose|ids`",
+                      _baseline_problems("# re-measured from CI run 7\nred-criteria|many|x|y\n",
+                                         Path("/nonexistent"))[0])
+
     def test_the_corpus_job_installs_coverage(self) -> None:
         """MUTANTS: drop `'coverage>=7.10'` from the corpus-verify install while the ci job's
         keeps it; install plain `coverage`, unversioned; leave the install at `pyyaml pytest`
