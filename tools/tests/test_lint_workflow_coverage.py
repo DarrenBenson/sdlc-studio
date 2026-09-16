@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import ast
 import re
+import tempfile
 import shlex
 import unittest
 from pathlib import Path
@@ -185,6 +186,48 @@ class CorpusJobEnvironmentTests(unittest.TestCase):
         self.assertGreater(int(value), SLOWEST_CRITERION_S,
                            f"{name}={value} does not clear the slowest criterion's "
                            f"{SLOWEST_CRITERION_S} s")
+
+    def test_the_baseline_names_its_ci_run(self) -> None:
+        """MUTANTS: append US0031::AC3 to field 4 and bump the count with no new comment line,
+        so only the header prose mentions it; write no CI run line; justify an added id with
+        BG9999, which no file carries; justify one with a bare `cause:`.
+
+        The controls first, so a checker that refuses every id, or none, fails here rather
+        than passing a real baseline that happens to add nothing."""
+        bug = "BG0001"
+        self.assertFalse(any(BUGS.glob("BG9999-*.md")), "the negative control's id exists")
+        prior = " ".join(sorted(PRIOR_RED))
+
+        def page(*comments: str, extra: str = "", run: bool = True) -> str:
+            ids = f"{prior} {extra}".strip()
+            head = ["# re-measured from CI run 1234567890"] if run else ["# local 3f73ab64"]
+            return "\n".join(head + list(comments) + [
+                f"red-criteria|{len(ids.split())}|what it counts|{ids}", ""])
+
+        with tempfile.TemporaryDirectory() as d:
+            fake_bugs = Path(d)
+            (fake_bugs / f"{bug}-x.md").write_text("x", encoding="utf-8")
+            good = page("# US9998::AC1 cause: coverage, absent on the runner",
+                        f"# US9999::AC2 - {bug}", extra="US9998::AC1 US9999::AC2")
+            self.assertEqual(_baseline_problems(good, fake_bugs), [],
+                             "a baseline whose added ids each carry a cause or a real bug is "
+                             "refused, so the checker refuses everything")
+            for why, bad in {
+                "prose mention only": page("# Its extra row was US9998::AC1, which timed out",
+                                           extra="US9998::AC1"),
+                "no run line": page("# US9998::AC1 cause: coverage", extra="US9998::AC1",
+                                    run=False),
+                "a bug no file carries": page("# US9998::AC1 - BG9999", extra="US9998::AC1"),
+                "a bare cause": page("# US9998::AC1 cause:", extra="US9998::AC1"),
+                "a count its list does not support":
+                    page().replace("red-criteria|20|", "red-criteria|21|"),
+                "a cause written into field 4": page(extra="US9998::AC1 cause: coverage"),
+            }.items():
+                self.assertNotEqual(_baseline_problems(bad, fake_bugs), [], why)
+
+        problems = _baseline_problems(BASELINE.read_text(encoding="utf-8"), BUGS)
+        self.assertEqual(problems, [], f"{BASELINE.name} cannot be trusted as a re-measure: "
+                                       f"{problems}")
 
 
 if __name__ == "__main__":

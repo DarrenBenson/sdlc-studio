@@ -113,6 +113,18 @@
 # one can read differently there. The difference will now be NAMED rather than appearing as a
 # number that moved.
 #
+#
+# RE-MEASURED IN CI, 2026-09-16, and this is the first reading this row has ever taken from the
+# environment the lane actually runs in. BG0676: the scheduled run of 2026-09-14 read 40 red
+# against this baseline of 20, and every one of the 20 it added passed locally - the job installed
+# no `coverage`, cloned one commit deep, and gave each verifier gate.py's 120 s default while the
+# slowest criterion here takes 136 s. With those three corrected (coverage installed, full
+# history, SDLC_VERIFY_TIMEOUT=300) the count is 19: the 20 spurious reds are gone, no id is NEW,
+# and US0666::AC2 went green, which is the one real movement and is banked here rather than left
+# to the tolerance. A local reading is not admissible for this row - the difference between the
+# two environments was the whole defect.
+# re-measured from CI run 35072360410
+#
 # metric|count|what it counts|identities
-red-criteria|20|executable acceptance criteria that FAIL when run, across stories already at Done|US0021::AC1 US0040::AC3 US0042::AC2 US0047::AC1 US0052::AC4 US0063::AC1 US0063::AC2 US0070::AC1 US0070::AC2 US0080::AC2 US0165::AC2 US0202::AC3 US0207::AC3 US0268::AC1 US0284::AC4 US0289::AC2 US0347::AC1 US0512::AC4 US0666::AC1 US0666::AC2
+red-criteria|19|executable acceptance criteria that FAIL when run, across stories already at Done|US0021::AC1 US0040::AC3 US0042::AC2 US0047::AC1 US0052::AC4 US0063::AC1 US0063::AC2 US0070::AC1 US0070::AC2 US0080::AC2 US0165::AC2 US0202::AC3 US0207::AC3 US0268::AC1 US0284::AC4 US0289::AC2 US0347::AC1 US0512::AC4 US0666::AC1
 dead-stamps|3|criteria stamped `Verified: yes` whose selector now selects nothing|US0063::AC2 BG0357::AC4 BG0357::AC5
