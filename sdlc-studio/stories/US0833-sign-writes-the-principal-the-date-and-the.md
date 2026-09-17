@@ -41,6 +41,14 @@ THE SEALED RUN is US0832's prepared run carrying report RPT0001, signed by `spri
 whose batch is US0832's two stories and one bug, plus one story OUTSIDE the batch left at Ready
 as the paired control.
 
+### AC0: one principal, one act - SEAL writes the per-unit rows AND the run's signature
+
+- **Given** THE PREPARED RUN, every unit's terminal gate clear and no unit yet moved
+- **When** `sprint.py sign --report <id> --principal "Darren Benson"` runs once
+- **Then** each batch unit gains its sign-off row naming that principal, reaches its terminal status, its parent epic and request cascade, and the run gains ONE run-level signature - all from the single principal the command was given, with no second prompt and no second command
+- **Mutant:** write the run signature and leave the per-unit rows to a later `--apply-signoff` - the operator then signs twice for one decision, which is the shape D0213 rejected
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SealTests::test_one_principal_writes_the_unit_rows_and_the_run_signature
+
 ### AC1: sign records the principal, the date and the report's OWN fingerprint against the run
 
 - **Given** US0832's prepared run carrying report RPT0001, whose JSON on disk holds fingerprint F

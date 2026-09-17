@@ -19,10 +19,13 @@
 ## Acceptance Criteria
 
 The split is judged by what each half WRITES, never by what its help text claims. PREPARE is
-`sprint.py close` under its existing name - the ten `_CLOSE_CHAIN` steps plus the fan-out
-`_apply_signoff` (sprint.py:6607) and the tail `_apply_signoff_tail` (:6793) runs: the per-unit
-sign-off rows, the terminal transitions, the parent epic and request cascades, the handoff
-re-render, the velocity row and the final reconcile. SEAL is a new `sprint.py sign`, and its
+`sprint.py close` under its existing name - the ten `_CLOSE_CHAIN` steps, the handoff re-render,
+the velocity row and the final reconcile. It fans out NOTHING: under D0213 the run carries ONE
+signature, so the per-unit sign-off rows, the terminal transitions and the parent epic and
+request cascades all belong to SEAL, which applies them from the single principal it is given.
+The consequence is stated here because it changes what the report says: at the moment the report
+is produced no unit is terminal yet, so the report describes each unit as having CLEARED ITS
+TERMINAL GATE, never as Done, and SEAL performs the transitions that make it so. SEAL is a new `sprint.py sign`, and its
 whole job is the signature and the run's end. Two shapes at HEAD make the split falsifiable:
 the chain's `handoff` step closes the run object (sprint.py:9572 re-reads the state for exactly
 that reason), so PREPARE today ends the run before anything could sign it; and
@@ -35,8 +38,8 @@ than gating (US0834 owns the gating).
 ### AC1: PREPARE runs every step that can change a fact and leaves the run OPEN with a report to sign
 
 - **Given** THE PREPARED RUN, open
-- **When** `sprint.py close --retro RETRO0001 --principal "Darren Benson"` runs through `main`
-- **Then** it exits 0; each unit reached its terminal status and the parent epic derived (the fan-out and the tail ran); `run_state.read(root)` still returns an OPEN run - no `closed_at`, no archived record under `.local/run-archive/` - carrying a `report` field naming an id whose JSON exists on disk; and the last line of stdout is the `sprint.py sign --report <id> --principal ...` command, named as the only action left
+- **When** `sprint.py close --retro RETRO0001` runs through `main` - PREPARE takes no principal, because it signs nothing
+- **Then** it exits 0; every unit's terminal gate is recorded CLEAR and no unit has moved (`transition.requirements` returns no unmet requirement for each, and each unit's Status is unchanged on disk); `run_state.read(root)` still returns an OPEN run - no `closed_at`, no archived record under `.local/run-archive/` - carrying a `report` field naming an id whose JSON exists on disk; and the last line of stdout is the `sprint.py sign --report <id> --principal ...` command, named as the only action left
 - **Mutant:** leave the `handoff` chain step closing the run object - the chain still runs, every unit still transitions, and the only thing that breaks is that SEAL has no open run to seal, which no assertion about the chain would catch
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_prepare_runs_every_fact_changing_step_and_leaves_the_run_open
 

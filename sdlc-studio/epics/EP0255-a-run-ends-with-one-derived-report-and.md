@@ -23,6 +23,14 @@ Decomposed from RFC0059. Delivers the work RFC0059 requested.
 - [ ] [US0844: the run-level token meter is stamped at run open and at report time, and the total names the sessions it covers](../stories/US0844-the-run-level-token-meter-is-stamped-at.md)
 - [ ] [US0845: a report whose fingerprint no longer matches the tree renders INVALIDATED wherever it is shown](../stories/US0845-a-report-whose-fingerprint-no-longer-matches-the.md)
 
+## Acceptance Criteria (Epic Level)
+
+- [ ] **EA1** A run's close produces exactly one report, of the META type `RPT` under `sdlc-studio/reports/` (D0213), and every figure in it resolves to a source in the run's own artefacts. A figure with no source refuses the report rather than printing.
+- [ ] **EA2** The operator's act is ONE command taking ONE principal, and every step that can change a fact the report states runs before it. After `sign`, a batch unit cannot be transitioned at all.
+- [ ] **EA3** The report's headline cost row carries a real figure with its model and its session coverage, never `UNMEASURED` by default - the outcome RFC0059 names as worse than no report.
+- [ ] **EA4** A report whose figures no longer re-derive reads INVALIDATED wherever it is shown, including in `status` for the reader who never opens it (D0213).
+- [ ] **EA5** Every section with no data renders `NOT MEASURED` by name. No section is dropped, and no absent figure renders as `0`, `-` or an empty cell.
+
 ## Revision History
 
 | Date | Author | Change |

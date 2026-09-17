@@ -7,7 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/consult.py, .claude/skills/sdlc-studio/scripts/tests/test_consult.py
 > **Epic:** EP0256
-> **Points:** 3
+> **Points:** 8
 > **Persona:** Maya Okafor
 
 ## User Story

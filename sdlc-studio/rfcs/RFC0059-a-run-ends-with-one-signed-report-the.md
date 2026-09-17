@@ -136,12 +136,12 @@ Three of those earn their place against the alternative of showing more:
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Artefact id and location: a new `RPTxxxx` type under `sdlc-studio/reports/`, or a rendering hung off the retro id | Open |
+| D1 | **RULED 2026-09-17 (operator):** a META `RPT` type under `sdlc-studio/reports/`, so the report carries an id, an index row and a history like every other artefact and a ledger can name it | Settled |
 | D2a | **RULED 2026-09-16 (operator):** the JSON is the artefact of record, the Markdown twin is committed for diffing, and the HTML is GENERATED ON DEMAND from the committed JSON - no rendered page churns in git | Settled |
 
 | D3 | **RULED 2026-09-16 (operator):** RUN-LEVEL ONLY. The harness meter is stamped at run open and at report time, giving an honest run total and a batch tokens-per-point. Per-unit actuals stay UNMEASURED and the report says so by name rather than splitting an interleaved session into per-unit figures it cannot defend | Settled |
-| D4 | What invalidates a signature: any tracked write, a write to a batch unit's declared files, or only a change to the report's own facts | Open |
-| D5 | Whether PREPARE may be run by a delegate while SEAL stays the operator's, and whether SEAL is offline-capable (no forge reads) | Open |
+| D4 | **RULED 2026-09-17 (operator):** RE-DERIVATION. A report is INVALIDATED when re-deriving its figures produces different ones - not on any tracked write, which would fire for every change that moves nothing the report states | Settled |
+| D5 | Whether PREPARE may be run by a delegate while SEAL stays the operator's, and whether SEAL is offline-capable (no forge reads). **PARTLY RULED 2026-09-17:** the run carries ONE signature, written in SEAL from ONE principal, and PREPARE fans out nothing - so PREPARE takes no principal at all. Whether a delegate may run PREPARE is still open | Open |
 | D6 | Whether the report absorbs the handoff or links to it - two documents about the same run is the drift this RFC exists to remove | Open |
 | D7 | Retention: one report per run kept forever, indexed and diffable, or superseded by the next | Open |
 
@@ -160,3 +160,4 @@ Three of those earn their place against the alternative of showing more:
 | 2026-09-16 | Claude Opus 5 (authoring session) | Written on the operator's request at the RUN-01M2JA6J close: five options weighed, B+C+E recommended with D as the cost section's prerequisite, report contents tabled with their sources, seven open decisions. |
 | 2026-09-16 | Claude Opus 5 (authoring session) | Operator rulings recorded: slice 1 (the PREPARE/SEAL split) leads the next run alone; token attribution is run-level only, per-unit stays UNMEASURED and named; JSON of record with a committed Markdown twin and HTML generated on demand; confidence is a profile with a NOT-proven section, never a score. |
 | 2026-09-16 | Claude Opus 5 (authoring session) | Report contents settled against a worked prototype over RUN-01M2JA6J and shipped as `templates/core/sprint-report.md` plus `templates/reports/sprint-report.html`: the goal leads verbatim, the model is named beside the cost, DORA's four keys carry this project's own mapping, rework rate replaces mutant and verdict volume on the top line, and the CI history collapses to a single ship guardrail. |
+| 2026-09-17 | Claude Opus 5 (authoring session) | D1 and D4 ruled by the operator after grooming, confirming the pins the grooming stated as assumptions. The signing question they exposed is ruled too: one signature, written in SEAL, which fans out the per-unit rows and the transitions from that single principal. Its consequence is recorded in US0832 - no unit is terminal when the report is produced, so the report states that each unit has CLEARED ITS TERMINAL GATE rather than that it is Done. |
