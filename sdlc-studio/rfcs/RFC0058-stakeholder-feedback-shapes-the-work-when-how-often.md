@@ -98,7 +98,7 @@ Record every consult as an artefact under `sdlc-studio/reviews/` naming the unit
 | D2 | **RULED 2026-09-16 (operator):** RISK-TRIGGERED - a unit is consulted when it touches the running system, changes what a user reads or is told, originates in a stakeholder concern, or belongs to an epic no consult has covered. Derived from `Affects` and the unit type, so most bugs (defects against settled intent) skip without a reason | Settled |
 | D3 | What a consult artefact must carry for the gate to count it (units covered, verdicts, per-finding disposition) | Open |
 | D4 | **RULED 2026-09-16 (operator):** INFORMS, and the operator rules. A stakeholder Reject holds no gate, but it must be ANSWERED in writing - folded into delivery, filed with an id, or declined with a reason - and an unanswered one is reported at the close. Consistent with D0194: the operator rules, the personas inform | Settled |
-| D5 | Persona validity: synthetic personas speak for real users only as well as they were authored; how often they are refreshed against real feedback, and whether a real stakeholder can stand in for a persona | Open |
+| D5 | **PARTLY RULED 2026-09-17 (operator):** provenance and age are RECORDED - each card carries when it was authored, from what evidence, and when it was last revisited, and every consult artefact and yield figure carries the oldest card's age with the validity caveat (US0847). No refresh process is built yet, and whether a real stakeholder may stand in for a persona is still open | Open |
 | D6 | How consult yield is measured (findings per consult, share folded or filed, cost against seat rounds) and when the requirement is revisited | Open |
 
 ## Evidence
@@ -114,3 +114,4 @@ Record every consult as an artefact under `sdlc-studio/reviews/` naming the unit
 | 2026-09-15 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-15 | Claude Opus 5 (authoring session) | Context, goals, five options weighed, recommendation and six open decisions written on the operator's request; filed under an operator-named triage session because the run's finding cap was reached |
 | 2026-09-16 | Claude Opus 5 (authoring session) | D1, D2 and D4 ruled by the operator at the RUN-01M2JA6J close: consult at refine per epic or CR, a risk trigger derived from Affects and unit type, and a Reject that informs and must be answered but holds no gate. D3, D5 and D6 remain open for refine. |
+| 2026-09-17 | Claude Opus 5 (authoring session) | D5 partly ruled: persona provenance and age are recorded and travel with every consult figure, so a yield number stops implying the personas are current. The refresh horizon is deliberately not built. |

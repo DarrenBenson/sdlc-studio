@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-09-16
+**Last Updated:** 2026-09-17
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 143 |
+| Draft | 145 |
 | Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 5 |
 | Blocked | 12 |
-| **Total** | **845** |
+| **Total** | **847** |
 
 ## All Stories
 
@@ -204,6 +204,8 @@
 | [US0843](US0843-module-alone-prints-the-per-module-wall-clock.md) | module-alone prints the per-module wall clock it already computes, so a narrowing can be judged before it is built | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
 | [US0844](US0844-the-run-level-token-meter-is-stamped-at.md) | the run-level token meter is stamped at run open and at report time, and the total names the sessions it covers | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
 | [US0845](US0845-a-report-whose-fingerprint-no-longer-matches-the.md) | a report whose fingerprint no longer matches the tree renders INVALIDATED wherever it is shown | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0846](US0846-the-report-computes-this-run-s-change-failure.md) | the report computes this run's change failure rate from its own push-triggered CI results, so a narrowed gate can be judged against it | Draft | EP0255 | 2026-09-17 | 2026-09-17 |
+| [US0847](US0847-a-persona-card-records-when-it-was-authored.md) | a persona card records when it was authored, from what evidence and when it was last revisited, and every consult figure carries that age | Draft | EP0256 | 2026-09-17 | 2026-09-17 |
 
 ## Archived Releases
 

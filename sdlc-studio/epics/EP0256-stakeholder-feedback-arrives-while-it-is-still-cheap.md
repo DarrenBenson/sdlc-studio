@@ -1,7 +1,7 @@
 # EP0256: Stakeholder feedback arrives while it is still cheap to act on
 
 > **Status:** Draft
-> **Derived Point Total:** 26
+> **Derived Point Total:** 29
 > **Parent:** RFC0058
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -19,6 +19,7 @@ Decomposed from RFC0058. Delivers the work RFC0058 requested.
 - [ ] [US0840: a consult artefact carries each persona's verdict and a disposition per finding, so a consult can be counted rather than remembered](../stories/US0840-a-consult-artefact-carries-each-persona-s-verdict.md)
 - [ ] [US0841: an unanswered stakeholder Reject is reported at the close, holding nothing, and the operator rules it](../stories/US0841-an-unanswered-stakeholder-reject-is-reported-at-the.md)
 - [ ] [US0842: consult yield is measured - findings per consult and the share folded or filed - so the requirement is revisited on evidence](../stories/US0842-consult-yield-is-measured-findings-per-consult-and.md)
+- [ ] [US0847: a persona card records when it was authored, from what evidence and when it was last revisited, and every consult figure carries that age](../stories/US0847-a-persona-card-records-when-it-was-authored.md)
 
 ## Acceptance Criteria (Epic Level)
 

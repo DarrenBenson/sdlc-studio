@@ -61,8 +61,8 @@
 | [EP0248](EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Draft | 1 | -- | 2026-09-07 | 2026-09-07 |
 | [EP0253](EP0253-the-push-boundary-runs-the-modules-the-push.md) | The push boundary runs the modules the push changed, and says which | Draft | 5 | -- | 2026-09-16 | 2026-09-16 |
 | [EP0254](EP0254-the-corpus-lane-runs-in-shards-and-judges.md) | The corpus lane runs in shards and judges one union | Draft | 4 | -- | 2026-09-16 | 2026-09-16 |
-| [EP0255](EP0255-a-run-ends-with-one-derived-report-and.md) | A run ends with one derived report, and signing it is a transaction | Draft | 8 | -- | 2026-09-16 | 2026-09-16 |
-| [EP0256](EP0256-stakeholder-feedback-arrives-while-it-is-still-cheap.md) | Stakeholder feedback arrives while it is still cheap to act on | Draft | 5 | -- | 2026-09-16 | 2026-09-16 |
+| [EP0255](EP0255-a-run-ends-with-one-derived-report-and.md) | A run ends with one derived report, and signing it is a transaction | Draft | 9 | -- | 2026-09-16 | 2026-09-16 |
+| [EP0256](EP0256-stakeholder-feedback-arrives-while-it-is-still-cheap.md) | Stakeholder feedback arrives while it is still cheap to act on | Draft | 6 | -- | 2026-09-16 | 2026-09-16 |
 
 ## Archived Releases
 

@@ -1,7 +1,7 @@
 # EP0255: A run ends with one derived report, and signing it is a transaction
 
 > **Status:** Draft
-> **Derived Point Total:** 32
+> **Derived Point Total:** 35
 > **Parent:** RFC0059
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -22,6 +22,7 @@ Decomposed from RFC0059. Delivers the work RFC0059 requested.
 - [ ] [US0837: the report opens with the sprint goal verbatim and carries DORA's four keys with this project's mapping stated](../stories/US0837-the-report-opens-with-the-sprint-goal-verbatim.md)
 - [ ] [US0844: the run-level token meter is stamped at run open and at report time, and the total names the sessions it covers](../stories/US0844-the-run-level-token-meter-is-stamped-at.md)
 - [ ] [US0845: a report whose fingerprint no longer matches the tree renders INVALIDATED wherever it is shown](../stories/US0845-a-report-whose-fingerprint-no-longer-matches-the.md)
+- [ ] [US0846: the report computes this run's change failure rate from its own push-triggered CI results, so a narrowed gate can be judged against it](../stories/US0846-the-report-computes-this-run-s-change-failure.md)
 
 ## Acceptance Criteria (Epic Level)
 
