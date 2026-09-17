@@ -62,8 +62,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0708` | Medium | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets |
 | `BG0709` | Medium | the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red |
 | `BG0710` | Medium | the close prints the run's cost before the step that captures it, so every close reports the sprint as not attributable |
+| `BG0711` | Medium | test_complexity's temporary git fixture races its own cleanup on CI, reddening main on a teardown rather than a failure |
 
-32 findings: 32 Medium, 0 Low.
+33 findings: 33 Medium, 0 Low.
 
 ## Not carried
 

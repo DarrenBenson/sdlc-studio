@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-16
+**Last Updated:** 2026-09-17
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 32 |
+| Open | 33 |
 | In Progress | 0 |
 | Fixed | 576 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 9 |
 | Superseded | 6 |
-| **Total** | **710** |
+| **Total** | **711** |
 
 ## All Bugs
 
@@ -69,6 +69,7 @@
 | [BG0708](BG0708-gate-py-reads-sdlc-verify-timeout-per-call.md) | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets | Open | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0709](BG0709-the-pre-push-red-main-check-trusts-the.md) | the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red | Open | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0710](BG0710-the-close-prints-the-run-s-cost-before.md) | the close prints the run's cost before the step that captures it, so every close reports the sprint as not attributable | Open | Medium | 2026-09-16 | 2026-09-16 |
+| [BG0711](BG0711-test-complexity-s-temporary-git-fixture-races-its.md) | test_complexity's temporary git fixture races its own cleanup on CI, reddening main on a teardown rather than a failure | Open | Medium | 2026-09-17 | 2026-09-17 |
 
 ## Archived Releases
 
