@@ -4,28 +4,69 @@
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
 > **Epic:** EP0255
 > **Points:** 3
 > **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** Maya Okafor, reading the cost row of her own run's report
+**I want** the run's token total stamped at open and at report time, and labelled with the sessions it covers
+**So that** the report's headline cost is a measurement rather than the word UNMEASURED that every unit of RUN-01M2JA6J carried
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+How attribution works today, because the fix is a change to it rather than a new mechanism.
+`run_state.open_run` stamps `TOKEN_BASELINE` once, on a fresh run only, from
+`run_state.session_tokens` - the transcript's summed input, output and cache-creation tokens,
+cache reads excluded. At the close, `retro.run_attributed_tokens` subtracts that baseline from
+the current reading. It returns NOT ATTRIBUTABLE, deliberately and correctly, when
+`base["source"] != cap["source"]` - the baseline was taken in a different session from the one
+closing the run, so the two readings are of different meters and their difference is not a
+spend. That guard is the reason RUN-01M2JA6J's every unit reads `UNMEASURED (no telemetry token
+record)` and its sprint total reads `not attributable`: the run was CLOSED ACROSS SESSIONS,
+which is the normal shape of a long run, not an error.
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-<!-- Verify: authored at grooming, one discriminating selector per criterion -->
+RFC0059 states in its own text that a report printing unknown in its headline row every run is
+worse than no report, and D3 ruled the attribution RUN-LEVEL: per-unit actuals stay UNMEASURED
+and are named, because the meter is cumulative per session and interleaved work cannot be split
+between units honestly. So the fix is to stop taking ONE reading and start taking a stamp per
+session, making the run total the sum of per-session deltas - which is a spend, each term being
+a difference of two readings of the same meter - and to label it with the sessions it covers,
+because an unqualified total over a partially stamped run is a partial one.
+
+The figures below are RUN-01M2JA6J's own, measured this way after the fact: 6,459,675 tokens
+over 103 points, 62,715 per point. Fixtures drive `session_tokens` through the transcripts
+directory (`SDLC_STUDIO_TRANSCRIPTS`), as `test_retro.py`'s harness-capture fixtures already do.
+
+### AC1: the meter is stamped at run open and again at report time, each stamp naming its session
+
+- **Given** a fresh run opened against a transcript `s1.jsonl` whose usage records sum to 4,271,975, the transcript then grown so it sums to 10,731,650
+- **When** the run is opened, and PREPARE later builds the report in that same session
+- **Then** the run record carries an ORDERED list of stamps rather than one baseline, each holding the reading, its transcript path, an ISO time and a kind - the first `open`, the last `report`; the `open` stamp still reads 4,271,975, unchanged by the second; and `run_state.run_token_total(state)` returns 6,459,675 with one session named
+- **Mutant:** overwrite the single `TOKEN_BASELINE` at report time instead of appending a stamp - the delta is then zero and the run reports no cost at all, while a test that only checks a stamp exists still passes
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RunTokenStampTests::test_the_meter_is_stamped_at_open_and_at_report_time
+
+### AC2: a run spanning sessions sums its per-session deltas and names the sessions it covers
+
+- **Given** a run opened in session `s1` (stamped at 4,271,975, that transcript reaching 10,731,650) and prepared in session `s2`, whose own transcript reads 120,000 when the run first writes to it and 900,000 at report time, with a stamp taken at each of those four moments
+- **When** `run_state.run_token_total(state)` is called
+- **Then** it returns 7,239,675 - the sum of the two same-session deltas, 6,459,675 and 780,000 - names both transcript paths and the session count 2, and labels the figure a LOWER BOUND; it is not `not attributable`, which is what a single cross-session baseline produces today and what RUN-01M2JA6J's close printed
+- **Mutant:** keep `run_attributed_tokens`' rule that a baseline taken in another session makes the whole run not attributable - the headline cost row is then UNMEASURED on every run closed across sessions, which is the run this story was raised from, and every single-session test still passes
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RunTokenStampTests::test_a_run_spanning_sessions_sums_its_stamps_and_names_them
+
+### AC3: the report's cost row prints the total, the model, the rate and the coverage, and NOT MEASURED only when no stamp can be read
+
+- **Given** AC2's run, its batch summing 103 points; and a second copy whose transcripts directory holds no session file at all
+- **When** PREPARE builds the report on each
+- **Then** the first copy's cost row carries the total, the model the stamps recorded, the per-point figure derived from total and points, and a coverage clause naming the session count and any session that wrote to the run without a stamp; the second reads `NOT MEASURED` with the reason `session_tokens` returned, never `0` and never a per-point figure of zero; in both, every per-unit token actual reads UNMEASURED by name, under D3
+- **Mutant:** print the run total with no coverage clause - a partial total then reads as the run's cost, which is the consult's finding that an unqualified total over a run closed across sessions is a partial one
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ReportCostRowTests::test_the_cost_row_names_its_total_model_rate_and_session_coverage
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-17 | grooming 2026-09-17 | Groomed: three criteria, and the user story filled. Written against why RUN-01M2JA6J read `not attributable`: `run_attributed_tokens` refuses a baseline taken in another session, and that run was closed across sessions. One stamp per session replaces the single baseline, the total is the sum of same-session deltas and names its coverage. Figures are the run's own, 6,459,675 over 103 points. test_run_state.py added to Affects. |
