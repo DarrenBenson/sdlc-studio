@@ -18,7 +18,23 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+A narrowed lane that reports like a full one is worse than either: the reader cannot tell which ran. Every persona raised this independently.
+
+### AC1: the line names what ran, what was skipped, and the rule that decided
+
+- **Given** a push selecting 11 of 133 modules
+- **When** the lane reports
+- **Then** its detail carries the selected count against the total, the base sha the diff used, and the rule's name, so `[PASS] module-alone` can never be read as the full sweep
+- **Mutant:** print the selected count alone - 11 modules green reads identically whether the other 122 were skipped or never existed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneSelectionTests::test_the_line_names_the_selection_and_its_rule
+
+### AC2: the full sweep says so in the same field a reader already looks at
+
+- **Given** a release boundary or a push whose base could not be resolved
+- **When** the lane reports
+- **Then** the same field reads that every module ran and why, rather than omitting the selection clause
+- **Mutant:** omit the clause when nothing was narrowed - absence then means both "full sweep" and "an older build that could not narrow"
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneSelectionTests::test_a_full_run_states_that_it_was_full
 
 ## Revision History
 

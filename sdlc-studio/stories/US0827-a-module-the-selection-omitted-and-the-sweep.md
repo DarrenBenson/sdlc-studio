@@ -18,7 +18,23 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+An advisory ledger with no threshold is a third instrument that accumulates and decides nothing - `revert-check` and `claim-drift` already do that here, and both personas named the pattern.
+
+### AC1: a module the selection skipped and the sweep found red is recorded as a miss, with what would have selected it
+
+- **Given** a weekly sweep finding `test_x` red, and the pushes since the last green sweep
+- **When** the miss is recorded
+- **Then** the ledger row carries the module, the push that introduced the failure, and the import edge the selection would have needed to catch it
+- **Mutant:** record the module and date alone - the rule cannot then be improved from its own misses, only counted
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneMissTests::test_a_miss_records_the_edge_that_would_have_caught_it
+
+### AC2: the miss rate carries a stated threshold and the lane says which side it is on
+
+- **Given** a miss ledger over a declared window
+- **When** the lane reports
+- **Then** it states the miss rate against a threshold recorded in config, and names the consequence of crossing it - the selection reverts to the full sweep at the push boundary until a delivery lowers it
+- **Mutant:** report the rate with no threshold - the ledger then joins the two advisory instruments this repository already cannot act on
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneMissTests::test_the_miss_rate_is_judged_against_a_recorded_threshold
 
 ## Revision History
 
