@@ -39,7 +39,7 @@ about what an unanswered review is (D0193, D0194).
 ### AC1: a batch unit whose terminal GATE is unmet refuses the report, with every such unit named in one refusal
 
 - **Given** a run otherwise ready to prepare - retro recorded, goal judged, reviews answered - whose batch holds two units whose terminal gate is UNMET - a story missing a review half and a bug at `In Progress`, beside three terminal ones
-- **When** `sprint.py close --retro RETRO0001 --principal "Darren Benson"` runs through `main`
+- **When** `sprint.py close --retro RETRO0001` runs through `main` - no principal, because PREPARE signs nothing
 - **Then** it exits 2; stderr names BOTH unit ids with their statuses in a single refusal - the statuses named are the GATE's verdict, not the unit's Status line, because under D0213 no unit is terminal until SEAL; no file exists under `sdlc-studio/reports/`; and the run state carries no `report` field
 - **Mutant:** return at the first non-terminal unit found - the operator clears it, pays the whole of PREPARE again and meets the second, and every assertion about the first unit's name still passes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareRefusesTests::test_a_non_terminal_batch_unit_refuses_the_report

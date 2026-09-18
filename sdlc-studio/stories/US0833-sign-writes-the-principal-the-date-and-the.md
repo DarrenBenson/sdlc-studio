@@ -77,7 +77,7 @@ as the paired control.
 
 - **Given** THE SEALED RUN
 - **When** `sprint.py reopen --run <the run id> --reason "late repair to US0832"` runs, then AC3's refused transition is repeated; and separately `sprint.py reopen --run <the run id>` with no `--reason`
-- **Then** the reason-less form exits 2 and writes nothing; the reasoned form exits 0, appends a re-open record carrying the run id, RPT0001, the reason and a date, and the repeated transition then succeeds; and the run record still holds the signature from AC1 beside the re-open record, so what was signed and when it was broken are both readable afterwards
+- **Then** a reopen of a run that was never sealed exits 2 naming that (the reason-less form is argparse's already, `sprint.py reopen` at 11638 declaring `--reason` required, so it proves nothing here) and writes nothing; the reasoned form exits 0, appends a re-open record carrying the run id, RPT0001, the reason and a date, and the repeated transition then succeeds; and the run record still holds the signature from AC1 beside the re-open record, so what was signed and when it was broken are both readable afterwards
 - **Mutant:** clear the signature on re-open - the record then cannot say what had been signed, and US0845 has no signed fingerprint left to render INVALIDATED against
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheSealIsATransactionTests::test_reopen_is_recorded_and_keeps_the_signature_it_breaks
 
@@ -87,3 +87,4 @@ as the paired control.
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-17 | grooming 2026-09-17 | Groomed: four criteria, carrying BOTH halves of RFC0059's option E on the consult's finding that a signature nothing refuses over is a convention. Adds the CR0571 inheritance (critic.py's principal rule applied across the batch, the reviewer recorded on the SECOND unit only), the post-seal refusal at `transition.transition` (the chokepoint `artifact.close` routes through) and a recorded re-open that keeps the signature. Affects and Points grown for the two new files. |
+| 2026-09-18 | goal review round 5 | AC4's reason-less arm withdrawn: `sprint.py reopen` at 11638 already declares `--reason` required, so that arm tested argparse rather than this story. It now proves the reopen of a run that was never sealed. |

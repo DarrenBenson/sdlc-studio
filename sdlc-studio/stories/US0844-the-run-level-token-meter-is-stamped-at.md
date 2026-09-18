@@ -4,7 +4,7 @@
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0255
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -64,9 +64,18 @@ directory (`SDLC_STUDIO_TRANSCRIPTS`), as `test_retro.py`'s harness-capture fixt
 - **Mutant:** print the run total with no coverage clause - a partial total then reads as the run's cost, which is the consult's finding that an unqualified total over a run closed across sessions is a partial one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ReportCostRowTests::test_the_cost_row_names_its_total_model_rate_and_session_coverage
 
+### AC4: a run carrying only the legacy single baseline still reports, and says which shape it read
+
+- **Given** a run state holding the pre-change `session_token_baseline` dict alone - the shape every run open at delivery time carries, including the one this story ships in
+- **When** the report's cost row is produced
+- **Then** it reads the legacy baseline, states the figure it can derive from it, and names the shape it read, so an older run is reported rather than refused
+- **Mutant:** require the stamp list - every run opened before this story lands then reports NOT MEASURED, including the run that delivers it, which is the fixture-green-is-not-target-green scar this project already carries
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CostRowTests::test_a_legacy_single_baseline_is_read_and_named
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-17 | grooming 2026-09-17 | Groomed: three criteria, and the user story filled. Written against why RUN-01M2JA6J read `not attributable`: `run_attributed_tokens` refuses a baseline taken in another session, and that run was closed across sessions. One stamp per session replaces the single baseline, the total is the sum of same-session deltas and names its coverage. Figures are the run's own, 6,459,675 over 103 points. test_run_state.py added to Affects. |
+| 2026-09-18 | goal review round 5 | AC4 added for the LEGACY single `session_token_baseline` shape - the state every run open at delivery time carries, including the one this story ships in. Without it the cost row reads NOT MEASURED on its own run, which is this project's fixture-green scar. |

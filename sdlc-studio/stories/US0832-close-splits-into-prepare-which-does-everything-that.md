@@ -62,8 +62,8 @@ than gating (US0834 owns the gating).
 ### AC4: PREPARE is re-runnable after a late fix, and the second run re-derives rather than reuses
 
 - **Given** THE PREPARED RUN after AC1's PREPARE, with one batch unit's file then edited so a figure the report carries moves (a criterion marked `- **Verified:** yes`, lifting the unit's verified-criteria count)
-- **When** `sprint.py close --retro RETRO0001 --principal "Darren Benson"` runs a second time
-- **Then** it exits 0; no unit is transitioned twice and `signoff-record.md` holds one row per unit, not two; `VELOCITY.md` holds one row for RETRO0001; and the report the run now names carries a DIFFERENT fingerprint from the first, with the moved figure at its new value
+- **When** `sprint.py close --retro RETRO0001` runs a second time, still with no principal
+- **Then** it exits 0; no unit is transitioned twice and `signoff-record.md` is untouched by the re-run - the per-unit rows belong to SEAL, which has not run; `VELOCITY.md` holds one row for RETRO0001; and the report the run now names carries a DIFFERENT fingerprint from the first, with the moved figure at its new value
 - **Mutant:** return the existing report when the run already names one - the late fix is then invisible and the operator signs a fingerprint over facts that have moved underneath it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_prepare_is_rerunnable_and_re_derives_the_report
 
