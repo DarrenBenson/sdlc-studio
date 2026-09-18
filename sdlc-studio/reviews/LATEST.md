@@ -3,9 +3,12 @@
 > **RUN-01M2SPNS closed running.** 9 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **RUN-01M2SPNS is OPEN.** 9 unit(s) delivered, none terminal, and NO report has been filed -
-> PREPARE has not completed, because the coverage gate refuses every unit of the batch (BG0706).
-> There is nothing to sign yet. The run's state is the run record, not this file.
+> **RUN-01M2SPNS is OPEN and a report is filed.** 9 unit(s) delivered, none terminal - under
+> D0213 no unit is terminal until the SEAL, so each has cleared its terminal gate rather than
+> reached Done. PREPARE completed once the coverage lane stood down under D0214, and RPT0001 is
+> the page to be signed. What remains is the operator's single act:
+> `sprint sign --report RPT0001 --principal "Darren Benson"`. The run's state is the run record,
+> not this file.
 >
 > Closing review of record: RETRO0118 (`sdlc-studio/retros/RETRO0118-run-01m2spns-the-close-splits-and-the-run.md`).
 > **Run of record:** RUN-01M2SPNS - a run ends with one page it can be judged on, and one act
@@ -37,6 +40,35 @@ zero. The cost row states what the token meter covers and names the sessions it 
 it now carries the delegated agent spend separately - supplied by each agent, never measured
 here. The four DORA keys each state their mapping. And the page reads INVALIDATED once its
 figures no longer re-derive from the tree.
+
+## WHAT WAS FOUND AFTER THE FIRST FILING, BY READING THE PAGE
+
+The report filed, passed `check`, and was still wrong in two figures. Both were found by
+reading what the shipped commands produced, not by the suite, which was green throughout.
+
+- **The cost row priced the stamped window, not the run.** `run_token_total` ignored the legacy
+  `session_token_baseline` whenever any stamp existed. A run already open when the `open` stamp
+  shipped has none and never can, so its opening reading lives in the baseline alone: this run
+  published 90,809 tokens - the 44 minutes between its two PREPARE stamps - for 9.6 hours of
+  work, with every other clause of the row true. US0844 AC5.
+- **Mutation evidence was counted without checking it was still evidence.** The page counted
+  every ledger row, including rows the ledger reads as NOT-RUN because the mutant was applied to
+  bytes the file no longer holds. A run's own later fixes are what stale a row, so the figure was
+  at its most wrong exactly when the page is derived. Judged now at the anchor's site. Measured
+  after the fix: 36 of 36 rows live, none stale - the claim was true, and is now checked.
+
+Two further defects came out of the same pass. `report` was a registered artefact type with no
+index template, so filing the first report left a `reconcile` drift `apply` cannot clear and the
+first close of any project ended in a gate refusing the commit the close had just asked for
+(US0836 AC5). And `test_autosprint` still asserted the pre-split contract: it went red when the
+close tail stopped ending the run, was invisible to its own module, and reached main because the
+tail fix was committed on a selected subset - the full-suite rule, broken again by the run that
+ships the machinery for keeping it.
+
+Two declared mutants SURVIVED re-execution and were corrected rather than recorded as kills.
+US0835 AC1's named the wrong guard - defaulting a missing source to `derived` cannot produce a
+passing build, because the resolution check refuses it in the next clause. A mutant that cannot
+fail is not evidence, whichever way it reads.
 
 ## WHAT DELIVERY REVIEW FOUND, AND WHY IT MATTERED
 

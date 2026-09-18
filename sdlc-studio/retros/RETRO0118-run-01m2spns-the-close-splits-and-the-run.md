@@ -133,8 +133,6 @@ sprints fits noise.
 
 **0 of 9 unit(s) measured; 9 of 9 forecast at plan time.**
 
-**3,440,527 tokens supplied, but no rate:** the batch has no delivered unit carrying Points, so there is no denominator. Size the delivered stories/bugs, or the rate stays uncomputable.
-
 Review passes, by phase - read from the two verdict ledgers:
 
   test-plan review: 9 pass(es) over 9 unit(s), 3 rejected
