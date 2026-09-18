@@ -1,7 +1,7 @@
 # EP0255: A run ends with one derived report, and signing it is a transaction
 
 > **Status:** Draft
-> **Derived Point Total:** 35
+> **Derived Point Total:** 37
 > **Parent:** RFC0059
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new

@@ -54,7 +54,7 @@ every reading of D4 agrees about (i) and (iii).
 ### AC3: status names an invalidated report, so the operator who never opens it is still told
 
 - **Given** THE THREE TREES
-- **When** `sprint.py status` runs in each
+- **When** `status.py pillars` (status.py:390, the verb that prints the Run line) runs in each
 - **Then** only (iii) prints a line naming RPT0001 as INVALIDATED with the re-prepare command; (i) and (ii) print the report as signed, with its principal and date; and status writes nothing in any of the three
 - **Mutant:** compute the banner inside the renderer alone - the operator who reads `status` and never opens the report is told nothing, which is the state the consult found and this story exists to end
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::InvalidatedReportInStatusTests::test_status_names_an_invalidated_report

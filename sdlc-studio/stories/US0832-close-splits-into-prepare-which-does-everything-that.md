@@ -7,7 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Epic:** EP0255
-> **Points:** 5
+> **Points:** 8
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -67,9 +67,18 @@ than gating (US0834 owns the gating).
 - **Mutant:** return the existing report when the run already names one - the late fix is then invisible and the operator signs a fingerprint over facts that have moved underneath it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_prepare_is_rerunnable_and_re_derives_the_report
 
+### AC5: PREPARE prints no second account of the run
+
+- **Given** a prepared run, and the TWO legacy accounts `cmd_close` prints on its success path: `_draw_report` (defined sprint.py:7077, called 9603), whose body is `print(sprint_report.render(sprint_report.report(root, retro_id)))`, and `_tell_the_operator` (defined 6991, called 9610), which prints shipped and carried per unit with a cost block from `_close_cost`
+- **When** `sprint.py close --retro RETRO0001` runs through `main`
+- **Then** stdout carries exactly ONE set of delivered and cost figures, the filed report's, and `_draw_report` is no longer reached from `cmd_close` - grep of the close path finds no call, and neither `_draw_report` nor `_tell_the_operator` is reached from `cmd_close` - `sprint_report.report`, `sprint_report.render` and `sprint_report.close_report` are not invoked to render a page beside the one being filed
+- **Mutant:** leave `_draw_report` in place - the operator then decides over two accounts of the same run, derived from two different root objects, which is the disagreement US0835 AC2's fixture was built to expose and the reason the goal's first word is ONE
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_prepare_prints_exactly_one_account_of_the_run
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-17 | grooming 2026-09-17 | Groomed: four criteria. PREPARE is `close` (chain + fan-out + tail) and SEAL is a new `sign`; the split is judged by what each half WRITES, with a tree snapshot across `sign`. `--apply-signoff` is refused and names `sign`; a re-prepare re-derives the report. |
+| 2026-09-18 | goal review confirmation | AC5 added and raised 5 -> 8 points: the close prints TWO legacy accounts, not one - `_draw_report` at 9603 and `_tell_the_operator` at 9610 - and retiring both is the work the goal's first word requires. |
