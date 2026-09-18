@@ -3825,7 +3825,14 @@ def render_markdown(report: dict, template: str | None = None,
     """The committed twin, from `templates/core/sprint-report.md`."""
     if template is None:
         template = template_path("core/sprint-report.md").read_text(encoding="utf-8")
-    return _render(report, template, revalidation)
+    out = _render(report, template, revalidation)
+    # A repeat block that emits NOTHING - the invalidation banner on a valid report is the
+    # ordinary case - leaves its surrounding blank line behind, and two blank lines in a row
+    # fail this project's own markdownlint (MD012). The twin is COMMITTED, so a page the repo
+    # refuses to accept is a page the close cannot land. Normalised here rather than by
+    # tightening every block's whitespace in the template, where the next block added would
+    # have to remember the rule.
+    return re.sub(r"\n{3,}", "\n\n", out)
 
 
 def render_html(report: dict, template: str | None = None,

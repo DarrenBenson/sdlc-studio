@@ -133,6 +133,8 @@ sprints fits noise.
 
 **0 of 9 unit(s) measured; 9 of 9 forecast at plan time.**
 
+**3,440,527 tokens supplied, but no rate:** the batch has no delivered unit carrying Points, so there is no denominator. Size the delivered stories/bugs, or the rate stays uncomputable.
+
 Review passes, by phase - read from the two verdict ledgers:
 
   test-plan review: 9 pass(es) over 9 unit(s), 3 rejected
@@ -211,4 +213,4 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Handoff
 
-- [HO-0072](../handoffs/HO0072-a-run-ends-with-one-page-it-can.md) - 9 remaining item(s): 0 copilot-tail, 9 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
+- [HO-0073](../handoffs/HO0073-a-run-ends-with-one-page-it-can.md) - 9 remaining item(s): 0 copilot-tail, 9 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

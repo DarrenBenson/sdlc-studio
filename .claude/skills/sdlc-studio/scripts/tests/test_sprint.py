@@ -19622,6 +19622,49 @@ class PrepareAndSealTests(unittest.TestCase):
                                   if b["stage"] not in mod._SIGNOFF_ONLY_STAGES]),
                              "the recorded count and the recorded stages disagree")
 
+    def test_the_close_tail_does_not_end_the_run(self):
+        """US0832 AC1's headline claim, at the one place it actually breaks.
+
+        PREPARE runs the close TAIL, and the tail called `_finalise_outcome`, which stamps
+        `goal-reached` and an `ended_at` whenever the goal verdict is `achieved`. So a close
+        whose tail COMPLETED sealed the run with no signature on it - the exact thing the split
+        exists to prevent - and `sign` then refused its own run as already sealed.
+
+        The sibling AC1 test cannot see this: its tail fails early on the velocity row (no batch
+        in the retro), so it returns before reaching the call. Only a tail that RUNS TO THE END
+        reaches it, which is what this builds. Measured on RUN-01M2SPNS, whose PREPARE filed
+        RPT0001 and closed the run in the same breath.
+
+        MUTANT: restore `_finalise_outcome(root, state)` at the end of `_apply_signoff_tail`.
+        Ending a run is SEAL's - `cmd_sign` derives the same outcome from the same verdict and
+        stamps it after the signature, which is the only order that makes the signature mean
+        anything.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            state = mod.run_state.read(root) or {}
+            self.assertEqual("achieved",
+                             (state.get("sprint_goal_verdict") or {}).get("verdict"),
+                             "the fixture's verdict is not the one that triggers the stamp")
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                # The tail RUNS TO THE END. In the sibling fixture it returns early on the
+                # final reconcile, so the closing call is unreachable and the defect invisible;
+                # a clean reconcile is what a real close has, and what this needs.
+                import reconcile as _rc  # noqa: PLC0415
+                with unittest.mock.patch.object(_rc, "main", lambda *a, **k: 0):
+                    rc_tail = mod._apply_signoff_tail(
+                        root, state, units=list(state.get("batch") or []),
+                        retro_arg="RETRO0001")
+            self.assertEqual(0, rc_tail,
+                             f"the tail did not run to the end, so this asserts nothing: "
+                             f"{err.getvalue()[:300]}")
+            live = mod.run_state.read(root) or {}
+            self.assertEqual("running", live.get("outcome"),
+                             "the close tail ended the run - the signature would then be "
+                             "written onto a run that was already sealed without one")
+            self.assertIsNone(live.get("ended_at"), "the close tail stamped an end time")
+
     def test_apply_signoff_is_refused_and_names_sign(self):
         """AC3. MUTANT: keep `--apply-signoff` as an alias that calls `sign` - the old path
         survives in every operator's fingers, help file and runbook row."""

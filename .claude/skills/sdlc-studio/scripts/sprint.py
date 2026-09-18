@@ -6911,9 +6911,6 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         print(f"apply-signoff: the review anchor could not be re-stamped ({exc}) - it still "
               f"says sign-off is owed", file=sys.stderr)
     _finalise_outcome(root, state)
-    # `--apply-signoff` returns before `cmd_close`'s own success path, so the report is emitted
-    # here too - it is the end of that route, and the operator is owed the same account of the
-    # close whichever way it completed.
     record_close_tree(root)
     return 0
 
@@ -6972,6 +6969,14 @@ def _finalise_outcome(root, state) -> None:
         return
     if live.get("outcome") == run_state.GOAL_REACHED:
         return                               # already stamped; do not re-stamp `ended_at`
+    if live.get("outcome") not in run_state.CLOSED:
+        # PROMOTE a closed outcome; never CLOSE an open run. BG0208 is about a run that ended
+        # `stopped` and then completed its chain with an `achieved` verdict - the archive read
+        # it as abandoned, and promoting it is the fix. An OPEN run is a different animal: under
+        # D0213 ending it belongs to SEAL, so stamping it here sealed the run with nothing
+        # signed on it and `sign` then refused its own run as already sealed. Measured on
+        # RUN-01M2SPNS, whose PREPARE filed RPT0001 and closed the run in the same breath.
+        return
     # `close_run` re-stamps `ended_at` to now. When the close and a later `--apply-signoff`
     # are separated in time, that would stretch the archived run's elapsed span, which
     # `retro` reads - so the original end time is put back. The outcome is the correction;
