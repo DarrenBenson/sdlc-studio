@@ -7793,8 +7793,11 @@ def _done_gate_preflight(root: Path, state: dict) -> list[dict]:
     return out
 
 
-#: Stages only `close --apply-signoff` owes. A plain close performs no Done transitions and
-#: records no sign-off, so reporting these as flatly unmet overstates what THIS invocation needs.
+#: Stages only the SEAL owes. PREPARE performs no Done transitions and records no sign-off -
+#: under D0213 the fan-out is `sprint.py sign`'s - so a close can never clear these rows.
+#: They still HOLD: a build rung whose sign-off preview stopped blocking would report READY for
+#: units carrying no sign-off whatever, which is a delivered criterion with its own mutant. What
+#: they are excluded from is the CONVERGENCE SERIES - see `_record_close_attempt`.
 _SIGNOFF_ONLY_STAGES = ("sign-off", "done-gate")
 
 
@@ -8197,11 +8200,20 @@ def _record_close_attempt(root, pre: dict) -> str | None:
     # BOTH cells come from the filtered list. They are separate expressions over the same data,
     # so filtering only the count writes `outstanding: 0` beside `stages: ["gate"]` - an
     # attempt that reads converged while naming the lane it converged past.
+    # ...and NOT the rows only the SEAL can clear. `held_blockers` already drops the advisories
+    # for the reason above; this drops the stages PREPARE structurally cannot move. Under D0213
+    # the sign-off and done-gate previews ask whether the FAN-OUT could run, and the fan-out is
+    # `sign`'s - so a close that has cleared everything of its own still records them, the series
+    # plateaus, and `loop_termination` reads a loop that will never terminate. Measured on
+    # RUN-01M2SPNS as 31 -> 20 -> 19 -> 20, where the floor was nine units' sign-off rows and
+    # nothing else. They still HOLD the close and are still printed - the reviewer of record has
+    # to be told what is owed - they simply are not evidence about whether PREPARE is converging.
     held = held_blockers(pre["blockers"])
-    n = len(held)
+    movable = [b for b in held if b["stage"] not in _SIGNOFF_ONLY_STAGES]
+    n = len(movable)
     prev = attempts[-1]["outstanding"] if attempts else None
     attempts.append({"at": sdlc_md.now_iso8601(), "outstanding": n,
-                     "stages": sorted({b["stage"] for b in held})})
+                     "stages": sorted({b["stage"] for b in movable})})
     run_state.update(root, close_attempts=attempts)
     # The DECISION, not just the narration below. A detector that reports divergence and lets
     # the next round start has reported nothing; this is the half that ends the loop. Wired

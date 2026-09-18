@@ -70,7 +70,16 @@ evidence re-measured by hand for one line moving in a shared file.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1.0 discloses 35 open defects: 35 Medium, 0 Low.** Zero Critical, zero High.
+**v5.1.0 discloses 35 open defects: 35 Medium, 0 Low.**
+
+**One High-severity finding is open against the tag: BG0715.** It was raised on 2026-09-18,
+after v5.1.0 shipped, by RUN-01M2SPNS running its own close. `_open_findings` dates a finding
+by the last word of its `Raised-in-batch` stamp, so a finding raised outside a delivery batch -
+the ordinary case for a backlog sweep or an audit - sorts as inside every run window and is
+attributed to whichever run is open. The close then demands a stop-ship ruling for findings the
+run never saw. It affects the sprint-close ceremony, not the tool's output, and it has a
+documented route past it (a dated waiver naming the row, as D0215 records for that run), but it
+is disclosed here rather than counted quietly because the bar names ids and so must the prose.
 
 ## What is in it
 

@@ -1,6 +1,6 @@
 # US0837: the report opens with the sprint goal verbatim and carries DORA's four keys with this project's mapping stated
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** RFC0059
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new

@@ -5226,13 +5226,20 @@ class FileAndCloseTests(unittest.TestCase):
             self.assertIn("oauth", out + err)
 
     def test_reclose_reports_outstanding_set_trend(self) -> None:
+        """The counts are 3 -> 1, not 5 -> 2, and the difference is deliberate: under D0213 the
+        series counts only what PREPARE can MOVE, so the `sign-off` rows in `ADMIN` are excluded
+        from it. They still hold the close and are still printed; they are simply not evidence
+        about whether the close is converging, because no close can clear them - `sign` does.
+        Counting them made the series unable to reach zero on any unsigned run, which is every
+        run at PREPARE time, and the round cap then refused the close whatever was fixed.
+        """
         with tempfile.TemporaryDirectory() as d:
             root = self._fixture(d)
             mod = _load()
             five = {"ready": False, "blockers": self.ADMIN["blockers"] * 2 + self.HARD["blockers"]}
             self._close(mod, root, five)
             rc, out, err = self._close(mod, root, self.ADMIN)
-            self.assertIn("5 -> 2", out + err)
+            self.assertIn("3 -> 1", out + err)
             self.assertIn("shrinking", out + err)
             rc, out, err = self._close(mod, root, five)
             self.assertIn("growing", out + err)
@@ -19576,6 +19583,44 @@ class PrepareAndSealTests(unittest.TestCase):
                     self.assertIn(key, st, f"a stamp carries no {key}: {st}")
             self.assertEqual(before, stamps[:len(before)],
                              "PREPARE rewrote an earlier stamp instead of appending")
+
+    def test_the_convergence_series_measures_only_what_prepare_can_move(self):
+        """US0832's own defect, found by running the close six times rather than by any test.
+
+        The pre-flight's `sign-off` and `done-gate` rows ask whether the FAN-OUT could run, and
+        under D0213 the fan-out is `sign`'s. They still HOLD the close - a build rung whose
+        sign-off preview stopped blocking would report READY for units carrying no sign-off at
+        all, which is pinned elsewhere with its own mutant, and trying that was my first and
+        wrong repair. What they must not do is count as evidence about whether PREPARE is
+        CONVERGING: a close that has cleared everything of its own still records them, the
+        series plateaus, and `loop_termination` correctly reads a loop that will never
+        terminate. Measured on RUN-01M2SPNS as 31 -> 20 -> 19 -> 20, whose floor was nine
+        units' sign-off rows and nothing else.
+
+        MUTANT: count `held_blockers` again instead of the movable subset. The recorded series
+        can then never reach zero on any run whose units are not yet signed, which is every
+        run at PREPARE time, so the round cap refuses the close whatever the operator does.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            pre = mod.close_preflight(root, "RETRO0001")
+            held = mod.held_blockers(pre["blockers"])
+            seal_rows = [b for b in held if b["stage"] in mod._SIGNOFF_ONLY_STAGES]
+            self.assertTrue(seal_rows,
+                            "the fixture raised no SEAL-only row, so this asserts nothing")
+            # They HOLD - that guard is not weakened.
+            self.assertTrue(all(b.get("blocking", True) for b in seal_rows),
+                            "a SEAL-only row stopped holding the close")
+            # ...and they are NOT in the series the loop guard reads.
+            mod._record_close_attempt(root, pre)
+            attempt = ((mod.run_state.read(root) or {}).get("close_attempts") or [])[-1]
+            self.assertNotIn("sign-off", attempt["stages"],
+                             "the convergence series counts work only the SEAL can clear")
+            self.assertNotIn("done-gate", attempt["stages"])
+            self.assertEqual(attempt["outstanding"],
+                             len([b for b in held
+                                  if b["stage"] not in mod._SIGNOFF_ONLY_STAGES]),
+                             "the recorded count and the recorded stages disagree")
 
     def test_apply_signoff_is_refused_and_names_sign(self):
         """AC3. MUTANT: keep `--apply-signoff` as an alias that calls `sign` - the old path

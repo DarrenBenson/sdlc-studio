@@ -1,6 +1,6 @@
 # US0845: a report whose fingerprint no longer matches the tree renders INVALIDATED wherever it is shown
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

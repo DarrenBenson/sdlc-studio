@@ -1,6 +1,6 @@
 # US0846: the report computes this run's change failure rate from its own push-triggered CI results, so a narrowed gate can be judged against it
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-09-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,6 +1,6 @@
 # US0834: PREPARE refuses to produce a report while any batch unit is non-terminal, any review unanswered or any index drifted
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** RFC0059
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new

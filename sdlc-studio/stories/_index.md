@@ -7,16 +7,16 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 144 |
+| Draft | 136 |
 | Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 9 |
 | Done | 665 |
 | Won't Implement | 4 |
 | Deferred | 0 |
 | Superseded | 5 |
-| Blocked | 13 |
+| Blocked | 12 |
 | **Total** | **847** |
 
 ## All Stories
@@ -190,21 +190,21 @@
 | [US0829](US0829-one-collector-unions-the-shard-identities-and-judges.md) | one collector unions the shard identities and judges them against the single baseline, naming NEW, went-green and VANISHED as the serial lane does | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
 | [US0830](US0830-a-shard-that-dies-fails-the-lane-by.md) | a shard that dies fails the lane by name, so a lost shard can never read as a corpus that got smaller | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
 | [US0831](US0831-per-shard-wall-clock-is-recorded-and-the.md) | per-shard wall clock is recorded and the job cap is set from the measured figure | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
-| [US0832](US0832-close-splits-into-prepare-which-does-everything-that.md) | close splits into PREPARE, which does everything that can change facts, and SEAL, which does not | Blocked | EP0255 | 2026-09-16 | 2026-09-16 |
-| [US0833](US0833-sign-writes-the-principal-the-date-and-the.md) | sign writes the principal, the date and the report fingerprint against the run, and nothing else runs after it | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
-| [US0834](US0834-prepare-refuses-to-produce-a-report-while-any.md) | PREPARE refuses to produce a report while any batch unit is non-terminal, any review unanswered or any index drifted | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
-| [US0835](US0835-the-report-json-of-record-is-derived-from.md) | the report JSON of record is derived from the run's own artefacts, every figure carrying its source | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
-| [US0836](US0836-the-markdown-twin-and-the-html-rendering-are.md) | the Markdown twin and the HTML rendering are generated from the shipped templates, and a section with no data renders NOT MEASURED by name | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
-| [US0837](US0837-the-report-opens-with-the-sprint-goal-verbatim.md) | the report opens with the sprint goal verbatim and carries DORA's four keys with this project's mapping stated | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0832](US0832-close-splits-into-prepare-which-does-everything-that.md) | close splits into PREPARE, which does everything that can change facts, and SEAL, which does not | Review | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0833](US0833-sign-writes-the-principal-the-date-and-the.md) | sign writes the principal, the date and the report fingerprint against the run, and nothing else runs after it | Review | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0834](US0834-prepare-refuses-to-produce-a-report-while-any.md) | PREPARE refuses to produce a report while any batch unit is non-terminal, any review unanswered or any index drifted | Review | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0835](US0835-the-report-json-of-record-is-derived-from.md) | the report JSON of record is derived from the run's own artefacts, every figure carrying its source | Review | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0836](US0836-the-markdown-twin-and-the-html-rendering-are.md) | the Markdown twin and the HTML rendering are generated from the shipped templates, and a section with no data renders NOT MEASURED by name | Review | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0837](US0837-the-report-opens-with-the-sprint-goal-verbatim.md) | the report opens with the sprint goal verbatim and carries DORA's four keys with this project's mapping stated | Review | EP0255 | 2026-09-16 | 2026-09-16 |
 | [US0838](US0838-refine-runs-a-stakeholder-consult-over-the-epic.md) | refine runs a stakeholder consult over the epic and its stories and records it as an artefact naming the units it covered | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0839](US0839-a-risk-trigger-derived-from-affects-and-unit.md) | a risk trigger derived from Affects and unit type names which units still owe a consult, and most bugs skip without a reason | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0840](US0840-a-consult-artefact-carries-each-persona-s-verdict.md) | a consult artefact carries each persona's verdict and a disposition per finding, so a consult can be counted rather than remembered | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0841](US0841-an-unanswered-stakeholder-reject-is-reported-at-the.md) | an unanswered stakeholder Reject is reported at the close, holding nothing, and the operator rules it | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0842](US0842-consult-yield-is-measured-findings-per-consult-and.md) | consult yield is measured - findings per consult and the share folded or filed - so the requirement is revisited on evidence | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0843](US0843-module-alone-prints-the-per-module-wall-clock.md) | module-alone prints the per-module wall clock it already computes, so a narrowing can be judged before it is built | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
-| [US0844](US0844-the-run-level-token-meter-is-stamped-at.md) | the run-level token meter is stamped at run open and at report time, and the total names the sessions it covers | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
-| [US0845](US0845-a-report-whose-fingerprint-no-longer-matches-the.md) | a report whose fingerprint no longer matches the tree renders INVALIDATED wherever it is shown | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
-| [US0846](US0846-the-report-computes-this-run-s-change-failure.md) | the report computes this run's change failure rate from its own push-triggered CI results, so a narrowed gate can be judged against it | Draft | EP0255 | 2026-09-17 | 2026-09-17 |
+| [US0844](US0844-the-run-level-token-meter-is-stamped-at.md) | the run-level token meter is stamped at run open and at report time, and the total names the sessions it covers | Review | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0845](US0845-a-report-whose-fingerprint-no-longer-matches-the.md) | a report whose fingerprint no longer matches the tree renders INVALIDATED wherever it is shown | Review | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0846](US0846-the-report-computes-this-run-s-change-failure.md) | the report computes this run's change failure rate from its own push-triggered CI results, so a narrowed gate can be judged against it | Review | EP0255 | 2026-09-17 | 2026-09-17 |
 | [US0847](US0847-a-persona-card-records-when-it-was-authored.md) | a persona card records when it was authored, from what evidence and when it was last revisited, and every consult figure carries that age | Draft | EP0256 | 2026-09-17 | 2026-09-17 |
 
 ## Archived Releases

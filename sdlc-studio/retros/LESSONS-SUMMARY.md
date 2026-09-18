@@ -2,6 +2,13 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0419: Splitting one command into two halves is a claim about what each half WRITES.**
+- **L-0418: A content-keyed evidence ledger has an ordering rule, not a preference: register a unit's mutants AFTER the last edit to their target.**
+- **L-0417: A test that searches a whole page passes on somebody else's output.**
+- **L-0416: A page cannot be signed over facts the signature itself writes.**
+- **L-0415: A harness stub lands on the module object it names, which is not always the one the code under test reads from.**
+- **L-0414: A verifier that stands in for a lane protects nothing, and the test that does protect it must be BOUND to a criterion.**
+- **L-0413: Verify the field exists before you report the state it implies**
 - **L-0412: **Evidence hashed against whole-file bytes is voided by a neighbour's edit, not just your own.** Mutant rows and coverage rulings on...**
 - **L-0411: **An uncapped review loop converges on wording, not defects.** Plan review ran to five rounds on one unit and drew 47 REJECTs.**
 - **L-0410: **Seats judge the build against the author's criteria; only a stakeholder judges the criteria against the need.** Seventy plan-review...**

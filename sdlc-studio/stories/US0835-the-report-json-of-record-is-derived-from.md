@@ -1,6 +1,6 @@
 # US0835: the report JSON of record is derived from the run's own artefacts, every figure carrying its source
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** RFC0059
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new

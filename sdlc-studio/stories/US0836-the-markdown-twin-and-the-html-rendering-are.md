@@ -1,6 +1,6 @@
 # US0836: the Markdown twin and the HTML rendering are generated from the shipped templates, and a section with no data renders NOT MEASURED by name
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** RFC0059
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new

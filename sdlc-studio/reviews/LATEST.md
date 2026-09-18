@@ -1,3 +1,8 @@
+
+<!-- close-status:begin -->
+> **RUN-01M2SPNS closed running.** 9 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
 > **RUN-01M2SPNS is OPEN.** 9 unit(s) delivered, none terminal, and NO report has been filed -
 > PREPARE has not completed, because the coverage gate refuses every unit of the batch (BG0706).
 > There is nothing to sign yet. The run's state is the run record, not this file.

@@ -1,6 +1,6 @@
 # US0832: close splits into PREPARE, which does everything that can change facts, and SEAL, which does not
 
-> **Status:** Blocked
+> **Status:** Review
 > **Delivers:** RFC0059
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
