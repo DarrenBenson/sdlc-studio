@@ -2838,12 +2838,27 @@ def _criteria_count(text: str) -> int:
         return len(re.findall(r"(?m)^(?:###\s+AC\d|- \[[ x]\] \*\*AC\d)", text))
 
 
-def _mutants_by_unit(root: Path, units=None) -> dict[str, tuple[int, int]]:
-    """`{unit: (killed, rows)}` from the mutation ledger - evidence the tests can fail.
+def _mutants_by_unit(root: Path, units=None) -> dict[str, tuple[int, int, int]]:
+    """`{unit: (killed, live_rows, stale_rows)}` from the ledger - evidence the tests can fail.
 
     Scoped to `units` when given: the ledger accumulates across runs, so an unscoped count
     is the project's whole mutation history rather than this run's.
+
+    A STALE row is not evidence and is not counted as one. The ledger judges each row against
+    the site its mutant was applied to, and reads a stale row as NOT-RUN - `register` says so
+    on every registration and `evidence-drift` reports it on every commit. Counting it here
+    published a measurement the ledger itself disclaims, and it is the run's own later fixes
+    that stale a row, so the figure was at its most wrong exactly when the page was derived.
+    Nor are stale rows folded into the planned count: `planned - killed` is this module's
+    survivor figure, and a survivor is a change no test failed on, which is a different and
+    far worse fact than a row nobody re-ran. They are returned as their own term so the page
+    can say which it has.
     """
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import mutation  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    except ImportError:                                       # pragma: no cover - defensive
+        mutation = None
     want = None if units is None else {sdlc_md.norm_id(u) for u in units}
     out: dict[str, list[int]] = {}
     p = root / "sdlc-studio" / ".local" / "mutation-runs.json"
@@ -2860,11 +2875,18 @@ def _mutants_by_unit(root: Path, units=None) -> dict[str, tuple[int, int]]:
             uid = sdlc_md.norm_id(str(m["unit"]))
             if want is not None and uid not in want:
                 continue
-            row = out.setdefault(uid, [0, 0])
+            row = out.setdefault(uid, [0, 0, 0])
+            # `head` is a row whose evidence matches the COMMITTED bytes with an edit still in
+            # the working tree. That is the commit lane's business, not the report's: the
+            # measurement was made, so it counts.
+            state = (mutation.row_staleness(root, entry, m) if mutation is not None else "live")
+            if state in ("stale", "missing"):
+                row[2] += 1
+                continue
             row[1] += 1
             if str(m.get("verdict") or "").lower() == "killed":
                 row[0] += 1
-    return {k: (v[0], v[1]) for k, v in out.items()}
+    return {k: (v[0], v[1], v[2]) for k, v in out.items()}
 
 
 # --- the forge, and the git history behind it ------------------------------------------------
@@ -3465,7 +3487,7 @@ def _units_section(root: Path, paths, state_rel: str, gate_clear=()) -> dict:
     for uid, p in paths:
         rel = _rel(root, p) if p is not None else state_rel
         text = sdlc_md.read_text_safe(p) if p is not None else ""
-        killed, planned = mutants.get(uid, (0, 0))
+        killed, planned, stale_rows = mutants.get(uid, (0, 0, 0))
         ruled = len(_table_rows(text, "Coverage Ruling"))
         depth = (sdlc_md.extract_field(text, "Verification depth") or "").split("[[")[0]\
             .strip()
@@ -3484,10 +3506,18 @@ def _units_section(root: Path, paths, state_rel: str, gate_clear=()) -> dict:
                           unmeasured("unit_gate", state_rel,
                                      "PREPARE recorded no gate verdict for this unit")),
             "unit_acs": fig("unit_acs", _criteria_count(text), rel),
-            "unit_mutants": (fig("unit_mutants", f"{killed}/{planned}",
+            "unit_mutants": (fig("unit_mutants",
+                                 f"{killed}/{planned}"
+                                 + (f" ({stale_rows} stale)" if stale_rows else ""),
                                  "sdlc-studio/.local/mutation-runs.json") if planned
                              else unmeasured("unit_mutants", "sdlc-studio/.local",
-                                             "the mutation ledger carries no row for this unit")),
+                                             f"the mutation ledger carries {stale_rows} row(s) "
+                                             f"for this unit and every one is STALE - the "
+                                             f"mutant was applied to bytes the file no longer "
+                                             f"holds, so the ledger reads it as not-run"
+                                             if stale_rows else
+                                             "the mutation ledger carries no row for this "
+                                             "unit")),
             "unit_ruled": (fig("unit_ruled", ruled, rel) if ruled else
                            unmeasured("unit_ruled", rel,
                                       "the unit declares no Coverage Rulings table")),
@@ -3524,9 +3554,10 @@ def _not_proven_section(root: Path, state: dict, state_rel: str, units: list) ->
                               f"covers no delta and its spend is outside the total above.",
                               state_rel),
             "gap_kind": fig("gap_kind", "measurement", state_rel)})
-    survived = 0
-    for _unit, (killed, planned) in _mutants_by_unit(root, units).items():
+    survived, stale_rows = 0, 0
+    for _unit, (killed, planned, stale) in _mutants_by_unit(root, units).items():
         survived += planned - killed
+        stale_rows += stale
     if survived:
         rows.append({
             "gap_title": fig("gap_title", f"{survived} mutant(s) survived",
@@ -3602,8 +3633,8 @@ def _carried_section(root: Path, retro_rel: str, retro_text: str, retro_id: str,
                                                            " ".join(r))})
     ruled = [r for r in carried if len(r) > 1 and r[1].strip()]
     mutants = _mutants_by_unit(root, units)
-    killed = sum(k for k, _p in mutants.values())
-    planned = sum(p for _k, p in mutants.values())
+    killed = sum(k for k, _p, _s in mutants.values())
+    planned = sum(p for _k, p, _s in mutants.values())
     delivery, delivery_rel = _verdict_rows(root, "delivery", units)
     plan, plan_rel = _verdict_rows(root, "plan-review", units)
     d_rej = sum(1 for r in delivery if len(r) > 1 and r[1].strip().upper() == "REJECT")
@@ -3883,9 +3914,60 @@ def write_report(root, report: dict) -> Path:
     path = d / f"{rid}.json"
     path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     stem = sdlc_md.slug(f"sprint report {report.get('run_id') or ''}")[:60].strip("-")
-    (d / f"{rid}-{stem or 'sprint-report'}.md").write_text(render_markdown(report),
-                                                           encoding="utf-8")
+    md = d / f"{rid}-{stem or 'sprint-report'}.md"
+    md.write_text(render_markdown(report), encoding="utf-8")
+    _sync_report_index(root, d, rid, md, report)
     return path
+
+
+#: The index a filed report has to leave behind. `report` is a registered artefact type, so
+#: `reconcile detect` requires this file the moment the first RPT exists - and reports it as
+#: drift `apply` cannot clear, because there is nothing to sync rows INTO. Writing the JSON and
+#: the twin and stopping therefore ended the first close of every project in a pre-commit gate
+#: refusing the very commit the close had just told the operator to make.
+_REPORT_INDEX_HEAD = """# Report Index
+
+**Last Updated:** {updated}
+
+Sprint reports of record, one per run that reached a close. Each is a JSON record derived from
+the run's own artefacts with a Markdown twin rendered from it, and a fingerprint over the
+ordered figure set - so a reader can tell whether a signed page still describes the tree.
+Filed by `sprint close` and sealed by `sprint sign`; never hand-authored, and re-derived rather
+than edited when a figure moves.
+
+| ID | Run | Generated | Fingerprint | Signed |
+| --- | --- | --- | --- | --- |
+"""
+
+
+def _sync_report_index(root: Path, d: Path, rid: str, md: Path, report: dict) -> None:
+    """Add or replace this report's row, keeping every other row already there.
+
+    Re-filing a report REPLACES its own row rather than appending a second: PREPARE is
+    rerunnable by contract, so a run that prepares three times must leave one row, not three.
+    """
+    idx = d / "_index.md"
+    head = report.get("header") or {}
+
+    def val(key):
+        f = head.get(key) if isinstance(head, dict) else None
+        v = f.get("value") if isinstance(f, dict) else None
+        return str(v) if v not in (None, "") else "-"
+
+    sig = report.get("signature") or {}
+    row = (f"| [{rid}]({md.name}) | {report.get('run_id') or val('run_id')} | "
+           f"{report.get('generated_at') or '-'} | {report.get('fingerprint') or '-'} | "
+           f"{(sig.get('principal') if isinstance(sig, dict) else None) or 'unsigned'} |")
+    if idx.is_file():
+        kept = [ln for ln in idx.read_text(encoding="utf-8").splitlines()
+                if not (ln.startswith("| [") and f"[{rid}]" in ln)]
+        text = "\n".join(kept).rstrip("\n") + "\n" + row + "\n"
+    else:
+        text = _REPORT_INDEX_HEAD.format(updated=str(report.get("generated_at") or "")[:10]
+                                         or "-") + row + "\n"
+    # Atomically, like every other index write in this skill: a reader must never see a
+    # half-written index, and `test_concurrency` refuses any `_index.md` write that bypasses it.
+    sdlc_md.atomic_write(idx, text)
 
 
 def read_report(root, report_id: str) -> dict:

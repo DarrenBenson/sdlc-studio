@@ -213,4 +213,4 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Handoff
 
-- [HO-0073](../handoffs/HO0073-a-run-ends-with-one-page-it-can.md) - 9 remaining item(s): 0 copilot-tail, 9 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
+- [HO-0074](../handoffs/HO0074-a-run-ends-with-one-page-it-can.md) - 9 remaining item(s): 0 copilot-tail, 9 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

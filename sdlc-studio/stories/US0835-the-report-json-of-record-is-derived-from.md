@@ -39,7 +39,7 @@ this story derives the figures that fill them and US0836 renders them.
 - **Given** THE FIXTURE RUN
 - **When** `sprint_report.py build --run <the run id> --format json` runs through `main`
 - **Then** every leaf figure in the JSON is an object carrying `value` and `source`, and each `source` names either a path that exists under the fixture root or a forge run id; a figure whose deriver produced no source makes the build exit 2 naming that figure's key and its section, and no JSON is written
-- **Mutant:** default a missing `source` to the string `derived` - every figure then carries a source, none of them can be re-derived, and the Provenance section's whole claim ("a disputed number can be re-derived rather than argued") is false while reading as satisfied
+- **Mutant:** pass a sourceless figure through instead of refusing the build - every figure then reads as carrying a source, none of them can be re-derived, and the Provenance section's whole claim ("a disputed number can be re-derived rather than argued") is false while reading as satisfied. Defaulting the missing source to the literal string `derived`, which this line named until 2026-09-18, SURVIVES: `_source_resolves` refuses `derived` as a source a reader cannot go to, so the build still exits 2 and the guard holds through its sibling clause rather than this one. Defence in depth, and not a mutant this criterion can be evidenced by
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportIsDerivedTests::test_every_figure_carries_a_resolvable_source
 - **Verified:** yes (2026-09-18)
 
@@ -70,6 +70,15 @@ this story derives the figures that fill them and US0836 renders them.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportIsDerivedTests::test_the_fingerprint_covers_the_facts_and_not_the_signature
 - **Verified:** yes (2026-09-18)
 
+### AC5: a figure states a measurement, so a mutation row the ledger reads as not-run is not counted as evidence
+
+- **Given** a mutation ledger holding two killed rows for a unit, one whose anchor still occurs exactly once in its target and one whose anchor the file no longer holds - the state a unit reaches whenever a later fix moves a file its mutants were registered against, which is every unit of a run that repairs anything after registering
+- **When** the report's evidence-by-unit figures are derived
+- **Then** the unit counts one row, not two; the stale row is reported as its own term and never folded into the planned count, because `planned - killed` is the survivor figure and a survivor is a change no test failed on rather than a row nobody re-ran; and a unit whose every row is stale reads NOT MEASURED with staleness named, not `0/0`
+- **Mutant:** count every row in the ledger - the page then publishes killed evidence for a mutant applied to bytes that exist nowhere, and it is the run's own later fixes that stale a row, so the figure is at its most wrong exactly when the page is derived; OR keep the stale rows in the planned count, which reports them as SURVIVORS and says a test failed to catch a change nobody applied; must redden on both
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::StaleMutantRowsAreNotEvidenceTests
+- **Verified:** yes (2026-09-18)
+
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
@@ -86,3 +95,5 @@ this story derives the figures that fill them and US0836 renders them.
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-17 | grooming 2026-09-17 | Groomed: four criteria. D1 pinned to a META `RPT` type under `sdlc-studio/reports/`. The fixture's artefacts disagree on purpose (retro prose 25 units / 120 points against a 23-unit, 103-point batch) so a wrong source is caught by its figure; the stakeholder section names EP0256's absent schema; the fingerprint excludes the signature and the timestamp. |
 | 2026-09-18 | delivery | AC4 repaired against the shipped commands: `sign` then `sprint_report.py check` reported INVALIDATED on a legitimate seal, because three figures in the digest are facts the SEAL itself writes - each unit's Status, the run's `ended_at`/`duration_hours`, and a delivered count taken from statuses. `OUTSIDE_THE_DIGEST` now names them with their reason, one predicate serves both the fingerprint and `revalidate`, and `terminal_summary` counts units that CLEARED THEIR TERMINAL GATE - the fact that is true when the page is derived and that the signature does not move. Found by exercising the CLI end to end, not by any test in the batch; pinned now by `TheSealIsATransactionTests::test_the_seal_does_not_invalidate_the_report_it_signs` with its mutant killed. |
+| 2026-09-18 | CLI exercise | AC5 added. `_mutants_by_unit` counted every row in the mutation ledger, including rows the ledger itself reads as NOT-RUN because the mutant was applied to bytes the file no longer holds. A run's own later fixes are what stale a row, so a page derived at the end of a repairing run was the most likely to state evidence nobody had. The report now judges each row at the ledger's own grain - the anchor's site, via `mutation.row_staleness` - and stale rows are neither evidence nor survivors. Measured on this run: all 33 rows are live at the anchor grain, so the figures are unchanged and the claim is now checked rather than assumed. |
+| 2026-09-18 | re-mutation | AC1's declared mutant replaced after it SURVIVED on re-execution. Defaulting a missing source to `derived` cannot produce a passing build, because the resolution check refuses `derived` in the next clause - so the criterion was evidenced by a mutant its own guard could not be falsified by. The row now names the change AC1's Then clause actually turns on: the sourceless figure passing through. US0835's four earlier rows were dropped by LL0053 when `_mutants_by_unit` moved and were re-executed from their declared prose, not transcribed. |

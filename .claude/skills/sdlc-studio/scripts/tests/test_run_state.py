@@ -1175,6 +1175,42 @@ class RunTokenStampTests(unittest.TestCase):
         self.assertEqual(total["session_count"], 1)
         self.assertEqual(total["sessions"], [str(src)])
 
+    def test_a_legacy_baseline_earlier_than_the_stamps_is_part_of_the_delta(self) -> None:
+        """US0844 AC2/AC4's seam: a run OPENED before stamping shipped, then stamped later.
+
+        `session_token_baseline` holds that run's opening reading - same meter, same session,
+        recorded by `open_run`. When stamps exist, the total ignored it entirely and measured
+        only the stamped window, so a run that opened at 18,869,719 and reported at 21,920,038
+        published 90,809: the gap between its last two stamps, understating the run by 97%.
+
+        MUTANT: prefer the stamp list and drop the baseline whenever any stamp exists. The
+        headline cost is then the span between whichever stamps happen to exist rather than the
+        run's, and it reads as a measurement because every other clause of the row is true.
+        Measured on RUN-01M2SPNS, whose PREPARE had stamped twice and whose report priced
+        9.6 hours of work at 44 minutes of meter.
+        """
+        src = str(self._meter(18_869_719))
+        st = {run_state.TOKEN_BASELINE: {"tokens": 18_869_719, "source": src,
+                                         "at": "2026-09-18T07:20:32Z"},
+              run_state.TOKEN_STAMPS: [
+                  {"tokens": 21_829_229, "source": src, "kind": "report",
+                   "at": "2026-09-18T16:13:48Z", "model": "m9"},
+                  {"tokens": 21_920_038, "source": src, "kind": "report",
+                   "at": "2026-09-18T16:57:40Z", "model": "m9"}]}
+        total = run_state.run_token_total(st)
+        self.assertEqual(21_920_038 - 18_869_719, total["tokens"],
+                         "the opening reading was dropped, so the total spans the stamps "
+                         "rather than the run")
+        self.assertEqual(1, total["session_count"])
+        self.assertIn(src, total["sessions"])
+        # ...and a baseline from a DIFFERENT session is not folded in: it is a reading of
+        # another meter, and the difference of two meters is not a spend.
+        other = {**st, run_state.TOKEN_BASELINE: {"tokens": 1, "source": "/t/elsewhere.jsonl",
+                                                  "at": "2026-09-18T07:20:32Z"}}
+        self.assertEqual(21_920_038 - 21_829_229,
+                         run_state.run_token_total(other)["tokens"],
+                         "a baseline from another session was counted into this one's delta")
+
     def test_a_run_spanning_sessions_sums_its_stamps_and_names_them(self) -> None:
         """AC2. MUTANT: keep `run_attributed_tokens`' rule that a baseline taken in another
         session makes the whole run not attributable.

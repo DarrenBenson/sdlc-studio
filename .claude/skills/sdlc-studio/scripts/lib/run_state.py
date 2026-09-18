@@ -727,6 +727,19 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
         by_session: dict[str, list[dict]] = {}
         for s in stamps:
             by_session.setdefault(str(s["source"]), []).append(s)
+        # A run OPENED before stamping shipped, and stamped later, records its opening reading
+        # in the legacy baseline and nowhere else. That reading is of the SAME meter as the
+        # session's stamps - `open_run` took it from the same transcript - so it belongs in that
+        # session's readings, and dropping it prices the run at the span between whichever
+        # stamps happen to exist. Folded only into a session the stamps already name: a baseline
+        # from another transcript is a reading of another meter, and their difference is not a
+        # spend.
+        legacy = state.get(TOKEN_BASELINE)
+        folded = (isinstance(legacy, dict) and isinstance(legacy.get("tokens"), int)
+                  and str(legacy.get("source") or "") in by_session)
+        if folded:
+            by_session[str(legacy["source"])].append({"tokens": int(legacy["tokens"]),
+                                                      "source": str(legacy["source"])})
         total, covered, uncovered = 0, [], []
         for src, rows in by_session.items():
             if len(rows) < 2:
@@ -737,6 +750,9 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
             total += max(0, max(r["tokens"] for r in rows) - min(r["tokens"] for r in rows))
             covered.append(src)
         models = sorted({s["model"] for s in stamps if s.get("model")})
+        shape = ("stamps" if not folded else
+                 f"stamps, with the opening reading taken from the legacy {TOKEN_BASELINE} "
+                 f"this run predates the open stamp")
         if not covered:
             # EVERY session carries one reading, so no delta is measurable anywhere. `total` is
             # still at its 0 initialiser here, and returning it would publish a cost of zero and
@@ -744,7 +760,7 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
             # stamp and the next one - which is the outcome AC1's own mutant describes and the
             # output AC3 forbids by name. Zero tokens and no reading are different facts.
             return {"tokens": None, "sessions": [], "session_count": 0,
-                    "uncovered": sorted(uncovered), "shape": "stamps",
+                    "uncovered": sorted(uncovered), "shape": shape,
                     "model": models[0] if len(models) == 1 else (SESSION_MODEL_MIXED if models
                                                                  else None),
                     "basis": TOKEN_TOTAL_BASIS,
@@ -752,7 +768,7 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
                                f"no closing one, so no delta can be measured: "
                                f"{', '.join(sorted(uncovered))}")}
         return {"tokens": total, "sessions": sorted(covered), "session_count": len(covered),
-                "uncovered": sorted(uncovered), "shape": "stamps", "reason": None,
+                "uncovered": sorted(uncovered), "shape": shape, "reason": None,
                 "model": models[0] if len(models) == 1 else (SESSION_MODEL_MIXED if models
                                                              else None),
                 "basis": TOKEN_TOTAL_BASIS}

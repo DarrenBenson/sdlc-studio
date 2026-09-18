@@ -76,6 +76,15 @@ directory (`SDLC_STUDIO_TRANSCRIPTS`), as `test_retro.py`'s harness-capture fixt
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CostRowTests::test_a_legacy_single_baseline_is_read_and_named
 - **Verified:** yes (2026-09-18)
 
+### AC5: a run that opened before the open stamp existed prices itself from its opening reading, not from its stamped window
+
+- **Given** a run state holding BOTH the legacy `session_token_baseline` and stamps taken later in that same session - the shape of every run already open when AC1's `open_run` stamp lands, which has no `open` stamp and can never acquire one
+- **When** the run's token total is taken
+- **Then** the baseline is read as a reading of that session's meter and enters its delta, so the figure spans the run rather than the gap between whichever stamps exist; a baseline naming a transcript the stamps do not is left out, because the difference of two meters is not a spend
+- **Mutant:** prefer the stamp list and drop the baseline whenever any stamp exists - RUN-01M2SPNS, whose PREPARE stamped twice, then prices 9.6 hours of work at the 44 minutes between them and publishes it as a measurement, because every other clause of the cost row is true
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RunTokenStampTests::test_a_legacy_baseline_earlier_than_the_stamps_is_part_of_the_delta
+- **Verified:** yes (2026-09-18)
+
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
@@ -94,3 +103,4 @@ directory (`SDLC_STUDIO_TRANSCRIPTS`), as `test_retro.py`'s harness-capture fixt
 | 2026-09-18 | goal review round 5 | AC4 added for the LEGACY single `session_token_baseline` shape - the state every run open at delivery time carries, including the one this story ships in. Without it the cost row reads NOT MEASURED on its own run, which is this project's fixture-green scar. |
 | 2026-09-18 | delivery | AC3's second mutant named, and a second Verify line for it. The Then clause already required "never `0` and never a per-point figure of zero", and no declared mutant could falsify it - one criterion's words outrunning its fixture, which is this repo's dominant review defect. Both mutants were applied and killed. AC3's Verify also now drives PREPARE through `sprint.py`, not the composer's function: the Given says "when PREPARE builds the report", and a library call cannot see the wiring that files the report and stamps the run state. |
 | 2026-09-18 | plan review round 1 | AC1's Verify moved from the library call to the LANE. Its When names PREPARE building the report, and `stamp_tokens` had shipped with a test as its only caller - so the criterion's own verifier could not see that no second stamp was ever taken, and `test_run_state.py` stayed green while every run reported its cost as zero. The selector now drives `sprint.py`'s `_file_the_report` and asserts the stamp shape the Then describes; the library test remains as supporting evidence, bound to nothing. |
+| 2026-09-18 | CLI exercise | AC5 added. The filed report priced RUN-01M2SPNS at 90,809 main-thread tokens against a real cost near 3M, because this run opened BEFORE AC1's `open` stamp existed: its opening reading sits in the legacy `session_token_baseline` and `run_token_total` ignored the baseline outright whenever any stamp was present, so the total spanned the two PREPARE stamps rather than the run. AC4 covers a baseline ALONE; nothing covered a baseline beside a partial stamp list, which is the state every run open when AC1 landed occupies permanently. Found by reading the filed page, not by the suite. |

@@ -257,7 +257,14 @@ class PrimaryPathTests(unittest.TestCase):
     """US0351: the lifecycle an operator still reaches through the alias."""
 
     def test_the_primary_path_drives_a_batch_to_close(self) -> None:
-        """AC1: plan opens the run over the approved batch, the worked batch closes it."""
+        """AC1: plan opens the run over the approved batch, the worked batch closes it.
+
+        Under US0832's split the close is PREPARE: it runs every step that can change a fact,
+        files the report and leaves the run OPEN, because under D0213 ending a run belongs to
+        the SEAL. So the primary path is driven to its end here rather than stopped half way -
+        `close` then `sign` - and both halves of the contract are asserted, which is what this
+        test was for before the verb it names stopped being the whole of it.
+        """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _ws(root); _bug(root, 1); _bug(root, 2)
@@ -276,12 +283,31 @@ class PrimaryPathTests(unittest.TestCase):
                 rc, out = _close(root, rid)
             self.assertEqual(rc, 0, out)
 
-            closed = run_state.read(root)
-            self.assertEqual(closed["run_id"], opened["run_id"], "a second run was opened")
-            self.assertEqual(closed["outcome"], "goal-reached")
-            self.assertFalse(run_state.is_open(root), "the close left the run open")
-            self.assertTrue(closed.get("handoff"), "no handoff recorded against the closed run")
-            self.assertEqual(closed["sprint_goal_verdict"]["verdict"], "achieved")
+            prepared = run_state.read(root)
+            self.assertEqual(prepared["run_id"], opened["run_id"], "a second run was opened")
+            self.assertEqual(prepared["outcome"], "running",
+                             "PREPARE ended the run - under D0213 that belongs to the SEAL, "
+                             "and a run ended here can no longer be signed over its report")
+            self.assertTrue(run_state.is_open(root), "PREPARE closed the run it is preparing")
+            self.assertTrue(prepared.get("report"), "PREPARE filed no report to be signed over")
+            self.assertTrue(prepared.get("handoff"), "no handoff recorded against the run")
+            self.assertEqual(prepared["sprint_goal_verdict"]["verdict"], "achieved")
+
+            # ...and the SEAL refuses this fixture, which is the gate working rather than a
+            # gap: one command, one principal, and a run whose units carry no independent
+            # critic record cannot be signed at all. The successful seal is pinned where it
+            # belongs, on `test_sprint.py::PrepareAndSealTests` and `SealTests`, over a fixture
+            # built to be signable; asserting it here would mean teaching this one to record a
+            # reviewer, and a lifecycle test that has to fake independence tests nothing.
+            rc, out_sign = _capture(["sign", "--root", str(root),
+                                     "--report", str(prepared["report"]),
+                                     "--principal", "A Reviewer Of Record"])
+            self.assertNotEqual(rc, 0, "an unsignable run was sealed")
+            self.assertIn("critic", out_sign.lower(),
+                          f"the refusal does not name what is missing: {out_sign}")
+            self.assertEqual(run_state.read(root)["outcome"], "running",
+                             "a refused seal moved the run's outcome anyway")
+            closed = prepared
             # every step ran, in the ceremony's order, and the batch it sealed is the one
             # the plan approved
             # DERIVED: the ceremony's own order, so a step added to the chain is asserted

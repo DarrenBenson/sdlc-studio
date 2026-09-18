@@ -68,6 +68,15 @@ figure share no value with RUN-01M2JA6J.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TemplateRenderingTests::test_the_layout_comes_from_the_shipped_template
 - **Verified:** yes (2026-09-18)
 
+### AC5: a filed report leaves its type's index present, like every other artefact type
+
+- **Given** a tree with no `sdlc-studio/reports/` directory, and a run whose close files its first report
+- **When** the report is written
+- **Then** `sdlc-studio/reports/_index.md` exists, carries a table and a row naming that report, its run, its fingerprint and whether it is signed; a second report joins the same index rather than replacing it, and re-filing the same report replaces its own row rather than appending a second, because PREPARE is rerunnable by contract; and `reconcile detect` reports no drift over the tree the close leaves
+- **Mutant:** write the JSON and the Markdown twin and stop - `report` is a registered artefact type, so `reconcile` requires the index the moment the first RPT exists and reports drift `apply` cannot clear, and the first close of every project then ends in a pre-commit gate refusing the very commit the close told the operator to make; the remedy it prints names a template that does not exist
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportIndexTests
+- **Verified:** yes (2026-09-18)
+
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
@@ -83,3 +92,4 @@ figure share no value with RUN-01M2JA6J.
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-17 | grooming 2026-09-17 | Groomed: four criteria, written against the defect the shipped templates carry: both were derived from a RUN-01M2JA6J prototype and still hold that run's facts in prose no token covers, so AC1 forbids the prototype literals as well as the unsubstituted tokens. NOT MEASURED is asserted in both renderings; D2a's on-demand HTML is held; the layout is proved to come from the template. |
+| 2026-09-18 | CLI exercise | AC5 added. The `report` type was registered in `ARTIFACT_TYPES` but shipped no index template and no writer, so filing the first report left `reconcile detect` reporting a `missing-index` drift that `apply` cannot clear - and this run met it as a blocked commit during its own close, which is where every consuming project would meet it too. `templates/indexes/report.md` now ships and `write_report` maintains the index, replacing its own row on a re-file because PREPARE is rerunnable. |

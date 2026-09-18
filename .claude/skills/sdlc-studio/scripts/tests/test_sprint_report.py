@@ -3073,6 +3073,102 @@ class MutationSurvivorCountTests(unittest.TestCase):
                           "an ordinary bug was counted as a surviving mutant")
 
 
+class StaleMutantRowsAreNotEvidenceTests(unittest.TestCase):
+    """US0835 AC5: a figure states a measurement, and a stale row is not one.
+
+    The ledger judges each row against the site it was applied to, and reads a stale row as
+    NOT-RUN - `register` says so on every registration and `evidence-drift` reports it. The
+    report read the same ledger and counted every row, so a unit whose file moved after its
+    mutants were registered published its full killed count as evidence the tests can fail.
+    """
+
+    def _tree(self, rows):
+        """A real ledger over a real target: one anchor present, one edited away."""
+        d = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "src").mkdir(parents=True)
+        (d / "src" / "thing.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+        local = d / "sdlc-studio" / ".local"
+        local.mkdir(parents=True)
+        (local / "mutation-runs.json").write_text(json.dumps(
+            {"version": 1, "entries": [{"target": "src/thing.py", "hash": "0" * 64,
+                                        "mutants": rows}]}), encoding="utf-8")
+        return d
+
+    def test_a_stale_row_is_not_counted_as_killed_evidence(self) -> None:
+        """MUTANT: count every row in the ledger, as the composer did - the unit reads 2/2 and
+        the confidence profile states evidence for a mutant applied to bytes that exist
+        nowhere. Measured on RUN-01M2SPNS, where nine of nine units' rows had staled behind
+        later fixes and the page reported every one of them as killed.
+        """
+        root = self._tree([
+            {"unit": "US0001", "criterion": "AC1", "verdict": "killed",
+             "anchor": "    return 1"},                       # still in the file: live
+            {"unit": "US0001", "criterion": "AC2", "verdict": "killed",
+             "anchor": "    return 999"},                     # edited away: stale
+        ])
+        got = sr._mutants_by_unit(root, ["US0001"])
+        killed, planned, stale = got["US0001"]
+        self.assertEqual((1, 1, 1), (killed, planned, stale),
+                         f"a stale row was counted as evidence the tests can fail: {got}")
+
+    def test_a_unit_whose_every_row_is_stale_reads_not_measured(self) -> None:
+        """The second half, and the one that decides whether the fix can be gamed: counting a
+        stale row as planned-but-not-killed would publish it as a SURVIVOR, which says a test
+        failed to catch a change nobody applied. Not-run and survived are different facts.
+
+        MUTANT: keep the stale row in `planned` - the unit then reads 0/2 and the Not proven
+        section reports two surviving mutants that never ran.
+        """
+        root = self._tree([
+            {"unit": "US0002", "criterion": "AC1", "verdict": "killed", "anchor": "gone one"},
+            {"unit": "US0002", "criterion": "AC2", "verdict": "killed", "anchor": "gone two"},
+        ])
+        killed, planned, stale = sr._mutants_by_unit(root, ["US0002"])["US0002"]
+        self.assertEqual((0, 0, 2), (killed, planned, stale))
+        section = sr._units_section(root, [("US0002", None)], "state.json")
+        fig = section["rows"][0]["unit_mutants"]
+        self.assertEqual(sr.NOT_MEASURED, fig.get("value"),
+                         f"a unit with no live row still states a mutant figure: {fig}")
+        self.assertIn("stale", (fig.get("reason") or "").lower(),
+                      f"the row does not say WHY it is not measured: {fig}")
+
+
+class ReportIndexTests(unittest.TestCase):
+    """US0836 AC5: a filed report leaves its type's index present, like every other type.
+
+    `report` is registered in `ARTIFACT_TYPES`, so `reconcile detect` requires
+    `sdlc-studio/reports/_index.md` the moment the first RPT file exists - and no template
+    shipped to create one from. Filing the very first report therefore put the tree into a
+    state the repo's own pre-commit gate calls drift and `reconcile apply` cannot clear,
+    which is a wall every consuming project hits on its first close and not just this one.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_filing_a_report_creates_its_index_and_leaves_no_drift(self) -> None:
+        """MUTANT: write the JSON and the Markdown twin and stop, as the filer did - the
+        first close of every project then ends with a gate that refuses the commit the close
+        told it to make, and the remedy names a template that does not exist.
+        """
+        fixture_run(self.root)
+        rep = sr.build_report(self.root, FIX_RETRO)
+        rid = sr.file_report(self.root, rep)
+        idx = self.root / "sdlc-studio" / "reports" / "_index.md"
+        self.assertTrue(idx.is_file(), "the report was filed without its type's index")
+        text = idx.read_text(encoding="utf-8")
+        self.assertIn(rid, text, "the index carries no row for the report just filed")
+        self.assertIn("| ID |", text, "the index carries no table a reconcile can sync")
+        # ...and a SECOND report joins the same index rather than replacing it.
+        second = sr.file_report(self.root, sr.build_report(self.root, FIX_RETRO))
+        text = idx.read_text(encoding="utf-8")
+        self.assertIn(rid, text, "filing a second report dropped the first one's row")
+        self.assertIn(second, text)
+
+
 class DocSurfaceRowTests(unittest.TestCase):
     """US0655 AC3: the close row is DERIVED, never a number somebody wrote down."""
 
