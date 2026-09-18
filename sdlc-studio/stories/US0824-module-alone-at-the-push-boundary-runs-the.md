@@ -20,13 +20,13 @@
 
 The selection must be judged against the defect the lane exists for: `test_critic` was red alone because a SIBLING imported a name first, and `test_critic` has no import edge to that sibling. A test-module-to-test-module graph would never select it. The graph is therefore test module to PRODUCTION module, transitively, and the criteria say so (stakeholder consult 2026-09-16, all three personas).
 
-### AC1: the selection is the changed modules plus every test module reaching a changed file transitively
+### AC1: the selection is built from US0843's measured census, not from an import graph this codebase does not have
 
-- **Given** a push whose diff against the merge-base with `origin/main` changes `lib/sdlc_md.py` alone
-- **When** the module-alone lane selects
-- **Then** it selects every test module whose import closure reaches `lib/sdlc_md.py`, not only those naming it directly, and the closure is computed over PRODUCTION modules rather than test-to-test edges
-- **Mutant:** walk test-module imports only - `test_critic`'s founding case is then never selected, and the lane keeps its name while losing its yield
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneSelectionTests::test_selection_follows_production_imports_transitively
+- **Given** US0843's census, in which 103 of 133 test modules reach production code through `importlib.util.spec_from_file_location` on a runtime path and only 27 resolve through a static import
+- **When** the lane selects for a push changing `lib/sdlc_md.py`
+- **Then** a module is selected when ANY of its recorded routes reaches a changed file - static import, runtime spec load, or subprocess - and the lane's line names how many modules each route contributed
+- **Mutant:** select by static import closure alone, transitive or not - it matches 27 of 133 modules here, so the narrowing would skip the 106 that reach production another way while reporting a clean selection
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneSelectionTests::test_selection_uses_every_route_the_census_records
 
 ### AC1b: a module that reaches production only by subprocess is always selected, because no import edge can find it
 
@@ -52,16 +52,17 @@ The selection must be judged against the defect the lane exists for: `test_criti
 - **Mutant:** let `at_boundary` carry the narrowing to both - a tag cut then ships on a narrowed lane to save nine minutes on an operation that happens monthly
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneSelectionTests::test_release_boundary_runs_every_module
 
-### AC4: the PUSH GATE's own figure is recorded before and after, and it is the figure the story is judged on
+### AC4: the saving is measured on the push itself, not on a median that cannot move inside the run
 
-- **Given** `python3 tools/gate_timing.py estimate --suite boundary-push`, which reports the gate's measured wall clock from its recorded runs - 726s at the time of writing, of which module-alone was 551s on the run that measured it
-- **When** the narrowed lane has landed and a push has run the boundary gate
-- **Then** both the before and after figures come from THAT command, not from `module-alone-timings.json`, they are recorded in this story's Revision History, and the story is not Done while the after figure is at or above 300s
-- **Mutant:** judge the story on the LANE's own timings file - a delivery can then record a truthful 80% saving on a four-minute lane while the push it was raised to shorten is still over ten minutes, which is a criterion's words outrunning its fixture in the one story written to prevent exactly that
-- **Verify:** manual - the two `gate_timing.py estimate --suite boundary-push` figures, before and after, quoted in this story's Revision History
+- **Given** `gate_timing.py estimate --suite boundary-push` reads 726s as the MEDIAN of the last ten boundary runs (tools/gate_timing.py:194, HISTORY = 10), so six post-landing pushes would be needed before that command could read under 300
+- **When** the narrowed lane lands and a push touching one production file runs the boundary gate
+- **Then** the figure judged is THAT push's own recorded boundary-gate wall clock, taken from the run it wrote to `gate-timings.json`, before and after, quoted in this story's Revision History - and the story is not Done while the after figure is at or above 300s
+- **Mutant:** judge the story on `gate_timing estimate`'s median - nine pre-change runs sit in its window, so a delivery that genuinely halved the gate reports failure, and one that changed nothing reports success six pushes later
+- **Verify:** manual - the two single-run boundary-gate figures, before and after, quoted in this story's Revision History with their run timestamps
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-18 | goal review round 2 | AC1 rebuilt on US0843's census: 103 of 133 test modules reach production through `spec_from_file_location` on a runtime path and only 27 through a static import, so an import closure would have exempted 106 modules while reporting a clean selection. AC4 now judges the push's OWN recorded figure - `gate_timing estimate` is a ten-run MEDIAN (gate_timing.py:194), so it could not move inside the run. |

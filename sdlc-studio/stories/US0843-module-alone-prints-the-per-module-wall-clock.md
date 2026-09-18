@@ -43,8 +43,17 @@ The lane already measures every module: `run()` returns elapsed seconds as its f
 - **Mutant:** write the total only - a before-and-after comparison then needs the logs, which is how this lane's cost went unmeasured through eleven sprints
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneTimingTests::test_per_module_timings_are_written_for_comparison
 
+### AC4: the lane reports HOW each module reaches production code, because the selection cannot be designed without it
+
+- **Given** this repository's 133 test modules, of which 103 load production code through `importlib.util.spec_from_file_location` on a path computed at runtime and 43 drive it through `subprocess`
+- **When** the timing run records its results
+- **Then** it also records, per module, which of the three routes it uses to reach production code - a static import, a runtime `spec_from_file_location` load, or a subprocess invocation - with the path each resolves to where it can be read statically
+- **Mutant:** census by static import alone - only 27 of 133 modules resolve that way, so a selection built on it would silently exempt the other 106 while looking complete, which is the enumerated-list failure this project's carried lessons already name
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneTimingTests::test_the_census_names_each_module_route_to_production_code
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-18 | goal review round 2 | AC4 added: the timing run also records HOW each module reaches production code (static import, runtime spec load, subprocess), because EP0253's selection cannot be designed without it and a static-import census sees 27 of 133. |
