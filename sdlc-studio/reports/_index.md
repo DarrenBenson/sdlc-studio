@@ -10,4 +10,4 @@ than edited when a figure moves.
 
 | ID | Run | Generated | Fingerprint | Signed |
 | --- | --- | --- | --- | --- |
-| [RPT0001](RPT0001-sprint-report-run-01m2spns.md) | RUN-01M2SPNS | 2026-09-18T16:57:40Z | a04677e142afc0bc | unsigned |
+| [RPT0002](RPT0002-sprint-report-run-01m2spns.md) | RUN-01M2SPNS | 2026-09-18T20:21:14Z | 215a0147800b237e | unsigned |

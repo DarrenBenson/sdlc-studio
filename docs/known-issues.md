@@ -65,8 +65,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0711` | Medium | test_complexity's temporary git fixture races its own cleanup on CI, reddening main on a teardown rather than a failure |
 | `BG0712` | Medium | a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI |
 | `BG0714` | Medium | 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge |
+| `BG0716` | Medium | PREPARE mints a new report id on every re-file, so a run that prepares twice has two reports of record |
+| `BG0717` | Medium | the close's handoff link leaves a trailing blank line in the retro, so every close fails this project's own markdownlint |
 
-35 findings: 35 Medium, 0 Low.
+37 findings: 37 Medium, 0 Low.
 
 ## Not carried
 

@@ -70,7 +70,7 @@ evidence re-measured by hand for one line moving in a shared file.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1.0 discloses 35 open defects: 35 Medium, 0 Low.**
+**v5.1.0 discloses 37 open defects: 37 Medium, 0 Low.**
 
 **One High-severity finding is open against the tag: BG0715.** It was raised on 2026-09-18,
 after v5.1.0 shipped, by RUN-01M2SPNS running its own close. `_open_findings` dates a finding
