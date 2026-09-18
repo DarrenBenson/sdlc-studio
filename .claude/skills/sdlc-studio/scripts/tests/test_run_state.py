@@ -1119,5 +1119,96 @@ class GoalClauseEnumerationTests(unittest.TestCase):
                     len(run_state.goal_clauses(goal)))
 
 
+class RunTokenStampTests(unittest.TestCase):
+    """US0844: the meter is stamped PER SESSION, and the run total is the sum of same-session
+    deltas.
+
+    The single baseline `open_run` stamps is one reading, and `retro.run_attributed_tokens`
+    refuses to subtract it from a reading taken in a DIFFERENT session - correctly, because the
+    two are different meters. That guard is why RUN-01M2JA6J's sprint total read `not
+    attributable`: the run was closed across sessions, which is the normal shape of a long run.
+    A stamp per session makes the total a sum of differences of the same meter.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.transcripts = self.root / "transcripts"
+        self.transcripts.mkdir()
+        env = mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(self.transcripts)})
+        env.start()
+        self.addCleanup(env.stop)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _meter(self, tokens: int, name: str = "s1.jsonl") -> Path:
+        p = self.transcripts / name
+        with p.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"message": {"model": "m9",
+                                             "usage": {"input_tokens": tokens}}}) + "\n")
+        return p
+
+    def test_the_meter_is_stamped_at_open_and_at_report_time(self) -> None:
+        """AC1. MUTANT: overwrite the single `TOKEN_BASELINE` at report time instead of
+        appending a stamp.
+
+        The delta is then zero and the run reports no cost at all, while a test that only
+        checks a stamp exists still passes."""
+        src = self._meter(4_271_975)
+        run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
+        stamps = run_state.read(str(self.root))[run_state.TOKEN_STAMPS]
+        self.assertEqual(len(stamps), 1, "opening the run did not stamp the meter")
+        self.assertEqual(stamps[0]["kind"], "open")
+        self.assertEqual(stamps[0]["tokens"], 4_271_975)
+        self.assertEqual(stamps[0]["source"], str(src))
+        self.assertRegex(stamps[0]["at"], r"^\d{4}-\d{2}-\d{2}T")
+        self._meter(10_731_650 - 4_271_975)
+        run_state.stamp_tokens(str(self.root), "report")
+        stamps = run_state.read(str(self.root))[run_state.TOKEN_STAMPS]
+        self.assertEqual([s["kind"] for s in stamps], ["open", "report"],
+                         "the report stamp replaced the open one instead of being appended")
+        self.assertEqual(stamps[0]["tokens"], 4_271_975,
+                         "the open stamp was moved by the second reading")
+        self.assertEqual(stamps[-1]["tokens"], 10_731_650)
+        total = run_state.run_token_total(run_state.read(str(self.root)))
+        self.assertEqual(total["tokens"], 6_459_675,
+                         "the run total is not the delta between the two readings")
+        self.assertEqual(total["session_count"], 1)
+        self.assertEqual(total["sessions"], [str(src)])
+
+    def test_a_run_spanning_sessions_sums_its_stamps_and_names_them(self) -> None:
+        """AC2. MUTANT: keep `run_attributed_tokens`' rule that a baseline taken in another
+        session makes the whole run not attributable.
+
+        The headline cost row is then UNMEASURED on every run closed across sessions, which is
+        the run this story was raised from, and every single-session test still passes."""
+        state = {"schema": 1, "run_id": "RUN-X", "started_at": "2026-09-15T05:00:00Z",
+                 "batch": ["BG0001"], run_state.TOKEN_STAMPS: [
+                     {"tokens": 4_271_975, "source": "/t/s1.jsonl", "kind": "open",
+                      "at": "2026-09-15T05:00:00Z", "model": "m9"},
+                     {"tokens": 10_731_650, "source": "/t/s1.jsonl", "kind": "handoff",
+                      "at": "2026-09-15T13:00:00Z", "model": "m9"},
+                     {"tokens": 120_000, "source": "/t/s2.jsonl", "kind": "resume",
+                      "at": "2026-09-16T09:00:00Z", "model": "m9"},
+                     {"tokens": 900_000, "source": "/t/s2.jsonl", "kind": "report",
+                      "at": "2026-09-16T11:00:00Z", "model": "m9"}]}
+        total = run_state.run_token_total(state)
+        self.assertEqual(total["tokens"], 7_239_675,
+                         "the total is not the sum of the two same-session deltas")
+        self.assertEqual(total["session_count"], 2)
+        self.assertEqual(sorted(total["sessions"]), ["/t/s1.jsonl", "/t/s2.jsonl"])
+        self.assertIn("LOWER BOUND", total["basis"],
+                      "the figure is not labelled a lower bound")
+        self.assertIsNotNone(total["tokens"],
+                             "a run closed across sessions read as not attributable")
+        # A session carrying ONE stamp covers no delta, and the coverage clause names it.
+        state[run_state.TOKEN_STAMPS].append(
+            {"tokens": 50_000, "source": "/t/s3.jsonl", "kind": "resume",
+             "at": "2026-09-16T12:00:00Z", "model": "m9"})
+        partial = run_state.run_token_total(state)
+        self.assertEqual(partial["tokens"], 7_239_675)
+        self.assertEqual(partial["uncovered"], ["/t/s3.jsonl"],
+                         "a session with one reading is not named as covering no delta")
+
+
 if __name__ == "__main__":
     unittest.main()

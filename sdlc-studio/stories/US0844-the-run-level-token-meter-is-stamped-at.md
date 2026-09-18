@@ -46,7 +46,8 @@ directory (`SDLC_STUDIO_TRANSCRIPTS`), as `test_retro.py`'s harness-capture fixt
 - **When** the run is opened, and PREPARE later builds the report in that same session
 - **Then** the run record carries an ORDERED list of stamps rather than one baseline, each holding the reading, its transcript path, an ISO time and a kind - the first `open`, the last `report`; the `open` stamp still reads 4,271,975, unchanged by the second; and `run_state.run_token_total(state)` returns 6,459,675 with one session named
 - **Mutant:** overwrite the single `TOKEN_BASELINE` at report time instead of appending a stamp - the delta is then zero and the run reports no cost at all, while a test that only checks a stamp exists still passes
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RunTokenStampTests::test_the_meter_is_stamped_at_open_and_at_report_time
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_prepare_takes_the_report_time_stamp_through_the_shipped_lane
+- **Verified:** yes (2026-09-18)
 
 ### AC2: a run spanning sessions sums its per-session deltas and names the sessions it covers
 
@@ -55,14 +56,16 @@ directory (`SDLC_STUDIO_TRANSCRIPTS`), as `test_retro.py`'s harness-capture fixt
 - **Then** it returns 7,239,675 - the sum of the two same-session deltas, 6,459,675 and 780,000 - names both transcript paths and the session count 2, and labels the figure a LOWER BOUND; it is not `not attributable`, which is what a single cross-session baseline produces today and what RUN-01M2JA6J's close printed
 - **Mutant:** keep `run_attributed_tokens`' rule that a baseline taken in another session makes the whole run not attributable - the headline cost row is then UNMEASURED on every run closed across sessions, which is the run this story was raised from, and every single-session test still passes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RunTokenStampTests::test_a_run_spanning_sessions_sums_its_stamps_and_names_them
+- **Verified:** yes (2026-09-18)
 
 ### AC3: the report's cost row prints the total, the model, the rate and the coverage, and NOT MEASURED only when no stamp can be read
 
 - **Given** AC2's run, its batch summing 103 points; and a second copy whose transcripts directory holds no session file at all
 - **When** PREPARE builds the report on each
 - **Then** the first copy's cost row carries the total, the model the stamps recorded, the per-point figure derived from total and points, and a coverage clause naming the session count and any session that wrote to the run without a stamp; the second reads `NOT MEASURED` with the reason `session_tokens` returned, never `0` and never a per-point figure of zero; in both, every per-unit token actual reads UNMEASURED by name, under D3
-- **Mutant:** print the run total with no coverage clause - a partial total then reads as the run's cost, which is the consult's finding that an unqualified total over a run closed across sessions is a partial one
+- **Mutant:** print the run total with no coverage clause - a partial total then reads as the run's cost, which is the consult's finding that an unqualified total over a run closed across sessions is a partial one; OR fall back to a zero total instead of NOT MEASURED when no stamp is readable, which is the criterion's second half and was declared by the Then clause with no mutant naming it; must redden on both
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ReportCostRowTests::test_the_cost_row_names_its_total_model_rate_and_session_coverage
+- **Verified:** yes (2026-09-18)
 
 ### AC4: a run carrying only the legacy single baseline still reports, and says which shape it read
 
@@ -71,6 +74,16 @@ directory (`SDLC_STUDIO_TRANSCRIPTS`), as `test_retro.py`'s harness-capture fixt
 - **Then** it reads the legacy baseline, states the figure it can derive from it, and names the shape it read, so an older run is reported rather than refused
 - **Mutant:** require the stamp list - every run opened before this story lands then reports NOT MEASURED, including the run that delivers it, which is the fixture-green-is-not-target-green scar this project already carries
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CostRowTests::test_a_legacy_single_baseline_is_read_and_named
+- **Verified:** yes (2026-09-18)
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | `run_state`: overwrite the single `TOKEN_BASELINE` at report time instead of appending a stamp - the delta is then zero and the run reports no cost, while a test that only checks a stamp exists still passes | the meter is stamped at run open and again at report time, each stamp naming its session |
+| AC2 | `run_state.run_token_total`: keep `run_attributed_tokens`' rule that a baseline taken in another session makes the whole run not attributable - the headline cost is then UNMEASURED on every run closed across sessions, and every single-session test still passes | a run spanning sessions sums its per-session deltas and names the sessions it covers |
+| AC3 | `sprint_report._cost_section`: drop the uncovered-sessions clause from the coverage figure; ALSO fall back to a zero total instead of NOT MEASURED when no stamp is readable - must redden on both | the report's cost row prints the total, the model, the rate and the coverage, and NOT MEASURED only when no stamp can be read |
+| AC4 | `sprint_report._cost_section`: require the stamp list, so every run opened before this story lands reports NOT MEASURED, including the run that delivers it | a run carrying only the legacy single baseline still reports, and says which shape it read |
 
 ## Revision History
 
@@ -79,3 +92,5 @@ directory (`SDLC_STUDIO_TRANSCRIPTS`), as `test_retro.py`'s harness-capture fixt
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-17 | grooming 2026-09-17 | Groomed: three criteria, and the user story filled. Written against why RUN-01M2JA6J read `not attributable`: `run_attributed_tokens` refuses a baseline taken in another session, and that run was closed across sessions. One stamp per session replaces the single baseline, the total is the sum of same-session deltas and names its coverage. Figures are the run's own, 6,459,675 over 103 points. test_run_state.py added to Affects. |
 | 2026-09-18 | goal review round 5 | AC4 added for the LEGACY single `session_token_baseline` shape - the state every run open at delivery time carries, including the one this story ships in. Without it the cost row reads NOT MEASURED on its own run, which is this project's fixture-green scar. |
+| 2026-09-18 | delivery | AC3's second mutant named, and a second Verify line for it. The Then clause already required "never `0` and never a per-point figure of zero", and no declared mutant could falsify it - one criterion's words outrunning its fixture, which is this repo's dominant review defect. Both mutants were applied and killed. AC3's Verify also now drives PREPARE through `sprint.py`, not the composer's function: the Given says "when PREPARE builds the report", and a library call cannot see the wiring that files the report and stamps the run state. |
+| 2026-09-18 | plan review round 1 | AC1's Verify moved from the library call to the LANE. Its When names PREPARE building the report, and `stamp_tokens` had shipped with a test as its only caller - so the criterion's own verifier could not see that no second stamp was ever taken, and `test_run_state.py` stayed green while every run reported its cost as zero. The selector now drives `sprint.py`'s `_file_the_report` and asserts the stamp shape the Then describes; the library test remains as supporting evidence, bound to nothing. |

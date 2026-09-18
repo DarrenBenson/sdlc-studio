@@ -7,6 +7,7 @@ config switch gates RENDERING only - never recording.
 import contextlib
 import io
 import json
+import re
 import subprocess
 import shutil
 import os
@@ -18,7 +19,10 @@ from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gitutil  # noqa: E402 - the confined git helper, resolved by module name like its siblings
 import sprint_report as sr  # noqa: E402
+from lib import run_state  # noqa: E402
 import telemetry as tel  # noqa: E402
 
 BATCH = "US0001, US0002"
@@ -3244,6 +3248,924 @@ class ChecklistRosterTests(unittest.TestCase):
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)          # the shipped roster, imported for real
         self.assertEqual(len(self.EXPECTED), len(mod.CHECKLIST))
+
+# ---------------------------------------------------------------------------------------------
+# THE REPORT OF RECORD - US0835, US0836, US0837, US0844, US0845, US0846.
+#
+# THE FIXTURE RUN is shaped on RUN-01M2JA6J and its artefacts DISAGREE on purpose: the retro's
+# prose claims 25 units and 120 points while the run record's batch holds 23 and the unit files'
+# `Points:` sum to 103. A deriver that read the wrong artefact is caught by its figure.
+# ---------------------------------------------------------------------------------------------
+
+FIX_RUN = "RUN-01TESTFIX"
+FIX_RETRO = "RETRO9200"
+#: 23 units, 103 points - the run record's batch and the unit files, which the retro contradicts.
+FIX_POINTS = [5] * 19 + [3, 3, 1, 1]
+FIX_UNITS = ([f"US{101 + i:04d}" for i in range(15)] + [f"BG{201 + i:04d}" for i in range(8)])
+FIX_SHA = "ecff745d0ac1b2c3d4e5f60718293a4b5c6d7e8f"
+FIX_GOAL = ("Nothing is left open silently: US0101, US0102 and BG0201 reach a terminal on their\n"
+            "own verifiers; the lane passes against a baseline measured in CI; and a run can no\n"
+            "longer end over an unanswered unit (D9001, D9002).")
+FIX_MODEL = "test-model-9"
+#: The two session readings: 4,271,975 stamped at open, 10,731,650 at report. Delta 6,459,675.
+FIX_OPEN_READING = 4_271_975
+FIX_REPORT_READING = 10_731_650
+FIX_RUN_TOKENS = FIX_REPORT_READING - FIX_OPEN_READING
+
+
+def _unit_file(root: Path, uid: str, points: int, *, status: str, acs: int = 3) -> Path:
+    rel = "stories" if uid.startswith("US") else "bugs"
+    d = root / "sdlc-studio" / rel
+    d.mkdir(parents=True, exist_ok=True)
+    body = [f"# {uid}: a fixture unit", "",
+            f"> **Status:** {status}", f"> **Points:** {points}",
+            "> **Verification depth:** entry point 1 of 3", "",
+            "## Acceptance Criteria", ""]
+    for n in range(1, acs + 1):
+        body += [f"### AC{n}: a criterion", "", "- **Given** a fixture", "- **When** it runs",
+                 "- **Then** it holds", ""]
+    p = d / f"{uid}-a-fixture-unit.md"
+    p.write_text("\n".join(body), encoding="utf-8")
+    return p
+
+
+def _ci_runs_file(root: Path, rows: list[dict]) -> Path:
+    d = root / "sdlc-studio" / ".local"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "ci-runs.json"
+    p.write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    return p
+
+
+FIX_CI_ROWS = [
+    # THREE push-triggered runs, one of them red - 1 of 3 is 33%.
+    {"databaseId": 900001, "event": "push", "conclusion": "success", "headBranch": "main",
+     "headSha": "aaaa111", "workflowName": "Lint",
+     "createdAt": "2026-09-15T06:00:00Z", "updatedAt": "2026-09-15T06:20:00Z"},
+    {"databaseId": 900002, "event": "push", "conclusion": "failure", "headBranch": "main",
+     "headSha": "bbbb222", "workflowName": "Lint",
+     "createdAt": "2026-09-15T07:00:00Z", "updatedAt": "2026-09-15T07:29:00Z"},
+    {"databaseId": 900003, "event": "push", "conclusion": "success", "headBranch": "main",
+     "headSha": FIX_SHA, "workflowName": "Lint",
+     "createdAt": "2026-09-15T08:00:00Z", "updatedAt": "2026-09-15T08:10:00Z"},
+    # TWO runs that are not deployments. Counting these makes the rate read 20%.
+    {"databaseId": 900004, "event": "workflow_dispatch", "conclusion": "success",
+     "headBranch": "main", "headSha": FIX_SHA, "workflowName": "Lint",
+     "createdAt": "2026-09-15T09:00:00Z", "updatedAt": "2026-09-15T09:05:00Z"},
+    {"databaseId": 900005, "event": "schedule", "conclusion": "success", "headBranch": "main",
+     "headSha": FIX_SHA, "workflowName": "Lint",
+     "createdAt": "2026-09-15T10:00:00Z", "updatedAt": "2026-09-15T10:04:00Z"},
+]
+
+CONSULT = """# RV9001: stakeholder consult
+
+> **Kind:** stakeholder-consult
+> **Run:** {run}
+
+| Persona | Perspective | Verdict | What it found |
+| --- | --- | --- | --- |
+| Rowan Vale | solo founder-engineer, primary | Concerns | the close moved rejected units on |
+| Imre Kass | team lead, brownfield adoption, secondary | Concerns | no reader sees an abandoned unit |
+| Petra Lund | enterprise delivery manager, negative | Reject | a hold can be released by its author |
+"""
+
+VERDICTS = """# Critic verdicts
+
+| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+"""
+
+PLAN_VERDICTS = """# Plan-review verdicts
+
+| Unit | Verdict | Reviewer | Author | Date | Brief | Kind | Issues |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+"""
+
+
+def _fixture_retro(root: Path, *, units: list[str]) -> Path:
+    """The retro whose PROSE disagrees with the batch: 25 / 25 and 120 points."""
+    d = root / "sdlc-studio" / "retros"
+    d.mkdir(parents=True, exist_ok=True)
+    text = "\n".join([
+        f"# RETRO-9200: {FIX_RUN}: a fixture sprint", "",
+        "> **Date:** 2026-09-15",
+        "> **Batch:** " + ", ".join(units),
+        "> **Delivered:** 25 / 25   **Blocked:** 0",
+        "",
+        "The run delivered 120 points across 25 units, says this prose, and it is wrong.", "",
+        "## Delivered", "", "- everything", "",
+        "## What went well", "", "- the seats discriminated", "",
+        "## What was hard / what stalled", "", "- the meter spanned two sessions", "",
+        "## Lessons", "", "- a real lesson worth keeping for the next run", "",
+        "## Known issues carried", "",
+        # The doctrine's own shape, and its own ruling vocabulary: the ruling column reads one
+        # of stop-ship / not-stop-ship / accepted-risk / deferred, never free prose.
+        "| Issue | Ruling | Ruled by | Date |", "| --- | --- | --- | --- |",
+        "| BG9001 | not-stop-ship | the operator | 2026-09-15 |",
+        "| BG9002 | not-stop-ship | the operator | 2026-09-15 |", "",
+        "## Actions raised", "",
+        "| Finding | Disposition |", "| --- | --- |",
+        "| a finding | BG9001 |", "| a second finding | BG9002 |", "",
+    ])
+    p = d / f"{FIX_RETRO}-a-fixture-sprint.md"
+    p.write_text(text, encoding="utf-8")
+    return p
+
+
+def fixture_run(root: Path, *, consult: bool = True, ci: bool = True, goal: str | None = FIX_GOAL,
+                verdict: str | None = "achieved", stamps: bool = True,
+                legacy_baseline: bool = False) -> None:
+    """THE FIXTURE RUN on `root`. Every option removes one artefact, which is how the criteria
+    that assert an ABSENCE reads NOT MEASURED get a tree to assert it on."""
+    (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-studio" / "reviews").mkdir(parents=True, exist_ok=True)
+    for uid, pts in zip(FIX_UNITS, FIX_POINTS):
+        _unit_file(root, uid, pts, status="Done" if uid.startswith("US") else "Fixed")
+    _fixture_retro(root, units=FIX_UNITS)
+    if consult:
+        (root / "sdlc-studio" / "reviews" / "RV9001-stakeholder-consult.md").write_text(
+            CONSULT.format(run=FIX_RUN), encoding="utf-8")
+    if ci:
+        _ci_runs_file(root, FIX_CI_ROWS)
+    # The two review ledgers: three plan REJECTs and two delivery REJECTs (the rework signal).
+    rows = []
+    for i, uid in enumerate(FIX_UNITS):
+        v = "REJECT" if i < 2 else "APPROVE"
+        rows.append(f"| {uid} | {v} | Rowan Vale | author-session | 2026-09-15 | bf{i:04d} "
+                    f"| full | {'one issue' if v == 'REJECT' else 'none'} |")
+    (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").write_text(
+        VERDICTS + "\n".join(rows) + "\n", encoding="utf-8")
+    prows = []
+    for i, uid in enumerate(FIX_UNITS):
+        v = "REJECT" if i < 3 else "APPROVE"
+        prows.append(f"| {uid} | {v} | Imre Kass | author-session | 2026-09-14 | pf{i:04d} "
+                     f"| story | {'one issue' if v == 'REJECT' else 'none'} |")
+    (root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md").write_text(
+        PLAN_VERDICTS + "\n".join(prows) + "\n", encoding="utf-8")
+    # The mutation ledger: three killed rows per unit, none survived.
+    entries = [{"target": f"scripts/{uid.lower()}.py", "run": "r1",
+                "mutants": [{"unit": uid, "criterion": f"AC{n}", "row": n - 1,
+                             "mutant": f"m{n}", "test": "t", "verdict": "killed"}
+                            for n in (1, 2, 3)]}
+               for uid in FIX_UNITS]
+    (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+        json.dumps({"version": 1, "dropped": 0, "entries": entries}), encoding="utf-8")
+    state = {"schema": 1, "run_id": FIX_RUN, "started_at": "2026-09-15T05:00:00Z",
+             "ended_at": "2026-09-15T13:00:00Z", "outcome": "goal-reached",
+             "batch": list(FIX_UNITS), "goal": goal, "sprint_goal": goal,
+             "sprint_goal_verdict": ({"verdict": verdict, "note": "all limbs met by execution"}
+                                     if verdict else None),
+             "base_ref": "0000000000000000000000000000000000000000",
+             "verified_sha": FIX_SHA, "forecast_tokens": 2_575_000}
+    if stamps:
+        state["session_token_stamps"] = [
+            {"tokens": FIX_OPEN_READING, "source": "/t/s1.jsonl", "at": "2026-09-15T05:00:00Z",
+             "kind": "open", "model": FIX_MODEL},
+            {"tokens": FIX_REPORT_READING, "source": "/t/s1.jsonl", "at": "2026-09-15T13:00:00Z",
+             "kind": "report", "model": FIX_MODEL}]
+    if legacy_baseline:
+        state["session_token_baseline"] = {"tokens": FIX_OPEN_READING, "source": "/t/s1.jsonl",
+                                           "at": "2026-09-15T05:00:00Z"}
+    (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+        json.dumps(state, indent=2), encoding="utf-8")
+
+
+def _leaf_figures(report: dict):
+    """Every (section key, figure key, figure) triple in the report's figure set, in order.
+
+    DELEGATES to production's own `leaf_figures`. This used to be a second, hand-kept copy, and
+    it had already drifted: it did not yield a section's `not_measured` marker, which production
+    yields and calls a figure. Every assertion over "every figure" was therefore made over a
+    strictly smaller set than the report's, and a mutant defaulting a marker's source passed.
+    A list of the thing under test, maintained beside the thing under test, goes stale silently.
+    """
+    return sr.leaf_figures(report)
+
+
+class ReportOfRecordBase(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+
+
+class ReportIsDerivedTests(ReportOfRecordBase):
+    """US0835: the JSON of record, derived from the run's own artefacts."""
+
+    def test_every_figure_carries_a_resolvable_source(self) -> None:
+        """AC1. MUTANT: default a missing `source` to the string `derived`.
+
+        Every figure then carries a source, none of them can be re-derived, and the Provenance
+        section's whole claim is false while reading as satisfied."""
+        # A fixture WITH unmeasured sections. `fixture_run(self.root)` supplies every artefact,
+        # so it produces none at all, and the `not_measured` markers - which production counts
+        # as figures - were never put in front of this assertion by anything. Each option below
+        # removes one artefact, which is how a section that reads NOT MEASURED gets a tree to
+        # read it on.
+        fixture_run(self.root, consult=False, ci=False, stamps=False)
+        rep = sr.build_report(self.root, FIX_RETRO)
+        markers = [(sec, k) for sec, k, _f in _leaf_figures(rep) if k == "not_measured"]
+        self.assertTrue(markers,
+                        "the fixture produced no unmeasured section, so the marker half of the "
+                        "figure set is asserted over nothing")
+        seen = 0
+        for section, key, fig in _leaf_figures(rep):
+            self.assertIsInstance(fig, dict, f"{section}.{key} is not a figure object")
+            self.assertIn("value", fig, f"{section}.{key} carries no value")
+            self.assertIn("source", fig, f"{section}.{key} carries no source")
+            src = fig["source"]
+            self.assertTrue(isinstance(src, str) and src.strip(),
+                            f"{section}.{key} carries an empty source")
+            for part in [p.strip() for p in src.split(",") if p.strip()]:
+                # PRODUCTION'S definition of "resolves", not a second one. A regex kept here
+                # disagreed with the guard about `gh run list` and about the harness meter, so
+                # the test and the thing it tests were answering different questions.
+                resolvable = sr._source_resolves(self.root, part)
+                self.assertTrue(resolvable,
+                                f"{section}.{key} names {part!r}, which is neither a path under "
+                                f"the root nor a forge run id")
+            seen += 1
+        self.assertGreater(seen, 40, "the figure set is too small to be the report")
+        # ... and the refusal, with the positive control above it: a deriver that produced no
+        # source exits 2 naming the figure's key and its section, and writes no JSON.
+        out = io.StringIO()
+        err = io.StringIO()
+        real = sr.fig
+
+        def sourceless(key, value, source, *a, **kw):
+            made = real(key, value, source, *a, **kw)
+            if key == "points_delivered":
+                made.pop("source")          # a deriver that produced none
+            return made
+
+        with mock.patch.object(sr, "fig", sourceless), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sr.main(["--root", str(self.root), "build", "--run", FIX_RUN,
+                          "--format", "json", "--write"])
+        self.assertEqual(rc, 2, "a sourceless figure did not refuse")
+        msg = err.getvalue() + out.getvalue()
+        self.assertIn("points_delivered", msg, "the refusal does not name the figure")
+        self.assertIn("delivered", msg, "the refusal does not name the section")
+        self.assertEqual(list((self.root / "sdlc-studio" / "reports").glob("*.json"))
+                         if (self.root / "sdlc-studio" / "reports").exists() else [], [],
+                         "the refused build wrote JSON anyway")
+
+    def test_the_build_refuses_a_source_a_reader_cannot_go_to(self) -> None:
+        """AC1's guard, asked directly. MUTANT: drop the resolution check from
+        `_refuse_sourceless` and keep only "is it a non-empty string".
+
+        Then a deriver may answer `derived`, or name a file that was deleted, for every figure
+        it produces: each one carries a source, the Provenance section reads as satisfied, and
+        not one of them can be re-derived by the reader it was written for. No fixture has a bad
+        source at build time - that is the point of the guard - so the only way to put one in
+        front of it is to make a deriver produce one.
+        """
+        fixture_run(self.root)
+        self.assertTrue(sr.build_report(self.root, FIX_RETRO), "the control build refused")
+        real = sr._signoff_section
+
+        def bad(state_rel):                       # a source that resolves to nothing
+            sec = real(state_rel)
+            sec["figures"]["principal"]["source"] = "derived"
+            return sec
+
+        with unittest.mock.patch.object(sr, "_signoff_section", bad):
+            with self.assertRaises(sr.ReportError) as caught:
+                sr.build_report(self.root, FIX_RETRO)
+        self.assertIn("resolves to nothing", str(caught.exception))
+        self.assertIn("principal", str(caught.exception),
+                      "the refusal does not name the figure whose source is unreachable")
+
+    def test_figures_come_from_the_artefacts_not_the_retros_prose(self) -> None:
+        """AC2. MUTANT: read the header counts from the retro's `Delivered: N / M` line.
+
+        A hand-edited retro then rewrites the report's headline figures - and this repository
+        has already shipped a retro header that contradicted its own batch."""
+        fixture_run(self.root)
+        rep = sr.build_report(self.root, FIX_RETRO)
+        figs = {f"{s}.{k}": f for s, k, f in _leaf_figures(rep)}
+        units = figs["header.unit_count"]
+        points = figs["header.points_delivered"]
+        self.assertEqual(units["value"], 23, "unit_count did not come from the run record")
+        self.assertEqual(points["value"], 103, "points_delivered did not come from the unit files")
+        self.assertIn("run-state.json", units["source"])
+        self.assertIn("US0101-a-fixture-unit.md", points["source"],
+                      "points_delivered is not sourced to the unit files")
+        retro_rel = "sdlc-studio/retros/RETRO9200-a-fixture-sprint.md"
+        sourced_to_retro = {name for name, f in figs.items() if retro_rel in (f["source"] or "")}
+        self.assertTrue(sourced_to_retro, "nothing is sourced to the retro at all")
+        for name in sourced_to_retro:
+            self.assertTrue(name.startswith(("carried.", "rulings.")),
+                            f"{name} is sourced to the retro's prose; only the rulings and the "
+                            f"carried-open table may be")
+
+    def test_the_stakeholder_section_names_its_absent_schema(self) -> None:
+        """AC3. MUTANT: omit the section when no consult artefact is found.
+
+        A reader then cannot tell a run that consulted nobody from a report that forgot to
+        look, which is the distinction the whole Not-proven discipline rests on."""
+        fixture_run(self.root, consult=True)
+        with_it = sr.build_report(self.root, FIX_RETRO)
+        sec = {s["key"]: s for s in with_it["sections"]}["consult"]
+        self.assertIsNone(sec.get("not_measured"))
+        self.assertEqual(len(sec["rows"]), 3)
+        for row in sec["rows"]:
+            for key in ("persona_name", "persona_role", "persona_verdict", "persona_finding"):
+                self.assertIn(key, row)
+                self.assertIn("RV9001-stakeholder-consult.md", row[key]["source"])
+        second = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        fixture_run(second, consult=False)
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sr.main(["--root", str(second), "build", "--run", FIX_RUN, "--format", "json"])
+        self.assertEqual(rc, 0, f"a run with no consult did not exit 0: {err.getvalue()}")
+        without = json.loads(out.getvalue())
+        keys = [s["key"] for s in without["sections"]]
+        self.assertIn("consult", keys, "the section was dropped rather than named absent")
+        sec = {s["key"]: s for s in without["sections"]}["consult"]
+        self.assertEqual(sec["not_measured"]["value"], "NOT MEASURED")
+        self.assertEqual(sec["not_measured"]["reason"],
+                         "no stakeholder consult artefact for this run")
+        self.assertEqual(sec["rows"], [], "an absent consult rendered as zero consults")
+
+    def test_the_fingerprint_covers_the_facts_and_not_the_signature(self) -> None:
+        """AC4. MUTANT: fingerprint the whole JSON file.
+
+        Signing the report then changes the fingerprint the signature just recorded, so every
+        sealed run reads INVALIDATED under US0845 from the moment it is signed."""
+        fixture_run(self.root)
+        first = sr.build_report(self.root, FIX_RETRO)
+        f = first["fingerprint"]
+        later = dict(first)
+        later["generated_at"] = "2099-01-01T00:00:00Z"
+        self.assertEqual(sr.fingerprint(later), f, "the timestamp moved the fingerprint")
+        signed = dict(first)
+        signed["signature"] = {"principal": "the operator", "signed_at": "2026-09-16T09:00:00Z",
+                               "fingerprint": f}
+        self.assertEqual(sr.fingerprint(signed), f, "the signature moved the fingerprint")
+        unit = self.root / "sdlc-studio" / "stories" / "US0101-a-fixture-unit.md"
+        unit.write_text(unit.read_text(encoding="utf-8").replace("> **Points:** 5",
+                                                                 "> **Points:** 8"),
+                        encoding="utf-8")
+        third = sr.build_report(self.root, FIX_RETRO)
+        self.assertNotEqual(third["fingerprint"], f,
+                            "a moved Points value left the fingerprint unchanged")
+
+
+class RenderingTests(ReportOfRecordBase):
+    """US0836 AC1: no fact of another run survives into a rendered page."""
+
+    #: Numerals of two digits or more, and any percentage, in the templates' own STATIC text -
+    #: derived from the templates rather than from a list, so a literal nobody listed is caught.
+    _NUMERAL = re.compile(r"\d+(?:[.,]\d+)*\s*%|\b\d{2,}(?:[.,]\d{3})*\b")
+    _NAME = re.compile(r"\b[A-Z][a-z]{2,} [A-Z][a-z]{2,}\b")
+
+    @staticmethod
+    def _static_text(template: str) -> str:
+        """The template with every token, directive and stylesheet removed - what a render
+        emits verbatim whatever the run."""
+        text = re.sub(r"<style>.*?</style>", " ", template, flags=re.S)
+        text = re.sub(r"<title>.*?</title>", " ", text, flags=re.S)
+        text = re.sub(r"<link[^>]*>", " ", text)
+        text = re.sub(r"\{\{[^}]*\}\}", " ", text)
+        text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
+        return text
+
+    @staticmethod
+    def _headings(template: str) -> str:
+        return " ".join(re.findall(r"^#+ .*$", template, flags=re.M)
+                        + re.findall(r"<h[123][^>]*>(.*?)</h[123]>", template, flags=re.S))
+
+    def test_no_fact_of_another_run_survives_into_a_render(self) -> None:
+        """AC1. MUTANT: check only the five ids and names first listed.
+
+        The rendered page then ships another run's rework rate and change failure rate as
+        prose, which is the defect in its most quotable form - so the forbidden set is DERIVED
+        from the templates' own static text, and every numeral in the page is traced to the
+        fixture's own data."""
+        tpl_dir = Path(sr.__file__).resolve().parents[1] / "templates"
+        md_tpl = (tpl_dir / "core" / "sprint-report.md").read_text(encoding="utf-8")
+        html_tpl = (tpl_dir / "reports" / "sprint-report.html").read_text(encoding="utf-8")
+        for name, tpl in (("sprint-report.md", md_tpl), ("sprint-report.html", html_tpl)):
+            static = self._static_text(tpl)
+            self.assertEqual(self._NUMERAL.findall(static), [],
+                             f"{name} carries a numeral or percentage in prose no token covers - "
+                             f"it is another run's fact on every page after the first")
+            headings = self._headings(tpl)
+            for hit in self._NAME.findall(static):
+                self.assertIn(hit, headings,
+                              f"{name} carries the proper name {hit!r} outside a heading")
+        fixture_run(self.root)
+        rep = sr.build_report(self.root, FIX_RETRO)
+        allowed = set()
+        for _s, _k, fig in _leaf_figures(rep):
+            for form in (str(fig["value"]), f"{fig['value']:,}" if isinstance(fig["value"], int)
+                         else str(fig["value"]), str(fig.get("source") or ""),
+                         str(fig.get("reason") or ""), str(fig.get("mapping") or ""),
+                         str(fig.get("band") or "")):
+                allowed.update(self._NUMERAL.findall(form))
+        allowed.update(self._NUMERAL.findall(rep["fingerprint"]))
+        md = sr.render_markdown(rep)
+        html = sr.render_html(rep)
+        self.assertNotIn("{{", md)
+        self.assertNotIn("{{", html)
+        body = html.split("</style>", 1)[1]
+        for name, text in (("the Markdown twin", md), ("the HTML rendering", body)):
+            for hit in self._NUMERAL.findall(text):
+                self.assertIn(hit, allowed,
+                              f"{name} carries the numeral {hit!r}, which is no value of this "
+                              f"run's own data")
+
+
+class TemplateRenderingTests(ReportOfRecordBase):
+    """US0836 AC2-AC4."""
+
+    _HEADINGS_MD = re.compile(r"^## (.+)$", re.M)
+    _HEADINGS_HTML = re.compile(r"<h2[^>]*>(.*?)</h2>", re.S)
+
+    def test_an_empty_section_renders_not_measured_by_name_in_both(self) -> None:
+        """AC2. MUTANT: render an absent figure as an empty table cell.
+
+        A reader then cannot separate a measured zero from a measurement nobody took, which is
+        the one distinction this report exists to preserve, and the tables still line up."""
+        fixture_run(self.root, consult=False, ci=False, stamps=False)
+        rep = sr.build_report(self.root, FIX_RETRO)
+        md = sr.render_markdown(rep)
+        html = sr.render_html(rep)
+        md_heads = self._HEADINGS_MD.findall(md)
+        html_heads = [h.strip() for h in self._HEADINGS_HTML.findall(html)]
+        self.assertEqual(md_heads, html_heads,
+                         "the two renderings do not carry the same ordered section headings")
+        for heading in ("DORA", "Stakeholder consult", "Cost"):
+            self.assertIn(heading, md_heads)
+            for label, text in (("Markdown", md), ("HTML", html)):
+                body = self._section_body(text, heading)
+                self.assertIn("NOT MEASURED", body,
+                              f"the {heading} section of the {label} rendering does not read "
+                              f"NOT MEASURED by name")
+                after = body.split("NOT MEASURED", 1)[1]
+                self.assertRegex(after, r"[A-Za-z]{3,}",
+                                 f"{heading} gives no reason after NOT MEASURED in {label}")
+        # An ABSENT figure, wherever it renders, reads NOT MEASURED and never one of these.
+        # Scoped to the sections that HAVE no data, because a measured zero is a fact and must
+        # keep printing as `0` - separating the two is the point.
+        for heading in ("DORA", "Stakeholder consult", "Cost", "Estimate accuracy"):
+            for label, text in (("Markdown", md), ("HTML", html)):
+                body = self._section_body(text, heading)
+                for placeholder in ("| 0 |", "| - |", "| None |", "| n/a |", "|  |",
+                                    ">0<", ">-<", ">None<", ">n/a<"):
+                    self.assertNotIn(placeholder, body,
+                                     f"{heading} rendered an absent figure as {placeholder!r} "
+                                     f"in the {label} rendering")
+        for cell in re.findall(r"<td[^>]*>(.*?)</td>", html, flags=re.S):
+            self.assertTrue(re.sub(r"<[^>]*>", "", cell).strip(),
+                            "an absent figure rendered as an empty HTML cell")
+
+    @staticmethod
+    def _section_body(text: str, heading: str) -> str:
+        if text.lstrip().startswith("#"):
+            parts = re.split(r"^## ", text, flags=re.M)
+            for part in parts:
+                if part.startswith(heading + "\n"):
+                    return part
+            raise AssertionError(f"no Markdown section {heading!r}")
+        chunks = re.split(r"<h2[^>]*>", text)
+        for chunk in chunks:
+            if chunk.startswith(heading):
+                return chunk
+        raise AssertionError(f"no HTML section {heading!r}")
+
+    def test_the_twin_is_written_and_the_html_is_generated_on_demand(self) -> None:
+        """AC3. MUTANT: write the HTML beside the twin at PREPARE time.
+
+        A three-hundred-line generated page then churns in git on every re-prepare, which is
+        the cost D2a's ruling was made to avoid."""
+        fixture_run(self.root)
+        rep = sr.build_report(self.root, FIX_RETRO)
+        rid = sr.file_report(self.root, rep)
+        reports = self.root / "sdlc-studio" / "reports"
+        self.assertTrue((reports / f"{rid}.json").is_file(), "the JSON of record was not written")
+        self.assertTrue(list(reports.glob(f"{rid}-*.md")), "the Markdown twin was not written")
+        self.assertEqual(list((self.root / "sdlc-studio").rglob("*.html")), [],
+                         "an HTML page was written into the tree at PREPARE time")
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sr.main(["--root", str(self.root), "render", "--report", rid,
+                          "--to", "html"])
+        self.assertEqual(rc, 0, err.getvalue())
+        self.assertIn("<h2>Sprint goal</h2>", out.getvalue())
+        self.assertEqual(list((self.root / "sdlc-studio").rglob("*.html")), [],
+                         "render with no --out created a file")
+        target = self.root / "out" / "report.html"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            rc = sr.main(["--root", str(self.root), "render", "--report", rid,
+                          "--to", "html", "--out", str(target)])
+        self.assertEqual(rc, 0)
+        self.assertTrue(target.is_file())
+        self.assertEqual(list((self.root / "sdlc-studio").rglob("*.html")), [])
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            rc = sr.main(["--root", str(self.root), "render", "--report", rid, "--to", "html",
+                          "--out", str(reports / "x.html")])
+        self.assertEqual(rc, 2, "an --out inside sdlc-studio/reports/ was not refused")
+        self.assertIn("D2a", err.getvalue(), "the refusal does not name D2a")
+
+    def test_the_layout_comes_from_the_shipped_template(self) -> None:
+        """AC4. MUTANT: build the Markdown from format strings in the renderer and keep the
+        template as documentation.
+
+        The two drift on the first change to either, and the "shipped templates" in this
+        story's title then describe nothing that runs."""
+        fixture_run(self.root)
+        rep = sr.build_report(self.root, FIX_RETRO)
+        tpl = (Path(sr.__file__).resolve().parents[1] / "templates" / "core"
+               / "sprint-report.md").read_text(encoding="utf-8")
+        altered = tpl.replace("## Carried open", "## What this run is still carrying")
+        self.assertNotEqual(altered, tpl)
+        got = sr.render_markdown(rep, template=altered)
+        self.assertIn("## What this run is still carrying", got,
+                      "the altered heading did not reach the output, so the template is not the "
+                      "source of the layout")
+        self.assertNotIn("## Carried open", got)
+        unfillable = altered.replace("## Sign-off", "{{no_figure_answers_this}}\n\n## Sign-off")
+        with self.assertRaises(sr.ReportError) as ctx:
+            sr.render_markdown(rep, template=unfillable)
+        self.assertIn("no_figure_answers_this", str(ctx.exception))
+
+
+class TheGoalLeadsTests(ReportOfRecordBase):
+    """US0837 AC1-AC2: the goal leads, verbatim."""
+
+    def test_the_goal_is_first_and_verbatim_in_all_three_renderings(self) -> None:
+        """AC1. MUTANT: render the goal through the first-sentence trim the status line uses.
+
+        A goal that is a shopping list then reads as one tidy line, the defect a verbatim quote
+        exposes is hidden again, and the section is still present and still labelled the
+        sprint goal."""
+        fixture_run(self.root)
+        recorded = run_state.read(str(self.root))["sprint_goal"]
+        self.assertIn("\n", recorded, "the fixture goal is not multi-line")
+        rep = sr.build_report(self.root, FIX_RETRO)
+        goal_fig = {s["key"]: s for s in rep["sections"]}["goal"]["figures"]["sprint_goal"]
+        self.assertEqual(goal_fig["value"], recorded, "the JSON goal is not the recorded string")
+        md = sr.render_markdown(rep)
+        html = sr.render_html(rep)
+        # A section HEADING is layout, not a reading, and the report's own section titles are
+        # what the Provenance rows are named after - so a title cannot discriminate here.
+        titles = {s["title"] for s in rep["sections"]}
+        for label, text in (("the Markdown twin", md),
+                            ("the HTML rendering", html.split("</style>", 1)[1])):
+            self.assertIn(recorded, text, f"{label} does not carry the goal verbatim")
+            at = text.index(recorded)
+            for section, key, fig in _leaf_figures(rep):
+                if section in ("goal", "identity", "invalidation"):
+                    continue
+                for form in {str(fig["value"]), f"{fig['value']:,}"
+                             if isinstance(fig["value"], int) else str(fig["value"])}:
+                    if (len(form) < 4 or form not in text or form in titles
+                            or form == sr.NOT_MEASURED):
+                        continue
+                    self.assertGreater(text.index(form), at,
+                                       f"{label}: the figure {section}.{key} ({form!r}) appears "
+                                       f"before the sprint goal")
+            verdict_at = text.index("all limbs met by execution")
+            self.assertGreater(verdict_at, at, f"{label}: the verdict stands in for the goal")
+
+    def test_an_unjudged_goal_reads_not_measured_and_a_goalless_run_refuses(self) -> None:
+        """AC2. MUTANT: default the verdict to `achieved` when none is recorded.
+
+        The run's own account then judges itself, and every reader of the report sees a verdict
+        nobody gave."""
+        fixture_run(self.root, verdict=None)
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sr.main(["--root", str(self.root), "build", "--run", FIX_RUN, "--format", "json"])
+        self.assertEqual(rc, 0, err.getvalue())
+        rep = json.loads(out.getvalue())
+        goal = {s["key"]: s for s in rep["sections"]}["goal"]["figures"]
+        self.assertEqual(goal["sprint_goal"]["value"], FIX_GOAL)
+        self.assertEqual(goal["goal_verdict"]["value"], "NOT MEASURED")
+        self.assertEqual(goal["goal_verdict"]["reason"],
+                         "no goal verdict recorded on this run")
+        self.assertNotIn("achieved", goal["goal_verdict"]["value"])
+        second = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        fixture_run(second, goal=None, verdict=None)
+        out2, err2 = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out2), contextlib.redirect_stderr(err2):
+            rc = sr.main(["--root", str(second), "build", "--run", FIX_RUN,
+                          "--format", "json", "--write"])
+        self.assertEqual(rc, 2, "a run with no sprint goal did not refuse")
+        self.assertIn("sprint goal", (err2.getvalue() + out2.getvalue()).lower())
+        self.assertFalse((second / "sdlc-studio" / "reports").exists(),
+                         "the refused build wrote a report anyway")
+
+
+class TheDoraKeysTests(ReportOfRecordBase):
+    """US0837 AC3: each key states this project's mapping."""
+
+    def test_each_key_states_its_mapping_and_an_unsourced_key_reads_not_measured(self) -> None:
+        """AC3. MUTANT: print the four keys and their elite bands with no mapping sentence.
+
+        The report then asserts a comparison against an industry band on definitions nobody
+        stated, and the two unmeasured keys read as elite performance."""
+        fixture_run(self.root, ci=False)
+        _git_window(self.root, commits=3)
+        rep = sr.build_report(self.root, FIX_RETRO)
+        dora = {s["key"]: s for s in rep["sections"]}["dora"]
+        keys = {r["dora_key"]["value"]: r for r in dora["rows"]}
+        self.assertEqual(list(keys), ["Deployment frequency", "Lead time for changes",
+                                      "Change failure rate", "Time to restore"])
+        for name, row in keys.items():
+            for field in ("dora_value", "dora_mapping", "dora_source", "dora_band"):
+                self.assertIn(field, row, f"{name} carries no {field}")
+                self.assertTrue(str(row[field]["value"]).strip(), f"{name}'s {field} is empty")
+            self.assertGreater(len(str(row["dora_mapping"]["value"]).split()), 4,
+                               f"{name}'s mapping is not a sentence stating what is counted")
+        freq = keys["Deployment frequency"]
+        self.assertEqual(freq["dora_value"]["value"], 3)
+        self.assertIn("git", freq["dora_source"]["value"],
+                      "deployment frequency is not sourced to the git history")
+        self.assertIn("push to main", freq["dora_mapping"]["value"])
+        for name in ("Change failure rate", "Time to restore"):
+            row = keys[name]
+            self.assertEqual(row["dora_value"]["value"], "NOT MEASURED",
+                             f"{name} printed a figure with no CI run data behind it")
+            self.assertEqual(row["dora_value"]["reason"], "no forge run data")
+            self.assertNotEqual(str(row["dora_value"]["value"]), "0%")
+
+
+class DoraTests(ReportOfRecordBase):
+    """US0846 AC1: the change failure rate, from this run's own push-triggered CI results."""
+
+    def test_change_failure_rate_counts_push_triggered_runs_only(self) -> None:
+        """AC1. MUTANT: count every CI run in the window rather than push-triggered ones alone.
+
+        A dispatch or a schedule then counts as a deployment, and this run's rate reads 20%
+        instead of 33%."""
+        fixture_run(self.root)
+        # Through the SHIPPED COMMAND, not `build_report` alone. `lane-check` is right that a
+        # library call leaves the wiring unexercised, and this run's own headline defect was a
+        # function that reached no caller - so the figure is read back out of the JSON the CLI
+        # produced, which is the artefact an operator actually gets.
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sr.main(["--root", str(self.root), "build", "--id", FIX_RETRO,
+                          "--format", "json"])
+        self.assertEqual(rc, 0, err.getvalue())
+        rep = json.loads(out.getvalue())
+        dora = {s["key"]: s for s in rep["sections"]}["dora"]
+        keys = {r["dora_key"]["value"]: r for r in dora["rows"]}
+        cfr = keys["Change failure rate"]
+        self.assertEqual(cfr["dora_value"]["value"], "33%",
+                         "the rate is not one failure in three push-triggered runs")
+        self.assertEqual(keys["Deployment frequency"]["dora_value"]["value"], 3,
+                         "a dispatch or a schedule was counted as a deployment")
+        source = cfr["dora_source"]["value"]
+        self.assertIn("bbbb222", source, "the failed sha is not named")
+        self.assertIn("3", source, "the deploy count is not named")
+        mapping = cfr["dora_mapping"]["value"]
+        self.assertIn("push to main", mapping)
+        self.assertIn("trunk", mapping.lower(),
+                      "the mapping does not state that a push to main IS the deployment in a "
+                      "trunk-based repository with no separate deploy step")
+
+
+class CostRowTests(ReportOfRecordBase):
+    """US0844 AC4: the legacy single baseline is still read, and named."""
+
+    def test_a_legacy_single_baseline_is_read_and_named(self) -> None:
+        """AC4. MUTANT: require the stamp list.
+
+        Every run opened before this story lands then reports NOT MEASURED, including the run
+        that delivers it, which is the fixture-green-is-not-target-green scar this project
+        already carries."""
+        fixture_run(self.root, stamps=False, legacy_baseline=True)
+        transcripts = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        src = transcripts / "s1.jsonl"
+        src.write_text(json.dumps({"message": {"model": FIX_MODEL, "usage": {
+            "input_tokens": FIX_REPORT_READING, "output_tokens": 0,
+            "cache_creation_input_tokens": 0}}}) + "\n", encoding="utf-8")
+        state = json.loads((self.root / "sdlc-studio" / ".local"
+                            / "run-state.json").read_text(encoding="utf-8"))
+        state["session_token_baseline"]["source"] = str(src)
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps(state), encoding="utf-8")
+        with mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(transcripts)}):
+            rep = sr.build_report(self.root, FIX_RETRO)
+        cost = {s["key"]: s for s in rep["sections"]}["cost"]
+        self.assertIsNone(cost.get("not_measured"),
+                          "a run carrying only the legacy baseline was refused a cost row")
+        self.assertEqual(cost["figures"]["tokens_total"]["value"], FIX_RUN_TOKENS)
+        shape = cost["figures"]["token_shape"]["value"]
+        self.assertIn("legacy", shape.lower(),
+                      f"the cost row does not name the shape it read: {shape!r}")
+        self.assertIn("session_token_baseline", shape)
+
+
+class InvalidatedReportTests(ReportOfRecordBase):
+    """US0845 AC1-AC2: invalidation is decided by re-derivation."""
+
+    def _sealed(self) -> tuple[Path, str]:
+        root = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        fixture_run(root)
+        rep = sr.build_report(root, FIX_RETRO)
+        rid = sr.file_report(root, rep)
+        p = root / "sdlc-studio" / "reports" / f"{rid}.json"
+        data = json.loads(p.read_text(encoding="utf-8"))
+        data["signature"] = {"principal": "the operator", "signed_at": "2026-09-16T09:00:00Z",
+                             "fingerprint": data["fingerprint"]}
+        p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        return root, rid
+
+    @staticmethod
+    def _snapshot(root: Path) -> dict:
+        return {str(p.relative_to(root)): p.stat().st_mtime_ns
+                for p in (root / "sdlc-studio").rglob("*") if p.is_file()}
+
+    def three_trees(self) -> list[tuple[str, Path, str]]:
+        """The three trees, in REAL git repositories.
+
+        `mkdtemp` alone left `_git_commits` shelling out to git, getting a non-zero exit and
+        returning `[]`, so every DORA figure came from the static `ci-runs.json` fixture and
+        tree (ii)'s write was never committed. The one case AC1 calls discriminating was the
+        one the fixture could not reach - and the defect it could not see was real: the DORA
+        window is open-ended until SEAL, so on a git tree every later commit entered the
+        figures and committing the report invalidated the report.
+        """
+        trees = []
+        for name in ("untouched", "unrelated-write", "figure-moved"):
+            root, rid = self._sealed()
+            for cmd in (["init", "-q", "."], ["config", "user.email", "t@example.com"],
+                        ["config", "user.name", "t"], ["add", "-A"],
+                        ["-c", "commit.gpgsign=false", "commit", "-qm", "the delivered batch"]):
+                gitutil.git(cmd, root, check=False)
+            if name == "unrelated-write":
+                # ...and COMMITTED, well after the report was generated. An uncommitted write
+                # cannot exercise the window at all.
+                (root / "README.md").write_text("a typo fixed\n", encoding="utf-8")
+                gitutil.git(["add", "-A"], root, check=False)
+                gitutil.git(["-c", "commit.gpgsign=false", "commit", "-qm", "fix a typo",
+                             "--date", "2099-01-01T00:00:00+00:00"], root, check=False,
+                            env_extra={"GIT_COMMITTER_DATE": "2099-01-01T00:00:00+00:00"})
+            if name == "figure-moved":
+                unit = root / "sdlc-studio" / "stories" / "US0101-a-fixture-unit.md"
+                unit.write_text(unit.read_text(encoding="utf-8")
+                                .replace("> **Points:** 5", "> **Points:** 8"), encoding="utf-8")
+            trees.append((name, root, rid))
+        return trees
+
+    def test_an_open_runs_report_survives_the_commit_that_files_it(self) -> None:
+        """AC1 on the shape a report is actually PRODUCED in: the run is still OPEN.
+
+        MUTANT: leave the DORA window open-ended when `ended_at` is None - `end = _at(
+        state.get("ended_at"))` with no fallback. Every commit made after the page then enters
+        the run's figures, so an unrelated commit invalidates the report and, because this
+        repository ships the paperwork in the same commit as the code, COMMITTING THE REPORT
+        invalidates the report. No operator could obtain a page that stayed valid long enough
+        to sign it.
+
+        The sealed trees above cannot see this: `ended_at` is set there, so the window is
+        already closed and the fallback never runs.
+        """
+        root = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        fixture_run(root)
+        # THE PREPARE SHAPE: the run is open, so it carries no end time.
+        sp = root / "sdlc-studio" / ".local" / "run-state.json"
+        st = json.loads(sp.read_text(encoding="utf-8"))
+        st["ended_at"], st["outcome"] = None, "running"
+        sp.write_text(json.dumps(st), encoding="utf-8")
+        for cmd in (["init", "-q", "."], ["config", "user.email", "t@example.com"],
+                    ["config", "user.name", "t"], ["add", "-A"],
+                    ["-c", "commit.gpgsign=false", "commit", "-qm", "the delivered batch"]):
+            gitutil.git(cmd, root, check=False)
+        rid = sr.file_report(root, sr.build_report(root, FIX_RETRO))
+        self.assertTrue(sr.revalidate(root, rid)["valid"],
+                        "the report did not re-derive even before anything moved")
+        # ...and now the commit that files it, plus an unrelated one, both AFTER the page.
+        (root / "README.md").write_text("a typo fixed\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], root, check=False)
+        gitutil.git(["-c", "commit.gpgsign=false", "commit", "-qm",
+                     "file the report of record and fix a typo",
+                     "--date", "2099-01-01T00:00:00+00:00"], root, check=False,
+                    env_extra={"GIT_COMMITTER_DATE": "2099-01-01T00:00:00+00:00"})
+        after = sr.revalidate(root, rid)
+        self.assertTrue(after["valid"],
+                        f"a commit made after the page invalidated it: {after['moved']}")
+        # The paired control, or this would pass on a digest covering nothing.
+        unit = root / "sdlc-studio" / "stories" / "US0101-a-fixture-unit.md"
+        unit.write_text(unit.read_text(encoding="utf-8")
+                        .replace("> **Points:** 5", "> **Points:** 8"), encoding="utf-8")
+        self.assertFalse(sr.revalidate(root, rid)["valid"],
+                         "a moved figure still re-derives - the digest covers nothing")
+
+    def test_invalidation_is_decided_by_re_deriving_the_facts(self) -> None:
+        """AC1. MUTANT: invalidate whenever the tree has a tracked write newer than `signed_at`.
+
+        Tree (ii) then reads INVALIDATED, every sealed report goes stale on the next unrelated
+        commit, and the marker means only that time has passed."""
+        for name, root, rid in self.three_trees():
+            before = self._snapshot(root)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = sr.main(["--root", str(root), "check", "--report", rid])
+            printed = out.getvalue() + err.getvalue()
+            if name == "figure-moved":
+                self.assertNotEqual(rc, 0, f"{name}: a moved figure did not refuse")
+                self.assertIn("INVALIDATED", printed)
+                self.assertIn("points_delivered", printed,
+                              f"{name}: the figure that moved is not named")
+                self.assertIn("103", printed, f"{name}: the signed value is not named")
+                self.assertIn("106", printed, f"{name}: the current value is not named")
+            else:
+                self.assertEqual(rc, 0, f"{name}: a valid report was refused - {printed}")
+                self.assertIn("VALID", printed)
+                self.assertNotIn("INVALIDATED", printed)
+            self.assertEqual(self._snapshot(root), before, f"{name}: the check wrote to the tree")
+
+    def test_both_renderings_lead_with_the_invalidation_banner(self) -> None:
+        """AC2. MUTANT: render the banner at the foot, below Provenance.
+
+        The reader takes the figures as signed and meets the warning after the decision, and
+        every assertion that the banner exists still passes."""
+        trees = {name: (root, rid) for name, root, rid in self.three_trees()}
+        root, rid = trees["figure-moved"]
+        rep = sr.read_report(root, rid)
+        state = sr.revalidate(root, rid)
+        self.assertFalse(state["valid"])
+        self.assertIn("points_delivered", state["moved"])
+        md = sr.render_markdown(rep, revalidation=state)
+        html = sr.render_html(rep, revalidation=state)
+        goal = rep["sections"][[s["key"] for s in rep["sections"]].index("goal")]
+        goal_text = goal["figures"]["sprint_goal"]["value"]
+        for label, text in (("the Markdown twin", md), ("the HTML rendering", html)):
+            self.assertIn("INVALIDATED", text, f"{label} carries no banner")
+            self.assertLess(text.index("INVALIDATED"), text.index(goal_text),
+                            f"{label}: the banner does not lead the report")
+            self.assertIn(rep["fingerprint"], text, f"{label}: the signed fingerprint is absent")
+            self.assertIn(state["fingerprint"], text,
+                          f"{label}: the current fingerprint is absent")
+            self.assertIn("points_delivered", text, f"{label}: what moved is not named")
+            self.assertIn("the operator", text,
+                          f"{label}: the sign-off block was emptied rather than left standing")
+            self.assertIn("2026-09-16", text, f"{label}: the signed date was emptied")
+        root2, rid2 = trees["untouched"]
+        rep2 = sr.read_report(root2, rid2)
+        state2 = sr.revalidate(root2, rid2)
+        self.assertTrue(state2["valid"])
+        for text in (sr.render_markdown(rep2, revalidation=state2),
+                     sr.render_html(rep2, revalidation=state2)):
+            self.assertNotIn("INVALIDATED", text,
+                             "a valid report carries the banner anyway")
+
+
+def _git_window(root: Path, commits: int) -> None:
+    """A git history holding `commits` commits inside the run's window, and no release tag."""
+    env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@e",
+           "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@e"}
+    subprocess.run(["git", "init", "-q", "-b", "main", str(root)], check=True, env=env)
+    for n in range(commits):
+        (root / f"f{n}.txt").write_text(f"{n}\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=str(root), check=True, env=env)
+        subprocess.run(["git", "commit", "-q", "-m", f"c{n}",
+                        "--date", f"2026-09-15T0{6 + n}:00:00Z"], cwd=str(root), check=True,
+                       env={**env, "GIT_COMMITTER_DATE": f"2026-09-15T0{6 + n}:00:00Z"})
+
+
+class RulingVocabularyTests(ReportOfRecordBase):
+    """`not-stop-ship` is not a stop-ship. Found on the REAL tree, not in a fixture.
+
+    Not a criterion's row - a regression pin for a defect the fixture could not show. Run
+    against RETRO0117's own carried table, every one of whose 76 rows reads `not-stop-ship`,
+    the report printed `76 stop-ship` under Carried risk where the true figure is nought: a
+    substring search for "stop-ship" matches its own negation.
+    """
+
+    def test_a_ruling_is_matched_as_a_whole_word_so_a_negation_is_not_its_own_opposite(self):
+        self.assertEqual(sr._ruling("not-stop-ship"), "not-stop-ship")
+        self.assertEqual(sr._ruling("stop-ship"), "stop-ship")
+        self.assertEqual(sr._ruling("ruled: stop-ship, holds the close"), "stop-ship")
+        self.assertEqual(sr._ruling("accepted-risk"), "accepted-risk")
+        self.assertIsNone(sr._ruling("ships disclosed"))
+        for word in sr.RULINGS:
+            self.assertEqual(sr._ruling(word), word, f"{word} does not read as itself")
+
+    def test_a_carried_table_of_negations_counts_no_stop_ships(self) -> None:
+        fixture_run(self.root)
+        retro = next((self.root / "sdlc-studio" / "retros").glob("RETRO9200*.md"))
+        rep = sr.build_report(self.root, FIX_RETRO)
+        carried = {s["key"]: s for s in rep["sections"]}["carried"]["figures"]
+        self.assertIn("not-stop-ship", retro.read_text(encoding="utf-8"))
+        self.assertEqual(carried["stop_ship_count"]["value"], 0,
+                         "a table of not-stop-ship rulings was counted as stop-ships")
+        self.assertEqual(carried["ruled_count"]["value"], 2)
+        # ... and a real stop-ship IS counted, which is the control the row above needs.
+        text = retro.read_text(encoding="utf-8").replace(
+            "| BG9001 | not-stop-ship |", "| BG9001 | stop-ship |", 1)
+        retro.write_text(text, encoding="utf-8")
+        carried = {s["key"]: s for s in sr.build_report(self.root, FIX_RETRO)["sections"]
+                   }["carried"]["figures"]
+        self.assertEqual(carried["stop_ship_count"]["value"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

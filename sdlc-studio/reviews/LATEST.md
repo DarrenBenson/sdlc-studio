@@ -1,76 +1,74 @@
-<!-- close-status:begin -->
-> **RUN-01M2JA6J closed goal-reached.** 23 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
-> Stamped by `sprint close` - edit the prose below, not this block.
-<!-- close-status:end -->
+> **RUN-01M2SPNS is OPEN.** 9 unit(s) delivered, none terminal, and NO report has been filed -
+> PREPARE has not completed, because the coverage gate refuses every unit of the batch (BG0706).
+> There is nothing to sign yet. The run's state is the run record, not this file.
+>
+> Closing review of record: RETRO0118 (`sdlc-studio/retros/RETRO0118-run-01m2spns-the-close-splits-and-the-run.md`).
+> **Run of record:** RUN-01M2SPNS - a run ends with one page it can be judged on, and one act
+> that signs it. Nine units: the close split into PREPARE and SEAL, the three holds a report is
+> refused over, and the six units that compose the page itself.
 
-> Closing review of record: RETRO0117 (`sdlc-studio/retros/RETRO0117-run-01m2ja6j-a-sprint-that-ends-with-nothing.md`).
-> **Run of record:** RUN-01M2JA6J - a sprint that ends with nothing unanswered. Twenty-three
-> units: 18 bugs to Fixed and 5 stories to Done, 70 plan-review verdicts and 48 delivery
-> verdicts, and a corpus-verify lane that passes in CI against a baseline measured in CI.
+## THE HEADLINE: THE SIGNATURE IS NOW THE LAST THING THAT HAPPENS
 
-## THE HEADLINE: A RUN CAN NO LONGER END OVER A QUESTION NOBODY ANSWERED
+RUN-01M2JA6J paid for this batch. Its operator's approval was applied and then roughly two hours
+of CI, reviews, repairs, cascades and paperwork followed it, because `--apply-signoff` ran the
+fan-out AND the close tail. `sprint close` is now PREPARE: every step that can change a fact -
+the ten-step chain, the handoff, the velocity row, the reconcile - then it files the report and
+leaves the run OPEN. `sprint sign --report RPTxxxx --principal "<name>"` is SEAL: the per-unit
+rows, the terminal transitions, the cascades they imply, the run's signature and its outcome,
+and then it stops. `--apply-signoff` exits 2 and names `sign` rather than surviving as an alias
+that would keep the old path alive in every operator's fingers, help file and runbook row.
 
-Five stories closed the routes by which a run could end quietly. An unfinished batch unit now
-holds the close through its stop-ship step and names where its findings went (US0626). No story
-or bug reaches Done or Fixed over a delivery REJECT whose findings were neither filed nor
-repaired (US0627). A unit closed over a REJECT names, in its own record, the artefact its
-findings were filed to (US0628). Every other route that ends a run - `stop`, `file-and-close`,
-the boundary stop, the handoff - reads the same predicate as the close, and `stop --force`
-records what it waived (US0823). The doctrine states the rule, the one store a stop-ship ruling
-lives in, and who rules it (US0625).
+A signature nothing refuses to write over only ORDERS the work, so the seal is a transaction:
+the principal is judged across the WHOLE batch before anything is written, a sealed run refuses
+the transitions that would move the facts its page states, and a re-open is explicit, names the
+report it breaks and KEEPS the signature it breaks.
 
-## WHAT THE CORPUS LANE WAS ACTUALLY SAYING
+## WHAT THE PAGE IS
 
-BG0676 is the unit the whole batch was ordered around. The scheduled lane had been red on main
-at 40 red criteria against a baseline of 20, and every one of the 21 it named as new passed on a
-developer machine. It was not a corpus regression: the job installed no `coverage`, cloned one
-commit deep, and gave every verifier gate.py's 120 s default while its slowest criterion needs
-136. With those three corrected the same lane reads 19, one fewer than the baseline it started
-from, and that improvement is BANKED rather than left to the tolerance.
+One report of record per run, derived and never hand-authored. It opens with the sprint goal
+verbatim before any figure. Every figure carries a source that must resolve to somewhere a
+reader can actually go, and a section with no data reads NOT MEASURED by name rather than as a
+zero. The cost row states what the token meter covers and names the sessions it does not, and
+it now carries the delegated agent spend separately - supplied by each agent, never measured
+here. The four DORA keys each state their mapping. And the page reads INVALIDATED once its
+figures no longer re-derive from the tree.
 
-The number was measured three times in CI before it was written down, and the reviews found the
-cap before the lane did: the job's own ceiling was 90 minutes against a pass that now takes 85.6,
-and a job killed at its cap is marked failure, indistinguishable from the red it exists to
-report. That is BG0676's own defect class, and it was caught inside BG0676's own fix.
+## WHAT DELIVERY REVIEW FOUND, AND WHY IT MATTERED
 
-## WHAT THE REVIEWS COST AND BOUGHT
+Two independent seats rejected six of the nine units in round one, and every rejection was a
+defect that 33 passing criteria and 2,036 passing tests could not see:
 
-Plan review ran to 70 verdicts, 47 of them REJECT, before a line of code; one unit was rejected
-five times. Delivery review, capped at two rounds by D0146, ran to 48 verdicts with 4 REJECTs,
-and every one of the four was real: two regressions the authors' own suites passed, and a pair
-of surviving mutants that would have restored the very defect the unit was fixing. D0204 now
-caps plan review at three rounds, and CR0578 will encode it.
+- `stamp_tokens` reached NO CALLER. The report-time meter reading was never taken, so every run
+  would have published its cost as zero. `test_run_state.py` was green throughout, which is the
+  point: a library test cannot see a missing lane.
+- The DORA window stayed open while the run was open, so every later commit entered the run's
+  figures - and because this repository ships the paperwork in the same commit as the code,
+  COMMITTING THE REPORT invalidated the report. No operator could have obtained a signable page.
+- The CI cache nothing wrote meant every re-derivation was a fresh network call with a different
+  answer, behind figures the report claims re-derive.
+- `transition requirements` raised an uncaught refusal for every unit of a sealed run's batch, a
+  regression in a read-only reporting command.
+- Two declared mutants had SURVIVED: one assertion searched a whole page for a unit id the close
+  pre-flight also prints, and one narrowed on a sentence no fixture ever put two requirements
+  into.
 
-One stakeholder consult, run only because the operator asked when personas are consulted, found
-the batch's largest design gap in a single pass: nothing checks who wrote a stop-ship ruling, so
-the session that did the work can release its own hold (CR0571). Seventy seat verdicts had not
-raised it. RFC0058 decides where that input belongs.
+The root cause was one question asked too narrowly. The first repair asked "which figures does
+the SEAL move?" and excluded three. The question that decides whether a page can be signed is
+"which figures does anything but the delivered work move?" - and that answer also included the
+live transcript, the open git window and the live forge.
 
 ## WHAT IS OWED
 
-- **Nothing is unanswered.** Every open finding this run filed carries a ruling in RETRO0117's
-  carried table, made by the operator at the close review.
-- **Two ceilings sit inside their 5% tolerance** and will redden main on the next line added to
-  either: `reference-config.md` at 104.89% and `reference-review.md` at 100.49%. This run learned
-  that the hard way - `reference-sprint.md` crossed its own ceiling and turned main red.
-- **BG0709 is the one to read next.** The pre-push red-main check trusts the forge's ordering,
-  and a stale row had it demand acknowledgement of a run from July while main was green. Taking
-  the printed remedy would have banked a false "red read" and inverted D0181.
-
-## THE NEXT RUN
-
-Four epics, planned at this close and CONSULTED BEFORE GROOMING under D0210: EP0253 (the push
-boundary runs the modules the push changed), EP0254 (the corpus lane runs in shards), EP0255
-(a run ends with one derived report, and signing it is a transaction), EP0256 (stakeholder
-feedback arrives while it is still cheap). Twenty-two stories owe criteria; grooming is the
-next task and is not priced by the points.
-
-The consult is the part to read: three personas in fresh contexts, all Concerns, 17 actionable
-findings - four of them defects in the authoring session's own breakdown, four verified by
-execution, one over-claimed and recorded as such. Three became stories: US0843 measures the
-narrowing before it is built, US0844 stamps the token meter, US0845 reads the fingerprint
-nothing was reading. D0211 rules the rest. Full account:
-`reviews/consult-EP0253-EP0256-stakeholders-2026-09-16.md`.
-
-This run's measured rate sets the next one's expectation: 62,715 tokens per point over 103
-points, against an estimator that forecasts 25,000.
+- **BG0706**, ruled not-stop-ship: the per-unit coverage gate charges a unit for the added lines
+  of a batch sibling sharing its `Affects` file. Measured here at 432 uncovered lines for
+  US0832, almost all of them executed by another unit's tests in the same suite. Recorded as the
+  wall it is rather than repaired in the run it refuses.
+- **The run is OPEN and no report exists.** PREPARE cannot complete while the coverage gate
+  refuses the batch, and the anchor block above previously claimed a filed report and a tool
+  stamp it never had - a hand-written claim in the one file every fresh session reads first,
+  which is the most expensive kind of false claim this project can carry. Corrected.
+- **The panel measured what the record had not.** Running all 33 of the batch's verifiers in one
+  coverage session against the batch's added lines - which is what BG0706's proposed run-scope
+  fix would do - leaves 284 lines uncovered by ANY verifier in the whole run. So the proposed
+  fix does not clear this run, and neither does a per-unit commit split, because those 284 lines
+  belong to somebody. Only a recorded waiver ends with a sealed run.

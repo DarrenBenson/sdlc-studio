@@ -26,6 +26,13 @@ Three of the next batch's four epics make a gate cheaper and one removes a contr
 - **Then** its DORA section carries `33%` with the deploy count, the failed sha, and the mapping stated - that a push to main IS the deployment in a trunk-based repository with no separate deploy step
 - **Mutant:** count every CI run in the window rather than push-triggered ones alone - a dispatch or a schedule then counts as a deployment, and this run's rate reads 20% instead of 33%
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::DoraTests::test_change_failure_rate_counts_push_triggered_runs_only
+- **Verified:** yes (2026-09-18)
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | count every CI run in the window rather than push-triggered ones alone - a dispatch or a schedule then counts as a deployment, and this run's rate reads 20% instead of 33% | the rate is derived from the run's push-triggered CI results, and names the mapping it used |
 
 ## Revision History
 

@@ -85,7 +85,14 @@ def git_env(**extra: str) -> dict:
     return env
 
 
-def git(args, cwd, check: bool = True, **kw):
-    """Run `git <args>` in `cwd` with the confined env; captures output by default."""
+def git(args, cwd, check: bool = True, env_extra: dict | None = None, **kw):
+    """Run `git <args>` in `cwd` with the confined env; captures output by default.
+
+    `env_extra` adds or overrides env keys for this one call, through `git_env` so the
+    confinement still applies. It exists so a caller needing a deterministic committer date
+    does not have to build its own environment and shell out raw - which is the thing the
+    unconfined-call sweep refuses, and the reason it refuses it.
+    """
     kw.setdefault("capture_output", True)
-    return subprocess.run(["git", *args], cwd=str(cwd), check=check, env=git_env(), **kw)
+    return subprocess.run(["git", *args], cwd=str(cwd), check=check,
+                          env=git_env(**(env_extra or {})), **kw)

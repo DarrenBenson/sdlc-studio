@@ -76,7 +76,7 @@ A unit with no per-unit telemetry record has its PER-UNIT ratio reported as **UN
 excluded from that ratio - it is never counted as accurate. But the token count itself is NOT
 unmeasurable: the harness tracks it deterministically. An INTERACTIVE sprint (no runner) records no
 per-unit actual, so the close captures this RUN's share of the harness-tracked total itself
-(`accuracy --tokens-from-harness`, run by `sprint close --apply-signoff`) and the velocity row
+(`accuracy --tokens-from-harness`, run by `sprint close` as it PREPARES the run) and the velocity row
 records it. The meter is per-SESSION and cumulative, so what is captured is the delta from the
 baseline stamped when the run opened - not the session total, which in a session holding more than
 one sprint counts the earlier ones again. A run with no baseline (opened before the baseline

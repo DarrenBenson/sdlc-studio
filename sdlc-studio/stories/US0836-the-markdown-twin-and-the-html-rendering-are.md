@@ -39,6 +39,7 @@ figure share no value with RUN-01M2JA6J.
 - **Then** no numeral, percentage or proper name appears in either output that is not the value of a substituted token or a literal in that fixture's own data - the forbidden set DERIVED from the templates' own static text rather than from a capitalised-word pattern, which would trip on every heading, and no unsubstituted `{{token}}` remains - the nine strings above are the smoke case, not the definition
 - **Mutant:** check only the five ids and names first listed - the rendered page then ships another run's rework rate and change failure rate as prose, which is the defect in its most quotable form
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::RenderingTests::test_no_fact_of_another_run_survives_into_a_render
+- **Verified:** yes (2026-09-18)
 
 ### AC2: a section with no data renders NOT MEASURED by name, in both renderings
 
@@ -47,6 +48,7 @@ figure share no value with RUN-01M2JA6J.
 - **Then** all three sections are present with their headings in both; each body reads `NOT MEASURED` followed by the reason, naming the source it could not read; no absent figure renders as `0`, `-`, `None`, `n/a` or an empty cell anywhere in either output; and the two renderings carry the same ordered list of section headings, compared list against list
 - **Mutant:** render an absent figure as an empty table cell - a reader then cannot separate a measured zero from a measurement nobody took, which is the one distinction this report exists to preserve, and the tables still line up
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TemplateRenderingTests::test_an_empty_section_renders_not_measured_by_name_in_both
+- **Verified:** yes (2026-09-18)
 
 ### AC3: the twin is committed beside the JSON and the HTML is generated on demand
 
@@ -55,6 +57,7 @@ figure share no value with RUN-01M2JA6J.
 - **Then** `sdlc-studio/reports/<id>.json` and `<id>.md` both exist and no `.html` file exists anywhere under `sdlc-studio/`; `render --format html` with no `--out` writes the page to stdout and creates no file; with `--out <path>` it writes only to that path, and a `--out` inside `sdlc-studio/reports/` is refused, naming D2a
 - **Mutant:** write the HTML beside the twin at PREPARE time - a three-hundred-line generated page then churns in git on every re-prepare, which is the cost D2a's ruling was made to avoid
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TemplateRenderingTests::test_the_twin_is_written_and_the_html_is_generated_on_demand
+- **Verified:** yes (2026-09-18)
 
 ### AC4: the layout comes from the shipped template, not from strings in the renderer
 
@@ -63,6 +66,16 @@ figure share no value with RUN-01M2JA6J.
 - **Then** the output carries the altered heading, so the template is the source of the layout rather than its documentation; and the unfillable token makes the render exit non-zero naming that token, rather than leaving it in the output or silently emptying it
 - **Mutant:** build the Markdown from format strings in the renderer and keep the template as documentation - the two drift on the first change to either, and the "shipped templates" in this story's title then describe nothing that runs
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TemplateRenderingTests::test_the_layout_comes_from_the_shipped_template
+- **Verified:** yes (2026-09-18)
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | check only the five ids and names first listed - the rendered page then ships another run's rework rate and change failure rate as prose, which is the defect in its most quotable form | no fact of another run survives into a rendered page |
+| AC2 | render an absent figure as an empty table cell - a reader then cannot separate a measured zero from a measurement nobody took, which is the one distinction this report exists to preserve, and the tables still line up | a section with no data renders NOT MEASURED by name, in both renderings |
+| AC3 | write the HTML beside the twin at PREPARE time - a three-hundred-line generated page then churns in git on every re-prepare, which is the cost D2a's ruling was made to avoid | the twin is committed beside the JSON and the HTML is generated on demand |
+| AC4 | build the Markdown from format strings in the renderer and keep the template as documentation - the two drift on the first change to either, and the "shipped templates" in this story's title then describe nothing that runs | the layout comes from the shipped template, not from strings in the renderer |
 
 ## Revision History
 

@@ -1576,6 +1576,71 @@ def _invalidate_verify_report(root: Path, uid: str) -> None:
         sdlc_md.atomic_write(report, json.dumps(data, indent=2) + "\n")
 
 
+class SealedRunRefusal(ValueError):
+    """A status write refused because the unit's run is SEALED - its report has been signed.
+
+    Subclasses ValueError so every existing caller keeps working, and carries `run_id` and
+    `report` as DATA so a caller that wants to say WHICH page it broke does not re-parse the
+    sentence. Distinct from `GateRefusal` because it is not a gate: no amount of further work
+    on the unit clears it, and `--force` does not waive it. The only exit is `sprint.py reopen`,
+    which records the break beside the signature it breaks.
+    """
+
+    def __init__(self, message: str, run_id: str, report: str):
+        super().__init__(message)
+        self.run_id = run_id
+        self.report = report
+
+
+def _sealed_run_refusal(root, artifact_id: str) -> SealedRunRefusal | None:
+    """The refusal for a unit inside a SEALED run's batch, or None.
+
+    SEALED is judged by the RUN RECORD's own signature - a closed outcome plus a signature
+    written by `sprint.py sign` - and never by comparing the tree against the signed
+    fingerprint. That comparison answers a different question ("has the report gone stale"),
+    it is US0845's, and asking it here would refuse a run whose report drifted for reasons
+    nothing in this transition caused.
+
+    SCOPED TO THE BATCH. A seal freezes the facts the signed report states, and the report
+    states the batch's statuses; a repository-wide refusal would stop unrelated work for the
+    duration of somebody else's signature, which is a much worse rule than the one the
+    criterion asks for.
+
+    Reading the run state can never break a transition: an absent, unreadable or corrupt
+    record is not a sealed one, and refusing a status write because a cache would not parse
+    would make the seal a hazard rather than a guarantee.
+    """
+    try:
+        from lib import run_state  # noqa: PLC0415 - deferred, as elsewhere in this module
+        state = run_state.read(root)
+        closed = run_state.CLOSED
+    except Exception as exc:  # noqa: BLE001 - an unreadable run is not a sealed one
+        sdlc_md.debug("transition.sealed_run.unreadable", exc)
+        return None
+    if not isinstance(state, dict) or state.get("outcome") not in closed:
+        return None
+    signature = state.get("signature")
+    if not signature:
+        return None
+    want = sdlc_md.norm_id(artifact_id)
+    batch = [sdlc_md.norm_id(u) for u in (state.get("batch") or []) if u]
+    if want not in batch:
+        return None
+    run_id = str(state.get("run_id") or "the closed run")
+    report = str((signature or {}).get("report") or "its report")
+    principal = (signature or {}).get("principal") or "its principal"
+    signed_at = (signature or {}).get("signed_at") or "an unrecorded date"
+    return SealedRunRefusal(
+        f"{artifact_id} belongs to {run_id}, which is SEALED: {report} was signed by "
+        f"{principal} on {signed_at}, and that report states this unit's status. Moving it now "
+        f"would leave the signed page describing a tree that no longer exists, with nothing on "
+        f"the record saying it changed - a signature nothing refuses to write over only orders "
+        f"the work. The way back is explicit: `sprint.py reopen --reason \"<why>\"`, which "
+        f"reopens {run_id}, records the break and KEEPS the signature it breaks, so what was "
+        f"signed and when it was broken stay readable. Nothing was written.",
+        run_id, report)
+
+
 def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                dry_run: bool = False, force: bool = False,
                metrics: dict | None = None, triaged_by: str | None = None,
@@ -1604,6 +1669,16 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         raise ValueError(
             f"{artifact_id} is a meta-artifact (retro/review/handoff) outside the status "
             f"machinery by design - edit the file directly; there is no status to cascade")
+    # THE SEAL, and it is asked FIRST - before the artefact is even opened, so a refusal cannot
+    # have written a byte. NOT guarded by `not force` and not collected into the gate ladder:
+    # every gate there is a bar the unit can clear by doing more work, and this is not one. The
+    # run's report has been signed; the sanctioned exit is `sprint.py reopen`, which records the
+    # break, and a `--force` that skipped it would leave the same silent drift with a flag on it.
+    # Asked on a DRY RUN too, on the ladder's own terms: a preflight that predicts a write the
+    # real run refuses is the one falsehood a preflight must never tell.
+    sealed = _sealed_run_refusal(root, artifact_id)
+    if sealed:
+        raise sealed
     path, type_ = _find(root, artifact_id)
     if path is None:
         raise ValueError(f"no artifact found for id {artifact_id!r}")
@@ -2158,7 +2233,14 @@ def cmd_set(args: argparse.Namespace) -> int:
             refused += 1
             results.append({"id": aid, "blocked": str(exc)})
             if args.format != "json":
-                print(f"  blocked  {aid}: {exc}")
+                # A SEALED-run refusal goes to STDERR; every other block keeps the stdout line it
+                # has always had. A gate refusal is part of this command's ordinary report - the
+                # actor asked for a transition and is told what it still owes. The seal is not:
+                # the run is over and signed, and the driver that reads this is a chain step
+                # scanning stdout for `set <id>` lines. On stdout the refusal reads as one more
+                # progress line in the same stream as the successes it is contradicting.
+                stream = sys.stderr if isinstance(exc, SealedRunRefusal) else sys.stdout
+                print(f"  blocked  {aid}: {exc}", file=stream)
     if args.format == "json":
         print(json.dumps(results if len(ids) > 1 else results[0], indent=2))
     if len(ids) > 1:
@@ -2936,6 +3018,16 @@ def requirements(root, artifact_id: str, target: str) -> list[str]:
     """
     try:
         transition(root, artifact_id, target, dry_run=True)
+    except SealedRunRefusal as exc:
+        # A sealed run is not a gate - no work on the unit clears it - but `requirements` must
+        # still ANSWER. It is a read-only question, and every caller before this unit shipped
+        # got a list back; letting the refusal escape turned that list into an uncaught
+        # exception for every unit of a sealed run's batch, which is a regression in a command
+        # that reports rather than writes. The requirement is the one thing that would let the
+        # transition through, and it is named as such.
+        return [f"{artifact_id} belongs to {exc.run_id}, which is SEALED over {exc.report} - "
+                f"re-open it with `sprint.py reopen --reason \"<why>\"`, which records the "
+                f"break beside the signature it breaks"]
     except GateRefusal as exc:
         # The blocks come from the ladder as a LIST. An earlier version rebuilt them by
         # splitting the message on `". Override with --force"`, which only some gates append -

@@ -76,7 +76,7 @@ CLOSED = tuple(o for o in OUTCOMES if o != RUNNING)
 FIELDS = ("schema", "run_id", "started_at", "ended_at", "outcome", "goal", "batch",
           "batch_changes", "reopened",
           "plan", "handoff", "review_rounds", "review_ceiling_overrides",
-          "session_token_baseline", "delegated_tokens")
+          "session_token_baseline", "session_token_stamps", "delegated_tokens")
 
 # The session's token meter reading at the moment this run opened. The close subtracts it from
 # the meter's CURRENT reading to get the tokens THIS run spent, because the harness transcript
@@ -90,6 +90,22 @@ FIELDS = ("schema", "run_id", "started_at", "ended_at", "outcome", "goal", "batc
 # token cost cannot be attributed - exactly as an unmeasured elapsed reads UNMEASURED rather than
 # falling back to a plausible number.
 TOKEN_BASELINE = "session_token_baseline"
+
+# The ORDERED stamps of the session meter, one per reading, replacing the single baseline above.
+#
+# The baseline is ONE reading, and a difference of two readings is a spend only when both were
+# taken from the SAME meter. `retro.run_attributed_tokens` therefore refuses to subtract a
+# baseline stamped in one session from a reading taken in another, and it is right to: they are
+# different meters. But that refusal is why a run CLOSED ACROSS SESSIONS - the normal shape of a
+# long run - reports `not attributable`, which is worse than no report at all.
+#
+# A stamp per session fixes it without weakening the rule. Each stamp records the reading, the
+# transcript it came from, the time and the KIND (`open`, `resume`, `handoff`, `report`, ...),
+# and the run total is the sum of the per-session deltas: each term is a difference of two
+# readings of one meter, which is what a spend is. A session holding a single stamp covers no
+# delta and is NAMED as uncovered rather than guessed at, so an unqualified total can never
+# stand for a partially stamped run.
+TOKEN_STAMPS = "session_token_stamps"
 
 # The delegated agents' token totals, one record per agent, SUPPLIED rather than measured.
 #
@@ -388,7 +404,8 @@ def _blank() -> dict:
     false fact in the one file the next reader trusts. An unopened run says so."""
     return {"schema": SCHEMA, "run_id": None, "started_at": None, "ended_at": None,
             "outcome": RUNNING, "goal": None, "batch": [], "plan": None, "handoff": None,
-            REVIEW_ROUNDS: [], CEILING_OVERRIDES: [], TOKEN_BASELINE: None, DELEGATED: [],
+            REVIEW_ROUNDS: [], CEILING_OVERRIDES: [], TOKEN_BASELINE: None, TOKEN_STAMPS: [],
+            DELEGATED: [],
             # Seeded empty like its siblings: `reopened` is part of the documented shape, and a
             # field that only appears after a reopen would make every reader test for it.
             "reopened": [],
@@ -639,6 +656,126 @@ def _session_baseline(repo_root: Path | str) -> dict | None:
             "at": sdlc_md.now_iso8601()}
 
 
+def _stamp(repo_root: Path | str, kind: str, transcripts_dir: Path | str | None = None):
+    """One reading of the session meter, or None when it cannot be read.
+
+    Never raises, for `_session_baseline`'s reason: neither a plan nor a report may fail
+    because a transcript was unreadable, and a missing stamp is reported as missing.
+    """
+    try:
+        cap = session_tokens(repo_root, transcripts_dir)
+    except (ArithmeticError, AttributeError, OSError, TypeError, ValueError):
+        return None
+    if not cap.get("tokens"):
+        return None
+    return {"tokens": int(cap["tokens"]), "source": cap.get("source"),
+            "at": sdlc_md.now_iso8601(), "kind": kind, "model": cap.get("model")}
+
+
+def stamp_tokens(repo_root: Path | str, kind: str,
+                 transcripts_dir: Path | str | None = None) -> dict | None:
+    """APPEND a meter reading to the open run's stamp list. Returns the stamp, or None.
+
+    Appends - never overwrites. Rewriting one baseline at report time would make the delta
+    zero and the run report no cost at all, while a check that merely asserts a stamp exists
+    still passed. The earlier stamps are what the later ones are measured against, so losing
+    one loses a session's whole spend.
+    """
+    stamp = _stamp(repo_root, kind, transcripts_dir)
+    if stamp is None:
+        return None
+
+    def apply(state: dict) -> dict:
+        state = state or _blank()
+        stamps = list(state.get(TOKEN_STAMPS) or [])
+        stamps.append(stamp)
+        state[TOKEN_STAMPS] = stamps
+        return state
+
+    _mutate(repo_root, apply)
+    return stamp
+
+
+#: What the run token total is, said once so every caller inherits the sentence. The transcript
+#: records no subagent usage at all, and a session that wrote to the run without a closing stamp
+#: contributes nothing, so the figure can only ever be a floor.
+TOKEN_TOTAL_BASIS = ("the sum of the per-session meter deltas - a LOWER BOUND: the transcript "
+                     "records main-thread usage only, and a session with no closing stamp "
+                     "contributes nothing")
+
+
+def run_token_total(state: dict, current: dict | None = None) -> dict:
+    """What the run spent, from its stamps: the SUM of the per-session deltas.
+
+    `{"tokens", "sessions", "session_count", "uncovered", "model", "shape", "basis", "reason"}`.
+    `tokens` is None only when no reading can be had at all, and the `reason` then says why - it
+    is never 0, because a run whose meter could not be read did not cost nothing.
+
+    Each term is `last - first` WITHIN one transcript, so every subtraction is of two readings
+    of the same meter. That is the rule `retro.run_attributed_tokens` enforces by refusing a
+    cross-session baseline; summing per session keeps it and still reports a run closed across
+    sessions, which is the shape that read `not attributable` before.
+
+    `shape` names which record was read - `stamps` or the LEGACY single `session_token_baseline`
+    - so an older run is reported rather than refused, and the reader can tell which it got. For
+    the legacy shape a `current` reading (a `session_tokens` result) supplies the closing end of
+    the one delta available; without it the baseline alone is reported as the opening reading.
+    """
+    stamps = [s for s in (state.get(TOKEN_STAMPS) or [])
+              if isinstance(s, dict) and s.get("source") and isinstance(s.get("tokens"), int)]
+    if stamps:
+        by_session: dict[str, list[dict]] = {}
+        for s in stamps:
+            by_session.setdefault(str(s["source"]), []).append(s)
+        total, covered, uncovered = 0, [], []
+        for src, rows in by_session.items():
+            if len(rows) < 2:
+                # ONE reading covers no delta. Named, never guessed at and never dropped
+                # silently: an unqualified total over a partially stamped run is a partial one.
+                uncovered.append(src)
+                continue
+            total += max(0, max(r["tokens"] for r in rows) - min(r["tokens"] for r in rows))
+            covered.append(src)
+        models = sorted({s["model"] for s in stamps if s.get("model")})
+        if not covered:
+            # EVERY session carries one reading, so no delta is measurable anywhere. `total` is
+            # still at its 0 initialiser here, and returning it would publish a cost of zero and
+            # a rate of zero per point for the shape EVERY run carries between `open_run`'s
+            # stamp and the next one - which is the outcome AC1's own mutant describes and the
+            # output AC3 forbids by name. Zero tokens and no reading are different facts.
+            return {"tokens": None, "sessions": [], "session_count": 0,
+                    "uncovered": sorted(uncovered), "shape": "stamps",
+                    "model": models[0] if len(models) == 1 else (SESSION_MODEL_MIXED if models
+                                                                 else None),
+                    "basis": TOKEN_TOTAL_BASIS,
+                    "reason": (f"{len(uncovered)} session(s) carry a single meter reading and "
+                               f"no closing one, so no delta can be measured: "
+                               f"{', '.join(sorted(uncovered))}")}
+        return {"tokens": total, "sessions": sorted(covered), "session_count": len(covered),
+                "uncovered": sorted(uncovered), "shape": "stamps", "reason": None,
+                "model": models[0] if len(models) == 1 else (SESSION_MODEL_MIXED if models
+                                                             else None),
+                "basis": TOKEN_TOTAL_BASIS}
+    base = state.get(TOKEN_BASELINE)
+    if isinstance(base, dict) and isinstance(base.get("tokens"), int):
+        shape = f"the legacy single {TOKEN_BASELINE} (one reading, not a stamp list)"
+        if (isinstance(current, dict) and isinstance(current.get("tokens"), int)
+                and current.get("source") == base.get("source")):
+            return {"tokens": max(0, int(current["tokens"]) - int(base["tokens"])),
+                    "sessions": [str(base["source"])], "session_count": 1, "uncovered": [],
+                    "shape": shape, "model": current.get("model"), "reason": None,
+                    "basis": TOKEN_TOTAL_BASIS}
+        return {"tokens": None, "sessions": [str(base.get("source") or "")], "session_count": 0,
+                "uncovered": [str(base.get("source") or "")], "shape": shape,
+                "model": None, "basis": TOKEN_TOTAL_BASIS,
+                "reason": (f"only an opening reading of {base['tokens']} is recorded, from "
+                           f"{base.get('source')}, and no closing reading of that same meter "
+                           f"is available - the difference of two meters is not a spend")}
+    return {"tokens": None, "sessions": [], "session_count": 0, "uncovered": [],
+            "shape": "none", "model": None, "basis": TOKEN_TOTAL_BASIS,
+            "reason": "the run carries no meter stamp and no session token baseline"}
+
+
 #: The commit the run's delivery is measured FROM. Stamped when the run opens, on the run
 #: state, rather than in a loose file nothing owns - the old `sprint-base-ref.txt` was written
 #: once and never rewritten, so it held a sha two weeks older than the run that read it.
@@ -731,7 +868,11 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
             state = {**_blank(), "run_id": _mint_run_id(repo_root, state),
                      "started_at": sdlc_md.now_iso8601(),
                      BASE_REF: _head_sha(repo_root),
-                     TOKEN_BASELINE: _session_baseline(repo_root)}
+                     TOKEN_BASELINE: _session_baseline(repo_root),
+                     # The FIRST stamp, appended by the same read. The legacy baseline is kept
+                     # beside it: every consumer of the old field goes on working, and a run
+                     # opened before the stamp list existed still reports (US0844 AC4).
+                     TOKEN_STAMPS: [s for s in [_stamp(repo_root, "open")] if s]}
         elif _disjoint(state, batch):
             # The run is OPEN (not spent) and this batch shares no unit with it: a second sprint
             # the one run slot cannot hold. Refused here, ahead of every write - inside the lock,
@@ -1350,8 +1491,18 @@ def reopen_run(repo_root: Path | str, reason: str) -> dict:
             raise ValueError(f"{state['run_id']} is already open - nothing to reopen")
         history = list(state.get("reopened") or [])
         history.append({"at": sdlc_md.now_iso8601(),
+                        # The RUN this record belongs to. The record is archived and read back
+                        # beside others, so one that does not name its own run leaves a reader
+                        # holding a date and a reason with nothing to attach them to.
+                        "run_id": state.get("run_id"),
                         "from_outcome": state.get("outcome"),
                         "was_ended_at": state.get("ended_at"),
+                        # WHAT was broken, not just when. The signature is over one report, so
+                        # a re-open record that does not name it leaves a reader unable to say
+                        # which page stopped describing the tree. The signature itself is left
+                        # ALONE for the same reason the archive is: what was signed, and when
+                        # it was broken, must both stay readable afterwards.
+                        "report": state.get("report"),
                         "reason": reason.strip()})
         state["reopened"] = history
         state["outcome"] = RUNNING

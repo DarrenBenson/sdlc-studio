@@ -141,6 +141,13 @@ def _stubbed_close(record: list | None = None):
     # once. A list of the thing under test, maintained beside it, goes stale silently.
     names = tuple(s.replace("-", "_") for s in sprint._CLOSE_CHAIN)
     saved = {n: getattr(sprint, f"_close_{n}") for n in names}
+    # US0834's report holds are stubbed alongside the chain, and for the same reason. These
+    # tests are about the rolling CYCLE - the boundary order, the per-cycle run records, the
+    # regenerated batch - and their fixtures were never built to be report-clean, so leaving
+    # the holds live would make every one of them assert the holds by accident and fail for a
+    # reason outside its own subject.
+    saved_holds = sprint._report_holds
+    sprint._report_holds = lambda *a, **k: []
 
     def make(n):
         def step(root, retro_id, state):
@@ -154,6 +161,7 @@ def _stubbed_close(record: list | None = None):
     try:
         yield
     finally:
+        sprint._report_holds = saved_holds
         for n, fn in saved.items():
             setattr(sprint, f"_close_{n}", fn)
 

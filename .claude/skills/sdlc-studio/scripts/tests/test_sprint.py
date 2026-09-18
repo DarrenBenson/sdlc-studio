@@ -4366,12 +4366,29 @@ def _close_retro(root: Path, rid: str = "RETRO0001", with_index: bool = True,
 _CLOSE_STEP_NAMES = tuple(_load()._CLOSE_CHAIN)
 
 
-def _patch_close_steps(mod, fail_at=None, remedy="fix it", record=None):
+def _patch_close_steps(mod, fail_at=None, remedy="fix it", record=None, real=()):
     """Patch every chain step to succeed (recording call order), optionally failing
-    at one named step. Returns the contextlib.ExitStack the caller must close."""
+    at one named step. Returns the contextlib.ExitStack the caller must close.
+
+    `real` names steps to leave UNPATCHED. A test whose subject is what a step writes must ask
+    for it: a stub records that the step was reached and nothing about what it did, so a mutant
+    inside a stubbed step survives every assertion the caller makes about it.
+
+    `report-holds` is stubbed alongside them, and named in `real` the same way. It is not a chain
+    step - it is US0834's three refusals - but it stands in the same relation to a close test:
+    a fixture that is not report-clean refuses at it, and almost every close test here is about
+    the chain, the brief or the cost line rather than about the holds. Leaving it live would make
+    each of them assert the holds by accident, and a test that fails for a reason outside its own
+    subject is a test that stops meaning what its name says.
+    """
     import contextlib as _ctx
     stack = _ctx.ExitStack()
+    if "report-holds" not in real:
+        stack.enter_context(unittest.mock.patch.object(mod, "_report_holds",
+                                                       lambda *a, **k: []))
     for name in _CLOSE_STEP_NAMES:
+        if name in real:
+            continue
         attr = "_close_" + name.replace("-", "_")
 
         def make(nm):
@@ -4409,7 +4426,7 @@ class CloseChainTests(unittest.TestCase):
             self.assertIn("STOPPED", err.getvalue())
             self.assertIn("run lessons summary", err.getvalue())   # the remedy, named
 
-    def test_rerun_after_repair_resumes_and_prints_brief(self) -> None:
+    def test_rerun_after_repair_resumes_and_names_the_signing_command(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _close_state(root, handoff="HO0001", outcome="goal-reached")
@@ -4423,7 +4440,10 @@ class CloseChainTests(unittest.TestCase):
             self.assertEqual(rc, 0, err.getvalue())
             # the recorded goal-verdict is reused, not re-asked, and the brief prints
             self.assertIn("already judged", out.getvalue().lower())
-            self.assertIn("sign-off request", out.getvalue().lower())
+            # US0832 took the sign-off brief off this path - it was a second account of the run
+            # beside the page being signed. What a resumed close ends with is the one action
+            # left, which is the assertion that still says "this close reached its end".
+            self.assertIn("sprint.py sign", out.getvalue().lower())
 
     def test_goal_verdict_recorded_via_close_flag(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -4484,8 +4504,12 @@ class CloseRealChainTests(unittest.TestCase):
                                                    json.loads((root / "sdlc-studio" / ".local" /
                                                                "run-state.json").read_text()))
             self.assertTrue(ok)
-            i = calls["argv"].index("--outcome")
-            self.assertEqual(calls["argv"][i + 1], "stopped")   # partial -> stopped, not goal-reached
+            # US0832: PREPARE's handoff step passes NO outcome - an outcome is what ENDS a run
+            # and ending it is SEAL's. The derivation itself is unchanged and still tested, in
+            # PrepareAndSealTests, where `sign` writes `stopped` for a partial verdict.
+            self.assertNotIn("--outcome", calls["argv"],
+                             "PREPARE ended the run: SEAL then has no open run to seal")
+            self.assertIn("--retro", calls["argv"])
 
     def test_run_cli_handles_string_systemexit(self) -> None:
         mod = _load()
@@ -4638,157 +4662,31 @@ class _CloseReportBase(unittest.TestCase):
         return rc, out.getvalue(), err.getvalue()
 
 
-class CloseDrawsReportTests(_CloseReportBase):
-    """US0224: the close draws the sprint report, before the sign-off brief, and a report
-    that cannot be composed is noted rather than allowed to fail the close."""
-
-    def test_report_drawn_before_the_signoff_brief(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            mod = _load()
-            rc, out, err = self._close(mod, root)
-            self.assertEqual(rc, 0, err)
-            self.assertIn("Sprint report - RETRO0001", out)
-            # Composed from THIS run, not a stub: the unit count comes off the retro's Batch
-            # and the goal line off the run state.
-            self.assertIn("Delivered: 1 unit(s)", out)
-            self.assertIn("Sprint Goal: make the close honest", out)
-            brief = out.lower().index("sign-off request")
-            self.assertLess(out.index("Sprint report - RETRO0001"), brief)
-
-    def test_uncomposable_report_is_noted_and_the_close_still_passes(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            mod = _load()
-            import sprint_report
-            with unittest.mock.patch.object(sprint_report, "report",
-                                            side_effect=RuntimeError("composer exploded")):
-                rc, out, err = self._close(mod, root)
-            self.assertEqual(rc, 0, err)                    # noted, never fatal
-            self.assertIn("sprint report not drawn", (out + err).lower())
-            self.assertIn("composer exploded", out + err)   # named, not swallowed silently
-            self.assertIn("sign-off request", out.lower())  # the brief still prints
-
-    def test_unavailable_report_is_noted_and_the_close_still_passes(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            mod = _load()
-            import sprint_report
-            bad = {"ok": False, "id": "RETRO0001", "errors": ["retro not found"]}
-            with unittest.mock.patch.object(sprint_report, "report", return_value=bad):
-                rc, out, err = self._close(mod, root)
-            self.assertEqual(rc, 0, err)
-            self.assertIn("unavailable", out + err)
-            self.assertIn("sign-off request", out.lower())
-
-    def test_rerun_redraws_the_report_and_writes_nothing(self) -> None:
-        # The close is resumable: a second run must draw the page again and add no file -
-        # the report step is a read, and a read must not become a write on the re-run.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            mod = _load()
-            rc1, out1, err1 = self._close(mod, root)
-            before = {p.relative_to(root) for p in root.rglob("*") if p.is_file()}
-            rc2, out2, err2 = self._close(mod, root)
-            after = {p.relative_to(root) for p in root.rglob("*") if p.is_file()}
-            self.assertEqual((rc1, rc2), (0, 0), err1 + err2)
-            self.assertIn("Sprint report - RETRO0001", out1)
-            self.assertIn("Sprint report - RETRO0001", out2)
-            self.assertEqual(before, after, "the report step wrote a file on the re-run")
-
-
-class CloseReportReachesTheOperatorTests(_CloseReportBase):
-    """US0604 at the LANE, not the library.
-
-    Both of US0604's criteria call `sprint_report.close_report()` directly, so they were green
-    for a whole sprint while the caller raised NameError on `critic` and its own advisory
-    `except` ate it. The report printed only for an EMPTY batch - a batch size no real close
-    has - so the one input the feature exists to serve was exactly the one it failed on.
-
-    A library test cannot see a missing import in its caller. This drives the close.
-    """
-
-    def test_the_close_prints_the_report_for_a_non_empty_batch(self) -> None:
-        """MUTANT: drop `import critic` from `_tell_the_operator`; or move the call back onto
-        `_finalise_outcome`; or delete the call.
-
-        Driven through `main(["close", ...])` - the SHIPPED entry point - because everything
-        short of it has now been wrong twice. The first repair fixed a NameError inside a
-        function the close does not reach; a test entering at `_finalise_outcome` killed every
-        mutant while a real close printed nothing, because its fixture set `outcome="running"`
-        and a real close has already been stamped `goal-reached` by the handoff step.
-
-        A fixture the production caller is never presented with is not a lane test, however
-        many mutants it kills.
-
-        The batch is non-empty (`_close_state` carries US0101), which is the other half: an
-        empty batch takes no lap of the `unit_review_rounds` loop, so an empty-batch fixture
-        passes against the NameError too.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            mod = _load()
-            rc, printed, errored = self._close(mod, root)
-            self.assertEqual(rc, 0, errored)
-            self.assertNotIn("close report not emitted", errored,
-                             "the report step raised and was swallowed as advisory")
-            self.assertIn("CLOSE REPORT", printed,
-                          "a completed close told the operator nothing")
-            self.assertIn("US0101", printed, "the report names no unit from the batch")
-            # AC1's four sections, asserted against the CLOSE's output rather than against the
-            # renderer called with a hand-built dict.
-            report = printed.split("CLOSE REPORT", 1)[1]
-            for heading in ("SHIPPED", "CARRIED", "COST", "FINDINGS"):
-                self.assertIn(heading, report.upper(),
-                              f"the close's report has no {heading} section")
-
-
-class CloseReportDisabledTests(_CloseReportBase):
-    """US0224 AC2: `report.enabled: false` skips the PAGE, never the close."""
-
-    def _disable(self, root: Path) -> None:
-        (root / "sdlc-studio" / ".config.yaml").write_text("report:\n  enabled: false\n",
-                                                           encoding="utf-8")
-
-    def test_page_omitted_but_chain_and_brief_complete(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            self._disable(root)
-            mod = _load()
-            rc, out, err = self._close(mod, root)
-            self.assertEqual(rc, 0, err)
-            self.assertNotIn("Sprint report - RETRO0001", out)   # no page
-            # The chain still completed. Derived from the module, never a hardcoded index: the
-            # old `[6/6]` pinned a step COUNT, so adding a step failed a test about report
-            # rendering, which is not what it is meant to guard.
-            last = len(mod._CLOSE_CHAIN)
-            self.assertIn(f"[{last}/{last}] {mod._CLOSE_CHAIN[-1]}", out)
-            self.assertIn("reconcile: ok", out)
-            self.assertIn("sign-off request", out.lower())       # the brief still printed
-
-    def test_exit_code_is_the_same_as_with_rendering_on(self) -> None:
-        with tempfile.TemporaryDirectory() as on, tempfile.TemporaryDirectory() as off:
-            root_on, root_off = Path(on), Path(off)
-            self._fixture(root_on)
-            self._fixture(root_off)
-            self._disable(root_off)
-            mod = _load()
-            rc_on, out_on, _ = self._close(mod, root_on)
-            rc_off, out_off, _ = self._close(mod, root_off)
-            self.assertEqual(rc_on, rc_off)
-            self.assertIn("Sprint report - RETRO0001", out_on)    # guard: the on-run drew a page
-            self.assertNotIn("Sprint report - RETRO0001", out_off)
-
-
+# RETIRED by US0832 AC5 (2026-09-18): CloseDrawsReportTests, CloseReportReachesTheOperator-
+# Tests and CloseReportDisabledTests pinned the two legacy accounts the close used to print -
+# `_draw_report` and `_tell_the_operator` - each derived from its own root object. PREPARE now
+# prints exactly ONE account, the filed report, and that is pinned by
+# PrepareAndSealTests::test_prepare_prints_exactly_one_account_of_the_run. A test that pins
+# removed behaviour is not coverage, it is a second definition of done.
 class CloseBriefTests(unittest.TestCase):
     """US0198: the decision brief is composed from the committed records - deliveries,
-    verdict + REJECT history, gate and mutation results, forecast vs measured spend."""
+    verdict + REJECT history, gate and mutation results, forecast vs measured spend.
+
+    US0832 took the brief OFF the close's success path: it was a second account of the run
+    beside the page being signed, and it closed by naming the per-unit `critic.py signoff`
+    route, which is the two-command shape D0213 rejected. The brief itself is unchanged and
+    still has its own verb, so these tests compose it directly. What they no longer assert -
+    and must not - is that a close prints it.
+    """
+
+    def _brief(self, root: Path) -> str:
+        mod = _load()
+        c = _critic_mod()
+        state = mod.run_state.read(root) or {}
+        return c.signoff_brief(root, state.get("batch") or [],
+                               gate_note=f"gate --require-retro RETRO0001: PASS; "
+                                         f"{mod._mutation_note(root)}",
+                               cost_note=mod._cost_note(root, state))
 
     def _fixture(self, root: Path) -> None:
         _close_state(root)
@@ -4811,13 +4709,7 @@ class CloseBriefTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._fixture(root)
-            mod = _load()
-            out, err = io.StringIO(), io.StringIO()
-            with _patch_close_steps(mod), \
-                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
-            self.assertEqual(rc, 0, err.getvalue())
-            text = out.getvalue()
+            text = self._brief(root)
             self.assertIn("widget frobnicates", text)          # delivery title
             self.assertIn("REJECT", text)                      # reject history
             self.assertIn("vacuous killing test", text)
@@ -4835,14 +4727,9 @@ class CloseBriefTests(unittest.TestCase):
             _close_state(root)
             _close_story(root)   # no telemetry actuals written
             _close_retro(root)
-            mod = _load()
-            out, err = io.StringIO(), io.StringIO()
-            with _patch_close_steps(mod), \
-                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
-            self.assertEqual(rc, 0, err.getvalue())
-            self.assertIn("not measured, not zero", out.getvalue())
-            self.assertNotIn("tokens measured across", out.getvalue())
+            brief = self._brief(root)
+            self.assertIn("not measured, not zero", brief)
+            self.assertNotIn("tokens measured across", brief)
 
     def test_red_baseline_mutation_report_named_worthless(self) -> None:
         # A report whose baseline is red proves nothing; the brief must say so,
@@ -4854,14 +4741,9 @@ class CloseBriefTests(unittest.TestCase):
                    "summary": {"applied": 25, "killed": 0, "survived": 0, "errors": 25}}
             p = root / "sdlc-studio" / ".local" / "mutation-report.json"
             p.write_text(json.dumps(rep), encoding="utf-8")
-            mod = _load()
-            out, err = io.StringIO(), io.StringIO()
-            with _patch_close_steps(mod), \
-                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
-            self.assertEqual(rc, 0, err.getvalue())
-            self.assertIn("WORTHLESS", out.getvalue())
-            self.assertNotIn("0 killed / 0 survived", out.getvalue())
+            brief = self._brief(root)
+            self.assertIn("WORTHLESS", brief)
+            self.assertNotIn("0 killed / 0 survived", brief)
 
     def test_mutation_errors_and_truncation_surface(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -4872,14 +4754,9 @@ class CloseBriefTests(unittest.TestCase):
                                "errors": 3, "truncated": 65}}
             p = root / "sdlc-studio" / ".local" / "mutation-report.json"
             p.write_text(json.dumps(rep), encoding="utf-8")
-            mod = _load()
-            out, err = io.StringIO(), io.StringIO()
-            with _patch_close_steps(mod), \
-                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
-            self.assertEqual(rc, 0, err.getvalue())
-            self.assertIn("3 errored", out.getvalue())
-            self.assertIn("65", out.getvalue())   # the truncation, not silent
+            brief = self._brief(root)
+            self.assertIn("3 errored", brief)
+            self.assertIn("65", brief)   # the truncation, not silent
 
     def test_brief_includes_mutation_summary_when_report_exists(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -4890,14 +4767,9 @@ class CloseBriefTests(unittest.TestCase):
                                "errors": 0, "unviable": 1}}
             p = root / "sdlc-studio" / ".local" / "mutation-report.json"
             p.write_text(json.dumps(rep), encoding="utf-8")
-            mod = _load()
-            out, err = io.StringIO(), io.StringIO()
-            with _patch_close_steps(mod), \
-                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
-            self.assertEqual(rc, 0, err.getvalue())
-            self.assertIn("21", out.getvalue())                # killed
-            self.assertIn("survived", out.getvalue().lower())
+            brief = self._brief(root)
+            self.assertIn("21", brief)                # killed
+            self.assertIn("survived", brief.lower())
 
 
 def _critic_mod():
@@ -4944,8 +4816,7 @@ class ApplySignoffTests(unittest.TestCase):
             out, err = io.StringIO(), io.StringIO()
             with _patch_close_steps(mod), \
                     contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
-                               "--root", str(root)])
+                rc = mod.main(["sign", "--report", "RPT0001", "--retro", "RETRO0001", "--root", str(root)])
             self.assertNotEqual(rc, 0)
             self.assertIn("--principal", err.getvalue())
             c = _critic_mod()
@@ -4989,8 +4860,7 @@ class ApplySignoffTests(unittest.TestCase):
             out, err = io.StringIO(), io.StringIO()
             with _patch_close_steps(mod), \
                     contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
-                               "--principal", "Darren", "--root", str(root)])
+                rc = mod.main(["sign", "--report", "RPT0001", "--principal", "Darren", "--retro", "RETRO0001", "--root", str(root)])
             self.assertEqual(rc, 0, err.getvalue())
             c = _critic_mod()
             so = c.signoff_for(root, "US0101")
@@ -5013,12 +4883,19 @@ class ApplySignoffStopsTests(unittest.TestCase):
             out, err = io.StringIO(), io.StringIO()
             with _patch_close_steps(mod), \
                     contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
-                               "--principal", "qa-seat", "--root", str(root)])
+                rc = mod.main(["sign", "--report", "RPT0001", "--principal", "qa-seat", "--retro", "RETRO0001", "--root", str(root)])
             self.assertNotEqual(rc, 0)
-            self.assertIn("STOPPED", err.getvalue())
+            # US0833 AC2 moved this refusal EARLIER: the principal is judged across the whole
+            # batch before the fan-out writes anything, so a subagent principal is REFUSED
+            # rather than STOPPED at part-way. The subject is unchanged - a principal the
+            # authoring session controls does not get through - and the guarantee is stronger,
+            # so the assertion is on the refusal and on nothing having moved.
+            self.assertIn("REFUSED", err.getvalue())
+            self.assertIn("authoring-session subagent", err.getvalue())
             text = (root / "sdlc-studio" / "stories" / "US0101-widget.md").read_text()
             self.assertIn("Status:** Review", text)   # not advanced
+            self.assertIsNone((mod.run_state.read(root) or {}).get("signature"),
+                              "a refused seal still wrote a signature")
 
     def test_ApplySignoffStops_on_red_done_gate(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -5030,20 +4907,37 @@ class ApplySignoffStopsTests(unittest.TestCase):
             out, err = io.StringIO(), io.StringIO()
             with _patch_close_steps(mod), \
                     contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
-                               "--principal", "Darren", "--root", str(root)])
+                rc = mod.main(["sign", "--report", "RPT0001", "--principal", "Darren", "--retro", "RETRO0001", "--root", str(root)])
             self.assertNotEqual(rc, 0)
             self.assertIn("STOPPED", err.getvalue())
             text = (root / "sdlc-studio" / "stories" / "US0101-widget.md").read_text()
             self.assertIn("Status:** Review", text)   # Done gate refused; left at Review
 
 
-def _run_apply_signoff(root, mod, principal="Darren", retro="RETRO0001"):
+def _run_prepare(root, mod, retro="RETRO0001"):
+    """PREPARE: `close` with no principal. Under US0832 it runs everything that can change a
+    fact - the chain, the tail (velocity row, handoff refresh, reconcile) - and files the
+    report, leaving the run open for `sign`."""
     out, err = io.StringIO(), io.StringIO()
-    argv = ["close"]
+    argv = ["close"] + (["--retro", retro] if retro else []) + ["--root", str(root)]
+    with _patch_close_steps(mod), \
+            contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = mod.main(argv)
+    return rc, out.getvalue(), err.getvalue()
+
+
+def _run_apply_signoff(root, mod, principal="Darren", retro="RETRO0001"):
+    """The fan-out, driven through the verb that now owns it.
+
+    US0832 split the close: `--apply-signoff` is refused and names `sign`, so every test that
+    exercised the fan-out drives `sign` instead. The fan-out itself is unchanged - what moved
+    is which command runs it, and that the close tail no longer follows the signature.
+    """
+    out, err = io.StringIO(), io.StringIO()
+    argv = ["sign", "--principal", principal, "--report", "RPT0001"]
     if retro:
         argv += ["--retro", retro]
-    argv += ["--apply-signoff", "--principal", principal, "--root", str(root)]
+    argv += ["--root", str(root)]
     with _patch_close_steps(mod), \
             contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         rc = mod.main(argv)
@@ -5974,8 +5868,12 @@ def _ua_drop(mod, root: Path, uid: str) -> None:
 def _ua_close(mod, root: Path, *extra: str, retro: str = "RETRO0001") -> tuple:
     """`sprint.py close --retro <retro>` through `main`, every chain step patched to pass
     EXCEPT `checklist`, so the real `_close_checklist` runs where `_patch_close_steps` would
-    patch it out."""
+    patch it out. US0834's report holds are patched out for the same reason the steps are:
+    this helper's subject is the checklist, and a fixture that is not report-clean would
+    refuse after it, making every test here assert the holds by accident."""
     with contextlib.ExitStack() as stack:
+        stack.enter_context(unittest.mock.patch.object(mod, "_report_holds",
+                                                       lambda *_a, **_k: []))
         for name in mod._CLOSE_CHAIN:
             if name != "checklist":
                 stack.enter_context(unittest.mock.patch.object(
@@ -6141,11 +6039,16 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
             rc, out, err = _ua_close(mod, root)
             self.assertIn("checklist: ok", out, f"the first close refused:\n{err}")
             self.assertEqual(0, rc, err)
-            rc, out, err = _ua_close(mod, root, "--apply-signoff", "--principal", "Darren")
-            self.assertIn("checklist: ok", out, f"the apply-signoff close refused:\n{err}")
+            # US0832: the transitions moved to `sign`. The subject of this test is that a
+            # Review, Fixed or rung-end unit does not HOLD the close, so the close is driven
+            # here and the fan-out follows it through the verb that now owns it.
+            out2, err2 = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out2), contextlib.redirect_stderr(err2):
+                rc = mod.main(["sign", "--report", "RPT0001", "--principal", "Darren",
+                               "--root", str(root)])
             self.assertEqual(("Done", "Done", "Fixed"),
                              tuple(_ua_status(root, u) for u in ("US0101", "US0102", "BG0101")),
-                             err)
+                             err2.getvalue())
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             harness(root, extra=("US0103",))
@@ -6396,7 +6299,10 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                     rc, out, err = _ua_close(mod, root)
                     self.assertIn("checklist: ok", out, err)
                     self.assertEqual(0, rc, err)
-                rc, out, err = _ua_close(mod, root, "--apply-signoff", "--principal", "Darren")
+                # US0832: the checklist hold is PREPARE's, so it is driven by `close` with no
+                # principal. `--apply-signoff` no longer reaches the checklist at all - it is
+                # refused up front and names `sign`, which is its own criterion (AC3).
+                rc, out, err = _ua_close(mod, root)
                 if tree == "i":
                     self.assertEqual(1, rc)
                     self.assertIn("close STOPPED at checklist", err)
@@ -6630,10 +6536,14 @@ class AbandonedUnitIsNotFannedToDoneTests(unittest.TestCase):
 
     def test_an_abandoned_unit_with_an_unrepaired_reject_does_not_stop_the_close(self) -> None:
         """MUTANT: `_batch_story_units` keeps a unit at an abandonment terminal (the base-ref
-        fan-out), so the done-gate preview dry-runs Done on it and apply-signoff stops at it
+        fan-out), so the done-gate preview dry-runs Done on it and the fan-out stops at it
         over its unanswered delivery REJECT; or it keeps Superseded or Won't Fix by testing
         one status word. The control is the same REJECT on a Review story, which the preview
-        still names and apply-signoff still stops at."""
+        still names and the fan-out still stops at.
+
+        US0832 moved the fan-out off the close: it is `sprint.py sign` that runs it now, so
+        that is what this drives. The subject is unchanged - which units the fan-out walks -
+        and only the verb that runs it has moved."""
         mod = _load()
         for kind_status in ("Won't Implement", "Superseded"):
             with self.subTest(status=kind_status), tempfile.TemporaryDirectory() as d:
@@ -6642,7 +6552,7 @@ class AbandonedUnitIsNotFannedToDoneTests(unittest.TestCase):
                 pre = mod._signoff_preflight(root, state)
                 self.assertEqual([], [b["detail"] for b in pre if "US0102" in b["detail"]],
                                  "the pre-flight names an abandoned unit as owing a Done")
-                rc, out, err = _ua_close(mod, root, "--apply-signoff", "--principal", "Darren")
+                rc, out, err = _run_apply_signoff(root, mod, principal="Darren")
                 self.assertNotIn("STOPPED at US0102", err)
                 self.assertEqual(0, rc, err)
                 self.assertEqual(kind_status, _ua_status(root, "US0102"),
@@ -7337,8 +7247,11 @@ class ApplySignoffTailTests(unittest.TestCase):
                            "| [US0101](US0101-widget.md) | widget frobnicates | Draft |\n"
                            "| [US0102](US0102-ghost.md) | ghost | Draft |\n", encoding="utf-8")
             mod = _load()
-            rc, out, err = _run_apply_signoff(root, mod)
-            self.assertNotEqual(rc, 0)
+            rc, out, err = _run_prepare(root, mod)
+            # US0832: the reconcile is PREPARE's - it checks the tree the report is about to
+            # describe. It is ADVISORY there, because at PREPARE no unit is terminal and the
+            # tail cannot compute a delivered count, so the drift is REPORTED rather than fatal.
+            self.assertIn("could not complete at PREPARE", err)
             self.assertIn("reconcile", (out + err).lower())
 
 
@@ -7356,9 +7269,11 @@ class ApplySignoffIdempotentTests(unittest.TestCase):
             rc1, out1, err1 = _run_apply_signoff(root, mod)
             self.assertEqual(rc1, 0, err1)
             rc2, out2, err2 = _run_apply_signoff(root, mod)   # same command again
-            self.assertEqual(rc2, 0, err2)
-            self.assertIn("1 already complete", out2)          # skipped, not re-done
-            self.assertIn("0 transitioned Done", out2)
+            # US0832: re-signing is no longer "skip the done units" - a SEALED run refuses the
+            # second signature outright, which is the stronger guarantee the split buys, and it
+            # is why `reopen --reason` exists rather than a silent second pass.
+            self.assertEqual(rc2, 2, out2)
+            self.assertIn("already sealed", err2)
 
     def test_ApplySignoffIdempotent_velocity_row_not_duplicated(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -7367,8 +7282,8 @@ class ApplySignoffIdempotentTests(unittest.TestCase):
             _signoffable_story(root)
             _close_retro(root)
             mod = _load()
-            _run_apply_signoff(root, mod)
-            _run_apply_signoff(root, mod)
+            _run_prepare(root, mod)
+            _run_prepare(root, mod)
             vel = (root / "sdlc-studio" / "retros" / "VELOCITY.md").read_text()
             self.assertEqual(vel.count("| RETRO0001 |"), 1)    # upserted, not appended twice
 
@@ -19477,6 +19392,905 @@ class PlanFalsifiabilityGateTests(unittest.TestCase):
             rc, out, err = self._plan(root, passing)
             self.assertEqual(0, rc, err)
             self.assertIn("batch: 2 unit(s)", out)
+
+
+class PrepareAndSealTests(unittest.TestCase):
+    """US0832: `close` becomes PREPARE - everything that can change a fact - and a new `sign`
+    becomes SEAL, which writes the signature and only what the signature entails.
+
+    RUN-01M2JA6J is the evidence: the operator's approval was applied and then roughly two
+    hours of work followed it, because `--apply-signoff` runs the fan-out AND the tail. The
+    split is judged by what each half WRITES, never by what its help text claims.
+    """
+
+    def _prepared(self, d):
+        """A run PREPARE has no refusal to make: one unit, retro recorded, goal judged.
+
+        The verify report is part of the fixture, not decoration: SEAL transitions the unit to
+        Done, and the Done gate refuses a story whose executable ACs were never verified. A
+        fixture without it tests the gate's refusal rather than the split under test.
+        """
+        root = Path(d)
+        _close_state(root)
+        _close_retro(root, batch="US0101")
+        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "stories" / "US0101-a.md").write_text(
+            "# US0101: a\n\n> **Status:** Review\n\n## Acceptance Criteria\n\n"
+            "### AC1: it behaves\n\n- **Verify:** shell true\n", encoding="utf-8")
+        rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rp.write_text(json.dumps({"stories": {"US0101-a": {
+            "failed": 0, "stale": 0, "failures": [], "ac_count": 1,
+            "verified_at": "2099-01-01T00:00:00Z"}}}), encoding="utf-8")
+        return root
+
+    def _close(self, root, mod, extra=(), record=None, real=()):
+        out, err = io.StringIO(), io.StringIO()
+        argv = ["close", "--retro", "RETRO0001", *extra, "--root", str(root)]
+        with _patch_close_steps(mod, record=record, real=real), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_prepare_runs_every_fact_changing_step_and_leaves_the_run_open(self):
+        """AC1. MUTANT: leave the `handoff` chain step closing the run object - the chain still
+        runs and every unit still transitions, and the only thing that breaks is that SEAL has
+        no open run to seal, which no assertion about the chain would catch."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            steps = []
+            # `handoff` runs FOR REAL: it is the step that used to end the run, so a stub of it
+            # would leave this criterion asserting over a step that never executed.
+            rc, out, err = self._close(root, mod, record=steps, real=("handoff",))
+            self.assertEqual(rc, 0, err)
+            self.assertTrue(steps, "no chain step ran - PREPARE must do the fact-changing work")
+            self.assertTrue((mod.run_state.read(root) or {}).get("handoff"),
+                            "the real handoff step did not run - the mutant it guards is unseen")
+            state = mod.run_state.read(root)
+            self.assertEqual(state.get("outcome"), "running",
+                             "PREPARE closed the run: SEAL then has no open run to seal")
+            self.assertIsNone(state.get("ended_at"), "PREPARE ended the run")
+            rid = state.get("report") or ""
+            self.assertTrue(rid, "PREPARE named no report for SEAL to sign")
+            import sprint_report as sr  # noqa: PLC0415
+            self.assertTrue((root / "sdlc-studio" / "reports" / f"{rid}.json").is_file(),
+                            "the run names a report whose JSON is not on disk")
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-archive").exists(),
+                             "PREPARE archived the run - only a close does that")
+            # AC1's last clause, and it had no assertion: the LAST line names the only action
+            # left. It did not hold - the sign-off brief printed after the report and closed
+            # with the per-unit `critic.py signoff` route, which is the two-command shape this
+            # split exists to end.
+            last = [ln for ln in out.splitlines() if ln.strip()][-1]
+            self.assertIn("sprint.py sign", last,
+                          f"the last line of PREPARE is not the sign command: {last!r}")
+            self.assertIn(rid, last, "the sign command does not name the report to sign")
+
+    def test_seal_writes_the_signature_and_only_what_it_entails(self):
+        """AC2. MUTANT: call `_apply_signoff_tail` from `sign` - the velocity row, the handoff
+        re-render and the final reconcile then run AFTER the signature."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            self._close(root, mod)
+            before = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["sign", "--principal", "Darren Benson",
+                               "--author", "agent", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            after = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            moved = {p for p in set(before) | set(after)
+                     if before.get(p) != after.get(p)}
+            # What a signature ENTAILS, each one a consequence of the transitions SEAL just
+            # wrote and of nothing else. `actuals-*.jsonl` is on the list because `transition`
+            # itself records a unit's close telemetry as it reaches its terminal status - the
+            # row exists because the signature moved the unit, and it is written BY the move
+            # rather than by a tail step that runs after it, which is what AC2 forbids.
+            allowed = ("run-state.json", "run-archive", "signoff-record.md", "reports/",
+                       "_index.md", "US0101", "VELOCITY.md", "actuals-")
+            stray = [str(p) for p in moved
+                     if not any(a in str(p) for a in allowed)]
+            self.assertEqual(stray, [], f"SEAL wrote what the signature does not entail: {stray}")
+            # ...and the criterion's real distinction, which a byte set cannot express on a
+            # fixture where the tail's own writes are allowlisted or inert: SEAL does not run
+            # the close TAIL. The cascade it does run is the signature's consequence; the tail
+            # changes facts the report already states, so it belongs to PREPARE.
+            tail_ran = []
+            with unittest.mock.patch.object(mod, "_apply_signoff_tail",
+                                            lambda *a, **k: tail_ran.append(True) or 0):
+                root2, mod2 = self._prepared(tempfile.mkdtemp()), mod
+                self._close(root2, mod2)
+                tail_ran.clear()
+                o2, e2 = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(o2), contextlib.redirect_stderr(e2):
+                    mod2.main(["sign", "--principal", "Darren Benson", "--author", "agent",
+                               "--root", str(root2)])
+            self.assertEqual(tail_ran, [],
+                             "SEAL ran the close tail - the reconcile and the figures it "
+                             "recomputes belong to PREPARE, before the page is derived")
+
+    def test_the_close_tells_the_operator_where_the_report_is(self):
+        """US0604 AC1: a report nobody is told about is told to nobody.
+
+        A DIFFERENT claim from US0832 AC5, which is that there is no SECOND account. This one
+        is that the one account REACHES the operator: the filed report is named on stdout,
+        with its fingerprint and with the command that signs it, so the close ends by handing
+        over rather than by falling silent.
+
+        MUTANT: file the report and print nothing about it - `_file_the_report` returns its id
+        to a caller that says nothing. Every US0832 assertion about there being no second
+        account still passes, because printing nothing is trivially not printing twice.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            rc, out, err = self._close(root, mod)
+            self.assertEqual(rc, 0, err)
+            rid = (mod.run_state.read(root) or {}).get("report") or ""
+            self.assertTrue(rid, "PREPARE filed no report")
+            self.assertIn(rid, out, "the operator is not told which report was filed")
+            self.assertIn("report filed", out.lower(),
+                          "the close does not announce the page it produced")
+            fp = (mod.run_state.read(root) or {}).get("report_fingerprint") or ""
+            self.assertIn(fp, out, "the report is named without the fingerprint it is signed over")
+            self.assertIn("sprint.py sign", out,
+                          "the operator is not told the command that signs it")
+
+    def test_prepare_takes_the_report_time_stamp_through_the_shipped_lane(self):
+        """US0844 AC1's "and again at report time", asked of the LANE through `main`.
+
+        MUTANT: remove the `run_state.stamp_tokens(root, "report")` call from PREPARE. Nothing
+        else in the shipped tree calls it - it was delivered with a test as its only caller -
+        so `open_run`'s single reading stands alone, no delta is measurable, and every run
+        reports its cost as NOT MEASURED. `test_run_state.py` stays green throughout, because a
+        library test cannot see a missing lane.
+
+        Driven through `sprint.py close`, not through `_file_the_report`: the criterion's When
+        is PREPARE building the report, and `lane-check` is right that a test calling the
+        function directly does not exercise the wiring - which is the half of this defect that
+        made it possible.
+        """
+        from lib import run_state  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            transcripts = Path(tempfile.mkdtemp())
+            (transcripts / "s1.jsonl").write_text(
+                json.dumps({"message": {"model": "m9",
+                                        "usage": {"input_tokens": 9_000_000}}}) + "\n",
+                encoding="utf-8")
+            before = list((mod.run_state.read(root) or {}).get(run_state.TOKEN_STAMPS) or [])
+            with unittest.mock.patch.dict(os.environ,
+                                          {run_state.TRANSCRIPTS_ENV: str(transcripts)}):
+                rc, out, err = self._close(root, mod)
+            self.assertEqual(rc, 0, err)
+            stamps = (mod.run_state.read(root) or {}).get(run_state.TOKEN_STAMPS) or []
+            self.assertGreater(len(stamps), len(before),
+                               "PREPARE took no meter reading, so no delta can be measured")
+            self.assertEqual("report", stamps[-1].get("kind"),
+                             "the stamp PREPARE took is not the report-time one")
+            # The SHAPE the criterion describes: an ordered list, each stamp carrying its
+            # reading, path, ISO time and kind, with the earlier stamps UNCHANGED. Appending is
+            # what makes a delta measurable; overwriting one baseline makes it zero while a
+            # check that a stamp exists still passes.
+            for st in stamps:
+                for key in ("tokens", "source", "at", "kind"):
+                    self.assertIn(key, st, f"a stamp carries no {key}: {st}")
+            self.assertEqual(before, stamps[:len(before)],
+                             "PREPARE rewrote an earlier stamp instead of appending")
+
+    def test_apply_signoff_is_refused_and_names_sign(self):
+        """AC3. MUTANT: keep `--apply-signoff` as an alias that calls `sign` - the old path
+        survives in every operator's fingers, help file and runbook row."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            rc, out, err = self._close(root, mod,
+                                       extra=["--apply-signoff", "--principal", "Darren"])
+            self.assertEqual(rc, 2, out)
+            self.assertIn("sprint.py sign", err + out,
+                          "the refusal does not name the replacement command")
+            rec = root / "sdlc-studio" / "reviews" / "signoff-record.md"
+            self.assertFalse(rec.exists() and "Darren" in rec.read_text(encoding="utf-8"),
+                             "a refused --apply-signoff still wrote a sign-off row")
+            self.assertEqual(mod.run_state.read(root).get("outcome"), "running")
+
+    def test_prepare_is_rerunnable_and_re_derives_the_report(self):
+        """AC4. MUTANT: return the existing report when the run already names one - a late fix
+        is then invisible and the operator signs a fingerprint over facts that have moved."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            self._close(root, mod)
+            first = mod.run_state.read(root).get("report_fingerprint")
+            # A LATE FIX between the two prepares, and one the report actually reads: the unit's
+            # points feed the delivered figure and the per-point rate derived from it. Moving a
+            # line no figure reads would test nothing - the fingerprint is a digest of the
+            # figure SET, so a fact outside that set is not one the operator is signing over.
+            story = root / "sdlc-studio" / "stories" / "US0101-a.md"
+            story.write_text(story.read_text(encoding="utf-8").replace(
+                "> **Status:** Review", "> **Status:** Review\n> **Points:** 8"),
+                encoding="utf-8")
+            rc, out, err = self._close(root, mod)
+            self.assertEqual(rc, 0, err)
+            self.assertNotEqual(mod.run_state.read(root).get("report_fingerprint"), first,
+                                "the second PREPARE reused the first report over moved facts")
+            # ...and the rest of the Then, which had no assertion. Each is one line, and a
+            # re-derive that also transitioned a unit or wrote a sign-off row would have passed
+            # the fingerprint check alone.
+            import sprint_report as sr  # noqa: PLC0415
+            self.assertIn("Status:** Review",
+                          (root / "sdlc-studio" / "stories" / "US0101-a.md").read_text(
+                              encoding="utf-8"),
+                          "the re-run transitioned a unit - the per-unit rows belong to SEAL")
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "signoff-record.md").exists(),
+                             "the re-run wrote a sign-off row before anyone signed")
+            rid2 = (mod.run_state.read(root) or {})["report"]
+            rep = sr.read_report(root, rid2)
+            header = {s["key"]: s for s in rep["sections"]}["header"]
+            self.assertEqual(8, header["figures"]["points_delivered"]["value"],
+                             "the re-derived page does not carry the moved figure's new value")
+
+    def test_seal_derives_stopped_from_a_partial_verdict(self):
+        """The outcome derivation moved from PREPARE's handoff step to SEAL, so it is tested
+        where it now lives: only an achieved goal seals goal-reached.
+
+        MUTANT: seal every run `goal-reached` - a partial or missed run then closes claiming
+        the thing its own verdict denied, which is the defect the derivation was added for.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            _close_state(root, sprint_goal_verdict={"verdict": "partial", "note": "half"})
+            self._close(root, mod)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                mod.main(["sign", "--principal", "Darren Benson", "--author", "agent",
+                          "--report", "RPT0001", "--root", str(root)])
+            self.assertEqual(mod.run_state.read(root).get("outcome"), "stopped",
+                             "a partial verdict sealed as something other than stopped")
+
+    def test_prepare_prints_exactly_one_account_of_the_run(self):
+        """AC5. MUTANT: leave `_draw_report` in place - the operator decides over two accounts
+        of the same run, derived from two different root objects."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._prepared(d), _load()
+            called = []
+            with unittest.mock.patch.object(mod, "_draw_report",
+                                            lambda *a, **k: called.append("draw")), \
+                    unittest.mock.patch.object(mod, "_tell_the_operator",
+                                               lambda *a, **k: called.append("tell")):
+                rc, out, err = self._close(root, mod)
+            self.assertEqual(rc, 0, err)
+            self.assertEqual(called, [],
+                             f"PREPARE still prints a legacy account: {called}")
+            # ...and the criterion's real claim, which "neither legacy function ran" does not
+            # reach: exactly ONE account of the run on stdout. A second full page printed
+            # beside the filed one, or the sign-off brief's own per-unit and cost block, both
+            # left those assertions green while the operator read two sets of figures.
+            page = out
+            self.assertEqual(1, page.count("report filed:"),
+                             f"PREPARE filed or announced more than one report:\n{page}")
+            for second in ("## Delivered", "## Cost", "Cost evidence:", "APPROVE: record with"):
+                self.assertNotIn(second, page,
+                                 f"PREPARE printed a second account of the run ({second!r}) "
+                                 f"beside the page being signed")
+
+
+class ReportCostRowTests(unittest.TestCase):
+    """US0844 AC3: the cost row PREPARE produces names its total, model, rate and coverage.
+
+    Driven through `sprint.py`'s own PREPARE step rather than the composer's function, because
+    the criterion's Given is "when PREPARE builds the report" and a library call cannot see the
+    wiring: `_file_the_report` is what actually derives the report, files it and stamps the run
+    state, and a break in any of those three is invisible to `build_report` on its own.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import test_sprint_report as tsr  # noqa: PLC0415 - the fixture builder lives beside it
+        self.tsr = tsr
+
+    def _prepare(self, root: Path):
+        """PREPARE's report step, and the report it filed, read back off disk."""
+        import sprint_report as sr  # noqa: PLC0415
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            report_id, fp = mod._file_the_report(root, self.tsr.FIX_RETRO)
+        if not report_id:
+            return None, out.getvalue() + err.getvalue(), fp
+        return sr.read_report(root, report_id), out.getvalue() + err.getvalue(), fp
+
+    def test_the_cost_row_names_its_total_model_rate_and_session_coverage(self) -> None:
+        """AC3. MUTANT: print the run total with no coverage clause.
+
+        A partial total then reads as the run's cost, which is the consult's finding that an
+        unqualified total over a run closed across sessions is a partial one."""
+        from lib import run_state  # noqa: PLC0415
+        root = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        self.tsr.fixture_run(root)
+        # AC2's run: two sessions, four stamps, plus a session that wrote with one reading only.
+        p = root / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(p.read_text(encoding="utf-8"))
+        state[run_state.TOKEN_STAMPS] = [
+            {"tokens": 4_271_975, "source": "/t/s1.jsonl", "kind": "open",
+             "at": "2026-09-15T05:00:00Z", "model": "test-model-9"},
+            {"tokens": 10_731_650, "source": "/t/s1.jsonl", "kind": "handoff",
+             "at": "2026-09-15T13:00:00Z", "model": "test-model-9"},
+            {"tokens": 120_000, "source": "/t/s2.jsonl", "kind": "resume",
+             "at": "2026-09-16T09:00:00Z", "model": "test-model-9"},
+            {"tokens": 900_000, "source": "/t/s2.jsonl", "kind": "report",
+             "at": "2026-09-16T11:00:00Z", "model": "test-model-9"},
+            {"tokens": 50_000, "source": "/t/s3.jsonl", "kind": "resume",
+             "at": "2026-09-16T12:00:00Z", "model": "test-model-9"}]
+        p.write_text(json.dumps(state), encoding="utf-8")
+        rep, printed, fp = self._prepare(root)
+        self.assertIsNotNone(rep, f"PREPARE filed no report: {printed}")
+        # The wiring, which the composer's own tests cannot see: the report reached disk, the
+        # run state names it, and the fingerprint PREPARE printed is the one it stored.
+        self.assertTrue(fp, "PREPARE filed a report with no fingerprint")
+        self.assertEqual(rep["fingerprint"], fp)
+        live = run_state.read(root) or {}
+        self.assertEqual(live.get("report"), rep["report_id"])
+        self.assertEqual(live.get("report_fingerprint"), fp)
+        self.assertIn(rep["report_id"], printed, "PREPARE did not name the report it filed")
+
+        cost = {s["key"]: s for s in rep["sections"]}["cost"]
+        self.assertIsNone(cost.get("not_measured"))
+        figs = cost["figures"]
+        self.assertEqual(figs["tokens_total"]["value"], 7_239_675)
+        self.assertEqual(figs["model"]["value"], "test-model-9")
+        self.assertEqual(figs["tokens_per_point"]["value"], round(7_239_675 / 103))
+        coverage = figs["token_coverage"]["value"]
+        self.assertIn("2", str(coverage), "the coverage clause does not name the session count")
+        self.assertIn("s3.jsonl", str(coverage),
+                      "the coverage clause does not name the session that wrote to the run "
+                      "without a closing stamp")
+        self.assertNotEqual(str(figs["tokens_per_point"]["value"]), "0")
+        # D3: per-unit actuals stay UNMEASURED and are NAMED.
+        self.assertEqual(figs["per_unit_cost"]["value"], "UNMEASURED")
+        units = {s["key"]: s for s in rep["sections"]}["units"]
+        self.assertTrue(units["rows"], "the unit table is empty")
+
+        # THE SECOND HALF OF THE SAME CRITERION, asserted by the same selector. It used to sit
+        # in a sibling test on a second `Verify:` line - which stacks verifiers, refused by the
+        # corpus check, and which hid that one criterion's two halves were answered by two
+        # different selectors. MUTANT for this half: fall back to 0 when no stamp is readable.
+        # A zero total and a rate of zero per point are indistinguishable from a free sprint,
+        # which is what AC3 forbids by name.
+        import sprint_report as sr  # noqa: PLC0415
+        bare = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        self.tsr.fixture_run(bare, stamps=False)
+        empty = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        with unittest.mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(empty)}):
+            rep, printed, _fp = self._prepare(bare)
+        self.assertIsNotNone(rep, f"PREPARE filed no report: {printed}")
+        cost2 = {s["key"]: s for s in rep["sections"]}["cost"]
+        self.assertIsNotNone(cost2.get("not_measured"),
+                             "an unreadable meter produced a cost row anyway")
+        self.assertEqual(cost2["not_measured"]["value"], "NOT MEASURED")
+        self.assertTrue(cost2["not_measured"]["reason"],
+                        "NOT MEASURED carries no reason from session_tokens")
+        self.assertNotIn("tokens_total", cost2.get("figures") or {})
+        body = sr.render_markdown(rep).split("## Cost", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("NOT MEASURED - ", body,
+                      "the rendered cost section does not read NOT MEASURED with its reason")
+        self.assertNotIn("/pt", body, "an unmeasured cost still printed a per-point rate")
+
+
+class PrepareRefusesTests(unittest.TestCase):
+    """US0834: three holds PREPARE refuses over, each naming every failure at once.
+
+    What separates them from `close_preflight`'s blockers is that they REFUSE the report rather
+    than being filed and deferred. `--file-and-close` exists so a run can end honestly with work
+    outstanding; a report is exactly the artefact that must not. A report produced over a unit
+    whose gate is unmet, a live REJECT or an index that disagrees with the tree is a document
+    whose facts expire before the signature dries.
+    """
+
+    def _unit(self, root, uid, status="Review", *, epic="EP0001", verified=True, acs=1):
+        d = root / "sdlc-studio" / ("bugs" if uid.startswith("BG") else "stories")
+        d.mkdir(parents=True, exist_ok=True)
+        slug = f"{uid}-a-unit"
+        body = [f"# {uid}: a unit", "", f"> **Status:** {status}", "> **Points:** 3",
+                f"> **Epic:** {epic}"]
+        if uid.startswith("BG"):
+            body.append("> **Verification depth:** functional")
+        body += ["", "## Acceptance Criteria", ""]
+        for i in range(1, acs + 1):
+            body += [f"### AC{i}: it behaves", "", "- **Verify:** shell true", ""]
+        (d / f"{slug}.md").write_text("\n".join(body) + "\n", encoding="utf-8")
+        if verified:
+            rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+            rp.parent.mkdir(parents=True, exist_ok=True)
+            rep = json.loads(rp.read_text(encoding="utf-8")) if rp.is_file() else {"stories": {}}
+            rep["stories"][slug] = {"failed": 0, "stale": 0, "failures": [],
+                                    "ac_count": acs, "verified_at": "2099-01-01T00:00:00Z"}
+            rp.write_text(json.dumps(rep), encoding="utf-8")
+        return d / f"{slug}.md"
+
+    def _index(self, root, units):
+        """The index rows the drift hold reads. A fixture with no index IS drifted, so a run
+        built without them tests the hold rather than what the test claims to be about."""
+        for kind, prefix in (("stories", "US"), ("bugs", "BG")):
+            ids = [u for u in units if u.startswith(prefix)]
+            if not ids:
+                continue
+            d = root / "sdlc-studio" / kind
+            d.mkdir(parents=True, exist_ok=True)
+            rows = "".join(f"| [{u}]({u}-a-unit.md) | a unit | Review | 3 |\n" for u in ids)
+            (d / "_index.md").write_text(
+                f"# {kind.title()} Registry\n\n**Last Updated:** 2026-09-18\n\n"
+                f"| ID | Title | Status | Points |\n| --- | --- | --- | --- |\n{rows}",
+                encoding="utf-8")
+
+    def _answer_reviews(self, root, units):
+        """One independent judgement over the batch, so no unit is owed an adversarial pass.
+        Recorded through `critic`'s own API - a hand-written row is the shape this repo's
+        brief-with-the-shipped-tool rule exists to refuse."""
+        _critic_mod().record_sprint_review(
+            root, list(units), reviewer="qa-seat", author="build-seat",
+            verdict="APPROVE", findings="full-diff pass over the batch; none blocking")
+
+    def _run(self, d, units, **over):
+        root = Path(d)
+        # The two-role cutoff is part of the fixture, not decoration: `_awaits_signoff` reads
+        # it, and without it a unit at Review reads as REMAINING WORK rather than as finished
+        # bar a signature. D0213's state - every unit at Review, its gate clear, waiting only
+        # for the seal - is only expressible on a project that sets the cutoff.
+        _config(root, "review:\n  two_role_after: 1\n")
+        _close_state(root, batch=list(units), **over)
+        _close_retro(root, batch=" ".join(units))
+        return root
+
+    def _close(self, root, mod, extra=()):
+        out, err = io.StringIO(), io.StringIO()
+        argv = ["close", "--retro", "RETRO0001", *extra, "--root", str(root)]
+        with _patch_close_steps(mod, real=("report-holds",)), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def _reports(self, root):
+        d = root / "sdlc-studio" / "reports"
+        return sorted(p.name for p in d.glob("*.json")) if d.is_dir() else []
+
+    def test_a_gate_clear_run_still_at_review_produces_its_report(self):
+        """AC0. MUTANT: keep the old status test - `Status == Done or Fixed` - and PREPARE
+        refuses the exact state its own split creates, so it can never produce a report."""
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            root = self._run(d, ["US0101", "US0102"])
+            for u in ("US0101", "US0102"):
+                self._unit(root, u)
+            self._index(root, ["US0101", "US0102"])
+            self._answer_reviews(root, ["US0101", "US0102"])
+            # The UNITS, which is what the criterion is about - PREPARE writes the retro and
+            # the run's own paperwork by design, and asserting over the whole tree would be
+            # asserting that PREPARE does nothing.
+            units = root / "sdlc-studio" / "stories"
+            before = {p: p.read_bytes() for p in units.rglob("US*.md")}
+            rc, out, err = self._close(root, mod)
+            self.assertEqual(rc, 0, err)
+            self.assertEqual(len(self._reports(root)), 1, f"no report filed: {err}")
+            after = {p: p.read_bytes() for p in units.rglob("US*.md")}
+            moved = [str(p) for p in before if before[p] != after.get(p)]
+            self.assertEqual(moved, [], f"PREPARE moved a unit: {moved}")
+            # ...and the page says what is actually true of them: the GATE is clear. Under
+            # D0213 no unit is Done until SEAL, so a report claiming Done would be claiming
+            # the thing the signature has not yet made true.
+            import sprint_report as sr
+            rep = sr.read_report(root, (mod.run_state.read(root) or {})["report"])
+            rows = {s["key"]: s for s in rep["sections"]}["units"]["rows"]
+            self.assertEqual(len(rows), 2)
+            for r in rows:
+                self.assertIn("gate", str(r["unit_gate"]["value"]).lower(),
+                              "the unit row does not record that its terminal gate cleared")
+                self.assertTrue(r["unit_gate"]["source"], "the gate figure carries no source")
+
+    def test_the_carve_out_forgives_the_signature_and_nothing_else(self):
+        """AC0's carve-out, probed where it matters. MUTANT: return True from
+        `_only_the_signature_is_owed` - or accept a refusal listing more than one requirement.
+
+        The seal supplies ONE thing: the reviewer-of-record sign-off. A unit that also owes a
+        red criterion is reported gate-CLEAR by a carve-out that is too wide, PREPARE files a
+        report recording it as having cleared its terminal gate, and SEAL is then refused over
+        a page the operator has already signed. The previous reading re-parsed the refusal
+        sentence, and its narrowing could be replaced by `return True` with the whole suite
+        green, because no fixture ever put two requirements in front of it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            root = self._run(d, ["US0101", "US0102"])
+            self._unit(root, "US0101")                      # owes only the signature
+            self._unit(root, "US0102", verified=False)      # owes the signature AND a red AC
+            self._index(root, ["US0101", "US0102"])
+            self._answer_reviews(root, ["US0101", "US0102"])
+            verdicts = mod._report_gate_verdicts(root, mod.run_state.read(root) or {})
+            self.assertIsNone(verdicts["US0101"],
+                              "a unit owing only the signature was not forgiven - the split is "
+                              "then circular and no run past the cutoff can produce a report")
+            self.assertIsNotNone(verdicts["US0102"],
+                                 "a unit owing a red criterion AS WELL as the signature was "
+                                 "forgiven - the carve-out is wider than the one thing SEAL "
+                                 "supplies")
+            self.assertIn("verify", str(verdicts["US0102"]).lower(),
+                          "the refusal does not name the criterion that is actually owed")
+
+    def test_a_non_terminal_batch_unit_refuses_the_report(self):
+        """AC1. MUTANT: return at the first non-terminal unit found - the operator clears it,
+        pays the whole of PREPARE again and meets the second, and every assertion about the
+        first unit's name still passes."""
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            root = self._run(d, ["US0101", "US0102", "US0103", "BG0201", "BG0202"])
+            for u in ("US0101", "US0102", "US0103"):
+                self._unit(root, u)
+            # TWO unmet gates beside three clear ones, which is the criterion's shape: a story
+            # missing a review half, and a bug at In Progress with no parseable Verification
+            # depth. The three clear ones matter as much as the two - a hold that refuses
+            # everything would pass a test that only checks the two are named.
+            self._unit(root, "US0104")
+            root_bug = root / "sdlc-studio" / "bugs"
+            root_bug.mkdir(parents=True, exist_ok=True)
+            (root_bug / "BG0201-a-unit.md").write_text(
+                "# BG0201: a unit\n\n> **Status:** In Progress\n> **Points:** 3\n",
+                encoding="utf-8")
+            self._unit(root, "BG0202")
+            self._index(root, ["US0101", "US0102", "US0103", "US0104", "BG0201", "BG0202"])
+            # US0104 is left OUT of the batch review: its gate is unmet on the adversarial-pass
+            # half, which the seal does not supply and the carve-out therefore must not forgive.
+            self._answer_reviews(root, ["US0101", "US0102", "US0103", "BG0202"])
+            _close_state(root, batch=["US0101", "US0102", "US0103", "US0104", "BG0201",
+                                      "BG0202"])
+            rc, out, err = self._close(root, mod)
+            self.assertEqual(rc, 2, out)
+            # The HOLD'S OWN LINE, not the whole page. The close pre-flight above prints its
+            # own blockers naming these same units, so a search over everything printed passes
+            # on text the hold did not write - which is how a first-unit-only hold survives a
+            # test that looks like it checks for both.
+            line = next((ln for ln in (out + err).splitlines()
+                         if "[terminal-gate]" in ln), "")
+            self.assertTrue(line, f"no terminal-gate refusal was printed:\n{out}{err}")
+            self.assertIn("US0104", line, "the first unmet unit is not named")
+            self.assertIn("BG0201", line,
+                          "only one unmet unit was named - the hold returned at the first")
+            self.assertIn("2 batch unit(s)", line,
+                          "the hold does not count every unmet unit it found")
+            self.assertEqual(self._reports(root), [], "a refused PREPARE still filed a report")
+            self.assertFalse((mod.run_state.read(root) or {}).get("report"),
+                             "a refused PREPARE still named a report on the run state")
+
+    def test_an_unanswered_review_refuses_the_report(self):
+        """AC2. MUTANT: derive the hold from the batch's non-terminal units, as AC1's does -
+        every unit here is terminal, so the hold never fires and a run with a live REJECT
+        produces a signable report, which is the state D0193 was written against."""
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            root = self._run(d, ["US0101", "US0102"])
+            for u in ("US0101", "US0102"):
+                self._unit(root, u)
+            self._index(root, ["US0101", "US0102"])
+            self._answer_reviews(root, ["US0101", "US0102"])
+            # The predicate is the close's own, never a second opinion about what is owed.
+            with unittest.mock.patch.object(
+                    mod, "unanswered_units",
+                    lambda *a, **k: {"rulings_from": None, "unanswered": [
+                        {"unit": "US0102", "status": "Review",
+                         "why": "standing REJECT at delivery, no repair record",
+                         "filed": []}]}):
+                rc, out, err = self._close(root, mod)
+            self.assertEqual(rc, 2, out)
+            page = out + err
+            self.assertIn("US0102", page, "the refusal does not name the owed unit")
+            self.assertNotIn("US0101", page.split("US0102")[0].split("hold")[-1],
+                             "the refusal names a unit the predicate did not return")
+            self.assertIn("REJECT", page, "the refusal does not name the review that is owed")
+            self.assertEqual(self._reports(root), [])
+
+    def test_index_drift_refuses_the_report_and_a_clean_run_produces_one(self):
+        """AC3. MUTANT: register the drift as a deferrable close blocker, so `--file-and-close`
+        files it as a CR and continues - the report then ships describing an index that
+        disagrees with the tree it was derived from, a filed ticket standing in for the fact
+        being right."""
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            # The DRIFTED copy.
+            root = self._run(d, ["US0101"])
+            self._unit(root, "US0101")
+            self._index(root, ["US0101"])
+            self._answer_reviews(root, ["US0101"])
+            # A REAL drifted tree, never a patched predicate. Mocking `_report_index_drift`
+            # meant the criterion's Given ("an `_index.md` row edited so `reconcile detect`
+            # reports drift") was never constructed, and a hold that named no real drift at all
+            # passed the whole suite - `reconcile`'s items carry `type`/`id`/`kind` and no path.
+            idx = root / "sdlc-studio" / "stories" / "_index.md"
+            idx.write_text(idx.read_text(encoding="utf-8").replace(
+                "| a unit | Review |", "| a unit | Draft |"), encoding="utf-8")
+            rc, out, err = self._close(root, mod)
+            self.assertEqual(rc, 2, out)
+            line = next((ln for ln in (out + err).splitlines() if "[index-drift]" in ln), "")
+            self.assertTrue(line, f"no index-drift refusal was printed:\n{out}{err}")
+            self.assertIn("sdlc-studio/stories/_index.md", line,
+                          "the refusal does not name a path the reader can open")
+            self.assertIn("US0101", line, "the refusal does not name the drifted row")
+            self.assertEqual(self._reports(root), [])
+            # THE HOLDS' DEFINING PROPERTY, and nothing asserted it: they REFUSE rather than
+            # being filed and deferred. `--file-and-close` is the bounded exit that lets a run
+            # end honestly with work outstanding, and it must not buy a report over a drifted
+            # index - an implementation that registered the drift as a deferrable close blocker
+            # would satisfy every assertion above and then file the page anyway.
+            rc2, out2, err2 = self._close(root, mod, extra=["--file-and-close"])
+            self.assertNotEqual(rc2, 0,
+                                "`--file-and-close` filed a report over a drifted index")
+            self.assertEqual(self._reports(root), [],
+                             "a deferred close still wrote the page a signature freezes")
+        with tempfile.TemporaryDirectory() as d2:
+            # The PAIRED CONTROL, identical but undrifted.
+            mod = _load()
+            clean = self._run(d2, ["US0101"])
+            self._unit(clean, "US0101")
+            self._index(clean, ["US0101"])
+            self._answer_reviews(clean, ["US0101"])
+            rc, out, err = self._close(clean, mod)
+            self.assertEqual(rc, 0, err)
+            self.assertEqual(len(self._reports(clean)), 1,
+                             "the clean copy did not produce exactly one report")
+            for name in ("terminal-gate", "unanswered-review", "index-drift"):
+                self.assertIn(name, out,
+                              f"the clean run passed the {name} hold in silence")
+
+
+
+class SealTests(unittest.TestCase):
+    """US0833 AC0: one principal, one act.
+
+    The seal is a TRANSACTION, not a checkpoint: the per-unit rows, the terminal transitions,
+    the cascades they imply and the run's own signature all come from the single principal the
+    command was given. Two commands for one decision is the shape D0213 rejected - the operator
+    signs, and then signs again for the half the first command did not cover.
+    """
+
+    def _sealable(self, d):
+        """A PREPARED run: one story, gate clear, retro recorded, report filed."""
+        root = Path(d)
+        _close_state(root)
+        _close_retro(root, batch="US0101")
+        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "stories" / "US0101-a.md").write_text(
+            "# US0101: a\n\n> **Status:** Review\n> **Points:** 5\n> **Epic:** EP0001\n\n"
+            "## Acceptance Criteria\n\n### AC1: it behaves\n\n- **Verify:** shell true\n",
+            encoding="utf-8")
+        rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rp.write_text(json.dumps({"stories": {"US0101-a": {
+            "failed": 0, "stale": 0, "failures": [], "ac_count": 1,
+            "verified_at": "2099-01-01T00:00:00Z"}}}), encoding="utf-8")
+        return root
+
+    def _prepare(self, root, mod):
+        out, err = io.StringIO(), io.StringIO()
+        with _patch_close_steps(mod), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _sign(self, root, mod, principal="Darren Benson", extra=()):
+        out, err = io.StringIO(), io.StringIO()
+        argv = ["sign", "--principal", principal, "--author", "agent", *extra,
+                "--root", str(root)]
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_one_principal_writes_the_unit_rows_and_the_run_signature(self):
+        """AC0. MUTANT: write the run signature and leave the per-unit rows to a later
+        `--apply-signoff` - the operator then signs twice for one decision."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._sealable(d), _load()
+            rc, out, err = self._prepare(root, mod)
+            self.assertEqual(rc, 0, err)
+            rc, out, err = self._sign(root, mod)
+            self.assertEqual(rc, 0, err)
+            # ONE command, and all of it: the unit row, the terminal status, the run signature.
+            rec = (root / "sdlc-studio" / "reviews" / "signoff-record.md").read_text(
+                encoding="utf-8")
+            self.assertIn("Darren Benson", rec, "no per-unit sign-off row names the principal")
+            self.assertIn("US0101", rec)
+            text = (root / "sdlc-studio" / "stories" / "US0101-a.md").read_text(encoding="utf-8")
+            self.assertIn("Status:** Done", text, "the unit did not reach its terminal")
+            sig = (mod.run_state.read(root) or {}).get("signature") or {}
+            self.assertEqual("Darren Benson", sig.get("principal"),
+                             "the run carries no signature from the principal it was given")
+            self.assertNotIn("--apply-signoff", out + err,
+                             "the seal still points at a second command for one decision")
+
+
+class TheSealIsATransactionTests(unittest.TestCase):
+    """US0833 AC1, AC2, AC4: what the signature records, who may give it, and how it is broken.
+
+    A signature nothing refuses to write over only ORDERS the work, and ordering is a
+    convention. So the seal records what was signed (AC1), is refused to a principal the
+    authoring session controls (AC2), and survives the re-open that breaks it (AC4), so what
+    was signed and when it was broken are both readable afterwards.
+    """
+
+    def _sealable(self, d, units=("US0101",), reviewer_on=None):
+        """A PREPARED run. `reviewer_on` records a critic evidence row naming a subagent
+        reviewer on THAT unit alone - AC2's shape, where a check reading the first unit sees
+        nothing and a check reading the batch sees the refusal."""
+        root = Path(d)
+        _close_state(root, batch=list(units))
+        _close_retro(root, batch=" ".join(units))
+        d_s = root / "sdlc-studio" / "stories"
+        d_s.mkdir(parents=True, exist_ok=True)
+        rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rep = {"stories": {}}
+        for u in units:
+            (d_s / f"{u}-a.md").write_text(
+                f"# {u}: a\n\n> **Status:** Review\n> **Points:** 5\n> **Epic:** EP0001\n\n"
+                "## Acceptance Criteria\n\n### AC1: it behaves\n\n- **Verify:** shell true\n",
+                encoding="utf-8")
+            rep["stories"][f"{u}-a"] = {"failed": 0, "stale": 0, "failures": [],
+                                        "ac_count": 1, "verified_at": "2099-01-01T00:00:00Z"}
+        rp.write_text(json.dumps(rep), encoding="utf-8")
+        c = _critic_mod()
+        c.record_sprint_review(root, list(units), reviewer="qa-seat", author="Claude Opus 5",
+                               verdict="APPROVE", findings="full-diff pass; none blocking")
+        if reviewer_on:
+            c.record_evidence(root, reviewer_on, reviewer="Sam Eriksson (qa)",
+                              author="Claude Opus 5",
+                              findings="adversarial pass over the unit's diff")
+        return root
+
+    def _prepare(self, root, mod):
+        out, err = io.StringIO(), io.StringIO()
+        with _patch_close_steps(mod), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _sign(self, root, mod, principal="Darren Benson", author="Claude Opus 5", extra=()):
+        out, err = io.StringIO(), io.StringIO()
+        argv = ["sign", "--principal", principal, "--author", author, *extra,
+                "--root", str(root)]
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_sign_records_principal_date_and_the_reports_own_fingerprint(self):
+        """AC1. MUTANT: record the principal, the date and the report ID without the
+        fingerprint - "signed RPT0001" then says nothing about WHICH RPT0001, and every
+        re-prepare produces another one under the same id."""
+        import sprint_report as sr  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._sealable(d), _load()
+            self.assertEqual(0, self._prepare(root, mod)[0])
+            rid = (mod.run_state.read(root) or {})["report"]
+            # F is read back off DISK, never computed here: a test that recomputes the
+            # fingerprint agrees with itself rather than with the page being signed.
+            f_on_disk = sr.read_report(root, rid)["fingerprint"]
+            rc, out, err = self._sign(root, mod)
+            self.assertEqual(rc, 0, err)
+            sig = (mod.run_state.read(root) or {}).get("signature") or {}
+            self.assertEqual("Darren Benson", sig.get("principal"))
+            self.assertEqual(rid, sig.get("report"))
+            self.assertEqual(f_on_disk, sig.get("fingerprint"),
+                             "the signature does not record the report's own fingerprint")
+            self.assertTrue(str(sig.get("signed_at", "")).startswith("20"),
+                            "the signature carries no ISO date")
+            # ...and the twin's sign-off table carries those three and ONLY those three.
+            md = sr.render_markdown(sr.read_report(root, rid))
+            block = md.split("## Sign-off", 1)[1].split("\n## ", 1)[0]
+            self.assertIn("Darren Benson", block)
+            self.assertIn(f_on_disk, block, "the twin's sign-off table omits the fingerprint")
+            self.assertNotIn("sprint.py sign", block,
+                             "the sign-off block still carries the command that produced it")
+            self.assertNotIn("unsigned", block.lower(),
+                             "a signed report still declares itself unsigned")
+
+    def test_sign_refuses_a_principal_the_authoring_session_controls(self):
+        """AC2. MUTANT: judge the principal against the run's own author field alone - the
+        subagent that reviewed every unit in the batch then signs the run off, which is CR0571
+        in a new command.
+
+        The subagent is recorded on the SECOND unit only, so a check reading the first unit
+        alone passes this batch and fails this criterion."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._sealable(d, units=("US0101", "US0102"),
+                                       reviewer_on="US0102"), _load()
+            self.assertEqual(0, self._prepare(root, mod)[0])
+            before = (root / "sdlc-studio" / "stories" / "US0101-a.md").read_bytes()
+            rc, out, err = self._sign(root, mod, principal="Sam Eriksson (qa)")
+            self.assertEqual(2, rc, out)
+            self.assertIn("authoring-session subagent", err + out,
+                          "the refusal does not carry critic.py's own wording")
+            rc2, out2, err2 = self._sign(root, mod, principal="Claude Opus 5")
+            self.assertEqual(2, rc2, out2)
+            self.assertIn("is the author", err2 + out2,
+                          "the self-sign-off refusal does not carry critic.py's own wording")
+            # NOTHING was written by either refusal: not a unit, not the signature, not the run.
+            self.assertEqual(before,
+                             (root / "sdlc-studio" / "stories" / "US0101-a.md").read_bytes(),
+                             "a refused seal still moved the first unit it walked")
+            live = mod.run_state.read(root) or {}
+            self.assertIsNone(live.get("signature"), "a refused seal still wrote a signature")
+            self.assertEqual("running", live.get("outcome"), "a refused seal still closed the run")
+
+    def test_the_seal_does_not_invalidate_the_report_it_signs(self):
+        """US0835 AC4, found by running the shipped commands rather than by any test here:
+        `sign` then `sprint_report.py check` reported INVALIDATED on a legitimate seal.
+
+        MUTANT: put a fact the SEAL itself changes back into the digest - each unit's Status,
+        the run's `ended_at`, or the delivered count taken from statuses. Signing then changes
+        the fingerprint the signature just recorded, every sealed run reads INVALIDATED from the
+        moment it is signed, and US0845's banner stops carrying information.
+
+        The paired control is in the same test: a fact the page STATES and the seal does not
+        touch must still invalidate it, or this would pass on a digest covering nothing.
+        """
+        import sprint_report as sr  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._sealable(d), _load()
+            self.assertEqual(0, self._prepare(root, mod)[0])
+            rid = (mod.run_state.read(root) or {})["report"]
+            self.assertTrue(sr.revalidate(root, rid)["valid"],
+                            "the report did not re-derive even before it was signed")
+            self.assertEqual(0, self._sign(root, mod)[0])
+            after = sr.revalidate(root, rid)
+            self.assertTrue(after["valid"],
+                            f"the seal invalidated the page it signed: {after['moved']}")
+            # ...and the control: move a figure the page states and the seal never writes.
+            story = root / "sdlc-studio" / "stories" / "US0101-a.md"
+            story.write_text(story.read_text(encoding="utf-8").replace(
+                "**Points:** 5", "**Points:** 8"), encoding="utf-8")
+            moved = sr.revalidate(root, rid)
+            self.assertFalse(moved["valid"],
+                             "a report whose points moved still re-derives - the digest is "
+                             "covering nothing")
+            self.assertIn("points_delivered", moved["moved"])
+
+    def test_reopen_is_recorded_and_keeps_the_signature_it_breaks(self):
+        """AC4. MUTANT: clear the signature on re-open - the record then cannot say what had
+        been signed, and US0845 has no signed fingerprint left to render INVALIDATED against."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = self._sealable(d), _load()
+            self.assertEqual(0, self._prepare(root, mod)[0])
+            rid = (mod.run_state.read(root) or {})["report"]
+            self.assertEqual(0, self._sign(root, mod)[0])
+            signed = (mod.run_state.read(root) or {})["signature"]
+            run_id = (mod.run_state.read(root) or {})["run_id"]
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["reopen", "--reason", "late repair to US0101",
+                               "--root", str(root)])
+            self.assertEqual(0, rc, err.getvalue())
+            live = mod.run_state.read(root) or {}
+            self.assertEqual(signed, live.get("signature"),
+                             "the re-open cleared the signature it broke")
+            rec = (live.get("reopened") or [])[-1]
+            self.assertEqual("late repair to US0101", rec.get("reason"))
+            self.assertEqual(rid, rec.get("report"),
+                             "the re-open record does not name the report it broke")
+            self.assertEqual(run_id, rec.get("run_id"),
+                             "the re-open record does not name the run it belongs to")
+            self.assertTrue(str(rec.get("at", "")).startswith("20"))
+            self.assertEqual("running", live.get("outcome"))
+            # ...and the criterion's last clause, which nothing asserted: the write AC3 refused
+            # now succeeds. A re-open that records the break but does not actually lift it
+            # would satisfy every assertion above.
+            import transition as _t  # noqa: PLC0415
+            self.assertEqual([], _t.requirements(root, "US0101", "In Progress"),
+                             "the re-open recorded the break but did not lift the refusal")
+            # ...and a run that was never sealed refuses, naming that.
+            with tempfile.TemporaryDirectory() as d2:
+                fresh = self._sealable(d2)
+                o2, e2 = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(o2), contextlib.redirect_stderr(e2):
+                    rc2 = mod.main(["reopen", "--reason", "nothing to break",
+                                    "--root", str(fresh)])
+                self.assertEqual(2, rc2, o2.getvalue())
+                self.assertIn("already open", e2.getvalue() + o2.getvalue())
+            self.assertTrue(run_id)
 
 
 if __name__ == "__main__":

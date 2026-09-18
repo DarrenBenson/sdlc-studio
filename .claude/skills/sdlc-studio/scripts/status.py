@@ -407,6 +407,13 @@ def cmd_pillars(args: argparse.Namespace) -> int:
         print(f"Workflows:    total={data['workflows']['total']}")
         print(f"Reviews:      files={data['reviews']['review_files']} "
               f"latest={'yes' if data['reviews']['latest'] else 'no'}")
+        # THE REPORT OF RECORD, and whether it is still true of the tree. Computed HERE and not
+        # only inside the renderer: an operator who reads `status` and never opens the report
+        # would otherwise be told nothing, which is the state the stakeholder consult found.
+        # Read-only, like everything else on this line.
+        report = report_of_record_line(Path(args.root))
+        if report:
+            print(report)
         bl = data["backlogs"]
         disc, deliv = bl["discovery"], bl["delivery"]
         awaiting = bl["awaiting"]["count"]
@@ -614,6 +621,21 @@ def _hint_inside_sweep(args: argparse.Namespace) -> int:
         for line in index_bloat_advisories(Path(args.root)):
             print(f"advisory: {line}")
     return 0
+
+
+def report_of_record_line(repo_root: Path | str) -> str | None:
+    """The one line about the sprint report of record, or None when a run has filed none.
+
+    The INVALIDATED judgement is `sprint_report.revalidate`'s - re-deriving the report from the
+    tree now and comparing the facts - so `status` and the rendered page can never disagree
+    about whether a report still holds. Read-only, and it never raises: a status dashboard must
+    not fail because one artefact is unreadable.
+    """
+    try:
+        import sprint_report  # noqa: PLC0415 - lazy sibling, like every other advisory here
+        return sprint_report.status_line(sprint_report.report_status(Path(repo_root)))
+    except Exception:  # noqa: BLE001 - the whole family: a dashboard never fails on a garnish
+        return None
 
 
 def close_owed_advisory(repo_root: Path | str) -> str | None:

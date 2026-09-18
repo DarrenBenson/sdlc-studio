@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-17
+**Last Updated:** 2026-09-18
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 34 |
+| Open | 35 |
 | In Progress | 0 |
 | Fixed | 576 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 9 |
+| Won't Fix | 10 |
 | Superseded | 6 |
-| **Total** | **712** |
+| **Total** | **714** |
 
 ## All Bugs
 
@@ -71,6 +71,8 @@
 | [BG0710](BG0710-the-close-prints-the-run-s-cost-before.md) | the close prints the run's cost before the step that captures it, so every close reports the sprint as not attributable | Open | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0711](BG0711-test-complexity-s-temporary-git-fixture-races-its.md) | test_complexity's temporary git fixture races its own cleanup on CI, reddening main on a teardown rather than a failure | Open | Medium | 2026-09-17 | 2026-09-17 |
 | [BG0712](BG0712-a-local-guard-that-tolerates-what-a-criterion.md) | a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI | Open | Medium | 2026-09-17 | 2026-09-17 |
+| [BG0713](BG0713-the-per-unit-coverage-gate-charges-a-unit.md) | the per-unit coverage gate charges a unit for its batch siblings' added lines in a shared file | Won't Fix | High | 2026-09-18 | 2026-09-18 |
+| [BG0714](BG0714-284-added-lines-of-run-01m2spns-are-executed.md) | 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge | Open | Medium | 2026-09-18 | 2026-09-18 |
 
 ## Archived Releases
 

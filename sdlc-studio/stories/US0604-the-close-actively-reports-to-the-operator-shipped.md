@@ -18,13 +18,13 @@
 
 ## Acceptance Criteria
 
-### AC1: the close reports shipped, carried, cost and findings
+### AC1: the close leaves the operator exactly one account of the run
 
-- **Given** a completed close
+- **Given** a completed close (PREPARE, under US0832)
 - **When** it finishes
-- **Then** it emits a report naming what shipped, what is carried, what it cost and what the reviews found, because a report nobody is told about is the same as no report
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseReportReachesTheOperatorTests::test_the_close_prints_the_report_for_a_non_empty_batch
-- **Verified:** yes (2026-08-02)
+- **Then** the operator is left with exactly ONE account naming what shipped, what is carried, what it cost and what the reviews found - the filed report, named on stdout with the command that signs it - because a report nobody is told about is told to nobody, and two accounts derived from two root objects are two chances to disagree
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_the_close_tells_the_operator_where_the_report_is
+- **Verified:** yes (2026-09-18)
 
 ### AC2: an absent figure is named absent, never omitted
 
@@ -39,3 +39,5 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-01 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-18 | US0832 delivery | AC1 re-pointed and restated. Its claim was that the close PRINTS the report; US0832 AC5 replaces the two printed accounts (`_draw_report`, `_tell_the_operator`) with one FILED report the close names on stdout. The surviving claim - the operator is left exactly one account - is stronger than the original, and the stamp moves to the test that pins it. |
+| 2026-09-18 | delivery | AC1 given its OWN selector. It had been re-pointed at US0832 AC5's test when the class it named was retired, and two criteria sharing one selector cannot both discriminate - a regression in either fails both and neither says which. The claims are genuinely different: AC5 is that there is no SECOND account, this is that the one account REACHES the operator, named with its fingerprint and the command that signs it. |

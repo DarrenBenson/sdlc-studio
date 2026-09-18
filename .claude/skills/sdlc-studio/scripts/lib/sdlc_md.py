@@ -1205,6 +1205,11 @@ META_TYPES: dict[str, tuple[str, str]] = {
     "review": ("sdlc-studio/reviews", "RV"),
     "retro": ("sdlc-studio/retros", "RETRO"),
     "handoff": ("sdlc-studio/handoffs", "HO"),
+    # The sprint report of record. A run RECORDS it rather than delivering it: it carries no
+    # acceptance criteria, sits on no backlog, and is never planned - which is what this map is
+    # for. The JSON beside the Markdown twin is the artefact of record; the twin is what a
+    # reader opens and what git diffs.
+    "report": ("sdlc-studio/reports", "RPT"),
 }
 
 

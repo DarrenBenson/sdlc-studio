@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 145 |
+| Draft | 144 |
 | Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 4 |
 | Deferred | 0 |
 | Superseded | 5 |
-| Blocked | 12 |
+| Blocked | 13 |
 | **Total** | **847** |
 
 ## All Stories
@@ -190,7 +190,7 @@
 | [US0829](US0829-one-collector-unions-the-shard-identities-and-judges.md) | one collector unions the shard identities and judges them against the single baseline, naming NEW, went-green and VANISHED as the serial lane does | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
 | [US0830](US0830-a-shard-that-dies-fails-the-lane-by.md) | a shard that dies fails the lane by name, so a lost shard can never read as a corpus that got smaller | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
 | [US0831](US0831-per-shard-wall-clock-is-recorded-and-the.md) | per-shard wall clock is recorded and the job cap is set from the measured figure | Draft | EP0254 | 2026-09-16 | 2026-09-16 |
-| [US0832](US0832-close-splits-into-prepare-which-does-everything-that.md) | close splits into PREPARE, which does everything that can change facts, and SEAL, which does not | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
+| [US0832](US0832-close-splits-into-prepare-which-does-everything-that.md) | close splits into PREPARE, which does everything that can change facts, and SEAL, which does not | Blocked | EP0255 | 2026-09-16 | 2026-09-16 |
 | [US0833](US0833-sign-writes-the-principal-the-date-and-the.md) | sign writes the principal, the date and the report fingerprint against the run, and nothing else runs after it | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
 | [US0834](US0834-prepare-refuses-to-produce-a-report-while-any.md) | PREPARE refuses to produce a report while any batch unit is non-terminal, any review unanswered or any index drifted | Draft | EP0255 | 2026-09-16 | 2026-09-16 |
 | [US0835](US0835-the-report-json-of-record-is-derived-from.md) | the report JSON of record is derived from the run's own artefacts, every figure carrying its source | Draft | EP0255 | 2026-09-16 | 2026-09-16 |

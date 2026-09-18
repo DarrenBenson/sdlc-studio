@@ -2030,6 +2030,32 @@ def _seat_role(who: str) -> str:
     return _id(raw)
 
 
+def signoff_refusal(repo_root: Path | str, unit: str, principal: str, author: str,
+                    delegate: str | None = None,
+                    session_ids: set[str] | None = None) -> str | None:
+    """Why this principal may not sign THIS unit off, or None. The independence rule itself.
+
+    ONE rule, two callers. `record_signoff` raises what this returns, and a RUN-LEVEL caller -
+    `sprint.py sign`, which signs a whole batch from one principal - asks it of every unit
+    BEFORE writing anything, so a principal refused on the last unit cannot leave the first
+    ones already signed. Extracted rather than re-implemented there: a second copy of this rule
+    is CR0571 returning in a new command, which is the finding the consult raised against the
+    seal by name.
+    """
+    ids = _session_reviewer_ids(repo_root, unit) if session_ids is None else session_ids
+    if _id(principal) == _id(author):
+        return (f"principal {principal!r} is the author - a self-sign-off "
+                "never clears the gate")
+    if _id(principal) in ids and delegate is None:
+        # Still refused on the DIRECT path: an author naming their own subagent as principal,
+        # with no delegation chain and no boundary, is a self-sign-off wearing another name.
+        # The delegated path is the deliberate, disclosed route.
+        return (f"principal {principal!r} is an authoring-session subagent (a recorded "
+                "reviewer on this unit) - the reviewer of record must sit outside the "
+                "author's control, or be recorded as a disclosed delegation; refused")
+    return None
+
+
 def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str,
                    delegate: str | None = None, boundary: str | None = None,
                    note: str = "", panel: list | None = None,
@@ -2115,17 +2141,10 @@ def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str
         marker = f" [{DELEGATED_AGENT}]" if _id(delegate) in session_ids else ""
         chain = f"{principal} -> {delegate} (boundary: {boundary}){marker}"
         effective = delegate
-    if _id(effective) == _id(author):
-        raise ValueError(f"principal {effective!r} is the author - a self-sign-off "
-                         "never clears the gate")
-    if _id(effective) in session_ids and delegate is None:
-        # Still refused on the DIRECT path: an author naming their own subagent as principal,
-        # with no delegation chain and no boundary, is a self-sign-off wearing another name.
-        # The delegated path above is the deliberate, disclosed route.
-        raise ValueError(
-            f"principal {effective!r} is an authoring-session subagent (a recorded "
-            "reviewer on this unit) - the reviewer of record must sit outside the "
-            "author's control, or be recorded as a disclosed delegation; refused")
+    refusal = signoff_refusal(repo_root, unit, effective, author, delegate=delegate,
+                              session_ids=session_ids)
+    if refusal:
+        raise ValueError(refusal)
     # DERIVED, not asked for, unless the caller states it: a panel signs as a seat and anyone
     # else signs as a human. A caller that had to remember to pass it would eventually forget,
     # and the value it forgot would be the one that matters.

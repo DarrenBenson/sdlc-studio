@@ -7131,6 +7131,130 @@ class RejectNeedsAnAnswerTests(unittest.TestCase):
         self.assertIn("itemises no findings", said, said)
 
 
+class SealedRunRefusesWritesTests(unittest.TestCase):
+    """US0833 AC3. A run whose report has been signed is SEALED, and a status write to a unit
+    inside its batch is refused at `transition.transition` - the single chokepoint `artifact.close`
+    also routes through, so one refusal covers both routes.
+
+    MUTANT this test must fail on: print the drift as a warning and let the write through. The
+    seal is then ordering advice rather than a transaction, which is the consult's own finding,
+    and every assertion about the MESSAGE still passes - so the byte-comparison and the exit code
+    below are the load-bearing half, not the wording.
+
+    The paired control is the second half of the criterion: a unit OUTSIDE the batch transitions
+    exactly as today. Without it this test passes on an implementation that refuses the whole
+    repository while a run happens to be sealed, which is a different and much worse rule.
+    """
+
+    RUN_ID = "RUN-01TESTSEAL"
+    REPORT = "RPT0001"
+
+    def _sealed_repo(self, root: Path) -> Path:
+        """THE SEALED RUN: a bug at `Fixed` inside the signed batch, and a story at `Ready`
+        outside it. Both are at statuses the ordinary ladder lets move, measured at the base ref -
+        so a refusal here is this seal's and not some neighbouring gate's."""
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True)
+        (bd / "BG0001-x.md").write_text(
+            "# BG0001: b\n\n> **Status:** Fixed\n> **Severity:** medium\n"
+            "> **Verification depth:** functional\n\n## Summary\n\nx\n\n"
+            "## Steps to Reproduce\n\n1. x\n\n## Proposed Fix\n\ny\n\n"
+            "## Acceptance Criteria\n\n- [x] the defect no longer reproduces\n", encoding="utf-8")
+        (bd / "_index.md").write_text(
+            "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Fixed | 1 |\n"
+            "| In Progress | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [BG0001](BG0001-x.md) | b | Fixed |\n", encoding="utf-8")
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0009-outside.md").write_text(
+            "# US0009: outside the batch\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+            "### AC1\n- **Verify:** shell echo ok\n", encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Ready | 1 |\n"
+            "| In Progress | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0009](US0009-outside.md) | outside the batch | Ready |\n", encoding="utf-8")
+        local = root / "sdlc-studio" / ".local"
+        local.mkdir(parents=True)
+        (local / "run-state.json").write_text(json.dumps({
+            "schema": 3, "run_id": self.RUN_ID, "started_at": "2026-09-18T09:00:00Z",
+            "ended_at": "2026-09-18T12:00:00Z", "outcome": "goal-reached",
+            "goal": "seal the report", "batch": ["BG0001"], "reopened": [],
+            "signature": {"principal": "Darren Benson", "signed_at": "2026-09-18",
+                          "report": self.REPORT, "fingerprint": "f00dcafe"}}, indent=2),
+            encoding="utf-8")
+        return root
+
+    @staticmethod
+    def _run(root: Path, aid: str) -> tuple[int, str, str]:
+        """`transition.main` through the SHIPPED entry point, stdout and stderr kept APART.
+
+        `_cli` merges the two, and the criterion asks specifically where the refusal lands: a
+        driver that reads only stdout, as the close's own chain does, must not be told the seal
+        held when it did not."""
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                code = tr.main(["--root", str(root), "set", aid, "In Progress"])
+            except SystemExit as exc:                   # argparse's own exits
+                code = int(exc.code or 0)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_requirements_still_answers_for_a_sealed_runs_unit(self) -> None:
+        """The seal must not break the READ-ONLY question. MUTANT: let `SealedRunRefusal`
+        escape `requirements()` as it did when this landed - `transition.py requirements` then
+        raises an uncaught exception for every unit of a sealed run's batch, where at the base
+        ref it returned a list. A refusal that reports is one thing; a reporting command that
+        crashes is a regression, and it was invisible because `requirements` has no gate test
+        that puts a sealed run in front of it.
+
+        The requirement it names is the ONE thing that would let the write through, so the
+        answer stays useful rather than merely non-fatal.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._sealed_repo(Path(d))
+            reqs = transition.requirements(root, "BG0001", "In Progress")
+            self.assertTrue(reqs, "a sealed run's unit reports no requirement at all")
+            joined = " ".join(reqs)
+            self.assertIn(self.RUN_ID, joined, "the requirement does not name the sealed run")
+            self.assertIn(self.REPORT, joined, "the requirement does not name the signed report")
+            self.assertIn("reopen", joined, "the requirement does not name the way back")
+            # ...and the paired control: a unit OUTSIDE the batch answers as it always did.
+            self.assertEqual([], transition.requirements(root, "US0009", "In Progress"),
+                             "the seal leaked onto a unit outside its batch")
+
+    def test_a_sealed_runs_batch_unit_cannot_be_transitioned(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _refuse_working_tree(Path(d))
+            self._sealed_repo(root)
+            sealed = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+            control = root / "sdlc-studio" / "stories" / "US0009-outside.md"
+            before = sealed.read_bytes()
+
+            code, out, err = self._run(root, "BG0001")
+
+            self.assertNotEqual(code, 0, f"the sealed run let the write through: {out}{err}")
+            # BYTES, not the Status line. A warning-and-write mutant leaves a file whose status
+            # reads `In Progress` while every assertion about the refusal's wording still holds,
+            # and only the bytes tell the two implementations apart.
+            self.assertEqual(sealed.read_bytes(), before,
+                             "the unit file moved under a signed report")
+            said = err
+            self.assertIn(self.REPORT, said, f"the signed report is unnamed: {said!r}")
+            self.assertIn(self.RUN_ID, said, f"the sealed run is unnamed: {said!r}")
+            self.assertIn("sprint.py reopen", said, f"no way back is named: {said!r}")
+            # The index must not have been synced either - a refusal that wrote the derived row
+            # would leave the tree claiming a status the artefact does not carry.
+            self.assertIn("| [BG0001](BG0001-x.md) | b | Fixed |",
+                          _read(root, "bugs", "_index.md"))
+
+            # THE PAIRED CONTROL: outside the batch, nothing is sealed.
+            ccode, cout, cerr = self._run(root, "US0009")
+            self.assertEqual(ccode, 0, f"the seal escaped its batch: {cout}{cerr}")
+            self.assertIn("> **Status:** In Progress", control.read_text(encoding="utf-8"))
+            self.assertNotIn(self.RUN_ID, cerr, f"a unit outside the batch was told about the "
+                                                f"seal: {cerr!r}")
+
+
 if __name__ == "__main__":
     unittest.main()
 

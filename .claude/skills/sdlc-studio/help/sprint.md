@@ -46,7 +46,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint close                            # scaffolds the retro, then stops for you to fill it
 /sdlc-studio sprint close --retro RETRO0001          # the close ceremony as one command (retro already filled)
 /sdlc-studio sprint close --retro RETRO0001 --file-and-close  # bounded exit: file the ceremony debt, close honestly (refused while a hard gate is red or a batch unit is unanswered)
-/sdlc-studio sprint close --retro RETRO0001 --apply-signoff --principal "You"  # fan your approval into per-unit sign-offs + Done
+python3 <skill>/scripts/sprint.py sign --report RPT0001 --principal "You"   # SEAL: sign the prepared run - the last thing that happens
 /sdlc-studio sprint plan --cycles 3 --goal done      # a standing policy: roll 3 cycles, regenerating the plan each time
 /sdlc-studio sprint boundary --retro RETRO0001       # close this cycle down and open the next from the live backlog
 /sdlc-studio sprint report --id RETRO0001             # the end-of-sprint report (the close draws it too)
@@ -86,13 +86,29 @@ as a conformance waiver, so closing without an item and forgetting it are differ
 record. The sign-off and the handoff rows are reported but never held: the close produces them
 itself, and a gate whose only exit is the step it blocks is a deadlock rather than a gate.
 
-**`--apply-signoff --principal "<you>"`** turns the close's decision brief into an action: instead
-of hand-running `critic signoff` and `transition` for every unit, one command records your
-reviewer-of-record sign-off per story unit, transitions each Done (AC-verify gated, cascading its
-parent), then writes the run's velocity row and a final reconcile. Story-scoped (bugs are already
-terminal), idempotent (a re-run resumes, skipping already-done+signed units), and it stops loudly at
-the first refusal - a principal that is an authoring-session subagent, or a unit whose Done gate is
-red - leaving the completed units done. It never runs without an explicit `--principal`.
+**The close is in two halves, and the signature is the second one.** `close` is PREPARE: it runs
+every step that can change a fact - the ten-step chain, the handoff, the velocity row, the
+reconcile - files the report you are going to sign, and leaves the run OPEN. What moves after that
+page is derived is only what the SIGNATURE ITSELF entails: the per-unit rows, the terminal
+transitions and the cascades they imply. Nothing else does, and the page is written so that none
+of those moves changes a figure it records - which is what makes signing a transaction rather than
+the start of another day's work.
+
+**`sign --report RPTxxxx --principal "<you>"`** is SEAL, and it is the last thing that happens.
+Instead of hand-running `critic signoff` and `transition` for every unit, one command records your
+reviewer-of-record sign-off per unit, transitions each to its own terminal - `Done` for a story,
+`Fixed` for a bug - (AC-verify gated, cascading its
+parent and the request above it), then writes the run's signature and its outcome, and stops. It
+does NOT run the close tail: a fact that moves after a signature is a fact the signature did not
+cover. It walks every unit of the batch to its own terminal, idempotent (a re-run resumes, skipping
+already-done+signed units), and it stops loudly at the first refusal - a unit whose Done gate is
+red - leaving the completed units done. A principal the authoring session controls is refused
+BEFORE any of that, judged across the whole batch, so that refusal leaves nothing written at all.
+It never runs without an explicit `--principal`.
+
+`close --apply-signoff` no longer signs: it exits 2 and names `sign`. An alias would have kept the
+old path alive in every operator's fingers, help file and runbook row, and the split would have
+shipped with its own bypass intact.
 
 Natural language works too: "do a sprint to deliver all open bugs"; "plan and break down the
 next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
@@ -416,7 +432,10 @@ looks precise and is not.
 says so. `call` FINISHES one: the units nobody started leave the batch, and the close chain then runs
 against the Sprint Goal - so `call` completes what it starts rather than telling you to. It takes
 the close's own flags - `--retro`, `--goal-verdict`, `--note`, `--apply-signoff`, `--principal` -
-and forwards them, so the close's messages never name a flag this verb rejects. Without a
+and forwards them, so the close's messages never name a flag this verb rejects. `--apply-signoff`
+is forwarded to the close's refusal of it rather than dropped, so `call` gives the same answer the
+close does and points at `sign`; a verb that quietly swallowed the flag would leave the operator
+believing they had signed. Without a
 `--retro` it scaffolds one and stops, exactly as `sprint close` does. The bounded exit
 (`--file-and-close`) is not among them: reach it with `sprint close` after the descope. The remainder returns to the
 BACKLOG, never forward to the next charter - attaching it forward would make the next run

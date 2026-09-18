@@ -5446,12 +5446,15 @@ def _close_handoff(root, retro_id, state):
     # control could not see it.
     title = (goal if outcome == run_state.GOAL_REACHED and goal
              else f"{state.get('run_id') or 'sprint'} closed {verdict or 'without a verdict'}")
+    # NO `--outcome`: an outcome is what ENDS a run, and under US0832 ending it belongs to
+    # SEAL. `generate` without one writes the document and records its id, leaving the run
+    # open for `sign` - which is the seam this split needed and the only one handoff offers.
     rc, out = _run_cli(handoff.main, ["generate", "--title", title,
-                                      "--outcome", outcome,
                                       "--retro", retro_id, "--root", str(root)])
     if rc != 0:
-        return False, out, "`handoff.py generate` must close the run - see its output"
-    return True, f"handoff generated; run state closed ({outcome}, from the {verdict} verdict)", ""
+        return False, out, "`handoff.py generate` must write the handoff - see its output"
+    return True, (f"handoff generated; the run stays OPEN for `sprint.py sign`, which writes "
+                  f"the {outcome} outcome from the {verdict} verdict"), ""
 
 
 def _close_reconcile(root, retro_id, state):
@@ -6605,7 +6608,7 @@ def _signoff_author(root, unit) -> str:
 
 
 def _apply_signoff(root, state, principal: str | None, author_default: str | None = None,
-                   retro_arg: str | None = None) -> int:
+                   retro_arg: str | None = None, tail: bool = True) -> int:
     """Fan the operator's recorded approval across the batch: per story unit, record the
     reviewer-of-record sign-off then transition it Done (`artifact.close` - AC-verify gated,
     cascades the parent, records telemetry), then the close tail (velocity row + final reconcile).
@@ -6671,7 +6674,12 @@ def _apply_signoff(root, state, principal: str | None, author_default: str | Non
         done.append(unit)
         print(f"apply-signoff: {unit} signed off by {principal} -> Done")
     # the run's own units - the derivation must not reach epics this close never touched
-    rc = _apply_signoff_tail(root, state, units=done + skipped, retro_arg=retro_arg)
+    # `tail=False` is SEAL's call: the velocity row, the handoff re-render and the final
+    # reconcile all CHANGE FACTS, so they belong before the signature, not after it. The
+    # legacy `--apply-signoff` path passed them here, which is where RUN-01M2JA6J's two hours
+    # of post-signature work came from.
+    rc = (_apply_signoff_tail(root, state, units=done + skipped, retro_arg=retro_arg)
+          if tail else 0)
     unfanned = _batch_unfanned_units(root, state.get("batch") or [])
     if unfanned:
         # AC1: named, never silently skipped. AC2: the shortfall is stated in the same breath as
@@ -6906,7 +6914,6 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     # `--apply-signoff` returns before `cmd_close`'s own success path, so the report is emitted
     # here too - it is the end of that route, and the operator is owed the same account of the
     # close whichever way it completed.
-    _tell_the_operator(root)
     record_close_tree(root)
     return 0
 
@@ -9596,26 +9603,421 @@ def cmd_close(args: argparse.Namespace) -> int:
     # recorded approval into per-unit sign-offs + Done transitions, then the tail. Replaces the
     # brief print (the brief is what you read to DECIDE; here the decision is made).
     if getattr(args, "apply_signoff", False):
-        print()
-        return _apply_signoff(root, state, getattr(args, "principal", None),
-                              getattr(args, "author", None),
-                              retro_arg=getattr(args, "retro", None))
-    _draw_report(root, args.retro)
-    # Emitted from the close's OWN success path, which is the only place every completed close
-    # passes through. It hung off `_finalise_outcome` before, and that function is reached on a
-    # plain close only via `_close_handoff`'s "already generated" skip branch - which a first
-    # close never takes - and then returns early anyway, because step [8/10] has by that point
-    # already stamped the run goal-reached. So a completed close told the operator nothing.
-    # Twice over: the first repair fixed a NameError inside a function the close does not call.
-    _tell_the_operator(root)
+        # US0832 AC3. NOT an alias: an alias keeps the old path alive in every operator's
+        # fingers, help file and runbook row, and the split would ship with its own bypass
+        # intact (LL0027 - gate it in the command people run).
+        print("close: `--apply-signoff` no longer signs anything.", file=sys.stderr)
+        print(f"  This run is PREPARED. Sign it with: sprint.py sign --report "
+              f"{(state or {}).get('report') or '<report id>'} --principal \"<name>\"",
+              file=sys.stderr)
+        print("  `sign` writes the per-unit rows, the transitions and the run's signature "
+              "from one principal, and nothing runs after it.", file=sys.stderr)
+        return 2
+    # US0832 AC5: PREPARE leaves exactly ONE account of the run - the filed report. Both
+    # legacy accounts are gone from this path: `_draw_report`, which printed
+    # `sprint_report.render(sprint_report.report(...))`, and `_tell_the_operator`, which
+    # printed shipped/carried per unit with its own cost block. Two pages derived from two
+    # different root objects are two chances to disagree, and the operator signs one of them.
     record_close_tree(root)
-    import critic  # noqa: PLC0415 - the brief composer
-    gate_note = f"gate --require-retro {args.retro} --require-review: PASS; {_mutation_note(root)}"
-    batch = state.get("batch") or []
-    print()
-    print(critic.signoff_brief(root, batch, gate_note=gate_note,
-                               cost_note=_cost_note(root, state)))
+    # US0834: the three holds the REPORT is refused over, as distinct from the close blockers
+    # above. Those can be filed and deferred by `--file-and-close`, because a run may honestly
+    # end with work outstanding. A report may not: it is the page a signature freezes.
+    held = _report_holds(root, state)
+    if held:
+        for h in held:
+            print(f"close: the report is REFUSED - [{h['hold']}] {h['detail']}", file=sys.stderr)
+            print(f"      -> {h['remedy']}", file=sys.stderr)
+        return 2
+    for name in _REPORT_HOLDS:
+        print(f"close: report hold {name}: passed")
+    # The tail is PREPARE's, not SEAL's. The velocity row, the handoff re-render and the final
+    # reconcile all CHANGE FACTS the report states, so they run BEFORE the page is derived and
+    # long before anyone signs it. They rode inside `--apply-signoff` before, which is precisely
+    # how RUN-01M2JA6J spent two hours writing facts after its operator had already said yes.
+    # ADVISORY here, and the reason is recorded rather than smoothed over: the tail's velocity
+    # row counts DELIVERED units by status, and under D0213 no unit is terminal until SEAL, so
+    # at PREPARE it has nothing to count. Failing the close on that would make the split
+    # undeliverable; hiding it would file a report whose cost row nobody could trust. Filed as
+    # the debt it is - the counter must read a cleared terminal gate, or the row must move into
+    # the signature's consequences.
+    rc_tail = _apply_signoff_tail(root, state, units=list(state.get("batch") or []),
+                                  retro_arg=getattr(args, "retro", None))
+    if rc_tail != 0:
+        print("close: the tail could not complete at PREPARE time - the velocity row counts "
+              "delivered units by status and no unit is terminal until `sign`", file=sys.stderr)
+    # The gate verdict is RECORDED, not left to be re-derived. Under D0213 no unit is terminal
+    # until SEAL, so the page cannot say Done and must not: what is true of every unit here is
+    # that its terminal gate cleared, and the report says that instead. Written before the
+    # report is built, because the composer reads it from the run state as a sourced figure.
+    run_state.update(root, report_gate_clear=sorted(
+        u for u, why in _report_gate_verdicts(root, state).items() if not why))
+    report_id, fingerprint = _file_the_report(root, args.retro)
+    # The sign-off BRIEF is gone from this path, and its absence is the point of US0832 AC5.
+    # It was a second account of the run - per-unit rows and a cost block of its own, derived
+    # from a different root object than the page being signed - and its closing instruction was
+    # the per-unit `critic.py signoff` route, which is the two-command shape D0213 rejected. An
+    # operator reading it would have been told to hand-sign each unit by the very command that
+    # had just filed the one page they are meant to sign. It is still available on its own verb
+    # (`critic.py signoff-brief`) for anyone who wants it; it is no longer PREPARE's last word.
+    #
+    # AC1: the last line names the ONLY action left. Printed here rather than inside
+    # `_file_the_report`, so nothing can be appended after it without moving this line.
+    if report_id:
+        print(f"\nsign it with: sprint.py sign --report {report_id} "
+              f"--principal \"<the reviewer of record>\"")
     return 0
+
+
+#: The three holds, named so the clean path can report each as PASSED by its own name. A hold
+#: passed in silence is indistinguishable from a hold that never ran, which is how a scheduled
+#: lane in this project once sat red for three weeks unread.
+_REPORT_HOLDS = ("terminal-gate", "unanswered-review", "index-drift")
+
+
+def _report_gate_verdicts(root, state) -> dict:
+    """Each batch unit's TERMINAL GATE verdict: `None` when clear, the refusal otherwise.
+
+    The gate, never the Status line. Under D0213 the fan-out belongs to SEAL, so at PREPARE
+    every unit is still at Review or In Progress by design - a status test here would refuse the
+    exact state the split creates, and no report could ever be produced. Asked by previewing the
+    real terminal transition (`artifact.close(dry_run=True)`), which is the same question
+    `_done_gate_preflight` asks, so the two can never disagree about one unit.
+    """
+    import artifact  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    out: dict = {}
+    for unit in state.get("batch") or []:
+        uid = sdlc_md.norm_id(unit)
+        try:
+            artifact.close(root, uid, dry_run=True)
+        except (ValueError, OSError) as exc:
+            # OSError as well as ValueError, for `_done_gate_preflight`'s reason: a
+            # PermissionError here must not turn a clean refusal into a traceback.
+            why = str(exc).strip().splitlines()[0]
+            out[uid] = None if _only_the_signature_is_owed(exc) else why
+        else:
+            out[uid] = None
+    return out
+
+
+def _only_the_signature_is_owed(exc) -> bool:
+    """Is the reviewer-of-record sign-off the SINGLE thing this unit's gate is waiting for?
+
+    Then the gate is clear for PREPARE's purposes, because that sign-off is precisely what SEAL
+    is about to write. Without this the split is circular and unshippable: the Done gate demands
+    a signature, the signature comes after the report, and no run past `review.two_role_after`
+    could ever produce one. US0834 AC0's own Given says what "clear" means here - reviews
+    answered, criteria passed, coverage ruled - and the reviewer-of-record half is not in it.
+
+    Read from `GateRefusal.blocks`, which the ladder carries AS DATA for exactly this reason:
+    the blocks are joined with `"; AND "` but only some gates suffix theirs with `". Override
+    with --force"`, so splitting the sentence back up merges adjacent gates and leaks the
+    delimiter. An earlier version of this did re-parse the sentence, and the narrowing that was
+    supposed to make it strict - that the refusal lists exactly ONE requirement - could be
+    replaced by `return True` with the whole suite still green, because no fixture ever reached
+    it. One block, and that block naming the sign-off half and neither of the others, is the
+    same question asked of data nothing has to guess at.
+
+    Anything that is not a gate refusal carrying blocks fails CLOSED: an unreadable gate is not
+    a passed one.
+    """
+    blocks = list(getattr(exc, "blocks", ()) or ())
+    if len(blocks) != 1:
+        return False
+    import conformance  # noqa: PLC0415
+    only = blocks[0]
+    if conformance.HALF_SIGNOFF not in only:
+        return False
+    return not any(h in only for h in (conformance.HALF_EVIDENCE, conformance.HALF_VERDICT))
+
+
+def _report_index_drift(root) -> list:
+    """The index paths `reconcile detect` reports as disagreeing with the tree.
+
+    Its own module, asked its own question - a second reader of index drift would be a second
+    answer to it. Named at module level rather than inlined so a test can drive the hold without
+    building a drifted tree, and so the hold is reachable without running a whole close.
+    """
+    import reconcile  # noqa: PLC0415
+    try:
+        # `detect_all` is THE sweep - the one definition of what drift is on this tree, which
+        # `reconcile detect`'s own exit code and the gate's blocking lane both read. A hold
+        # assembling its own subset would be the smaller second definition that ruling exists
+        # to prevent.
+        _per_type, items = reconcile.detect_all(root)
+    except Exception as exc:               # noqa: BLE001 - an unreadable index is drift, not a crash
+        sdlc_md.debug("sprint.report_holds.index_drift", exc)
+        return [f"reconcile.detect_all failed: {type(exc).__name__}: {exc}"]
+    # Name the INDEX PATH and the row, because those are what the reader has to go and fix.
+    # A drift item carries `type`, `id` and `kind` and NO path, so a fallback chain ending at
+    # `type` printed the word "story" and called it an index - true of nothing the operator
+    # could open. The path is derived from the type through `sdlc_md.ARTIFACT_TYPES`, the same
+    # table `reconcile` itself indexes by, and each row is named rather than deduped away: a
+    # count of types is not a count of drifted rows.
+    named = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            named.append(str(item))
+            continue
+        type_ = item.get("type") or ""
+        folder = (sdlc_md.ARTIFACT_TYPES.get(type_) or ("",))[0] if type_ else ""
+        where = item.get("path") or (f"{folder}/_index.md" if folder else "")
+        row = " ".join(x for x in (item.get("id"), item.get("kind")) if x)
+        entry = f"{where}: {row}".strip(": ") if (where or row) else str(item)
+        if entry and entry not in named:
+            named.append(entry)
+    return named
+
+
+def _report_holds(root, state) -> list:
+    """Every reason the report is refused, ALL of them, never the first.
+
+    Serial discovery - clear one, pay the whole of PREPARE again, meet the next - is the cost
+    this returns a list to avoid. Each hold names every failure it found in one row.
+    """
+    holds = []
+    unmet = {u: why for u, why in _report_gate_verdicts(root, state).items() if why}
+    if unmet:
+        named = "; ".join(f"{u}: {why}" for u, why in sorted(unmet.items()))
+        holds.append({
+            "hold": "terminal-gate",
+            "detail": f"{len(unmet)} batch unit(s) whose terminal gate is UNMET - {named}",
+            "remedy": "clear each gate this names (commonly `verify_ac.py run --story <id>`, "
+                      "or a bug's `Verification depth`), then re-run the close"})
+    # The one predicate the rest of the close already reads (US0823), never a second opinion
+    # about what an unanswered review is: D0193, D0194.
+    try:
+        # The predicate returns `{"unanswered": [{"unit", "status", "why", "filed"}], ...}`;
+        # read its own rows rather than re-deriving a set from them, or this becomes the second
+        # opinion about what is owed that D0193 and D0194 refused.
+        owed = {r["unit"]: f"{r.get('status', '?')} - {r.get('why', 'owed')}"
+                for r in (unanswered_units(root, state) or {}).get("unanswered", [])}
+    except Exception as exc:               # noqa: BLE001
+        owed = {"<unreadable>": f"{type(exc).__name__}: {exc}"}
+    if owed:
+        named = "; ".join(f"{u}: {why}" for u, why in sorted(owed.items()))
+        holds.append({
+            "hold": "unanswered-review",
+            "detail": f"{len(owed)} batch unit(s) whose review is unanswered - {named}",
+            "remedy": "answer the review this names - repair the REJECT and record the repair, "
+                      "or rule it in the retro's `## Known issues carried`"})
+    drifted = _report_index_drift(root)
+    if drifted:
+        holds.append({
+            "hold": "index-drift",
+            "detail": f"{len(drifted)} index/indexes disagree with the tree - "
+                      f"{', '.join(drifted)}",
+            "remedy": "`reconcile.py apply`, then re-run the close - a report describing an "
+                      "index that disagrees with its own tree is not a fact, and filing a "
+                      "ticket for it would stand a receipt in place of the figure being right"})
+    return holds
+
+
+def _file_the_report(root, retro_id):
+    """PREPARE's last act: derive the run's report, file it, and name it on the run state.
+
+    Re-derived on EVERY prepare, never reused: a late fix between two prepares moves a figure,
+    and an operator signing a fingerprint over facts that have moved underneath it is the
+    failure this whole split exists to end (US0832 AC4).
+    """
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    # THE REPORT-TIME STAMP, taken here because here is the only place it can be. `open_run`
+    # takes the `open` reading; without a closing one from the same session no delta exists,
+    # and the cost row reads NOT MEASURED on every run - which is what a library function with
+    # no caller buys you. `stamp_tokens` was shipped with its only caller a test, and this is
+    # the lane that was missing. Taken BEFORE the report is derived, so the figure the page
+    # states is the one the run actually spent up to the moment it was written.
+    try:
+        run_state.stamp_tokens(root, "report")
+    except Exception as exc:               # noqa: BLE001 - an unreadable meter is not a failed close
+        sdlc_md.debug("sprint.file_the_report.stamp", exc)
+    try:
+        report = sprint_report.build_report(str(root), retro_id)
+        report_id = sprint_report.file_report(str(root), report)
+    except sprint_report.ReportError as exc:
+        # The composer refuses a run it cannot report honestly - no goal, no run record, a
+        # figure whose deriver produced no source. PREPARE reports the refusal and its reason
+        # and leaves the run open: an operator with nothing to sign is the correct outcome,
+        # and a report invented around the gap would be the wrong one.
+        print(f"close: the run cannot be reported yet - {exc}", file=sys.stderr)
+        return "", ""
+    except AttributeError as exc:          # composer not yet shipped - say so, never pretend
+        print(f"close: the report composer is not available ({exc}) - the run is prepared but "
+              f"carries no report to sign", file=sys.stderr)
+        return "", ""
+    fingerprint = report.get("fingerprint", "")
+    run_state.update(root, report=report_id, report_fingerprint=fingerprint)
+    print(f"\nreport filed: {report_id} (fingerprint {fingerprint})")
+    return report_id, fingerprint
+
+
+def _cascade_after_signature(root, state, units) -> None:
+    """What the SIGNATURE entails, and nothing else.
+
+    SEAL has just transitioned each batch unit, so three things follow from that and could not
+    have been true before it: the parent epics whose children are now all terminal, the requests
+    above them whose children are now all resolved, and the handoff document, which describes
+    unit statuses and would otherwise permanently describe the world as it was one moment before
+    the signature. It is NOT `_apply_signoff_tail`: the velocity row and the final reconcile
+    change facts the report states, so they run in PREPARE, before anyone signs.
+    """
+    derived = _derive_parent_epics(root, units)
+    if derived:
+        print(f"sign: derived {', '.join(derived)} Done (all children terminal)")
+    derived_requests = _derive_parent_requests(root, scope_ids=list(units or []) + derived)
+    if derived_requests:
+        print(f"sign: derived parent request(s) {', '.join(derived_requests)} terminal")
+    # The velocity row joins the cascade for the same reason the epics do: it counts DELIVERED
+    # units by status, and those statuses exist only because this signature wrote them. Filing
+    # it at PREPARE would count zero. It is one row, upserted by retro id, and it is the last
+    # thing the signature entails - not the tail, whose reconcile still belongs before the page.
+    try:
+        import retro as _retro  # noqa: PLC0415
+        rc, out = _run_cli(_retro.main, ["--root", str(root), "accuracy", "--id",
+                                         (state.get("scaffolded_retro") or "").strip()
+                                         or "RETRO0001", "--write", "--tokens-from-harness"])
+        if rc == 0:
+            # the capture line itself, not a paraphrase: the operator needs to read WHAT was
+            # attributed and from which session, which is the half a summary always drops
+            for line in out.splitlines():
+                if line.startswith("token actual"):
+                    print(f"sign: {line}")
+            print("sign: velocity row recorded")
+    except Exception as exc:  # noqa: BLE001 - a missing row must not lose a written signature
+        print(f"sign: velocity row NOT recorded ({exc})", file=sys.stderr)
+    hid = (state.get("handoff") or "").strip()
+    if not hid:
+        return
+    import handoff  # noqa: PLC0415
+    try:
+        rep = handoff.refresh(root, hid, batch=state.get("batch") or None)
+    except Exception as exc:  # noqa: BLE001 - a stale handoff must not lose the seal
+        print(f"sign: {hid} NOT refreshed ({exc}) - it still describes the state before "
+              f"this signature", file=sys.stderr)
+        return
+    if rep is None:
+        print(f"sign: {hid} has no file on disk - not refreshed", file=sys.stderr)
+    else:
+        s = rep["summary"]
+        print(f"sign: {hid} refreshed - {s['delivered']} delivered, {s['remaining']} remaining")
+
+
+def _principal_refusals(root, state, principal: str | None, author_default: str | None) -> list:
+    """Every unit of the batch this principal may not sign, asked of `critic`'s own rule.
+
+    Only the units the fan-out would actually SIGN are asked: one already independently signed
+    off is one the seal will skip, and refusing over it would make a resumed seal unrunnable.
+    """
+    import critic  # noqa: PLC0415
+    if not (principal or "").strip():
+        return ["sign needs an explicit --principal (the reviewer of record) - a sign-off "
+                "with no named principal is not a review"]
+    out = []
+    for unit in _batch_story_units(root, state.get("batch") or []):
+        # EVERY unit, including ones already signed off. An earlier reading skipped those for
+        # idempotence, but the question here is not whether a unit needs signing - it is
+        # whether THIS principal may give the run its signature, and the run's signature is
+        # written on a resumed seal too. Skipping them meant a seal resumed after every unit
+        # was signed met no refusal at all, and the author could sign the run off: the exact
+        # hole AC2 exists to close, reached by a different door.
+        author = author_default or _signoff_author(root, unit)
+        if not author:
+            # NOT this check's business. A unit with no recorded author owes a critic pass, not
+            # a different principal, and `_apply_signoff` already stops on it with that remedy.
+            # Refusing here would answer a question nobody asked and would give the operator a
+            # second, differently worded refusal for one condition.
+            continue
+        why = critic.signoff_refusal(root, unit, principal, author)
+        if why:
+            out.append(f"{unit}: {why}")
+    return out
+
+
+def cmd_sign(args: argparse.Namespace) -> int:
+    """SEAL. One command, one principal, and only what the signature entails.
+
+    Everything that can change a fact ran in PREPARE. This writes the per-unit sign-off rows,
+    the terminal transitions and the cascades they imply, then the run's own signature and its
+    outcome - and stops. It does NOT run `_apply_signoff_tail`: the velocity row, the handoff
+    re-render and the final reconcile are PREPARE's, because a fact that moves after a
+    signature is a fact the signature did not cover (D0213, RUN-01M2JA6J's own two hours).
+    """
+    root = Path(args.root)
+    state = run_state.read(root) or {}
+    if state.get("outcome") in run_state.CLOSED:
+        print(f"sign: {state.get('run_id')} is already sealed ({state.get('outcome')}) - "
+              f"`sprint.py reopen --reason ...` to break the seal", file=sys.stderr)
+        return 2
+    report_id = getattr(args, "report", None) or state.get("report") or ""
+    if not report_id:
+        print("sign: this run names no report - run `sprint.py close --retro RETROxxxx` "
+              "first, which prepares the run and files the page you are signing",
+              file=sys.stderr)
+        return 2
+    verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
+    outcome = run_state.GOAL_REACHED if verdict == "achieved" else run_state.STOPPED
+    # THE PRINCIPAL IS JUDGED OVER THE WHOLE BATCH, BEFORE ANYTHING IS WRITTEN. `record_signoff`
+    # already refuses a principal the authoring session controls, but per unit and as it walks -
+    # so a subagent recorded on the LAST unit alone is caught only after the first ones have
+    # been signed and moved. One principal signs one batch, so the question is asked of the
+    # batch: every refusal named at once, nothing written, the run left open.
+    refused = _principal_refusals(root, state, getattr(args, "principal", None),
+                                  getattr(args, "author", None))
+    if refused:
+        for line in refused:
+            print(f"sign REFUSED: {line}", file=sys.stderr)
+        print("  the run is untouched and still open - sign with a reviewer of record outside "
+              "the authoring session's control", file=sys.stderr)
+        return 2
+    rc = _apply_signoff(root, state, getattr(args, "principal", None),
+                        getattr(args, "author", None),
+                        retro_arg=getattr(args, "retro", None), tail=False)
+    if rc != 0:
+        return rc
+    _cascade_after_signature(root, state, list(state.get("batch") or []))
+    try:
+        ua = unanswered_units(root, state)
+    except Exception as exc:               # noqa: BLE001 - a seal records what it ended over
+        ua, exc_note = None, f"{type(exc).__name__}: {exc}"
+        run_state.update(root, **unanswered_record(None, exc_note))
+    else:
+        run_state.update(root, **unanswered_record(ua))
+    signature = _write_the_signature(root, report_id, args.principal)
+    run_state.close_run(root, outcome, handoff=state.get("handoff"))
+    print(f"sealed {state.get('run_id')} {outcome}: signed by {args.principal} over "
+          f"{report_id}" + (f" (fingerprint {signature.get('fingerprint')})"
+                            if signature.get("fingerprint") else ""))
+    return 0
+
+
+def _write_the_signature(root, report_id: str, principal: str) -> dict:
+    """The run's own signature: the principal, the date, the report and THAT report's fingerprint.
+
+    The fingerprint is read back off the filed report rather than taken from the run state or
+    recomputed here. "Signed RPT0001" says nothing about WHICH RPT0001 - PREPARE re-derives the
+    page on every run and files it under a fresh id, but a re-prepare that reused an id would
+    leave a signature naming a document that had moved underneath it. The fingerprint is what
+    makes the signature point at one version of one page.
+
+    It also lands ON the report, because the report is the artefact that gets read, sent and
+    filed; a signature only the run state carries is one nobody signing the page can see. The
+    figure SET is untouched, so the fingerprint the signature just recorded still re-derives -
+    signing a report must not be what invalidates it.
+    """
+    import sprint_report  # noqa: PLC0415
+    signature = {"principal": principal, "signed_at": sdlc_md.now_iso8601(),
+                 "report": report_id, "fingerprint": ""}
+    try:
+        report = sprint_report.read_report(root, report_id)
+        signature["fingerprint"] = report.get("fingerprint") or ""
+        report["signature"] = signature
+        sprint_report.write_report(root, report)
+    except (sprint_report.ReportError, AttributeError, OSError) as exc:
+        # The run is signed either way - the operator said yes, and that fact is not contingent
+        # on a file write succeeding. What is NOT done is pretend it landed on the page.
+        print(f"sign: the signature was recorded on the run but could not be written onto "
+              f"{report_id} ({type(exc).__name__}: {exc})", file=sys.stderr)
+    run_state.update(root, signature=signature)
+    return signature
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -11439,6 +11841,19 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--root", default=".", help="Repo root (default: .)")
     b.add_argument("--format", choices=("text", "json"), default="text")
     b.set_defaults(func=cmd_breakdown)
+
+    sg = sub.add_parser("sign", help="SEAL a prepared run: one principal writes the per-unit "
+                                     "sign-off rows, the transitions and the run's signature, "
+                                     "and nothing runs afterwards")
+    sg.add_argument("--report", default=None, metavar="RPTxxxx",
+                    help="the report being signed (default: the one the run names)")
+    sg.add_argument("--principal", default=None,
+                    help="the reviewer of record - refused when the authoring session "
+                         "controls it, as `critic.py signoff` refuses it")
+    sg.add_argument("--author", default=None, help="the authoring seat, for the independence check")
+    sg.add_argument("--retro", default=None, metavar="RETROxxxx")
+    sg.add_argument("--root", default=".")
+    sg.set_defaults(func=cmd_sign)
 
     cl = sub.add_parser("close", help="Run the close ceremony as one deterministic chain "
                                       "(goal-verdict, retro, lessons, gate, handoff, reconcile), "

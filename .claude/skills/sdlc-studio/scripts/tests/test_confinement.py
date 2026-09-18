@@ -407,6 +407,12 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "lessons.py": "writes the lessons store it owns",
     "docgen.py": "writes only between generation markers in the targets it owns, and refuses any file that carries none - the marker is the confinement",
     "digest.py": "writes the digest it owns",
+    "sprint_report.py": ("writes the report of record it owns - the JSON and its Markdown twin "
+                         "under sdlc-studio/reports/, both named by an id the shared allocator "
+                         "minted - plus the CI answer it caches under .local/ so a re-derivation "
+                         "is offline rather than a second network call with a different answer. "
+                         "Not a WriterCase because a report cannot be built without a run "
+                         "record and a retro, and this fixture seeds neither"),
     "changelog.py": "writes the changelog it owns",
     "release_cut.py": "writes the CHANGELOG section it cuts (via changelog.compose) and the "
                       "release-gate green marker it owns under .local",

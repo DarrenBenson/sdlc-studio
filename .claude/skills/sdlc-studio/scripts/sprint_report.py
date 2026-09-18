@@ -27,10 +27,14 @@ Two honesty rules it will not bend:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib
 import json
 import re
+import shutil
+import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -941,8 +945,13 @@ NON_CEREMONY_VERBS = {
     # close to certify something that happened before the run began.
     "sprint": ("appetite", "close", "boundary", "report", "checklist", "preflight",
                "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call"),
+    # `signoff` is the RECORDER, not the ceremony step. US0832 split the close, and the stage
+    # "reviewer-of-record sign-off" is now held by `sprint sign`, which is what the checklist's
+    # `signoff` row names; `critic signoff` is what that verb calls to write each row. It is
+    # declared here rather than left to fail the drift guard because a row may name only one
+    # command, and the command an operator runs is the one the checklist should certify.
     "critic": ("brief", "caller-check", "correct", "evidence", "repair", "show",
-               "signoff-brief", "supersede"),
+               "signoff", "signoff-brief", "supersede"),
     "handoff": ("show",),
     "lessons": ("add", "carried", "carry", "list", "propose", "prune", "rank",
                 "recall", "repeats", "revalidate", "violated"),
@@ -994,8 +1003,15 @@ CHECKLIST = (
     # a gate whose only exit is the step it blocks is not a gate, it is a deadlock. Reject,
     # fix, RE-REQUEST is the loop a human sprint runs; a gate must leave the re-request
     # reachable.
+    # The command that HOLDS this stage is `sprint sign`: US0832 split the close, and the
+    # reviewer-of-record rows are written by SEAL rather than by the close. `critic signoff` is
+    # still the recorder underneath, but naming it here left the ceremony verb `sign` covered by
+    # no row at all, which is exactly the drift `cycle_drift` exists to catch.
+    # `discharged_by` stays `close` because that field decides whether a row HOLDS the close,
+    # and this one must not: it is produced by the close ceremony, of which `sign` is the second
+    # half, so holding PREPARE over it would be a gate whose only exit is the step it blocks.
     {"id": "signoff", "kind": STAGE, "authority": DERIVED, "discharged_by": "close",
-     "title": "Reviewer-of-record sign-off", "command": "critic signoff",
+     "title": "Reviewer-of-record sign-off", "command": "sprint sign",
      "resolver": "_ck_signoff"},
     {"id": "handoff", "kind": STAGE, "authority": DERIVED, "discharged_by": "close",
      "title": "Handoff, when the run stopped short of its goal", "command": "handoff generate",
@@ -2588,6 +2604,1427 @@ def cmd_checklist(args: argparse.Namespace) -> int:
     return 1 if (ck["outstanding"] or ck["stop_ship"]) else 0
 
 
+
+# =============================================================================================
+# THE REPORT OF RECORD
+#
+# A second, separate artefact from the close report above it: that one is the operator's
+# terminal page at the moment of the close; this one is the FILEABLE document a run leaves
+# behind - JSON of record, a committed Markdown twin, and an HTML rendering generated on
+# demand and never written into the tree (D2a).
+#
+# Two rules hold the whole thing up, and everything below is machinery for them:
+#
+#   EVERY FIGURE CARRIES ITS SOURCE. A leaf figure is `{"value", "source"}` and a build whose
+#   deriver produced no source REFUSES, naming the figure and its section. Without that the
+#   Provenance section's claim - that a disputed number can be re-derived rather than argued -
+#   reads as satisfied while being false.
+#
+#   A SECTION WITH NO DATA SAYS SO BY NAME. `NOT MEASURED` with the reason and the source it
+#   could not read, never `0`, `-`, `None` or an empty cell. Separating a measured zero from a
+#   measurement nobody took is the one distinction this report exists to preserve.
+# =============================================================================================
+
+#: What an unmeasured figure or section READS. A word, in the output, not an absence.
+NOT_MEASURED = "NOT MEASURED"
+#: What a per-unit token actual reads, under the run-level attribution ruling: the meter is
+#: cumulative per session and interleaved work cannot be split between units honestly, so the
+#: split is named UNMEASURED rather than divided up.
+UNMEASURED = "UNMEASURED"
+
+#: D2a: the JSON is of record, the Markdown twin is committed, the HTML is generated on demand.
+D2A = ("D2a: the JSON is the artefact of record and the Markdown twin is committed beside it; "
+       "the HTML is generated on demand and never written into the tree, because a "
+       "three-hundred-line generated page churns in git on every re-prepare")
+
+REPORTS_REL = "sdlc-studio/reports"
+
+
+class ReportError(RuntimeError):
+    """A report that cannot be built or rendered honestly. Every message names what is missing
+    and where, because the caller's next move is to go and look at it."""
+
+
+def fig(key: str, value, source: str, reason: str | None = None, **extra) -> dict:
+    """ONE figure: a value and the source it can be re-derived from.
+
+    Every leaf in the report passes through here, so `source` is never optional by accident.
+    A figure that is not measured carries `NOT_MEASURED` as its value, a `reason`, and the
+    source it CONSULTED - the reader has to be able to go and look at the thing that had no
+    answer, not merely be told there was none.
+    """
+    out = {"key": key, "value": value, "source": source}
+    if reason is not None:
+        out["reason"] = reason
+    out.update(extra)
+    return out
+
+
+def unmeasured(key: str, source: str, reason: str, **extra) -> dict:
+    return fig(key, NOT_MEASURED, source, reason=reason, **extra)
+
+
+def _section(key: str, title: str, figures: dict | None = None, rows: list | None = None,
+             not_measured: dict | None = None) -> dict:
+    return {"key": key, "title": title, "figures": figures or {},
+            "rows": rows or [], "not_measured": not_measured}
+
+
+#: Figures the digest does NOT cover, and why. These are the run's own LIFECYCLE - set by the
+#: act of closing and sealing rather than derived from the delivered work - so including them
+#: would mean the signature changed the fingerprint it had just recorded, and every sealed run
+#: would read INVALIDATED from the moment it was signed. Exactly the reason `fingerprint` already
+#: excludes the signature block and the generation timestamp; these two were missed because they
+#: sit inside a section rather than at the top level. Measured: a seal moved `terminal_summary`
+#: and `duration_hours` and nothing else.
+OUTSIDE_THE_DIGEST = (("header", "ended_at"), ("header", "duration_hours"),
+                      # ...and each unit's STATUS, for the same reason and one level
+                      # down: SEAL transitions every unit, so a signature over the
+                      # statuses is a signature over what it is about to change. The
+                      # durable claim about a unit is `unit_gate` - that its terminal
+                      # gate cleared - and that IS in the digest. The status stays on
+                      # the page, because a reader wants it; it is just not a fact the
+                      # signature freezes.
+                      ("units", "unit_status"))
+
+
+def in_the_digest(section: str, key: str) -> bool:
+    """Is this figure one the signature is over? One predicate, so what is COMPARED on
+    revalidation and what is SIGNED can never be two different sets."""
+    return (section, key.split("[", 1)[0]) not in OUTSIDE_THE_DIGEST
+
+
+def leaf_figures(report: dict):
+    """Every `(section key, figure key, figure)` in the report's figure set, IN ORDER.
+
+    The order is the fingerprint's input, so it is the section list's order, then each
+    section's figures in insertion order, then its rows. A `not_measured` marker is a figure
+    too: a section that stops being measured has moved, and a fingerprint that could not see
+    that would certify a report whose facts had gone.
+    """
+    for sec in report.get("sections") or []:
+        nm = sec.get("not_measured")
+        if nm:
+            yield sec["key"], "not_measured", nm
+        for key, f in (sec.get("figures") or {}).items():
+            yield sec["key"], key, f
+        for i, row in enumerate(sec.get("rows") or []):
+            for key, f in row.items():
+                yield sec["key"], f"{key}[{i}]", f
+
+
+def fingerprint(report: dict) -> str:
+    """A digest of the ordered FIGURE SET - not of the JSON file.
+
+    The signature block and the generation timestamp are excluded deliberately. Fingerprinting
+    the whole file would mean that signing a report changes the fingerprint the signature just
+    recorded, so every sealed run would read INVALIDATED from the moment it was signed.
+    """
+    payload = [[section, key, f.get("value")] for section, key, f in leaf_figures(report)
+               if in_the_digest(section, key)]
+    blob = json.dumps(payload, sort_keys=False, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
+
+
+# --- reading the run's artefacts -------------------------------------------------------------
+
+def _rel(root: Path, path: Path) -> str:
+    try:
+        return str(Path(path).resolve().relative_to(Path(root).resolve()))
+    except ValueError:
+        return str(path)
+
+
+def _run_state_for(root: Path, run_id: str | None) -> tuple[dict, str]:
+    """The run record this report describes, and the relative path it was read from."""
+    rel = _rel(root, run_state.path(root))
+    try:
+        live = run_state.read(root) or {}
+    except run_state.RunStateError as exc:
+        raise ReportError(f"the run record at {rel} could not be read: {exc}") from exc
+    if not run_id or sdlc_md.norm_id(str(live.get("run_id") or "")) == sdlc_md.norm_id(run_id):
+        if live.get("run_id"):
+            return live, rel
+    for archived in run_state.archived(root):
+        if str(archived.get("run_id") or "") == run_id:
+            return archived, _rel(root, run_state.archive_path(root, run_id))
+    raise ReportError(f"no run record names {run_id or 'a run'} - looked in {rel} and the "
+                      f"run archive beside it")
+
+
+def _retro_for_run(root: Path, state: dict) -> str:
+    """The retro whose Batch names this run's units. The report is keyed by retro because the
+    retro is the artefact a close produces; the run record is what it is checked against."""
+    want = {sdlc_md.norm_id(u) for u in (state.get("batch") or [])}
+    best = None
+    for p in sorted((root / "sdlc-studio" / "retros").glob("*.md")):
+        if p.name == "_index.md":
+            continue
+        text = sdlc_md.read_text_safe(p)
+        batch = {sdlc_md.norm_id(u.strip())
+                 for u in (sdlc_md.extract_field(text, "Batch") or "").split(",") if u.strip()}
+        cover = len(batch & want)
+        if cover and (best is None or cover > best[0]):
+            best = (cover, sdlc_md.any_record_id(p.stem))
+    if best is None:
+        raise ReportError(f"no retro under sdlc-studio/retros/ names any unit of "
+                          f"{state.get('run_id')}'s batch")
+    return best[1]
+
+
+def _retro_path(root: Path, retro_id: str) -> Path:
+    for p in sorted((root / "sdlc-studio" / "retros").glob("*.md")):
+        if sdlc_md.norm_id(sdlc_md.any_record_id(p.stem) or "") == sdlc_md.norm_id(retro_id):
+            return p
+    raise ReportError(f"no retro file for {retro_id} under sdlc-studio/retros/")
+
+
+def _unit_paths(root: Path, units: list[str]) -> list[tuple[str, Path | None]]:
+    out = []
+    for uid in units:
+        found = sdlc_md.find_by_id(root, uid)
+        out.append((uid, Path(found[0]) if found else None))
+    return out
+
+
+def _table_rows(text: str, header: str) -> list[list[str]]:
+    """Every data row of the first table whose header row carries `header` (case-folded).
+
+    Routed through `sdlc_md.iter_tables`, the ONE structural boundary rule every table parser
+    in this project shares - a hand-rolled scan re-imports the tallied-into-the-wrong-table
+    defect class, and a fenced example table would be read as real rows.
+    """
+    want = header.lower()
+    for table in sdlc_md.iter_tables(text):
+        cells = table.get("header") or []
+        if want in " | ".join(cells).lower():
+            return [[c.strip() for c in row] for _line, row in table.get("rows") or []]
+    return []
+
+
+def _verdict_rows(root: Path, phase: str, units=None) -> tuple[list[list[str]], str]:
+    """The verdict ledger's rows for THIS run's units, and the file they came from.
+
+    The ledgers are PROJECT-WIDE and append-only: read whole they carry a year of other runs'
+    verdicts. Unscoped, this repository's own report read 185 rejected units out of a batch of
+    23 and printed a rework rate of 804% - measured, not imagined, on the first run against the
+    real tree. `units` is the run's batch; None keeps every row, for a caller that wants the
+    whole file and says so.
+    """
+    name = "critic-verdicts.md" if phase == "delivery" else "plan-review-verdicts.md"
+    p = root / "sdlc-studio" / "reviews" / name
+    rel = _rel(root, p)
+    if not p.is_file():
+        return [], rel
+    rows = _table_rows(sdlc_md.read_text_safe(p), "Unit | Verdict")
+    if units is None:
+        return rows, rel
+    want = {sdlc_md.norm_id(u) for u in units}
+    return [r for r in rows if r and sdlc_md.norm_id(r[0]) in want], rel
+
+
+def _criteria_count(text: str) -> int:
+    """How many acceptance criteria an artefact declares.
+
+    Through `verify_ac.criteria_blocks`, the ONE reader the runner, the lint, the plan deriver
+    and the seat brief already share. A local `^### AC\\d` scan counted a story's criteria and
+    read ZERO for every bug in this repository, because a bug writes `- [ ] **AC1**` - measured
+    on the real corpus, where 18 of 23 units reported no criteria at all.
+    """
+    try:
+        import verify_ac  # noqa: PLC0415 - the module that owns the criteria format
+        return len(verify_ac.criteria_blocks(text))
+    except Exception:  # noqa: BLE001 - the report never fails on its evidence being unreadable
+        return len(re.findall(r"(?m)^(?:###\s+AC\d|- \[[ x]\] \*\*AC\d)", text))
+
+
+def _mutants_by_unit(root: Path, units=None) -> dict[str, tuple[int, int]]:
+    """`{unit: (killed, rows)}` from the mutation ledger - evidence the tests can fail.
+
+    Scoped to `units` when given: the ledger accumulates across runs, so an unscoped count
+    is the project's whole mutation history rather than this run's.
+    """
+    want = None if units is None else {sdlc_md.norm_id(u) for u in units}
+    out: dict[str, list[int]] = {}
+    p = root / "sdlc-studio" / ".local" / "mutation-runs.json"
+    if not p.is_file():
+        return {}
+    try:
+        state = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    for entry in (state.get("entries") or []):
+        for m in (entry.get("mutants") or []) if isinstance(entry, dict) else []:
+            if not isinstance(m, dict) or not m.get("unit") or m.get("withdrawn"):
+                continue
+            uid = sdlc_md.norm_id(str(m["unit"]))
+            if want is not None and uid not in want:
+                continue
+            row = out.setdefault(uid, [0, 0])
+            row[1] += 1
+            if str(m.get("verdict") or "").lower() == "killed":
+                row[0] += 1
+    return {k: (v[0], v[1]) for k, v in out.items()}
+
+
+# --- the forge, and the git history behind it ------------------------------------------------
+
+#: Where a `gh run list --json ...` answer is cached for this run. The report reads the cache
+#: when it is there and asks the forge when it is not, so a report can be rebuilt offline from
+#: the same data it was first built from - which is what makes re-derivation a check rather
+#: than a second network call with a different answer.
+CI_RUNS_REL = "sdlc-studio/.local/ci-runs.json"
+_CI_FIELDS = "databaseId,event,conclusion,headBranch,headSha,workflowName,createdAt,updatedAt"
+
+
+def _ci_runs(root: Path) -> tuple[list[dict], str]:
+    """Every CI run this clone can see, and the source they were read from."""
+    cached = root / CI_RUNS_REL
+    if cached.is_file():
+        try:
+            rows = json.loads(cached.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            rows = []
+        return ([r for r in rows if isinstance(r, dict)], CI_RUNS_REL)
+    if shutil.which("gh") is None:
+        return [], "gh run list"
+    try:
+        proc = subprocess.run(["gh", "run", "list", "--limit", "100", "--json", _CI_FIELDS],
+                              capture_output=True, text=True, cwd=str(root), timeout=30)
+        rows = json.loads(proc.stdout or "[]") if proc.returncode == 0 else []
+    except (OSError, ValueError, subprocess.SubprocessError):
+        rows = []
+    rows = [r for r in rows if isinstance(r, dict)]
+    # WRITE THE CACHE. Nothing wrote it, so every read went to the live forge - and a forge
+    # answer is time-varying and page-truncated, which makes the guardrail and all four DORA
+    # keys move on a tree nobody touched. A report is supposed to re-derive from the same data
+    # it was first built from; without this it re-derives from a second network call with a
+    # different answer, which is the thing the fragment claims is avoided. Best-effort: a clone
+    # that cannot write its own `.local/` still gets its figures, just not the stability.
+    if rows:
+        try:
+            cached.parent.mkdir(parents=True, exist_ok=True)
+            cached.write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
+        except OSError as exc:
+            sdlc_md.debug("sprint_report.ci_runs.cache", exc)
+    return (rows, "gh run list")
+
+
+def _at(value) -> "datetime | None":
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        return datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _in_window(stamp, start, end) -> bool:
+    at = _at(stamp)
+    if at is None or start is None:
+        return False
+    return at >= start and (end is None or at <= end)
+
+
+def _git_commits(root: Path, start, end) -> list[tuple[str, "datetime"]]:
+    """`(sha, committed at)` for every commit inside the run's window, oldest first."""
+    try:
+        proc = subprocess.run(["git", "log", "--format=%H%x09%cI"], capture_output=True,
+                              text=True, cwd=str(root), timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if proc.returncode != 0:
+        return []
+    out = []
+    for line in (proc.stdout or "").splitlines():
+        sha, _, stamp = line.partition("\t")
+        at = _at(stamp)
+        if at is not None and start is not None and at >= start and (end is None or at <= end):
+            out.append((sha, at))
+    return sorted(out, key=lambda r: r[1])
+
+
+def _hms(seconds: float) -> str:
+    total = int(seconds)
+    return f"{total // 3600}h {total % 3600 // 60}m"
+
+
+#: A deployment in THIS project, stated rather than assumed. The report prints the sentence
+#: beside every DORA figure, because a figure whose definition is unstated cannot be compared
+#: with anyone else's - and an unmeasured key printed as 0% against an elite band of 0-15%
+#: reads as the best possible result.
+DEPLOY_MAPPING = ("a push to main IS the deployment in this trunk-based repository: there is no "
+                  "separate deploy step, and CI on that commit is what decides whether the "
+                  "change stood up")
+_NO_FORGE = "no forge run data"
+
+
+def _dora_rows(root: Path, start, end) -> list[dict]:
+    """The four keys, each with its value, this project's mapping, the elite band and a source.
+
+    Deployment frequency and change failure rate count PUSH-TRIGGERED runs alone. Counting
+    every run in the window would let a `workflow_dispatch` or a schedule stand as a
+    deployment, which is not a change reaching the trunk, and the rate it produces is a
+    different number about a different thing.
+    """
+    runs, ci_source = _ci_runs(root)
+    windowed = [r for r in runs if _in_window(r.get("createdAt"), start, end)]
+    pushes = [r for r in windowed if str(r.get("event") or "") == "push"]
+    failed = [r for r in pushes if str(r.get("conclusion") or "").lower() not in ("success", "")]
+    ids = "/".join(str(r.get("databaseId")) for r in pushes)
+
+    def forge(detail: str) -> str:
+        return f"forge runs {ids} - {detail}" if ids else f"forge runs (none readable); {detail}"
+
+    rows: list[dict] = []
+    if pushes:
+        rows.append({"dora_key": fig("dora_key", "Deployment frequency", ci_source),
+                     "dora_value": fig("dora_value", len(pushes), ci_source),
+                     "dora_mapping": fig("dora_mapping", DEPLOY_MAPPING, ci_source),
+                     "dora_band": fig("dora_band", "on demand", ci_source),
+                     "dora_source": fig("dora_source", forge(
+                         f"{len(pushes)} push-triggered run(s) on main in the run window"),
+                         ci_source)})
+    else:
+        commits = _git_commits(root, start, end)
+        mapping = (DEPLOY_MAPPING + "; with no forge run data a deployment is counted as a "
+                                    "commit on main inside the run window")
+        if commits:
+            rows.append({"dora_key": fig("dora_key", "Deployment frequency", "git log"),
+                         "dora_value": fig("dora_value", len(commits), "git log"),
+                         "dora_mapping": fig("dora_mapping", mapping, "git log"),
+                         "dora_band": fig("dora_band", "on demand", "git log"),
+                         "dora_source": fig("dora_source",
+                                            f"git history - {len(commits)} commit(s) on main "
+                                            f"inside the run window", "git log")})
+        else:
+            rows.append({"dora_key": fig("dora_key", "Deployment frequency", "git log"),
+                         "dora_value": unmeasured("dora_value", "git log", _NO_FORGE),
+                         "dora_mapping": fig("dora_mapping", mapping, "git log"),
+                         "dora_band": fig("dora_band", "on demand", "git log"),
+                         "dora_source": fig("dora_source", "git history - no commit inside the "
+                                                           "run window", "git log")})
+
+    lead_map = ("the span from the run's first commit on main to its last - per-commit lead "
+                "time is not derived, because the work is committed locally and pushed in "
+                "batches")
+    commits = _git_commits(root, start, end)
+    if len(commits) >= 2:
+        span = _hms((commits[-1][1] - commits[0][1]).total_seconds())
+        rows.append({"dora_key": fig("dora_key", "Lead time for changes", "git log"),
+                     "dora_value": fig("dora_value", span, "git log"),
+                     "dora_mapping": fig("dora_mapping", lead_map, "git log"),
+                     "dora_band": fig("dora_band", "under a day", "git log"),
+                     "dora_source": fig("dora_source", f"git history - first to last of "
+                                                       f"{len(commits)} commit(s)", "git log")})
+    elif len(pushes) >= 2:
+        first, last = _at(pushes[0].get("createdAt")), _at(pushes[-1].get("createdAt"))
+        rows.append({"dora_key": fig("dora_key", "Lead time for changes", ci_source),
+                     "dora_value": fig("dora_value", _hms((last - first).total_seconds()),
+                                       ci_source),
+                     "dora_mapping": fig("dora_mapping", lead_map, ci_source),
+                     "dora_band": fig("dora_band", "under a day", ci_source),
+                     "dora_source": fig("dora_source",
+                                        forge("first to last push-triggered run"), ci_source)})
+    else:
+        rows.append({"dora_key": fig("dora_key", "Lead time for changes", ci_source),
+                     "dora_value": unmeasured("dora_value", ci_source, _NO_FORGE),
+                     "dora_mapping": fig("dora_mapping", lead_map, ci_source),
+                     "dora_band": fig("dora_band", "under a day", ci_source),
+                     "dora_source": fig("dora_source", "no commit and no push-triggered run "
+                                                       "inside the run window", ci_source)})
+
+    cfr_map = (DEPLOY_MAPPING + "; the rate is the share of push-triggered CI runs on main "
+                                "that did not conclude success")
+    if pushes:
+        pct = f"{round(100 * len(failed) / len(pushes))}%"
+        shas = "/".join(str(r.get("headSha") or "?") for r in failed) or "none"
+        rows.append({"dora_key": fig("dora_key", "Change failure rate", ci_source),
+                     "dora_value": fig("dora_value", pct, ci_source),
+                     "dora_mapping": fig("dora_mapping", cfr_map, ci_source),
+                     "dora_band": fig("dora_band", "0-15%", ci_source),
+                     "dora_source": fig("dora_source", forge(
+                         f"{len(pushes)} deployment(s); {len(failed)} failed on {shas}"),
+                         ci_source)})
+    else:
+        rows.append({"dora_key": fig("dora_key", "Change failure rate", ci_source),
+                     "dora_value": unmeasured("dora_value", ci_source, _NO_FORGE),
+                     "dora_mapping": fig("dora_mapping", cfr_map, ci_source),
+                     "dora_band": fig("dora_band", "0-15%", ci_source),
+                     "dora_source": fig("dora_source", "no push-triggered CI run is readable "
+                                                       "for this run window", ci_source)})
+
+    restore_map = ("the span from a push-triggered run concluding failure on main to the next "
+                   "push-triggered run concluding success")
+    restored = None
+    for i, run in enumerate(pushes):
+        if run in failed:
+            for later in pushes[i + 1:]:
+                if str(later.get("conclusion") or "").lower() == "success":
+                    red, green = _at(run.get("updatedAt")), _at(later.get("updatedAt"))
+                    if red and green:
+                        restored = (_hms((green - red).total_seconds()), run, later)
+                    break
+            break
+    if restored:
+        span, red, green = restored
+        rows.append({"dora_key": fig("dora_key", "Time to restore", ci_source),
+                     "dora_value": fig("dora_value", span, ci_source),
+                     "dora_mapping": fig("dora_mapping", restore_map, ci_source),
+                     "dora_band": fig("dora_band", "under an hour", ci_source),
+                     "dora_source": fig("dora_source",
+                                        f"forge runs {red.get('databaseId')}/"
+                                        f"{green.get('databaseId')} - red then green on main",
+                                        ci_source)})
+    elif pushes and not failed:
+        rows.append({"dora_key": fig("dora_key", "Time to restore", ci_source),
+                     "dora_value": fig("dora_value", "no restore needed", ci_source),
+                     "dora_mapping": fig("dora_mapping", restore_map, ci_source),
+                     "dora_band": fig("dora_band", "under an hour", ci_source),
+                     "dora_source": fig("dora_source", forge("no push-triggered run on main "
+                                                            "concluded failure"), ci_source)})
+    else:
+        rows.append({"dora_key": fig("dora_key", "Time to restore", ci_source),
+                     "dora_value": unmeasured("dora_value", ci_source, _NO_FORGE),
+                     "dora_mapping": fig("dora_mapping", restore_map, ci_source),
+                     "dora_band": fig("dora_band", "under an hour", ci_source),
+                     "dora_source": fig("dora_source", "no push-triggered CI run is readable "
+                                                       "for this run window", ci_source)})
+    return rows
+
+
+# --- the stakeholder consult ------------------------------------------------------------------
+#
+# The consult schema is not settled yet; until it is there is no artefact on most runs, and the
+# section has to say that rather than disappear. A reader who cannot tell a run that consulted
+# nobody from a report that forgot to look has lost the Not-proven discipline's distinction.
+
+def _consult_rows(root: Path) -> tuple[list[dict], str | None]:
+    reviews = root / "sdlc-studio" / "reviews"
+    for p in sorted(reviews.glob("*.md")):
+        text = sdlc_md.read_text_safe(p)
+        if (sdlc_md.extract_field(text, "Kind") or "").strip() != "stakeholder-consult":
+            continue
+        rel = _rel(root, p)
+        rows = []
+        for cells in _table_rows(text, "Persona | Perspective"):
+            if len(cells) < 4:
+                continue
+            rows.append({"persona_name": fig("persona_name", cells[0], rel),
+                         "persona_role": fig("persona_role", cells[1], rel),
+                         "persona_verdict": fig("persona_verdict", cells[2], rel),
+                         "persona_finding": fig("persona_finding", cells[3], rel)})
+        return rows, rel
+    return [], None
+
+
+# --- building the report ----------------------------------------------------------------------
+
+def build_report(root, retro_id: str, as_of: str | None = None) -> dict:
+    """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
+
+    Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
+    recorded, no run record, a figure whose deriver produced no source - because a report that
+    invents what the run aimed at, or prints a number nobody can re-derive, is worse than the
+    absence of one.
+    """
+    root = Path(root)
+    state, state_rel = _run_state_for(root, None)
+    units = [sdlc_md.norm_id(u) for u in (state.get("batch") or [])]
+    retro_path = _retro_path(root, retro_id)
+    retro_rel = _rel(root, retro_path)
+    retro_text = sdlc_md.read_text_safe(retro_path)
+    # THE WINDOW MUST BE CLOSED, even on an open run. `ended_at` is None until SEAL, so an
+    # unbounded window let every later commit into the run's DORA figures - and since this
+    # project ships the paperwork in the same commit as the code, COMMITTING THE REPORT moved
+    # the figures the report states, so no report could stay valid long enough to be signed.
+    # The bound is the moment the page was generated, carried on the report so a re-derivation
+    # reproduces the same window rather than a wider one.
+    generated_at = as_of or sdlc_md.now_iso8601()
+    start = _at(state.get("started_at"))
+    end = _at(state.get("ended_at")) or _at(generated_at)
+
+    goal = state.get("sprint_goal") or state.get("goal")
+    if not goal or not str(goal).strip():
+        raise ReportError(
+            f"{state.get('run_id')} records no sprint goal in {state_rel}, and a report cannot "
+            f"invent what the run aimed at - nothing was written")
+
+    sections: list[dict] = [
+        _section("identity", "Identity",
+                 {"run_id": fig("run_id", state.get("run_id"), state_rel)}),
+    ]
+
+    # --- the header figures: the batch from the RUN RECORD, the points from the UNIT FILES.
+    # Never from the retro's `Delivered: N / M` line: a hand-edited retro would then rewrite the
+    # report's headline figures, and this repository has already shipped a retro header that
+    # contradicted its own batch.
+    paths = _unit_paths(root, units)
+    unit_rels = [_rel(root, p) for _uid, p in paths if p is not None]
+    points = 0
+    for _uid, p in paths:
+        if p is not None:
+            points += sdlc_md.read_points(sdlc_md.read_text_safe(p)) or 0
+    unit_src = ", ".join(unit_rels) or state_rel
+    duration = round((end - start).total_seconds() / 3600, 1) if start and end else None
+    header = {
+        "started_at": fig("started_at", state.get("started_at"), state_rel),
+        "ended_at": fig("ended_at", state.get("ended_at") or "open", state_rel),
+        "unit_count": fig("unit_count", len(units), state_rel),
+        "points_delivered": fig("points_delivered", points, unit_src),
+        "verified_sha": fig("verified_sha", state.get("verified_sha") or state.get("base_ref"),
+                            state_rel),
+    }
+    # The UNIT travels with the figure. The templates used to append a literal `h`, so an
+    # unmeasured duration rendered as "NOT MEASURED - the run record carries no end timeh" -
+    # a reason with a stray unit stuck to it, which is what any absent value in a suffixed
+    # slot will do. A figure that carries its own unit cannot be mis-suffixed by a layout.
+    header["duration_hours"] = (fig("duration_hours", f"{duration}h", state_rel) if duration else
+                                unmeasured("duration_hours", state_rel,
+                                           "the run record carries no end time"))
+    sections.append(_section("header", "Filing", header))
+
+    verdict = state.get("sprint_goal_verdict") or {}
+    if isinstance(verdict, str):
+        verdict = {"verdict": verdict, "note": ""}
+    goal_figs = {"sprint_goal": fig("sprint_goal", goal, state_rel)}
+    if verdict.get("verdict"):
+        goal_figs["goal_verdict"] = fig("goal_verdict", f"Judged {verdict['verdict']}", state_rel)
+        goal_figs["goal_verdict_note"] = fig("goal_verdict_note",
+                                             verdict.get("note") or "no note recorded", state_rel)
+    else:
+        # NEVER defaulted to `achieved`. The run's own account would then judge itself, and
+        # every reader of the report would see a verdict nobody gave.
+        goal_figs["goal_verdict"] = unmeasured("goal_verdict", state_rel,
+                                               "no goal verdict recorded on this run")
+        goal_figs["goal_verdict_note"] = fig("goal_verdict_note",
+                                             "no goal verdict recorded on this run", state_rel)
+    sections.append(_section("goal", "Sprint goal", goal_figs))
+
+    sections.append(_guardrail_section(root, state))
+    sections.append(_delivered_section(root, paths, unit_src, len(units),
+                                       state.get("report_gate_clear") or [], state_rel))
+    sections.append(_cost_section(root, state, state_rel, points))
+    sections.append(_accuracy_section(root, state, state_rel))
+
+    dora_rows = _dora_rows(root, start, end)
+    unmeasured_keys = [r for r in dora_rows if r["dora_value"]["value"] == NOT_MEASURED]
+    if len(unmeasured_keys) == len(dora_rows):
+        sections.append(_section(
+            "dora", "DORA", rows=[],
+            not_measured=unmeasured("dora", _ci_runs(root)[1],
+                                    f"{_NO_FORGE} and no commit on main inside the run "
+                                    f"window")))
+    else:
+        sections.append(_section("dora", "DORA", rows=dora_rows))
+
+    sections.append(_units_section(root, paths, state_rel,
+                                   state.get("report_gate_clear") or []))
+    sections.append(_not_proven_section(root, state, state_rel, units))
+    sections.append(_judges_section(root, state, state_rel, units))
+
+    consult_rows, consult_rel = _consult_rows(root)
+    if consult_rows:
+        sections.append(_section("consult", "Stakeholder consult", rows=consult_rows))
+    else:
+        sections.append(_section(
+            "consult", "Stakeholder consult", rows=[],
+            not_measured=unmeasured("consult", "sdlc-studio/reviews",
+                                    "no stakeholder consult artefact for this run")))
+
+    sections.append(_carried_section(root, retro_rel, retro_text, retro_id, units))
+    sections.append(_signoff_section(state_rel))
+    report = {"schema": 1, "report_id": None, "run_id": state.get("run_id"),
+              "retro_id": sdlc_md.norm_id(retro_id), "generated_at": generated_at,
+              "signature": None, "sections": sections}
+    report["sections"].append(_provenance_section(report))
+    _refuse_sourceless(report, root)
+    report["fingerprint"] = fingerprint(report)
+    return report
+
+
+#: Sources that are NOT paths and cannot be resolved as one - a command whose output was read,
+#: or a forge query. Declared, so "it resolves" has one meaning and a deriver cannot invent a
+#: third kind of source that quietly satisfies the check by being neither.
+#: Where a workspace path starts. A source under one of these names a place in the tree,
+#: whether or not the file has been written yet.
+WORKSPACE_PREFIXES = ("sdlc-studio/", ".claude/", "tools/", "docs/", "changelog.d/")
+
+NON_PATH_SOURCES = ("gh run list", "git log", "git history", "the session transcript",
+                    "forge run", "forge runs", "the harness meter", "no forge")
+
+
+def _source_resolves(root: Path, src: str) -> bool:
+    """Does this source name somewhere a reader can actually go?
+
+    A non-empty string was the whole test, so a deriver could answer `derived` for every figure
+    and the Provenance section would read as satisfied while being true of nothing - the exact
+    mutant AC1 names, and it survived.
+
+    The rule is DELIBERATELY not "the file exists". A ledger a run has not written to yet is
+    the honest source of a figure derived from its absence - `rework_rate` reads the critic
+    verdict ledger, and a run with no rejections has no such file - so requiring existence
+    would refuse a report over the very absence it is reporting. What is required is that the
+    source names a place: a path inside the workspace, or one of the declared non-path sources.
+    `derived` is neither, and that is what this catches.
+    """
+    for part in str(src).split(", "):
+        part = part.strip()
+        if not part:
+            continue
+        if any(part.startswith(n) for n in NON_PATH_SOURCES):
+            continue
+        if (root / part).exists():
+            continue
+        if any(part.startswith(pre) for pre in WORKSPACE_PREFIXES):
+            continue                 # a place in the workspace, written to or not yet
+        if part.endswith(".jsonl"):
+            # A SESSION TRANSCRIPT. It is a real place and the only place a meter reading can
+            # come from, but it lives outside the workspace (the harness owns it) and a run
+            # closed from another machine cannot expect to find it. Naming it is honest; going
+            # to it is the reader's problem, not this report's.
+            continue
+        return False
+    return True
+
+
+def _refuse_sourceless(report: dict, root: Path | None = None) -> None:
+    """A figure whose deriver produced no source REFUSES the whole build.
+
+    Defaulting the missing source to a word like `derived` would let every figure carry one and
+    none of them be re-derivable, so the Provenance section's whole claim would read as
+    satisfied while being false. The refusal names the figure's key and its section, because
+    the reader's next move is to go and fix that deriver.
+    """
+    for section, key, f in leaf_figures(report):
+        if not isinstance(f, dict) or "value" not in f:
+            raise ReportError(f"{section}.{key} is not a figure: it carries no value")
+        src = f.get("source")
+        if not isinstance(src, str) or not src.strip():
+            raise ReportError(
+                f"the figure {key!r} in the {section!r} section carries no source, so it cannot "
+                f"be re-derived - a figure with no source is a defect in this report, not a "
+                f"fact, and nothing was written")
+        if root is not None and not _source_resolves(root, src):
+            raise ReportError(
+                f"the figure {key!r} in the {section!r} section names the source {src!r}, which "
+                f"resolves to nothing under {root} - a source a reader cannot go to is not a "
+                f"source, and nothing was written")
+
+
+def _guardrail_section(root: Path, state: dict) -> dict:
+    runs, ci_source = _ci_runs(root)
+    sha = str(state.get("verified_sha") or state.get("base_ref") or "")
+    on_sha = [r for r in runs if str(r.get("headSha") or "") == sha]
+    if on_sha:
+        worst = [r for r in on_sha if str(r.get("conclusion") or "").lower() != "success"]
+        ids = "/".join(str(r.get("databaseId")) for r in on_sha)
+        verdict = "red" if worst else "green"
+        return _section("guardrail", "Ship guardrail", {
+            "guardrail_statement": fig(
+                "guardrail_statement",
+                f"The trunk is {verdict} on {sha}, the commit that carries this batch: "
+                f"{len(on_sha)} CI run(s) on it - {ids} - and {len(worst)} did not conclude "
+                f"success. Nothing merged on a local pass.",
+                f"forge runs {ids} - CI on {sha}")})
+    return _section("guardrail", "Ship guardrail", {}, not_measured=unmeasured(
+        "guardrail", _ci_runs(root)[1],
+        f"no CI run on {sha or 'the verified commit'} is readable"))
+
+
+def _delivered_section(root: Path, paths, unit_src: str, count: int,
+                       gate_clear=(), state_rel: str = "") -> dict:
+    # What is true WHEN THIS PAGE IS DERIVED, which is not each unit's terminal status. Under
+    # D0213 the fan-out belongs to SEAL, so at PREPARE no unit is Done and the signature is what
+    # moves them - a headline counting statuses would therefore be a figure the signature itself
+    # changes, and every sealed report would read INVALIDATED the moment it was signed. The gate
+    # verdict PREPARE recorded does not move, so that is what this counts.
+    cleared = {sdlc_md.norm_id(u) for u in (gate_clear or [])}
+    passed = sum(1 for uid, _p in paths if sdlc_md.norm_id(uid) in cleared)
+    terminal = {"Done": 0, "Fixed": 0}
+    other = 0
+    for _uid, p in paths:
+        st = (sdlc_md.extract_field(sdlc_md.read_text_safe(p), "Status") or "").strip() \
+            if p is not None else ""
+        if st in terminal:
+            terminal[st] += 1
+        else:
+            other += 1
+    rows, verdict_rel = _verdict_rows(root, "delivery", [u for u, _p in paths])
+    rejected = sorted({sdlc_md.norm_id(r[0]) for r in rows
+                       if len(r) > 1 and r[1].strip().upper() == "REJECT"})
+    pct = f"{round(100 * len(rejected) / count)}%" if count else "0%"
+    return _section("delivered", "Delivered", {
+        "terminal_summary": fig(
+            "terminal_summary",
+            f"{passed} of {count} units cleared their terminal gate",
+            state_rel or unit_src),
+        "rework_rate": fig("rework_rate", pct, verdict_rel),
+        "rework_reading": fig(
+            "rework_reading",
+            f"{len(rejected)} of {count} units needed a repair round after delivery review"
+            + (f": {', '.join(rejected)}" if rejected else ""), verdict_rel),
+    })
+
+
+def _cost_section(root: Path, state: dict, state_rel: str, points: int) -> dict:
+    """The run's own spend, from the meter stamps - and NOT MEASURED when no stamp can be read.
+
+    Never `0` and never a per-point figure of zero: a run whose meter could not be read did not
+    cost nothing. The coverage clause is not optional either - an unqualified total over a run
+    closed across sessions is a partial one, and reads as the run's whole cost.
+    """
+    current = None
+    if not (state.get(run_state.TOKEN_STAMPS) or []) and state.get(run_state.TOKEN_BASELINE):
+        # The LEGACY single-baseline shape - the state every run open at delivery time carries.
+        # Its one reading needs a closing one from the same meter, so the transcript is read
+        # here and nowhere else: a run carrying stamps must never pay for a transcript scan.
+        current = run_state.session_tokens(root)
+    total = run_state.run_token_total(state, current)
+    per_unit = fig("per_unit_cost", UNMEASURED, state_rel,
+                   reason="the harness meter is cumulative per session, so interleaved work "
+                          "cannot be split between units honestly")
+    if total.get("tokens") is None:
+        return _section("cost", "Cost", {"per_unit_cost": per_unit}, not_measured=unmeasured(
+            "cost", state_rel, total.get("reason") or "the session meter could not be read"))
+    delegated = run_state.delegated_total(state)
+    sessions = total.get("sessions") or []
+    uncovered = total.get("uncovered") or []
+    coverage = f"{total['session_count']} session(s)"
+    if uncovered:
+        coverage += (f"; {len(uncovered)} session(s) wrote to the run with no closing stamp and "
+                     f"are NOT in this total: {', '.join(uncovered)}")
+    return _section("cost", "Cost", {
+        "model": fig("model", total.get("model") or UNMEASURED, state_rel,
+                     reason=None if total.get("model") else
+                     "the stamps record no model, so the rate this cost was bought at is "
+                     "unstated"),
+        "tokens_total": fig("tokens_total", total["tokens"] + delegated, state_rel),
+        # SUPPLIED, never measured: a delegated agent's meter is not this session's, so the
+        # figure can only be what that agent reported. It is named separately rather than
+        # folded away silently, because a reader has to be able to tell a measured delta from
+        # a reported one - and because 0 here means NOTHING WAS SUPPLIED, which is a different
+        # fact from no delegation having happened. Omitting it entirely was the worse option:
+        # this run delegated five agents, and the page was understating its own cost by them.
+        "tokens_delegated": (fig("tokens_delegated", delegated, state_rel)
+                             if delegated else
+                             unmeasured("tokens_delegated", state_rel,
+                                        "no delegated agent supplied a total, which is not "
+                                        "the same fact as no work having been delegated")),
+        "token_basis": fig("token_basis", total["basis"], state_rel),
+        "tokens_per_point": (fig("tokens_per_point",
+                                 round((total["tokens"] + delegated) / points), state_rel)
+                             if points else unmeasured("tokens_per_point", state_rel,
+                                                       "the batch carries no declared points")),
+        "token_coverage": fig("token_coverage", coverage, state_rel),
+        "token_shape": fig("token_shape",
+                           f"read from {total['shape']}"
+                           + (f" over {', '.join(sessions)}" if sessions else ""), state_rel),
+        "per_unit_cost": per_unit,
+    })
+
+
+def _accuracy_section(root: Path, state: dict, state_rel: str) -> dict:
+    # `token_forecast` is the key `sprint plan` writes; `forecast_tokens` was never written by
+    # anything, so this section read NOT MEASURED on every real run while its fixture supplied
+    # the key by hand. Both are accepted - the run states already on disk carry the one the
+    # planner wrote - and the planner's spelling is read first.
+    forecast = state.get("token_forecast", state.get("forecast_tokens"))
+    current = None
+    if not (state.get(run_state.TOKEN_STAMPS) or []) and state.get(run_state.TOKEN_BASELINE):
+        current = run_state.session_tokens(root)
+    actual = run_state.run_token_total(state, current).get("tokens")
+    # `not actual` as well as `actual is None`: a measured total of zero is not an actual to
+    # divide by, and dividing by it raised ZeroDivisionError out of `build_report` - which
+    # `_file_the_report` does not catch, so it took the whole close down rather than printing
+    # NOT MEASURED.
+    if not isinstance(forecast, int) or not forecast or not actual:
+        missing = ("no plan-time forecast is recorded" if not isinstance(forecast, int)
+                   else "the session meter could not be read, so there is no actual to compare")
+        return _section("accuracy", "Estimate accuracy", {}, not_measured=unmeasured(
+            "accuracy", state_rel, missing))
+    ratio = round(forecast / actual, 2)
+    return _section("accuracy", "Estimate accuracy", {
+        "forecast_tokens": fig("forecast_tokens", forecast, state_rel),
+        "actual_tokens": fig("actual_tokens", actual, state_rel),
+        "forecast_ratio": fig("forecast_ratio", ratio, state_rel),
+        "accuracy_note": fig("accuracy_note",
+                             f"the plan forecast {ratio} of the measured cost", state_rel),
+    })
+
+
+def _units_section(root: Path, paths, state_rel: str, gate_clear=()) -> dict:
+    units = [u for u, _p in paths]
+    # The gate verdicts PREPARE recorded. Passed in rather than re-derived here: judging a
+    # terminal gate means previewing a transition, and this module is read-only by contract.
+    cleared = {sdlc_md.norm_id(u) for u in (gate_clear or [])}
+    mutants = _mutants_by_unit(root, units)
+    delivery, delivery_rel = _verdict_rows(root, "delivery", units)
+    plan, plan_rel = _verdict_rows(root, "plan-review", units)
+    rows = []
+    for uid, p in paths:
+        rel = _rel(root, p) if p is not None else state_rel
+        text = sdlc_md.read_text_safe(p) if p is not None else ""
+        killed, planned = mutants.get(uid, (0, 0))
+        ruled = len(_table_rows(text, "Coverage Ruling"))
+        depth = (sdlc_md.extract_field(text, "Verification depth") or "").split("[[")[0]\
+            .strip()
+        rows.append({
+            "unit_id": fig("unit_id", uid, rel),
+            "unit_points": fig("unit_points", sdlc_md.read_points(text) or 0, rel),
+            "unit_status": fig("unit_status",
+                               (sdlc_md.extract_field(text, "Status") or UNMEASURED).strip(),
+                               rel),
+            # What is TRUE of a unit at report time, which is not its terminal status. Under
+            # D0213 the fan-out belongs to SEAL, so at the moment this page is derived no unit
+            # is Done - it has cleared the gate that lets it become Done. A report printing
+            # Done here would claim the thing the signature has not yet made true.
+            "unit_gate": (fig("unit_gate", "cleared its terminal gate", state_rel)
+                          if uid in cleared else
+                          unmeasured("unit_gate", state_rel,
+                                     "PREPARE recorded no gate verdict for this unit")),
+            "unit_acs": fig("unit_acs", _criteria_count(text), rel),
+            "unit_mutants": (fig("unit_mutants", f"{killed}/{planned}",
+                                 "sdlc-studio/.local/mutation-runs.json") if planned
+                             else unmeasured("unit_mutants", "sdlc-studio/.local",
+                                             "the mutation ledger carries no row for this unit")),
+            "unit_ruled": (fig("unit_ruled", ruled, rel) if ruled else
+                           unmeasured("unit_ruled", rel,
+                                      "the unit declares no Coverage Rulings table")),
+            "unit_entry_depth": (fig("unit_entry_depth", depth, rel) if depth else
+                                 unmeasured("unit_entry_depth", rel,
+                                            "the unit records no Verification depth")),
+            "unit_delivery_rounds": fig(
+                "unit_delivery_rounds",
+                sum(1 for r in delivery if r and sdlc_md.norm_id(r[0]) == uid), delivery_rel),
+            "unit_plan_rejects": fig(
+                "unit_plan_rejects",
+                sum(1 for r in plan
+                    if len(r) > 1 and sdlc_md.norm_id(r[0]) == uid
+                    and r[1].strip().upper() == "REJECT"), plan_rel),
+        })
+    return _section("units", "Evidence by unit", rows=rows)
+
+
+def _not_proven_section(root: Path, state: dict, state_rel: str, units: list) -> dict:
+    """What the run did NOT establish, as a section rather than an omission."""
+    rows = [{
+        "gap_title": fig("gap_title", "Per-unit token cost", state_rel),
+        "gap_detail": fig("gap_detail",
+                          "the run total is measured; the split is not. The harness meter is "
+                          "per session and cumulative, so every unit reads UNMEASURED rather "
+                          "than carrying a share nobody can defend.", state_rel),
+        "gap_kind": fig("gap_kind", "measurement", state_rel)}]
+    total = run_state.run_token_total(state)
+    for src in (total.get("uncovered") or []):
+        rows.append({
+            "gap_title": fig("gap_title", "A session with no closing stamp", src or state_rel),
+            "gap_detail": fig("gap_detail",
+                              f"{src} wrote to this run and carries one meter reading, so it "
+                              f"covers no delta and its spend is outside the total above.",
+                              state_rel),
+            "gap_kind": fig("gap_kind", "measurement", state_rel)})
+    survived = 0
+    for _unit, (killed, planned) in _mutants_by_unit(root, units).items():
+        survived += planned - killed
+    if survived:
+        rows.append({
+            "gap_title": fig("gap_title", f"{survived} mutant(s) survived",
+                             "sdlc-studio/.local/mutation-runs.json"),
+            "gap_detail": fig("gap_detail",
+                              "a surviving mutant is a production change no test failed on, so "
+                              "the criterion it belongs to is not evidenced by execution.",
+                              "sdlc-studio/.local/mutation-runs.json"),
+            "gap_kind": fig("gap_kind", "instrumentation",
+                            "sdlc-studio/.local/mutation-runs.json")})
+    return _section("not_proven", "Not proven", rows=rows)
+
+
+def _judges_section(root: Path, state: dict, state_rel: str, units: list) -> dict:
+    """Who reviewed this, and on what. The model is named beside each agent, because a review's
+    weight depends on what ran it - and where the ledger records none, that is said."""
+    rows, seen = [], {}
+    for phase, label in (("plan-review", "plan"), ("delivery", "delivery")):
+        ledger, rel = _verdict_rows(root, phase, units)
+        for r in ledger:
+            if len(r) < 3:
+                continue
+            name = r[2].strip()
+            if not name:
+                continue
+            entry = seen.setdefault(name, {"rel": rel, "plan": 0, "delivery": 0})
+            entry[label] += 1
+            entry["rel"] = rel
+    for name, entry in sorted(seen.items()):
+        rows.append({
+            "judge_name": fig("judge_name", name, entry["rel"]),
+            "judge_role": fig("judge_role", "independent reviewer", entry["rel"]),
+            "judge_model": unmeasured("judge_model", entry["rel"],
+                                      "the verdict ledger records no model for this reviewer"),
+            "judge_contribution": fig(
+                "judge_contribution",
+                f"{entry['plan']} plan verdict(s) and {entry['delivery']} delivery verdict(s)",
+                entry["rel"])})
+    total = run_state.run_token_total(state)
+    rows.append({
+        "judge_name": fig("judge_name", "the authoring session", state_rel),
+        "judge_role": fig("judge_role", "author, never the reviewer of record", state_rel),
+        "judge_model": (fig("judge_model", total["model"], state_rel) if total.get("model")
+                        else unmeasured("judge_model", state_rel,
+                                        "the meter stamps record no model")),
+        "judge_contribution": fig(
+            "judge_contribution",
+            "wrote every unit and drove the close. A delegate the author controls does not "
+            "satisfy the independence bar.", state_rel)})
+    if not rows:
+        return _section("judges", "Who judged this", rows=[], not_measured=unmeasured(
+            "judges", "sdlc-studio/reviews", "no verdict ledger names a reviewer for this run"))
+    return _section("judges", "Who judged this", rows=rows)
+
+
+def _carried_section(root: Path, retro_rel: str, retro_text: str, retro_id: str,
+                     units: list) -> dict:
+    """The retro's rulings and its carried-open table - the ONLY figures sourced to the retro.
+
+    The headline counts are not among them: the retro's `Delivered: N / M` line is prose, and a
+    hand-edited retro must not be able to rewrite this report's figures.
+    """
+    carried = _table_rows(retro_text, "Issue |")
+    # THE RULING CELL, matched as a whole word against the doctrine's four-word vocabulary -
+    # `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`. A substring search for
+    # "stop-ship" matches `not-stop-ship`, its own negation: on this repository's real retro
+    # that read all 76 carried items as stop-ships and printed `76 stop-ship` under Carried
+    # risk, where the true figure is nought.
+    stop_ship = [r for r in carried
+                 if len(r) > 1 and _ruling(r[1]) == "stop-ship"]
+    actions = _table_rows(retro_text, "Finding |")
+    filed = sorted({m for r in actions for m in re.findall(r"\b(?:BG|CR|US|RFC)\d{4}\b",
+                                                           " ".join(r))})
+    ruled = [r for r in carried if len(r) > 1 and r[1].strip()]
+    mutants = _mutants_by_unit(root, units)
+    killed = sum(k for k, _p in mutants.values())
+    planned = sum(p for _k, p in mutants.values())
+    delivery, delivery_rel = _verdict_rows(root, "delivery", units)
+    plan, plan_rel = _verdict_rows(root, "plan-review", units)
+    d_rej = sum(1 for r in delivery if len(r) > 1 and r[1].strip().upper() == "REJECT")
+    p_rej = sum(1 for r in plan if len(r) > 1 and r[1].strip().upper() == "REJECT")
+    mutation_rel = "sdlc-studio/.local/mutation-runs.json"
+    return _section("carried", "Carried open", {
+        "retro_id": fig("retro_id", sdlc_md.norm_id(retro_id), retro_rel),
+        "filed_count": fig("filed_count", len(filed), retro_rel),
+        "filed_ids": fig("filed_ids", ", ".join(filed) or "none filed this run", retro_rel),
+        "ruled_count": fig("ruled_count", len(ruled), retro_rel),
+        "stop_ship_count": fig("stop_ship_count", len(stop_ship), retro_rel),
+        "carried_risk_reading": fig(
+            "carried_risk_reading",
+            f"{len(carried)} issue(s) carried open, {len(stop_ship)} of them stop-ship",
+            retro_rel),
+        "mutants_killed": (fig("mutants_killed", killed, mutation_rel) if planned
+                           else unmeasured("mutants_killed", "sdlc-studio/.local",
+                                           "the mutation ledger holds no row for this batch")),
+        "mutants_reading": (fig("mutants_reading",
+                                f"{planned - killed} survived of {planned} registered",
+                                mutation_rel) if planned
+                            else unmeasured("mutants_reading", "sdlc-studio/.local",
+                                            "the mutation ledger holds no row for this batch")),
+        "verdict_count": fig("verdict_count", len(delivery) + len(plan), delivery_rel),
+        "verdict_reading": fig(
+            "verdict_reading",
+            f"{p_rej} of {len(plan)} rejected at plan, {d_rej} of {len(delivery)} at delivery",
+            f"{plan_rel}, {delivery_rel}"),
+    })
+
+
+#: The rulings a `Known issues carried` row may carry, from the doctrine's own list. Anything
+#: else is not a ruling and is never guessed at.
+RULINGS = ("stop-ship", "not-stop-ship", "accepted-risk", "deferred")
+
+
+def _ruling(cell: str) -> str | None:
+    """The ruling a carried-issue cell records, or None when it records none.
+
+    Matched as a whole word, longest first, so `not-stop-ship` never reads as `stop-ship`.
+    """
+    text = (cell or "").strip().lower()
+    for word in sorted(RULINGS, key=len, reverse=True):
+        if re.search(rf"(?<![\w-]){re.escape(word)}(?![\w-])", text):
+            return word
+    return None
+
+
+def _signoff_section(state_rel: str) -> dict:
+    """The block a signature LANDS in. Unsigned it says so; it is never blanked, because an
+    empty cell reads as a signature nobody can find rather than one nobody has given."""
+    return _section("signoff", "Sign-off", {
+        "principal": fig("principal", "not yet signed", state_rel),
+        "signed_at": fig("signed_at", "not yet signed", state_rel),
+        # The fingerprint is what makes a signature point at ONE version of one page, so it is
+        # part of the block that records the signature rather than a footnote under it. Its
+        # value is filled from `report["signature"]` at render time, never from the figure set:
+        # a figure holding the digest OF the figure set could not be computed before itself.
+        "signed_fingerprint": fig("signed_fingerprint", "not yet signed", state_rel),
+    })
+
+
+def _provenance_section(report: dict) -> dict:
+    """One row per section, naming what its figures were derived from. DERIVED from the figure
+    set itself, so it cannot fall out of step with the sources above it."""
+    rows = []
+    for sec in report["sections"]:
+        srcs, seen = [], set()
+        for _s, _k, f in leaf_figures({"sections": [sec]}):
+            for part in str(f.get("source") or "").split(", "):
+                part = part.strip()
+                if not part:
+                    continue
+                short = part.rsplit("/", 1)[0] if "/" in part and part.endswith(".md") else part
+                if short not in seen:
+                    seen.add(short)
+                    srcs.append(short)
+        if not srcs:
+            continue
+        summary = "; ".join(srcs[:4]) + (" ..." if len(srcs) > 4 else "")
+        src = ", ".join(srcs)
+        rows.append({"provenance_figure": fig("provenance_figure", sec["title"], src),
+                     "provenance_source": fig("provenance_source", summary, src)})
+    return _section("provenance", "Provenance", rows=rows)
+
+
+# --- the template engine ------------------------------------------------------------------
+#
+# The LAYOUT comes from the shipped template, never from format strings in this module. Build
+# the Markdown here and the template becomes documentation, and the two drift on the first
+# change to either.
+
+_TOKEN = re.compile(r"\{\{([a-z0-9_]+)\}\}")
+_BLOCK = re.compile(r"[ \t]*<!--\s*(repeat|when|unless):\s*([a-z0-9_]+)\s*-->[ \t]*\n?"
+                    r"|[ \t]*<!--\s*end\s*-->[ \t]*\n?")
+
+
+def _parse_blocks(template: str) -> list:
+    """`[str | (kind, name, [children])]` - the template as a tree of literals and blocks."""
+    stack: list[list] = [[]]
+    kinds: list[tuple[str, str]] = []
+    pos = 0
+    for m in _BLOCK.finditer(template):
+        if m.start() > pos:
+            stack[-1].append(template[pos:m.start()])
+        pos = m.end()
+        if m.group(1):
+            kinds.append((m.group(1), m.group(2)))
+            stack.append([])
+        else:
+            if not kinds:
+                raise ReportError("the template closes a block that was never opened")
+            kind, name = kinds.pop()
+            children = stack.pop()
+            stack[-1].append((kind, name, children))
+    if kinds:
+        raise ReportError(f"the template leaves the block {kinds[-1][1]!r} unclosed")
+    if pos < len(template):
+        stack[-1].append(template[pos:])
+    return stack[0]
+
+
+def _fill(text: str, scope: dict, seen: set) -> str:
+    def sub(m):
+        name = m.group(1)
+        if name not in scope:
+            seen.add(name)
+            return m.group(0)
+        value = scope[name]
+        return "" if value is None else str(value)
+    return _TOKEN.sub(sub, text)
+
+
+def _emit(nodes: list, scope: dict, rows: dict, flags: dict, seen: set) -> str:
+    out = []
+    for node in nodes:
+        if isinstance(node, str):
+            out.append(_fill(node, scope, seen))
+            continue
+        kind, name, children = node
+        if kind == "when" and not flags.get(name):
+            continue
+        if kind == "unless" and flags.get(name):
+            continue
+        if kind in ("when", "unless"):
+            out.append(_emit(children, scope, rows, flags, seen))
+            continue
+        for row in rows.get(name) or []:
+            out.append(_emit(children, {**scope, **row}, rows, flags, seen))
+    return "".join(out)
+
+
+def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict, dict, dict]:
+    """`(scalars, row lists, flags)` - what the templates are filled from.
+
+    Tokens are FLAT across sections on purpose: the report's sections group figures by their
+    provenance, and the page groups them by what a reader wants next to what. Tying the two
+    together would make a layout change a schema change.
+    """
+    scope: dict = {}
+    rows: dict = {}
+    flags: dict = {}
+    for sec in report.get("sections") or []:
+        nm = sec.get("not_measured")
+        flags[f"{sec['key']}_measured"] = nm is None
+        if nm is not None:
+            scope[f"{sec['key']}_reason"] = f"{nm.get('reason')} (consulted {nm.get('source')})"
+        for key, f in (sec.get("figures") or {}).items():
+            value = f.get("value")
+            if value == NOT_MEASURED and f.get("reason"):
+                value = f"{NOT_MEASURED} - {f['reason']}"
+            scope[key] = f"{value:,}" if isinstance(value, int) and abs(value) >= 10000 else value
+        if sec.get("rows"):
+            rows[_ROW_LISTS.get(sec["key"], sec["key"])] = [
+                {k: (f"{f['value']} - {f['reason']}" if f.get("value") == NOT_MEASURED
+                     and f.get("reason") else f.get("value"))
+                 for k, f in row.items()} for row in sec["rows"]]
+    scope["report_fingerprint"] = report.get("fingerprint") or "unsigned"
+    sig = report.get("signature") or {}
+    if sig.get("principal"):
+        scope["principal"] = sig["principal"]
+        scope["signed_at"] = sig.get("signed_at") or "not recorded"
+        scope["signed_fingerprint"] = sig.get("fingerprint") or "not recorded"
+    rows["invalidation"] = []
+    if revalidation is not None and not revalidation.get("valid"):
+        rows["invalidation"] = [{
+            "signed_fingerprint": revalidation.get("signed_fingerprint"),
+            "current_fingerprint": revalidation.get("fingerprint"),
+            "moved_figures": ", ".join(revalidation.get("moved") or []) or "an unnamed figure"}]
+    return scope, rows, flags
+
+
+#: Section key -> the row-list name the templates repeat over. Named here rather than in the
+#: templates so a section can be renamed without editing two files.
+_ROW_LISTS = {"units": "units", "not_proven": "gaps", "dora": "dora",
+              "judges": "judges", "consult": "consult", "provenance": "provenance"}
+
+
+def _render(report: dict, template: str, revalidation: dict | None) -> str:
+    scope, rows, flags = render_context(report, revalidation)
+    seen: set = set()
+    out = _emit(_parse_blocks(template), scope, rows, flags, seen)
+    if seen:
+        # A token no figure answers REFUSES rather than being left in the page or silently
+        # emptied: a page carrying `{{unit_count}}` is a defect a reader sees, and a page
+        # carrying a blank where a figure should be is one nobody sees.
+        raise ReportError(
+            f"the template names {len(seen)} placeholder(s) this report has no figure for: "
+            f"{', '.join(sorted(seen))} - nothing was rendered")
+    return out
+
+
+def template_path(name: str) -> Path:
+    return Path(__file__).resolve().parent.parent / "templates" / name
+
+
+def render_markdown(report: dict, template: str | None = None,
+                    revalidation: dict | None = None) -> str:
+    """The committed twin, from `templates/core/sprint-report.md`."""
+    if template is None:
+        template = template_path("core/sprint-report.md").read_text(encoding="utf-8")
+    return _render(report, template, revalidation)
+
+
+def render_html(report: dict, template: str | None = None,
+                revalidation: dict | None = None) -> str:
+    """The page, from `templates/reports/sprint-report.html`. Generated on demand and never
+    written into the tree (D2a)."""
+    if template is None:
+        template = template_path("reports/sprint-report.html").read_text(encoding="utf-8")
+    return _render(report, template, revalidation)
+
+
+# --- filing, reading and re-deriving -----------------------------------------------------------
+
+def report_dir(root) -> Path:
+    return Path(root) / REPORTS_REL
+
+
+def file_report(root, report: dict) -> str:
+    """Write the JSON of record and the Markdown twin. Returns the report id.
+
+    The id is allocated through the shared allocator, so a report can never take a number an
+    index row or origin already holds. No HTML is written: D2a.
+    """
+    root = Path(root)
+    import next_id  # noqa: PLC0415 - sibling script, imported where it is used
+    number = next_id.allocate_number("report", root, remote=False)
+    rid = f"RPT{number:04d}"
+    report = {**report, "report_id": rid}
+    report["fingerprint"] = report.get("fingerprint") or fingerprint(report)
+    write_report(root, report)
+    return rid
+
+
+def write_report(root, report: dict) -> Path:
+    """Write a report's JSON of record and re-render its Markdown twin. Returns the JSON path.
+
+    Both, always. The twin is a RENDERING of the JSON, so writing one without the other is how
+    a page and the record it claims to show come to disagree - which is the failure the whole
+    fingerprint exists to detect, and it should not be this module that causes it. Used by
+    `file_report` when the page is first derived, and by the seal when a signature lands on it.
+    """
+    root = Path(root)
+    rid = sdlc_md.norm_id(report.get("report_id") or "")
+    if not rid:
+        raise ReportError("a report cannot be written without its id")
+    d = report_dir(root)
+    d.mkdir(parents=True, exist_ok=True)
+    path = d / f"{rid}.json"
+    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    stem = sdlc_md.slug(f"sprint report {report.get('run_id') or ''}")[:60].strip("-")
+    (d / f"{rid}-{stem or 'sprint-report'}.md").write_text(render_markdown(report),
+                                                           encoding="utf-8")
+    return path
+
+
+def read_report(root, report_id: str) -> dict:
+    p = report_dir(root) / f"{sdlc_md.norm_id(report_id)}.json"
+    if not p.is_file():
+        raise ReportError(f"no report of record at {_rel(Path(root), p)}")
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ReportError(f"{_rel(Path(root), p)} could not be read: {exc}") from exc
+
+
+def revalidate(root, report_id: str) -> dict:
+    """Is this report still true of the tree? Decided by RE-DERIVING it, never by counting
+    writes since the signature.
+
+    A tracked write newer than the signature marks every sealed report stale on the next
+    unrelated commit, so the marker stops carrying information within a day; a write to a batch
+    unit's declared files invalidates on a changelog fragment that moves no figure. Re-derivation
+    is the only reading that is itself re-derivable, which is the property the whole report
+    rests on. READ-ONLY: nothing on disk is touched.
+    """
+    stored = read_report(root, report_id)
+    # RE-DERIVED OVER THE SAME WINDOW. Passing the stored generation time is what makes this a
+    # comparison of the tree against the page, rather than of one window against a wider one:
+    # without it every commit made after the report - including the commit that files it -
+    # entered the fresh figures and nothing else had to change for INVALIDATED to appear.
+    fresh = build_report(root, stored.get("retro_id"), as_of=stored.get("generated_at"))
+    was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(stored)
+           if in_the_digest(s, k)}
+    now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
+           if in_the_digest(s, k)}
+    changes = []
+    for name in sorted(set(was) | set(now)):
+        if was.get(name) != now.get(name):
+            changes.append({"figure": name, "key": name.split(".", 1)[1],
+                            "signed": was.get(name), "current": now.get(name)})
+    signed = stored.get("fingerprint")
+    current = fresh["fingerprint"]
+    return {"valid": signed == current, "report_id": stored.get("report_id") or report_id,
+            "signed_fingerprint": signed, "fingerprint": current,
+            "moved": [c["key"] for c in changes], "changes": changes,
+            "signature": stored.get("signature")}
+
+
+def report_status(root) -> dict | None:
+    """The newest report of record and whether it is still valid, or None when there is none.
+
+    Lives here rather than in the renderer so `status` can say it too: an operator who reads
+    `status` and never opens the report would otherwise be told nothing, which is the state
+    this check exists to end. Never raises and never writes.
+    """
+    d = report_dir(root)
+    if not d.is_dir():
+        return None
+    files = sorted(d.glob("RPT*.json"))
+    if not files:
+        return None
+    rid = files[-1].stem
+    try:
+        state = revalidate(root, rid)
+    except (ReportError, OSError, ValueError) as exc:
+        return {"report_id": rid, "valid": None, "reason": f"{type(exc).__name__}: {exc}"}
+    return state
+
+
+def status_line(state: dict | None) -> str | None:
+    """The one line `status` prints about the report of record."""
+    if not state:
+        return None
+    rid = state.get("report_id")
+    if state.get("valid") is None:
+        return f"Report:       {rid} could not be re-derived ({state.get('reason')})"
+    sig = state.get("signature") or {}
+    if state.get("valid"):
+        if sig.get("principal"):
+            return (f"Report:       {rid} signed by {sig['principal']} on "
+                    f"{sig.get('signed_at')}")
+        return f"Report:       {rid} built and not yet signed"
+    moved = ", ".join(state.get("moved") or []) or "an unnamed figure"
+    return (f"Report:       {rid} INVALIDATED - re-deriving it now moves {moved}; "
+            f"re-prepare it with `sprint_report.py build --write`")
+
+
+# --- the verbs ---------------------------------------------------------------------------------
+
+def cmd_build(args: argparse.Namespace) -> int:
+    root = Path(args.root)
+    try:
+        state, _rel_ = _run_state_for(root, getattr(args, "run", None))
+        retro_id = args.id or _retro_for_run(root, state)
+        report = build_report(root, retro_id)
+        if args.write:
+            report["report_id"] = file_report(root, report)
+    except ReportError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+    else:
+        print(render_markdown(report))
+    return 0
+
+
+def cmd_render(args: argparse.Namespace) -> int:
+    root = Path(args.root)
+    try:
+        report = read_report(root, args.report)
+        state = revalidate(root, args.report)
+        if args.out:
+            out = Path(args.out).resolve()
+            if report_dir(root).resolve() in out.parents or out.parent == report_dir(root).resolve():
+                print(f"error: {out} is inside {REPORTS_REL}/, and {D2A}", file=sys.stderr)
+                return 2
+        page = (render_html(report, revalidation=state) if args.to == "html"
+                else render_markdown(report, revalidation=state))
+    except ReportError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.out:
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(page, encoding="utf-8")
+        return 0
+    print(page)
+    return 0
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    try:
+        state = revalidate(Path(args.root), args.report)
+    except ReportError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    rid = state["report_id"]
+    if state["valid"]:
+        print(f"VALID: {rid} re-derives to the fingerprint it records ({state['fingerprint']})")
+        return 0
+    print(f"INVALIDATED: {rid} records fingerprint {state['signed_fingerprint']}; re-deriving "
+          f"it from the tree now yields {state['fingerprint']}")
+    for change in state["changes"]:
+        print(f"  {change['key']}: signed {change['signed']!r}, now {change['current']!r}")
+    print("re-prepare the report with `sprint_report.py build --write`")
+    return 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="The end-of-sprint report: delivered, cost, velocity.")
     p.add_argument("--root", default=".")
@@ -2614,6 +4051,32 @@ def build_parser() -> argparse.ArgumentParser:
                    help="sprint elapsed hours for the primary velocity (interactive)")
     s.add_argument("--format", choices=["text", "json"], default="text")
     s.set_defaults(func=cmd_show)
+    b = sub.add_parser("build", help="Build the REPORT OF RECORD for a run: every figure "
+                                     "derived from the run's own artefacts and carrying its "
+                                     "source. Exits 2 on a figure with no source.")
+    b.add_argument("--run", default=None, metavar="RUN-...", help="the run to report on")
+    b.add_argument("--id", default=None, metavar="RETROxxxx", help="the run's retro")
+    # `text` and `json`, defaulting to `text`, like every other `--format` in the family.
+    # `text` here IS the Markdown rendering - it is what a reader reads.
+    b.add_argument("--format", choices=["text", "json"], default="text")
+    b.add_argument("--write", action="store_true",
+                   help="file the JSON of record and the Markdown twin under "
+                        "sdlc-studio/reports/")
+    b.set_defaults(func=cmd_build)
+    r = sub.add_parser("render", help="Render a filed report. The HTML is generated on demand "
+                                      "and never written into the tree (D2a).")
+    r.add_argument("--report", required=True, metavar="RPTxxxx")
+    # NOT `--format`: this chooses which RENDERING to produce, and `--format` is spelled one
+    # way family-wide (`text`/`json`, defaulting to `text`). Borrowing the name for a
+    # different question is what makes an agent probe --help for a switch it already knows.
+    r.add_argument("--to", choices=["markdown", "html"], default="markdown",
+                   help="which rendering to produce")
+    r.add_argument("--out", default=None, help="write to this path instead of stdout")
+    r.set_defaults(func=cmd_render)
+    k = sub.add_parser("check", help="Is a filed report still true of the tree? Re-derives it "
+                                     "and names every figure that moved. Non-zero when it has.")
+    k.add_argument("--report", required=True, metavar="RPTxxxx")
+    k.set_defaults(func=cmd_check)
     return p
 
 

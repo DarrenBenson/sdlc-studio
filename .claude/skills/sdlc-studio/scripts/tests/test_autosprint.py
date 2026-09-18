@@ -166,6 +166,18 @@ def _stubbed(failing: str | None = None):
     """
     tgt = sys.modules[autosprint.cmd_close.__module__]
     saved = {n: getattr(tgt, f"_close_{n}") for n in _DELEGATING}
+    # US0834's report holds go green alongside the chain steps, for the same reason: these
+    # tests are about the PRIMARY PATH - the run opens over the approved batch and the worked
+    # batch closes it - and their fixture was never built to be report-clean. A live hold would
+    # make every one of them fail for a reason outside its own subject.
+    # Patched into `cmd_close`'s OWN globals, not onto whatever `sys.modules["sprint"]` holds.
+    # A sibling suite that loads sprint.py through `spec_from_file_location` REPLACES that
+    # entry, so the module `tgt` resolves to is then a different object from the one this
+    # function body reads its names out of - and the stub lands where nothing looks for it.
+    # Module-alone this is invisible; it only appears once another module has run first.
+    g = autosprint.cmd_close.__globals__
+    saved_holds = g["_report_holds"]
+    g["_report_holds"] = lambda *a, **k: []
 
     def make(n):
         def step(root, retro_id, state):
@@ -179,6 +191,7 @@ def _stubbed(failing: str | None = None):
     try:
         yield
     finally:
+        g["_report_holds"] = saved_holds
         for n, fn in saved.items():
             setattr(tgt, f"_close_{n}", fn)
 

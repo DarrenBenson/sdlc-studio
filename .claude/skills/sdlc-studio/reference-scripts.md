@@ -259,7 +259,16 @@ lists every script with a one-line summary; open the linked page for the full en
   creep as a ratio, review attribution by seat and lens count, impediments, carried known issues,
   cost). Every row is derived except the stop-ship rulings, which are a judgement and live in the
   retro's `## Known issues carried` table. `cycle_drift()` is the anti-drift guard: a sprint ceremony
-  verb with no checklist row fails it. Read-only
+  verb with no checklist row fails it. Read-only.
+  Three further verbs compose the REPORT OF RECORD - the page an operator signs, which `sprint close`
+  files for them as it PREPARES the run, so these are for inspecting one rather than producing one.
+  `build --id RETROxxxx [--format text|json] [--write]` derives every figure with its source and
+  refuses a run it cannot report honestly; `render --report RPTxxxx [--to markdown|html] [--out
+  PATH]` renders a filed report from its stored JSON - `--to`, not `--format`, because it chooses
+  a RENDERING rather than a serialisation, and `--format` is spelled one way family-wide;
+  `check --report RPTxxxx` re-derives the figures and compares the fingerprint, which is how a signed
+  report is shown to still describe the tree. The fingerprint digests the ordered figure SET, never
+  the file, so signing a report does not invalidate the signature it just recorded
 - `handoff.py` - The run-close handoff guide: a JOIN over the run's own evidence naming every
   remaining item with its pointer (file / AC / check) and a copilot-tail vs judgement tag; emits the
   worklist the next `sprint plan --worklist` reads. `lib/run_state.py` holds the run object it closes

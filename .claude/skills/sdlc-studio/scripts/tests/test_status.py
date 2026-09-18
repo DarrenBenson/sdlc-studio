@@ -5,6 +5,7 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import contextlib
 import io
@@ -1510,6 +1511,87 @@ class CloseOwedAgreementTests(unittest.TestCase):
             self.assertEqual(sorted(ids), sorted(re.findall(r"US\d{4}", owed_line[0])),
                              f"the two surfaces name different blocking sets.\n"
                              f"detect: {ids}\nstatus: {owed_line[0]}")
+
+
+class InvalidatedReportInStatusTests(unittest.TestCase):
+    """US0845 AC3: the operator who never opens the report is still told it is invalidated.
+
+    THE THREE TREES are copies of a run sealed under one report: (i) untouched; (ii) a typo
+    fixed in `README.md`, a tracked write that moves no figure the report carries; (iii) a
+    batch unit's `Points:` changed, so `points_delivered` moves. (ii) is the discriminating
+    one - every reading of D4 agrees about (i) and (iii).
+    """
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import test_sprint_report as tsr  # noqa: PLC0415 - the fixture builder lives beside it
+        self.tsr = tsr
+
+    def _tree(self, kind: str) -> tuple[Path, str]:
+        import gitutil  # noqa: PLC0415
+        import sprint_report as sr  # noqa: PLC0415
+        root = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        self.tsr.fixture_run(root)
+        # A REAL git repository, matching the repair made to `test_sprint_report.three_trees`.
+        # Without it `_git_commits` shells out, gets a non-zero exit and returns nothing, so the
+        # DORA figures come only from the static CI fixture and the unrelated write below is an
+        # UNTRACKED file in a non-repository - not the tracked write THE THREE TREES is defined
+        # as, which makes the discriminating case degenerate.
+        for cmd in (["init", "-q", "."], ["config", "user.email", "t@example.com"],
+                    ["config", "user.name", "t"], ["add", "-A"],
+                    ["-c", "commit.gpgsign=false", "commit", "-qm", "the delivered batch"]):
+            gitutil.git(cmd, root, check=False)
+        rep = sr.build_report(root, self.tsr.FIX_RETRO)
+        rid = sr.file_report(root, rep)
+        p = root / "sdlc-studio" / "reports" / f"{rid}.json"
+        data = json.loads(p.read_text(encoding="utf-8"))
+        data["signature"] = {"principal": "the operator", "signed_at": "2026-09-16T09:00:00Z",
+                             "fingerprint": data["fingerprint"]}
+        p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        if kind == "unrelated-write":
+            (root / "README.md").write_text("a typo fixed\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], root, check=False)
+            gitutil.git(["-c", "commit.gpgsign=false", "commit", "-qm", "fix a typo",
+                         "--date", "2099-01-01T00:00:00+00:00"], root, check=False,
+                        env_extra={"GIT_COMMITTER_DATE": "2099-01-01T00:00:00+00:00"})
+        if kind == "figure-moved":
+            unit = root / "sdlc-studio" / "stories" / "US0101-a-fixture-unit.md"
+            unit.write_text(unit.read_text(encoding="utf-8")
+                            .replace("> **Points:** 5", "> **Points:** 8"), encoding="utf-8")
+        return root, rid
+
+    def test_status_names_an_invalidated_report(self) -> None:
+        """AC3. MUTANT: compute the banner inside the renderer alone.
+
+        The operator who reads `status` and never opens the report is told nothing, which is
+        the state the consult found and this story exists to end."""
+        for kind in ("untouched", "unrelated-write", "figure-moved"):
+            root, rid = self._tree(kind)
+            before = {str(p.relative_to(root)): p.stat().st_mtime_ns
+                      for p in (root / "sdlc-studio").rglob("*") if p.is_file()}
+            out = io.StringIO()
+            args = argparse.Namespace(root=str(root), format="text")
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                status.cmd_pillars(args)
+            printed = out.getvalue()
+            self.assertIn(rid, printed, f"{kind}: status does not name the report at all")
+            if kind == "figure-moved":
+                self.assertIn("INVALIDATED", printed,
+                              f"{kind}: status does not name the report as invalidated")
+                self.assertIn("sprint_report.py build", printed,
+                              f"{kind}: status gives no re-prepare command")
+            else:
+                self.assertNotIn("INVALIDATED", printed,
+                                 f"{kind}: a valid report was named invalidated")
+                self.assertIn("the operator", printed,
+                              f"{kind}: status does not print the report's principal")
+                self.assertIn("2026-09-16", printed,
+                              f"{kind}: status does not print the date it was signed")
+            after = {str(p.relative_to(root)): p.stat().st_mtime_ns
+                     for p in (root / "sdlc-studio").rglob("*") if p.is_file()}
+            self.assertEqual(after, before, f"{kind}: status wrote to the tree")
 
 
 if __name__ == "__main__":

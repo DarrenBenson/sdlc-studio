@@ -42,6 +42,7 @@ every reading of D4 agrees about (i) and (iii).
 - **Then** (i) and (ii) print VALID and exit 0; (iii) prints INVALIDATED, exits non-zero, and names the figure that moved with its signed value and its current one; and the check writes nothing in any of the three
 - **Mutant:** invalidate whenever the tree has a tracked write newer than `signed_at` - tree (ii) then reads INVALIDATED, every sealed report goes stale on the next unrelated commit, and the marker means only that time has passed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::InvalidatedReportTests::test_invalidation_is_decided_by_re_deriving_the_facts
+- **Verified:** yes (2026-09-18)
 
 ### AC2: both renderings lead with the banner, and it names what moved without blanking what was signed
 
@@ -50,6 +51,7 @@ every reading of D4 agrees about (i) and (iii).
 - **Then** in (iii) both outputs carry `INVALIDATED` before the sprint goal - ahead of every figure - naming the signed fingerprint, the current one and the figure that moved, while the sign-off block still shows the principal and date that WERE signed rather than being emptied; in (i) neither output carries the banner
 - **Mutant:** render the banner at the foot, below Provenance - the reader takes the figures as signed and meets the warning after the decision, and every assertion that the banner exists still passes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::InvalidatedReportTests::test_both_renderings_lead_with_the_invalidation_banner
+- **Verified:** yes (2026-09-18)
 
 ### AC3: status names an invalidated report, so the operator who never opens it is still told
 
@@ -58,6 +60,15 @@ every reading of D4 agrees about (i) and (iii).
 - **Then** only (iii) prints a line naming RPT0001 as INVALIDATED with the re-prepare command; (i) and (ii) print the report as signed, with its principal and date; and status writes nothing in any of the three
 - **Mutant:** compute the banner inside the renderer alone - the operator who reads `status` and never opens the report is told nothing, which is the state the consult found and this story exists to end
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::InvalidatedReportInStatusTests::test_status_names_an_invalidated_report
+- **Verified:** yes (2026-09-18)
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | invalidate whenever the tree has a tracked write newer than `signed_at` - tree (ii) then reads INVALIDATED, every sealed report goes stale on the next unrelated commit, and the marker means only that time has passed | invalidation is decided by re-deriving the facts, not by counting writes since the signature |
+| AC2 | render the banner at the foot, below Provenance - the reader takes the figures as signed and meets the warning after the decision, and every assertion that the banner exists still passes | both renderings lead with the banner, and it names what moved without blanking what was signed |
+| AC3 | compute the banner inside the renderer alone - the operator who reads `status` and never opens the report is told nothing, which is the state the consult found and this story exists to end | status names an invalidated report, so the operator who never opens it is still told |
 
 ## Revision History
 
