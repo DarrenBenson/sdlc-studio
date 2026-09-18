@@ -24,8 +24,31 @@ Make the local guard refuse what CI refuses: the pre-commit lane judges against 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `check_budgets.py` passes a file up to 5% over its recorded ceiling (`CEILING_TOLERANCE` = 1.05) and the pre-commit hook runs that guard, so a breach commits...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Make the local guard refuse what CI refuses: the pre-commit lane judges against the ceiling itself, and the tolerance survives only as a REPORT of files inside...
+The class, not the instance: wherever a local guard tolerates what a criterion refuses, the commit passes and CI fails. The fix is judged on the commit path, because that is where the author is standing when the difference matters.
+
+### AC1: the pre-commit budget lane refuses a file over its ceiling, with no tolerance
+
+- **Given** a fixture skill tree whose `reference-x.md` sits at 103 lines against a recorded ceiling of 100, inside the 1.05 tolerance
+- **When** `check_budgets.py --root <fixture>` runs as the pre-commit lane invokes it
+- **Then** it exits non-zero and names the file, its lines, its ceiling and the criteria that judge it strictly, so the author sees at commit time what CI would have told them at push time
+- **Mutant:** keep `CEILING_TOLERANCE` in the pass/fail decision and report the band - the commit is then green on the exact state that reddened main in RUN-01M2JA6J
+- **Verify:** pytest tools/tests/test_check_budgets.py::TolerancePathTests::test_a_file_inside_the_tolerance_is_refused_at_commit_time
+
+### AC2: the tolerance survives as a report, so drift is still visible before it breaches
+
+- **Given** the same fixture, and a second file at 98 lines against a ceiling of 100
+- **When** `check_budgets.py --drift --root <fixture>` runs
+- **Then** it exits 0 and names every file inside the band with its percentage, the 103-line file included, so a file approaching its ceiling is seen before it crosses
+- **Mutant:** delete the drift verb along with the tolerance - the only warning a file is about to breach then disappears, and every breach becomes a surprise
+- **Verify:** pytest tools/tests/test_check_budgets.py::TolerancePathTests::test_drift_still_reports_the_band_and_exits_zero
+
+### AC3: the two files inside the band today are resolved deliberately, not by the tolerance
+
+- **Given** this repository, where `reference-config.md` sits at 104.89% of its ceiling and `reference-review.md` at 100.49%
+- **When** the strict lane runs on the tree as it stands
+- **Then** both are refused, and the delivery either raises each ceiling with a written reason in `check_budgets.py` and the pinned value in the test, or shrinks the file - the choice recorded per file in this bug's Revision History
+- **Mutant:** grandfather the two current offenders into an allowlist - the guard then ships strict for everyone except the files that already broke it, which is the ratchet running backwards
+- **Verify:** shell python3 tools/check_budgets.py --root . && python3 -m pytest tools/tests/test_check_budgets.py -q
 
 ## Revision History
 

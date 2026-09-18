@@ -28,6 +28,14 @@ The selection must be judged against the defect the lane exists for: `test_criti
 - **Mutant:** walk test-module imports only - `test_critic`'s founding case is then never selected, and the lane keeps its name while losing its yield
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneSelectionTests::test_selection_follows_production_imports_transitively
 
+### AC1b: a module that reaches production only by subprocess is always selected, because no import edge can find it
+
+- **Given** the 19 test modules that drive production code through `subprocess` alone and import no production module at any depth - `test_rehearse_release` (the serial_only module), `test_conformance`, `test_changelog`, `test_mutation`, `test_cli_grammar` and the rest of that set
+- **When** the lane selects for any push
+- **Then** every module in that set runs regardless of the diff, the set is DERIVED by scanning for a subprocess invocation of a production path rather than listed by hand, and the lane's line names how many were included for that reason
+- **Mutant:** select by import closure alone - those 19 become unselectable by any diff, the lane silently exempts the modules guarding conformance, changelog and mutation, and the founding defect class (a name present only because a sibling imported it) is exactly the kind that leaves no edge to find
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneSelectionTests::test_subprocess_only_modules_are_always_selected
+
 ### AC2: the base ref is the merge-base with origin/main, and it is named in the lane's line
 
 - **Given** a working branch whose main has moved since the local commits were written
@@ -44,13 +52,13 @@ The selection must be judged against the defect the lane exists for: `test_criti
 - **Mutant:** let `at_boundary` carry the narrowing to both - a tag cut then ships on a narrowed lane to save nine minutes on an operation that happens monthly
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneSelectionTests::test_release_boundary_runs_every_module
 
-### AC4: the push gate's cost after this change is measured against US0843's figures and recorded
+### AC4: the PUSH GATE's own figure is recorded before and after, and it is the figure the story is judged on
 
-- **Given** US0843's `module-alone-timings.json` from before this change
-- **When** the narrowed lane runs on a push touching one test module's production file
-- **Then** the delivery records both figures in this story's Revision History, and the story is not Done while the narrowed push gate is within 10% of the full one
-- **Mutant:** land the change with no figure - the epic can then be delivered in full and still leave a twelve-minute push, which is what the operator raised it for
-- **Verify:** manual - two recorded figures from `sdlc-studio/.local/module-alone-timings.json`, before and after, in the Revision History
+- **Given** `python3 tools/gate_timing.py estimate --suite boundary-push`, which reports the gate's measured wall clock from its recorded runs - 726s at the time of writing, of which module-alone was 551s on the run that measured it
+- **When** the narrowed lane has landed and a push has run the boundary gate
+- **Then** both the before and after figures come from THAT command, not from `module-alone-timings.json`, they are recorded in this story's Revision History, and the story is not Done while the after figure is at or above 300s
+- **Mutant:** judge the story on the LANE's own timings file - a delivery can then record a truthful 80% saving on a four-minute lane while the push it was raised to shorten is still over ten minutes, which is a criterion's words outrunning its fixture in the one story written to prevent exactly that
+- **Verify:** manual - the two `gate_timing.py estimate --suite boundary-push` figures, before and after, quoted in this story's Revision History
 
 ## Revision History
 

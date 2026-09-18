@@ -43,13 +43,13 @@ than gating (US0834 owns the gating).
 - **Mutant:** leave the `handoff` chain step closing the run object - the chain still runs, every unit still transitions, and the only thing that breaks is that SEAL has no open run to seal, which no assertion about the chain would catch
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_prepare_runs_every_fact_changing_step_and_leaves_the_run_open
 
-### AC2: SEAL writes the signature and the run's end, and changes nothing else in the tree
+### AC2: SEAL writes the signature and only what the signature entails
 
-- **Given** THE PREPARED RUN after AC1's PREPARE, with the bytes of every tracked path under the fixture root recorded
+- **Given** THE PREPARED RUN after AC1's PREPARE, with the bytes of every tracked path under the fixture root recorded, and a `closed_at` marker absent
 - **When** `sprint.py sign --report <the report id> --principal "Darren Benson"` runs through `main`
-- **Then** it exits 0, the run is closed (`closed_at` set and `run_state.read_archived` returns the record), and the ONLY paths whose bytes differ from the recording are the run state, its archived copy and the report's own two files - no unit file, no `_index.md`, no retro, no `VELOCITY.md`, no handoff and no `reviews/` ledger
-- **Mutant:** call `_apply_signoff_tail` from `sign` as `_apply_signoff` does today - the velocity row, the handoff re-render, the epic and request cascades and the reconcile then all run after the signature, which is RUN-01M2JA6J exactly, and every assertion about the signature itself still passes
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_seal_writes_the_signature_and_nothing_else_in_the_tree
+- **Then** it exits 0 and every path whose bytes differ is one the SIGNATURE entails: the run state and its archived copy, the report's own two files, the sign-off record, each batch unit's Status line and its index row, and the parent epic and request whose children are now resolved. Nothing else differs - no gate re-run, no retro edit, no changelog, no velocity recompute, no handoff re-render (D0213 puts the fan-out in SEAL; it does not put the TAIL there)
+- **Mutant:** call `_apply_signoff_tail` from `sign` as `_apply_signoff` does today - the velocity row, the handoff re-render and the final reconcile then run after the signature, which is the two hours RUN-01M2JA6J spent after the operator had already said yes
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_seal_writes_the_signature_and_only_what_it_entails
 
 ### AC3: `close --apply-signoff` no longer signs, and names `sign` instead
 
