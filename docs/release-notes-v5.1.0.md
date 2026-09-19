@@ -70,9 +70,9 @@ evidence re-measured by hand for one line moving in a shared file.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1.0 discloses 37 open defects: 37 Medium, 0 Low.**
+**v5.1.0 discloses 38 open defects: 38 Medium, 0 Low.**
 
-**One High-severity finding is open against the tag: BG0715.** It was raised on 2026-09-18,
+**Three High-severity findings are open against the tag: BG0715, BG0718 and BG0719.** It was raised on 2026-09-18,
 after v5.1.0 shipped, by RUN-01M2SPNS running its own close. `_open_findings` dates a finding
 by the last word of its `Raised-in-batch` stamp, so a finding raised outside a delivery batch -
 the ordinary case for a backlog sweep or an audit - sorts as inside every run window and is
@@ -80,6 +80,17 @@ attributed to whichever run is open. The close then demands a stop-ship ruling f
 run never saw. It affects the sprint-close ceremony, not the tool's output, and it has a
 documented route past it (a dated waiver naming the row, as D0215 records for that run), but it
 is disclosed here rather than counted quietly because the bar names ids and so must the prose.
+
+**BG0718 and BG0719 were both raised on 2026-09-19 by RUN-01M2SPNS's own SEAL**, and both are
+about the report of record that run shipped. BG0718: the seal writes `ended_at`, the DORA window
+was bounded by `ended_at` before the page's own generation time, so signing a report widened its
+window and invalidated it - the run signed a page whose lead time re-derived differently one
+second later, and no run could have held a valid signature over its own report. Its repair is
+in this tree and it stays open only until an independent seat reviews its test plan. BG0719: the
+report does not name the waivers that were in force when it was derived, so an operator signs
+without being told which close-gate lane stood down - on that run, the per-unit coverage gate.
+Both affect the report, not the rest of the tool, and both are disclosed here rather than
+counted quietly because the bar names ids and so must the prose.
 
 ## What is in it
 

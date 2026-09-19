@@ -4058,6 +4058,158 @@ class CostRowTests(ReportOfRecordBase):
         self.assertIn("session_token_baseline", shape)
 
 
+class TheSealDoesNotMoveTheWindowTests(ReportOfRecordBase):
+    """BG0718: the act of SEALING must not invalidate the page it seals.
+
+    The window's end is carried on the page and replayed, rather than re-derived from a run
+    record the seal has since written to. Re-deriving it is what made signing invalidate the
+    page; bounding every re-derivation at the generation time instead only moved the failure
+    onto pages built after a run ended, which an independent plan review demonstrated.
+    """
+
+    def _tree(self, *, open_run: bool, commit_at: str | None = None) -> pathlib.Path:
+        """A REAL git repository: in a bare temp directory `_git_commits` returns nothing,
+        every DORA figure falls back to the static CI fixture, and the window cannot be
+        observed to move at all - which is how two of these mutants survived their first runs.
+
+        `fixture_run` writes an `ended_at`, so an OPEN run has to be made one deliberately.
+        Both criteria here claimed an open run in their Given while testing a closed one, so
+        the fallback they were about never executed and deleting it was a no-op.
+        """
+        root = pathlib.Path(tempfile.mkdtemp(dir=self.tmp.name))
+        fixture_run(root)
+        st = root / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(st.read_text(encoding="utf-8"))
+        if open_run:
+            state["ended_at"], state["outcome"] = None, "running"
+            st.write_text(json.dumps(state), encoding="utf-8")
+        for cmd in (["init", "-q", "."], ["config", "user.email", "t@example.com"],
+                    ["config", "user.name", "t"], ["add", "-A"],
+                    ["-c", "commit.gpgsign=false", "commit", "-qm", "the delivered batch"]):
+            gitutil.git(cmd, root, check=False)
+        if commit_at:
+            (root / "README.md").write_text(f"work at {commit_at}\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], root, check=False)
+            gitutil.git(["-c", "commit.gpgsign=false", "commit", "-qm", "later work",
+                         "--date", commit_at], root, check=False,
+                        env_extra={"GIT_COMMITTER_DATE": commit_at})
+        return root
+
+    def test_writing_ended_at_does_not_change_what_the_page_re_derives_to(self) -> None:
+        """AC1. MUTANT: re-derive the window's end from the run record instead of replaying
+        the one the page carries - the seal's `ended_at` then widens the window, and a run can
+        never hold a valid signature over its own report.
+        """
+        root = self._tree(open_run=True, commit_at="2026-12-01T00:00:00+00:00")
+        rep = sr.build_report(root, FIX_RETRO)
+        rid = sr.file_report(root, rep)
+        signed = json.loads(
+            (root / "sdlc-studio" / "reports" / f"{rid}.json").read_text(encoding="utf-8")
+        )["fingerprint"]
+
+        st = root / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(st.read_text(encoding="utf-8"))
+        state["ended_at"] = "2027-01-01T00:00:00Z"        # the SEAL, in the respect that matters
+        st.write_text(json.dumps(state), encoding="utf-8")
+
+        v = sr.revalidate(root, rid)
+        self.assertTrue(v["valid"],
+                        f"sealing the run invalidated the page it sealed: {v['moved']}")
+        self.assertEqual(signed, sr.fingerprint(
+            sr.build_report(root, FIX_RETRO, as_of=rep["generated_at"],
+                            window_end=rep.get("window_end"))))
+
+    def test_an_open_run_is_still_bounded_at_its_generation_time(self) -> None:
+        """AC2. MUTANT: leave an open run's window unbounded - every commit made after the page
+        then enters its figures, and because this project ships the paperwork in the same commit
+        as the code, committing the report invalidates the report.
+
+        The run here is genuinely OPEN: `ended_at` is cleared, so the fallback this criterion is
+        about actually executes. It did not before, and the mutant survived three times.
+        """
+        root = self._tree(open_run=True, commit_at="2026-12-01T00:00:00+00:00")
+        state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                           .read_text(encoding="utf-8"))
+        self.assertIsNone(state.get("ended_at"),
+                          "the fixture's run is not open, so this criterion tests nothing")
+        rep = sr.build_report(root, FIX_RETRO)
+        self.assertEqual(rep["window_end"], rep["generated_at"],
+                         "an open run's page did not record its generation time as the bound")
+        again = sr.build_report(root, FIX_RETRO, as_of=rep["generated_at"],
+                                window_end=rep["window_end"])
+        self.assertEqual(sr.fingerprint(rep), sr.fingerprint(again),
+                         "a commit made after the page entered its figures, so the window was "
+                         "left open on the derivation that had no bound recorded")
+
+    def test_a_page_built_after_the_run_ended_also_re_derives_valid(self) -> None:
+        """AC3, which the plan review required: the repair must not move the defect onto the
+        other case. A page derived AFTER a run ended bounds at `ended_at`, which is EARLIER
+        than its own generation time, so a commit landing between the two belongs to neither
+        the run nor the page.
+
+        MUTANT: bound every re-derivation at the generation time - the first derivation then
+        excludes that commit and the re-derivation includes it, and a page nobody has touched
+        reads INVALID. That is the repair this criterion was added to refuse, and it is what
+        the first fix for AC1 actually did.
+        """
+        root = self._tree(open_run=False, commit_at="2026-09-16T00:00:00+00:00")
+        state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                           .read_text(encoding="utf-8"))
+        self.assertTrue(state.get("ended_at"), "the fixture's run never ended")
+        rep = sr.build_report(root, FIX_RETRO)
+        rid = sr.file_report(root, rep)
+        self.assertEqual(rep["window_end"], state["ended_at"],
+                         "a page built after the run ended did not record the run's end as its "
+                         "bound, so it cannot replay the window it was derived under")
+        v = sr.revalidate(root, rid)
+        self.assertTrue(v["valid"], "a page built on an ended run re-derives INVALID with "
+                        f"nothing touched: {v['moved']}")
+
+    def test_a_page_recording_no_bound_replays_the_one_it_was_derived_under(self) -> None:
+        """AC4. A page filed before the bound was carried records none, and the two legacy
+        cases need different bounds: derived while the run was OPEN, the bound is the page's
+        own generation time; derived AFTER the run ended, it is `ended_at`, which is earlier.
+
+        MUTANT: fall back to the generation time for both - the second case then re-derives
+        over a wider window than it was written under, a commit landing between the run's end
+        and the page enters only the re-derivation, and an untouched page reads INVALID. That
+        is this bug's own defect surviving in exactly the pages the fallback exists to protect.
+
+        The positive control is the other half and it is the one that guards a REAL signature:
+        a legacy page derived while the run was open and sealed afterwards must keep re-deriving
+        at its generation time, because the run now carries an `ended_at` LATER than the page.
+        RPT0002 on this repository is that page.
+        """
+        # (i) derived AFTER the run ended, with a commit in between.
+        root = self._tree(open_run=False, commit_at="2026-09-16T00:00:00+00:00")
+        rep = sr.build_report(root, FIX_RETRO)
+        rid = sr.file_report(root, rep)
+        jp = root / "sdlc-studio" / "reports" / f"{rid}.json"
+        data = json.loads(jp.read_text(encoding="utf-8"))
+        data.pop("window_end")                       # as a page filed before this shipped
+        jp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        v = sr.revalidate(root, rid)
+        self.assertTrue(v["valid"], "a legacy page derived after its run ended re-derived over "
+                                    f"a wider window than it was written under: {v['moved']}")
+
+        # (ii) derived while OPEN, then sealed - the shape a signed page is actually in.
+        root2 = self._tree(open_run=True, commit_at="2026-12-01T00:00:00+00:00")
+        rep2 = sr.build_report(root2, FIX_RETRO)
+        rid2 = sr.file_report(root2, rep2)
+        jp2 = root2 / "sdlc-studio" / "reports" / f"{rid2}.json"
+        d2 = json.loads(jp2.read_text(encoding="utf-8"))
+        d2.pop("window_end")
+        jp2.write_text(json.dumps(d2, indent=2), encoding="utf-8")
+        st = root2 / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(st.read_text(encoding="utf-8"))
+        state["ended_at"] = "2027-01-01T00:00:00Z"   # the seal, AFTER the page
+        st.write_text(json.dumps(state), encoding="utf-8")
+        v2 = sr.revalidate(root2, rid2)
+        self.assertTrue(v2["valid"], "sealing a legacy page's run invalidated it - the bound "
+                                     f"was taken from the seal rather than the page: {v2['moved']}")
+
+
+
 class InvalidatedReportTests(ReportOfRecordBase):
     """US0845 AC1-AC2: invalidation is decided by re-derivation."""
 

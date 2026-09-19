@@ -1,6 +1,6 @@
 # US0844: the run-level token meter is stamped at run open and at report time, and the total names the sessions it covers
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -4,7 +4,12 @@
   "run_id": "RUN-01M2SPNS",
   "retro_id": "RETRO0118",
   "generated_at": "2026-09-18T20:21:14Z",
-  "signature": null,
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-09-19T17:28:19Z",
+    "report": "RPT0002",
+    "fingerprint": "215a0147800b237e"
+  },
   "sections": [
     {
       "key": "identity",

@@ -8,14 +8,7 @@
 
 ## Where to pick up
 
-9 of 9 unit(s) remain (0 suit copilot-assisted completion, 9 need human judgement). Plan them straight back in:
-
-```bash
-python3 "$CLAUDE_SKILL_DIR/scripts/sprint.py" plan \
-  --worklist sdlc-studio/.local/handoff-worklist.txt --order wsjf
-```
-
-Each item below names the pointer to start from: the failing AC, the check it stalled at, the blocker that stopped it, or the file it was to touch.
+Every unit in the batch is terminal. There is no tail: close the run and plan the next batch normally.
 
 ## Unanswered stop-ship questions
 
@@ -24,100 +17,27 @@ None: every batch unit is delivered, abandoned, ruled, dropped, parked or awaiti
 ## Appetite
 
 - **Declared:** wall-clock 5760 min, units 64 unit(s)
-- **Spent:** 777.9 min, 0 unit(s) terminal
-- **Delivered:** 0 unit(s)
+- **Spent:** 2047.8 min, 9 unit(s) terminal
+- **Delivered:** 9 unit(s)
 - **Token forecast:** ~4,410,787 tokens - a plan-time estimate, never a gate (the total is transcript-measured but a LOWER BOUND - delegated spend is supplied, not observed)
 
-## Delivered (0)
+## Delivered (9)
 
-_Nothing was delivered in this run._
+| Unit | Type | Status | Evidence |
+| --- | --- | --- | --- |
+| [US0832](../../sdlc-studio/stories/US0832-close-splits-into-prepare-which-does-everything-that.md) | story | Done | 5/5 AC(s) verified; critic REJECT (Sam Eriksson (qa)) |
+| [US0833](../../sdlc-studio/stories/US0833-sign-writes-the-principal-the-date-and-the.md) | story | Done | 5/5 AC(s) verified; critic REJECT (Sam Eriksson (qa)) |
+| [US0834](../../sdlc-studio/stories/US0834-prepare-refuses-to-produce-a-report-while-any.md) | story | Done | 4/4 AC(s) verified; critic REJECT (Sam Eriksson (qa)) |
+| [US0835](../../sdlc-studio/stories/US0835-the-report-json-of-record-is-derived-from.md) | story | Done | 5/5 AC(s) verified; critic REJECT (Sam Eriksson (qa)) |
+| [US0836](../../sdlc-studio/stories/US0836-the-markdown-twin-and-the-html-rendering-are.md) | story | Done | 5/5 AC(s) verified; critic APPROVE (Sam Eriksson (qa)) |
+| [US0837](../../sdlc-studio/stories/US0837-the-report-opens-with-the-sprint-goal-verbatim.md) | story | Done | 3/3 AC(s) verified; critic APPROVE (Sam Eriksson (qa)) |
+| [US0844](../../sdlc-studio/stories/US0844-the-run-level-token-meter-is-stamped-at.md) | story | Done | 5/5 AC(s) verified; critic REJECT (Sam Eriksson (qa)) |
+| [US0845](../../sdlc-studio/stories/US0845-a-report-whose-fingerprint-no-longer-matches-the.md) | story | Done | 3/3 AC(s) verified; critic REJECT (Sam Eriksson (qa)) |
+| [US0846](../../sdlc-studio/stories/US0846-the-report-computes-this-run-s-change-failure.md) | story | Done | 1/1 AC(s) verified; critic APPROVE (Sam Eriksson (qa)) |
 
-## Remaining (9)
+## Remaining (0)
 
-### US0832 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint.py` - declared Affects
-- **file:** `sdlc-studio/stories/US0832-close-splits-into-prepare-which-does-everything-that.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:high, issue:already-satisfied
-
-### US0833 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/critic.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/transition.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_transition.py` - declared Affects
-- **file:** `sdlc-studio/stories/US0833-sign-writes-the-principal-the-date-and-the.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:high, issue:already-satisfied
-
-### US0834 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint.py` - declared Affects
-- **file:** `sdlc-studio/stories/US0834-prepare-refuses-to-produce-a-report-while-any.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:medium, issue:already-satisfied
-
-### US0835 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint_report.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/lib/sdlc_md.py` - declared Affects
-- **file:** `sdlc-studio/stories/US0835-the-report-json-of-record-is-derived-from.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:high, issue:already-satisfied
-
-### US0836 (story, Review) - judgement
-
-- **issue:** `weak-AC` - tranche audit
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint_report.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/templates/core/sprint-report.md` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/templates/reports/sprint-report.html` - declared Affects
-- **file:** `sdlc-studio/stories/US0836-the-markdown-twin-and-the-html-rendering-are.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:high, issue:weak-AC, issue:already-satisfied
-
-### US0837 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint_report.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py` - declared Affects
-- **file:** `sdlc-studio/stories/US0837-the-report-opens-with-the-sprint-goal-verbatim.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:medium, issue:already-satisfied
-
-### US0844 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/lib/run_state.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_run_state.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint_report.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py` - declared Affects
-- **file:** `sdlc-studio/stories/US0844-the-run-level-token-meter-is-stamped-at.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:high, issue:already-satisfied
-
-### US0845 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint_report.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/status.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_status.py` - declared Affects
-- **file:** `sdlc-studio/stories/US0845-a-report-whose-fingerprint-no-longer-matches-the.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:high, issue:already-satisfied
-
-### US0846 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint_report.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py` - declared Affects
-- **file:** `sdlc-studio/stories/US0846-the-report-computes-this-run-s-change-failure.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:medium, issue:already-satisfied
+_Nothing remains: every unit in the batch reached a terminal status._
 
 ## Open decisions
 

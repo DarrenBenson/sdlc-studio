@@ -112,7 +112,7 @@ review:
   # with its siblings' added lines in a shared file; BG0714 records the 284 lines that
   # survive even the run-scope reading BG0706 proposes. `report` prints the identical
   # figures and proceeds, so nothing is hidden - only the refusal is lifted.
-  line_coverage: report
+  line_coverage: block
   line_coverage_after: "2026-09-07"
   # D0146 (2026-08-21) CUTS this from 6 to 2, superseding D0132's raise, and the reason is a
   # measurement rather than a preference. D0132 raised it to 6 saying "revisit if a run reaches 6";

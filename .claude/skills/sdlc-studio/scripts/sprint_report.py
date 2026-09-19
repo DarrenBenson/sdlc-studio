@@ -3142,7 +3142,8 @@ def _consult_rows(root: Path) -> tuple[list[dict], str | None]:
 
 # --- building the report ----------------------------------------------------------------------
 
-def build_report(root, retro_id: str, as_of: str | None = None) -> dict:
+def build_report(root, retro_id: str, as_of: str | None = None,
+                 window_end: str | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -3164,7 +3165,23 @@ def build_report(root, retro_id: str, as_of: str | None = None) -> dict:
     # reproduces the same window rather than a wider one.
     generated_at = as_of or sdlc_md.now_iso8601()
     start = _at(state.get("started_at"))
-    end = _at(state.get("ended_at")) or _at(generated_at)
+    # THE WINDOW'S END IS CARRIED ON THE PAGE, not re-derived from a run record that moves.
+    # `ended_at` is None until SEAL and written BY the seal, so a page derived while the run was
+    # open resolved its end to the generation time and then, on re-derivation, resolved it to
+    # the seal's `ended_at` instead: the act of signing widened the window, moved every figure
+    # derived from it, and left the page INVALIDATED one second after the signature landed.
+    #
+    # Bounding a re-derivation at the generation time instead does NOT fix that - it relocates
+    # it. A page built on a run that had ALREADY ended bounds at `ended_at` when first derived
+    # and at the later generation time when re-derived, so a commit landing between the two
+    # enters only the re-derivation and the page reads INVALID with nothing touched. An
+    # independent plan review caught that, and it is the same defect wearing the other shoe.
+    #
+    # So the resolved end is recorded on the report and replayed, exactly as `generated_at`
+    # already is. A page with no `window_end` predates this and falls back to its generation
+    # time, which is the bound such a page was in fact derived under.
+    end = (_at(window_end) if window_end else
+           (_at(state.get("ended_at")) or _at(generated_at)))
 
     goal = state.get("sprint_goal") or state.get("goal")
     if not goal or not str(goal).strip():
@@ -3258,6 +3275,10 @@ def build_report(root, retro_id: str, as_of: str | None = None) -> dict:
     sections.append(_signoff_section(state_rel))
     report = {"schema": 1, "report_id": None, "run_id": state.get("run_id"),
               "retro_id": sdlc_md.norm_id(retro_id), "generated_at": generated_at,
+              # The window this page's figures were derived under, replayed on every
+              # re-derivation. An envelope field, never a figure: it must not enter the digest,
+              # or recording the bound would itself change the fingerprint it protects.
+              "window_end": (end.isoformat().replace("+00:00", "Z") if end else None),
               "signature": None, "sections": sections}
     report["sections"].append(_provenance_section(report))
     _refuse_sourceless(report, root)
@@ -3980,6 +4001,34 @@ def read_report(root, report_id: str) -> dict:
         raise ReportError(f"{_rel(Path(root), p)} could not be read: {exc}") from exc
 
 
+def _legacy_window_end(root, stored: dict) -> str | None:
+    """The bound a stored page was DERIVED under, for a page that records none.
+
+    Pages filed before the bound was carried have to have it inferred, and the two cases are
+    not the same: a page derived while its run was still open was bounded at its own generation
+    time, and one derived after the run ended was bounded at `ended_at`. Falling back to the
+    generation time for both leaves the second re-deriving over a WIDER window than it was
+    written under, so a commit landing between the run's end and the page enters only the
+    re-derivation and an untouched page reads INVALID - which is the defect this whole repair
+    is about, surviving in exactly the pages the fallback exists to protect. An independent
+    plan review found it there.
+
+    Which case a page belongs to is readable from the two timestamps: a run that ended BEFORE
+    the page was generated had already ended when it was derived. A run that ended after - the
+    ordinary shape, because the seal comes after the page - was open at the time, whatever
+    `ended_at` says now. So the earlier of the two is the bound, and a page that records its
+    own `window_end` never reaches here at all.
+    """
+    gen = stored.get("generated_at")
+    if stored.get("window_end"):
+        return stored["window_end"]
+    state, _rel = _run_state_for(Path(root), None)
+    ended, g = _at(state.get("ended_at")), _at(gen)
+    if ended and g and ended < g:
+        return state["ended_at"]
+    return gen
+
+
 def revalidate(root, report_id: str) -> dict:
     """Is this report still true of the tree? Decided by RE-DERIVING it, never by counting
     writes since the signature.
@@ -3995,7 +4044,8 @@ def revalidate(root, report_id: str) -> dict:
     # comparison of the tree against the page, rather than of one window against a wider one:
     # without it every commit made after the report - including the commit that files it -
     # entered the fresh figures and nothing else had to change for INVALIDATED to appear.
-    fresh = build_report(root, stored.get("retro_id"), as_of=stored.get("generated_at"))
+    fresh = build_report(root, stored.get("retro_id"), as_of=stored.get("generated_at"),
+                         window_end=_legacy_window_end(root, stored))
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(stored)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)

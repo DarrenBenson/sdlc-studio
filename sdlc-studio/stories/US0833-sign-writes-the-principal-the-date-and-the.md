@@ -1,6 +1,6 @@
 # US0833: sign writes the principal, the date and the report fingerprint against the run, and nothing else runs after it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0059
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
