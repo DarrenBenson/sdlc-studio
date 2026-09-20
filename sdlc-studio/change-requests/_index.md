@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 29 |
+| Proposed | 28 |
 | Approved | 0 |
 | In Progress | 37 |
 | Complete | 499 |
-| Rejected | 1 |
+| Rejected | 3 |
 | Deferred | 0 |
 | Superseded | 24 |
 | Blocked | 0 |
-| **Total** | **590** |
+| **Total** | **591** |
 
 ## All Changes
 
@@ -29,7 +29,7 @@
 | [CR-0504](CR0504-closing-review-is-doing-the-work-development-should.md) | closing review is doing the work development should have done, and the same five defect classes recur every sprint | In Progress | High | Improvement | 2026-07-30 | EP0223 |
 | [CR-0507](CR0507-closing-a-sprint-asks-twenty-questions-when-it.md) | closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies | In Progress | High | Improvement | 2026-07-30 | EP0224 |
 | [CR-0509](CR0509-a-review-worktree-opens-at-a-stale-base.md) | A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet | In Progress | High | Improvement | 2026-07-31 | EP0225 |
-| [CR-0511](CR0511-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-07-31 | -- |
+| [CR-0511](CR0511-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Rejected | Low | Improvement | 2026-07-31 | -- |
 | [CR-0512](CR0512-a-unit-review-is-scoped-to-that-unit.md) | A unit review is scoped to that unit's own diff and blocks only on a NEW defect; an already-logged finding is reported, never blocking | In Progress | High | Improvement | 2026-08-01 | EP0194 |
 | [CR-0515](CR0515-an-agent-customises-content-never-tooling-hand-rolled.md) | An agent customises content, never tooling: hand-rolled work is detected from the run diff, reported at the close, and escapes only by filing the gap | In Progress | High | Feature | 2026-08-01 | EP0196 |
 | [CR-0523](CR0523-the-unreviewed-span-is-reported-during-the-run.md) | the unreviewed span is reported DURING the run, not discovered at the close | Proposed | High | Improvement | 2026-08-02 | EP0226 |
@@ -72,7 +72,7 @@
 | [CR-0572](CR0572-ruling-a-close-s-findings-means-hand-editing.md) | Ruling a close's findings means hand-editing one table row per finding; no bulk ruling command exists | Proposed | Medium | Feature | 2026-09-15 | -- |
 | [CR-0573](CR0573-us0627-s-reject-guard-applies-to-the-whole.md) | US0627's REJECT guard applies to the whole existing backlog with no cutoff and no adoption report | Proposed | Medium | Improvement | 2026-09-15 | -- |
 | [CR-0574](CR0574-units-abandoned-or-forced-past-an-unanswered-delivery.md) | Units abandoned or forced past an unanswered delivery REJECT within a run are not listed at the close | Proposed | Medium | Improvement | 2026-09-15 | -- |
-| [CR-0575](CR0575-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-09-15 | -- |
+| [CR-0575](CR0575-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Rejected | Low | Improvement | 2026-09-15 | -- |
 | [CR-0576](CR0576-the-release-cut-does-not-list-the-not.md) | The release cut does not list the not-stop-ship and accepted-risk rulings carried since the previous tag | Proposed | Medium | Feature | 2026-09-15 | -- |
 | [CR-0577](CR0577-stakeholder-persona-consultation-is-advisory-with-no-gate.md) | Stakeholder persona consultation is advisory with no gate, so a story batch reaches delivery with no persona ever consulted | Proposed | High | Improvement | 2026-09-15 | -- |
 | [CR-0578](CR0578-plan-review-has-no-round-ceiling-in-the.md) | Plan review has no round ceiling in the tooling; D0204's three-round cap is a ruling nothing enforces | Proposed | High | Improvement | 2026-09-15 | -- |
@@ -88,6 +88,7 @@
 | [CR-0588](CR0588-run-state-readers-cannot-tell-a-field-that.md) | run_state readers cannot tell a field that is empty from a field the schema never had, so a typo reads as a state | Proposed | Medium | Improvement | 2026-09-17 | -- |
 | [CR-0589](CR0589-prepare-rehearses-the-seal-and-refuses-to-file.md) | PREPARE rehearses the seal, and refuses to file a report that cannot survive being signed | Proposed | High | Improvement | 2026-09-20 | -- |
 | [CR-0590](CR0590-the-report-absorbs-the-handoff-so-a-run.md) | the report absorbs the handoff, so a run ends with one page instead of two that must agree | Proposed | Medium | Improvement | 2026-09-20 | -- |
+| [CR-0591](CR0591-audit-the-41-in-progress-discovery-requests-against.md) | audit the 41 In-Progress discovery requests against HEAD and close what is dead | Proposed | High | Improvement | 2026-09-20 | -- |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # CR-0511: Low-severity bugs (consolidated)
 
-> **Status:** Proposed
+> **Status:** Rejected
 > **Size:** S
 > **Priority:** Low
 > **Type:** Improvement
@@ -115,11 +115,18 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 - **The root-effect control resolves a run id only once a retro records it, reads retros non-recursively, and runs its diagnostic groups together**: A run id resolves only once a retro records it (`test_cli_grammar.py`:404-409): the open run's id is in no retro, so a fixture leak naming only that id passes the run-id check. The artefact-id check still catches any leaked artefact id, and this matches AC2's stated design. Retros are read non-recursively (`walk_glob`, `test_cli_grammar.py`:407), so moving retros into a subdirectory would stop run ids resolving, a smaller form of the expiry the fix removed. `_verdict` joins the failures and the skips with no separator between the groups (`test_cli_grammar.py`:645); diagnostic text only. AC4's stated cost ('at least twice the 83 s control') is too high: it measured 45 s, because flow.py compute takes 1.8 s in the copy without .git against 42.7 s on the real tree; all nine verbs name the same resolvable ids in both.
 - **route.estimate's JSON dropped story_points and the band change moves plan review's difficulty trigger, and neither is disclosed**: The route.estimate signals dict no longer carries story_points (route.py:159). No script consumer reads it and the suites pass, but the JSON shape changed without a changelog mention. The same band changes also move plan_review's difficulty trigger, and the fragment records only the review-tier shift. AC4 cannot tell a made-up but consistent Tier Shift line from the real one (a mutant with balancing sums survives, which the criterion accepts by design); the recorded figures match the census files and live tier_for agrees on 16 of 16 sampled units, but the '41 of 41 stride' in the Method line is unverifiable.
 
+## Why this was retired
+
+**RETIRED 2026-09-20 (operator ruling).** This was a CONSOLIDATION artefact - a holding pen for 91 low-severity bug findings - not a change request. It could not be refined as written: `refine` decomposes a request into sized units, and there is no coherent decomposition of a bucket whose only shared property is a severity band. Left Proposed it sat permanently at the bottom of the discovery backlog, counted as an option awaiting refinement that nobody could ever take.
+
+**Nothing is lost.** The underlying findings keep their own artefacts and their own severities, and `docs/known-issues.md` is GENERATED from the bug corpus rather than maintained by hand - so every one of them stays disclosed whether this page exists or not. Retiring the pen removes a number that was never actionable, not the work it pointed at. If a low-severity sweep is ever wanted, it should be filed as a request with a scope somebody chose, rather than inherited from a filter.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-31 | Claude Opus 5 | Consolidation opened |
+| 2026-09-20 | operator ruling | Retired as Rejected. A consolidation bucket is not a change request and cannot be refined; the findings it pointed at remain, disclosed from the corpus. |
 | 2026-09-07 | sdlc-studio | The rejoinder-fingerprint item filed 2026-09-07 (record notes 'matches no brief' for every rejoinder) is closed by BG0645 in the same run: the rejoinder fingerprint now identifies its base brief and phase and the matcher reproduces it |
 | 2026-09-07 | sdlc-studio | Correction to the 2026-09-07 rejoinder-fingerprint row: BG0645 closes it for the default and derived tiers; a tier CHOSEN against the derived one still records with the unrecognised-brief note, on rejoinders and first-round briefs alike, as at ea8a99a0 |
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: all 60 findings re-checked at HEAD. Five no longer stand and are marked in place: #21 (superseded by BG0645), #29 (superseded by BG0649), #15, #48 and #51 (premise gone). #14, #41 and #46 are partly fixed (BG0645, BG0652); #11 duplicates #10. The other 52 stand. Confirmed by an independent adversarial verifier. |
