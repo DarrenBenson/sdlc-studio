@@ -1,6 +1,7 @@
 # CR-0591: audit the 41 In-Progress discovery requests against HEAD and close what is dead
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0257
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** L
@@ -30,7 +31,7 @@ The cost is a run's worth of reading with no feature at the end of it, which is 
 
 **Scope also takes five delivery-side items** that are the same judgement: US0677, US0684, US0817 and US0840 sit at the 8-point ceiling where estimation reliability falls off, and US0793/US0794 share four files and 50% of their wording. Settling them here leaves the delivery backlog honest when the build run plans from it.
 
-**Not in scope:** any code change. D0221 defines this run as ruling-only, and that line is what lets one reviewer judge the whole of it - BG0719 was deliberately kept out and sent to the build run (D0223) for exactly that reason.
+**Not in scope:** feature work. D0221 defines this run as ruling-only and that line is what lets one reviewer judge the whole of it - BG0719 was deliberately kept out and sent to the build run (D0223) for exactly that reason. The ONE exception is this request's own AC4 guard, which is not a feature but the thing that stops the state this sweep clears from silently rebuilding; without it the audit is a one-off tidy. An earlier draft of this note said `any code change`, which contradicted AC4 - the criteria are the authority, not the note.
 
 ## Acceptance Criteria
 

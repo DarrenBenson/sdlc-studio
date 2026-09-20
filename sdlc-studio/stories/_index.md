@@ -1,6 +1,6 @@
 # Story Index
 
-**Last Updated:** 2026-09-17
+**Last Updated:** 2026-09-20
 
 ## Summary
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 136 |
-| Ready | 16 |
+| Ready | 23 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 5 |
 | Blocked | 12 |
-| **Total** | **847** |
+| **Total** | **854** |
 
 ## All Stories
 
@@ -206,6 +206,13 @@
 | [US0845](US0845-a-report-whose-fingerprint-no-longer-matches-the.md) | a report whose fingerprint no longer matches the tree renders INVALIDATED wherever it is shown | Done | EP0255 | 2026-09-16 | 2026-09-16 |
 | [US0846](US0846-the-report-computes-this-run-s-change-failure.md) | the report computes this run's change failure rate from its own push-triggered CI results, so a narrowed gate can be judged against it | Done | EP0255 | 2026-09-17 | 2026-09-17 |
 | [US0847](US0847-a-persona-card-records-when-it-was-authored.md) | a persona card records when it was authored, from what evidence and when it was last revisited, and every consult figure carries that age | Draft | EP0256 | 2026-09-17 | 2026-09-17 |
+| [US0848](US0848-the-guard-a-discovery-request-in-progress-with.md) | the guard: a discovery request In Progress with no unresolved child and no dated ruling is reported | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
+| [US0849](US0849-rule-the-close-and-ceremony-cluster-against-head.md) | rule the close-and-ceremony cluster against HEAD | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
+| [US0850](US0850-rule-the-review-and-critic-cluster-against-head.md) | rule the review-and-critic cluster against HEAD | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
+| [US0851](US0851-rule-the-evidence-and-mutation-cluster-against-head.md) | rule the evidence-and-mutation cluster against HEAD | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
+| [US0852](US0852-rule-the-config-docs-and-remaining-requests-against.md) | rule the config, docs and remaining requests against HEAD | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
+| [US0853](US0853-re-triage-bg0463-s-twenty-batch-boundary-findings.md) | re-triage BG0463's twenty batch-boundary findings against HEAD and file the survivors | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
+| [US0854](US0854-decompose-the-four-8-point-stories-and-resolve.md) | decompose the four 8-point stories and resolve the US0793/US0794 duplicate, so the delivery backlog is honest before the build run plans from it | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
 
 ## Archived Releases
 

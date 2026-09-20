@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-09-16
+**Last Updated:** 2026-09-20
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 38 |
+| Draft | 39 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 218 |
-| **Total** | **256** |
+| **Total** | **257** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -63,6 +63,7 @@
 | [EP0254](EP0254-the-corpus-lane-runs-in-shards-and-judges.md) | The corpus lane runs in shards and judges one union | Draft | 4 | -- | 2026-09-16 | 2026-09-16 |
 | [EP0255](EP0255-a-run-ends-with-one-derived-report-and.md) | A run ends with one derived report, and signing it is a transaction | Done | 9 | -- | 2026-09-16 | 2026-09-16 |
 | [EP0256](EP0256-stakeholder-feedback-arrives-while-it-is-still-cheap.md) | Stakeholder feedback arrives while it is still cheap to act on | Draft | 6 | -- | 2026-09-16 | 2026-09-16 |
+| [EP0257](EP0257-the-backlog-tells-the-truth-every-stalled-request.md) | the backlog tells the truth: every stalled request carries a dated ruling, and the state cannot rebuild | Draft | 7 | -- | 2026-09-20 | 2026-09-20 |
 
 ## Archived Releases
 

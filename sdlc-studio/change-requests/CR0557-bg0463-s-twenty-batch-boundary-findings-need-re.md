@@ -1,6 +1,7 @@
 # CR-0557: BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0257
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
