@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 28 |
+| Proposed | 29 |
 | Approved | 0 |
 | In Progress | 37 |
 | Complete | 499 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 24 |
 | Blocked | 0 |
-| **Total** | **589** |
+| **Total** | **590** |
 
 ## All Changes
 
@@ -87,6 +87,7 @@
 | [CR-0587](CR0587-the-goal-review-asks-whether-a-sprint-goal.md) | the goal review asks whether a Sprint Goal is achievable, not whether it states value, so a shopping list passes | Proposed | High | Improvement | 2026-09-16 | -- |
 | [CR-0588](CR0588-run-state-readers-cannot-tell-a-field-that.md) | run_state readers cannot tell a field that is empty from a field the schema never had, so a typo reads as a state | Proposed | Medium | Improvement | 2026-09-17 | -- |
 | [CR-0589](CR0589-prepare-rehearses-the-seal-and-refuses-to-file.md) | PREPARE rehearses the seal, and refuses to file a report that cannot survive being signed | Proposed | High | Improvement | 2026-09-20 | -- |
+| [CR-0590](CR0590-the-report-absorbs-the-handoff-so-a-run.md) | the report absorbs the handoff, so a run ends with one page instead of two that must agree | Proposed | Medium | Improvement | 2026-09-20 | -- |
 
 ## Archived Releases
 

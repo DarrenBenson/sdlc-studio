@@ -31,3 +31,4 @@ In `file_report` (or its caller `_file_the_report`), take the report id from the
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-18 | sdlc-studio | Filed |
+| 2026-09-20 | operator ruling | RFC0059 D7 ruled: ONE report per run, kept forever, indexed and diffable - a run owns exactly one RPT id, stable across every re-prepare. That settles this bug's fix rather than leaving it to the implementer: take the id from the run record when the run already names one, allocate only when it does not. The reading in which each derivation is its own artefact is ruled out. |

@@ -1,6 +1,6 @@
 # RFC-0059: A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts
 
-> **Status:** In Review
+> **Status:** Accepted
 > **Decomposed-into:** EP0255
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -141,9 +141,9 @@ Three of those earn their place against the alternative of showing more:
 
 | D3 | **RULED 2026-09-16 (operator):** RUN-LEVEL ONLY. The harness meter is stamped at run open and at report time, giving an honest run total and a batch tokens-per-point. Per-unit actuals stay UNMEASURED and the report says so by name rather than splitting an interleaved session into per-unit figures it cannot defend | Settled |
 | D4 | **RULED 2026-09-17 (operator):** RE-DERIVATION. A report is INVALIDATED when re-deriving its figures produces different ones - not on any tracked write, which would fire for every change that moves nothing the report states | Settled |
-| D5 | Whether PREPARE may be run by a delegate while SEAL stays the operator's, and whether SEAL is offline-capable (no forge reads). **PARTLY RULED 2026-09-17:** the run carries ONE signature, written in SEAL from ONE principal, and PREPARE fans out nothing - so PREPARE takes no principal at all. Whether a delegate may run PREPARE is still open | Open |
-| D6 | Whether the report absorbs the handoff or links to it - two documents about the same run is the drift this RFC exists to remove | Open |
-| D7 | Retention: one report per run kept forever, indexed and diffable, or superseded by the next | Open |
+| D5 | Whether PREPARE may be run by a delegate while SEAL stays the operator's, and whether SEAL is offline-capable (no forge reads). **PARTLY RULED 2026-09-17:** the run carries ONE signature, written in SEAL from ONE principal, and PREPARE fans out nothing - so PREPARE takes no principal at all. **RULED 2026-09-20 (operator):** a delegate MAY run PREPARE. It writes no signature, fans nothing out and is re-runnable by contract, so a delegate running it can move no fact the operator is accountable for; the SEAL stays the operator's sole act, which is the separation the split exists for. The offline half is unaffected and stays as ruled | Settled |
+| D6 | Whether the report absorbs the handoff or links to it. **RULED 2026-09-20 (operator):** the report ABSORBS it. One page per run, whose remaining-work section reads `none` when the run reached its goal - RUN-01M2SPNS's HO0075 said `9 delivered, 0 remaining`, so the second artefact carried nothing and still had to be kept in agreement with the first. This is the drift this RFC exists to remove, and it is not removed by linking to it | Settled |
+| D7 | Retention. **RULED 2026-09-20 (operator):** ONE report per run, kept forever, indexed and diffable - a run owns exactly one RPT id, stable across every re-prepare. BG0716 is the gap: PREPARE allocates a fresh id on every re-file, so RUN-01M2SPNS produced RPT0001 and then RPT0002 for one run, only the last of them true. Its fix follows from this ruling - take the id from the run record when the run already names one, and allocate only when it does not | Settled |
 
 ## Evidence
 
