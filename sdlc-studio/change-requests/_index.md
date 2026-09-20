@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-17
+**Last Updated:** 2026-09-20
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 27 |
+| Proposed | 28 |
 | Approved | 0 |
 | In Progress | 37 |
 | Complete | 499 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 24 |
 | Blocked | 0 |
-| **Total** | **588** |
+| **Total** | **589** |
 
 ## All Changes
 
@@ -86,6 +86,7 @@
 | [CR-0586](CR0586-module-alone-re-runs-all-133-modules-on.md) | module-alone re-runs all 133 modules on every push, 551 s of a 749 s gate, for a signal that changes only when a module's imports do | In Progress | Medium | Improvement | 2026-09-16 | EP0253 |
 | [CR-0587](CR0587-the-goal-review-asks-whether-a-sprint-goal.md) | the goal review asks whether a Sprint Goal is achievable, not whether it states value, so a shopping list passes | Proposed | High | Improvement | 2026-09-16 | -- |
 | [CR-0588](CR0588-run-state-readers-cannot-tell-a-field-that.md) | run_state readers cannot tell a field that is empty from a field the schema never had, so a typo reads as a state | Proposed | Medium | Improvement | 2026-09-17 | -- |
+| [CR-0589](CR0589-prepare-rehearses-the-seal-and-refuses-to-file.md) | PREPARE rehearses the seal, and refuses to file a report that cannot survive being signed | Proposed | High | Improvement | 2026-09-20 | -- |
 
 ## Archived Releases
 

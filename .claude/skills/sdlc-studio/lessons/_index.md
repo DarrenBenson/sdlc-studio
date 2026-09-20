@@ -67,6 +67,7 @@ and from per-project memory (project-specific facts).
 | [LL0052](LL0052-a-repair-is-right-on-the-path-it-was-written-for-and-wrong-on-the-path-beside-it.md) | A repair is right on the path it was written for and wrong on the path beside it | testing, mutation, review, repair |
 | [LL0053](LL0053-a-registered-mutant-is-a-claim-clear-the-ledger-and-apply-them-before-believing-the-count.md) | A registered mutant is a claim; clear the ledger and apply them before believing the count | mutation, evidence, false-green, self-report, bug-class |
 | [LL0054](LL0054-a-test-and-its-mutant-authored-together-share-one-mental-model-so-they-agree-with-each-other-and-not-with-the-code.md) | A test and its mutant authored together share one mental model, so they agree with each other and not with the code | testing, mutation, false-green, evidence, bug-class |
+| [LL0055](LL0055-rehearse-the-seal-before-asking-anyone-to-sign-and-file-and-defer-whatever-it-surfaces.md) | Rehearse the seal before asking anyone to sign, and file-and-defer whatever it surfaces | sprint, close, signoff, report, gating, verification |
 
 ## Notes
 
