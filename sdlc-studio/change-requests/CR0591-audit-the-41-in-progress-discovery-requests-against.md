@@ -24,6 +24,14 @@ Anyone planning a run, and every figure derived from the discovery backlog. Toda
 
 The cost is a run's worth of reading with no feature at the end of it, which is exactly why it keeps not happening. The risk to manage is the opposite of the obvious one: a sweep measured by how many items it closes will close things that should have stayed open, so the outcome to hold it to is that every one of the 41 carries a dated ruling afterwards - including the ones ruled still-wanted.
 
+## How this is run, and what else it takes
+
+**D0222:** executed as PARALLEL agents over file-disjoint groups, not as one serial pass. Reading an artefact against HEAD and ruling it is independent work, so it parallelises almost perfectly, and the precedent is this project's own audit-backlog sprint. The orchestrating session keeps the rulings and the close: the agents produce EVIDENCE, not verdicts of record. RUN-01M2SPNS priced at 116,439 tokens per point, and this run buys rulings rather than code, so a serial pass would be the most expensive way to the least shippable output.
+
+**Scope also takes five delivery-side items** that are the same judgement: US0677, US0684, US0817 and US0840 sit at the 8-point ceiling where estimation reliability falls off, and US0793/US0794 share four files and 50% of their wording. Settling them here leaves the delivery backlog honest when the build run plans from it.
+
+**Not in scope:** any code change. D0221 defines this run as ruling-only, and that line is what lets one reviewer judge the whole of it - BG0719 was deliberately kept out and sent to the build run (D0223) for exactly that reason.
+
 ## Acceptance Criteria
 
 - [ ] Every one of the 41 In-Progress discovery requests carries a dated ruling afterwards, naming which of the four outcomes it took and why. A request left In Progress is a RULING that it is still wanted and correctly started, not the absence of a decision - the sweep is judged on having ruled all 41, never on how many it closed.

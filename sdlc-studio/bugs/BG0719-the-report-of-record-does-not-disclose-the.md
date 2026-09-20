@@ -31,3 +31,4 @@ Derive a waivers row set from `sdlc-studio/decisions.md` scoped to the run - the
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-19 | sdlc-studio | Filed |
+| 2026-09-20 | operator ruling | D0223: delivered in the BUILD run alongside D0218's close-and-ruling-ergonomics theme, not in the sweep. It shares a surface and a reviewer with CR0571 (a carried ruling is not checked against who may rule) and CR0576 (the release cut does not list rulings carried since the last tag); the three are one claim about what a close discloses and to whom. Stays open and disclosed meanwhile. |
