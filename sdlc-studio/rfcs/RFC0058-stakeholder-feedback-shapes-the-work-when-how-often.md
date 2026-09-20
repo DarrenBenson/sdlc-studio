@@ -107,6 +107,10 @@ Record every consult as an artefact under `sdlc-studio/reviews/` naming the unit
 - `sdlc-studio/reviews/plan-review-verdicts.md`: the seat rounds the same stories went through.
 - CR0571 to CR0577: what that single consult produced.
 
+## Status note
+
+**D0221 (2026-09-20):** this RFC is one of the 41 In-Progress discovery requests the next run's audit reads against HEAD, and it takes that audit's dated ruling like every other item rather than a separate decision now. It has sat In Review since 2026-09-15 with six children, all still open, and the operator declined to pre-judge it: the call is deferred by exactly one run, with a method behind it. CR0577 - stakeholder consultation is advisory with no gate - belongs to the same track and is in the awaiting-refine queue.
+
 ## Revision History
 
 | Date | Author | Change |
