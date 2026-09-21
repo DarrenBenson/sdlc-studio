@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 53 |
 | Approved | 0 |
-| In Progress | 9 |
-| Complete | 501 |
+| In Progress | 7 |
+| Complete | 503 |
 | Rejected | 5 |
 | Deferred | 0 |
 | Superseded | 24 |
@@ -58,7 +58,7 @@
 | [CR-0554](CR0554-a-plan-row-whose-recorded-kill-node-is.md) | A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts | Proposed | High | Improvement | 2026-08-24 | EP0241 |
 | [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | In Progress | High | Improvement | 2026-08-24 | EP0218 |
 | [CR-0556](CR0556-a-bug-reaches-a-terminal-status-with-no.md) | A bug reaches a terminal status with no independent judgement of its plan OR its code - the only gate is evidence it reports about itself | In Progress | High | Improvement | 2026-08-25 | EP0242 |
-| [CR-0557](CR0557-bg0463-s-twenty-batch-boundary-findings-need-re.md) | BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered | In Progress | Medium | Improvement | 2026-08-25 | EP0257 |
+| [CR-0557](CR0557-bg0463-s-twenty-batch-boundary-findings-need-re.md) | BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered | Complete | Medium | Improvement | 2026-08-25 | EP0257 |
 | [CR-0558](CR0558-the-derived-depth-lane-checks-each-span-against.md) | the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes | Proposed | High | enhancement | 2026-08-25 | EP0243 |
 | [CR-0559](CR0559-the-same-concept-is-named-three-ways-across.md) | the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal | Proposed | Medium | enhancement | 2026-08-26 | EP0244 |
 | [CR-0560](CR0560-filing-a-finding-leaves-the-disclosure-page-stale.md) | filing a finding leaves the disclosure page stale, so the tree is red until somebody separately remembers to regenerate it | Proposed | Medium | enhancement | 2026-08-26 | EP0245 |
@@ -88,7 +88,7 @@
 | [CR-0588](CR0588-run-state-readers-cannot-tell-a-field-that.md) | run_state readers cannot tell a field that is empty from a field the schema never had, so a typo reads as a state | Proposed | Medium | Improvement | 2026-09-17 | -- |
 | [CR-0589](CR0589-prepare-rehearses-the-seal-and-refuses-to-file.md) | PREPARE rehearses the seal, and refuses to file a report that cannot survive being signed | Proposed | High | Improvement | 2026-09-20 | -- |
 | [CR-0590](CR0590-the-report-absorbs-the-handoff-so-a-run.md) | the report absorbs the handoff, so a run ends with one page instead of two that must agree | Proposed | Medium | Improvement | 2026-09-20 | -- |
-| [CR-0591](CR0591-audit-the-41-in-progress-discovery-requests-against.md) | audit the 41 In-Progress discovery requests against HEAD and close what is dead | In Progress | High | Improvement | 2026-09-20 | EP0257 |
+| [CR-0591](CR0591-audit-the-41-in-progress-discovery-requests-against.md) | audit the 41 In-Progress discovery requests against HEAD and close what is dead | Complete | High | Improvement | 2026-09-20 | EP0257 |
 | [CR-0592](CR0592-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-09-21 | -- |
 
 ## Archived Releases

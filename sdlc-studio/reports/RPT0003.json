@@ -5,7 +5,12 @@
   "retro_id": "RETRO0119",
   "generated_at": "2026-09-21T10:41:35Z",
   "window_end": "2026-09-21T10:41:35Z",
-  "signature": null,
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-09-21T11:57:43Z",
+    "report": "RPT0003",
+    "fingerprint": "488315550969d744"
+  },
   "sections": [
     {
       "key": "identity",

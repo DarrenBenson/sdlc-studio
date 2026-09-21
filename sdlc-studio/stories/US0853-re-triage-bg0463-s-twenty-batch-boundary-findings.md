@@ -1,6 +1,6 @@
 # US0853: re-triage BG0463's twenty batch-boundary findings against HEAD and file the survivors
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0557
 > **Created:** 2026-09-20
 > **Created-by:** sdlc-studio new

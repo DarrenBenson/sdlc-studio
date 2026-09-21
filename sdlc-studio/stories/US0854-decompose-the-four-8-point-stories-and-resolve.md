@@ -1,6 +1,6 @@
 # US0854: decompose the four 8-point stories and resolve the US0793/US0794 duplicate, so the delivery backlog is honest before the build run plans from it
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-09-20
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

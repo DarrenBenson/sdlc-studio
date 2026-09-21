@@ -8,14 +8,7 @@
 
 ## Where to pick up
 
-7 of 8 unit(s) remain (0 suit copilot-assisted completion, 7 need human judgement). Plan them straight back in:
-
-```bash
-python3 "$CLAUDE_SKILL_DIR/scripts/sprint.py" plan \
-  --worklist sdlc-studio/.local/handoff-worklist.txt --order wsjf
-```
-
-Each item below names the pointer to start from: the failing AC, the check it stalled at, the blocker that stopped it, or the file it was to touch.
+Every unit in the batch is terminal. There is no tail: close the run and plan the next batch normally.
 
 ## Unanswered stop-ship questions
 
@@ -24,72 +17,26 @@ None: every batch unit is delivered, abandoned, ruled, dropped, parked or awaiti
 ## Appetite
 
 - **Declared:** wall-clock 5760 min, units 64 unit(s)
-- **Spent:** 876.3 min, 1 unit(s) terminal
-- **Delivered:** 1 unit(s)
+- **Spent:** 953.6 min, 8 unit(s) terminal
+- **Delivered:** 8 unit(s)
 - **Token forecast:** ~4,208,715 tokens - a plan-time estimate, never a gate (the total is transcript-measured but a LOWER BOUND - delegated spend is supplied, not observed)
 
-## Delivered (1)
+## Delivered (8)
 
 | Unit | Type | Status | Evidence |
 | --- | --- | --- | --- |
 | [BG0718](../../sdlc-studio/bugs/BG0718-the-seal-widens-the-dora-window-it-is.md) | bug | Fixed | 6/6 AC(s) verified |
+| [US0848](../../sdlc-studio/stories/US0848-the-guard-a-discovery-request-in-progress-with.md) | story | Done | 4/4 AC(s) verified |
+| [US0849](../../sdlc-studio/stories/US0849-rule-the-close-and-ceremony-cluster-against-head.md) | story | Done | 2/2 AC(s) verified |
+| [US0850](../../sdlc-studio/stories/US0850-rule-the-review-and-critic-cluster-against-head.md) | story | Done | 2/2 AC(s) verified |
+| [US0851](../../sdlc-studio/stories/US0851-rule-the-evidence-and-mutation-cluster-against-head.md) | story | Done | 2/2 AC(s) verified |
+| [US0852](../../sdlc-studio/stories/US0852-rule-the-config-docs-and-remaining-requests-against.md) | story | Done | 2/2 AC(s) verified |
+| [US0853](../../sdlc-studio/stories/US0853-re-triage-bg0463-s-twenty-batch-boundary-findings.md) | story | Done | 2/2 AC(s) verified |
+| [US0854](../../sdlc-studio/stories/US0854-decompose-the-four-8-point-stories-and-resolve.md) | story | Done | 2/2 AC(s) verified |
 
-## Remaining (7)
+## Remaining (0)
 
-### US0848 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/backlog_triage.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py` - declared Affects
-- **file:** `sdlc-studio/stories/US0848-the-guard-a-discovery-request-in-progress-with.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:low, issue:already-satisfied
-
-### US0849 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `sdlc-studio/change-requests` - declared Affects
-- **file:** `sdlc-studio/rfcs` - declared Affects
-- **file:** `sdlc-studio/stories/US0849-rule-the-close-and-ceremony-cluster-against-head.md` - the unit itself
-- **Suitability:** judgement (confidence low) - seeded by difficulty:low, issue:already-satisfied
-
-### US0850 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `sdlc-studio/change-requests` - declared Affects
-- **file:** `sdlc-studio/rfcs` - declared Affects
-- **file:** `sdlc-studio/stories/US0850-rule-the-review-and-critic-cluster-against-head.md` - the unit itself
-- **Suitability:** judgement (confidence low) - seeded by difficulty:low, issue:already-satisfied
-
-### US0851 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `sdlc-studio/change-requests` - declared Affects
-- **file:** `sdlc-studio/rfcs` - declared Affects
-- **file:** `sdlc-studio/stories/US0851-rule-the-evidence-and-mutation-cluster-against-head.md` - the unit itself
-- **Suitability:** judgement (confidence low) - seeded by difficulty:low, issue:already-satisfied
-
-### US0852 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `sdlc-studio/change-requests` - declared Affects
-- **file:** `sdlc-studio/rfcs` - declared Affects
-- **file:** `sdlc-studio/stories/US0852-rule-the-config-docs-and-remaining-requests-against.md` - the unit itself
-- **Suitability:** judgement (confidence low) - seeded by difficulty:low, issue:already-satisfied
-
-### US0853 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `sdlc-studio/bugs` - declared Affects
-- **file:** `sdlc-studio/change-requests` - declared Affects
-- **file:** `sdlc-studio/stories/US0853-re-triage-bg0463-s-twenty-batch-boundary-findings.md` - the unit itself
-- **Suitability:** judgement (confidence low) - seeded by difficulty:low, issue:already-satisfied
-
-### US0854 (story, Review) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `sdlc-studio/stories` - declared Affects
-- **file:** `sdlc-studio/stories/US0854-decompose-the-four-8-point-stories-and-resolve.md` - the unit itself
-- **Suitability:** judgement (confidence low) - seeded by difficulty:low, issue:already-satisfied
+_Nothing remains: every unit in the batch reached a terminal status._
 
 ## Open decisions
 

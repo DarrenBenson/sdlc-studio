@@ -1,6 +1,6 @@
 # CR-0591: audit the 41 In-Progress discovery requests against HEAD and close what is dead
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0257
 > **Priority:** High
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # US0852: rule the config, docs and remaining requests against HEAD
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0591
 > **Created:** 2026-09-20
 > **Created-by:** sdlc-studio new

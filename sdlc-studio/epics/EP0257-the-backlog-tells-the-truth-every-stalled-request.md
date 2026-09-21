@@ -1,6 +1,6 @@
 # EP0257: the backlog tells the truth: every stalled request carries a dated ruling, and the state cannot rebuild
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0557
 > **Derived Point Total:** 31
 > **Parent:** CR0591
@@ -15,13 +15,13 @@ Decomposed from CR0591. Delivers the work CR0591 requested.
 
 ## Story Breakdown
 
-- [ ] [US0848: the guard: a discovery request In Progress with no unresolved child and no dated ruling is reported](../stories/US0848-the-guard-a-discovery-request-in-progress-with.md)
-- [ ] [US0849: rule the close-and-ceremony cluster against HEAD](../stories/US0849-rule-the-close-and-ceremony-cluster-against-head.md)
-- [ ] [US0850: rule the review-and-critic cluster against HEAD](../stories/US0850-rule-the-review-and-critic-cluster-against-head.md)
-- [ ] [US0851: rule the evidence-and-mutation cluster against HEAD](../stories/US0851-rule-the-evidence-and-mutation-cluster-against-head.md)
-- [ ] [US0852: rule the config, docs and remaining requests against HEAD](../stories/US0852-rule-the-config-docs-and-remaining-requests-against.md)
-- [ ] [US0853: re-triage BG0463's twenty batch-boundary findings against HEAD and file the survivors](../stories/US0853-re-triage-bg0463-s-twenty-batch-boundary-findings.md)
-- [ ] [US0854: decompose the four 8-point stories and resolve the US0793/US0794 duplicate, so the delivery backlog is honest before the build run plans from it](../stories/US0854-decompose-the-four-8-point-stories-and-resolve.md)
+- [x] [US0848: the guard: a discovery request In Progress with no unresolved child and no dated ruling is reported](../stories/US0848-the-guard-a-discovery-request-in-progress-with.md)
+- [x] [US0849: rule the close-and-ceremony cluster against HEAD](../stories/US0849-rule-the-close-and-ceremony-cluster-against-head.md)
+- [x] [US0850: rule the review-and-critic cluster against HEAD](../stories/US0850-rule-the-review-and-critic-cluster-against-head.md)
+- [x] [US0851: rule the evidence-and-mutation cluster against HEAD](../stories/US0851-rule-the-evidence-and-mutation-cluster-against-head.md)
+- [x] [US0852: rule the config, docs and remaining requests against HEAD](../stories/US0852-rule-the-config-docs-and-remaining-requests-against.md)
+- [x] [US0853: re-triage BG0463's twenty batch-boundary findings against HEAD and file the survivors](../stories/US0853-re-triage-bg0463-s-twenty-batch-boundary-findings.md)
+- [x] [US0854: decompose the four 8-point stories and resolve the US0793/US0794 duplicate, so the delivery backlog is honest before the build run plans from it](../stories/US0854-decompose-the-four-8-point-stories-and-resolve.md)
 
 ## Acceptance Criteria (Epic Level)
 

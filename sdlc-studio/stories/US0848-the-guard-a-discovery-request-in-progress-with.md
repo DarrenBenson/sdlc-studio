@@ -1,6 +1,6 @@
 # US0848: the guard: a discovery request In Progress with no unresolved child and no dated ruling is reported
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0591
 > **Created:** 2026-09-20
 > **Created-by:** sdlc-studio new
