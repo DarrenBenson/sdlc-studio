@@ -1,45 +1,56 @@
-
 <!-- close-status:begin -->
-> **RUN-01M2SPNS closed running.** 9 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
-> Stamped by `sprint close` - edit the prose below, not this block.
+> **RUN-01M306PY is OPEN.** 8 unit(s) in the batch, 7 delivered and verified, 1 carried.
+> Sign-off is the operator's.
 <!-- close-status:end -->
-> **RUN-01M2SPNS is OPEN and a report is filed.** 9 unit(s) delivered, none terminal - under
-> D0213 no unit is terminal until the SEAL, so each has cleared its terminal gate rather than
-> reached Done. PREPARE completed once the coverage lane stood down under D0214, and RPT0001 is
-> the page to be signed. What remains is the operator's single act:
-> `sprint sign --report RPT0001 --principal "Darren Benson"`. The run's state is the run record,
-> not this file.
+> **The sweep run: the backlog tells the truth.** 38 In-Progress discovery requests and 24 claims
+> from a July aggregate, each read against HEAD and each carrying a dated `audit ruling`. Two
+> requests that had been FINISHED since August are finally closed; 26 return to Proposed as
+> never-started; 3 are retired as overtaken or self-retracted.
 >
-> Closing review of record: RETRO0118 (`sdlc-studio/retros/RETRO0118-run-01m2spns-the-close-splits-and-the-run.md`).
-> **Run of record:** RUN-01M2SPNS - a run ends with one page it can be judged on, and one act
-> that signs it. Nine units: the close split into PREPARE and SEAL, the three holds a report is
-> refused over, and the six units that compose the page itself.
+> Closing review of record: RETRO0119.
 
-## THE HEADLINE: THE SIGNATURE IS NOW THE LAST THING THAT HAPPENS
+## THE HEADLINE: `IN PROGRESS` MEANT `DECOMPOSED ONCE`
 
-RUN-01M2JA6J paid for this batch. Its operator's approval was applied and then roughly two hours
-of CI, reviews, repairs, cascades and paperwork followed it, because `--apply-signoff` ran the
-fan-out AND the close tail. `sprint close` is now PREPARE: every step that can change a fact -
-the ten-step chain, the handoff, the velocity row, the reconcile - then it files the report and
-leaves the run OPEN. `sprint sign --report RPTxxxx --principal "<name>"` is SEAL: the per-unit
-rows, the terminal transitions, the cascades they imply, the run's signature and its outcome,
-and then it stops. `--apply-signoff` exits 2 and names `sign` rather than surviving as an alias
-that would keep the old path alive in every operator's fingers, help file and runbook row.
+The count said 67 live discovery options. Read against HEAD, most were not. In one cluster of
+eleven requests, **not a single commit naming any of them is a `feat` or a `fix`** - every one is
+refine, decompose or filing paperwork. Six others in another cluster were decomposed on one day in
+August and never touched again. A planner reading `Discovery=67` was reading a batch-refine event
+as work in flight, and choosing what to build from a number that could not tell the two apart.
 
-A signature nothing refuses to write over only ORDERS the work, so the seal is a transaction:
-the principal is judged across the WHOLE batch before anything is written, a sealed run refuses
-the transitions that would move the facts its page states, and a re-open is explicit, names the
-report it breaks and KEEPS the signature it breaks.
+The best outcome of the audit was not a closure count. **CR0547 and CR0548 were already
+delivered** - every criterion maps to a Done story, and they had been finished since August, held
+open solely because they share an epic whose Draft status blocked the derivation. The request was
+done; the link was not. Nothing but reading them against HEAD would have found it.
 
-## WHAT THE PAGE IS
+## WHAT THIS RUN FOUND OUT ABOUT ITSELF
 
-One report of record per run, derived and never hand-authored. It opens with the sprint goal
-verbatim before any figure. Every figure carries a source that must resolve to somewhere a
-reader can actually go, and a section with no data reads NOT MEASURED by name rather than as a
-zero. The cost row states what the token meter covers and names the sessions it does not, and
-it now carries the delegated agent spend separately - supplied by each agent, never measured
-here. The four DORA keys each state their mapping. And the page reads INVALIDATED once its
-figures no longer re-derive from the tree.
+**The guard it built does not guard the state it cleared.** US0848 reports a request that is In
+Progress, finished by its children and never judged. Run against the real backlog on the day it
+shipped: **zero**, because all 37 stalled requests have an unresolved child. It catches a request
+nobody closed; what accumulated here was a request everybody abandoned. The goal says the state
+cannot rebuild, and after this sweep it still can. Filed as BG0722 at High rather than claimed.
+
+**Three gates caught defects in this run's own work, and none was repaired to let the run pass.**
+A shell-hazard guard found the residue of a mangled edit inside a bug's prose. The verify-ratchet
+found four cluster stories sharing one verifier, so a regression in any would fail all four and
+none would say which. The derived-only corpus ceiling went red because the run filed twelve
+findings - a false positive of an absolute ceiling, filed as BG0732 and cleared by giving the
+findings real criteria, which the run's own criterion demanded anyway.
+
+**Four of the run's own verifiers were narrower than the criteria they served**, every one caught
+by execution rather than by review: two matched `f['kind']` where the tool emits `lens`, one
+demanded a duplicate disappear when its criterion also allowed ruling it distinct, and one counted
+five lines where twenty-four individual rulings were required.
+
+## BG0718: THREE REJECTIONS, THREE REAL DEFECTS
+
+Round 1 found a fixture claiming an open run that was not one, and a repair that relocated the
+defect rather than removing it. Round 2 found the same defect surviving in the legacy pages the
+fallback existed to protect. Round 3 verified all four rows as real and discriminating, then
+rejected for what no row covered: nothing pinned the window bound OUTSIDE the digest - recording
+it as a figure passes all 208 tests in the module and invalidates every page ever filed - and
+nothing pinned that the bound reaches the FILED page rather than the derived dict. Six criteria,
+six mutants killed, and it stays OPEN: the operator ruled it is not closed on its author's say-so.
 
 ## WHAT WAS FOUND AFTER THE FIRST FILING, BY READING THE PAGE
 

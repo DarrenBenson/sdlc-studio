@@ -128,3 +128,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0116](RETRO0116-run-01m20rwx-twenty-two-mediums-sixty-three-seat.md) | RUN-01M20RWX: twenty-two Mediums, sixty-three seat verdicts, and the gate that caught its own repair | 2026-09-10 | -- | -- |
 | [RETRO-0117](RETRO0117-run-01m2ja6j-a-sprint-that-ends-with-nothing.md) | RUN-01M2JA6J: a sprint that ends with nothing unanswered - 23 units, the stop-ship rule, and the coverage gate's attribution | 2026-09-15 | -- | -- |
 | [RETRO-0118](RETRO0118-run-01m2spns-the-close-splits-and-the-run.md) | RUN-01M2SPNS: the close splits, and the run ends with one page and one act | 2026-09-18 | -- | -- |
+| [RETRO-0119](RETRO0119-the-backlog-tells-the-truth-what-38-requests.md) | the backlog tells the truth: what 38 requests and 24 claims said when somebody finally asked them | 2026-09-21 | -- | -- |
