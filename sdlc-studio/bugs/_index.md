@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 53 |
+| Open | 55 |
 | In Progress | 0 |
 | Fixed | 577 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 6 |
-| **Total** | **733** |
+| **Total** | **735** |
 
 ## All Bugs
 
@@ -92,6 +92,8 @@
 | [BG0731](BG0731-filing-a-low-severity-finding-recreates-the-consolidation.md) | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0732](BG0732-the-derived-only-corpus-ceiling-is-an-absolute.md) | the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0733](BG0733-a-verified-line-reading-partial-or-no-is.md) | a Verified line reading PARTIAL or no is treated exactly like yes, so an honest self-report of a miss is laundered into a green | Open | High | 2026-09-21 | 2026-09-21 |
+| [BG0734](BG0734-the-blockquote-skip-in-check-versions-is-unreachable.md) | the blockquote skip in check_versions is unreachable, so it guards nothing | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0735](BG0735-the-checklist-s-authority-field-is-carried-on.md) | the checklist's authority field is carried on 22 rows and read by no renderer | Open | Medium | 2026-09-21 | 2026-09-21 |
 
 ## Archived Releases
 

@@ -63,6 +63,7 @@ ruling HOLDS the close, which is the point of being able to make one.
 | --- | --- | --- | --- |
 | BG0718 | not-stop-ship | operator, D0226 and the standing ruling on its escalation | 2026-09-21 |
 | BG0722 | not-stop-ship | the run that raised it - the gap is recorded, not claimed as met | 2026-09-21 |
+| US0853 | not-stop-ship | the run itself, recorded rather than waived - see the criterion and BG0731 | 2026-09-21 |
 | BG0732 | not-stop-ship | the wall was recorded, not moved; the census cleared by authoring criteria | 2026-09-21 |
 
 ## Estimate vs actual
@@ -186,4 +187,4 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Handoff
 
-- [HO-0076](../handoffs/HO0076-the-backlog-tells-the-truth-every-stalled-request.md) - 7 remaining item(s): 1 copilot-tail, 6 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
+- [HO-0078](../handoffs/HO0078-the-backlog-tells-the-truth-every-stalled-request.md) - 7 remaining item(s): 1 copilot-tail, 6 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

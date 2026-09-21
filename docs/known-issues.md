@@ -78,8 +78,10 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0729` | Medium | the batch-level reviewer contribution to the lens count is asserted by no test |
 | `BG0731` | Medium | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request |
 | `BG0732` | Medium | the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching |
+| `BG0734` | Medium | the blockquote skip in check_versions is unreachable, so it guards nothing |
+| `BG0735` | Medium | the checklist's authority field is carried on 22 rows and read by no renderer |
 
-48 findings: 48 Medium, 0 Low.
+50 findings: 50 Medium, 0 Low.
 
 ## Not carried
 

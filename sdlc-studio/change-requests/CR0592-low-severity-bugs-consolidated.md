@@ -20,11 +20,9 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 
 ## Consolidated Findings
 
-- **the blockquote skip in check_versions is unreachable, so it guards nothing**: BG0463 claim 8, confirmed by execution. `_is_superseded` continues on a line beginning with `>`, but the regex that skip protects never matches a `>`-prefixed line in the first place - all three blockquoted Status forms return False when executed directly. The skip changes no outcome for any input, so it is either dead code or the regex is wrong; the two readings have opposite fixes, which is why this is worth resolving rather than deleting on sight.
-- **the checklist's authority field is carried on 22 rows and read by no renderer**: BG0463 claim 15, still true. All 22 CHECKLIST rows carry an `authority` field and the only read anywhere in the tree is an assertion in test_sprint_report.py. A field that only its own test reads is indistinguishable from a field nobody needs, and it costs every future editor a decision about what to put in it.
-
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Consolidation opened |
+| 2026-09-21 | US0853 AC2 | The two BG0463 survivors this bucket had absorbed are minted as their own artefacts, BG0734 and BG0735, and removed from here. US0853's AC2 says nothing carries forward as a bullet inside another artefact, and delivery review was right that a bucket is exactly that. This page keeps whatever else it consolidates. |
