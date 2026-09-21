@@ -181,6 +181,27 @@ class UnruledRequestTests(TriageBase):
         self.assertEqual(["CR0003"], flagged,
                          f"the lane did not isolate the finished-but-unruled request: {flagged}")
 
+    def test_the_unruled_finding_renders_with_its_lens_name_and_remedy(self) -> None:
+        """The finding has to survive RENDERING, not just exist in the report dict.
+
+        `render` sorts by a lens-order map, and a lens missing from that map falls to the default
+        bucket - which reads as a lane nobody thought about, beneath the ones that were. The
+        rendered line is also the only form most readers ever see, so a remedy present in the
+        dict and absent from the page has not been delivered.
+
+        MUTANT: drop `unruled` from `render`'s order map. The finding still exists and every
+        other assertion in this class still passes, while the line a reader actually meets moves
+        to the bottom of the list under a default nobody chose.
+        """
+        self._units(("US0001", "Done"),)
+        self._req("CR0001", status="In Progress", children=["US0001"])
+        text = backlog_triage.render(backlog_triage.triage(self.root, today="2026-09-21"))
+        self.assertIn("unruled", text, "the lens name is absent from the rendered page")
+        self.assertIn("CR0001", text)
+        self.assertIn("audit ruling", text,
+                      f"the rendered line does not name what clears it: {text}")
+        self.assertIn("[note ]", text, "an advisory finding rendered as a blocking one")
+
     def test_a_childless_request_is_not_reported_as_unruled(self) -> None:
         """A childless request is the separate `undecomposed` case `status` already counts as
         awaiting refine. Reporting it here too makes one problem look like two.

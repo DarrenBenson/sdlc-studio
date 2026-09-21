@@ -1,6 +1,6 @@
 <!-- close-status:begin -->
-> **RUN-01M306PY is OPEN.** 8 unit(s) in the batch, all delivered, reviewed and verified.
-> Sign-off is the operator's.
+> **RUN-01M306PY closed running.** 8 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **The sweep run: the backlog tells the truth.** 38 In-Progress discovery requests and 24 claims
 > from a July aggregate, each read against HEAD and each carrying a dated `audit ruling`. Two

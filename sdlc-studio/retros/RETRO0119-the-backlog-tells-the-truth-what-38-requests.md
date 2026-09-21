@@ -109,9 +109,13 @@ sprints fits noise.
 
 **0 of 8 unit(s) measured; 8 of 8 forecast at plan time.**
 
+**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
+
 Review passes, by phase - read from the two verdict ledgers:
 
-  test-plan review: 3 pass(es) over 1 unit(s), 3 rejected
+  test-plan review: 14 pass(es) over 8 unit(s), 7 rejected
 
   code review: NOT IN FORCE for this run - no verdict of that phase covers any of its units, which is not the same as a run that held them and spent nothing
 Unmeasured: BG0718, US0848, US0849, US0850, US0851, US0852, US0853, US0854. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
@@ -179,3 +183,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
   run filed as BG0720 (a figure scraped from retro prose rather than taken from the record).
 - Critic rejects this run: 1 unit rejected, 3 times, all on BG0718's test plan - and every one
   found a real defect the previous round had missed.
+
+## Handoff
+
+- [HO-0076](../handoffs/HO0076-the-backlog-tells-the-truth-every-stalled-request.md) - 7 remaining item(s): 1 copilot-tail, 6 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
