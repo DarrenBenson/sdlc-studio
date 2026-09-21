@@ -1,6 +1,6 @@
 # US0854: decompose the four 8-point stories and resolve the US0793/US0794 duplicate, so the delivery backlog is honest before the build run plans from it
 
-> **Status:** Ready
+> **Status:** Review
 > **Created:** 2026-09-20
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -34,6 +34,13 @@
 - **Mutant:** in `.claude/skills/sdlc-studio/scripts/backlog_triage.py`, widen the duplicate similarity threshold until the pair stops matching - the detector then reports nothing and the two units stay in the backlog, which is the count falling by not looking rather than by deciding
 - **Verify:** shell python3 -c "import json,subprocess,pathlib,re,sys; d=json.loads(subprocess.run(['python3','.claude/skills/sdlc-studio/scripts/backlog_triage.py','check','--format','json'],capture_output=True,text=True).stdout); flagged=[f for f in d['findings'] if f['lens']=='duplicate' and set(f['units'])=={'US0793','US0794'}]; ruled=all(any(re.search(r'\\| 2026-\\d\\d-\\d\\d \\| audit ruling \\|.*GENUINELY DISTINCT', q.read_text(encoding='utf-8')) for q in pathlib.Path('sdlc-studio/stories').glob(u+'-*.md')) for u in ('US0793','US0794')); print('unresolved: flagged and not ruled distinct') if (flagged and not ruled) else None; sys.exit(1 if (flagged and not ruled) else 0)"
 - **Verified:** yes (2026-09-21)
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `.claude/skills/sdlc-studio/scripts/backlog_triage.py`, raise the oversized ceiling instead of decomposing - the warning disappears, every unit still costs what it cost, and the estimate that was unreliable is now unreliable and unflagged | the four 8-point stories are decomposed, and none of the parts is at the ceiling |
+| AC2 | in `.claude/skills/sdlc-studio/scripts/backlog_triage.py`, widen the duplicate similarity threshold until the pair stops matching - the detector then reports nothing and the two units stay in the backlog, which is the count falling by not looking rather than by deciding | US0793 and US0794 are ruled the same change or genuinely distinct, with the ruling recorded |
 
 ## Revision History
 

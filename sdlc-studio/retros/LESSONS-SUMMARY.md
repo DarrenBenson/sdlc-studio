@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0421: A guard built to stop a state rebuilding must be run against the state that actually accumulated, the same day, before the run claims its...**
+- **L-0420: A backlog count is a claim about state, and `In Progress` is the weakest link in it: in one cluster of eleven, not a single commit naming...**
 - **L-0419: Splitting one command into two halves is a claim about what each half WRITES.**
 - **L-0418: A content-keyed evidence ledger has an ordering rule, not a preference: register a unit's mutants AFTER the last edit to their target.**
 - **L-0417: A test that searches a whole page passes on somebody else's output.**

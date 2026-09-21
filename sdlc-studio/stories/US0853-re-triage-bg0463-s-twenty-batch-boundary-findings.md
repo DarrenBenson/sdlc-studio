@@ -1,6 +1,6 @@
 # US0853: re-triage BG0463's twenty batch-boundary findings against HEAD and file the survivors
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0557
 > **Created:** 2026-09-20
 > **Created-by:** sdlc-studio new
@@ -42,6 +42,13 @@ project has a recorded case of five closed bugs that were never defects.
 - **Verify:** shell python3 -c "import pathlib,re,sys; buckets=[q for q in pathlib.Path('sdlc-studio').rglob('*.md') if re.search(r'(?m)^> \\*\\*Consolidation:\\*\\*', q.read_text(encoding='utf-8'))]; bad=[q.name for q in buckets if 'BG0463' in q.read_text(encoding='utf-8')]; print('survivors still carried as bullets inside:', bad) if bad else None; sys.exit(1 if bad else 0)"
 - **Verified:** no (2026-09-21)
 - **Verified:** PARTIAL (2026-09-21) - met for 13 of the 15 survivors, and NOT met for claims 8 and 15. Both are genuinely Low severity, and `triage_noise.should_consolidate` routes every Low finding into a themed consolidation CR by DESIGN - it is config policy (`low_consolidation`), not an accident - so they landed in CR0592 as bullets, which is the shape this criterion's own mutant names. Delivery review raised it and was right on the criterion's words. The criterion over-reached: it demanded a shape the shipped filer will not produce for Low findings, and satisfying it would have meant either inflating two severities or switching off a deliberate mechanism mid-run. Recorded as unmet rather than argued away; BG0731 already carries the underlying conflict between that mechanism and D0217.
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | rule the twenty as a block from the aggregate's age - "these are months old, close them" reaches the same count with none of them read, and the observations an independent pass found are discarded on a date rather than on a premise | each of the twenty is re-run against HEAD and ruled, and the ruling names what was observed |
+| AC2 | re-file the survivors as a second aggregate - the new artefact inherits the old one's defect exactly, cannot produce a test plan, cannot reach a terminal gate, and welds several files into one atomic block whose planning cost was already measured once | a finding ruled STILL TRUE is filed as its own unit with criteria, not left as a bullet |
 
 ## Revision History
 
