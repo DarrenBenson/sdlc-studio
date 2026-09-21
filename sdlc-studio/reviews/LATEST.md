@@ -1,11 +1,11 @@
 <!-- close-status:begin -->
-> **RUN-01M306PY is OPEN.** 8 unit(s) in the batch, 7 delivered and verified, 1 carried.
+> **RUN-01M306PY is OPEN.** 8 unit(s) in the batch, all delivered, reviewed and verified.
 > Sign-off is the operator's.
 <!-- close-status:end -->
 > **The sweep run: the backlog tells the truth.** 38 In-Progress discovery requests and 24 claims
 > from a July aggregate, each read against HEAD and each carrying a dated `audit ruling`. Two
-> requests that had been FINISHED since August are finally closed; 26 return to Proposed as
-> never-started; 3 are retired as overtaken or self-retracted.
+> requests FINISHED since August are closed; 26 return to Proposed as never-started; 3 retired.
+> BG0718 is Fixed after three plan-review rounds, every finding now dispositioned.
 >
 > Closing review of record: RETRO0119.
 
@@ -41,6 +41,31 @@ findings real criteria, which the run's own criterion demanded anyway.
 by execution rather than by review: two matched `f['kind']` where the tool emits `lens`, one
 demanded a duplicate disappear when its criterion also allowed ruling it distinct, and one counted
 five lines where twenty-four individual rulings were required.
+
+## WHAT THE REVIEWS COST, AND WHAT THEY BOUGHT
+
+Eight independent review passes ran against this batch: three delivery, five plan-review. They
+returned four REJECTs, and **every one named a defect that was really there**.
+
+The sharpest was the cheapest to state. Four cluster stories' AC2 matched `already delivered`
+case-sensitively, while every ruling this run wrote says `ALREADY DELIVERED` - so it matched
+nothing, and exit 0 was guaranteed whatever the rulings said. A verifier that passes for a reason
+unrelated to its claim, recorded as evidence. That was the **fifth** verifier in this run to do
+it: two matched `f['kind']` where the tool emits `lens`, one demanded a duplicate disappear when
+its criterion also allowed ruling it distinct, one counted five lines where twenty-four rulings
+were required. Each was caught by execution, never by reading.
+
+A second finding was ruled **unfixable and recorded rather than repaired**: AC2's mutant is
+`accept a title match as evidence of delivery`, and a title-matched ruling cites a unit id
+exactly as a verified one does, so no textual check can separate them. Each story now states what
+its verifier proves and what execution established instead. The reviewer judged that split honest
+BECAUSE it is disclosed in the artefact rather than implied by a green tick.
+
+A third: US0853's AC2 was recorded PARTIAL, and the reviewer approved the disposition then warned
+in the same breath that it only means anything if the gate reads it. It does not - `Verified:` is
+prose, only the selector's exit code counts - so an honest self-report of a miss was being
+laundered into a green. Checked, confirmed, and filed as BG0733 at High. The criterion's verifier
+now tests its own claim and correctly fails.
 
 ## BG0718: THREE REJECTIONS, THREE REAL DEFECTS
 

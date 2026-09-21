@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 54 |
+| Open | 53 |
 | In Progress | 0 |
-| Fixed | 576 |
+| Fixed | 577 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
@@ -76,7 +76,7 @@
 | [BG0715](BG0715-the-close-attributes-every-finding-raised-outside-a.md) | the close attributes every finding raised outside a delivery batch to whichever run is open, because it dates them by the last word of a prose stamp | Open | High | 2026-09-18 | 2026-09-18 |
 | [BG0716](BG0716-prepare-mints-a-new-report-id-on-every.md) | PREPARE mints a new report id on every re-file, so a run that prepares twice has two reports of record | Open | Medium | 2026-09-18 | 2026-09-18 |
 | [BG0717](BG0717-the-close-s-handoff-link-leaves-a-trailing.md) | the close's handoff link leaves a trailing blank line in the retro, so every close fails this project's own markdownlint | Open | Medium | 2026-09-18 | 2026-09-18 |
-| [BG0718](BG0718-the-seal-widens-the-dora-window-it-is.md) | the seal widens the DORA window it is sealing, so a signed report reads INVALIDATED one second after the signature lands | Open | High | 2026-09-19 | 2026-09-19 |
+| [BG0718](BG0718-the-seal-widens-the-dora-window-it-is.md) | the seal widens the DORA window it is sealing, so a signed report reads INVALIDATED one second after the signature lands | Fixed | High | 2026-09-19 | 2026-09-19 |
 | [BG0719](BG0719-the-report-of-record-does-not-disclose-the.md) | the report of record does not disclose the waivers that permitted the seal, so an operator signs without being told which gate stood down | Open | High | 2026-09-19 | 2026-09-19 |
 | [BG0720](BG0720-the-report-s-filed-this-run-figure-names.md) | the report's Filed this run figure names the batch's delivered units as findings and omits a finding that was filed | Open | Medium | 2026-09-19 | 2026-09-19 |
 | [BG0721](BG0721-the-duplicate-lens-cannot-tell-one-change-filed.md) | the duplicate lens cannot tell one change filed twice from one method applied to several disjoint scopes | Open | Medium | 2026-09-21 | 2026-09-21 |

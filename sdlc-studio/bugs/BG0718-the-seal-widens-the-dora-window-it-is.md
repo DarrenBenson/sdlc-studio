@@ -1,6 +1,6 @@
 # BG0718: the seal widens the DORA window it is sealing, so a signed report reads INVALIDATED one second after the signature lands
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (both criteria drive `build_report` over a REAL git repository built with `gitutil`, not a mkdtemp - the first fixture attempt used a bare temp directory, where `_git_commits` returns nothing, every DORA figure falls back to the static CI fixture and the window cannot be observed to move at all; both mutants applied against the current bytes, both KILLED, file restored byte-exactly)
 > **Severity:** High
 > **Points:** 2
