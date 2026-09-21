@@ -72,7 +72,7 @@ bug corpus rather than maintained by hand.
 
 **v5.1.0 discloses 48 open defects: 48 Medium, 0 Low.**
 
-**Five High-severity findings are open against the tag: BG0715, BG0718, BG0719, BG0722 and BG0730.** It was raised on 2026-09-18,
+**Six High-severity findings are open against the tag: BG0715, BG0718, BG0719, BG0722, BG0730 and BG0733.** It was raised on 2026-09-18,
 after v5.1.0 shipped, by RUN-01M2SPNS running its own close. `_open_findings` dates a finding
 by the last word of its `Raised-in-batch` stamp, so a finding raised outside a delivery batch -
 the ordinary case for a backlog sweep or an audit - sorts as inside every run window and is

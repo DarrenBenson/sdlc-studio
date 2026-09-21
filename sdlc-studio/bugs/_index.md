@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 53 |
+| Open | 54 |
 | In Progress | 0 |
 | Fixed | 576 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 6 |
-| **Total** | **732** |
+| **Total** | **733** |
 
 ## All Bugs
 
@@ -91,6 +91,7 @@
 | [BG0730](BG0730-a-stop-ship-ruling-is-never-re-derived.md) | a stop-ship ruling is never re-derived against its finding's status, so a ruling on a Fixed finding blocks every close permanently | Open | High | 2026-09-21 | 2026-09-21 |
 | [BG0731](BG0731-filing-a-low-severity-finding-recreates-the-consolidation.md) | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0732](BG0732-the-derived-only-corpus-ceiling-is-an-absolute.md) | the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0733](BG0733-a-verified-line-reading-partial-or-no-is.md) | a Verified line reading PARTIAL or no is treated exactly like yes, so an honest self-report of a miss is laundered into a green | Open | High | 2026-09-21 | 2026-09-21 |
 
 ## Archived Releases
 
