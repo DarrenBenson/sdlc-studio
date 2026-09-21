@@ -1,6 +1,6 @@
 # CR-0535: a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0210
 > **Priority:** High
 > **Type:** Improvement
@@ -45,3 +45,4 @@ C, decomposed so B ships first and the lane follows. Start with the verbs whose 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-06 | Darren Benson | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, and the premise is WORSE than filed: still exactly two scripts answer a contract query, while the refusing-script count has risen from 39 to 42. No lint lane counts coverage. Its stories US0646-US0651 are Ready. Note the hard dependency: CR0536 cannot start before this ships, because it generates from the contract reporter this request would build. |

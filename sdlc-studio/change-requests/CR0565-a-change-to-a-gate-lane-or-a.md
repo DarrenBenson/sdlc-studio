@@ -29,3 +29,4 @@ A gate-lane change that refuses every push from the clone that ships it (BG0649 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-07 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, correctly in progress. No self-run requirement exists anywhere: nothing in `transition.py` reads a unit's `Affects` for gate-lane, `.githooks/` or `tools/skill-tests.sh` membership. The specific BG0649 defect that motivated it was repaired in gate.py; the general gate it motivated was not. Its single child US0817 is Ready - groomed, through three goal-review rounds, expanded 3 to 8 points, and explicitly deferred from RUN-01M1WPNV's batch, so its state is a recorded choice rather than neglect. It is also one of the four 8-pointers US0854 decomposes in this run. |

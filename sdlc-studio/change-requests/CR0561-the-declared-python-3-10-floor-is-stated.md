@@ -1,6 +1,6 @@
 # CR-0561: the declared Python 3.10 floor is stated in six shipped places and guarded nowhere, and one shipped script already violates it
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0246
 > **Priority:** High
 > **Type:** enhancement
@@ -40,3 +40,4 @@ Add a floor lane that parses every tracked `.py` at the declared version and ref
 | --- | --- | --- |
 | 2026-08-26 | sdlc-studio | Raised |
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: the premise is wider than filed. A second tracked file fails to parse under Python 3.10: tools/tests/test_test_noise.py:166 ('f-string expression part cannot include a backslash', last touched by BG0644) beside sprint_report.py. The floor lane lands red on its first run unless US0813's repair covers both. |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, and the premise is WIDER than filed. `tools/check_python_floor.py` does not exist and no lane parses at the declared floor. A sweep of all 385 tracked Python files under a real python3.10 fails on two - `sprint_report.py` (unterminated string literal) and `tools/tests/test_test_noise.py` (f-string backslash) - up from the one at filing. The declared 3.10 floor is therefore false in the shipped tree. All four EP0246 children are Draft. |

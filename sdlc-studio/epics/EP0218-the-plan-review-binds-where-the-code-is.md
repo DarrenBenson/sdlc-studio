@@ -1,7 +1,7 @@
 # EP0218: The plan review binds where the code is, so a unit takes one review round instead of two
 
 > **Status:** Draft
-> **Derived Point Total:** 24
+> **Derived Point Total:** 32
 > **Parent:** CR0555
 > **Created:** 2026-08-25
 > **Created-by:** sdlc-studio new

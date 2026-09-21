@@ -25,6 +25,7 @@
 - **Then** only the third is reported, named by id with the reason that it is In Progress, finished by its children, and unruled - the first is working normally and the second has been judged, and reporting either would train the reader to ignore the lane
 - **Mutant:** in `.claude/skills/sdlc-studio/scripts/backlog_triage.py`, report every In-Progress request whose children are all resolved, ruled or not - the lane then fires on requests that were correctly judged, becomes noise within one sweep, and gets switched off, which is the failure mode this project has already recorded for a guard whose cost is paid on every commit
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::UnruledRequestTests::test_an_in_progress_request_with_no_unresolved_child_and_no_ruling_is_reported
+- **Verified:** yes (2026-09-21)
 
 ### AC2: a request with no children at all is NOT reported by this lane
 
@@ -33,6 +34,7 @@
 - **Then** it is not reported here: a childless request is the separate `undecomposed` case that `status` already counts as awaiting refine, and reporting it twice under two names makes one problem look like two
 - **Mutant:** in `.claude/skills/sdlc-studio/scripts/backlog_triage.py`, treat zero children as `every child resolved` - a vacuously-true reading that reports every undecomposed request as unruled and doubles the lane's output on a backlog that already has 25 of them
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::UnruledRequestTests::test_a_childless_request_is_not_reported_as_unruled
+- **Verified:** yes (2026-09-21)
 
 ### AC3: the lane is advisory and names its remedy
 
@@ -41,6 +43,7 @@
 - **Then** it reports rather than blocks, and its detail names the request and the action that clears it, so a reader can act without reading this story
 - **Mutant:** in `.claude/skills/sdlc-studio/scripts/backlog_triage.py`, make the finding blocking - a backlog-hygiene lane that refuses a commit stops unrelated work for a state nobody created in that commit, which is the distinction between drift that predates a change and drift a change causes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::UnruledRequestTests::test_the_unruled_finding_is_advisory_and_names_its_remedy
+- **Verified:** yes (2026-09-21)
 
 ## Revision History
 

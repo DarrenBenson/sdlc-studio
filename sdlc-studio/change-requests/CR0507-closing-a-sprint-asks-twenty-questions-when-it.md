@@ -41,3 +41,4 @@ Check during refine whether this SUBSUMES CR0505 rather than sitting beside it. 
 | --- | --- | --- |
 | 2026-07-30 | Darren Benson (operator), from the RUN-01KYPZ1G close | Raised |
 | 2026-09-15 | sprint planning 2026-09-15 | Amended by D0193 (2026-09-15): AC1's two gates stand, and the question whether every batch unit is answered lives INSIDE the stop-ship gate rather than as a third. US0717 is to be read that way when it is groomed. |
+| 2026-09-21 | audit ruling | still wanted, correctly in progress, and the premise has got WORSE since it was raised. Its core criterion is not merely unmet: the close chain has grown from nine blocking steps to ten, because sibling CR0505 added the `checklist` step this request warned against by name. The decomposition has genuinely been maintained - AC3 retired via US0719, AC4 delivered by CR0506, AC5 partly delivered as `close_cost_line` - which is what puts it here rather than never-started. Residue is AC1 and AC2. |

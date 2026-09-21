@@ -1,6 +1,6 @@
 # CR-0552: revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0239
 > **Priority:** High
 > **Type:** Improvement
@@ -43,3 +43,4 @@ Two things to settle when it is built. The per-unit CLI and the lane must MEASUR
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. `revert_check` still reverts the LIVE working tree in place and restores from a byte snapshot in a `finally`; there is no worktree anywhere in the file. The scar is on the record: RETRO0108 documents an adversarial reviewer's manual revert destroying roughly 400 uncommitted lines of verify_ac.py (BG0604). All five EP0239 children are Draft. |

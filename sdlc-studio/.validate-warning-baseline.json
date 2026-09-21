@@ -1,5 +1,5 @@
 {
-  "stamped": "2026-08-07",
+  "stamped": "2026-09-21",
   "entries": [
     {
       "id": "BG0138",
@@ -2222,16 +2222,22 @@
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
     },
     {
-      "id": "US0590",
-      "rule": "affects-undeclared",
-      "target": "tools/tests/test_doctrine_tooling.py",
-      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
-    },
-    {
       "id": "US0602",
       "rule": "affects-undeclared",
       "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0840",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/consult.py",
+      "reason": "US0840 is SUPERSEDED by US0858 and US0859 (RUN-01M306PY, D0222 decomposition of an 8-point unit). Its Affects names consult.py and test_consult.py, which do not exist because the consult feature is unbuilt - the successors carry the same unresolvable Affects for the same reason, and will resolve it when they are built. The instances are new to the baseline only because superseding the parent changed how it is judged, not because anything regressed."
+    },
+    {
+      "id": "US0840",
+      "rule": "affects-unresolvable",
+      "target": ".claude/skills/sdlc-studio/scripts/tests/test_consult.py",
+      "reason": "US0840 is SUPERSEDED by US0858 and US0859 (RUN-01M306PY, D0222 decomposition of an 8-point unit). Its Affects names consult.py and test_consult.py, which do not exist because the consult feature is unbuilt - the successors carry the same unresolvable Affects for the same reason, and will resolve it when they are built. The instances are new to the baseline only because superseding the parent changed how it is judged, not because anything regressed."
     }
   ]
 }

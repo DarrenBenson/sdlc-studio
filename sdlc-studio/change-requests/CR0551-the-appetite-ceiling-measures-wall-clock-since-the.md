@@ -1,6 +1,6 @@
 # CR-0551: The appetite ceiling measures WALL-CLOCK since the run opened, so a run left open overnight reports spend it never incurred
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0238
 > **Priority:** High
 > **Type:** Improvement
@@ -43,3 +43,4 @@ What breaks if this is done carelessly: an activity-derived figure that reads ze
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. `loop_guard.elapsed_minutes` is still literally `now - started_at`, and the appetite breaker compares that wall-clock figure straight against the capacity. No idle or blocked classification, no working figure, no second figure reported. All six children (US0778-US0783) are Draft. |

@@ -1,6 +1,6 @@
 # CR-0559: the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0244
 > **Priority:** Medium
 > **Type:** enhancement
@@ -36,3 +36,4 @@ Option 2, with option 1 as its first step. `--unit` is the majority name and the
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-26 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. Both named refusals reproduce verbatim at HEAD: `verify_ac.py run --unit` is rejected as an unrecognised argument while the same concept is `--story`, `--id` or `--ids`, and `file_finding.py` refuses the key `ac` where it wants `acs`. All four EP0244 children are Draft. It and CR0535 are one defect at two depths against the same four scripts and should be sized together. |

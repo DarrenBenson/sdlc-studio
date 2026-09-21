@@ -60,6 +60,24 @@ An explicit `as_of` is a RE-DERIVATION bound and must win outright: `end = _at(g
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TheSealDoesNotMoveTheWindowTests::test_a_page_recording_no_bound_replays_the_one_it_was_derived_under
 - **Verified:** yes (2026-09-19)
 
+### AC5: the bound is an envelope field and never a digest figure
+
+- **Given** a page carrying a recorded `window_end`
+- **When** its figure set is walked and its fingerprint taken
+- **Then** `window_end` appears in no leaf figure, and changing its value leaves the fingerprint unchanged - the bound is recorded BESIDE the digest, never inside it
+- **Mutant:** in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, record it the way every other value on the page is recorded, as a `fig()` in a section. That passes all four of this bug's other criteria and all 208 tests in the module, while making every page filed before the bound shipped read INVALIDATED with `window_end` as the mover - this bug's own failure mode returning through its own repair. Required by the third plan review, which found the property stated only in a code comment
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TheSealDoesNotMoveTheWindowTests::test_the_bound_is_an_envelope_field_and_never_a_digest_figure
+- **Verified:** yes (2026-09-21)
+
+### AC6: the bound reaches the FILED page, not only the derived dict
+
+- **Given** a report derived and then filed
+- **When** the stored JSON is read back
+- **Then** its `window_end` equals the one the derivation resolved, so a reader re-deriving the page REPLAYS the bound rather than inferring it
+- **Mutant:** in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, strip `window_end` in `file_report` before writing. AC1, AC2 and AC3 all stay green, because the legacy fallback happens to infer the same answer for their fixtures; across the whole module the only thing that notices is a `KeyError` in another test's fixture setup, which a defensive `.pop(..., None)` would erase entirely. The design's central claim would then be untested on the only artefact anybody reads
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TheSealDoesNotMoveTheWindowTests::test_the_bound_reaches_the_filed_page_not_only_the_derived_dict
+- **Verified:** yes (2026-09-21)
+
 ## Test Plan
 
 | Criterion | Mutant - the production change this test must fail on | Title |
@@ -68,6 +86,8 @@ An explicit `as_of` is a RE-DERIVATION bound and must win outright: `end = _at(g
 | AC2 | in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, change `build_report` to drop the open-run fallback - replace `_at(state.get("ended_at")) or _at(generated_at)` with `None` - leaving an open run's window unbounded so every later commit enters its figures. This mutant reddens all four selectors; what makes AC2's row discriminating is its own `window_end == generated_at` assertion, which no other criterion makes | an open run's window is still closed at the page's generation time |
 | AC3 | in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, change `build_report` to bound every derivation at the generation time - replace the whole expression with `_at(generated_at)` - so a page built on an already-ended run re-derives over a wider window than it was written under and reads INVALID untouched | a page built after the run ended also re-derives valid |
 | AC4 | in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, change `_legacy_window_end` to return the stored generation time for both legacy cases - replace the `ended < g` branch with a bare `return gen` - so a page derived after its run ended re-derives over a wider window than it was written under | a page recording no bound replays the one it was actually derived under |
+| AC5 | in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, record the bound as a section `fig()` instead of an envelope key, so it enters the digest it exists to protect | the bound is an envelope field and never a digest figure |
+| AC6 | in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, strip `window_end` in `file_report` before writing, so the filed page carries no bound and a reader must infer the window | the bound reaches the FILED page, not only the derived dict |
 
 ## Revision History
 
@@ -78,3 +98,4 @@ An explicit `as_of` is a RE-DERIVATION bound and must win outright: `end = _at(g
 | 2026-09-19 | plan review r1 REJECT | Both blocking findings accepted. AC2's fixture was not an open run at all - `fixture_run` writes an `ended_at` - so the fallback it was about never executed and its mutant survived a THIRD time. And the repair itself relocated the defect: bounding re-derivations at the generation time left a page built on an already-ended run re-deriving over a wider window than it was written under. The design changed in response - the resolved bound is now recorded on the page and replayed, the treatment `generated_at` already gets - and AC3 was added for the case the review demonstrated. |
 | 2026-09-19 | plan review r2 REJECT | Findings 1 and 2 ruled CLOSED. One new blocking finding: the legacy fallback for a page carrying no `window_end` returned the generation time for both cases, so a page derived AFTER its run ended still re-derived over a wider window - the same defect surviving in the pages the fallback exists to protect. The review's proposed remedy (prefer the run's `ended_at`) would have broken the opposite case and invalidated RPT0002's real signature; the two are distinguishable by which timestamp came first, and AC4 pins both directions with the signed shape as its positive control. |
 | 2026-09-20 | operator ruling | ESCALATION ANSWERED: stays OPEN, and the next run closes it with a fresh plan review. The repair is committed and in force - four criteria, four mutants applied and killed against the final bytes, and the signed RPT0002 re-derives at its signed fingerprint - but two of this bug's three repairs were got wrong by their own author and caught by an independent seat, so the third is not closed on that author's say-so. Disclosed as an open High in the v5.1.0 notes meanwhile. |
+| 2026-09-21 | plan review r3 REJECT | All four declared rows verified real, executed and uniquely discriminating. Rejected for what no row covered, and both findings are the same shape: the property the repair RESTS on was stated in a comment rather than pinned. Nothing asserted `window_end` stays outside the digest - recording it as a figure passes every one of the 208 tests in the module and invalidates every page ever filed. And nothing asserted the bound reaches the FILED page; stripping it in `file_report` was noticed only by a KeyError in another test's fixture setup. Repaired as AC5 and AC6, both mutants applied and killed. Third REJECT: the tooling escalated again. |

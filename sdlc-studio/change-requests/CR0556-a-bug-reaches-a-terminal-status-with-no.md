@@ -36,3 +36,4 @@ Option 2, and NOT before the backlog sweep. The gate's weak point is precise: it
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-25 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, correctly in progress, with half its premise now false. BG0630's terminal firing means a bug past `review.test_plan_after` IS refused into Fixed without an independent plan approval - US0797/US0798 were closed Superseded-by-BG0630. The other half stands and is the sharper one: the two-role delivery review is still `story` and `Done` only, so a bug's CODE is never independently judged. Residue is thin and partly duplicated - US0800 is the same check CR0554/EP0241 owns as US0793-US0796, and one of the two should be dropped. |

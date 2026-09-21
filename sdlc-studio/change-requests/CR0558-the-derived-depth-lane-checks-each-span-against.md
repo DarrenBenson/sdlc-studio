@@ -1,6 +1,6 @@
 # CR-0558: the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0243
 > **Priority:** High
 > **Type:** enhancement
@@ -35,3 +35,4 @@ A `Verification depth` field is the artefact's claim about how hard its evidence
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-25 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, WITH A CONDITION: it argues against a recorded position rather than an oversight, and any re-proposal owes an answer to it. `_derived_depth` judges each span against its own seal deliberately, because re-deriving needs the gitignored mutation ledger and would therefore refuse every unit in a fresh clone or CI runner. That rationale landed on 2026-08-21, four days before this request was raised on 2026-08-25. Re-proposing it without answering the fresh-clone problem would re-open a decision that was made. |

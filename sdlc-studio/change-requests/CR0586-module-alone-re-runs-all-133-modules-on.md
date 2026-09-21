@@ -1,6 +1,6 @@
 # CR-0586: module-alone re-runs all 133 modules on every push, 551 s of a 749 s gate, for a signal that changes only when a module's imports do
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0253
 > **Priority:** Medium
 > **Type:** Improvement
@@ -36,3 +36,4 @@ At the push boundary run the modules whose files the push touches, plus every mo
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, and the gate is WORSE than it says. `_module_alone` still globs every test module (133 at HEAD) with no changed-module selection and no scheduled sweep to fall back on. The quoted 749s push gate has risen to 968s. Its own 551s share cannot be confirmed, because no per-lane series is recorded - which is exactly what its own US0843 asks for, so its AC4 currently has no instrument. |

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-19
+**Last Updated:** 2026-09-21
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 41 |
+| Open | 53 |
 | In Progress | 0 |
 | Fixed | 576 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 6 |
-| **Total** | **720** |
+| **Total** | **732** |
 
 ## All Bugs
 
@@ -79,6 +79,18 @@
 | [BG0718](BG0718-the-seal-widens-the-dora-window-it-is.md) | the seal widens the DORA window it is sealing, so a signed report reads INVALIDATED one second after the signature lands | Open | High | 2026-09-19 | 2026-09-19 |
 | [BG0719](BG0719-the-report-of-record-does-not-disclose-the.md) | the report of record does not disclose the waivers that permitted the seal, so an operator signs without being told which gate stood down | Open | High | 2026-09-19 | 2026-09-19 |
 | [BG0720](BG0720-the-report-s-filed-this-run-figure-names.md) | the report's Filed this run figure names the batch's delivered units as findings and omits a finding that was filed | Open | Medium | 2026-09-19 | 2026-09-19 |
+| [BG0721](BG0721-the-duplicate-lens-cannot-tell-one-change-filed.md) | the duplicate lens cannot tell one change filed twice from one method applied to several disjoint scopes | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0722](BG0722-the-unruled-lens-catches-a-request-nobody-closed.md) | the unruled lens catches a request nobody closed, not the request everybody abandoned - the dominant accumulation path is still unguarded | Open | High | 2026-09-21 | 2026-09-21 |
+| [BG0723](BG0723-a-stated-count-in-source-or-test-prose.md) | a stated count in source or test prose is never checked against the tree it counts | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0724](BG0724-check-spec-claims-reads-raw-text-so-a.md) | check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0725](BG0725-two-spellings-of-the-stop-ship-constant-and.md) | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0726](BG0726-the-report-renders-no-declared-seat-without-asking.md) | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0727](BG0727-check-script-tests-sweeps-two-fixed-globs-so.md) | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0728](BG0728-a-unit-s-declared-affects-is-never-compared.md) | a unit's declared Affects is never compared with the files its delivering commit changed | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0729](BG0729-the-batch-level-reviewer-contribution-to-the-lens.md) | the batch-level reviewer contribution to the lens count is asserted by no test | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0730](BG0730-a-stop-ship-ruling-is-never-re-derived.md) | a stop-ship ruling is never re-derived against its finding's status, so a ruling on a Fixed finding blocks every close permanently | Open | High | 2026-09-21 | 2026-09-21 |
+| [BG0731](BG0731-filing-a-low-severity-finding-recreates-the-consolidation.md) | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0732](BG0732-the-derived-only-corpus-ceiling-is-an-absolute.md) | the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching | Open | Medium | 2026-09-21 | 2026-09-21 |
 
 ## Archived Releases
 

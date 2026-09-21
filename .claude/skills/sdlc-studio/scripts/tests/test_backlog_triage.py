@@ -141,6 +141,74 @@ class OrphanedDependencyLensTests(TriageBase):
         self.assertNotIn("orphaned-dependency", self._lenses(report))
 
 
+class UnruledRequestTests(TriageBase):
+    """US0848: a request that is In Progress, finished by its children, and never ruled.
+
+    This is the state RUN-01M306PY's sweep clears: 41 requests sat In Progress with children at
+    every depth, so `Discovery=67` read as 67 live options when most were abandoned. Clearing it
+    once is a tidy; the lane is what stops it rebuilding silently.
+    """
+
+    def _req(self, cid, *, status, children=(), ruled=False):
+        lines = [f"# {cid}: a request", "", f"> **Status:** {status}"]
+        if children:
+            lines.append("> **Decomposed-into:** " + ", ".join(children))
+        lines += ["> **Date:** 2026-07-16", "", "## Summary", "", "a request", "",
+                  "## Revision History", "", "| Date | Author | Change |", "| --- | --- | --- |",
+                  "| 2026-07-16 | sdlc-studio | Filed |"]
+        if ruled:
+            lines.append("| 2026-09-21 | audit ruling | still wanted, correctly in progress |")
+        d = self.root / "sdlc-studio" / "change-requests"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{cid}-x.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def _units(self, *specs):
+        for cid, status in specs:
+            _unit(self.root, "story", cid, title="a child", status=status)
+
+    def test_an_in_progress_request_with_no_unresolved_child_and_no_ruling_is_reported(self) -> None:
+        """MUTANT: report every In-Progress request whose children are all resolved, ruled or
+        not. The lane then fires on requests that WERE judged, becomes noise within one sweep,
+        and gets switched off - which is how this project's 120s gate budget failed.
+        """
+        self._units(("US0001", "Done"), ("US0002", "Draft"), ("US0003", "Done"), ("US0004", "Done"))
+        self._req("CR0001", status="In Progress", children=["US0001", "US0002"])   # still working
+        self._req("CR0002", status="In Progress", children=["US0003"], ruled=True)  # judged
+        self._req("CR0003", status="In Progress", children=["US0004"])              # finished, unruled
+        report = backlog_triage.triage(self.root, today="2026-09-21")
+        flagged = sorted(u for f in report["findings"] if f["lens"] == "unruled"
+                         for u in f["units"])
+        self.assertEqual(["CR0003"], flagged,
+                         f"the lane did not isolate the finished-but-unruled request: {flagged}")
+
+    def test_a_childless_request_is_not_reported_as_unruled(self) -> None:
+        """A childless request is the separate `undecomposed` case `status` already counts as
+        awaiting refine. Reporting it here too makes one problem look like two.
+
+        MUTANT: treat zero children as `every child resolved` - a vacuously-true reading that
+        reports every undecomposed request and doubles the lane's output on a backlog that
+        already carries 25 of them.
+        """
+        self._req("CR0001", status="In Progress")
+        report = backlog_triage.triage(self.root, today="2026-09-21")
+        self.assertNotIn("unruled", self._lenses(report))
+
+    def test_the_unruled_finding_is_advisory_and_names_its_remedy(self) -> None:
+        """MUTANT: make the finding blocking - a backlog-hygiene lane that refuses a commit
+        stops unrelated work for a state nobody created in that commit, which is the line this
+        project already draws between drift a change causes and drift that predates it.
+        """
+        self._units(("US0001", "Done"),)
+        self._req("CR0001", status="In Progress", children=["US0001"])
+        report = backlog_triage.triage(self.root, today="2026-09-21")
+        found = [f for f in report["findings"] if f["lens"] == "unruled"]
+        self.assertTrue(found, "the lane reported nothing")
+        self.assertEqual("report", found[0]["severity"])
+        self.assertFalse(report["blocked"], "a hygiene lane blocked the commit")
+        self.assertIn("audit ruling", found[0]["detail"],
+                      f"the finding does not name what clears it: {found[0]['detail']}")
+
+
 class CleanBacklogTests(TriageBase):
     def test_a_coherent_backlog_is_clean(self) -> None:
         _unit(self.root, "story", "US0001", title="add a flag", status="Draft",

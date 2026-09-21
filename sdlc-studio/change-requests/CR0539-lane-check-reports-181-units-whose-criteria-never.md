@@ -1,6 +1,6 @@
 # CR-0539: lane-check reports 181 units whose criteria never enter a shipped entry point
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0235
 > **Priority:** Medium
 > **Type:** process
@@ -34,3 +34,4 @@ Ratchet rather than block: record 181 as the baseline, refuse an INCREASE, and l
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-08 | sdlc-studio-authoring-session | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, and the number it was raised on has RISEN rather than fallen: `lane-check` over the corpus at HEAD reports 305 findings against the 181 filed, because bugs were later brought into scope. It is still `return 0  # ADVISORY` with a yield accumulator, no baseline file and no ratchet. AC3 was delivered six days BEFORE this request was raised (US0605 wired `lane-check --ids` into pre-commit), so it should be struck before re-proposing. |

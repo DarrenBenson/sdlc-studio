@@ -70,9 +70,9 @@ evidence re-measured by hand for one line moving in a shared file.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1.0 discloses 38 open defects: 38 Medium, 0 Low.**
+**v5.1.0 discloses 48 open defects: 48 Medium, 0 Low.**
 
-**Three High-severity findings are open against the tag: BG0715, BG0718 and BG0719.** It was raised on 2026-09-18,
+**Five High-severity findings are open against the tag: BG0715, BG0718, BG0719, BG0722 and BG0730.** It was raised on 2026-09-18,
 after v5.1.0 shipped, by RUN-01M2SPNS running its own close. `_open_findings` dates a finding
 by the last word of its `Raised-in-batch` stamp, so a finding raised outside a delivery batch -
 the ordinary case for a backlog sweep or an audit - sorts as inside every run window and is
@@ -91,6 +91,12 @@ report does not name the waivers that were in force when it was derived, so an o
 without being told which close-gate lane stood down - on that run, the per-unit coverage gate.
 Both affect the report, not the rest of the tool, and both are disclosed here rather than
 counted quietly because the bar names ids and so must the prose.
+
+**BG0722 was raised on 2026-09-21 by RUN-01M306PY auditing its own guard.** That run built a lane reporting a discovery request that is In Progress, finished by its children, and never judged - then ran it against the real backlog and got ZERO, because all 37 stalled requests had at least one child still open. The lane is correct and its mutants are killed; it simply catches a request nobody closed rather than a request everybody abandoned, which is the path that actually accumulated. The run recorded the gap rather than quietly claiming its goal.
+
+**The disclosed count rose from 39 to 47 in one day, and that is the sweep working rather than the tree rotting.** RUN-01M306PY re-triaged a July aggregate of twenty non-blocking review findings that had been closed as unbuildable, found it actually states TWENTY-FOUR claims, re-executed every one against HEAD, and filed the fifteen that still reproduce as artefacts that can be planned. Five had already been fixed by other work, one was never a defect, and three cannot be tested as written and say so. The count went up because the findings stopped being a bullet list nobody could act on.
+
+**BG0730 is the one to read first**: a stop-ship ruling is never re-derived against its finding's status, so a ruling on a finding that has since been Fixed blocks every subsequent close, permanently, with no escape but editing a retro by hand.
 
 ## What is in it
 

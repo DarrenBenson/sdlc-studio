@@ -1,6 +1,6 @@
 # CR-0554: A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0241
 > **Priority:** High
 > **Type:** Improvement
@@ -36,3 +36,4 @@ Option 1 first, then option 2 once the yield is known. This repository's own pre
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-24 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. `plan_execution` carries the killing node forward as the row's `test` but never compares it to the criterion's own `Verify:` selector, and `killed-elsewhere` appears nowhere in the skill or tools. Both facts needed are already in the ledger, so the detector is a comparison rather than new data collection. BG0606 is Fixed but it repaired the six instances, not the detector that would find the seventh. Note: US0800 under CR0556 duplicates this outright and one of the two should be dropped. |

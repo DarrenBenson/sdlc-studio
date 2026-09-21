@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 39 |
+| Draft | 38 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 218 |
+| Done | 219 |
 | **Total** | **257** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -28,8 +28,8 @@
 | [EP0196](EP0196-hand-rolled-work-is-visible-the-close-names.md) | Hand-rolled work is visible: the close names what an agent did by hand instead of by tool | Draft | 5 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0206](EP0206-a-sprint-ends-with-nothing-open-a-non.md) | A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it | Done | 5 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0210](EP0210-a-refusing-verb-can-be-asked-what-it.md) | A refusing verb can be asked what it demands, before it refuses | Draft | 6 | -- | 2026-08-07 | 2026-08-07 |
-| [EP0217](EP0217-the-instruments-that-judge-a-unit-are-measured.md) | The instruments that judge a unit are measured from the change, not asserted about the file | Draft | 14 | -- | 2026-08-21 | 2026-08-21 |
-| [EP0218](EP0218-the-plan-review-binds-where-the-code-is.md) | The plan review binds where the code is, so a unit takes one review round instead of two | Draft | 6 | -- | 2026-08-25 | 2026-08-25 |
+| [EP0217](EP0217-the-instruments-that-judge-a-unit-are-measured.md) | The instruments that judge a unit are measured from the change, not asserted about the file | Done | 12 | -- | 2026-08-21 | 2026-08-21 |
+| [EP0218](EP0218-the-plan-review-binds-where-the-code-is.md) | The plan review binds where the code is, so a unit takes one review round instead of two | Draft | 8 | -- | 2026-08-25 | 2026-08-25 |
 | [EP0219](EP0219-an-exemption-states-what-would-discharge-it-and.md) | An exemption states what would discharge it, and the mirror states what it did not compare | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0220](EP0220-an-upgrade-proposes-its-grandfathering-records-each-grant.md) | An upgrade proposes its grandfathering, records each grant, and can still answer for it a year later | Draft | 5 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0221](EP0221-a-tag-cannot-be-cut-without-asking-whether.md) | A tag cannot be cut without asking whether the increment is shippable | Draft | 7 | -- | 2026-08-27 | 2026-08-27 |
@@ -58,11 +58,11 @@
 | [EP0244](EP0244-one-concept-one-name-across-every-verb-and.md) | One concept, one name, across every verb and every document key | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0245](EP0245-filing-a-finding-leaves-the-disclosure-true.md) | Filing a finding leaves the disclosure true | Draft | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0246](EP0246-the-declared-python-floor-is-a-gate-not.md) | The declared Python floor is a gate, not a sentence in six documents | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
-| [EP0248](EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Draft | 1 | -- | 2026-09-07 | 2026-09-07 |
+| [EP0248](EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Draft | 4 | -- | 2026-09-07 | 2026-09-07 |
 | [EP0253](EP0253-the-push-boundary-runs-the-modules-the-push.md) | The push boundary runs the modules the push changed, and says which | Draft | 5 | -- | 2026-09-16 | 2026-09-16 |
 | [EP0254](EP0254-the-corpus-lane-runs-in-shards-and-judges.md) | The corpus lane runs in shards and judges one union | Draft | 4 | -- | 2026-09-16 | 2026-09-16 |
 | [EP0255](EP0255-a-run-ends-with-one-derived-report-and.md) | A run ends with one derived report, and signing it is a transaction | Done | 9 | -- | 2026-09-16 | 2026-09-16 |
-| [EP0256](EP0256-stakeholder-feedback-arrives-while-it-is-still-cheap.md) | Stakeholder feedback arrives while it is still cheap to act on | Draft | 6 | -- | 2026-09-16 | 2026-09-16 |
+| [EP0256](EP0256-stakeholder-feedback-arrives-while-it-is-still-cheap.md) | Stakeholder feedback arrives while it is still cheap to act on | Draft | 8 | -- | 2026-09-16 | 2026-09-16 |
 | [EP0257](EP0257-the-backlog-tells-the-truth-every-stalled-request.md) | the backlog tells the truth: every stalled request carries a dated ruling, and the state cannot rebuild | Draft | 7 | -- | 2026-09-20 | 2026-09-20 |
 
 ## Archived Releases

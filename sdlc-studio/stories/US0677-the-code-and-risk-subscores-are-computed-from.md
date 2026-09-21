@@ -1,6 +1,6 @@
 # US0677: The code and risk subscores are computed from the hunks a unit CHANGES against the base ref, not from every function in every declared file
 
-> **Status:** Blocked
+> **Status:** Won't Implement
 > **Delivers:** CR0549
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
@@ -37,3 +37,4 @@
 | 2026-08-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
 | 2026-08-24 | sdlc-studio | RE-GROOMED against CR0549's second and third corrections after a pre-code goal review REJECTED the first attempt: the declared basis now reads `Points` and `Affects` breadth rather than whole-file complexity, measured to move `light` from 13% to 33%. |
+| 2026-09-21 | audit ruling | RUN-01M306PY sweep: retired as Won't Implement. Its parent CR0550 retracted itself on 2026-08-24 and is now Rejected; D0150 forbids gating review depth on any author-declared field, which is the approach this story takes; and a pre-code goal review rejected this batch three times. It was blocking EP0217 from deriving Done, which in turn blocked CR0547 and CR0548 - two requests that were FINISHED - from closing. The request was done, the link was not. |

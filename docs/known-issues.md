@@ -68,8 +68,18 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0716` | Medium | PREPARE mints a new report id on every re-file, so a run that prepares twice has two reports of record |
 | `BG0717` | Medium | the close's handoff link leaves a trailing blank line in the retro, so every close fails this project's own markdownlint |
 | `BG0720` | Medium | the report's Filed this run figure names the batch's delivered units as findings and omits a finding that was filed |
+| `BG0721` | Medium | the duplicate lens cannot tell one change filed twice from one method applied to several disjoint scopes |
+| `BG0723` | Medium | a stated count in source or test prose is never checked against the tree it counts |
+| `BG0724` | Medium | check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim |
+| `BG0725` | Medium | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report |
+| `BG0726` | Medium | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all |
+| `BG0727` | Medium | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test |
+| `BG0728` | Medium | a unit's declared Affects is never compared with the files its delivering commit changed |
+| `BG0729` | Medium | the batch-level reviewer contribution to the lens count is asserted by no test |
+| `BG0731` | Medium | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request |
+| `BG0732` | Medium | the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching |
 
-38 findings: 38 Medium, 0 Low.
+48 findings: 48 Medium, 0 Low.
 
 ## Not carried
 

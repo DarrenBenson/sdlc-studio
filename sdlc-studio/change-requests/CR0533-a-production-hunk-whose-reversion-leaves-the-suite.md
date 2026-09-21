@@ -1,6 +1,6 @@
 # CR-0533: A production hunk whose reversion leaves the suite green is uncovered: make the gate prove coverage rather than assume it
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0232
 > **Priority:** High
 > **Type:** Improvement
@@ -68,3 +68,4 @@ Build the reporting command first and run it over the RUN-01KZ9315 diff before w
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, but it MUST be re-scoped before it is re-proposed, not returned at size M with its original criteria. Three of its five criteria were delivered by its own successor CR0547 (US0671-US0674): the answerable exemption, the boundary placement under D0149, and distinguishing a verifier that could not run. Its live residue is AC1 (per-HUNK granularity, where CR0547 shipped the per-FILE form that AC1's own mutant names) and AC2's five-instance RUN-01KZ9315 corpus, which exists in no test or fixture. |

@@ -1,6 +1,6 @@
 # CR-0550: The test-plan gate is scoped by DATE alone, so it cannot be narrowed to the units whose risk earns it
 
-> **Status:** In Progress
+> **Status:** Rejected
 > **Decomposed-into:** EP0217
 > **Priority:** High
 > **Type:** Improvement
@@ -64,3 +64,4 @@ against CR0555 rather than building this as filed.
 | 2026-08-21 | sdlc-studio | Raised |
 | 2026-08-21 | sdlc-studio | Goal review CORRECTION: the summary claimed this setting gates the pre-code plan review. It does not - `review.test_plan_after` is read only in `transition.py`, while the plan review fires from `plan_review.triggers`. The claimed saving against the 31 plan-review passes is withdrawn, and the scope question is named as owed grooming |
 | 2026-08-24 | sdlc-studio | Correction: the CR0549 dependency cannot be satisfied (D0150). Rework against CR0555, which moves the gate rather than scoping it. AC1 contradicts the settled design. |
+| 2026-09-21 | audit ruling | overtaken - retired, and it retracted itself. Its own 2026-08-24 correction says `rework against CR0555 rather than building this as filed` and `AC1 no longer describes the intended behaviour`. Its dependency CR0549 is Superseded with the remedy withdrawn, D0150 forbids gating review depth on any author-declared field - which is everything available at entry - and its own stories are Won't Implement or Blocked and carried by CR0555's AC4/AC6. The premise is still true at HEAD and the remedy is dead, which is precisely what overtaken means. |

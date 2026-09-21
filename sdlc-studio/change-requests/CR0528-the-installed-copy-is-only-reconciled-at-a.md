@@ -1,6 +1,6 @@
 # CR-0528: the installed copy is only reconciled at a close, so a fix believed shipped is in force nowhere for the length of a run
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0228
 > **Priority:** Medium
 > **Type:** Improvement
@@ -38,3 +38,4 @@ Price a pre-push drift check first, since push is where work becomes visible to 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-04 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, and its premise is failing AT THIS MOMENT. The only drift check outside the close is a `status` advisory that predates the request, reports a COUNT rather than the files, and fires only when somebody runs `status`; neither `.githooks/pre-push` nor `gate.py --boundary push or release` binds an installed-copy lane. This very run drifted the copy twice - once after the close's last code change, once from its own delivery - which is the exact window the request describes. All EP0228 children are Draft. |

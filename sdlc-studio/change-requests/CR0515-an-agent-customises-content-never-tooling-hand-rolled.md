@@ -1,6 +1,6 @@
 # CR-0515: An agent customises content, never tooling: hand-rolled work is detected from the run diff, reported at the close, and escapes only by filing the gap
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0196
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -45,3 +45,4 @@ It is also the root cause of the review problem this backlog is otherwise trying
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-01 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. No tool-use ledger exists, no hand-edit detection from the run diff, and the compulsory close checklist's 22 items include nothing about tooling. Doctrine rule 15 partly covers AC5 but PREDATES this request by a month (CR0133), so it should be struck rather than claimed. Its stories US0586-US0590 are Ready - groomed and never delivered. |

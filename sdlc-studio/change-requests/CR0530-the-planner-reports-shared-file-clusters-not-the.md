@@ -1,6 +1,6 @@
 # CR-0530: the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0230
 > **Priority:** Medium
 > **Type:** Improvement
@@ -58,3 +58,4 @@ Have `sprint breakdown` compute connected components over the declared Affects g
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-04 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. `sprint breakdown` still reports only shared-file clusters; there is no connected-component count, no largest-component size, no share-of-batch figure and no runbook row. All five children (US0745-US0749) are Draft. |

@@ -50,3 +50,4 @@ Cheapest first: rule 3 needs only a cross-reference against the open backlog, an
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-01 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-21 | audit ruling | still wanted, correctly in progress. Four of six criteria shipped - brief provenance refusal (US0577/US0578), per-finding origin classification with `record` refusing unclassified delivery findings (US0579), PRE-EXISTING reported and non-blocking (US0580), and the doctrine stating the scope rule (US0582). Two remain: US0581 is Ready but unbuilt - no annotation code exists in critic.py - and AC6's retrospective before/after measurement sits on the epic mapped to no story, which is a criterion nothing can deliver. |

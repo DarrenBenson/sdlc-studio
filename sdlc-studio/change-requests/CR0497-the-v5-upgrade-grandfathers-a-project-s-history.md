@@ -1,6 +1,6 @@
 # CR-0497: The v5 upgrade grandfathers a project's history silently, so every exemption it grants is a number with no record of what it forgave or why
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0220
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -38,3 +38,4 @@ Every project that adopts or upgrades to v5 carries a set of unexplained exempti
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Opus 5 | Related: CR0496 (a restore condition written as prose no tool reads). AC2 here deliberately reuses its machine-readable-condition requirement rather than inventing a second form - two representations of one rule diverge, and the looser one is the one that runs (L-0249). |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. `migrate.py` contains zero references to grandfathering, and `close_owed.stamp_baseline` still writes a bare id list with no era, no re-arm condition, no enumeration put to the operator, no stub retro and no `status` exemption report. All five EP0220 children are Draft. |

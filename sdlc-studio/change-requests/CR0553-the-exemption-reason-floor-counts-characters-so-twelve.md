@@ -1,6 +1,6 @@
 # CR-0553: The exemption reason floor counts characters, so twelve junk characters buy a blanket revert-check exemption
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0240
 > **Priority:** Medium
 > **Type:** Improvement
@@ -40,3 +40,4 @@ Filed rather than repaired in place because it is `[pre-existing]` by execution 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-21 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. `_reason_substance` still strips punctuation and the callers still measure length against 12, including the `Revert-check-exempt` path this request is about - `zzzzzzzzzzzz` still buys a blanket exemption. The overlap and restatement test it asks for EXISTS but is applied only to test-plan mutant prose, never to exemption reasons, so the remedy is a wiring job rather than a new mechanism. All four EP0240 children are Draft. |

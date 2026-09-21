@@ -31,3 +31,4 @@ Who: every operator running a sprint that meets reality, which is every sprint -
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (operator-raised, RFC0057 discussion) | Raised |
+| 2026-09-21 | audit ruling | still wanted, correctly in progress. Four of five criteria shipped - `batch swap`, `batch add-epic`, `appetite resize` and the docs (US0470-US0473, Done). The residue is AC1 and AC5: plain `batch add`/`batch drop` still print a unit COUNT with no points, batch total, appetite or over-appetite warning. US0469 is exactly that residue and is Ready. |

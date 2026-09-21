@@ -1,6 +1,6 @@
 # CR-0499: A sprint is never asked whether it produced a SHIPPABLE increment: the release definition-of-done encodes mechanism, not outcome
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0221
 > **Priority:** High
 > **Type:** Improvement
@@ -75,3 +75,4 @@ Add the missing clause and DERIVE both halves from facts the process already rec
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. The premise holds unchanged at HEAD: the shipped Release definition-of-done carries four mechanical clauses and no shippable-increment clause, and `release_cut.tag_check` still refuses only on mechanism. Neither `goal_panel` nor `judge_defects_against_goal` is reachable from the release path. All seven children (US0700-US0706) are Draft, decomposed and untouched. |

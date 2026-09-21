@@ -175,6 +175,7 @@ def _scan(root: Path, *, today: str | None = None) -> tuple[list[dict], dict[str
                 "tokens": _tokens(title, _summary(text)),
                 "points": sdlc_md.read_points(text), "size": sdlc_md.read_size(text),
                 "depends": _depends(text), "date": _last_date(text, today=today),
+                "children": _decomposed_into(text), "ruled": bool(_AUDIT_RULING_RE.search(text)),
             })
     return backlog, states, skipped
 
@@ -229,6 +230,53 @@ def _oversized_findings(backlog: list[dict]) -> list[dict]:
     return out
 
 
+#: A dated `audit ruling` revision row. The audit's output is a RULING recorded where a later
+#: reader meets it, so its presence is what this lane reads - not a status, which cannot say
+#: whether anybody judged the thing.
+_AUDIT_RULING_RE = re.compile(r"(?m)^\|\s*\d{4}-\d{2}-\d{2}\s*\|\s*audit ruling\s*\|")
+
+
+def _decomposed_into(text: str) -> list[str]:
+    """The units a request declares it was decomposed into. `Decomposed-into` is PLURAL, so
+    every line is read - taking only the first would make a request with two decomposition
+    lines look half-finished forever."""
+    out: list[str] = []
+    for line in re.findall(r"(?m)^>?[^\S\n]*\*\*Decomposed-into:\*\*[^\S\n]*(.*)$", text):
+        out += re.findall(r"\b(?:US|BG|EP|CR|RFC)\d{4}\b", line)
+    return out
+
+
+def _unruled_findings(backlog: list[dict], states: dict[str, str]) -> list[dict]:
+    """A discovery request that is In Progress, finished by its children, and never judged.
+
+    This is the state a backlog accumulates silently: work stops, every child reaches a terminal
+    status, and the request stays In Progress because nothing makes anyone say so. RUN-01M2SPNS
+    met 41 of them at once, and `Discovery=67` was read as 67 live options when most were
+    abandoned at different depths - a planner cannot tell the difference from the count.
+
+    A request with an UNRESOLVED child is working normally and is not reported. A request with NO
+    children is the separate `undecomposed` case `status` already counts as awaiting refine;
+    reporting it here as well would make one problem look like two. And a request carrying a
+    dated `audit ruling` row HAS been judged - reporting it anyway is how a lane becomes noise
+    and then gets switched off, which is the failure this project has already recorded for a
+    ceiling that fired on every commit.
+    """
+    out: list[dict] = []
+    for u in backlog:
+        if u["type"] not in ("cr", "rfc") or u["ruled"]:
+            continue
+        kids = [sdlc_md.norm_id(c) for c in u["children"]]
+        kids = [k for k in kids if k in states]
+        if not kids or any(states[k] != "terminal" for k in kids):
+            continue
+        out.append({"lens": "unruled", "severity": "report", "units": [u["id"]],
+                    "detail": (f"{u['id']} is {u['status']} and every unit it names is resolved, "
+                               f"but nothing records a judgement of it - add a dated "
+                               f"`audit ruling` row saying whether it is still wanted, already "
+                               f"delivered elsewhere, or overtaken")})
+    return out
+
+
 def _stale_findings(backlog: list[dict], *, today: str, stale_days: int = 90) -> list[dict]:
     """Open, untouched for months, and nothing open depends on it: ask if it is still wanted."""
     depended_on = {d for u in backlog for d in u["depends"]}
@@ -274,7 +322,7 @@ def triage(root: Path, *, today: str | None = None, stale_days: int = 90) -> dic
     backlog, states, skipped = _scan(root, today=today)
     findings = (_duplicate_findings(backlog) + _oversized_findings(backlog)
                 + _stale_findings(backlog, today=today, stale_days=stale_days)
-                + _orphaned_findings(backlog, states))
+                + _orphaned_findings(backlog, states) + _unruled_findings(backlog, states))
     blocking = [f for f in findings if f["severity"] == "block"]
     return {"scanned": len(backlog), "skipped": skipped, "findings": findings,
             "blocking": blocking, "blocked": bool(blocking)}
@@ -288,7 +336,8 @@ def render(report: dict) -> str:
         return f"backlog triage: clean ({report['scanned']} open artefact(s) scanned{unread})"
     lines = [f"backlog triage: {n} finding(s) over {report['scanned']} open artefact(s) "
              f"({len(report['blocking'])} blocking{unread}):"]
-    order = {"oversized": 0, "subsumed": 1, "duplicate": 2, "stale": 3, "orphaned-dependency": 4}
+    order = {"oversized": 0, "subsumed": 1, "duplicate": 2, "stale": 3, "orphaned-dependency": 4,
+             "unruled": 5}
     for f in sorted(report["findings"], key=lambda x: (order.get(x["lens"], 9), x["units"])):
         mark = "BLOCK" if f["severity"] == "block" else "note "
         lines.append(f"  [{mark}] {f['lens']}: {f['detail']}")

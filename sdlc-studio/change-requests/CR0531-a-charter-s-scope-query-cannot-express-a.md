@@ -1,6 +1,6 @@
 # CR-0531: a charter's scope query cannot express a decomposition, so the only queued charter's two scope fields disagree
 
-> **Status:** In Progress
+> **Status:** Rejected
 > **Decomposed-into:** EP0231
 > **Priority:** Medium
 > **Type:** Improvement
@@ -39,3 +39,4 @@ Extend the scope query with the selectors the rule needs and no more - at minimu
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-04 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | overtaken - retired. Its stated premise, that the vocabulary cannot express the rule, no longer holds: `--epic` is parsed by `parse_scope_query` and threaded through `select_batches`, and CR0507 has since been decomposed into EP0224, so the charter's rule IS now expressible as `--stories Draft --epic EP0224`. Since a request's units are exactly its epic's stories, `--parent CRxxxx` would add no reach. What remains is a content edit already flagged on the charter itself, plus AC4's irreconcilable-query report whose nearest half shipped as BG0674. |

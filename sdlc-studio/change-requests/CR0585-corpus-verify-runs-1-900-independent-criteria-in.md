@@ -1,6 +1,6 @@
 # CR-0585: corpus-verify runs 1,900 independent criteria in one serial job, so a weekly signal costs 85 minutes and sits under its own cap
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0254
 > **Priority:** High
 > **Type:** Improvement
@@ -36,3 +36,4 @@ Shard the red pass across a matrix of runners by a deterministic partition of th
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, and BOTH of its headline figures are stale. The last successful corpus-verify job measured 57.2 minutes, not the 85.6 filed, and the cap is already 150 minutes - raised in the very run that raised this request - so the `sits under its own cap` half of its title is no longer true. The serial structure is unchanged and the case now rests on wall-clock and dispatch latency alone, not on cap kills. Re-measure before re-proposing. |

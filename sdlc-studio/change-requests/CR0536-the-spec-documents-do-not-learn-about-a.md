@@ -1,6 +1,6 @@
 # CR-0536: the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0234
 > **Priority:** High
 > **Type:** Improvement
@@ -41,3 +41,4 @@ C, with B as its first slice - the generation is worthless while the comparison 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-06 | Darren Benson | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, with AC3 struck: BG0457 is Fixed and independently delivered it - four spec guards stopped comparing a document to itself. The other four criteria are untouched; the TRD and TSD still carry zero mentions of the four surfaces this request measured. It is blocked behind CR0535 by construction. All five EP0234 children are Draft. |

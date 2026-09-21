@@ -1,6 +1,6 @@
 # CR-0504: closing review is doing the work development should have done, and the same five defect classes recur every sprint
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0223
 > **Priority:** High
 > **Type:** Improvement
@@ -36,3 +36,4 @@ Sequence it so the two detectors land before the prose: the classes documented w
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-30 | Claude Opus 5 (operator-directed, from the EP0169/EP0172/EP0175 review round) | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. One of its two detectors was built by a sibling: the promise check ships as the advisory `claim-drift` lane (US0583, delivering CR0517). The divergent-reader detector, the self-agreeing-test refusal, the lane-inventory guard and the shape-census obligation do not exist, and no doctrine text names the five classes. Children US0712-US0716 are all Draft. |

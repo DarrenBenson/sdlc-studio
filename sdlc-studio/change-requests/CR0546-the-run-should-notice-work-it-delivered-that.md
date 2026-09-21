@@ -1,6 +1,6 @@
 # CR-0546: the run should notice work it delivered that its batch never named
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0237
 > **Priority:** High
 > **Type:** Improvement
@@ -34,3 +34,4 @@ Ask the question at DELIVERY rather than at the next close. When a unit transiti
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-17 | sdlc-studio | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, and this run is its own best evidence. Nothing in `transition.py` notices a terminal transition on a unit outside an open run's batch: its only batch-aware logic returns None precisely when the unit is NOT in the batch. RUN-01M306PY adopted BG0718 by hand for exactly this reason, because 205 lines had shipped outside every run and no report would ever price them (D0226). Children US0775-US0777 are Draft. |

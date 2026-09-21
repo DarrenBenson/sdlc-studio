@@ -1,6 +1,6 @@
 # CR-0534: a project's configuration is a surface nobody is introduced to and nobody revisits: the operator cannot see what is in force, what the default would have been, or which setting their own history says is wrong
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0233
 > **Priority:** High
 > **Type:** Improvement
@@ -45,3 +45,4 @@ C, decomposed so the first slice ships alone. `config show` is small, immediatel
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-06 | Darren Benson | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. `config show` exists but shipped in June, predating this request: it dumps 187 lines of merged JSON with no source attribution, no decision id, no one-line meaning and no marking of which keys are project judgements. `retro.py` proposes no setting change from any measurement. Documented keys have grown to 65 since filing. All five EP0233 children are Draft. |

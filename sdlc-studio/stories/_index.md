@@ -1,23 +1,23 @@
 # Story Index
 
-**Last Updated:** 2026-09-20
+**Last Updated:** 2026-09-21
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 136 |
-| Ready | 23 |
+| Draft | 140 |
+| Ready | 22 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
 | Done | 674 |
-| Won't Implement | 4 |
+| Won't Implement | 8 |
 | Deferred | 0 |
-| Superseded | 5 |
-| Blocked | 12 |
-| **Total** | **854** |
+| Superseded | 7 |
+| Blocked | 8 |
+| **Total** | **859** |
 
 ## All Stories
 
@@ -42,14 +42,14 @@
 | [US0649](US0649-a-lint-lane-counts-contract-reporter-coverage-and.md) | A lint lane counts contract-reporter coverage and names every refusing verb it cannot reach | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
 | [US0650](US0650-help-and-reference-scripts-point-at-the-contract.md) | help and reference-scripts point at the contract reporter instead of restating any contract | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
 | [US0651](US0651-the-refusals-a-run-hits-are-counted-so.md) | The refusals a run hits are counted, so the round-trip saving is a figure in the retro | Ready | EP0210 | 2026-08-07 | 2026-08-07 |
-| [US0677](US0677-the-code-and-risk-subscores-are-computed-from.md) | The code and risk subscores are computed from the hunks a unit CHANGES against the base ref, not from every function in every declared file | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0678](US0678-a-unit-whose-diff-cannot-be-resolved-bands.md) | A unit whose diff cannot be resolved bands FULL and names the basis the estimate used | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0679](US0679-the-scope-subscore-stops-counting-a-test-file.md) | The scope subscore stops counting a test file present only because the Affects convention requires it | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0677](US0677-the-code-and-risk-subscores-are-computed-from.md) | The code and risk subscores are computed from the hunks a unit CHANGES against the base ref, not from every function in every declared file | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0678](US0678-a-unit-whose-diff-cannot-be-resolved-bands.md) | A unit whose diff cannot be resolved bands FULL and names the basis the estimate used | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0679](US0679-the-scope-subscore-stops-counting-a-test-file.md) | The scope subscore stops counting a test file present only because the Affects convention requires it | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0680](US0680-the-band-distribution-over-this-repository-s-corpus.md) | The band distribution over this repository's corpus is RE-MEASURED after the change and recorded, so the claim that the gate discriminates rests on a number | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0681](US0681-plan-gate-active-takes-a-scope-as-well.md) | _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0682](US0682-review-mutation-evidence-stays-independent-of-the-test.md) | review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0683](US0683-the-close-reports-which-units-the-test-plan.md) | The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0684](US0684-every-consumer-of-route-estimate-asks-for-the.md) | Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded | Blocked | EP0217 | 2026-08-24 | 2026-08-24 |
+| [US0684](US0684-every-consumer-of-route-estimate-asks-for-the.md) | Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded | Won't Implement | EP0217 | 2026-08-24 | 2026-08-24 |
 | [US0685](US0685-the-entry-gate-keeps-the-demand-that-a.md) | The entry gate keeps the demand that a test plan EXISTS and drops the demand that a seat has approved it | Blocked | EP0218 | 2026-08-25 | 2026-08-25 |
 | [US0686](US0686-the-entry-refusal-names-when-the-independent-approval.md) | The entry refusal names WHEN the independent approval will be demanded, so the move is not a silent relaxation | Blocked | EP0218 | 2026-08-25 | 2026-08-25 |
 | [US0687](US0687-the-terminal-transition-demands-the-independent-plan-review.md) | The terminal transition demands the independent plan-review approval and refuses without one exactly as entry does today | Blocked | EP0218 | 2026-08-25 | 2026-08-25 |
@@ -180,7 +180,7 @@
 | [US0812](US0812-the-floor-lane-is-silent-when-every-script.md) | The floor lane is silent when every script parses, so it is not a check that always fires | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
 | [US0813](US0813-sprint-report-py-is-repaired-so-the-lane.md) | sprint_report.py is repaired, so the lane's first run over the real tree has something to find | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
 | [US0814](US0814-the-floor-lane-is-bound-into-the-pre.md) | The floor lane is bound into the pre-commit gate, so it runs in the command people actually run | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
-| [US0817](US0817-a-unit-whose-affects-names-a-gate-lane.md) | A unit whose Affects names a gate lane, a hook or the suite runner cannot reach Fixed or Done without a recorded green self-run of the affected lane on this repository | Ready | EP0248 | 2026-09-07 | 2026-09-07 |
+| [US0817](US0817-a-unit-whose-affects-names-a-gate-lane.md) | A unit whose Affects names a gate lane, a hook or the suite runner cannot reach Fixed or Done without a recorded green self-run of the affected lane on this repository | Superseded | EP0248 | 2026-09-07 | 2026-09-07 |
 | [US0823](US0823-every-other-route-that-ends-a-run-reads.md) | every other route that ends a run reads the same unanswered-unit predicate as the close, and stop --force records what it waived | Done | EP0206 | 2026-09-15 | 2026-09-15 |
 | [US0824](US0824-module-alone-at-the-push-boundary-runs-the.md) | module-alone at the push boundary runs the changed modules and everything that imports them | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
 | [US0825](US0825-the-lane-line-names-its-selection-and-the.md) | the lane line names its selection and the rule that produced it, so a narrowed lane is never read as a full one | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
@@ -198,7 +198,7 @@
 | [US0837](US0837-the-report-opens-with-the-sprint-goal-verbatim.md) | the report opens with the sprint goal verbatim and carries DORA's four keys with this project's mapping stated | Done | EP0255 | 2026-09-16 | 2026-09-16 |
 | [US0838](US0838-refine-runs-a-stakeholder-consult-over-the-epic.md) | refine runs a stakeholder consult over the epic and its stories and records it as an artefact naming the units it covered | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0839](US0839-a-risk-trigger-derived-from-affects-and-unit.md) | a risk trigger derived from Affects and unit type names which units still owe a consult, and most bugs skip without a reason | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
-| [US0840](US0840-a-consult-artefact-carries-each-persona-s-verdict.md) | a consult artefact carries each persona's verdict and a disposition per finding, so a consult can be counted rather than remembered | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
+| [US0840](US0840-a-consult-artefact-carries-each-persona-s-verdict.md) | a consult artefact carries each persona's verdict and a disposition per finding, so a consult can be counted rather than remembered | Superseded | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0841](US0841-an-unanswered-stakeholder-reject-is-reported-at-the.md) | an unanswered stakeholder Reject is reported at the close, holding nothing, and the operator rules it | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0842](US0842-consult-yield-is-measured-findings-per-consult-and.md) | consult yield is measured - findings per consult and the share folded or filed - so the requirement is revisited on evidence | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0843](US0843-module-alone-prints-the-per-module-wall-clock.md) | module-alone prints the per-module wall clock it already computes, so a narrowing can be judged before it is built | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
@@ -213,6 +213,11 @@
 | [US0852](US0852-rule-the-config-docs-and-remaining-requests-against.md) | rule the config, docs and remaining requests against HEAD | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
 | [US0853](US0853-re-triage-bg0463-s-twenty-batch-boundary-findings.md) | re-triage BG0463's twenty batch-boundary findings against HEAD and file the survivors | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
 | [US0854](US0854-decompose-the-four-8-point-stories-and-resolve.md) | decompose the four 8-point stories and resolve the US0793/US0794 duplicate, so the delivery backlog is honest before the build run plans from it | Ready | EP0257 | 2026-09-20 | 2026-09-20 |
+| [US0855](US0855-the-self-run-writer-a-recording-command-upserts.md) | the self-run WRITER: a recording command upserts a Self-run field carrying lane, verdict, wall clock and a hash over the unit's gate-surface bytes | Draft | EP0248 | 2026-09-21 | 2026-09-21 |
+| [US0856](US0856-the-self-run-gate-a-unit-whose-affects.md) | the self-run GATE: a unit whose Affects names the derived gate surface cannot reach Fixed or Done without a green, current self-run | Draft | EP0248 | 2026-09-21 | 2026-09-21 |
+| [US0857](US0857-the-pre-push-hook-runs-its-own-gate.md) | the pre-push hook runs its own gate against HEAD under SDLC_PRE_PUSH_SELF_RUN and pushes nothing, so a hook change can record a self-run | Draft | EP0248 | 2026-09-21 | 2026-09-21 |
+| [US0858](US0858-a-consult-artefact-s-verdicts-and-dispositions-come.md) | a consult artefact's verdicts and dispositions come from closed sets, and a FILE disposition names an id that resolves | Draft | EP0256 | 2026-09-21 | 2026-09-21 |
+| [US0859](US0859-a-consult-artefact-s-coverage-is-the-stamped.md) | a consult artefact's coverage is the stamped unit list and each verdict row's cast role is read from the persona card | Draft | EP0256 | 2026-09-21 | 2026-09-21 |
 
 ## Archived Releases
 

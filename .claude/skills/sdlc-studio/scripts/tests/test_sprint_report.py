@@ -4209,6 +4209,49 @@ class TheSealDoesNotMoveTheWindowTests(ReportOfRecordBase):
                                      f"was taken from the seal rather than the page: {v2['moved']}")
 
 
+    def test_the_bound_is_an_envelope_field_and_never_a_digest_figure(self) -> None:
+        """AC5, required by the third plan review. The whole repair rests on one property that
+        was stated only in a code comment: `window_end` must NOT enter the fingerprint.
+
+        MUTANT: record it the way every other value on the page is recorded - as a header
+        figure, `fig("window_end", ...)` beside `fig("ended_at", ...)`. That passes all four of
+        this class's other selectors and all 208 tests in this module, and makes every page
+        filed before the bound shipped read INVALIDATED with `moved=['window_end']`. It is this
+        bug's own failure mode returning through its own repair, which is why it needs a row.
+        """
+        root = self._tree(open_run=True, commit_at="2026-12-01T00:00:00+00:00")
+        rep = sr.build_report(root, FIX_RETRO)
+        self.assertTrue(rep.get("window_end"), "the page records no bound at all")
+        keys = [k for _sec, k, _f in _leaf_figures(rep)]
+        self.assertNotIn("window_end", keys,
+                         "the bound is a digest FIGURE, so recording it changes the very "
+                         "fingerprint it exists to protect")
+        # ...and directly: moving the bound must not move the fingerprint.
+        before = sr.fingerprint(rep)
+        moved = {**rep, "window_end": "1999-01-01T00:00:00Z"}
+        self.assertEqual(before, sr.fingerprint(moved),
+                         "changing the recorded bound changed the fingerprint")
+
+    def test_the_bound_reaches_the_filed_page_not_only_the_derived_dict(self) -> None:
+        """AC6, required by the third plan review. Every other criterion asserts `window_end`
+        on the IN-MEMORY dict, so the design's central claim - the bound is recorded and
+        replayed rather than inferred - was untested on the artefact that is actually read.
+
+        MUTANT: strip `window_end` in `file_report` before writing. AC1, AC2 and AC3 all stay
+        green, because `_legacy_window_end` happens to infer the same answer for their
+        fixtures; across the whole module the only thing that notices is a `KeyError` in
+        another test's FIXTURE SETUP, which a defensive `.pop(..., None)` would erase.
+        """
+        root = self._tree(open_run=True, commit_at="2026-12-01T00:00:00+00:00")
+        rep = sr.build_report(root, FIX_RETRO)
+        rid = sr.file_report(root, rep)
+        stored = json.loads((root / "sdlc-studio" / "reports" / f"{rid}.json")
+                            .read_text(encoding="utf-8"))
+        self.assertEqual(rep["window_end"], stored.get("window_end"),
+                         "the filed page does not carry the bound it was derived under, so a "
+                         "reader re-deriving it must INFER the window rather than replay it")
+
+
 
 class InvalidatedReportTests(ReportOfRecordBase):
     """US0845 AC1-AC2: invalidation is decided by re-derivation."""

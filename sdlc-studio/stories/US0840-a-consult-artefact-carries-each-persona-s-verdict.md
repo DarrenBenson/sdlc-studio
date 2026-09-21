@@ -1,6 +1,7 @@
 # US0840: a consult artefact carries each persona's verdict and a disposition per finding, so a consult can be counted rather than remembered
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Superseded-by:** US0858, US0859
 > **Delivers:** RFC0058
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -32,7 +33,7 @@ in EP0256.
 - **When** `consult.py parse <path> --format json` runs through `main` on each
 - **Then** the first returns three rows, each naming the persona, the cast role and a verdict from exactly {Approve, Concerns, Reject}; the second exits 2 naming the persona whose cell is empty; and a third copy whose verdict cell reads `Approve with notes` also exits 2, naming the value it could not place in the set
 - **Mutant:** read an unrecognised or empty verdict as Approve, or drop that persona's row - a consult that lost a persona then counts as a full panel, and US0842's yield counts a verdict it never received
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_consult.py::ConsultParseTests::test_every_persona_row_carries_a_verdict_from_the_closed_set
+- **Verify:** superseded by US0858 AC1 - that unit owns this verifier
 
 ### AC2: a disposition is one of the closed set, and a FILE disposition names an id that resolves
 
@@ -40,7 +41,7 @@ in EP0256.
 - **When** `consult.py parse` runs
 - **Then** the four valid rows are returned with their disposition, each of the three is returned marked `unanswered` with the reason that made it so, and the count of unanswered rows is part of the result, because US0841 reports on it
 - **Mutant:** accept any non-empty cell as a disposition - `will consider` then answers a Reject, and the unanswered list US0841 prints is permanently empty whatever the consult found
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_consult.py::ConsultParseTests::test_a_disposition_is_one_of_the_closed_set_and_a_file_id_must_resolve
+- **Verify:** superseded by US0858 AC2 - that unit owns this verifier
 
 ### AC3: coverage is the stamped unit list, never re-derived from the tree
 
@@ -48,7 +49,7 @@ in EP0256.
 - **When** `consult.py units <path>` runs
 - **Then** it returns exactly the two stamped story ids and the epic, the later story is absent, and the deleted id is reported beside the list as unresolvable rather than dropped from it
 - **Mutant:** read the epic's children at parse time instead of the stamped line - a consult then silently covers every unit added after it ran, which is the one thing a coverage record exists to prevent
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_consult.py::ConsultParseTests::test_coverage_is_the_stamped_units_line
+- **Verify:** superseded by US0859 AC3 - that unit owns this verifier
 
 ### AC4: each verdict row's cast role is read from the persona card, so the anti-persona is identifiable
 
@@ -56,10 +57,11 @@ in EP0256.
 - **When** `consult.py parse` runs on both
 - **Then** both return the same cast role per persona, read from the card rather than from the document; and a fourth persona named in the artefact with no card in the tree carries cast role `unknown` and is named in the output, never defaulted
 - **Mutant:** infer the cast role from the section heading the artefact renders - the two consults already written head that section differently, so on one of them the anti-persona US0842 must count separately is read as an ordinary user
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_consult.py::ConsultParseTests::test_cast_role_is_read_from_the_persona_card
+- **Verify:** superseded by US0859 AC4 - that unit owns this verifier
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-21 | decomposition | Superseded by US0858, US0859 (5 + 3 points) in RUN-01M306PY under D0222. It sat at the 8-point ceiling where this project's own tooling says estimation reliability falls off. Every criterion is carried VERBATIM into exactly one part - nothing dropped, nothing widened - so the scope is provably unchanged and only the sizing moves. |

@@ -1,6 +1,6 @@
 # CR-0548: derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0217
 > **Priority:** High
 > **Type:** enhancement
@@ -42,3 +42,4 @@ Generate it, and refuse a hand-edit to the derived half the way `_index.md` is r
 | --- | --- | --- |
 | 2026-08-19 | sdlc-studio | Raised |
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: every acceptance criterion is delivered by US0675-US0676 (Done; all 14 Verify selectors pass). Complete is refused only because its status derives from EP0217, which still holds CR0549/CR0550's Blocked stories - re-parent those to reach Complete. |
+| 2026-09-21 | audit ruling | ALREADY DELIVERED - closed. US0675 and US0676 are Done and ticked. `verify_ac.py depth` derives the counts from the ledger, renders EVIDENCE ABSENT when the ledger holds no executed row, and `depth_edit_faults` refuses a hand-edit to the sealed derived half while leaving the judgement half outside the delimiters untouched. Blocked from deriving by the same shared EP0217 as CR0547. |

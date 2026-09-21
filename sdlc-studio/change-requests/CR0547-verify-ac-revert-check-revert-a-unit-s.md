@@ -1,6 +1,6 @@
 # CR-0547: verify_ac revert-check: revert a unit's production files and REQUIRE its own verifiers to go red
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0217
 > **Priority:** High
 > **Type:** enhancement
@@ -42,3 +42,4 @@ Wire it into the `transition -> Fixed/Done` gate beside the planned-mutant check
 | --- | --- | --- |
 | 2026-08-19 | sdlc-studio | Raised |
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: every acceptance criterion is delivered by US0671-US0674 (Done; all 29 Verify selectors pass) with the lane advisory at the boundary per D0149. Complete is refused only because its status derives from EP0217, which still holds CR0549/CR0550's Blocked stories - re-parent those to reach Complete. |
+| 2026-09-21 | audit ruling | ALREADY DELIVERED - closed. Every criterion maps to a shipped, Done story: US0671, US0672, US0673 and US0674, all ticked in EP0217. `verify_ac.py revert-check` is a live subcommand and `gate.py`'s revert-check lane runs it at the push and release boundary, with a real yield record (53 runs, 484 examined, 10 would-refuse). It stayed In Progress only because EP0217 is a SHARED epic whose Draft status blocks the derivation - the request was finished, the link was not. |

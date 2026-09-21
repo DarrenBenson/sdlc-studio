@@ -25,3 +25,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-21 | audit ruling | RUN-01M306PY sweep, US0854 AC2: ruled GENUINELY DISTINCT, not a duplicate. US0793 asserts the defect case - a row whose ledger kill node is not named by its criterion's `Verify:` selector reads `killed-elsewhere` - and US0794 asserts the PAIRED POSITIVE CONTROL, that a row whose kill node IS named still reads `killed`. This project's own testing practice requires a positive control beside each refusal, so the two are one criterion's two halves. They share four files and 50% of their wording because that is what a control IS; the detector is right about the surface and wrong about the conclusion. Recorded on BG0721. |

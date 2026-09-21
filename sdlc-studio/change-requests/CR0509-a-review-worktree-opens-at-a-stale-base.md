@@ -1,6 +1,6 @@
 # CR-0509: A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet
 
-> **Status:** In Progress
+> **Status:** Proposed
 > **Decomposed-into:** EP0225
 > **Priority:** High
 > **Type:** Improvement
@@ -37,3 +37,4 @@ Both. The refusal is cheap and closes the seven-for-seven case outright. The rep
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-31 | Claude Opus 5 | Raised |
+| 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, and DELIBERATELY so: RETRO0116 formally ruled it `deferred` on 2026-09-10 because every reviewer that run worked in /tmp copies taken at HEAD, so the cost did not land. That is a habit, not a gate - a verdict measured against the wrong tree is still indistinguishable from a real one. At HEAD `--base` exists only on `sprint-review` and is marked advisory; `record` and `evidence` carry no base field at all. US0722-US0724 Draft. |

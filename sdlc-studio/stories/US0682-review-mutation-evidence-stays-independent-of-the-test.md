@@ -6,7 +6,7 @@
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
-> **Epic:** EP0217
+> **Epic:** EP0218
 > **Blocked by:** D0150 and CR0555. A pre-code goal review REJECTED this batch three times. The third rejection was decisive: the measurement justifying the design was taken against a throwaway script rather than the weighted pipeline `route.estimate` actually runs, and three literal readings of the criterion through the real pipeline land at 81 to 97 per cent `light` - the mirror image of the defect, in the more dangerous direction. D0150 then ruled out the class entirely: no author-declared field may gate review depth, and `Points` is author-declared. CR0555 replaces the approach - the expensive half of the gate MOVES to the terminal transition where a diff exists, rather than being banded on a signal that must be read before one does. Do not build this batch; it is kept for its review record, which cost three rounds to produce. Disposition: mutation-evidence independence - still wanted, re-target at CR0555's shape.
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -32,3 +32,4 @@
 | 2026-08-21 | sdlc-studio | Groomed: acceptance criteria authored against the slice |
 | 2026-08-24 | sdlc-studio | RE-GROOMED against CR0549's second and third corrections after a pre-code goal review REJECTED the first attempt: the declared basis now reads `Points` and `Affects` breadth rather than whole-file complexity, measured to move `light` from 13% to 33%. |
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - the lane's independence is coded and pinned for one pairing (BG0541, no cutoff), but no test combines review.mutation_evidence with the test-plan scope (AC2). |
+| 2026-09-21 | audit ruling | RUN-01M306PY sweep: re-parented from EP0217 to CR0555's EP0218, which the audit found already carries this work as its AC4/AC6. It stays Blocked and wanted - only its parent changes, because CR0550 is retracted and EP0217 had to derive Done so CR0547 and CR0548 could close. |
