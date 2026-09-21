@@ -110,6 +110,8 @@ sprints fits noise.
 
 **0 of 8 unit(s) measured; 8 of 8 forecast at plan time.**
 
+**Sprint tokens/point: 2,200,303** (4,400,606 tokens over 2 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
@@ -187,4 +189,4 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Handoff
 
-- [HO-0078](../handoffs/HO0078-the-backlog-tells-the-truth-every-stalled-request.md) - 7 remaining item(s): 1 copilot-tail, 6 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
+- [HO-0079](../handoffs/HO0079-the-backlog-tells-the-truth-every-stalled-request.md) - 7 remaining item(s): 0 copilot-tail, 7 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

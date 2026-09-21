@@ -11,3 +11,4 @@ than edited when a figure moves.
 | ID | Run | Generated | Fingerprint | Signed |
 | --- | --- | --- | --- | --- |
 | [RPT0002](RPT0002-sprint-report-run-01m2spns.md) | RUN-01M2SPNS | 2026-09-18T20:21:14Z | 215a0147800b237e | Darren Benson |
+| [RPT0003](RPT0003-sprint-report-run-01m306py.md) | RUN-01M306PY | 2026-09-21T10:41:35Z | 488315550969d744 | unsigned |
