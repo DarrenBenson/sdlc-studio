@@ -67,6 +67,26 @@ prose, only the selector's exit code counts - so an honest self-report of a miss
 laundered into a green. Checked, confirmed, and filed as BG0733 at High. The criterion's verifier
 now tests its own claim and correctly fails.
 
+## THE LAST CRITERION WAS MET RATHER THAN EXCUSED
+
+US0853's AC2 says nothing carries forward as a bullet inside another artefact. Two of its fifteen
+survivors sat in CR0592 as exactly that, because the filer routes Low findings into a themed
+consolidation CR **by design**. It was recorded PARTIAL, and an independent reviewer approved
+that disposition - it claims a fail and hands the reader the artefact to check, which is the
+opposite of grading your own homework.
+
+Then the honest answer turned out to be available, and it was taken. BG0734 and BG0735 are minted
+through `artifact.py new`, with criteria, `Affects` and size, and removed from the bucket. Neither
+of the two dishonest routes was used: filing them at Medium would have inflated two severities to
+make a criterion go green, and switching off `low_consolidation` would have been repairing the
+mechanism that refuses the run. BG0731 still carries the conflict between that mechanism and
+D0217.
+
+The verifier was tightened in the same pass, and for a reason worth stating: it scanned the whole
+file for `BG0463`, so the very revision row recording this repair would have failed it. A
+verifier that measures prose rather than the thing its criterion is about is the same defect this
+run met five other times. It now checks finding bullets only.
+
 ## BG0718: THREE REJECTIONS, THREE REAL DEFECTS
 
 Round 1 found a fixture claiming an open run that was not one, and a repair that relocated the
