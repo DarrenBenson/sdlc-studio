@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | In Review | 1 |
-| Accepted | 53 |
+| Accepted | 54 |
 | Superseded | 2 |
 | Withdrawn | 3 |
 | **Total** | **60** |
@@ -21,7 +21,7 @@
 | [RFC-0057](RFC0057-a-queue-of-planned-sprints-so-the-planner.md) | A queue of planned sprints, so the planner and the runner can be different people | High | Accepted | Claude Fable 5 (operator-raised, RUN-01KYHVWK resume discussion) | 2026-07-27 | EP0176 |
 | [RFC-0058](RFC0058-stakeholder-feedback-shapes-the-work-when-how-often.md) | Stakeholder feedback shapes the work: when, how often and at what cost the stakeholder personas are consulted | High | In Review | sdlc-studio | 2026-09-15 | EP0256 |
 | [RFC-0059](RFC0059-a-run-ends-with-one-signed-report-the.md) | A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts | High | Accepted | sdlc-studio | 2026-09-16 | EP0255 |
-| [RFC-0060](RFC0060-the-dark-factory-a-sprint-that-decides-for.md) | the dark factory: a sprint that decides for itself, and a goal that decides whether it worked | Medium | Draft | sdlc-studio | 2026-09-21 | -- |
+| [RFC-0060](RFC0060-the-dark-factory-a-sprint-that-decides-for.md) | the dark factory: a sprint that decides for itself, and a goal that decides whether it worked | Medium | Accepted | sdlc-studio | 2026-09-21 | EP0258, EP0259 |
 
 ## Archived Releases
 

@@ -2072,29 +2072,7 @@ def spawned_column_drift(repo_root: Path | str) -> list[dict]:
         path = root / rel / "_index.md"
         if not path.is_file():
             continue
-        col: int | None = None
-        for line in sdlc_md.read_text_safe(path).splitlines():
-            cells = sdlc_md.table_cells(line)
-            if not cells:
-                continue
-            lowered = [c.strip().lower() for c in cells]
-            # Re-pin at ANY header carrying an ID column, as `project_fields` does. Pinning once
-            # at the first table read the SUMMARY table every discovery index opens with - a
-            # `| Status | Count |` block that carries no spawned column - so the position was
-            # None for the rest of the file and every data row below was skipped. The detector
-            # was inert on every real index while its tests, whose fixtures had no summary
-            # block, passed. Re-pinning also RESETS the column, so a later table that does not
-            # carry one is exempt instead of inheriting this table's positions.
-            if "id" in lowered:
-                col = next((i for i, h in enumerate(lowered)
-                            if any(h.startswith(a) for a in SPAWNED_COLUMN_ALIASES)), None)
-                continue
-            if col is None or col >= len(cells):
-                continue
-            m = sdlc_md.ID_SEARCH_RE.search(cells[0])
-            if not m:
-                continue
-            rid = sdlc_md.norm_id(m.group(0))
+        for _line_no, cells, col, rid in _spawned_column_rows(sdlc_md.read_text_safe(path)):
             claimed = {sdlc_md.norm_id(x) for x in sdlc_md.ID_SEARCH_RE.findall(cells[col] or "")}
             actual = {sdlc_md.norm_id(cid) for cid, _t in sdlc_md.children_of(root, rid)}
             if claimed == actual:
@@ -2105,6 +2083,11 @@ def spawned_column_drift(repo_root: Path | str) -> list[dict]:
                            f"and the census finds {sorted(actual) or '(none)'} - a column that "
                            f"is right only on the day somebody sweeps it is one nobody can "
                            f"trust"),
+                # The sets themselves, not only their prose. The writer decides which WAY a cell
+                # disagrees before it touches it, and re-deriving them from `detail` would be a
+                # second reading of the same question that could answer it differently.
+                "claimed": sorted(claimed),
+                "actual": sorted(actual),
                 # `fix`, which is the key every drift item carries and the one the sweep's
                 # printer reads. This item called it `remedy`, so the first index to produce one
                 # would have killed `reconcile detect` with a KeyError - unreachable only for as
@@ -2112,6 +2095,99 @@ def spawned_column_drift(repo_root: Path | str) -> list[dict]:
                 "fix": _spawned_remedy(rel, rid, claimed, actual),
             })
     return drift
+
+
+def _spawned_column_rows(index_text: str):
+    """Yield `(line index, cells, spawned-column offset, id)` for each request row that has one.
+
+    ONE definition, consumed by both the detector and `apply_spawned_column`, because the two
+    must agree about which cell holds the claim. A writer that re-derived the offset separately
+    is the enumeration defect this module keeps re-filing - and here it would not merely miss a
+    row, it would write an epic id over whichever column its own count landed on.
+
+    Re-pins at ANY header carrying an ID column, as `project_fields` does. Pinning once at the
+    first table read the SUMMARY table every discovery index opens with - a `| Status | Count |`
+    block that carries no spawned column - so the position was None for the rest of the file and
+    every data row below was skipped. The detector was inert on every real index while its tests,
+    whose fixtures had no summary block, passed. Re-pinning also RESETS the column, so a later
+    table that does not carry one is exempt instead of inheriting this table's positions.
+    """
+    col: int | None = None
+    for i, line in enumerate(index_text.splitlines()):
+        cells = sdlc_md.table_cells(line)
+        if not cells:
+            continue
+        lowered = [c.strip().lower() for c in cells]
+        if "id" in lowered:
+            col = next((j for j, h in enumerate(lowered)
+                        if any(h.startswith(a) for a in SPAWNED_COLUMN_ALIASES)), None)
+            continue
+        if col is None or col >= len(cells):
+            continue
+        m = sdlc_md.ID_SEARCH_RE.search(cells[0])
+        if not m:
+            continue
+        yield i, cells, col, sdlc_md.norm_id(m.group(0))
+
+
+def apply_spawned_column(repo_root: Path | str, dry_run: bool = False,
+                         types: list[str] | None = None) -> dict:
+    """Write each request row's spawned-work cell from the census, in the ONE safe direction.
+
+    BG0736. Every other kind in `DRIFT_KINDS` had an `apply_*` writer; this one had a detector,
+    a remedy hint and nothing that could act on either, so a decomposition raised the standing
+    drift count by one and no command could lower it again. The gate refuses on drift, so the
+    tool's own remedy line pointed at an edit of a derived file that the doctrine forbids.
+
+    Only the ADD direction is automated, and the asymmetry is the point rather than an omission.
+    A cell the census can see past is derived output and is simply brought up to date. A cell
+    naming work the census CANNOT see is the opposite case: the child records no upward link, so
+    that cell may be the only surviving record that the link exists, and rewriting it from the
+    census would delete the evidence. Those are HELD and reported, exactly as
+    `apply_epic_index_derivable` holds a cell the census contradicts.
+
+    Rewrites ONLY the one cell, located by the shared row reader and split on UNESCAPED pipes, so
+    a title carrying a literal `\\|` neither shifts the columns nor loses its escape on the way
+    back out. Idempotent. Returns {synced: [ids], held: [{id, reason}]}.
+    """
+    root = Path(repo_root)
+    wanted: dict[str, dict[str, str]] = {}
+    held: list[dict] = []
+    for d in spawned_column_drift(root):
+        if types is not None and d["type"] not in types:
+            continue
+        if set(d["claimed"]) - set(d["actual"]):
+            held.append({"id": d["id"], "type": d["type"], "reason": d["fix"]})
+            continue
+        wanted.setdefault(d["type"], {})[d["id"]] = ", ".join(d["actual"]) or "--"
+    if dry_run:
+        return {"synced": [rid for m in wanted.values() for rid in m], "held": held}
+    synced: list[str] = []
+    for type_, by_id in wanted.items():
+        rel = sdlc_md.ARTIFACT_TYPES.get(type_, (None,))[0]
+        if not rel:
+            continue
+        path = root / rel / "_index.md"
+        text = sdlc_md.read_text_safe(path)
+        lines = text.splitlines(True)
+        touched = False
+        for line_no, _cells, col, rid in _spawned_column_rows(text):
+            if rid not in by_id:
+                continue
+            line = lines[line_no]
+            cells = _split_row_cells(line)
+            if col >= len(cells):
+                continue
+            cells[col] = by_id[rid]
+            lines[line_no] = ("| " + " | ".join(cells) + " |"
+                              + ("\n" if line.endswith("\n") else ""))
+            synced.append(rid)
+            touched = True
+        if touched:
+            # atomic_write, not write_text: an index is read by every other lane, and a torn
+            # write from an interrupted apply leaves a half-table nothing can parse.
+            sdlc_md.atomic_write(path, "".join(lines))
+    return {"synced": synced, "held": held}
 
 
 def _spawned_remedy(rel: str, rid: str, claimed: set, actual: set) -> str:
@@ -3158,6 +3234,12 @@ def cmd_apply(args: argparse.Namespace) -> int:
     prune = getattr(args, "prune_orphans", False)
     do_meta = args.scope in (None, "meta")
     do_breakdown = args.scope in (None, "epics")
+    # The spawned cell lives on the REQUEST indexes, so it belongs to the request scopes and to
+    # the full sweep - not to `epics`, where the rest of the relationship writers sit. Scoped by
+    # type as well as gated, so `--scope rfcs` does not quietly rewrite the CR index too.
+    spawned_types = [t for t in sdlc_md.DISCOVERY_TYPES
+                     if args.scope is None or t in SCOPE_TYPES.get(args.scope, [])]
+    do_spawned = bool(spawned_types)
     if getattr(args, "format", "text") == "json":
         by_type = {t: apply_type(t, repo_root, dry_run=args.dry_run, prune_orphans=prune)
                    for t in types}
@@ -3169,6 +3251,9 @@ def cmd_apply(args: argparse.Namespace) -> int:
             by_type["linked_epics"] = apply_linked_epics(repo_root, dry_run=args.dry_run)
             by_type["epic_index"] = apply_epic_index_derivable(
                 repo_root, dry_run=args.dry_run)
+        if do_spawned:
+            by_type["spawned_column"] = apply_spawned_column(
+                repo_root, dry_run=args.dry_run, types=spawned_types)
         if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):
             by_type["derivable_requests"] = apply_derivable_requests(
                 repo_root, dry_run=args.dry_run)
@@ -3273,6 +3358,18 @@ def cmd_apply(args: argparse.Namespace) -> int:
             # as a clean sweep to anyone reading stdout.
             print(f"held {len(ei['held'])} epic index cell(s) whose value the census contradicts "
                   f"- reported, never rewritten (see the warnings on stderr)")
+    if do_spawned:
+        sc = apply_spawned_column(repo_root, dry_run=args.dry_run, types=spawned_types)
+        for rid in sc["synced"]:
+            print(f"{'WOULD sync' if args.dry_run else 'synced'} spawned-work cell for {rid}")
+            n += 1
+        for h in sc["held"]:
+            # Counted as unapplied, not merely printed: a cell naming work the census cannot see
+            # is a real disagreement that survives the sweep, and one that exits 0 is invisible
+            # to the CI that runs this.
+            print(f"could NOT sync spawned-work cell for {h['id']}: {h['reason']}",
+                  file=sys.stderr)
+            unapplied += 1
     # Full-sweep only, and gated exactly as the detector is: an unenforced project closes its
     # requests by assertion, so nothing here may move them.
     if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):

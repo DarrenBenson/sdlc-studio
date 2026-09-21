@@ -3856,6 +3856,165 @@ class SpawnedColumnPastTheSummaryTableTests(unittest.TestCase):
         self.assertEqual(1, proc.returncode, "drift was found and the exit code did not say so")
 
 
+class SpawnedColumnIsRepairableTests(unittest.TestCase):
+    """BG0736. `spawned-column` was the one kind in `DRIFT_KINDS` with a detector and no writer:
+    `apply` reported `changed 0 row(s)` against an item `detect` kept emitting, at every scope.
+    The gate refuses on drift, so decomposing a request blocked every subsequent commit and the
+    only remedy the tool named was an edit of a derived file the doctrine forbids."""
+
+    def _repo(self, cell: str, title: str = "x") -> Path:
+        d = Path(tempfile.mkdtemp(prefix="spawned_apply_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "rfcs").mkdir(parents=True)
+        (d / "sdlc-studio" / "epics").mkdir(parents=True)
+        (d / "sdlc-studio" / "rfcs" / "RFC0001-x.md").write_text(
+            "# RFC0001: x\n\n> **Status:** Accepted\n", encoding="utf-8")
+        (d / "sdlc-studio" / "epics" / "EP0001-y.md").write_text(
+            "# EP0001: y\n\n> **Status:** Draft\n> **Parent:** RFC0001\n", encoding="utf-8")
+        (d / "sdlc-studio" / "rfcs" / "_index.md").write_text(
+            "# RFC Index\n\n| ID | Title | Status | Spawned CRs |\n| --- | --- | --- | --- |\n"
+            f"| [RFC0001](RFC0001-x.md) | {title} | Accepted | {cell} |\n", encoding="utf-8")
+        return d
+
+    def _cell(self, root: Path) -> str:
+        row = [ln for ln in (root / "sdlc-studio" / "rfcs" / "_index.md")
+               .read_text(encoding="utf-8").splitlines() if "RFC0001" in ln][0]
+        return reconcile._split_row_cells(row)[3]
+
+    def test_a_stale_cell_is_brought_up_to_date(self) -> None:
+        """The mutant: `apply_spawned_column` returning {"synced": []} without writing, which is
+        precisely the state before this fix - a detector firing into a sweep that cannot act."""
+        root = self._repo("--")
+        res = reconcile.apply_spawned_column(root)
+        self.assertEqual(["RFC0001"], res["synced"])
+        self.assertEqual("EP0001", self._cell(root))
+        self.assertEqual([], reconcile.spawned_column_drift(root),
+                         "the sweep must be able to return the tree to zero drift")
+
+    def test_the_repair_is_idempotent(self) -> None:
+        """A writer that re-reports a row it already wrote makes every later sweep look dirty."""
+        root = self._repo("--")
+        reconcile.apply_spawned_column(root)
+        self.assertEqual({"synced": [], "held": []}, reconcile.apply_spawned_column(root))
+
+    def test_a_cell_claiming_work_the_census_cannot_see_is_held_not_rewritten(self) -> None:
+        """The mutant: writing `", ".join(actual)` unconditionally. The child records no upward
+        link, so the cell may be the ONLY surviving record that the link exists - deriving it
+        from the census then deletes the evidence rather than correcting it."""
+        root = self._repo("EP0001, EP9999")
+        res = reconcile.apply_spawned_column(root)
+        self.assertEqual([], res["synced"])
+        self.assertEqual(["RFC0001"], [h["id"] for h in res["held"]])
+        self.assertEqual("EP0001, EP9999", self._cell(root),
+                         "held means UNCHANGED - an assertion that only looked for EP9999 passed "
+                         "a writer that held the row and still dropped the id the census sees")
+
+    def test_the_rest_of_the_row_survives_an_escaped_pipe(self) -> None:
+        """The mutant: rewriting through `sdlc_md.table_cells`, which UNESCAPES `\\|`. The cell
+        would be written back with a bare pipe and every column after it would shift on the next
+        read - the exact failure `apply_linked_epics` records in its own docstring."""
+        root = self._repo("--", title=r"push \| release")
+        reconcile.apply_spawned_column(root)
+        cells = reconcile._split_row_cells(
+            [ln for ln in (root / "sdlc-studio" / "rfcs" / "_index.md")
+             .read_text(encoding="utf-8").splitlines() if "RFC0001" in ln][0])
+        self.assertEqual(4, len(cells), "the escaped pipe split the row into a new column")
+        self.assertEqual(r"push \| release", cells[1])
+        self.assertEqual("EP0001", cells[3])
+
+    def test_the_shipped_apply_clears_it(self) -> None:
+        """Through the CLI, because the wiring is the half a library test cannot see - this kind
+        had a working detector for a whole release while `apply` never called anything for it."""
+        root = self._repo("--")
+        proc = subprocess.run(
+            [sys.executable, "-B", str(SCRIPT_PATH), "apply", "--root", str(root)],
+            capture_output=True, text=True, check=False)
+        self.assertIn("spawned-work cell for RFC0001", proc.stdout)
+        self.assertEqual(0, proc.returncode,
+                         "the positive control for AC9 - a sweep holding nothing exits clean")
+        self.assertEqual([], reconcile.spawned_column_drift(root))
+
+    def test_dry_run_names_the_row_and_writes_nothing(self) -> None:
+        """A dry run that already wrote is the worst of both - it reports a plan and performs it."""
+        root = self._repo("--")
+        before = (root / "sdlc-studio" / "rfcs" / "_index.md").read_text(encoding="utf-8")
+        self.assertEqual(["RFC0001"], reconcile.apply_spawned_column(root, dry_run=True)["synced"])
+        self.assertEqual(before, (root / "sdlc-studio" / "rfcs" / "_index.md")
+                         .read_text(encoding="utf-8"))
+
+    def test_the_writer_touches_only_the_rows_it_was_asked_for(self) -> None:
+        """Three ways a row is none of the writer's business, one branch each. It walks EVERY row
+        in the index rather than only the drifted ones, so each has to be recognised: a row whose
+        cell is already true, a continuation row carrying no id in its first cell, and an index
+        whose header never adopted the column at all. A writer that pinned a default offset, or
+        keyed a row off whatever id the regex found elsewhere in the line, would write an epic id
+        into whichever column happened to sit there."""
+        root = self._repo("--")
+        index = root / "sdlc-studio" / "rfcs" / "_index.md"
+        base = index.read_text(encoding="utf-8")
+
+        with self.subTest("a row whose cell the census already agrees with"):
+            index.write_text(base + "| [RFC0002](RFC0002-q.md) | q | Draft | -- |\n",
+                             encoding="utf-8")
+            (root / "sdlc-studio" / "rfcs" / "RFC0002-q.md").write_text(
+                "# RFC0002: q\n\n> **Status:** Draft\n", encoding="utf-8")
+            self.assertEqual(["RFC0001"], reconcile.apply_spawned_column(root)["synced"])
+            self.assertIn("| q | Draft | -- |", index.read_text(encoding="utf-8"))
+
+        with self.subTest("a row the reader cannot key"):
+            # The note names RFC0001 - the id the writer IS carrying. Naming any other id made
+            # this subtest vacuous: the `rid not in by_id` guard skipped the row for the wrong
+            # reason and it passed against the very mutant it exists to catch.
+            index.write_text(base + "|  | a note about RFC0001 | | -- |\n", encoding="utf-8")
+            reconcile.apply_spawned_column(root)
+            self.assertIn("| a note about RFC0001 | | -- |", index.read_text(encoding="utf-8"))
+
+        with self.subTest("an index that never adopted the column"):
+            no_column = (
+                "# RFC Index\n\n| ID | Title | Status | Author |\n| --- | --- | --- | --- |\n"
+                "| [RFC0001](RFC0001-x.md) | x | Accepted | someone |\n")
+            index.write_text(no_column, encoding="utf-8")
+            self.assertEqual({"synced": [], "held": []}, reconcile.apply_spawned_column(root))
+            self.assertEqual(no_column, index.read_text(encoding="utf-8"))
+
+    def test_the_json_apply_path_reports_it_too(self) -> None:
+        """`--format json` is a separate dispatch, and a writer wired into only one of the two is
+        the shape of defect this module has shipped before."""
+        root = self._repo("--")
+        proc = subprocess.run(
+            [sys.executable, "-B", str(SCRIPT_PATH), "apply", "--root", str(root),
+             "--format", "json"], capture_output=True, text=True, check=False)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(["RFC0001"], payload["by_type"]["spawned_column"]["synced"])
+
+    def test_the_cli_reports_a_held_cell_and_exits_non_zero(self) -> None:
+        """A disagreement the sweep could not resolve that exits 0 is invisible to the CI that
+        runs this - every sibling unapplied path in this command drives the exit code."""
+        root = self._repo("EP0001, EP9999")
+        proc = subprocess.run(
+            [sys.executable, "-B", str(SCRIPT_PATH), "apply", "--root", str(root)],
+            capture_output=True, text=True, check=False)
+        self.assertIn("could NOT sync spawned-work cell for RFC0001", proc.stderr)
+        self.assertNotEqual(0, proc.returncode)
+
+    def test_a_scoped_apply_does_not_reach_another_type_s_index(self) -> None:
+        """`--scope rfcs` rewriting the CR index would be a sweep doing more than it was asked."""
+        root = self._repo("--")
+        (root / "sdlc-studio" / "change-requests").mkdir(parents=True)
+        cr_index = root / "sdlc-studio" / "change-requests" / "_index.md"
+        cr_index.write_text(
+            "# CR Index\n\n| ID | Title | Status | Spawned CRs |\n| --- | --- | --- | --- |\n"
+            "| [CR0001](CR0001-z.md) | z | Proposed | -- |\n", encoding="utf-8")
+        (root / "sdlc-studio" / "change-requests" / "CR0001-z.md").write_text(
+            "# CR0001: z\n\n> **Status:** Proposed\n", encoding="utf-8")
+        (root / "sdlc-studio" / "epics" / "EP0002-w.md").write_text(
+            "# EP0002: w\n\n> **Status:** Draft\n> **Parent:** CR0001\n", encoding="utf-8")
+        before = cr_index.read_text(encoding="utf-8")
+        reconcile.apply_spawned_column(root, types=["rfc"])
+        self.assertEqual(before, cr_index.read_text(encoding="utf-8"))
+        self.assertEqual("EP0001", self._cell(root), "the scoped type was skipped too")
+
+
 class CorpusReadOnceTests(unittest.TestCase):
     """US0531/US0532 (CR0465). Every sweep detector walks the artefact tree, and several resolve
     an id or list a request's children unit by unit - each of those a fresh walk that opens and

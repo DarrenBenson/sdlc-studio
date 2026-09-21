@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 140 |
+| Draft | 148 |
 | Ready | 15 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 7 |
 | Blocked | 8 |
-| **Total** | **859** |
+| **Total** | **867** |
 
 ## All Stories
 
@@ -218,6 +218,14 @@
 | [US0857](US0857-the-pre-push-hook-runs-its-own-gate.md) | the pre-push hook runs its own gate against HEAD under SDLC_PRE_PUSH_SELF_RUN and pushes nothing, so a hook change can record a self-run | Draft | EP0248 | 2026-09-21 | 2026-09-21 |
 | [US0858](US0858-a-consult-artefact-s-verdicts-and-dispositions-come.md) | a consult artefact's verdicts and dispositions come from closed sets, and a FILE disposition names an id that resolves | Draft | EP0256 | 2026-09-21 | 2026-09-21 |
 | [US0859](US0859-a-consult-artefact-s-coverage-is-the-stamped.md) | a consult artefact's coverage is the stamped unit list and each verdict row's cast role is read from the persona card | Draft | EP0256 | 2026-09-21 | 2026-09-21 |
+| [US0860](US0860-a-sprint-goal-is-authored-as-numbered-clauses.md) | a sprint goal is authored as numbered clauses each carrying a check, and `sprint plan --write` refuses a goal that carries none | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0861](US0861-a-clause-check-executes-in-any-of-the.md) | a clause check executes in any of the three ruled shapes, and a check that cannot be run reports `unknown` rather than green | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0862](US0862-a-persona-judged-clause-is-refused-at-plan.md) | a persona-judged clause is refused at plan time unless it names what would falsify it, and its ruling is refused unless it records the alternative rejected | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0863](US0863-sprint-close-derives-the-goal-verdict-from-the.md) | `sprint close` derives the goal verdict from the clause results, and `--goal-verdict` becomes an override that must carry its justification | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0864](US0864-a-derived-verdict-that-contradicts-the-author-s.md) | a derived verdict that contradicts the author's note is filed as a finding naming both, and the close is not refused | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0865](US0865-the-report-of-record-carries-every-goal-clause.md) | the report of record carries every goal clause with its own verdict and evidence, and counts operator rulings against persona rulings | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0866](US0866-the-sprint-plan-records-its-operational-design-domain.md) | the sprint plan records its operational design domain: the files it may touch, the artefacts it may create, the statuses it may set and the budget it may spend | Draft | EP0259 | 2026-09-21 | 2026-09-21 |
+| [US0867](US0867-plan-time-refusal-rejects-a-goal-clause-whose.md) | plan-time refusal rejects a goal clause whose check reaches outside the declared domain, naming the clause and the path that left it | Draft | EP0259 | 2026-09-21 | 2026-09-21 |
 
 ## Archived Releases
 

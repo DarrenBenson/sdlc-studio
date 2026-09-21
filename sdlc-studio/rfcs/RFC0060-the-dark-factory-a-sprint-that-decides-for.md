@@ -1,6 +1,7 @@
 # RFC-0060: the dark factory: a sprint that decides for itself, and a goal that decides whether it worked
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Decomposed-into:** EP0258, EP0259
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -190,15 +191,31 @@ managed while it is only visible by reading a decisions log after the fact.
 
 ## Open Decisions
 
-| # | Decision | Options | Owner | How it resolves | Status |
-| --- | --- | --- | --- | --- | --- |
-| D1 | What may a goal clause's check be? | (a) `Verify:` selectors only; (b) selectors plus tool-verdict checks; (c) plus free-text predicates a persona judges | Engineering seat | Spike: re-express the last four run goals as clauses and see which shapes are needed | Open |
-| D2 | What happens when the derived verdict contradicts the author's note? | (a) derived wins silently; (b) derived wins and the contradiction is a finding; (c) the close refuses | Operator | Operator call - it is a policy about honesty, not a mechanism | Open |
-| D3 | Is a persona ruling binding, or advisory with the agent deciding? | (a) binding, the seat's answer is the answer; (b) advisory; (c) binding within the ODD, advisory at its edge | Product seat + operator | Consult across the three seats | Open |
-| D4 | What is on the andon cord? | Candidate list: an irreversible action (push, tag, release, delete); an ODD exit; goal unreachable; budget exceeded; the same gate refusing twice | Operator | Operator call, then pinned as config | Open |
-| D5 | Is there an escalation budget, and what happens at zero? | (a) no budget, measure only; (b) soft budget that warns; (c) hard budget - past N the run stops and is handed back | Operator | Measure first under (a), decide at the second sprint | Open |
-| D6 | Who signs when the human is away for days? | (a) nobody, the run waits sealed-but-unsigned; (b) a delegate in a separate trust boundary; (c) an expiry after which PREPARE is re-run | Operator | Operator call | Open |
-| D7 | Does a persona ruling need the author-independence gate that a review needs? | (a) yes, a seat the delivering context did not brief; (b) no, the record is enough | Engineering seat | Consult; the existing `critic signoff` rule is the precedent | Open |
+> Six of seven were ruled by the operator on 2026-09-21 and are recorded in the decisions log.
+> D6 remains open and blocks nothing in the first two workstreams.
+
+| # | Decision | Ruling | Recorded |
+| --- | --- | --- | --- |
+| D1 | What may a goal clause's check be? | All three shapes: a `Verify:` selector, a named tool invocation with an expected verdict, and a persona-judged predicate - the third guarded (see below) | D0230 |
+| D2 | Derived verdict versus the author's note | Derived wins; the disagreement is filed as a finding naming both. The close is not refused | D0231 |
+| D3 | Is a persona ruling binding? | Binding inside the ODD, advisory at its edge - so a seat can never ratify an ODD exit | D0232 |
+| D4 | What is on the andon cord? | Exactly two conditions: an irreversible action (push, tag, release, delete) and an ODD exit | D0233 |
+| D5 | Is there an escalation budget? | Not yet. The count is measured and reported every run; the budget is set at the second sprint on that number | D0234 |
+| D6 | Who signs when the human is away for days? | Open | - |
+| D7 | Do persona rulings need author-independence? | No. The seat, the rationale and the rejected alternative are the audit trail | D0235 |
+
+**The guard on D1.** A persona-judged predicate is the shape closest to today's `--goal-verdict`,
+and adopting it without a condition would reproduce the failure with extra steps. So the third shape
+carries two obligations the other two do not: the clause must name **at plan time** what would
+falsify it, and the ruling must record the alternative it rejected. A persona-judged clause with
+neither is a finding, not a check. It earns its place because RUN-01M306PY's second clause - *the
+state that let them accumulate cannot rebuild* - has no expressible selector, and that is exactly
+the clause that went unchecked.
+
+**What D4 leaves to the line.** A gate refusing, a High finding filed mid-run, a hard design call, a
+budget overrun: none of these stop the line. The cord is keyed on reversibility and blast radius, not
+on how difficult the decision feels, and PREPARE/SEAL remains the human boundary rather than a second
+one being invented beside it.
 
 ---
 
@@ -242,20 +259,31 @@ WS1 is the one that must ship first and the one that carries value alone: a spri
 fourteen questions but proves its goal is strictly better than today. WS3 and WS4 are the pair that
 actually turns the lights off, and neither is safe without WS1's inspection at the end.
 
-A note on sequencing against current work: D0228 has already committed the next run to the five open
-High findings, four of which are the close and the report being honest about themselves - BG0715,
-BG0719, BG0722, BG0730, BG0733. That is WS1's foundation by another name, and this RFC should be
-refined into CRs after that run rather than competing with it.
+**Sequencing against current work (D0236).** D0228 committed the next run to the five open High
+findings - BG0715, BG0719, BG0722, BG0730, BG0733 - four of which are the close and the report being
+honest about themselves. That is WS1's foundation by another name, so the next run takes both rather
+than fixing the honesty defects through code WS1 would then rewrite. WS2 joins it under one
+condition: it must have a consumer on the day it lands. Plan-time refusal therefore also rejects a
+goal clause that reaches outside the declared ODD, so the boundary is load-bearing immediately
+instead of lying dormant until WS3 arrives to read it.
+
+That makes the next run the largest this project has planned. The mitigation is that the surface is
+narrow even where the point count is not - `sprint.py`, `sprint_report.py`, the close and the plan -
+and four of the five bugs are already changes to the code WS1 extends.
 
 ---
 
 ## Decision
 
-> *Filled on acceptance.*
+**Outcome:** Accepted - Option C, four workstreams, six of seven open decisions ruled (D0230-D0235).
 
-**Outcome:** TBD
-**Rationale:** TBD
-**Spawned CRs:** TBD
+**Rationale:** The two measurements this RFC rests on are the project's own: a goal recorded
+`achieved` over a High finding that contradicts it, and fourteen operator rulings in a single
+session of which about four needed a human. Neither is fixed by asking the agent to try harder.
+The sequencing stands as recommended - the goal contract ships before the autonomy - because an
+unattended line with no real inspection at the end is the failure this RFC is named after.
+
+**Spawned CRs:** TBD - refined alongside the five open Highs under D0236.
 
 ---
 
@@ -281,3 +309,4 @@ refined into CRs after that run rather than competing with it.
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-21 | agent | Drafted: problem, four options, Option C recommended, 7 open decisions, 4 workstreams |
+| 2026-09-21 | operator | Accepted. D1-D5 and D7 ruled (D0230-D0235); D6 left open. WS1+WS2 folded into the five-Highs run (D0236) |
