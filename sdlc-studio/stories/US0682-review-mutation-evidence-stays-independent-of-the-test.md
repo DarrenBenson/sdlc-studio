@@ -1,7 +1,7 @@
 # US0682: review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested
 
 > **Status:** Blocked
-> **Delivers:** CR0550
+> **Delivers:** CR0555
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

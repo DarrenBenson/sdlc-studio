@@ -20,6 +20,8 @@ Decomposed from CR0555. Delivers the work CR0555 requested.
 - [ ] [US0688: The plan review and the delivery review are carried in ONE brief, so a unit takes one round where it took two](../stories/US0688-the-plan-review-and-the-delivery-review-are.md)
 - [ ] [US0689: The move binds behind the existing dated cutoff, so a project that has not adopted it is unchanged and no backlog is retro-refused](../stories/US0689-the-move-binds-behind-the-existing-dated-cutoff.md)
 - [ ] [US0690: The close names which units had the approval demanded at terminal and which the cutoff exempted](../stories/US0690-the-close-names-which-units-had-the-approval.md)
+- [ ] [US0682: review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested](../stories/US0682-review-mutation-evidence-stays-independent-of-the-test.md)
+- [ ] [US0683: The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each](../stories/US0683-the-close-reports-which-units-the-test-plan.md)
 
 ## Acceptance Criteria (Epic Level)
 

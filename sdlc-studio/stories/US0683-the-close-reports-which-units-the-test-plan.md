@@ -1,7 +1,7 @@
 # US0683: The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each
 
 > **Status:** Blocked
-> **Delivers:** CR0550
+> **Delivers:** CR0555
 > **Created:** 2026-08-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
