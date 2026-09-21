@@ -4,6 +4,7 @@
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Verification depth:** functional
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -30,6 +31,25 @@ Join each carried stop-ship row to its artefact's current status when the checkl
 - **Then** the Open one still blocks and the Fixed one is discharged - or reported as a ruling that outlived its finding - so a ruling cannot outlive the thing it ruled on
 - **Mutant:** in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, collect every stop-ship row without joining it to its artefact's status, which is the shipped behaviour: a ruling then blocks every subsequent close forever and the only escape is editing a retro by hand
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::StopShipDischargeTests::test_a_ruling_on_a_fixed_finding_is_discharged_and_an_open_one_still_blocks
+
+- [ ] **AC2: `retro.carried_issues` reports each carried row's CURRENT artefact status.**
+  - **Given** a retro table naming a finding that has since reached a terminal status
+  - **When** `carried_issues` parses it
+  - **Then** each row carries the status read from the artefact, not only the text the table was written with - the parse never opened the artefact, which is why the join had nothing to join on
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::CarriedIssueStatusTests::test_a_carried_row_carries_its_artefact_s_current_status
+- [ ] **AC3: a carried row naming an artefact that cannot be read is reported, not discharged.**
+  - **Given** a retro row naming an id with no file on disk
+  - **When** the checklist is derived
+  - **Then** it is reported as unreadable and still blocks - an unresolvable id is the one case where silently discharging would turn a typo into a released hold
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::StopShipDischargeTests::test_an_unreadable_artefact_is_reported_and_still_blocks
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint_report.py`, collect every stop-ship row without joining it to its artefact's status - the shipped behaviour | a Fixed ruling is discharged, an Open one blocks |
+| AC2 | in `retro.py`, return each carried row from the table text alone, without reading the artefact it names | a carried row carries its current status |
+| AC3 | in `sprint_report.py`, treat an unreadable artefact as terminal so its ruling discharges | an unreadable artefact still blocks |
 
 ## Revision History
 

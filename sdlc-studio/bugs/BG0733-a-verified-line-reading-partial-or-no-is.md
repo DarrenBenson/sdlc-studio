@@ -4,6 +4,7 @@
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Verification depth:** functional
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,7 +24,35 @@ Read the field. The cheapest honest form: a criterion whose `Verified:` line is 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: A criterion's `Verified:` line is PROSE.
+- [ ] **AC1: a `Verified:` line that is not `yes` reports the criterion NOT satisfied, whatever its selector did.**
+  - **Given** a story whose criterion carries a green `Verify:` selector and a `Verified:` line reading `PARTIAL`
+  - **When** `verify_ac.py run --story <id>` runs
+  - **Then** that criterion counts as failing, and the run's summary counts it in `fail`, not in `pass`
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::VerifiedFieldIsReadTests::test_a_partial_verified_line_fails_a_green_selector
+- [ ] **AC2: the recorded reason travels with the verdict.**
+  - **Given** the same criterion, whose `Verified:` line names why it is partial
+  - **When** the run reports it
+  - **Then** the reason appears against that criterion in the run's report, so a reader is told WHICH part is unmet rather than only that something is
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::VerifiedFieldIsReadTests::test_the_recorded_reason_is_carried_into_the_report
+- [ ] **AC3: a `Verified:` line reading `yes` over a green selector still passes.**
+  - **Given** a criterion whose selector is green and whose `Verified:` line reads `yes`
+  - **When** the run reports it
+  - **Then** it passes - the discriminating half, because a check that fails every criterion carrying the field is not reading the field, it is refusing it
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::VerifiedFieldIsReadTests::test_a_yes_verified_line_over_a_green_selector_still_passes
+- [ ] **AC4: a criterion carrying NO `Verified:` line is unaffected.**
+  - **Given** a criterion with a green selector and no `Verified:` line at all, which is the shape of most criteria in this corpus
+  - **When** the run reports it
+  - **Then** it passes exactly as before - an absent field is not a denial, and treating it as one would redden the entire backlog at once
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::VerifiedFieldIsReadTests::test_an_absent_verified_line_is_not_a_denial
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `verify_ac.py`, keep deriving the criterion's verdict from the selector's exit code alone, ignoring the parsed `Verified:` value - the shipped behaviour | a PARTIAL line fails a green selector |
+| AC2 | in `verify_ac.py`, drop the recorded reason when building the per-criterion result, so the verdict flips but nothing says why | the reason travels with the verdict |
+| AC3 | in `verify_ac.py`, treat ANY present `Verified:` line as a denial rather than comparing it to `yes` | a yes line still passes |
+| AC4 | in `verify_ac.py`, default a missing `Verified:` value to a non-`yes` sentinel instead of leaving the criterion's verdict to its selector | an absent line is not a denial |
 
 ## Revision History
 

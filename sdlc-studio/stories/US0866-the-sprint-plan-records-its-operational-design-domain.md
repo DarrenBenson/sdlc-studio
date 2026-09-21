@@ -18,7 +18,35 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+- [ ] **AC1: the plan records a boundary derived from the batch.**
+  - **Given** a batch whose units declare `Affects` across three files
+  - **When** `sprint plan --write` runs
+  - **Then** run state records an operational design domain carrying those files and the artefact types those units touch
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OperationalDesignDomainTests::test_the_boundary_is_derived_from_the_batch
+- [ ] **AC2: the planner may add to it explicitly.**
+  - **Given** a plan declaring an extra path the batch does not name
+  - **When** the plan is written
+  - **Then** the recorded boundary carries both the derived set and the addition, distinguishable from each other - D0239, so a wide boundary is visibly a choice
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OperationalDesignDomainTests::test_an_authored_addition_is_recorded_and_distinguishable
+- [ ] **AC3: the boundary records the budget the run may spend.**
+  - **Given** a plan carrying an estimate
+  - **When** the boundary is recorded
+  - **Then** it carries that budget - a boundary that names files but not cost bounds nothing about how long the line may run
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OperationalDesignDomainTests::test_the_budget_is_part_of_the_boundary
+- [ ] **AC4: a batch declaring nothing does not yield an EMPTY boundary silently.**
+  - **Given** a batch whose units carry no resolvable `Affects`
+  - **When** the plan is written
+  - **Then** it refuses rather than recording an empty domain - an empty boundary is not a tight one, it is one that permits nothing and would stop the line on its first edit
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OperationalDesignDomainTests::test_an_underivable_boundary_is_refused_not_emptied
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint.py`, write the plan without recording any boundary, as it does today | the boundary is derived |
+| AC2 | in `sprint.py`, merge an authored addition into the derived set so the two cannot be told apart | an addition stays distinguishable |
+| AC3 | in `sprint.py`, record only the file set and drop the budget from the boundary | the budget is part of it |
+| AC4 | in `sprint.py`, record an empty boundary when nothing resolves instead of refusing | an underivable boundary is refused |
 
 ## Revision History
 

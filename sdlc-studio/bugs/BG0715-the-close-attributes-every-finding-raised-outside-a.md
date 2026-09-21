@@ -41,13 +41,35 @@ Read the DATE from the stamp rather than its last token: parse an ISO timestamp 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `_open_findings` dates a finding by the LAST WORD of its `Raised-in-batch` stamp.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Measured on RUN-01M2SPNS, which filed exactly two findings (BG0713, BG0714): None of BG0679-BG0690 was raised by this run.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Read the DATE from the stamp rather than its last token: parse an ISO timestamp out of it and treat a stamp carrying none as undatable.
+- [ ] **AC1: a prose `Raised-in-batch` stamp is not read as a date.**
+  - **Given** a finding stamped `none open - raised outside a delivery batch`
+  - **When** the report derives its open findings for a run
+  - **Then** that finding is NOT attributed to the open run - the stamp carries no ISO timestamp, so it cannot place the finding inside any window
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::FindingAttributionTests::test_a_prose_stamp_is_not_read_as_a_date
+- [ ] **AC2: an undatable finding is reported, never silently dropped.**
+  - **Given** the same finding
+  - **When** the report renders
+  - **Then** it appears in a named undatable set with its id, because a finding excluded without trace is the same defect one direction over
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::FindingAttributionTests::test_an_undatable_finding_is_named_rather_than_dropped
+- [ ] **AC3: a finding genuinely raised inside the run is still attributed to it.**
+  - **Given** a finding whose stamp carries an ISO timestamp inside the run's window
+  - **When** the report derives its open findings
+  - **Then** it IS attributed to the run - the discriminating half, because a parser that attributed nothing would pass AC1 and AC2 together
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::FindingAttributionTests::test_a_dated_stamp_inside_the_window_is_still_attributed
+- [ ] **AC4: an empty stamp and a prose stamp are treated alike.**
+  - **Given** one finding with an empty `Raised-in-batch` value and one with the prose stamp
+  - **When** both are derived
+  - **Then** both land in the undatable set - the existing guard drew the distinction only for the empty case, which is how the prose case reached the date comparison at all
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::FindingAttributionTests::test_an_empty_stamp_and_a_prose_stamp_reach_the_same_verdict
 
-## Impact
+## Test Plan
 
-The close cannot complete on any project with findings raised outside a delivery batch, which is the ordinary case for a backlog sweep or an audit. The retro is asked to rule findings the run never saw, and a run that ruled them would be recording 81 judgements nobody made. It refused RUN-01M2SPNS's PREPARE with 81 findings against a run that filed two.
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint_report.py`, restore `_open_findings` to take the stamp's last whitespace-separated token as its date, so `batch` sorts before any ISO timestamp - the shipped behaviour | a prose stamp is not a date |
+| AC2 | in `sprint_report.py`, drop an undatable finding from the derivation instead of collecting it into the reported set | an undatable finding is named |
+| AC3 | in `sprint_report.py`, widen the undatable test so any stamp is treated as unparseable, attributing nothing to the run | a dated stamp is still attributed |
+| AC4 | in `sprint_report.py`, narrow the undatable guard back to an empty value only, so a prose stamp falls through to the date comparison | empty and prose agree |
 
 ## Revision History
 

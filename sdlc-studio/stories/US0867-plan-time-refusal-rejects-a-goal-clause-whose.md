@@ -18,7 +18,35 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+- [ ] **AC1: a clause whose check reaches outside the domain is REFUSED at plan time.**
+  - **Given** a goal clause whose check names a path no unit in the batch declares
+  - **When** `sprint plan --write` runs
+  - **Then** it refuses, naming the clause and the path that left the domain - this is what gives the boundary a consumer on the day it lands rather than leaving it dormant until the cord is built
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ClauseWithinDomainTests::test_a_clause_reaching_outside_the_domain_is_refused
+- [ ] **AC2: a clause inside the domain plans.**
+  - **Given** a clause whose check names a path the batch declares
+  - **When** the plan is written
+  - **Then** it is accepted - the discriminating half, because a check that refused every clause would pass AC1 and block every run
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ClauseWithinDomainTests::test_a_clause_inside_the_domain_plans
+- [ ] **AC3: an authored addition widens what a clause may reach.**
+  - **Given** a boundary carrying an authored path and a clause whose check names it
+  - **When** the plan is written
+  - **Then** it is accepted - otherwise the addition from US0866 AC2 would be recorded and then ignored, which is the dormant-boundary failure in a different place
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ClauseWithinDomainTests::test_an_authored_addition_widens_what_a_clause_may_reach
+- [ ] **AC4: a check naming no path at all is not refused.**
+  - **Given** a persona-judged clause whose check names a seat rather than a file
+  - **When** the plan is written
+  - **Then** it is accepted - a path test applied to a check that has no path would refuse the entire third shape D0230 admitted
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ClauseWithinDomainTests::test_a_pathless_check_is_not_refused
+
+## Test Plan
+
+| Criterion | Mutant - the production change this test must fail on | Title |
+| --- | --- | --- |
+| AC1 | in `sprint.py`, record the boundary but never test a clause's check against it | a clause outside the domain is refused |
+| AC2 | in `sprint.py`, refuse a clause unless its check path matches the domain exactly, rejecting any path under a declared directory | a clause inside the domain plans |
+| AC3 | in `sprint.py`, test the clause against the derived set only, ignoring authored additions | an addition widens the domain |
+| AC4 | in `sprint.py`, refuse any check from which no path can be extracted | a pathless check is not refused |
 
 ## Revision History
 
