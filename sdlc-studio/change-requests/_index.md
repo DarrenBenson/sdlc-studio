@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-21
+**Last Updated:** 2026-09-22
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 53 |
+| Proposed | 54 |
 | Approved | 0 |
 | In Progress | 7 |
 | Complete | 503 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 24 |
 | Blocked | 0 |
-| **Total** | **592** |
+| **Total** | **593** |
 
 ## All Changes
 
@@ -90,6 +90,7 @@
 | [CR-0590](CR0590-the-report-absorbs-the-handoff-so-a-run.md) | the report absorbs the handoff, so a run ends with one page instead of two that must agree | Proposed | Medium | Improvement | 2026-09-20 | -- |
 | [CR-0591](CR0591-audit-the-41-in-progress-discovery-requests-against.md) | audit the 41 In-Progress discovery requests against HEAD and close what is dead | Complete | High | Improvement | 2026-09-20 | EP0257 |
 | [CR-0592](CR0592-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-09-21 | -- |
+| [CR-0593](CR0593-nothing-refuses-a-batch-unit-that-no-goal.md) | nothing refuses a batch unit that no goal clause covers, so a run can deliver work its own goal never tested | Proposed | Medium | Enhancement | 2026-09-22 | -- |
 
 ## Archived Releases
 

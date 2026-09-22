@@ -19,9 +19,9 @@
 ## Acceptance Criteria
 
 - [ ] **AC1: a note contradicting the derived verdict is FILED as a finding naming both.**
-  - **Given** a close whose derivation is `partial` and whose author note asserts the work succeeded
+  - **Given** a close whose derivation is `partial` and whose `--goal-verdict` override asserts `achieved`
   - **When** the close runs
-  - **Then** a finding is filed carrying the derived verdict, the note, and the clause that disagrees
+  - **Then** a finding is filed carrying both verdicts, the override's justification, and the clause that disagrees - the comparison is between two recorded verdict values, never a reading of free text, because a keyword match on prose would pass its own mutants
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::VerdictContradictionTests::test_a_contradicting_note_files_a_finding_naming_both
 - [ ] **AC2: the close is NOT refused by the contradiction.**
   - **Given** the same close
@@ -29,7 +29,7 @@
   - **Then** it completes and files its report - D0231, because a stall in the middle is exactly what the dark factory removes
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::VerdictContradictionTests::test_the_close_is_not_refused_by_a_contradiction
 - [ ] **AC3: a note that AGREES with the derivation files nothing.**
-  - **Given** a close whose note and derived verdict agree
+  - **Given** a close whose override and derived verdict carry the same value, or a close passing no override at all
   - **When** it runs
   - **Then** no contradiction finding exists - the discriminating half, because a check that files on every close reports nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::VerdictContradictionTests::test_an_agreeing_note_files_nothing
@@ -43,7 +43,7 @@
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | in `sprint.py`, compare the note to the derived verdict and log the difference without filing anything | a contradiction is filed |
+| AC1 | in `sprint.py`, compare the override to the derived verdict and log the difference without filing anything | a contradiction is filed |
 | AC2 | in `sprint.py`, refuse the close when a contradiction is detected | the close is not refused |
 | AC3 | in `sprint.py`, file the contradiction finding unconditionally at every close | an agreeing note files nothing |
 | AC4 | in `sprint_report.py`, omit the contradiction finding from the report payload | the contradiction reaches the report |

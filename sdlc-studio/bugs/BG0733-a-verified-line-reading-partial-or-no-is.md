@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** High
-> **Points:** 2
+> **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Verification depth:** functional
 > **Created:** 2026-09-21
@@ -20,11 +20,11 @@ A criterion's `Verified:` line is PROSE. Nothing reads it: the verdict comes sol
 
 ## Proposed Fix
 
-Read the field. The cheapest honest form: a criterion whose `Verified:` line is anything other than `yes` is reported as NOT satisfied regardless of its selector's exit code, and the report of record renders it with the recorded reason beside it. That makes the field load-bearing rather than decorative and gives a delivery a way to record a miss that the machinery respects. Note the interaction with this project's own scar about fields nobody reads - BG0463 claim 15 is the `authority` field, the same defect in a different structure. The deeper fix, if it is wanted, is that a criterion's verifier should test what the criterion CLAIMS, so the prose and the exit code cannot disagree; US0853's own AC2 was repaired that way in the same run, and it then correctly went red.
+Read the field against the POSITIVE SET, which is `yes` and `manual` - a census of the corpus finds 3107 `yes`, 18 `manual` and 18 `no`, and `manual` is this project's own vocabulary for hand-verified, so anything-but-`yes` would redden 18 satisfied criteria. A criterion whose `Verified:` line is outside that set is reported as NOT satisfied regardless of its selector's exit code, and the report of record renders it with the recorded reason beside it. That makes the field load-bearing rather than decorative and gives a delivery a way to record a miss that the machinery respects. Note the interaction with this project's own scar about fields nobody reads - BG0463 claim 15 is the `authority` field, the same defect in a different structure. The deeper fix, if it is wanted, is that a criterion's verifier should test what the criterion CLAIMS, so the prose and the exit code cannot disagree; US0853's own AC2 was repaired that way in the same run, and it then correctly went red.
 
 ## Acceptance Criteria
 
-- [ ] **AC1: a `Verified:` line that is not `yes` reports the criterion NOT satisfied, whatever its selector did.**
+- [ ] **AC1: a `Verified:` line outside the positive set of `yes` and `manual` reports the criterion NOT satisfied, whatever its selector did.**
   - **Given** a story whose criterion carries a green `Verify:` selector and a `Verified:` line reading `PARTIAL`
   - **When** `verify_ac.py run --story <id>` runs
   - **Then** that criterion counts as failing, and the run's summary counts it in `fail`, not in `pass`
@@ -44,6 +44,16 @@ Read the field. The cheapest honest form: a criterion whose `Verified:` line is 
   - **When** the run reports it
   - **Then** it passes exactly as before - an absent field is not a denial, and treating it as one would redden the entire backlog at once
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::VerifiedFieldIsReadTests::test_an_absent_verified_line_is_not_a_denial
+- [ ] **AC5: `manual` is a POSITIVE verdict and still passes.**
+  - **Given** a criterion whose `Verified:` line reads `manual` with the hand-verification it records
+  - **When** the run reports it
+  - **Then** it passes - the corpus carries 18 of these against 3107 `yes`, and `manual` is this project's own vocabulary for hand-verified, so a fix reading anything-but-`yes` as a denial would turn 18 satisfied criteria red on the run that ships it
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::VerifiedFieldIsReadTests::test_a_manual_verified_line_is_a_positive_verdict
+- [ ] **AC6: a `no` line fails the criterion and changes no unit's status.**
+  - **Given** a criterion on a Done unit whose `Verified:` line reads `no` - the corpus carries 18, seven of them on Done units
+  - **When** the run reports it
+  - **Then** the criterion reports NOT satisfied and the unit's recorded status is untouched, because reporting the truth about history is the point and silently reopening it is a separate decision nobody has taken
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::VerifiedFieldIsReadTests::test_a_no_line_fails_without_moving_the_unit_s_status
 
 ## Test Plan
 
@@ -53,6 +63,8 @@ Read the field. The cheapest honest form: a criterion whose `Verified:` line is 
 | AC2 | in `verify_ac.py`, drop the recorded reason when building the per-criterion result, so the verdict flips but nothing says why | the reason travels with the verdict |
 | AC3 | in `verify_ac.py`, treat ANY present `Verified:` line as a denial rather than comparing it to `yes` | a yes line still passes |
 | AC4 | in `verify_ac.py`, default a missing `Verified:` value to a non-`yes` sentinel instead of leaving the criterion's verdict to its selector | an absent line is not a denial |
+| AC5 | in `verify_ac.py`, compare the parsed value to `yes` alone rather than to the positive set, so `manual` reads as a denial | manual is a positive verdict |
+| AC6 | in `verify_ac.py`, have the failing verdict drive a status change on the unit rather than only reporting it | a no line moves no status |
 
 ## Revision History
 

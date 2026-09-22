@@ -43,6 +43,11 @@
   - **When** run state is re-read by a later command
   - **Then** the clauses and their checks come back unchanged, including a check containing a pipe or a colon - the close reads these, and a clause mangled in storage fails silently at the far end
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalClauseAuthoringTests::test_a_clause_round_trips_through_run_state
+- [ ] **AC6: an ALREADY-OPEN run whose goal predates clauses can still be replanned.**
+  - **Given** a run opened before this behaviour shipped, whose recorded goal is prose
+  - **When** a batch drop, batch add or replan touches that run
+  - **Then** the refusal does not fire - it binds a goal being AUTHORED, not a run already under way, or this very run could not touch its own plan after unit one
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalClauseAuthoringTests::test_an_open_run_with_a_prose_goal_can_still_be_replanned
 
 ## Test Plan
 
@@ -53,6 +58,7 @@
 | AC3 | in `sprint.py`, emit the refusal with no candidate drawn from the batch's `Verify:` lines | the refusal suggests a check |
 | AC4 | in `sprint.py`, widen the refusal so it fires whenever a goal carries more than one clause | a well-formed goal still plans |
 | AC5 | in `lib/run_state.py`, serialise a clause by joining its fields on a separator that its own check text may contain | a clause round trips |
+| AC6 | in `sprint.py`, apply the no-check refusal to any command that writes run state, rather than to goal authoring alone | an open prose-goal run can replan |
 
 ## Revision History
 
