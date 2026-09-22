@@ -22,8 +22,14 @@ The lenses, deterministic and each stating what it compares:
                       exactly 8 (at the ceiling - consider decomposing).
   STALE               (report) - open, untouched for months, nothing depends on it: ask whether it
                       is still wanted before planning around it.
-  ORPHANED DEPENDENCY (report) - `Depends on:` names an artefact that is terminal or absent, so the
-                      dependency is already resolved or was mis-recorded.
+  ORPHANED DEPENDENCY (report) - `Depends on:` names an artefact that is terminal or absent, so
+                      the dependency is already resolved or was mis-recorded.
+  UNRULED             (report) - a request nobody CLOSED: In Progress, every unit it names
+                      resolved, and no dated `audit ruling` recording a judgement of it.
+  ABANDONED           (report) - a request everybody LEFT: In Progress, with open units none of
+                      which has been touched inside the idle window. Judged by the children's
+                      dates, so neither a write on the request nor this sweep's own ruling
+                      silences it.
 
 Judgement lenses REPORT (the human decides); the mechanical OVERSIZED lens BLOCKS. Every lens logs
 what it examined and dropped, so a silent truncation never reads as a clean backlog. Pure stdlib;
@@ -137,18 +143,22 @@ def _days_between(earlier: str, later: str) -> int | None:
         return None
 
 
-def _scan(root: Path, *, today: str | None = None) -> tuple[list[dict], dict[str, str], int]:
-    """One guarded pass over EVERY artefact. Returns (backlog, states, skipped):
+def _scan(root: Path, *, today: str | None = None) \
+        -> tuple[list[dict], dict[str, str], dict[str, str | None], int]:
+    """One guarded pass over EVERY artefact. Returns (backlog, states, dates, skipped):
 
     - `backlog` - the non-terminal triage-type units, with the fields the lenses read.
     - `states` - `{norm_id: "open" | "terminal"}` across ALL artefact types (so the orphaned lens
       can tell a resolved (terminal) dependency from an absent (mistyped/unmet) one, and does not
       false-flag a live dependency on a test-spec, plan or workflow the backlog scan omits).
+    - `dates` - `{norm_id: last-touched date or None}` across ALL artefact types, so a lens can
+      judge a request by whether its CHILDREN have moved rather than by its own date.
     - `skipped` - files that could not be read (a half-written or non-UTF-8 artefact). Counted, not
       swallowed, so a drop never reads as a clean backlog.
     """
     backlog: list[dict] = []
     states: dict[str, str] = {}
+    dates: dict[str, str | None] = {}
     skipped = 0
     for type_ in sdlc_md.ARTIFACT_TYPES:
         vocab = sdlc_md.status_vocab(type_, root)
@@ -165,6 +175,13 @@ def _scan(root: Path, *, today: str | None = None) -> tuple[list[dict], dict[str
             status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
             terminal = bool(status and sdlc_md.is_terminal_status(type_, status))
             states[sdlc_md.norm_id(cid)] = "terminal" if terminal else "open"
+            # Every artefact's own last-touched date, not just the backlog types. The abandoned
+            # lens judges a request by its CHILDREN, and a child is usually a story or a bug,
+            # which the backlog list does not carry. Computed ONCE and reused by the backlog row
+            # below - deriving it twice per backlog unit cost this sweep a measurable slice for
+            # nothing.
+            last = _last_date(text, today=today)
+            dates[sdlc_md.norm_id(cid)] = last
             if terminal or not triage_type:
                 continue
             title = sdlc_md.extract_h1_title(text) or ""
@@ -174,10 +191,10 @@ def _scan(root: Path, *, today: str | None = None) -> tuple[list[dict], dict[str
                 "affects": {a for a in affects if a},
                 "tokens": _tokens(title, _summary(text)),
                 "points": sdlc_md.read_points(text), "size": sdlc_md.read_size(text),
-                "depends": _depends(text), "date": _last_date(text, today=today),
+                "depends": _depends(text), "date": last,
                 "children": _decomposed_into(text), "ruled": bool(_AUDIT_RULING_RE.search(text)),
             })
-    return backlog, states, skipped
+    return backlog, states, dates, skipped
 
 
 def load_backlog(root: Path) -> list[dict]:
@@ -277,6 +294,61 @@ def _unruled_findings(backlog: list[dict], states: dict[str, str]) -> list[dict]
     return out
 
 
+def _abandoned_findings(backlog: list[dict], states: dict[str, str],
+                        dates: dict[str, str | None], *, today: str,
+                        idle_days: int = 45) -> list[dict]:
+    """A request that STARTED and stopped: In Progress, with open children nothing has touched.
+
+    The complement of `unruled`, which catches the request nobody CLOSED - finished by its
+    children and never judged. Run against this repository's real backlog that lens reported
+    ZERO, because all 37 In Progress requests had at least one child still open. Work that stops
+    halfway leaves exactly that shape, and no lens could see it.
+
+    Judged by the CHILDREN's dates, for two reasons. A request's own date records that somebody
+    WROTE on it, which is not the work moving - and the sweep's own dated `audit ruling` row is
+    such a write, so a lens reading the request's date would go blind the moment its own remedy
+    was applied. That is how `stale` was lost.
+
+    A request with no children at all is the separate `undecomposed` case `status` already counts;
+    reporting it here as well would make one problem look like two.
+
+    Scoped to IN PROGRESS, which is what the shape means: a request that was picked up. A Proposed
+    request whose children are idle has not been abandoned, it has not been started.
+
+    45 days, chosen on the principle and then measured rather than the other way round: a sprint
+    here runs in days, so delivery work that has not moved in six weeks has stopped, whatever the
+    request still says. Measured afterwards on THIS corpus, 7 requests carry open children with
+    dates and the threshold names 3 of them; the ages are bimodal - 57, 57, 52 against 28, 26, 26,
+    15 - so every cut from 29 to 52 names the same three and the figure is not balanced on 45.
+    (An earlier draft of this paragraph said "37 requests", which was the count of In Progress
+    requests BEFORE a backlog sweep and not the denominator of the 3 at all; quoting it here
+    understated the lens's reach fivefold.) The shipped `unruled` lens finds ZERO here.
+    """
+    out: list[dict] = []
+    for u in backlog:
+        if u["type"] not in ("cr", "rfc") or u["status"] != "In Progress":
+            continue
+        kids = [sdlc_md.norm_id(c) for c in u["children"]]
+        kids = [k for k in kids if k in states]
+        open_kids = [k for k in kids if states[k] != "terminal"]
+        if not kids or not open_kids:
+            continue
+        kid_dates = [dates.get(k) for k in open_kids if dates.get(k)]
+        if not kid_dates:
+            continue
+        newest = max(kid_dates)
+        age = _days_between(newest, today)
+        if age is None or age < idle_days:
+            continue
+        out.append({"lens": "abandoned", "severity": "report", "units": [u["id"]],
+                    "detail": (f"{u['id']} is {u['status']} and the OPEN units it names have "
+                               f"not been touched since "
+                               f"{newest} ({age}d) - the request's own date says only that "
+                               f"somebody wrote on it. Confirm it is still wanted, or close it "
+                               f"and let the open children say what happens to them")})
+    return out
+
+
 def _stale_findings(backlog: list[dict], *, today: str, stale_days: int = 90) -> list[dict]:
     """Open, untouched for months, and nothing open depends on it: ask if it is still wanted."""
     depended_on = {d for u in backlog for d in u["depends"]}
@@ -319,10 +391,11 @@ def triage(root: Path, *, today: str | None = None, stale_days: int = 90) -> dic
     """Run every lens over the backlog. Returns findings (block + report) and a scanned count, so a
     caller (plan, status) can surface them and a drop is never silent."""
     today = today or sdlc_md.now_date()
-    backlog, states, skipped = _scan(root, today=today)
+    backlog, states, dates, skipped = _scan(root, today=today)
     findings = (_duplicate_findings(backlog) + _oversized_findings(backlog)
                 + _stale_findings(backlog, today=today, stale_days=stale_days)
-                + _orphaned_findings(backlog, states) + _unruled_findings(backlog, states))
+                + _orphaned_findings(backlog, states) + _unruled_findings(backlog, states)
+                + _abandoned_findings(backlog, states, dates, today=today))
     blocking = [f for f in findings if f["severity"] == "block"]
     return {"scanned": len(backlog), "skipped": skipped, "findings": findings,
             "blocking": blocking, "blocked": bool(blocking)}
@@ -337,7 +410,7 @@ def render(report: dict) -> str:
     lines = [f"backlog triage: {n} finding(s) over {report['scanned']} open artefact(s) "
              f"({len(report['blocking'])} blocking{unread}):"]
     order = {"oversized": 0, "subsumed": 1, "duplicate": 2, "stale": 3, "orphaned-dependency": 4,
-             "unruled": 5}
+             "unruled": 5, "abandoned": 6}
     for f in sorted(report["findings"], key=lambda x: (order.get(x["lens"], 9), x["units"])):
         mark = "BLOCK" if f["severity"] == "block" else "note "
         lines.append(f"  [{mark}] {f['lens']}: {f['detail']}")

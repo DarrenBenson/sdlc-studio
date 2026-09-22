@@ -1125,6 +1125,11 @@ One row has been removed since adoption.
 | US0837 | APPROVE | Sam Eriksson (qa) | Claude Opus 5 | 2026-09-18 | 2fa082e6fa30 | full | [pre-existing] none blocking. The non-determinism probed in \_dora\_rows falsifies US0845's criterion rather than this one, and is reported there rather than blocking twice on one defect |
 | US0836 | APPROVE | Sam Eriksson (qa) | Claude Opus 5 | 2026-09-18 | 89e642b78ff3 | full | [new] non-blocking: a None-valued figure renders as an empty value in a blockquote and a span, outside AC2's tested surface, which checks table cells only - AC2's Given constructs a run where that figure is present, so this sits outside the criterion |
 | US0846 | APPROVE | Sam Eriksson (qa) | Claude Opus 5 | 2026-09-18 | e09b19f3c98d | full | [new] non-blocking: the stated mapping says 'on main' while the computation counts pushes to any ref, so a tag push counts as a deployment - every fixture row carries headBranch main, so no test can see it; [new] non-blocking: the --limit 100 truncation is silent, so a long run's window can fall off the page with no notice |
+| BG0733 | APPROVE | independent-critic | Dani Okafor | 2026-09-22 | f2ec864ef1d6 | - | - |
+| BG0715 | APPROVE | independent-critic | Dani Okafor | 2026-09-22 | 9f7f6d77f63d | - | - |
+| BG0719 | APPROVE | independent-critic | Dani Okafor | 2026-09-22 | 58e3f8e4e6cd | - | - |
+| BG0722 | APPROVE | independent-critic | Dani Okafor | 2026-09-22 | 4109cc5551b3 | - | - |
+| BG0730 | APPROVE | independent-critic | Dani Okafor | 2026-09-22 | b3380ed276c6 | - | - |
 
 ## Supersessions
 

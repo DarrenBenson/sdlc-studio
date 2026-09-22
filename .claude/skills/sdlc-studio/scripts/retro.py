@@ -263,8 +263,15 @@ def sections(text: str) -> dict[str, list[str]]:
     return out
 
 
-def carried_issues(text: str) -> list[dict]:
+def carried_issues(text: str, *, root=None) -> list[dict]:
     """The retro's carried known issues, as `{id, ruling, by, date, ok, why}` rows.
+
+    With `root`, each row also carries the CURRENT status of the artefact it names, and whether
+    that status is terminal. Without it, both come back unknown - two callers pass no root and an
+    absent root must mean "not looked up", never "terminal", or a ruling would discharge itself
+    wherever nobody happened to pass a path. A row naming an id with no readable file is marked
+    `unreadable` and is NOT terminal: an id that resolves to nothing is a typo or a deletion, and
+    in neither case has anybody discharged the ruling.
 
     Every row is returned, including the malformed ones, each carrying `ok` and the reason it
     is not usable. Dropping a bad row would report an issue with a broken ruling as an issue
@@ -287,6 +294,11 @@ def carried_issues(text: str) -> list[dict]:
         ruling = (cells[1] if len(cells) > 1 else "").strip().lower()
         who = (cells[2] if len(cells) > 2 else "").strip()
         date = (cells[3] if len(cells) > 3 else "").strip()
+        status, terminal, unreadable = None, False, False
+        if root is not None and uid:
+            status, unreadable, res_type = _artefact_status(root, uid)
+            terminal = bool(status) and bool(res_type) and status in sdlc_md.terminal_statuses(
+                res_type)
         why = ""
         if not uid:
             why = "names no artefact id, so the ruling cannot be joined to a finding"
@@ -299,8 +311,31 @@ def carried_issues(text: str) -> list[dict]:
             # nobody did. An anonymous row is the second wearing the first's clothes.
             why = "records no ruler, so nobody can be asked why"
         out.append({"id": uid, "ruling": ruling, "by": who, "date": date,
-                    "ok": not why, "why": why})
+                    "ok": not why, "why": why,
+                    "status": status, "terminal": terminal, "unreadable": unreadable})
     return out
+
+
+def _artefact_status(root, uid: str) -> tuple[str | None, bool, str | None]:
+    """`(status, unreadable, type)` for the artefact a carried row names.
+
+    Resolved through `sdlc_md.find_by_id`, the shipped single lookup that `transition` and `audit`
+    already delegate to. A hand-rolled per-type walk was tried first and was wrong twice: it
+    guessed the type from the id prefix, so the four other prefixes the row grammar admits -
+    `RFC`, `US`, `EP`, `LL` - resolved nothing and were marked UNREADABLE while their files sat
+    there readable, which is the opposite of what that flag asserts; and it resolved no migration
+    alias, so a pre-migration id in an old retro answered nothing.
+
+    `(None, True, None)` when no file resolves. Unreadable is reported rather than folded into
+    "not terminal", because a ruling whose finding has vanished is a different question from one
+    whose finding is still open, and only the second has somebody to ask.
+    """
+    hit = sdlc_md.find_by_id(Path(root), uid)
+    if not hit:
+        return None, True, None
+    path, type_ = hit
+    status = (sdlc_md.extract_field(sdlc_md.read_text_safe(path), "Status") or "").strip()
+    return (status or None), False, type_
 
 
 def _fold_bullets(body: list[str]) -> list[str]:

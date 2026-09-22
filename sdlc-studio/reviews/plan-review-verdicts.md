@@ -429,6 +429,11 @@
 | US0848 | APPROVE | qa seat (independent subagent) | Claude Opus 5 | 2026-09-21 | cd97e76516dd | test-plan | All three mutants applied to the real file and each selector went RED. AC1: dropping the ruled term made flagged ['CR0002','CR0003'] against the expected ['CR0003'], so a ruled request leaking in is caught by IDENTITY rather than by count. AC2: dropping the childless guard reported the childless request and the test saw it. AC3: severity report to block reddened, and the test also asserts blocked is False, so the advisory claim is EXECUTED rather than asserted. Behaviour judged for all three shapes: no children skipped, mixed children exercised via a request with one Done and one Draft child, and an existing ruling excluded. NON-BLOCKING: AC3's Given says 'as the gate invokes it' but the test calls triage() in-process, so the claim is true but proved one layer below the entry point; and \_unruled\_findings drops child ids absent from states, so a request whose every child id is unknown collapses to childless and is never reported - defensible since the orphaned-dependency lens owns absent ids, but undocumented |
 | BG0736 | APPROVE | independent-critic | Sam Eriksson | 2026-09-21 | e58eb7d835ad unmatched | test-plan | - |
 | BG0736 | APPROVE | independent-critic | Sam Eriksson | 2026-09-21 | e836ed39960e | test-plan | - |
+| BG0733 | APPROVE | independent-critic | Sam Eriksson | 2026-09-22 | c0b5db7c7496 | test-plan | - |
+| BG0715 | APPROVE | independent-critic | Sam Eriksson | 2026-09-22 | b25363dbc27e | test-plan | - |
+| BG0719 | APPROVE | independent-critic | Sam Eriksson | 2026-09-22 | 8dd6c0de0d3e | test-plan | - |
+| BG0722 | APPROVE | independent-critic | Sam Eriksson | 2026-09-22 | 12a8cc02e5ba | test-plan | - |
+| BG0730 | APPROVE | independent-critic | Sam Eriksson | 2026-09-22 | 4e465443aa8b | test-plan | - |
 
 ## Supersessions
 

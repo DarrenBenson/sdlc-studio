@@ -70,33 +70,35 @@ evidence re-measured by hand for one line moving in a shared file.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1.0 discloses 50 open defects: 50 Medium, 0 Low.**
+**v5.1.0 discloses 57 open defects: 57 Medium, 0 Low.**
 
-**Six High-severity findings are open against the tag: BG0715, BG0718, BG0719, BG0722, BG0730 and BG0733.** It was raised on 2026-09-18,
-after v5.1.0 shipped, by RUN-01M2SPNS running its own close. `_open_findings` dates a finding
-by the last word of its `Raised-in-batch` stamp, so a finding raised outside a delivery batch -
-the ordinary case for a backlog sweep or an audit - sorts as inside every run window and is
-attributed to whichever run is open. The close then demands a stop-ship ruling for findings the
-run never saw. It affects the sprint-close ceremony, not the tool's output, and it has a
-documented route past it (a dated waiver naming the row, as D0215 records for that run), but it
-is disclosed here rather than counted quietly because the bar names ids and so must the prose.
+**Zero Critical, zero High.** BG0715, BG0718, BG0719, BG0722, BG0730 and BG0733 were all open
+against this tag and are now Fixed. Five of the six were closed by RUN-01M33WJ3, which took the
+close and the report being honest about themselves as its whole subject.
 
-**BG0718 and BG0719 were both raised on 2026-09-19 by RUN-01M2SPNS's own SEAL**, and both are
-about the report of record that run shipped. BG0718: the seal writes `ended_at`, the DORA window
-was bounded by `ended_at` before the page's own generation time, so signing a report widened its
-window and invalidated it - the run signed a page whose lead time re-derived differently one
-second later, and no run could have held a valid signature over its own report. Its repair is
-in this tree and it stays open only until an independent seat reviews its test plan. BG0719: the
-report does not name the waivers that were in force when it was derived, so an operator signs
-without being told which close-gate lane stood down - on that run, the per-unit coverage gate.
-Both affect the report, not the rest of the tool, and both are disclosed here rather than
-counted quietly because the bar names ids and so must the prose.
+What those five changed, in one line each:
 
-**BG0722 was raised on 2026-09-21 by RUN-01M306PY auditing its own guard.** That run built a lane reporting a discovery request that is In Progress, finished by its children, and never judged - then ran it against the real backlog and got ZERO, because all 37 stalled requests had at least one child still open. The lane is correct and its mutants are killed; it simply catches a request nobody closed rather than a request everybody abandoned, which is the path that actually accumulated. The run recorded the gap rather than quietly claiming its goal.
+- **BG0733** - a criterion's `Verified:` line was not read, and a green selector overwrote a
+  recorded `no`, `manual` or `stale` with `yes`, destroying the author's own disclosure. The tool
+  now marks the downgrades it writes itself, so an unmarked non-positive verdict is treated as the
+  author's and protected. All 18 such lines in this corpus are unmarked.
+- **BG0715** - a finding was dated by the last word of its `Raised-in-batch` stamp, and the stamp
+  written outside a batch ends in the word `batch`, which sorts after every timestamp. One run
+  filed two findings and its close demanded stop-ship rulings for 99. The moment is now parsed by
+  shape, with `Created` as the fallback and undatable findings disclosed rather than dropped.
+- **BG0730** - a stop-ship ruling was never re-judged against its finding's status, so a ruling on
+  a finding since Fixed blocked every later close permanently. Rulings are now joined to the
+  artefact they name; a terminal finding discharges, an unreadable id still blocks.
+- **BG0719** - the report of record did not name the waivers in force when it was derived, so an
+  operator signed without being told which gate was not holding. It now carries a waivers section
+  bounded by the run's own window, which reports NOT MEASURED rather than a clean sheet when it
+  cannot bound one.
+- **BG0722** - the `unruled` backlog lens caught the request nobody closed and reported zero here,
+  because the path that actually accumulates is the request everybody abandoned. A complementary
+  `abandoned` lens judges a request by its open children's dates and names three on this backlog.
 
-**The disclosed count rose from 39 to 47 in one day, and that is the sweep working rather than the tree rotting.** RUN-01M306PY re-triaged a July aggregate of twenty non-blocking review findings that had been closed as unbuildable, found it actually states TWENTY-FOUR claims, re-executed every one against HEAD, and filed the fifteen that still reproduce as artefacts that can be planned. Five had already been fixed by other work, one was never a defect, and three cannot be tested as written and say so. The count went up because the findings stopped being a bullet list nobody could act on.
-
-**BG0730 is the one to read first**: a stop-ship ruling is never re-derived against its finding's status, so a ruling on a finding that has since been Fixed blocks every subsequent close, permanently, with no escape but editing a retro by hand.
+**BG0718** was closed earlier, by RUN-01M306PY: the seal wrote `ended_at`, the DORA window was
+bounded by it, so signing a report widened its window and invalidated it one second later.
 
 ## What is in it
 

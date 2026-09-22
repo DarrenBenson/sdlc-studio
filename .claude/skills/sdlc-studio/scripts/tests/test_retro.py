@@ -3790,5 +3790,53 @@ class ScaffoldPassesItsValidatorTests(unittest.TestCase):
         self.assertEqual([], retro.demonstration_leftovers(FULL))
 
 
+class CarriedIssueStatusTests(unittest.TestCase):
+    """BG0730. `carried_issues` parsed the retro table and never opened the artefact it named, so
+    a ruling could not be joined to the thing it ruled on - and a stop-ship ruling on a finding
+    that had since been Fixed blocked every later close, permanently, with hand-editing a retro
+    the only escape."""
+
+    def _root(self, *bugs: tuple[str, str]) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="carried_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        bd = d / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True)
+        for bid, status in bugs:
+            (bd / f"{bid}-x.md").write_text(
+                f"# {bid}: x\n\n> **Status:** {status}\n", encoding="utf-8")
+        return d
+
+    TABLE = ("## Known issues carried\n\n"
+             "| Issue | Ruling | By | Date |\n| --- | --- | --- | --- |\n"
+             "| BG9101 | stop-ship | Someone | 2026-09-01 |\n"
+             "| BG9102 | stop-ship | Someone | 2026-09-01 |\n")
+
+    def test_a_carried_row_carries_its_artefact_s_current_status(self) -> None:
+        """AC2. The parse never opened the artefact, so the join had nothing to join on."""
+        root = self._root(("BG9101", "Fixed"), ("BG9102", "Open"))
+        rows = {r["id"]: r for r in retro.carried_issues(self.TABLE, root=root)}
+        self.assertEqual("Fixed", rows["BG9101"].get("status"))
+        self.assertEqual("Open", rows["BG9102"].get("status"))
+        self.assertTrue(rows["BG9101"].get("terminal"))
+        self.assertFalse(rows["BG9102"].get("terminal"))
+
+    def test_without_a_root_the_rows_parse_exactly_as_before(self) -> None:
+        """The discriminating half. Two callers pass no root, and a change that made the status
+        mandatory would break them - an absent root means unknown, not terminal."""
+        rows = {r["id"]: r for r in retro.carried_issues(self.TABLE)}
+        self.assertEqual(2, len(rows))
+        self.assertIsNone(rows["BG9101"].get("status"))
+        self.assertFalse(rows["BG9101"].get("terminal"))
+
+    def test_an_artefact_that_cannot_be_read_is_marked_unreadable(self) -> None:
+        """AC3's other half. An id with no file is a typo or a deletion; either way nobody has
+        discharged the ruling, so it must not be silently treated as terminal."""
+        root = self._root(("BG9102", "Open"))
+        rows = {r["id"]: r for r in retro.carried_issues(self.TABLE, root=root)}
+        self.assertIsNone(rows["BG9101"].get("status"))
+        self.assertFalse(rows["BG9101"].get("terminal"))
+        self.assertTrue(rows["BG9101"].get("unreadable"))
+
+
 if __name__ == "__main__":
     unittest.main()

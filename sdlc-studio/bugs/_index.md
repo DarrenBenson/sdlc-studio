@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-21
+**Last Updated:** 2026-09-22
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 55 |
+| Open | 57 |
 | In Progress | 0 |
-| Fixed | 578 |
+| Fixed | 583 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 6 |
-| **Total** | **736** |
+| **Total** | **743** |
 
 ## All Bugs
 
@@ -73,14 +73,14 @@
 | [BG0712](BG0712-a-local-guard-that-tolerates-what-a-criterion.md) | a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI | Open | Medium | 2026-09-17 | 2026-09-17 |
 | [BG0713](BG0713-the-per-unit-coverage-gate-charges-a-unit.md) | the per-unit coverage gate charges a unit for its batch siblings' added lines in a shared file | Won't Fix | High | 2026-09-18 | 2026-09-18 |
 | [BG0714](BG0714-284-added-lines-of-run-01m2spns-are-executed.md) | 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge | Open | Medium | 2026-09-18 | 2026-09-18 |
-| [BG0715](BG0715-the-close-attributes-every-finding-raised-outside-a.md) | the close attributes every finding raised outside a delivery batch to whichever run is open, because it dates them by the last word of a prose stamp | Open | High | 2026-09-18 | 2026-09-18 |
+| [BG0715](BG0715-the-close-attributes-every-finding-raised-outside-a.md) | the close attributes every finding raised outside a delivery batch to whichever run is open, because it dates them by the last word of a prose stamp | Fixed | High | 2026-09-18 | 2026-09-18 |
 | [BG0716](BG0716-prepare-mints-a-new-report-id-on-every.md) | PREPARE mints a new report id on every re-file, so a run that prepares twice has two reports of record | Open | Medium | 2026-09-18 | 2026-09-18 |
 | [BG0717](BG0717-the-close-s-handoff-link-leaves-a-trailing.md) | the close's handoff link leaves a trailing blank line in the retro, so every close fails this project's own markdownlint | Open | Medium | 2026-09-18 | 2026-09-18 |
 | [BG0718](BG0718-the-seal-widens-the-dora-window-it-is.md) | the seal widens the DORA window it is sealing, so a signed report reads INVALIDATED one second after the signature lands | Fixed | High | 2026-09-19 | 2026-09-19 |
-| [BG0719](BG0719-the-report-of-record-does-not-disclose-the.md) | the report of record does not disclose the waivers that permitted the seal, so an operator signs without being told which gate stood down | Open | High | 2026-09-19 | 2026-09-19 |
+| [BG0719](BG0719-the-report-of-record-does-not-disclose-the.md) | the report of record does not disclose the waivers that permitted the seal, so an operator signs without being told which gate stood down | Fixed | High | 2026-09-19 | 2026-09-19 |
 | [BG0720](BG0720-the-report-s-filed-this-run-figure-names.md) | the report's Filed this run figure names the batch's delivered units as findings and omits a finding that was filed | Open | Medium | 2026-09-19 | 2026-09-19 |
 | [BG0721](BG0721-the-duplicate-lens-cannot-tell-one-change-filed.md) | the duplicate lens cannot tell one change filed twice from one method applied to several disjoint scopes | Open | Medium | 2026-09-21 | 2026-09-21 |
-| [BG0722](BG0722-the-unruled-lens-catches-a-request-nobody-closed.md) | the unruled lens catches a request nobody closed, not the request everybody abandoned - the dominant accumulation path is still unguarded | Open | High | 2026-09-21 | 2026-09-21 |
+| [BG0722](BG0722-the-unruled-lens-catches-a-request-nobody-closed.md) | the unruled lens catches a request nobody closed, not the request everybody abandoned - the dominant accumulation path is still unguarded | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0723](BG0723-a-stated-count-in-source-or-test-prose.md) | a stated count in source or test prose is never checked against the tree it counts | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0724](BG0724-check-spec-claims-reads-raw-text-so-a.md) | check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0725](BG0725-two-spellings-of-the-stop-ship-constant-and.md) | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report | Open | Medium | 2026-09-21 | 2026-09-21 |
@@ -88,13 +88,20 @@
 | [BG0727](BG0727-check-script-tests-sweeps-two-fixed-globs-so.md) | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0728](BG0728-a-unit-s-declared-affects-is-never-compared.md) | a unit's declared Affects is never compared with the files its delivering commit changed | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0729](BG0729-the-batch-level-reviewer-contribution-to-the-lens.md) | the batch-level reviewer contribution to the lens count is asserted by no test | Open | Medium | 2026-09-21 | 2026-09-21 |
-| [BG0730](BG0730-a-stop-ship-ruling-is-never-re-derived.md) | a stop-ship ruling is never re-derived against its finding's status, so a ruling on a Fixed finding blocks every close permanently | Open | High | 2026-09-21 | 2026-09-21 |
+| [BG0730](BG0730-a-stop-ship-ruling-is-never-re-derived.md) | a stop-ship ruling is never re-derived against its finding's status, so a ruling on a Fixed finding blocks every close permanently | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0731](BG0731-filing-a-low-severity-finding-recreates-the-consolidation.md) | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0732](BG0732-the-derived-only-corpus-ceiling-is-an-absolute.md) | the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching | Open | Medium | 2026-09-21 | 2026-09-21 |
-| [BG0733](BG0733-a-verified-line-reading-partial-or-no-is.md) | a Verified line reading PARTIAL or no is treated exactly like yes, so an honest self-report of a miss is laundered into a green | Open | High | 2026-09-21 | 2026-09-21 |
+| [BG0733](BG0733-a-verified-line-reading-partial-or-no-is.md) | a Verified line reading PARTIAL or no is treated exactly like yes, so an honest self-report of a miss is laundered into a green | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0734](BG0734-the-blockquote-skip-in-check-versions-is-unreachable.md) | the blockquote skip in check_versions is unreachable, so it guards nothing | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0735](BG0735-the-checklist-s-authority-field-is-carried-on.md) | the checklist's authority field is carried on 22 rows and read by no renderer | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0736](BG0736-spawned-column-is-the-one-drift-kind-reconcile.md) | spawned-column is the one drift kind reconcile can detect but never repair, so every decomposition leaves permanent drift the doctrine forbids fixing by hand | Fixed | High | 2026-09-21 | 2026-09-21 |
+| [BG0737](BG0737-the-stale-downgrade-destroys-an-author-s-reason.md) | the stale downgrade destroys an author's reason on a positive verdict, so the principle BG0733 shipped is violated on the sibling branch of the same function | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0738](BG0738-the-low-severity-consolidation-writes-a-consolidated-findings.md) | the low-severity consolidation writes a Consolidated Findings section with no blank line after the heading, so the commit that files a Low finding is refused by the markdown gate | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0739](BG0739-close-owed-reads-the-raised-in-batch-stamp.md) | close_owed reads the Raised-in-batch stamp by its last token while asserting it reads it exactly as sprint_report does, and the two now genuinely disagree | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0740](BG0740-a-gate-stood-down-in-prose-rather-than.md) | a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most needed went unnamed | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0741](BG0741-the-stale-lens-is-silenced-by-the-sweep.md) | the stale lens is silenced by the sweep's own audit rulings, and repairing it will make every abandoned request double-report on the same day | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0742](BG0742-ac5-style-corpus-coupled-tests-go-red-when.md) | AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0743](BG0743-a-signed-report-s-digest-covers-prose-that.md) | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an unchanged run | Open | Medium | 2026-09-22 | 2026-09-22 |
 
 ## Archived Releases
 

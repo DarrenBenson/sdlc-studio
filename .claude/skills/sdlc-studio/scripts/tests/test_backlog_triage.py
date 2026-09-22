@@ -15,6 +15,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import backlog_triage  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import workspace  # noqa: E402 - the one authority for "am I in the dev repo?"
 
 
 def _w(path: Path, text: str) -> None:
@@ -307,6 +309,176 @@ class FilerNeverBreaksTests(TriageBase):
         # must not raise - degrade to no candidates
         self.assertEqual(ff.duplicate_candidates(self.root, "a new bug",
                          {"affects": "src/thing.py", "summary": "s"}), [])
+
+
+class AbandonedRequestLensTests(TriageBase):
+    """BG0722. The `unruled` lens catches a request nobody CLOSED - In Progress, every child
+    resolved, no judgement recorded. Run against this repository's real backlog it reported ZERO,
+    because all 37 In Progress requests had at least one child still open. The path that actually
+    accumulates is the request everybody ABANDONED: work started, stopped, and the children have
+    not moved since. Judged by the CHILDREN's dates, because the request's own date says only that
+    somebody wrote on it - and the sweep's own dated audit ruling is a write."""
+
+    def _request(self, cid: str, *, status: str = "In Progress", date: str,
+                 children: list[str], ruled: bool = False) -> None:
+        d = "change-requests" if cid.startswith("CR") else "rfcs"
+        lines = [f"# {cid}: a request", "", f"> **Status:** {status}",
+                 f"> **Decomposed-into:** {', '.join(children)}", f"> **Date:** {date}"]
+        body = "\n".join(lines) + "\n\n## Summary\n\nsomething\n"
+        if ruled:
+            body += ("\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
+                     f"| {date} | audit ruling | still wanted |\n")
+        _w(self.root / "sdlc-studio" / d / f"{cid}-x.md", body)
+
+    def _child(self, uid: str, *, status: str, date: str) -> None:
+        _unit(self.root, "story", uid, title="a child", status=status, date=date)
+
+    def test_a_request_edited_today_with_frozen_children_is_reported(self) -> None:
+        """AC1. The request's own date is not evidence of progress - somebody writing on it is
+        not the work moving. This is the case the shipped lens cannot see at all."""
+        self._request("CR9001", date="2026-07-16", children=["US9001"])
+        self._child("US9001", status="Draft", date="2026-01-01")
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        self.assertIn("abandoned", self._lenses(report))
+
+    def test_an_audit_ruling_does_not_silence_the_lens(self) -> None:
+        """AC2. A guard its own remedy switches off goes blind exactly once it has been used -
+        which is how `stale` was lost. The children are what must move, not the paperwork."""
+        self._request("CR9002", date="2026-07-16", children=["US9002"], ruled=True)
+        self._child("US9002", status="Draft", date="2026-01-01")
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
+        self.assertTrue(any("CR9002" in f["units"] for f in abandoned),
+                        "a dated audit ruling is a write on the request, not movement in the work")
+
+    def test_a_request_with_moving_children_is_not_reported(self) -> None:
+        """AC3, the discriminating half - and the direction the shipped lens fails in, by
+        reporting nothing at all."""
+        self._request("CR9003", date="2026-01-01", children=["US9003"])
+        self._child("US9003", status="Draft", date="2026-07-10")
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
+        self.assertFalse(any("CR9003" in f["units"] for f in abandoned))
+
+    def test_both_lenses_report_their_own_case(self) -> None:
+        """AC4. Complementary, not overlapping: finished-but-never-closed against
+        started-and-left. Collapsing them would re-lose whichever the survivor does not catch."""
+        # The finished child is OLD, so the two lenses are genuinely distinguished. With a child
+        # dated today, `abandoned` could not fire on CR9004 whatever the code did, and the mutant
+        # that dates a request from ALL its children rather than its OPEN ones survived.
+        self._request("CR9004", date="2026-07-16", children=["US9004"])
+        self._child("US9004", status="Done", date="2026-01-01")
+        self._request("CR9005", date="2026-07-16", children=["US9005"])
+        self._child("US9005", status="Draft", date="2026-01-01")
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        by_lens = {f["lens"]: [u for x in report["findings"] if x["lens"] == f["lens"]
+                               for u in x["units"]] for f in report["findings"]}
+        self.assertIn("CR9004", by_lens.get("unruled", []))
+        self.assertIn("CR9005", by_lens.get("abandoned", []))
+        # Both NEGATIVES too. Without them the criterion says "each under its own lens" while the
+        # fixture only checks that each appears under one - a mutant reading dates from ALL
+        # children instead of the OPEN ones put CR9004 under both and survived.
+        self.assertNotIn("CR9004", by_lens.get("abandoned", []),
+                         "a request finished by its children is unruled, not abandoned")
+        self.assertNotIn("CR9005", by_lens.get("unruled", []),
+                         "a request with open children has not been finished by them")
+
+    def test_a_proposed_request_with_idle_children_is_not_abandoned(self) -> None:
+        """Scoped to In Progress, which is what the shape means. A Proposed request whose
+        children are idle has not been abandoned, it has not been started."""
+        self._request("CR9007", status="Proposed", date="2026-07-16", children=["US9007"])
+        self._child("US9007", status="Draft", date="2026-01-01")
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
+        self.assertFalse(any("CR9007" in f["units"] for f in abandoned))
+
+    def test_a_child_carrying_no_date_at_all_does_not_crash_the_sweep(self) -> None:
+        """The guard above the aggregation is load-bearing and had no cover: an open child with
+        no `Date`, `Created`, `Updated` or Revision History gives `max([])` -> ValueError out of
+        `triage()`, in a path both `status` and `sprint plan` call."""
+        self._request("CR9008", date="2026-01-01", children=["US9008"])
+        d = self.root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "US9008-x.md").write_text("# US9008: a child\n\n> **Status:** Draft\n",
+                                       encoding="utf-8")
+        report = backlog_triage.triage(self.root, today="2026-07-16")   # must not raise
+        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
+        self.assertFalse(any("CR9008" in f["units"] for f in abandoned),
+                         "a request whose open work records no date cannot be judged idle")
+
+    def test_the_finding_is_advisory_and_never_blocks(self) -> None:
+        """The sibling `unruled` lens shipped this test a day earlier and this one dropped it.
+        Flipping the severity to `block` sets `report['blocked']`, makes `check` exit 1 and
+        refuses `sprint plan` - and it would fire today, on three live findings."""
+        self._request("CR9009", date="2026-07-16", children=["US9009"])
+        self._child("US9009", status="Draft", date="2026-01-01")
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
+        self.assertTrue(abandoned)
+        self.assertEqual({"report"}, {f["severity"] for f in abandoned})
+        self.assertFalse(report["blocked"], "an advisory lens must not refuse a plan")
+        self.assertIn("abandoned", backlog_triage.render(report))
+
+    def test_the_oldest_idle_child_decides_not_the_newest(self) -> None:
+        """A request is as idle as its MOST RECENTLY touched open child - if anything is moving,
+        the request is not abandoned. `min` instead of `max` reverses that, and no fixture had
+        two open children so the aggregation rule the lens turns on was untested."""
+        self._request("CR9010", date="2026-07-16", children=["US9010", "US9011"])
+        self._child("US9010", status="Draft", date="2026-01-01")   # long idle
+        self._child("US9011", status="Draft", date="2026-07-10")   # moving
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
+        self.assertFalse(any("CR9010" in f["units"] for f in abandoned),
+                         "one child still moving means the request is not abandoned")
+
+    def test_the_threshold_boundary_is_exclusive_on_the_day_before(self) -> None:
+        """The one tunable constant, argued at length and pinned by nothing: every value from 7
+        to 57 passed the module. These two fixtures sit either side of 45."""
+        self._request("CR9012", date="2026-07-16", children=["US9012"])
+        self._child("US9012", status="Draft", date="2026-06-02")   # 44 days idle
+        self._request("CR9013", date="2026-07-16", children=["US9013"])
+        self._child("US9013", status="Draft", date="2026-06-01")   # 45 days idle
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        named = {u for f in report["findings"] if f["lens"] == "abandoned" for u in f["units"]}
+        self.assertNotIn("CR9012", named, "44 days idle is under the threshold")
+        self.assertIn("CR9013", named, "45 days idle is at it")
+
+    def test_only_a_request_is_judged_abandoned_never_an_epic(self) -> None:
+        """The type scope. I claimed dropping it was an equivalent mutant; the reviewer built the
+        distinguishing input and it is not - an In Progress EPIC naming an idle story parses into
+        the backlog and would be reported. An epic is delivery work, and `abandoned` is a question
+        about a REQUEST nobody is carrying forward."""
+        d = self.root / "sdlc-studio" / "epics"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "EP9300-x.md").write_text(
+            "# EP9300: an epic\n\n> **Status:** In Progress\n"
+            "> **Decomposed-into:** US9300\n> **Date:** 2026-07-16\n", encoding="utf-8")
+        self._child("US9300", status="Draft", date="2026-01-01")
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
+        self.assertFalse(any("EP9300" in f["units"] for f in abandoned))
+
+    def test_the_lens_is_not_inert_against_the_real_corpus(self) -> None:
+        """AC5, and the criterion that matters most. The shipped `unruled` lens is CORRECT and its
+        mutants are killed, yet it reports ZERO against this repository - a detector proved only
+        on a fixture is the inert-mechanism class this project has paid for repeatedly. Skipped
+        rather than failed outside the dev repo, because a consuming project's backlog is its own
+        and says nothing about this lens."""
+        if not workspace.in_dev_repo():
+            self.skipTest("not the dev repo - a consuming backlog cannot pin this lens")
+        report = backlog_triage.triage(workspace.REPO)
+        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
+        self.assertGreater(len(abandoned), 0,
+                           "the lens reports nothing against the very backlog it was built for, "
+                           "which is the defect BG0722 records about its predecessor")
+
+    def test_a_request_with_no_children_is_not_reported(self) -> None:
+        """A request nobody has decomposed is the separate `undecomposed` case `status` already
+        counts. Reporting it here as well would make one problem look like two."""
+        self._request("CR9006", date="2026-01-01", children=[])
+        report = backlog_triage.triage(self.root, today="2026-07-16")
+        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
+        self.assertFalse(any("CR9006" in f["units"] for f in abandoned))
 
 
 if __name__ == "__main__":

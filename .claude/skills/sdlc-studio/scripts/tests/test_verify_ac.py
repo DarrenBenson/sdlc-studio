@@ -1837,8 +1837,6 @@ class CompanionExclusionTests(unittest.TestCase):
             self.assertEqual(found, ["US0001-login.md"])
 
 
-
-
 class RootRelativePathsTests(unittest.TestCase):
     """BG0089: run from any cwd with --root, discovery and report resolve against the repo
     root - not the cwd - so the Done gate reads the report the run actually wrote."""
@@ -3401,8 +3399,6 @@ class StampResolutionTests(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
-
-
 class FenceInfoStringTests(unittest.TestCase):
     """A closing fence may be followed only by spaces (CommonMark 4.5). Treating an info-string
     line as a closer released the block early and turned the illustration beneath it into a LIVE
@@ -4951,7 +4947,6 @@ class MultiRowTestPlanTests(unittest.TestCase):
                               ("AC2", "in `verify_ac.py`, delete the single path")], cols)
 
 
-
 # -----------------------------------------------------------------------------
 # revert-check (US0671, US0672, US0673) and derived Verification depth (US0675)
 # -----------------------------------------------------------------------------
@@ -6072,7 +6067,6 @@ class UnnameableRowTests(unittest.TestCase):
         self.assertIn("edit verb", " ".join(faults))
 
 
-
 class UnevaluableSelectorTests(unittest.TestCase):
     """BG0628: a selector naming a file THE TREE DOES NOT HOLD is not a stale selector.
 
@@ -6921,7 +6915,6 @@ class LineCoverageTests(unittest.TestCase):
             self.assertIn("1 uncovered", out)
 
 
-
 class TestPlanCellEscapingTests(unittest.TestCase):
     """BG0658: `testplan derive` composed each row by f-string and `_testplan_rows` read it back
     by splitting on a raw pipe. A mutant naming a piped command - and a shell pipeline is an
@@ -7031,7 +7024,6 @@ class TestPlanCellEscapingTests(unittest.TestCase):
             with self.subTest(plain=plain):
                 self.assertEqual(plain, verify_ac._cell(plain))
                 self.assertEqual(plain, verify_ac._uncell(verify_ac._cell(plain)))
-
 
 
 class TestPlanProbeTests(unittest.TestCase):
@@ -7687,5 +7679,216 @@ class PlaceholderRowsAreReportedTests(unittest.TestCase):
                 self.assertIn(part, br.stdout)
 
 
+class VerifiedFieldIsReadTests(unittest.TestCase):
+    """BG0733. A criterion's `Verified:` line did not survive contact with the verifier, and the
+    bug as filed understated it. Measured through the shipped CLI: a parsed `no`, `manual` or
+    `stale` is OVERWRITTEN with `yes` by a green selector, so the disclosure is destroyed rather
+    than ignored; and `VERIFIED_RE` demanded end-of-line after the optional parenthetical, so any
+    value carrying a reason matched nothing, after which a fresh `yes` was inserted above the
+    original and the criterion carried two contradictory verdicts. 17 of this corpus's 3143
+    `Verified:` lines sat in that second state."""
+
+    def _story(self, *criteria: str, status: str = "In Progress") -> tuple[Path, Path]:
+        d = Path(tempfile.mkdtemp(prefix="verified_field_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "stories").mkdir(parents=True)
+        body = "\n".join(criteria)
+        path = d / "sdlc-studio" / "stories" / "US9100-probe.md"
+        path.write_text(
+            f"# US9100: probe\n\n> **Status:** {status}\n> **Affects:** a.py\n\n"
+            f"## Acceptance Criteria\n\n{body}\n\n## Revision History\n\n"
+            "| Date | Author | Change |\n| --- | --- | --- |\n| 2026-09-22 | probe | created |\n",
+            encoding="utf-8")
+        return d, path
+
+    def _run(self, root: Path) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, "-B", str(SCRIPT_PATH), "run", "--id", "US9100",
+             "--root", str(root)], capture_output=True, text=True, check=False)
+
+    @staticmethod
+    def _verified_lines(path: Path) -> list[str]:
+        return [ln.strip() for ln in path.read_text(encoding="utf-8").splitlines()
+                if "**Verified:**" in ln]
+
+    def test_a_recorded_no_fails_and_is_not_rewritten(self) -> None:
+        """AC1. The selector is green and the author said no. Today the line is overwritten with
+        `yes`, which destroys the only record that anybody doubted the criterion."""
+        root, path = self._story(
+            "- [x] **AC1: a thing**", "  - **Verify:** shell true",
+            "  - **Verified:** no - two of fifteen cases still fail")
+        out = self._run(root)
+        self.assertIn("fail=1", out.stdout + out.stderr,
+                      "a criterion its author recorded as unmet must not count as passing")
+        self.assertEqual(["- **Verified:** no - two of fifteen cases still fail"],
+                         self._verified_lines(path),
+                         "the recorded verdict was rewritten by the run that read it")
+        # Now that every non-positive verdict is protected, this message is the ONLY place an
+        # author's reason surfaces for the case the bug is about. One assertion kills the mutant
+        # that drops it from the failure text.
+        self.assertIn("two of fifteen cases still fail", out.stdout + out.stderr,
+                      "the author's reason must reach the reader, not just the verdict")
+
+    def test_manual_passes_and_keeps_its_own_word(self) -> None:
+        """AC2. `manual` is a POSITIVE verdict - 18 of them in the corpus - and it records HOW the
+        criterion was verified, so normalising it to `yes` loses the author's distinction."""
+        root, path = self._story(
+            "- [x] **AC1: a thing**", "  - **Verify:** shell true", "  - **Verified:** manual")
+        out = self._run(root)
+        self.assertIn("pass=1", out.stdout + out.stderr)
+        self.assertIn("fail=0", out.stdout + out.stderr)
+        self.assertEqual(["- **Verified:** manual"], self._verified_lines(path))
+
+    def test_a_value_with_a_trailing_reason_parses_and_carries_it(self) -> None:
+        """AC3. The shipped pattern demanded end-of-line after the optional parenthetical, so
+        every annotated line in the corpus missed entirely."""
+        line = "  - **Verified:** manual - byte-identical, confirmed independently by the reviewer"
+        m = sdlc_md.VERIFIED_RE.match(line)
+        self.assertIsNotNone(m, "an annotated value must parse, not miss")
+        self.assertEqual("manual", m.group(2).lower())
+        root, path = self._story("- [x] **AC1: a thing**", "  - **Verify:** shell true", line)
+        out = self._run(root)
+        self.assertIn("pass=1", out.stdout + out.stderr)
+        self.assertEqual(1, len(self._verified_lines(path)),
+                         "a parsed line must not gain a second verdict beside it")
+        # The REPORT, not the file. A positive verdict is never rewritten, so asserting on the
+        # file stayed green even with the reason capture deleted - that mutant SURVIVED.
+        payload = json.loads((root / "sdlc-studio" / ".local" / "verify-report.json")
+                             .read_text(encoding="utf-8"))
+        reasons = [r for story in payload["stories"].values()
+                   for r in (story.get("recorded_reasons") or [])]
+        self.assertTrue(any("byte-identical" in (r.get("reason") or "") for r in reasons),
+                        f"the recorded reason never reached the report: {reasons}")
+
+    def test_an_unreadable_value_is_reported_and_no_second_line_is_inserted(self) -> None:
+        """AC4. `PARTIAL` is outside the vocabulary. Today the parser cannot see the line, inserts
+        a fresh `yes` above it, and the criterion ends up carrying two contradictory verdicts."""
+        root, path = self._story(
+            "- [x] **AC1: a thing**", "  - **Verify:** shell true",
+            "  - **Verified:** PARTIAL (2026-09-22) - two of fifteen cases fail")
+        out = self._run(root)
+        blob = out.stdout + out.stderr
+        self.assertNotIn("pass=1", blob, "an unreadable verdict must not report as satisfied")
+        self.assertEqual(1, len(self._verified_lines(path)),
+                         "a second, contradictory Verified line was inserted above the original")
+        self.assertIn("PARTIAL", self._verified_lines(path)[0])
+
+    def test_an_absent_verified_line_is_not_a_denial(self) -> None:
+        """AC5. 660 of this corpus 3793 criteria carry no `Verified:` line. Treating an absent field as a denial
+        would redden the entire backlog at once, so this is the half that must NOT change."""
+        root, path = self._story("- [x] **AC1: a thing**", "  - **Verify:** shell true")
+        out = self._run(root)
+        self.assertIn("pass=1", out.stdout + out.stderr)
+        self.assertIn("fail=0", out.stdout + out.stderr)
+        self.assertEqual(1, len(self._verified_lines(path)))
+        self.assertTrue(self._verified_lines(path)[0].startswith("- **Verified:** yes"))
+
+    def test_a_failing_recorded_verdict_moves_no_status(self) -> None:
+        """AC6. Seven Done units carry a recorded `no`. Reporting the truth about them is the
+        point; reopening them is a separate decision nobody has taken."""
+        root, path = self._story(
+            "- [x] **AC1: a thing**", "  - **Verify:** shell true", "  - **Verified:** no",
+            status="Done")
+        out = self._run(root)
+        # Assert the branch is REACHED before asserting what it does not do. The first version
+        # asserted only the status, so it passed while the run was greening the line instead of
+        # failing it - the fixture demonstrated the defect it was named against.
+        self.assertIn("fail=1", out.stdout + out.stderr,
+                      "the recorded-not-verified branch must be reached for this to prove anything")
+        self.assertEqual(["- **Verified:** no"], self._verified_lines(path))
+        self.assertIn("> **Status:** Done", path.read_text(encoding="utf-8"),
+                      "reporting a failing verdict must not transition the unit")
+
+    def test_the_red_fix_green_loop_closes_end_to_end(self) -> None:
+        """AC7. `update_verified` writes the downgrade ITSELF when a stamped-green criterion goes
+        red, and the author writes the identical shape, so provenance cannot be read from the line
+        - it has to be MARKED. Driven as the real two-step loop rather than a hand-built fixture,
+        because the first repair passed a hand-built one while the loop still could not close."""
+        d = Path(tempfile.mkdtemp(prefix="verified_loop_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "stories").mkdir(parents=True)
+        path = d / "sdlc-studio" / "stories" / "US9100-probe.md"
+        path.write_text(
+            "# US9100: probe\n\n> **Status:** In Progress\n> **Affects:** a.py\n\n"
+            "## Acceptance Criteria\n\n- [x] **AC1: a thing**\n"
+            f"  - **Verify:** shell test -f {d / 'flag.txt'}\n"
+            "  - **Verified:** yes (2026-01-01)\n\n## Revision History\n\n"
+            "| Date | Author | Change |\n| --- | --- | --- |\n| 2026-09-22 | probe | created |\n",
+            encoding="utf-8")
+
+        red = self._run(d)
+        self.assertIn("fail=1", red.stdout + red.stderr, "step 1: the selector must go red")
+        downgraded = self._verified_lines(path)[0]
+        self.assertTrue(downgraded.startswith("- **Verified:** no"))
+        self.assertIn("downgraded by verify_ac", downgraded,
+                      "the tool must MARK its own downgrade, or nothing can tell it from an author's")
+
+        (d / "flag.txt").write_text("", encoding="utf-8")
+        green = self._run(d)
+        self.assertIn("pass=1", green.stdout + green.stderr,
+                      "step 2: the loop must close - the tool's own downgrade is not a disclosure")
+        self.assertIn("fail=0", green.stdout + green.stderr)
+        self.assertTrue(self._verified_lines(path)[0].startswith("- **Verified:** yes"))
+
+    def test_a_bare_recorded_no_is_protected(self) -> None:
+        """AC7b, and the finding that sank the first repair. Every one of this corpus's 18
+        non-positive lines is BARE - no reason - so keying protection on a reason being present
+        protected none of them, and 100% of the real instances were still destroyed. An UNMARKED
+        verdict is the author's; the cost of being wrong is one manual edit, against silently
+        erasing a disclosure."""
+        for value in ("no", "no (2026-07-20)", "stale"):
+            with self.subTest(value=value):
+                root, path = self._story(
+                    "- [x] **AC1: a thing**", "  - **Verify:** shell true",
+                    f"  - **Verified:** {value}", status="Done")
+                out = self._run(root)
+                self.assertIn("fail=1", out.stdout + out.stderr,
+                              f"a bare {value!r} is the corpus shape and must not be greened")
+                self.assertEqual([f"- **Verified:** {value}"], self._verified_lines(path),
+                                 "the recorded verdict was destroyed by the run that read it")
+                self.assertIn("> **Status:** Done", path.read_text(encoding="utf-8"))
+
+    def test_a_flip_records_what_it_replaced(self) -> None:
+        """AC7c. `old_state` is the audit field for exactly this event; hardcoding "none" made a
+        cleared verdict indistinguishable from one that was never there."""
+        d = Path(tempfile.mkdtemp(prefix="verified_flip_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "stories").mkdir(parents=True)
+        path = d / "sdlc-studio" / "stories" / "US9100-probe.md"
+        marked = "no (2026-01-01) - downgraded by verify_ac - the selector was red at verification time"
+        path.write_text(
+            "# US9100: probe\n\n> **Status:** In Progress\n> **Affects:** a.py\n\n"
+            "## Acceptance Criteria\n\n- [x] **AC1: a thing**\n  - **Verify:** shell true\n"
+            f"  - **Verified:** {marked}\n\n## Revision History\n\n"
+            "| Date | Author | Change |\n| --- | --- | --- |\n| 2026-09-22 | probe | created |\n",
+            encoding="utf-8")
+        self._run(d)
+        payload = json.loads((d / "sdlc-studio" / ".local" / "verify-report.json")
+                             .read_text(encoding="utf-8"))
+        flips = [f for story in payload["stories"].values() for f in (story.get("flips") or [])]
+        self.assertEqual([{"ac": "AC1", "old_state": "no", "new_state": "yes"}], flips,
+                         "the flip must name the verdict it replaced, not report none")
+
+    def test_the_value_must_be_a_whole_word(self) -> None:
+        """AC8. Without the word boundary, `yesterday` parses as a positive `yes` - the mutant that
+        drops it survived all 411 tests in this module."""
+        for text in ("yesterday", "nope", "manually by hand", "stalemate",
+                     "yes-ish", "yes/no unclear", "manual/automated", "no-longer-true"):
+            with self.subTest(value=text):
+                self.assertIsNone(
+                    sdlc_md.VERIFIED_RE.match(f"  - **Verified:** {text}"),
+                    f"{text!r} is not a verdict and must not parse as one")
+
+    def test_stale_is_not_a_positive_verdict(self) -> None:
+        """AC9. The changelog and the docstring both assert it; nothing pinned it, and a mutant
+        adding `stale` to the positive set survived all 411 tests."""
+        self.assertNotIn("stale", sdlc_md.VERIFIED_POSITIVE)
+        root, _path = self._story(
+            "- [x] **AC1: a thing**", "  - **Verify:** shell true",
+            "  - **Verified:** stale - the fixture moved under it")
+        out = self._run(root)
+        self.assertIn("fail=1", out.stdout + out.stderr)
+
 if __name__ == "__main__":
     unittest.main()
+

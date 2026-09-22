@@ -2030,9 +2030,25 @@ def _ck_known_issues(ctx: dict) -> tuple:
                 f"not the same as leaving none")
     ruled = {r["id"] for r in rows if r["ok"]}
     unruled = [u for u in open_findings if u not in ruled]
-    stop = [r["id"] for r in rows if r["ok"] and r["ruling"] == "stop-ship"]
+    # The same join the gate applies. Reporting every stop-ship row while the gate discharges
+    # some of them printed "2 STOP-SHIP" beside a close that proceeded over one - the operator
+    # reads this row, not the gate's dict.
+    stop = [r["id"] for r in rows
+            if r["ok"] and r["ruling"] == "stop-ship" and not r.get("terminal")]
+    discharged = [r["id"] for r in rows
+                  if r["ok"] and r["ruling"] == "stop-ship" and r.get("terminal")]
     broken = [f"{r['id'] or '(no id)'}: {r['why']}" for r in rows if not r["ok"]]
+    undatable = ctx.get("undatable_findings") or []
     if not rows and not open_findings:
+        if undatable:
+            # "None carried" is a claim about everything, and this scan could not judge these.
+            # Saying it anyway is how a visible over-count becomes a silent clean sheet.
+            return (UNANSWERED, f"none carried, but {len(undatable)} finding(s) undatable",
+                    f"the window could not judge {', '.join(undatable[:12])}"
+                    + (f" (+{len(undatable) - 12} more)" if len(undatable) > 12 else "")
+                    + " - each carries a `Raised-in-batch` stamp recording no moment and no "
+                      "`Created` to fall back on, so whether this sprint left them open is "
+                      "UNKNOWN, which is not the same as leaving none")
         return (ANSWERED, "none carried",
                 "the scan ran and this sprint left no finding open - a scan that could NOT "
                 "run reports unreadable above, so this row means what it says")
@@ -2041,8 +2057,14 @@ def _ck_known_issues(ctx: dict) -> tuple:
         return (UNANSWERED, f"{len(unruled)} unruled, {len(broken)} malformed row(s)",
                 "; ".join(bits[:12]) + " - an open finding nobody ruled on is not a carried "
                 "issue, it is one nobody looked at")
-    return (ANSWERED, f"{len(rows)} ruled" + (f", {len(stop)} STOP-SHIP" if stop else ""),
-            "; ".join(f"{r['id']} {r['ruling']} by {r['by']}" for r in rows[:12]))
+    detail = "; ".join(f"{r['id']} {r['ruling']} by {r['by']}" for r in rows[:12])
+    if discharged:
+        # Named, because a ruling that stopped holding is a fact the signer is entitled to -
+        # silently dropping it from the count is how a hold disappears with nobody told.
+        detail += (f" - DISCHARGED (their findings reached a terminal status): "
+                   f"{', '.join(discharged)}")
+    return (ANSWERED, f"{len(rows)} ruled" + (f", {len(stop)} STOP-SHIP" if stop else "")
+            + (f", {len(discharged)} discharged" if discharged else ""), detail)
 
 
 def _ck_cost(ctx: dict) -> tuple:
@@ -2053,6 +2075,78 @@ def _ck_cost(ctx: dict) -> tuple:
                 "sprint cost is not attributable - which is not zero")
     return (ANSWERED, f"{spend.get('tokens', 0):,} token(s) over "
                       f"{spend.get('measured_units', 0)} measured unit(s)", "")
+
+
+#: An ISO-8601 timestamp anywhere in a `Raised-in-batch` stamp. Anchored on the SHAPE of a date
+#: rather than on position: the stamp is a bare timestamp when a batch claimed the finding and
+#: prose when none did, so position says nothing and only the shape is reliable.
+_STAMP_TS_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?")
+
+
+def _stamp_timestamp(stamp: str) -> str:
+    """The moment a `Raised-in-batch` stamp records, or `""` when it records none.
+
+    `""` is the honest answer for a prose stamp, and the caller treats it exactly as it treats an
+    empty field - undatable, therefore outside every window. Taking the last token instead read
+    the word `batch` as a date.
+    """
+    m = _STAMP_TS_RE.search(stamp or "")
+    return m.group(0) if m else ""
+
+
+#: A date, or a full timestamp, at the START of a `Created` value.
+_CREATED_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)?")
+
+
+def _created_date(text: str) -> str:
+    """The `Created` field, the fallback when a `Raised-in-batch` stamp carries no timestamp.
+
+    `file_finding` writes `none open - raised outside a delivery batch` for a finding raised
+    with no batch open, and that stamp records no moment at all - but the artefact still does,
+    in `Created`. Reading it is what keeps a prose-stamped finding attributable instead of
+    invisible, and `sprint.py`'s reader of the same field already resolves it this way.
+    """
+    value = (sdlc_md.extract_field(text, "Created") or "").strip()
+    # Guarded BY SHAPE, exactly as `_stamp_timestamp` is. `Created: TBD` sorts after every ISO
+    # date, so an unguarded read would attribute it to any open run - and it would not appear in
+    # the undatable set either, so nothing would disclose it. That is this bug's own arithmetic
+    # moved one layer over.
+    m = _CREATED_DATE_RE.match(value)
+    return m.group(0) if m else ""
+
+
+def _undatable_findings(root: Path, *, open_only: bool = True) -> list[str]:
+    """Findings whose `Raised-in-batch` stamp carries no timestamp, by artefact id.
+
+    Reported rather than silently skipped: a finding excluded without trace is the same defect as
+    one attributed wrongly, one direction over. The close names these so a reader can see what the
+    window could not judge.
+
+    Scoped to NON-TERMINAL findings by default, and the scoping is the difference between a
+    disclosure and noise. This corpus holds 45 of them once both sources are read; naming every
+    artefact that merely lacks a stamp would tell a reader nothing they can act on, while these are
+    exactly the set a stop-ship question could be asked about.
+    """
+    out = []
+    for type_ in ("bug", "cr"):
+        for path in sdlc_md.artifact_files(type_, Path(root)):
+            uid = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or "")
+            if not uid:
+                continue
+            text = sdlc_md.read_text_safe(path)
+            stamp = (sdlc_md.extract_field(text, "Raised-in-batch") or "").strip()
+            # Undatable means a stamp EXISTS and neither it nor `Created` carries a moment. An
+            # artefact with no stamp at all is not an undatable stamp - it predates the mechanism
+            # that writes one, and `_open_findings` skips it for the same reason. The two readers
+            # must apply the same rule or the row would disclose a set the scan never considered.
+            if not stamp or _stamp_timestamp(stamp) or _created_date(text):
+                continue
+            if open_only:
+                status = (sdlc_md.extract_field(text, "Status") or "").strip()
+                if status in sdlc_md.terminal_statuses(type_):
+                    continue
+            out.append(uid)
+    return sorted(out)
 
 
 def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
@@ -2078,9 +2172,37 @@ def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
             text = sdlc_md.read_text_safe(path)
             stamp = (sdlc_md.extract_field(text, "Raised-in-batch") or "").strip()
             # A stamp naming no batch still carries the moment it was raised, and a raise
-            # inside the window is this run's whether or not a batch span claimed it.
-            when = stamp.split()[-1] if stamp else ""
-            if not when or when < started or (ended and when > ended):
+            # inside the window is this run's whether or not a batch span claimed it. But the
+            # moment has to be PARSED, not taken as the last whitespace-separated token: the
+            # stamp `file_finding` writes outside a batch ends in the word `batch`, and a word
+            # sorts after every ISO timestamp, so with an OPEN run - `ended` None, which is the
+            # state a close runs in - it passed both comparisons and the finding was attributed
+            # to whichever run happened to be open. One run filed two findings and its close
+            # demanded stop-ship rulings for 81.
+            if not stamp:
+                # No stamp AT ALL predates the mechanism that writes one: nothing ever claimed
+                # this finding for a run, and counting it would attribute the whole historical
+                # backlog to whichever run is open - 558 of them here, 402 of which carry no
+                # `Created` either. Only a stamp that EXISTS
+                # but records no moment is the case this bug is about.
+                continue
+            when = _stamp_timestamp(stamp) or _created_date(text)
+            if not when:
+                # Undatable: no timestamp in the stamp and no `Created` to fall back on.
+                # NOT attributed - attributing them handed the close 47 findings to rule on that
+                # no run had touched. But not silently dropped either: `_undatable_findings`
+                # collects them and the known-issues row reads it, so the close can never
+                # certify "none carried" over a set it was unable to judge. Excluding them with
+                # nothing said is what made a visible over-count into a silent under-count.
+                continue
+            # Compare at the granularity the value HAS. A date-only `Created` can only be judged
+            # to the day, but a stamp carrying a real moment must be compared in full: truncating
+            # both sides for every input gave a 4h22m run 45 findings raised elsewhere that day,
+            # and made two different runs each claim the same eleven. 15 days in this corpus
+            # carry more than one run, so the loss is live rather than theoretical.
+            lo, hi = ((started[:10], (ended or "")[:10]) if len(when) == 10
+                      else (started, ended or ""))
+            if when < lo or (ended and when > hi):
                 continue
             filed.append(uid)
             status = (sdlc_md.extract_field(text, "Status") or "").strip()
@@ -2127,6 +2249,9 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
         "sprint_reviews": sprint_reviews, "review_rounds": review_rounds,
         "filed_in_run": filed, "open_filed_in_run": still_open,
         "carried_issues": _carried_issues(root, retro_id),
+        # Named in the checklist so the close can SAY what its window could not
+        # judge. An uncalled derivation is a claim nobody can read.
+        "undatable_findings": _undatable_findings(Path(root)),
         "retro_validate": _retro_validate(root, retro_id),
     }
     rows = []
@@ -2138,11 +2263,31 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
             "expired": [r["id"] for r in rows if r["state"] == EXPIRED],
             "outstanding": [r["id"] for r in unmet if not r.get("discharged_by")],
             "pending_in_close": [r["id"] for r in unmet if r.get("discharged_by") == "close"],
-            # A finding ruled stop-ship is ANSWERED - the answer is that it stops the ship. It
-            # is carried separately because a ruling that changes nothing is a note, and the
-            # ruling that matters most is the one that must be able to stop something.
-            "stop_ship": [i["id"] for i in (ctx["carried_issues"] or [])
-                          if i["ok"] and i["ruling"] == retro.STOP_SHIP]}
+            **_known_issue_rulings(ctx)}
+
+
+def _known_issue_rulings(ctx: dict) -> dict:
+    """The carried stop-ship rulings, split by whether each still holds.
+
+    A finding ruled stop-ship is ANSWERED - the answer is that it stops the ship. It is carried
+    separately because a ruling that changes nothing is a note, and the ruling that matters most
+    is the one that must be able to stop something.
+
+    Each ruling is re-judged against its finding's CURRENT status, which is the whole of BG0730.
+    A finding that has reached a terminal status has had its ruling answered by the work, so it
+    is DISCHARGED rather than blocking forever - before this, a ruling outlived its finding and
+    blocked every later close with hand-editing a retro the only escape. A finding that cannot be
+    read at all still BLOCKS: an id resolving to nothing is a typo or a deletion, and in neither
+    case has anybody discharged anything, so releasing it silently would turn a typo into a
+    released hold.
+    """
+    rows = [i for i in (ctx["carried_issues"] or [])
+            if i["ok"] and i["ruling"] == retro.STOP_SHIP]
+    return {
+        "stop_ship": [i["id"] for i in rows if not i.get("terminal")],
+        "stop_ship_discharged": [i["id"] for i in rows if i.get("terminal")],
+        "stop_ship_unreadable": [i["id"] for i in rows if i.get("unreadable")],
+    }
 
 
 def _window(item: dict) -> str:
@@ -2206,7 +2351,10 @@ def _carried_issues(root: Path, retro_id: str) -> list[dict]:
         # A retro that cannot be LOCATED is blindness, not an empty table: `find_retro` answers
         # None rather than raising, so returning [] here dressed "we could not look" as "there
         # was nothing to see" one layer above the exception handler.
-        return retro.carried_issues(sdlc_md.read_text_safe(path)) if path else None
+        # `root` is what lets each row be joined to its artefact's CURRENT status. Without it
+        # a stop-ship ruling could never be discharged, so a ruling on a finding that had since
+        # been Fixed blocked every later close with hand-editing a retro the only escape.
+        return retro.carried_issues(sdlc_md.read_text_safe(path), root=root) if path else None
     except Exception as exc:  # noqa: BLE001
         sdlc_md.debug("sprint_report._carried_issues", exc)
         return None  # unreadable, NOT empty - the caller must be able to tell them apart
@@ -2353,6 +2501,17 @@ def render_checklist(ck: dict) -> str:
         lines += ["", f"{len(ck['stop_ship'])} carried finding(s) ruled STOP-SHIP: "
                       f"{', '.join(ck['stop_ship'])}. The close refuses: a ruling that cannot "
                       f"stop anything is a note."]
+    if ck.get("stop_ship_discharged"):
+        lines += ["", f"{len(ck['stop_ship_discharged'])} carried STOP-SHIP ruling(s) "
+                      f"DISCHARGED: {', '.join(ck['stop_ship_discharged'])}. Their findings "
+                      f"reached a terminal status, so the ruling has been answered by the work "
+                      f"rather than by anybody standing it down."]
+    if ck.get("stop_ship_unreadable"):
+        lines += ["", f"{len(ck['stop_ship_unreadable'])} carried STOP-SHIP ruling(s) name an "
+                      f"artefact that cannot be read: "
+                      f"{', '.join(ck['stop_ship_unreadable'])}. These still refuse - an id "
+                      f"resolving to nothing is a typo or a deletion, and neither discharges "
+                      f"anything."]
     if ck.get("pending_in_close"):
         lines += ["", f"{len(ck['pending_in_close'])} item(s) this close will discharge "
                       f"itself: {', '.join(ck['pending_in_close'])}. Reported, not held - a "
@@ -3260,6 +3419,12 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     sections.append(_units_section(root, paths, state_rel,
                                    state.get("report_gate_clear") or []))
     sections.append(_not_proven_section(root, state, state_rel, units))
+    # Beside the measurement gaps, because a gate that stood down and a figure nobody
+    # measured are the same kind of fact to a signer: something this page does not
+    # establish. Bounded at BOTH ends by the run's own window - the same bounds the DORA
+    # figures use - so a decision taken before or after this run cannot move a signed page.
+    sections.append(_waivers_section(root, end.isoformat().replace('+00:00', 'Z') if end else None,
+                                     start.isoformat().replace('+00:00', 'Z') if start else None))
     sections.append(_judges_section(root, state, state_rel, units))
 
     consult_rows, consult_rel = _consult_rows(root)
@@ -3557,6 +3722,97 @@ def _units_section(root: Path, paths, state_rel: str, gate_clear=()) -> dict:
     return _section("units", "Evidence by unit", rows=rows)
 
 
+def _waivers_in_force(root: Path | str, window_end: str | None,
+                      window_start: str | None = None) -> tuple[list[dict], list[str]]:
+    """The ACCEPTED waivers dated at or before `window_end`, as report rows.
+
+    RPT0002 was SIGNED with two waivers in force - one standing `review.line_coverage` down from
+    block to report for that seal, one waiving a checklist row - and named neither, so the
+    operator signed without being told which gate was not holding.
+
+    A waiver is an ordinary decision row whose decision cell is the canonical token
+    `waiver: <subject>`, which is why it can be recognised at all; a row that merely MENTIONS a
+    waiver is prose and is not one. Only `accepted` rows count: a superseded waiver did not hold,
+    and reporting it would tell the signer a gate stood down that did not.
+
+    Bounded at BOTH ends by the run's own window, the same bounds the DORA figures use. The upper
+    bound stops a decision taken after the page was derived from moving it - BG0718 is the scar,
+    where signing widened a window and invalidated the page one second later. The lower bound is
+    what makes the section a disclosure rather than an archive: without it this repository returns
+    67 rows, almost all one-shot per-story waivers discharged months ago, and the one that matters
+    lands around row 60. A section that buries what it exists to surface has disclosed nothing.
+
+    A missing bound is FAIL-CLOSED. An unbounded read would return every waiver ever recorded and
+    call them all in force, which is the direction a signer must never be shown.
+    """
+    try:
+        import decisions as dec  # noqa: PLC0415 - deferred, like the chain's sibling imports
+    except Exception as exc:  # noqa: BLE001 - a report must not die on a log read
+        sdlc_md.debug("sprint_report._waivers_in_force", exc)
+        return [], []   # the shape the caller unpacks - a bare [] made this guard the death
+    hi, lo = (window_end or "")[:10], (window_start or "")[:10]
+    rel = "sdlc-studio/decisions.md"
+    out, undated = [], []
+    for rec in dec.list_decisions(Path(root)):
+        if rec["status"] != "accepted":
+            continue
+        decision = (rec["decision"] or "").strip()
+        if not decision.lower().startswith(dec.WAIVER_PREFIX):
+            continue
+        when = (rec["date"] or "").strip()[:10]
+        if not hi or not lo:
+            continue      # fail-closed: an unbounded read would call every waiver ever in force
+        if not when:
+            # A waiver whose Date cell is blank or unreadable cannot be placed in any window.
+            # Dropping it silently is the defect BG0715 built `_undatable_findings` to avoid.
+            undated.append(rec["id"])
+            continue
+        if when > hi or when < lo:
+            continue
+        # `fig()` rows, not raw strings. Every consumer of a section's rows - `leaf_figures`,
+        # `fingerprint`, `render_context`, `_provenance_section` - reads `{"value","source"}`, so
+        # raw strings made `build` exit 1 with an AttributeError on any tree holding a waiver.
+        out.append({"waiver_id": fig("waiver_id", rec["id"], rel),
+                    "waiver_subject": fig("waiver_subject",
+                                          decision[len(dec.WAIVER_PREFIX):].strip(), rel),
+                    "waiver_reason": fig("waiver_reason", (rec["rationale"] or "").strip(), rel),
+                    "waiver_date": fig("waiver_date", when, rel)})
+    return out, undated
+
+
+def _waivers_section(root: Path | str, window_end: str | None,
+                     window_start: str | None = None) -> dict:
+    """The waivers section, ALWAYS present. An absent section reads as "not checked", and the
+    whole point is that the signer can tell that apart from "nothing stood down"."""
+    rel = "sdlc-studio/decisions.md"
+    if not window_end or not window_start:
+        # A read that could not be BOUNDED is not a clean sheet. Emitting the affirmative note
+        # here made a refused read indistinguishable from a log that was read and found nothing -
+        # on a page carrying a signature, which is this bug's own failure mode one layer over.
+        return _section("waivers", "Waivers in force",
+                        not_measured=unmeasured(
+                            "waivers", rel,
+                            "the run record carries no usable window, so the waivers in force "
+                            "could not be bounded - which is NOT the same as none standing down"))
+    rows, undated = _waivers_in_force(root, window_end, window_start)
+    note = ("no gate stood down for this seal - the log was read and carries no accepted waiver "
+            "dated inside this report's window" if not rows else
+            f"{len(rows)} gate(s) were not holding when this page was derived")
+    if undated:
+        # Named rather than dropped, the standard BG0715 set in this same run: an item the window
+        # cannot judge is disclosed, never silently excluded.
+        note += (f" - and {len(undated)} accepted waiver(s) carry no readable date, so whether "
+                 f"they were in force is UNKNOWN: {', '.join(undated)}")
+    # The note is a FIGURE, not a loose key. A key no consumer reads reaches no template and no
+    # digest, so "the log was read and found nothing" existed only inside the in-memory object -
+    # which is the same defect as not deriving it at all.
+    return _section("waivers", "Waivers in force",
+                    figures={"waivers_note": fig("waivers_note", note, "sdlc-studio/decisions.md"),
+                             "waivers_count": fig("waivers_count", len(rows),
+                                                  "sdlc-studio/decisions.md")},
+                    rows=rows)
+
+
 def _not_proven_section(root: Path, state: dict, state_rel: str, units: list) -> dict:
     """What the run did NOT establish, as a section rather than an omission."""
     rows = [{
@@ -3851,7 +4107,8 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
 #: Section key -> the row-list name the templates repeat over. Named here rather than in the
 #: templates so a section can be renamed without editing two files.
 _ROW_LISTS = {"units": "units", "not_proven": "gaps", "dora": "dora",
-              "judges": "judges", "consult": "consult", "provenance": "provenance"}
+              "judges": "judges", "consult": "consult", "provenance": "provenance",
+              "waivers": "waivers"}
 
 
 def _render(report: dict, template: str, revalidation: dict | None) -> str:

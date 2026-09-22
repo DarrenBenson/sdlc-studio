@@ -6437,16 +6437,27 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
         self.assertIn("checklist: ok", out, f"the close over its named retro refused:\n{err}")
         self.assertEqual(0, rc, err)
 
-    def test_a_stop_ship_ruling_holds_its_unit_whatever_its_status(self) -> None:
+    def test_a_stop_ship_ruling_holds_its_unit_unless_the_finding_is_TERMINAL(self) -> None:
         """MUTANT: read a stop-ship ruling only inside the ruling route of the answered test
-        (the rejected build) - a Done unit, a Review unit awaiting only its signature, or a
-        parked, dropped, abandoned or rung-end unit ruled stop-ship then reads as answered, and
-        `stop` exits 0 on a state the close refuses through its own stop-ship branch. The
-        control rules each `not-stop-ship` and leaves it answered, so the ruling and not the
-        shape is what holds."""
+        (the rejected build) - a Review unit awaiting only its signature, or a parked, dropped
+        or rung-end unit ruled stop-ship then reads as answered, and `stop` exits 0 on a state
+        the close refuses through its own stop-ship branch. The control rules each
+        `not-stop-ship` and leaves it answered, so the ruling and not the shape is what holds.
+
+        NARROWED by BG0730, deliberately. This test previously asserted `whatever its status`,
+        including Done and abandoned. A ruling whose finding has reached a TERMINAL status has
+        been answered by the work, and holding it anyway blocked every subsequent close forever
+        with editing a retro by hand the only escape. The two terminal shapes now belong to
+        `StopShipDischargeInUnansweredUnitsTests`, which pins the discharge and its control; what
+        remains here is the non-terminal set, where the ruling genuinely still holds. The
+        invariant the sibling comment in `sprint.py` asserts - that this reader and the close's
+        own stop-ship branch refuse the same states - is preserved, because the close's branch
+        now discharges those two as well."""
         mod = _load()
-        shapes = {"Done": "Done", "awaiting-signature": "Review", "parked": "Ready",
-                  "dropped": "In Progress", "abandoned": "Won't Implement", "rung-end": "Ready"}
+        # `Done` and `abandoned` (Won't Implement) are TERMINAL and are discharged by BG0730;
+        # they are covered by StopShipDischargeInUnansweredUnitsTests instead.
+        shapes = {"awaiting-signature": "Review", "parked": "Ready",
+                  "dropped": "In Progress", "rung-end": "Ready"}
         for shape, status in shapes.items():
             for ruling in ("stop-ship", "not-stop-ship"):
                 with self.subTest(shape=shape, ruling=ruling), \
@@ -20379,6 +20390,51 @@ class TheSealIsATransactionTests(unittest.TestCase):
                 self.assertEqual(2, rc2, o2.getvalue())
                 self.assertIn("already open", e2.getvalue() + o2.getvalue())
             self.assertTrue(run_id)
+
+
+class StopShipDischargeInUnansweredUnitsTests(unittest.TestCase):
+    """BG0730, the half `sprint_report` cannot reach. `unanswered_units` is the second reader of
+    a carried stop-ship ruling, and it held a unit whatever its status - so the close still
+    refused on a finding that had since been Fixed even once the checklist discharged it. The two
+    readers must agree, which is what `unanswered_units`' own comment asserts."""
+
+    def test_a_discharged_ruling_no_longer_holds_its_unit(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_unit(root, "US0101", "Done")
+            _close_state(root, batch=["US0101"], run_id=_UA_RUN)
+            _ua_retro(root, rulings=(("US0101", "stop-ship"),), batch=("US0101",))
+            got = mod.unanswered_units(root, mod.run_state.read(root), "RETRO0001")
+            held = {h["unit"] for h in got["unanswered"]}
+            self.assertNotIn("US0101", held,
+                             "a stop-ship ruling whose unit reached a terminal status has been "
+                             "answered by the work - holding it blocked every later close")
+
+    def test_an_abandoned_unit_ruled_stop_ship_is_discharged_too(self) -> None:
+        """The other terminal shape the sibling test used to carry. Won't Implement is terminal
+        but not delivered, and a ruling on it has equally been answered - by the decision to stop."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_unit(root, "US0101", "Won't Implement")
+            _close_state(root, batch=["US0101"], run_id=_UA_RUN)
+            _ua_retro(root, rulings=(("US0101", "stop-ship"),), batch=("US0101",))
+            got = mod.unanswered_units(root, mod.run_state.read(root), "RETRO0001")
+            self.assertNotIn("US0101", {h["unit"] for h in got["unanswered"]})
+
+    def test_an_undischarged_ruling_still_holds_its_unit(self) -> None:
+        """The discriminating half: the discharge must not become a switch that answers every
+        ruling. A unit still In Progress has answered nothing."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ua_unit(root, "US0101", "In Progress")
+            _close_state(root, batch=["US0101"], run_id=_UA_RUN)
+            _ua_retro(root, rulings=(("US0101", "stop-ship"),), batch=("US0101",))
+            got = mod.unanswered_units(root, mod.run_state.read(root), "RETRO0001")
+            held = {h["unit"] for h in got["unanswered"]}
+            self.assertIn("US0101", held)
 
 
 if __name__ == "__main__":

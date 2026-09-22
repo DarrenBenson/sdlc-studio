@@ -5788,7 +5788,7 @@ def _carried_rulings(root: Path, state: dict, retro_id: str | None) -> tuple:
         if path is None:
             return None, None, f"{retro_id} not found"
         return (sdlc_md.norm_id(retro_id),
-                retro_mod.carried_issues(sdlc_md.read_text_safe(path)), "")
+                retro_mod.carried_issues(sdlc_md.read_text_safe(path), root=root), "")
     run_id = str((state or {}).get("run_id") or "").strip()
     if not run_id:
         return None, None, "the run records no run_id, so no retro can be tied to it"
@@ -5806,7 +5806,7 @@ def _carried_rulings(root: Path, state: dict, retro_id: str | None) -> tuple:
             best = (key, rid, path)
     if best is None:
         return None, None, f"no retro carries {run_id}"
-    return best[1], retro_mod.carried_issues(sdlc_md.read_text_safe(best[2])), ""
+    return best[1], retro_mod.carried_issues(sdlc_md.read_text_safe(best[2]), root=root), ""
 
 
 def unanswered_units(root, state, retro_id=None) -> dict:
@@ -5838,9 +5838,19 @@ def unanswered_units(root, state, retro_id=None) -> dict:
     walked = list(dict.fromkeys(live + dropped))
     rid, rows, unreadable = _carried_rulings(root, state, retro_id)
     ruled: dict[str, set] = {}
+    discharged: set[str] = set()
     for row in rows or []:
-        if row.get("ok"):
-            ruled.setdefault(row["id"], set()).add(row["ruling"])
+        if not row.get("ok"):
+            continue
+        # A stop-ship ruling whose finding has since reached a terminal status has been ANSWERED
+        # by the work. Holding it anyway made a ruling outlive its finding and blocked every
+        # later close permanently, with editing a retro by hand the only escape. The rows carry
+        # `terminal` only when the caller passed a root, so a reader without one sees no
+        # discharge and behaves exactly as before.
+        if row["ruling"] == retro_mod.STOP_SHIP and row.get("terminal"):
+            discharged.add(row["id"])
+            continue
+        ruled.setdefault(row["id"], set()).add(row["ruling"])
     answering = {r for r in retro_mod.KNOWN_ISSUE_RULINGS if r != retro_mod.STOP_SHIP}
     rung = run_rung(state)
     rung_end = RUNG_TERMINALS.get(rung, (None,))[0] if rung not in COMPLETING_RUNGS else None
@@ -5863,7 +5873,9 @@ def unanswered_units(root, state, retro_id=None) -> dict:
         # A STOP-SHIP ruling holds its unit WHATEVER its status - Done, awaiting only a
         # signature, parked, dropped, abandoned or at its rung's end - because the close's own
         # stop-ship branch refuses on it at every one, and a reader of this predicate alone
-        # (`stop`, and every route that reads it) must refuse the same state.
+        # (`stop`, and every route that reads it) must refuse the same state. The ONE exception
+        # is a ruling already discharged above, where the close's own branch no longer refuses
+        # either: the two readers still agree, which is what this comment is really asserting.
         stop_ship = retro_mod.STOP_SHIP in rulings
         terminal = bool(kind) and sdlc_md.is_terminal_status(kind, status)
         abandoned = terminal and not sdlc_md.is_delivered_terminal(kind, status)

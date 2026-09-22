@@ -120,6 +120,22 @@ only what passed is a report nobody should trust.
 NOT MEASURED - {{not_proven_reason}}
 <!-- end -->
 
+## Waivers in force
+
+Which gates were NOT holding when this page was derived. A signature over a page that does not
+say so is a signature over a bar nobody stated.
+
+<!-- when: waivers_measured -->
+{{waivers_note}}
+
+<!-- repeat: waivers -->
+- **{{waiver_id}}** - {{waiver_subject}} ({{waiver_date}}): {{waiver_reason}}
+<!-- end -->
+<!-- end -->
+<!-- unless: waivers_measured -->
+NOT MEASURED - {{waivers_reason}}
+<!-- end -->
+
 ## Who judged this
 
 Every unit is reviewed by a fresh context that did not write it, and approved by a reviewer

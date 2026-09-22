@@ -235,6 +235,20 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
 </section>
 
 <section>
+  <h2>Waivers in force</h2>
+  <p class="lede">Which gates were NOT holding when this page was derived. A signature over a page that does not say so is a signature over a bar nobody stated.</p>
+<!-- when: waivers_measured -->
+  <p>{{waivers_note}}</p>
+<!-- repeat: waivers -->
+    <article class="np"><h3>{{waiver_id}} - {{waiver_subject}}</h3><p>{{waiver_reason}}</p><span class="tag">{{waiver_date}}</span></article>
+<!-- end -->
+<!-- end -->
+<!-- unless: waivers_measured -->
+  <p class="unmeasured"><b>NOT MEASURED</b> - {{waivers_reason}}</p>
+<!-- end -->
+</section>
+
+<section>
   <h2>Who judged this</h2>
   <p class="lede">Every unit was reviewed by a fresh context that did not write it, and approved by a reviewer of record outside the authoring session. The model is named beside each agent: a review's weight depends on what ran it.</p>
 <!-- when: judges_measured -->

@@ -65,6 +65,19 @@ AC_HEADING_RE = sdlc_md.AC_HEADING_RE
 AC_BULLET_RE = sdlc_md.AC_BULLET_RE
 VERIFY_RE = sdlc_md.VERIFY_RE
 VERIFIED_RE = sdlc_md.VERIFIED_RE
+#: Any `Verified:` bullet at all, whatever it claims - used only to tell an UNREADABLE
+#: verdict apart from an absent one, which the vocabulary pattern cannot do.
+_VERIFIED_ANY_RE = re.compile(r"^\s*-?\s*\*\*Verified:\*\*\s*\S", re.IGNORECASE)
+#: The state recorded for a `Verified:` line whose value is outside the vocabulary.
+_UNREADABLE = "unreadable"
+#: The note this tool appends to a verdict IT wrote. The author and the tool used to write the
+#: identical line - `no (<date>)` - so provenance could not be read from the file at all, and any
+#: rule keyed on the line's shape either destroyed the author's disclosure or froze the tool's own
+#: downgrade forever. Marking our own writes is the only thing that makes the two distinguishable.
+#: A non-positive verdict NOT carrying this note is therefore read as the author's and is protected,
+#: which is the safe default: the cost of being wrong is one manual edit, against silently
+#: destroying a disclosure.
+_DOWNGRADE_NOTE = "downgraded by verify_ac - the selector was red at verification time"
 
 
 @dataclass
@@ -78,6 +91,7 @@ class ACBlock:
     verifier: str | None = None
     verified_line: int | None = None
     verified_state: str | None = None
+    verified_reason: str = ""
     verified_when: str | None = None
     # The line index where a new Verified line should be inserted if absent.
     # Defaults to just after the Verify line, or just after the last bullet
@@ -186,6 +200,16 @@ def parse_story(text: str) -> list[ACBlock]:
             current.verified_line = i
             current.verified_state = rm.group(2).lower()
             current.verified_when = (rm.group(3) or "").strip()
+            current.verified_reason = (rm.group(4) or "").lstrip("- ").strip()
+            continue
+        # A line that announces a verdict but whose VALUE is outside the vocabulary. Before
+        # BG0733 this was indistinguishable from a criterion carrying no `Verified:` line: the
+        # parser saw nothing, the writer inserted a fresh `yes` ABOVE it, and the criterion ended
+        # up holding two contradictory verdicts. An unreadable claim is not an absent one.
+        if _VERIFIED_ANY_RE.match(line) and current.verified_line is None:
+            current.verified_line = i
+            current.verified_state = _UNREADABLE
+            current.verified_reason = line.split("**Verified:**", 1)[-1].strip()
             continue
 
         # Track the last bullet line inside the AC so we know where to
@@ -1487,7 +1511,8 @@ def update_verified(lines: list[str], block: ACBlock, new_state: str) -> list[st
         orig = lines[block.verified_line]
         indent_match = re.match(r"^(\s*)", orig)
         indent = indent_match.group(1) if indent_match else ""
-        new_line = f"{indent}- **Verified:** {new_state} ({today})"
+        new_line = (f"{indent}- **Verified:** {new_state}" if "(" in new_state
+                    else f"{indent}- **Verified:** {new_state} ({today})")
         lines = lines.copy()
         lines[block.verified_line] = new_line
         return lines
@@ -1524,6 +1549,10 @@ class StoryReport:
     failures: list[dict] = field(default_factory=list)
     changed: int = 0
     flips: list[dict] = field(default_factory=list)  # pending/applied (ac, old_state, new_state)
+    # Reasons an author wrote after a `Verified:` value. Group 4 of the widened pattern is
+    # the whole point of widening it, and before BG0733 nothing consumed it for a POSITIVE
+    # verdict - `manual - confirmed independently by the reviewer` reached no reader at all.
+    recorded_reasons: list[dict] = field(default_factory=list)
     # sha256 over the ACs and their verifiers as they stood at verification time; the
     # Done gate compares it to the story's current fingerprint (see `ac_fingerprint`)
     ac_fingerprint: str = ""
@@ -1826,10 +1855,52 @@ def verify_story(
                                   allow_shell=story_allow_shell, allow_fallback=allow_fallback)
 
         if result.ok:
+            recorded = (block.verified_state or "").strip().lower()
+            # PROVENANCE, not just value. `update_verified` writes `no (<date>)` itself when a
+            # stamped-green criterion goes red, so a bare `no` carrying no reason is very likely
+            # this tool's own downgrade rather than anybody's disclosure - `git log -S` puts the
+            # corpus's dated `no` lines in sprint-close commits. Treating those as sticky made the
+            # red-fix-green loop impossible to close: the selector went green and the run still
+            # refused, with hand-editing markdown the only way out. An author recording a real miss
+            # states WHY, and that reason is what makes the verdict theirs.
+            authored = _DOWNGRADE_NOTE not in block.verified_reason
+            if recorded and recorded not in sdlc_md.VERIFIED_POSITIVE and authored:
+                # The selector is green and the AUTHOR recorded that the criterion is not met, or
+                # recorded something nobody can read. Before BG0733 this branch did not exist: the
+                # run rewrote the line to `yes`, so an honest disclosure was destroyed by the very
+                # command that read it. The author's verdict wins over the selector's, and the line
+                # is left exactly as written - a derived verdict never overwrites a recorded one.
+                report.failed += 1
+                report.failures.append({
+                    "ac": block.ac_id,
+                    "verifier": block.verifier,
+                    "kind": "recorded-not-verified",
+                    "exit_code": 0,
+                    "stderr": (f"the selector passed, but this criterion records "
+                               f"`Verified: {block.verified_state}`"
+                               + (f" - {block.verified_reason}" if block.verified_reason else "")),
+                    "duration_ms": result.duration_ms,
+                    "score": result.score,
+                    "vacuous": result.vacuous,
+                })
+                continue
             report.verified += 1
             report.passed.append(block.ac_id)
-            if block.verified_state != "yes":
-                report.flips.append({"ac": block.ac_id, "old_state": block.verified_state or "none", "new_state": "yes"})
+            if block.verified_reason.strip():
+                # Group 4 of the widened pattern is the whole reason the pattern was widened. It
+                # used to be interpolated only into a failure message, so for a POSITIVE value -
+                # `manual - confirmed independently by the reviewer` - it reached nothing at all.
+                report.recorded_reasons.append(
+                    {"ac": block.ac_id, "state": recorded, "reason": block.verified_reason.strip()})
+            # Flip when nothing is recorded, and ALSO when what is recorded is this tool's own
+            # downgrade now cleared by a green selector - otherwise the line stays `no` forever and
+            # the red-fix-green loop still cannot close, just one branch further along.
+            if not recorded or recorded not in sdlc_md.VERIFIED_POSITIVE:
+                # `old_state` is the audit field for exactly this event. Hardcoding "none" made a
+                # cleared verdict indistinguishable from one that was never there, which removed
+                # the last trace of what the run overwrote.
+                report.flips.append({"ac": block.ac_id,
+                                    "old_state": recorded or "none", "new_state": "yes"})
                 report.changed += 1
                 if not dry_run:
                     pending.append((block, "yes"))
@@ -1854,7 +1925,7 @@ def verify_story(
                 report.flips.append({"ac": block.ac_id, "old_state": "yes", "new_state": "no"})
                 report.changed += 1
                 if not dry_run:
-                    pending.append((block, "no"))
+                    pending.append((block, f"no ({sdlc_md.now_date()}) - {_DOWNGRADE_NOTE}"))
 
     # Apply write-backs BOTTOM-UP: an insertion shifts every line below it, so
     # applying top-down from one parse compounds a one-line drift per prior
@@ -1957,6 +2028,7 @@ def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
             "passed": s.passed,
             "failures": s.failures,
             "flips": s.flips,
+            "recorded_reasons": s.recorded_reasons,
             # when THIS story was verified, so the Done gate can tell a fresh green from a
             # stale one carried forward by the merge.
             "verified_at": stamp,

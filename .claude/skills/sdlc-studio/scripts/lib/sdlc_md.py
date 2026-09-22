@@ -60,10 +60,25 @@ AC_BULLET_RE = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?\*\*(AC\d+[a-z]?)[^*]*\*
 # AC verifier bullets. The leading dash is optional — some repos use a standalone
 # `**Verify:**` line rather than a `- **Verify:**` bullet.
 VERIFY_RE = re.compile(r"^(\s*)-?\s*\*\*Verify:\*\*\s*(.+?)\s*$")
+# Group 4 is the REASON an author wrote after the value. It used to be absent, and the pattern
+# ended in `$` straight after the optional parenthetical - so `manual - byte-identical, confirmed
+# independently by the reviewer` matched NOTHING, the parser concluded the criterion carried no
+# verdict at all, and the writer inserted a fresh `yes` above it. 17 of this repository's 3143
+# `Verified:` lines were in that state. A reason is the normal way to record a hand
+# verification, so the pattern has to admit it or the field only works when it says nothing.
+# The lookahead is a REAL separator - end, whitespace or `(` - not a word boundary. `\b` admitted
+# punctuation, so `yes-ish`, `yes/no unclear` and `manual/automated` each parsed as a POSITIVE
+# verdict and passed their criterion. An ambiguous value must reach the unreadable branch, not be
+# read as whichever verdict it happens to start with.
 VERIFIED_RE = re.compile(
-    r"^(\s*)-?\s*\*\*Verified:\*\*\s*(yes|no|stale|manual)\s*(?:\(([^)]*)\))?\s*$",
+    r"^(\s*)-?\s*\*\*Verified:\*\*\s*(yes|no|stale|manual)(?=$|\s|\()\s*(?:\(([^)]*)\))?\s*(.*?)\s*$",
     re.IGNORECASE,
 )
+
+#: The values that mean the criterion IS satisfied. `manual` belongs here: it is this project's own
+#: word for hand-verified and the corpus carries 18 of them against 3107 `yes`, so a rule of
+#: anything-but-`yes` would redden 18 satisfied criteria on the run that shipped it.
+VERIFIED_POSITIVE = frozenset({"yes", "manual"})
 
 # The marker `refine` writes into an ungroomed story's Acceptance Criteria section in place of a
 # bare {{placeholder}} scaffold. It is an explicit, machine-detectable statement that these ACs

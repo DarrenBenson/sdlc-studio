@@ -4458,5 +4458,471 @@ class RulingVocabularyTests(ReportOfRecordBase):
         self.assertEqual(carried["stop_ship_count"]["value"], 1)
 
 
+class FindingAttributionTests(ReportOfRecordBase):
+    """BG0715. `_open_findings` dated a finding by the LAST WHITESPACE TOKEN of its
+    `Raised-in-batch` stamp. The stamp written outside a batch is `none open - raised outside a
+    delivery batch`, whose last token is `batch` - and a word sorts after every ISO timestamp, so
+    with an OPEN run (`ended` None, the state a close runs in) it passed both comparisons and the
+    finding was attributed to whichever run happened to be open. One run filed two findings and
+    its close demanded stop-ship rulings for 81.
+
+    The repair must not reverse the error's direction. Excluding prose-stamped findings outright
+    made the close certify `none carried` over findings the run had itself raised - a silent
+    under-count in place of a visible over-count, which `sprint.py`'s reader of the same field
+    already names as the worse of the two. `Created` is the fallback, and a finding no source can
+    date is COUNTED rather than dropped."""
+
+    WINDOW = ("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z")
+    PROSE = "none open - raised outside a delivery batch"
+
+    def _bug(self, bid: str, stamp: str, created: str = "", status: str = "Open") -> None:
+        d = self.root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        created_line = f"> **Created:** {created}\n" if created else ""
+        (d / f"{bid}-x.md").write_text(
+            f"# {bid}: x\n\n> **Status:** {status}\n> **Raised-in-batch:** {stamp}\n"
+            f"{created_line}", encoding="utf-8")
+
+    def _findings(self, ended=None):
+        # `ended_at` None by default: that is the state a CLOSE runs in, and the only state in
+        # which the original defect fires. A fixture carrying an end date is green against it,
+        # because `batch` sorts after every timestamp and the upper bound excludes it.
+        return sr._open_findings(self.root, {"started_at": self.WINDOW[0], "ended_at": ended})
+
+    def test_a_prose_stamp_falls_back_to_created_and_is_attributed(self) -> None:
+        """AC1. The word `batch` is never a date - but the finding still has one, in `Created`,
+        and reading it is what keeps the finding attributable instead of invisible."""
+        self._bug("BG9001", self.PROSE, created="2026-07-22")
+        filed, still_open = self._findings()
+        self.assertIn("BG9001", filed)
+        self.assertIn("BG9001", still_open)
+
+    def test_a_prose_stamp_created_before_the_run_is_not_this_run_s(self) -> None:
+        """AC1b, and the half the shipped code got wrong: it attributed EVERY prose-stamped
+        finding in the repository to whichever run was open, 307 of them here."""
+        self._bug("BG9002", self.PROSE, created="2026-01-01")
+        filed, _ = self._findings()
+        self.assertNotIn("BG9002", filed,
+                         "a finding created before the run opened is somebody else's backlog")
+
+    def test_an_undatable_finding_is_not_attributed_but_the_row_cannot_say_none_carried(self) -> None:
+        """AC2. Two ways to be wrong and both were taken in turn. Attributing these handed the
+        close 47 findings to rule on that no run had touched; excluding them silently let the
+        close certify `none carried` over findings it had raised. It is excluded from
+        attribution AND visible to the row, so the row reports UNKNOWN rather than none."""
+        self._bug("BG9003", self.PROSE)
+        filed, _still_open = self._findings()
+        self.assertNotIn("BG9003", filed, "an undatable finding is nobody's to rule on")
+        undatable = sr._undatable_findings(self.root)
+        self.assertIn("BG9003", undatable)
+        state, summary, _detail = sr._ck_known_issues(
+            {"carried_issues": [], "open_filed_in_run": [], "undatable_findings": undatable})
+        self.assertEqual("unanswered", state,
+                         "the row must not certify none carried over a set it could not judge")
+        self.assertIn("undatable", summary)
+
+    def test_the_row_still_says_none_carried_when_there_is_genuinely_nothing(self) -> None:
+        """AC2b, the discriminating half - a row that never answers is not a check."""
+        state, summary, _ = sr._ck_known_issues(
+            {"carried_issues": [], "open_filed_in_run": [], "undatable_findings": []})
+        self.assertEqual("answered", state)
+        self.assertEqual("none carried", summary)
+
+    def test_the_undatable_set_is_reported_and_reaches_the_checklist(self) -> None:
+        """AC2b. A derivation nothing calls is a claim nobody can read - the first version of
+        this shipped an uncalled function whose docstring said the close named these."""
+        self._bug("BG9004", self.PROSE)
+        self._bug("BG9005", self.PROSE, created="2026-07-22")
+        undatable = sr._undatable_findings(self.root)
+        self.assertIn("BG9004", undatable)
+        self.assertNotIn("BG9005", undatable,
+                         "a prose stamp is not undatable while `Created` still answers")
+        # Scoped to what a close can ACT on. Round 2 deleted these two lines and the mutant that
+        # drops `open_only` went from killed to surviving.
+        self._bug("BG9020", self.PROSE, status="Fixed")
+        self.assertNotIn("BG9020", sr._undatable_findings(self.root))
+        self.assertIn("BG9020", sr._undatable_findings(self.root, open_only=False))
+
+    def test_an_artefact_carrying_no_stamp_at_all_is_skipped(self) -> None:
+        """AC2c. No stamp predates the mechanism that writes one, so nothing ever claimed the
+        finding for a run. Counting these attributed the whole historical backlog to whichever
+        run was open - 558 artefacts here against the 2 this run actually raised."""
+        d = self.root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        # WITH a `Created` inside the window. Without it the guard is untestable: no stamp and
+        # no Created already falls through the undatable branch, so the mutant that deletes this
+        # skip survives. Of the 558 it excludes here, 402 carry no Created either.
+        (d / "BG9009-x.md").write_text(
+            "# BG9009: x\n\n> **Status:** Open\n> **Created:** 2026-07-22\n", encoding="utf-8")
+        filed, _ = self._findings()
+        self.assertNotIn("BG9009", filed)
+        self.assertNotIn("BG9009", sr._undatable_findings(self.root),
+                         "an artefact that never carried a stamp is not an undatable stamp")
+
+    def test_created_is_a_FALLBACK_and_never_the_primary_source(self) -> None:
+        """AC4b. Deleting the `Created` fallback must redden something, or the whole repair to
+        the reviewer's blocking finding is unpinned - the mutant dropping it survived once."""
+        self._bug("BG9010", self.PROSE, created="2026-07-22")
+        filed, _ = self._findings()
+        self.assertIn("BG9010", filed,
+                      "without the Created fallback a prose-stamped finding is invisible again")
+
+    def test_a_dated_stamp_inside_the_window_is_still_attributed(self) -> None:
+        """AC3, the discriminating half - a parser attributing NOTHING would satisfy the rest."""
+        self._bug("BG9006", "2026-07-22T09:00:00Z")
+        filed, still_open = self._findings()
+        self.assertIn("BG9006", filed)
+        self.assertIn("BG9006", still_open)
+
+    def test_a_dated_stamp_outside_the_window_is_not_attributed(self) -> None:
+        """AC3b. The window must still bound: another run's finding is not this one's."""
+        # SAME DAY as `ended_at`, one hour after it. The round-1 fixture was exactly this; I moved
+        # it to the next day so it would stay green over a truncation regression, which is
+        # weakening the test to fit the defect. A cross-day fixture cannot see a same-day bound.
+        self._bug("BG9007", "2026-07-22T11:00:00Z")
+        filed, _ = self._findings(ended=self.WINDOW[1])
+        self.assertNotIn("BG9007", filed)
+
+    def test_a_precise_timestamp_is_compared_precisely_not_to_the_day(self) -> None:
+        """AC3c. Comparing both sides at day granularity let a 4h22m run claim 45 findings raised
+        elsewhere that day, and made two different runs each claim the same eleven. A date-only
+        `Created` can only be judged to the day; a stamp carrying a real moment must not be."""
+        self._bug("BG9030", "2026-07-22T07:00:00Z")   # one hour BEFORE started_at, same day
+        self._bug("BG9031", "2026-07-22T09:00:00Z")   # inside
+        filed, _ = self._findings(ended=self.WINDOW[1])
+        self.assertNotIn("BG9030", filed,
+                         "a stamp an hour before the run opened is not this run's, same day or not")
+        self.assertIn("BG9031", filed)
+
+    def test_a_date_only_created_is_still_judged_to_the_day(self) -> None:
+        """AC3d, the other half - the day-granularity path must survive, or a `Created` of
+        2026-07-22 against a window opening at 08:00 that day would be excluded as 'before'."""
+        self._bug("BG9032", self.PROSE, created="2026-07-22")
+        filed, _ = self._findings(ended=self.WINDOW[1])
+        self.assertIn("BG9032", filed)
+
+    def test_an_unreadable_created_value_is_not_trusted_as_a_date(self) -> None:
+        """AC4b. `Created: TBD` sorts after every ISO date, so an unguarded read attributed it to
+        any open run AND left it out of the undatable set - this bug's own arithmetic one layer
+        over. `_stamp_timestamp` already guards by shape; its sibling now does too."""
+        self._bug("BG9033", self.PROSE, created="TBD")
+        filed, _ = self._findings()
+        self.assertNotIn("BG9033", filed)
+        self.assertIn("BG9033", sr._undatable_findings(self.root),
+                      "a value nothing can read is undatable, and must be disclosed as such")
+
+    def test_an_artefact_with_neither_a_stamp_nor_a_created_is_not_undatable(self) -> None:
+        """AC2d. The two readers must apply the SAME rule. An artefact that never carried a stamp
+        is not an undatable stamp, whether or not it also lacks a `Created` - and 402 of this
+        corpus's 558 unstamped artefacts carry neither."""
+        d = self.root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "BG9034-x.md").write_text("# BG9034: x\n\n> **Status:** Open\n", encoding="utf-8")
+        self.assertNotIn("BG9034", sr._undatable_findings(self.root))
+        filed, _ = self._findings()
+        self.assertNotIn("BG9034", filed)
+
+    def test_the_stamp_timestamp_beats_a_contradicting_created(self) -> None:
+        """AC4. The stamp is the precise record of when a batch claimed the finding; `Created`
+        is only the fallback. A reader that preferred `Created` would mis-date every batch-stamped
+        finding whose file was created on another day."""
+        # The stamp carries text BEFORE the timestamp, so returning the whole stamp instead of
+        # the parsed match is a different value. With a bare stamp the two are byte-identical and
+        # the mutant survives - which it did, through two rounds.
+        self._bug("BG9008", "batch RUN-TEST01 opened 2026-07-22T09:00:00Z", created="2026-01-01")
+        filed, _ = self._findings()
+        self.assertIn("BG9008", filed, "the stamp's own timestamp must win over `Created`")
+        self._bug("BG9021", "batch RUN-TEST01 opened 2026-01-01T09:00:00Z", created="2026-07-22")
+        filed2, _ = self._findings()
+        self.assertNotIn("BG9021", filed2,
+                         "a stamp dated outside the window must not be rescued by `Created`")
+
+
+class StopShipDischargeTests(ReportOfRecordBase):
+    """BG0730. A carried stop-ship ruling was collected whatever its finding's status, so a
+    ruling on a finding that had since been Fixed blocked every subsequent close, permanently,
+    with editing a retro by hand the only way out."""
+
+    def _ctx(self, rows):
+        return {"carried_issues": rows}
+
+    @staticmethod
+    def _row(uid, *, terminal=False, unreadable=False, ruling="stop-ship"):
+        return {"id": uid, "ruling": ruling, "by": "Someone", "date": "2026-09-01",
+                "ok": True, "why": "", "status": None,
+                "terminal": terminal, "unreadable": unreadable}
+
+    def test_a_ruling_on_a_fixed_finding_is_discharged_and_an_open_one_still_blocks(self) -> None:
+        """AC1, both directions in one fixture - the open row is the control that keeps the
+        discharge from being a switch that lets everything through."""
+        out = sr._known_issue_rulings(self._ctx([
+            self._row("BG9201", terminal=True), self._row("BG9202")]))
+        self.assertEqual(["BG9202"], out["stop_ship"])
+        self.assertEqual(["BG9201"], out["stop_ship_discharged"])
+
+    def test_an_unreadable_artefact_is_reported_and_still_blocks(self) -> None:
+        """AC3. An id resolving to no file is a typo or a deletion; in neither case has anybody
+        discharged the ruling, so silently releasing it would turn a typo into a released hold."""
+        out = sr._known_issue_rulings(self._ctx([
+            self._row("BG9203", unreadable=True)]))
+        self.assertEqual(["BG9203"], out["stop_ship"])
+        self.assertEqual(["BG9203"], out["stop_ship_unreadable"])
+        self.assertEqual([], out["stop_ship_discharged"])
+
+    def test_the_wiring_exists_end_to_end_on_a_real_workspace(self) -> None:
+        """The join between the two halves, which nothing pinned. Both halves had their own test -
+        `_known_issue_rulings` on hand-built rows, `carried_issues` on a real tree - and deleting
+        the single `root=root` that connects them left every test green. That is this repo's own
+        recorded scar: a correct library behind a dead entry point passed for a whole sprint."""
+        retro_dir = self.root / "sdlc-studio" / "retros"
+        retro_dir.mkdir(parents=True, exist_ok=True)
+        bugs = self.root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / "BG9301-x.md").write_text("# BG9301: x\n\n> **Status:** Fixed\n", encoding="utf-8")
+        (bugs / "BG9302-x.md").write_text("# BG9302: x\n\n> **Status:** Open\n", encoding="utf-8")
+        (retro_dir / "RETRO9300-r.md").write_text(
+            "# RETRO9300: a sprint\n\n## Known issues carried\n\n"
+            "| Issue | Ruling | By | Date |\n| --- | --- | --- | --- |\n"
+            "| BG9301 | stop-ship | Someone | 2026-09-01 |\n"
+            "| BG9302 | stop-ship | Someone | 2026-09-01 |\n", encoding="utf-8")
+        rows = sr._carried_issues(self.root, "RETRO9300")
+        by_id = {r["id"]: r for r in rows}
+        self.assertTrue(by_id["BG9301"]["terminal"],
+                        "`_carried_issues` must pass its root through, or the join has nothing "
+                        "to join on and the whole repair is inert")
+        self.assertFalse(by_id["BG9302"]["terminal"])
+        out = sr._known_issue_rulings({"carried_issues": rows})
+        self.assertEqual(["BG9302"], out["stop_ship"])
+        self.assertEqual(["BG9301"], out["stop_ship_discharged"])
+        state, summary, detail = sr._ck_known_issues(
+            {"carried_issues": rows, "open_filed_in_run": [], "undatable_findings": []})
+        self.assertEqual("answered", state)
+        self.assertIn("1 STOP-SHIP", summary)
+        self.assertIn("1 discharged", summary,
+                      "the row the operator reads must apply the same join as the gate")
+        self.assertIn("BG9301", detail)
+
+    def test_an_id_of_any_admitted_type_resolves(self) -> None:
+        """The row grammar admits CR, BG, US, RFC, EP and LL. Guessing the type from the prefix
+        marked four of the six UNREADABLE while their files sat there readable - asserting `no
+        file resolves` about files that resolve, which is the opposite of what the flag means."""
+        for uid, folder, status in (("US9401", "stories", "Done"),
+                                    ("RFC9402", "rfcs", "Accepted"),
+                                    ("EP9403", "epics", "Done")):
+            d = self.root / "sdlc-studio" / folder
+            d.mkdir(parents=True, exist_ok=True)
+            (d / f"{uid}-x.md").write_text(f"# {uid}: x\n\n> **Status:** {status}\n",
+                                           encoding="utf-8")
+        retro_dir = self.root / "sdlc-studio" / "retros"
+        retro_dir.mkdir(parents=True, exist_ok=True)
+        (retro_dir / "RETRO9400-r.md").write_text(
+            "# RETRO9400: a sprint\n\n## Known issues carried\n\n"
+            "| Issue | Ruling | By | Date |\n| --- | --- | --- | --- |\n"
+            + "".join(f"| {u} | stop-ship | Someone | 2026-09-01 |\n"
+                      for u in ("US9401", "RFC9402", "EP9403")), encoding="utf-8")
+        rows = {r["id"]: r for r in sr._carried_issues(self.root, "RETRO9400")}
+        for uid in ("US9401", "RFC9402", "EP9403"):
+            with self.subTest(id=uid):
+                self.assertFalse(rows[uid]["unreadable"],
+                                 f"{uid} resolves to a readable file and must not be reported "
+                                 f"as one that does not")
+                self.assertTrue(rows[uid]["terminal"])
+
+    def test_a_non_stop_ship_ruling_is_not_collected_either_way(self) -> None:
+        """The discriminating half: the discharge must not become a general filter."""
+        out = sr._known_issue_rulings(self._ctx([
+            self._row("BG9204", ruling="accepted-risk"),
+            self._row("BG9205", ruling="accepted-risk", terminal=True)]))
+        self.assertEqual([], out["stop_ship"])
+        self.assertEqual([], out["stop_ship_discharged"])
+
+
+class WaiverDisclosureTests(ReportOfRecordBase):
+    """BG0719. RPT0002 was SIGNED with D0214 (which stood `review.line_coverage` down from block
+    to report for that seal) and D0215 (which waived a known-issues checklist row) in force, and
+    the report named neither. The operator signed without being told which gate was not holding."""
+
+    WINDOW_END = "2026-07-22T10:00:00Z"
+    WINDOW_START = "2026-07-01T00:00:00Z"
+
+    def _log(self, *rows: tuple[str, str, str, str, str]) -> None:
+        d = self.root / "sdlc-studio"
+        d.mkdir(parents=True, exist_ok=True)
+        head = ("# Decisions\n\n| ID | Decision | Rationale | Status | Supersedes | Date |\n"
+                "| --- | --- | --- | --- | --- | --- |\n")
+        body = "".join(f"| {r[0]} | {r[1]} | {r[2]} | {r[3]} |  | {r[4]} |\n" for r in rows)
+        (d / "decisions.md").write_text(head + body, encoding="utf-8")
+
+    def test_a_waiver_in_force_is_disclosed_with_its_subject_and_reason(self) -> None:
+        """AC1. The signer is told which gate was not holding when they signed."""
+        self._log(("D0214", "waiver: review.line_coverage",
+                   "coverage cannot be measured on this interpreter", "accepted", "2026-07-22"))
+        rows, _undated = sr._waivers_in_force(self.root, self.WINDOW_END, self.WINDOW_START)
+        self.assertEqual(1, len(rows))
+        self.assertEqual("D0214", rows[0]["waiver_id"]["value"])
+        self.assertIn("review.line_coverage", rows[0]["waiver_subject"]["value"])
+        self.assertIn("cannot be measured", rows[0]["waiver_reason"]["value"])
+        self.assertTrue(all("source" in c for c in rows[0].values()),
+                        "every cell must be a fig() dict - raw strings crash build")
+
+    def test_an_ordinary_decision_is_not_a_waiver(self) -> None:
+        """AC2, the discriminating half - listing every decision discloses nothing and buries
+        what matters. The token `waiver:` is the marker, not a mention of one."""
+        self._log(("D0216", "the batch is ordered by what compounds over the run",
+                   "severity is not the ordering that matters", "accepted", "2026-07-22"),
+                  ("D0217", "a decision mentioning a waiver of review.line_coverage in prose",
+                   "not a waiver row", "accepted", "2026-07-22"))
+        self.assertEqual([], sr._waivers_in_force(self.root, self.WINDOW_END, self.WINDOW_START)[0])
+
+    def test_a_waiver_after_the_window_end_cannot_move_a_signed_page(self) -> None:
+        """AC3. Bounded by the report's recorded `window_end`, the same bound the DORA figures
+        use - BG0718 is the scar: a figure that moves after the signature invalidates the page."""
+        self._log(("D0300", "waiver: something", "later", "accepted", "2026-09-01"))
+        self.assertEqual([], sr._waivers_in_force(self.root, self.WINDOW_END, self.WINDOW_START)[0])
+        self.assertEqual(1, len(sr._waivers_in_force(self.root, "2026-09-30T00:00:00Z",
+                                                     self.WINDOW_START)[0]))
+
+    def test_a_waiver_before_the_run_opened_is_not_in_force_for_it(self) -> None:
+        """AC3b. Only the upper bound was applied at first, so this repository returned 67 rows -
+        almost all one-shot per-story waivers discharged months ago - and the note claimed all 67
+        were "not holding when this page was derived". A section that buries what it exists to
+        surface has disclosed nothing."""
+        self._log(("D0100", "waiver: old.lane", "long discharged", "accepted", "2026-01-15"),
+                  ("D0214", "waiver: review.line_coverage", "in force", "accepted", "2026-07-22"))
+        rows, _undated = sr._waivers_in_force(self.root, self.WINDOW_END, self.WINDOW_START)
+        self.assertEqual(["D0214"], [r["waiver_id"]["value"] for r in rows])
+
+    def test_an_unbounded_read_reports_NOT_MEASURED_not_a_clean_sheet(self) -> None:
+        """AC3c. Fail-closed is only half of it. The first repair returned nothing AND emitted
+        `the log was read and carries no accepted waiver` - so a read that REFUSED to run was
+        word-for-word indistinguishable from one that ran and found nothing, on a signed page.
+        That is this bug's own failure mode reproduced by its fix."""
+        self._log(("D0214", "waiver: review.line_coverage", "in force", "accepted", "2026-07-22"))
+        for end, start in ((None, self.WINDOW_START), (self.WINDOW_END, None), (None, None)):
+            with self.subTest(end=end, start=start):
+                self.assertEqual([], sr._waivers_in_force(self.root, end, start)[0])
+                section = sr._waivers_section(self.root, end, start)
+                self.assertIsNotNone(section["not_measured"],
+                                     "an unbounded read must report NOT MEASURED")
+                self.assertNotIn("waivers_note", section["figures"],
+                                 "it must not also claim the log was read")
+
+    def test_a_waiver_with_no_readable_date_is_disclosed_not_dropped(self) -> None:
+        """AC3d. A waiver whose Date cell is blank cannot be placed in any window. Dropping it
+        silently is the defect the sibling unit BG0715 built its undatable set to avoid."""
+        self._log(("D0400", "waiver: some.lane", "why", "accepted", ""))
+        rows, undated = sr._waivers_in_force(self.root, self.WINDOW_END, self.WINDOW_START)
+        self.assertEqual([], rows)
+        self.assertEqual(["D0400"], undated)
+        note = sr._waivers_section(self.root, self.WINDOW_END,
+                                   self.WINDOW_START)["figures"]["waivers_note"]["value"]
+        self.assertIn("D0400", note)
+        self.assertIn("UNKNOWN", note)
+
+    def test_a_superseded_waiver_does_not_hold(self) -> None:
+        """A waiver that was replaced is not in force, and reporting it would tell the signer a
+        gate stood down that did not."""
+        self._log(("D0214", "waiver: review.line_coverage", "why", "superseded", "2026-07-22"))
+        self.assertEqual([], sr._waivers_in_force(self.root, self.WINDOW_END, self.WINDOW_START)[0])
+
+    def test_the_section_reaches_the_report_of_record(self) -> None:
+        """AC5, and the lesson two sibling units paid for in this same run: a derivation nothing
+        calls is a claim nobody can read. The section must be IN the report, not merely
+        derivable from it."""
+        # DERIVED, not grepped. The first version of this test searched the source for the call
+        # and was satisfied by a commented-out one; the mutant that dead-ended the call SURVIVED.
+        self._log(("D0214", "waiver: review.line_coverage", "cannot be measured here",
+                   "accepted", "2026-07-22"))
+        state = {"schema": 1, "run_id": "RUN-TEST01", "batch": [], "goal": "done",
+                 "sprint_goal": "prove the section reaches the page",
+                 "sprint_goal_verdict": {"verdict": "achieved", "note": "it did"},
+                 "started_at": "2026-07-01T00:00:00Z", "ended_at": self.WINDOW_END}
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps(state), encoding="utf-8")
+        rd = self.root / "sdlc-studio" / "retros"
+        rd.mkdir(parents=True, exist_ok=True)
+        (rd / "RETRO0001-r.md").write_text(
+            "# RETRO0001: a sprint\n\n> **Batch:** none\n\n## Delivered\n- nothing\n",
+            encoding="utf-8")
+        keys = {sec["key"] for sec in sr.build_report(self.root, "RETRO0001")["sections"]}
+        self.assertIn("waivers", keys, "no report carries the section")
+        self.assertIn("waivers", sr._ROW_LISTS,
+                      "the renderer must know how to list this section's rows")
+        self.assertEqual("waivers", sr._ROW_LISTS["waivers"],
+                         "the row key must be the one the templates repeat over")
+        for tmpl in ("templates/core/sprint-report.md", "templates/reports/sprint-report.html"):
+            path = pathlib.Path(sr.__file__).parents[1] / tmpl
+            with self.subTest(template=tmpl):
+                self.assertIn("repeat: waivers", path.read_text(encoding="utf-8"),
+                              "a section no template repeats over renders nothing")
+
+    def test_the_not_measured_path_RENDERS(self) -> None:
+        """AC5b. Three rounds running, a correct derivation shipped with a path nobody rendered.
+        Both templates carried a bare `{{waivers_note}}` while the not_measured branch supplies
+        no such figure, and `_render` refuses an unanswered placeholder - so the run that most
+        needed the disclosure could not have its page produced at all."""
+        self._log(("D0214", "waiver: review.line_coverage", "why", "accepted", "2026-07-22"))
+        state = {"schema": 1, "run_id": "RUN-TEST01", "batch": [], "goal": "done",
+                 "sprint_goal": "g", "sprint_goal_verdict": {"verdict": "achieved", "note": "n"},
+                 "started_at": None, "ended_at": self.WINDOW_END}
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps(state), encoding="utf-8")
+        rd = self.root / "sdlc-studio" / "retros"
+        rd.mkdir(parents=True, exist_ok=True)
+        (rd / "RETRO0001-r.md").write_text(
+            "# RETRO0001: a sprint\n\n> **Batch:** none\n\n## Delivered\n- nothing\n",
+            encoding="utf-8")
+        rep = sr.build_report(self.root, "RETRO0001")
+        section = next(s for s in rep["sections"] if s["key"] == "waivers")
+        self.assertIsNotNone(section["not_measured"])
+        md = sr.render_markdown(rep)          # must not raise
+        self.assertIn("NOT MEASURED", md)
+        self.assertIn("could not be bounded", md,
+                      "the reason is the only text the signer gets on this path")
+        # BOTH twins. The HTML branch fails SILENTLY if it regresses - the `when:` guard means
+        # no unanswered placeholder, so the page emits the heading and lede with nothing beneath,
+        # which is the absent-section-reads-as-not-checked failure AC4 exists to prevent.
+        self.assertIn("could not be bounded", sr.render_html(rep),
+                      "the html twin must disclose it too, or it regresses without raising")
+
+    def test_an_unreadable_decisions_log_returns_the_shape_the_caller_unpacks(self) -> None:
+        """The import guard's own comment says a report must not die on a log read. When the
+        return signature became a pair, the guard still returned a bare list, so the caller's
+        unpack raised and the guard became the death it exists to prevent."""
+        with unittest.mock.patch.dict("sys.modules", {"decisions": None}):
+            self.assertEqual(([], []), sr._waivers_in_force(self.root, self.WINDOW_END,
+                                                            self.WINDOW_START))
+
+    def test_a_row_carries_its_date_and_a_populated_note(self) -> None:
+        """The reviewer found four behaviours unpinned: the date cell, the `_ROW_LISTS` value, the
+        non-empty note and row order. The first three are pinned here; order is pinned by the
+        two-row fixture below."""
+        self._log(("D0301", "waiver: lane.a", "reason a", "accepted", "2026-07-02"),
+                  ("D0302", "waiver: lane.b", "reason b", "accepted", "2026-07-03"))
+        section = sr._waivers_section(self.root, self.WINDOW_END, self.WINDOW_START)
+        rows = section["rows"]
+        self.assertEqual(["2026-07-02", "2026-07-03"], [r["waiver_date"]["value"] for r in rows],
+                         "the date must be carried, and in log order")
+        self.assertEqual(2, section["figures"]["waivers_count"]["value"])
+        self.assertIn("2 gate(s) were not holding",
+                      section["figures"]["waivers_note"]["value"])
+
+    def test_a_run_with_no_waivers_renders_an_explicit_empty_set(self) -> None:
+        """AC4. An absent section reads as `not checked`, and the whole point is that the signer
+        can tell the difference between nothing waived and nobody looking."""
+        self._log()
+        section = sr._waivers_section(self.root, self.WINDOW_END, self.WINDOW_START)
+        self.assertEqual("waivers", section["key"])
+        self.assertEqual([], section["rows"])
+        note = section["figures"]["waivers_note"]["value"].lower()
+        self.assertIn("no gate stood down", note)
+        self.assertIn("the log was read", note,
+                      "the note must say the log WAS read - that is the whole distinction "
+                      "between nothing waived and nobody looking")
+        self.assertEqual(0, section["figures"]["waivers_count"]["value"])
+
+
 if __name__ == "__main__":
     unittest.main()

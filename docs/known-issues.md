@@ -80,8 +80,15 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0732` | Medium | the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching |
 | `BG0734` | Medium | the blockquote skip in check_versions is unreachable, so it guards nothing |
 | `BG0735` | Medium | the checklist's authority field is carried on 22 rows and read by no renderer |
+| `BG0737` | Medium | the stale downgrade destroys an author's reason on a positive verdict, so the principle BG0733 shipped is violated on the sibling branch of the sam... |
+| `BG0738` | Medium | the low-severity consolidation writes a Consolidated Findings section with no blank line after the heading, so the commit that files a Low finding... |
+| `BG0739` | Medium | close_owed reads the Raised-in-batch stamp by its last token while asserting it reads it exactly as sprint_report does, and the two now genuinely d... |
+| `BG0740` | Medium | a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most neede... |
+| `BG0741` | Medium | the stale lens is silenced by the sweep's own audit rulings, and repairing it will make every abandoned request double-report on the same day |
+| `BG0742` | Medium | AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already |
+| `BG0743` | Medium | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an un... |
 
-50 findings: 50 Medium, 0 Low.
+57 findings: 57 Medium, 0 Low.
 
 ## Not carried
 
