@@ -2,110 +2,114 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
-- **L-0421: A guard built to stop a state rebuilding must be run against the state that actually accumulated, the same day, before the run claims its...**
-- **L-0420: A backlog count is a claim about state, and `In Progress` is the weakest link in it: in one cluster of eleven, not a single commit naming...**
-- **L-0419: Splitting one command into two halves is a claim about what each half WRITES.**
-- **L-0418: A content-keyed evidence ledger has an ordering rule, not a preference: register a unit's mutants AFTER the last edit to their target.**
-- **L-0417: A test that searches a whole page passes on somebody else's output.**
-- **L-0416: A page cannot be signed over facts the signature itself writes.**
-- **L-0415: A harness stub lands on the module object it names, which is not always the one the code under test reads from.**
-- **L-0414: A verifier that stands in for a lane protects nothing, and the test that does protect it must be BOUND to a criterion.**
+- **L-0425: **A test moved to accommodate a defect is worse than the defect.** It converts a caught error into a permanent blind spot, and only an...**
+- **L-0424: **When a corpus-coupled ceiling breaches, fix what it measures, not the number.** The census ceiling broke because this run filed seven...**
+- **L-0423: **Assert that a mutation applied before trusting its verdict.** A mutant that silently fails to apply reports as killed and is evidence of...**
+- **L-0422: **A derivation is not delivered until something consumes it.** Three units in this run shipped a correct derivation that no caller, no...**
+- **L-0421: A guard built to stop a state rebuilding must be run against the state that actually accumulated, the same day, before the run claims its**
+- **L-0420: A backlog count is a claim about state, and `In Progress` is the weakest link in it: in one cluster of eleven, not a single commit naming**
+- **L-0419: Splitting one command into two halves is a claim about what each half WRITES**
+- **L-0418: A content-keyed evidence ledger has an ordering rule, not a preference: register a unit's mutants AFTER the last edit to their target**
+- **L-0417: A test that searches a whole page passes on somebody else's output**
+- **L-0416: A page cannot be signed over facts the signature itself writes**
+- **L-0415: A harness stub lands on the module object it names, which is not always the one the code under test reads from**
+- **L-0414: A verifier that stands in for a lane protects nothing, and the test that does protect it must be BOUND to a criterion**
 - **L-0413: Verify the field exists before you report the state it implies**
-- **L-0412: **Evidence hashed against whole-file bytes is voided by a neighbour's edit, not just your own.** Mutant rows and coverage rulings on...**
-- **L-0411: **An uncapped review loop converges on wording, not defects.** Plan review ran to five rounds on one unit and drew 47 REJECTs.**
-- **L-0410: **Seats judge the build against the author's criteria; only a stakeholder judges the criteria against the need.** Seventy plan-review...**
-- **L-0409: **Attribution by blame turns one commit into a shared charge.** The coverage gate charged all 455 of US0626's added sprint.py lines to...**
-- **L-0408: **Two readers of one rule will disagree, and the one that blocks is the one nobody tested.** `row_staleness` shipped with no production...**
-- **L-0407: **A guard's reach is the spelling its fixture used.** BG0660's scan could not see this repository's own `subprocess.run([sys.executable...**
-- **L-0406: **A mutant aimed at the wrong site is not weak evidence, it is none.** Three retractions this run.**
-- **L-0405: **A criterion's words are law and its fixture is the measurement; when they differ, the fixture wins silently.** Nine of this run's...**
-- **L-0404: **Re-measure by target, not by unit.** Before porting a patch, list every delivered unit with live rows on each file it touches and chain...**
-- **L-0403: **A tool failing between two calls is not an absence of findings.** Coverage's own `combine` and `json` verbs failing read as no data and...**
-- **L-0402: **A message that claims to be runnable must be RUN by its test.** The refusal US0818 ships printed a `retract` command that a shell...**
-- **L-0401: **A criterion that says "X, or Y" needs a fixture for both.** Six of the eight rejections were one clause of a criterion with no case...**
-- **L-0400: When the build departs from the plan-reviewed design, amend the criterion before the brief renders, or the seat judges the code against a...**
-- **L-0399: A structural pin beats a string: the worker count printed from the pool survived; the sleepers' own overlap did not.**
-- **L-0398: Mutants come from the delivered code's branches, not only from the plan table: every survivor a seat found sat on a branch the unit's own...**
-- **L-0397: A number in prose needs the command that produced it beside it; a figure copied from a budget constant or an old bug report shipped twice...**
-- **L-0396: Fixture-green is not real-target-green: a gate lane, a hook or a command must be run where the hook runs it, on this repository, before a...**
-- **L-0395: The disclosure page is derived from statuses: regenerate it once, after the last transition, or every commit in between is refused by its...**
-- **L-0394: A test fixture that inherits the caller's environment is a defect even when green: an unscrubbed enable-hooks fixture wrote...**
-- **L-0393: Register mutation evidence after the LAST edit to a target, and re-check every earlier unit whose target a later unit touches: BG0641's...**
-- **L-0392: A depth field carries two counts, the total after the word and the entry-point denominator before it; a census that takes the first `<n>...**
-- **L-0391: A hook's stdout never reaches the pusher: git shows a pre-push hook's stderr only, so a refusal that says "see the lane named above" must...**
-- **L-0390: **The vacuous case is where a per-item rule fails, and it is the largest population.** "Every criterion carries a verifier" is TRUE over an...**
-- **L-0389: **A schema-widening test built on the shape YOUR repo holds cannot see the shape everyone else holds.** Two ledger columns were appended at...**
-- **L-0388: **A tool that cannot author its evidence produces units nobody can check.** `file_finding.py` could write an acceptance criterion but not...**
-- **L-0387: **Narrow the licence, not the pattern.** A lint error in three code spans was fixed by a regex over every code span in two directories...**
-- **L-0386: Verify against the INPUT SPACE, not against the criterion.**
-- **L-0385: A positive control asserting that an error string is ABSENT proves nothing, because a command that fails for an unrelated reason also omits...**
-- **L-0384: A repair that keeps moving is a scoping error, not a coding error.**
-- **L-0383: **A test that drives the library while its mutant changes the CLI cannot fail.** This happened twice in one run - BG0618 AC5 and BG0621 AC7...**
-- **L-0382: **A gate the run is measured on must be hardened before the run is measured on it.** BG0621 shipped first for that reason, and its first...**
-- **L-0381: **When a model changes, the assumptions built on the old one become invisible rather than wrong.** `repair_state` read the single standing...**
-- **L-0380: **A criterion whose subject is the CORPUS cannot be pinned by a mutant on the CODE.** AC5 asserted nineteen units were completely answered...**
-- **L-0379: **A repair that cites, as its evidence, the very thing the fix declares invalid has made the record prettier rather than truer.** BG0607...**
-- **L-0378: A pre-code review that re-verifies premises is worth more than one that critiques a plan.**
-- **L-0377: A repair believed shipped can be withdrawn by the review that judges it, and that is the gate working - and the review that judged the...**
-- **L-0376: **Two rules agreeing is corroboration only if they are INDEPENDENT, and mine were nested.** BG0607's roll-up was keyed on the reviewer...**
-- **L-0375: A criterion about an ARTEFACT cannot be verified by a test over CODE.**
-- **L-0374: Order a batch by what compounds over the run, not by severity.**
-- **L-0373: A fixture that cannot reach the branch is a fixture that proves the fail-open path.**
-- **L-0372: A gate's behaviour must be read for the POPULATION you care about, not in general.**
-- **L-0371: A repair for unpinned behaviour can itself ship unpinned, and did.**
-- **L-0370: The plan review took FOUR rounds, and the biggest single cause was a rule already written down: I hand-edited test-plan tables that...**
-- **L-0369: The derived field caught its own run's stale evidence, which is the first time an instrument this project built reported against the...**
-- **L-0368: A repair whose test can be satisfied by EITHER of two guards pins neither, and I shipped that shape while repairing this very defect.**
-- **L-0367: A plan row can be killed by a test the criterion does not name, and the toolchain will call that covered.**
-- **L-0366: A partial disposition recorded twice reads as two partial dispositions forever.**
-- **L-0365: A gate lane that mutates the shared working tree corrupts whatever else is reading it.**
-- **L-0364: A fixture whose counts are EQUAL cannot detect a swap, and the REPAIR for it moved the defect rather than closing it.**
-- **L-0363: Absent and could-not-ask must be different answers, and this run needed the lesson TWICE.**
-- **L-0362: A staging decision that puts a unit LAST also puts it outside the review that already ran.**
-- **L-0361: Marginal review yield decays, and a round cap should be set from that rather than from batch size.**
-- **L-0360: Ceremony scaled by FILE size is not ceremony scaled by risk.**
-- **L-0359: A changelog fragment written at the first commit describes the design that existed THEN.**
-- **L-0358: Re-registering against a file edited since the first registration DISCARDS the earlier verdicts, and that is correct.**
-- **L-0357: A retract-and-re-register cycle leaves the superseded row LIVE unless something withdraws it, and a join keyed on `(criterion, row)` then...**
-- **L-0356: Scope a rung fix to the rung it is about, never to "not `done`".**
-- **L-0355: A false premise RESTATED is worse than the original, because each restatement reads as verification.**
-- **L-0354: A fixture that makes the mutant equivalent is the commonest way a test measures nothing here.**
-- **L-0353: A detector's SILENCE is evidence only once it has been shown able to speak.**
+- **L-0412: **Evidence hashed against whole-file bytes is voided by a neighbour's edit, not just your own.** Mutant rows and coverage rulings on**
+- **L-0411: **An uncapped review loop converges on wording, not defects.** Plan review ran to five rounds on one unit and drew 47 REJECTs**
+- **L-0410: **Seats judge the build against the author's criteria; only a stakeholder judges the criteria against the need.** Seventy plan-review**
+- **L-0409: **Attribution by blame turns one commit into a shared charge.** The coverage gate charged all 455 of US0626's added sprint.py lines to**
+- **L-0408: **Two readers of one rule will disagree, and the one that blocks is the one nobody tested.** `row_staleness` shipped with no production**
+- **L-0407: **A guard's reach is the spelling its fixture used.** BG0660's scan could not see this repository's own `subprocess.run([sys.executable**
+- **L-0406: **A mutant aimed at the wrong site is not weak evidence, it is none.** Three retractions this run**
+- **L-0405: **A criterion's words are law and its fixture is the measurement; when they differ, the fixture wins silently.** Nine of this run's**
+- **L-0404: **Re-measure by target, not by unit.** Before porting a patch, list every delivered unit with live rows on each file it touches and chain**
+- **L-0403: **A tool failing between two calls is not an absence of findings.** Coverage's own `combine` and `json` verbs failing read as no data and**
+- **L-0402: **A message that claims to be runnable must be RUN by its test.** The refusal US0818 ships printed a `retract` command that a shell**
+- **L-0401: **A criterion that says "X, or Y" needs a fixture for both.** Six of the eight rejections were one clause of a criterion with no case**
+- **L-0400: When the build departs from the plan-reviewed design, amend the criterion before the brief renders, or the seat judges the code against a**
+- **L-0399: A structural pin beats a string: the worker count printed from the pool survived; the sleepers' own overlap did not**
+- **L-0398: Mutants come from the delivered code's branches, not only from the plan table: every survivor a seat found sat on a branch the unit's own**
+- **L-0397: A number in prose needs the command that produced it beside it; a figure copied from a budget constant or an old bug report shipped twice**
+- **L-0396: Fixture-green is not real-target-green: a gate lane, a hook or a command must be run where the hook runs it, on this repository, before a**
+- **L-0395: The disclosure page is derived from statuses: regenerate it once, after the last transition, or every commit in between is refused by its**
+- **L-0394: A test fixture that inherits the caller's environment is a defect even when green: an unscrubbed enable-hooks fixture wrote**
+- **L-0393: Register mutation evidence after the LAST edit to a target, and re-check every earlier unit whose target a later unit touches: BG0641's**
+- **L-0392: A depth field carries two counts, the total after the word and the entry-point denominator before it; a census that takes the first `<n>**
+- **L-0391: A hook's stdout never reaches the pusher: git shows a pre-push hook's stderr only, so a refusal that says "see the lane named above" must**
+- **L-0390: **The vacuous case is where a per-item rule fails, and it is the largest population.** "Every criterion carries a verifier" is TRUE over an**
+- **L-0389: **A schema-widening test built on the shape YOUR repo holds cannot see the shape everyone else holds.** Two ledger columns were appended at**
+- **L-0388: **A tool that cannot author its evidence produces units nobody can check.** `file_finding.py` could write an acceptance criterion but not**
+- **L-0387: **Narrow the licence, not the pattern.** A lint error in three code spans was fixed by a regex over every code span in two directories**
+- **L-0386: Verify against the INPUT SPACE, not against the criterion**
+- **L-0385: A positive control asserting that an error string is ABSENT proves nothing, because a command that fails for an unrelated reason also omits**
+- **L-0384: A repair that keeps moving is a scoping error, not a coding error**
+- **L-0383: **A test that drives the library while its mutant changes the CLI cannot fail.** This happened twice in one run - BG0618 AC5 and BG0621 AC7**
+- **L-0382: **A gate the run is measured on must be hardened before the run is measured on it.** BG0621 shipped first for that reason, and its first**
+- **L-0381: **When a model changes, the assumptions built on the old one become invisible rather than wrong.** `repair_state` read the single standing**
+- **L-0380: **A criterion whose subject is the CORPUS cannot be pinned by a mutant on the CODE.** AC5 asserted nineteen units were completely answered**
+- **L-0379: **A repair that cites, as its evidence, the very thing the fix declares invalid has made the record prettier rather than truer.** BG0607**
+- **L-0378: A pre-code review that re-verifies premises is worth more than one that critiques a plan**
+- **L-0377: A repair believed shipped can be withdrawn by the review that judges it, and that is the gate working - and the review that judged the**
+- **L-0376: **Two rules agreeing is corroboration only if they are INDEPENDENT, and mine were nested.** BG0607's roll-up was keyed on the reviewer**
+- **L-0375: A criterion about an ARTEFACT cannot be verified by a test over CODE**
+- **L-0374: Order a batch by what compounds over the run, not by severity**
+- **L-0373: A fixture that cannot reach the branch is a fixture that proves the fail-open path**
+- **L-0372: A gate's behaviour must be read for the POPULATION you care about, not in general**
+- **L-0371: A repair for unpinned behaviour can itself ship unpinned, and did**
+- **L-0370: The plan review took FOUR rounds, and the biggest single cause was a rule already written down: I hand-edited test-plan tables that**
+- **L-0369: The derived field caught its own run's stale evidence, which is the first time an instrument this project built reported against the**
+- **L-0368: A repair whose test can be satisfied by EITHER of two guards pins neither, and I shipped that shape while repairing this very defect**
+- **L-0367: A plan row can be killed by a test the criterion does not name, and the toolchain will call that covered**
+- **L-0366: A partial disposition recorded twice reads as two partial dispositions forever**
+- **L-0365: A gate lane that mutates the shared working tree corrupts whatever else is reading it**
+- **L-0364: A fixture whose counts are EQUAL cannot detect a swap, and the REPAIR for it moved the defect rather than closing it**
+- **L-0363: Absent and could-not-ask must be different answers, and this run needed the lesson TWICE**
+- **L-0362: A staging decision that puts a unit LAST also puts it outside the review that already ran**
+- **L-0361: Marginal review yield decays, and a round cap should be set from that rather than from batch size**
+- **L-0360: Ceremony scaled by FILE size is not ceremony scaled by risk**
+- **L-0359: A changelog fragment written at the first commit describes the design that existed THEN**
+- **L-0358: Re-registering against a file edited since the first registration DISCARDS the earlier verdicts, and that is correct**
+- **L-0357: A retract-and-re-register cycle leaves the superseded row LIVE unless something withdraws it, and a join keyed on `(criterion, row)` then**
+- **L-0356: Scope a rung fix to the rung it is about, never to "not `done`"**
+- **L-0355: A false premise RESTATED is worse than the original, because each restatement reads as verification**
+- **L-0354: A fixture that makes the mutant equivalent is the commonest way a test measures nothing here**
+- **L-0353: A detector's SILENCE is evidence only once it has been shown able to speak**
 - **L-0352: A false-premise filing costs more than the bug it invents**
-- **L-0351: A ledger that reads zero because nobody looked is indistinguishable from one that reads zero because it is zero.**
-- **L-0350: Repairs raised by a review round are new units nobody planned, and they are the systematic leak rather than the careless one.**
-- **L-0349: A batch is approved once and then only read, so work agreed AFTER the approval never joins it.**
-- **L-0348: An exit condition satisfied by deleting a marker is not an exit condition.**
-- **L-0347: A charter whose declared scope has emptied does not become a licence for whatever batch is convenient.**
-- **L-0346: A rung is a claim about what a run can reach, and stating a terminal without knowing the rung is stating an answer to a question nobody...**
-- **L-0345: An admission rule that asks a question whose answer moves with the tree admits entries that silently stop qualifying.**
+- **L-0351: A ledger that reads zero because nobody looked is indistinguishable from one that reads zero because it is zero**
+- **L-0350: Repairs raised by a review round are new units nobody planned, and they are the systematic leak rather than the careless one**
+- **L-0349: A batch is approved once and then only read, so work agreed AFTER the approval never joins it**
+- **L-0348: An exit condition satisfied by deleting a marker is not an exit condition**
+- **L-0347: A charter whose declared scope has emptied does not become a licence for whatever batch is convenient**
+- **L-0346: A rung is a claim about what a run can reach, and stating a terminal without knowing the rung is stating an answer to a question nobody**
+- **L-0345: An admission rule that asks a question whose answer moves with the tree admits entries that silently stop qualifying**
 - **L-0344: Never repair the gate that is refusing your own run**
 - **L-0343: A mutant that cannot reach the code it names proves as little as a test that cannot fail**
-- **L-0342: A recorded list is a claim like any other and rots the same way.**
-- **L-0341: A guard a paraphrase can defeat is weak; one the OPPOSITE statement satisfies is inverted.**
-- **L-0340: Verification run where the author is standing is not verification.**
-- **L-0338: Reviewing the PLAN catches what code review cannot: a wrong discriminator, an exemption inherited unscoped, and a missing step that makes...**
-- **L-0337: A number nobody re-measures is wrong.**
-- **L-0336: A guard narrowed to the RIGHT question can be less safe than the wrong one it replaced.**
-- **L-0335: A comparison is satisfied by agreement, INCLUDING agreement the defect produces.**
-- **L-0334: A test that proves a guard works must not depend on the guard working.**
-- **L-0333: **A test that passes only because a sibling ran first is not passing.** US0664 AC3 held for a whole round because two tests above it warmed...**
-- **L-0332: **A declared mutant is executed by strangers - write it so it cannot destroy their work.** "Change the fixture root to the repository root"...**
-- **L-0331: **A guard that hides a fault also hides the evidence of it.** Gitignoring the residue path stopped it being committed and stopped `git...**
-- **L-0330: **A presence check can never detect an addition.** US0663 AC3 asserted two strings were PRESENT while its own declared mutant was an...**
-- **L-0329: **A repair that is correct and ungated is not a repair.** Rounds 3 and 5 each reverted the previous round's fix against a green suite and...**
-- **L-0328: A tool whose blast radius is its own source must be scoped to the literal it rewrites.**
-- **L-0327: Drive the claim through the COMMAND and it finds wiring the suite cannot see.**
-- **L-0326: A criterion is only as good as the mutant its test can fail on.**
-- **L-0325: **A fixed line number in a fixture family probes past the end of the short ones.** Every severity fixture shared a probe line, and the...**
-- **L-0324: **A criterion whose premise is not decidable from what is stored gets satisfied by a fixture.** US0661 AC4 demanded that a registered claim...**
-- **L-0323: **A repair relocates its defect one construct over, and the second construct is the one nobody checks.** The terminality rule learned If...**
-- **L-0322: **A registered mutant is a claim; clear the ledger and apply them before believing the count.** 61 registrations, 47 applied for real, two...**
-- **L-0321: **L-0314: a guard that fails in the direction of inventing work is still wrong.** The resolvability sweep inherited the runner's working...**
-- **L-0320: **L-0313: an emergency bypass is a debt due on the NEXT commit.** Three lanes had been failing behind one `--no-verify`; the gate that...**
-- **L-0319: **L-0312: a fixture whose root is a PARAMETER will eventually be given the wrong one.** Writing to a real path looks exactly like writing...**
-- **L-0318: **L-0311: a repair judged only against its own finding can void the guarantee beside it.** Round 2 must re-run the SIBLING unit's mutants...**
-- **L-0317: **L-0310: a criterion asking for ONE implementation cannot be verified by two agreeing.** Agreement is what two correct-today...**
+- **L-0342: A recorded list is a claim like any other and rots the same way**
+- **L-0341: A guard a paraphrase can defeat is weak; one the OPPOSITE statement satisfies is inverted**
+- **L-0340: Verification run where the author is standing is not verification**
+- **L-0338: Reviewing the PLAN catches what code review cannot: a wrong discriminator, an exemption inherited unscoped, and a missing step that makes**
+- **L-0337: A number nobody re-measures is wrong**
+- **L-0336: A guard narrowed to the RIGHT question can be less safe than the wrong one it replaced**
+- **L-0335: A comparison is satisfied by agreement, INCLUDING agreement the defect produces**
+- **L-0334: A test that proves a guard works must not depend on the guard working**
+- **L-0333: **A test that passes only because a sibling ran first is not passing.** US0664 AC3 held for a whole round because two tests above it warmed**
+- **L-0332: **A declared mutant is executed by strangers - write it so it cannot destroy their work.** "Change the fixture root to the repository root"**
+- **L-0331: **A guard that hides a fault also hides the evidence of it.** Gitignoring the residue path stopped it being committed and stopped `git**
+- **L-0330: **A presence check can never detect an addition.** US0663 AC3 asserted two strings were PRESENT while its own declared mutant was an**
+- **L-0329: **A repair that is correct and ungated is not a repair.** Rounds 3 and 5 each reverted the previous round's fix against a green suite and**
+- **L-0328: A tool whose blast radius is its own source must be scoped to the literal it rewrites**
+- **L-0327: Drive the claim through the COMMAND and it finds wiring the suite cannot see**
+- **L-0326: A criterion is only as good as the mutant its test can fail on**
+- **L-0325: **A fixed line number in a fixture family probes past the end of the short ones.** Every severity fixture shared a probe line, and the**
+- **L-0324: **A criterion whose premise is not decidable from what is stored gets satisfied by a fixture.** US0661 AC4 demanded that a registered claim**
+- **L-0323: **A repair relocates its defect one construct over, and the second construct is the one nobody checks.** The terminality rule learned If**
+- **L-0322: **A registered mutant is a claim; clear the ledger and apply them before believing the count.** 61 registrations, 47 applied for real, two**
+- **L-0321: **L-0314: a guard that fails in the direction of inventing work is still wrong.** The resolvability sweep inherited the runner's working**
+- **L-0320: **L-0313: an emergency bypass is a debt due on the NEXT commit.** Three lanes had been failing behind one `--no-verify`; the gate that**
+- **L-0319: **L-0312: a fixture whose root is a PARAMETER will eventually be given the wrong one.** Writing to a real path looks exactly like writing**
+- **L-0318: **L-0311: a repair judged only against its own finding can void the guarantee beside it.** Round 2 must re-run the SIBLING unit's mutants**
+- **L-0317: **L-0310: a criterion asking for ONE implementation cannot be verified by two agreeing.** Agreement is what two correct-today**
 - **L-0316: **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the**
 - **L-0315: **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the**
 - **L-0314: **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment**
