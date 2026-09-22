@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M306PY closed running.** 8 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01M33WJ3 closed running.** 5 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **The sweep run: the backlog tells the truth.** 38 In-Progress discovery requests and 24 claims
