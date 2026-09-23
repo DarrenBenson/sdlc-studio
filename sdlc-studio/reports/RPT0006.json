@@ -1,0 +1,904 @@
+{
+  "schema": 2,
+  "report_id": "RPT0006",
+  "run_id": "RUN-01M36R3D",
+  "retro_id": "RETRO0121",
+  "generated_at": "2026-09-23T17:14:18Z",
+  "window_end": "2026-09-23T17:14:18Z",
+  "signature": null,
+  "sections": [
+    {
+      "key": "goal",
+      "title": "Goal",
+      "figures": {
+        "sprint_goal": {
+          "key": "sprint_goal",
+          "value": "A sprint runs start to finish on its own, learns from itself, and hands you one page.",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict": {
+          "key": "goal_verdict",
+          "value": "Judged achieved",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict_note": {
+          "key": "goal_verdict_note",
+          "value": "The run went from plan approval to this page without asking the operator anything: four seat rulings (D0256-D0259) answered its questions, each unit had one independent reviewer under the new cap, and the close ran in one pass. It learns from itself through a calibrated token rate measured from its own history and through ruling precedent; lesson graduation was scoped to Sprint 2 from the start.",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "run_id": {
+          "key": "run_id",
+          "value": "RUN-01M36R3D",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "started_at": {
+          "key": "started_at",
+          "value": "2026-09-23T09:10:21Z",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "ended_at": {
+          "key": "ended_at",
+          "value": "open",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "duration_hours": {
+          "key": "duration_hours",
+          "value": "8.1h",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "verified_sha": {
+          "key": "verified_sha",
+          "value": "4af3dfbc3182a20daea6c4864f7c0b1cd39b9a74",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "estimates",
+      "title": "Estimates",
+      "figures": {},
+      "rows": [
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Points",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 58,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 58,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.0x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "11 of 11 delivered unit(s)",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Minutes",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "the plan recorded no minute forecast for any unit"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 483.9,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "needs both a forecast and an actual"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the whole run: forecast over 0 of 11 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Tokens",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 5661095,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 6411344,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.13x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the whole run: the plan's run-level token forecast; actual is the main-thread meter plus 21 delegated agent(s)' reported totals, split in the appendix",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null,
+      "unit_rows": []
+    },
+    {
+      "key": "delivered",
+      "title": "Delivered to plan",
+      "figures": {
+        "planned_units": {
+          "key": "planned_units",
+          "value": 11,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "planned_points": {
+          "key": "planned_points",
+          "value": 58,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "plan_delivered_units": {
+          "key": "plan_delivered_units",
+          "value": 11,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "plan_delivered_points": {
+          "key": "plan_delivered_points",
+          "value": 58,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_delivered_units": {
+          "key": "added_delivered_units",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_points": {
+          "key": "added_points",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "dropped_units": {
+          "key": "dropped_units",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "dropped_points": {
+          "key": "dropped_points",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "carried_units": {
+          "key": "carried_units",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "carried_points": {
+          "key": "carried_points",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_units": {
+          "key": "added_units",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "points_delivered": {
+          "key": "points_delivered",
+          "value": 58,
+          "source": "sdlc-studio/stories/US0868-a-sprint-goal-is-one-memorable-sentence-and.md, sdlc-studio/stories/US0869-estimates-are-calibrated-from-the-project-s-own.md, sdlc-studio/stories/US0870-the-plan-records-each-unit-s-forecast-points.md, sdlc-studio/stories/US0871-each-unit-s-elapsed-time-and-tokens-are.md, sdlc-studio/stories/US0872-one-reviewer-at-most-two-rounds-a-fixed.md, sdlc-studio/stories/US0873-a-verdict-is-written-by-one-set-of.md, sdlc-studio/stories/US0874-a-persona-seat-answers-the-run-s-questions.md, sdlc-studio/stories/US0875-the-sprint-report-is-one-page-answering-three.md, sdlc-studio/stories/US0876-sprint-close-runs-once-and-finishes-gaps-become.md, sdlc-studio/stories/US0877-the-retro-is-three-lines-and-a-re.md, sdlc-studio/stories/US0878-sign-checks-what-it-seals-and-records-what.md"
+        }
+      },
+      "rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0868",
+            "source": "sdlc-studio/stories/US0868-a-sprint-goal-is-one-memorable-sentence-and.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US0868-a-sprint-goal-is-one-memorable-sentence-and.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0869",
+            "source": "sdlc-studio/stories/US0869-estimates-are-calibrated-from-the-project-s-own.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/stories/US0869-estimates-are-calibrated-from-the-project-s-own.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0870",
+            "source": "sdlc-studio/stories/US0870-the-plan-records-each-unit-s-forecast-points.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US0870-the-plan-records-each-unit-s-forecast-points.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0871",
+            "source": "sdlc-studio/stories/US0871-each-unit-s-elapsed-time-and-tokens-are.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/stories/US0871-each-unit-s-elapsed-time-and-tokens-are.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0872",
+            "source": "sdlc-studio/stories/US0872-one-reviewer-at-most-two-rounds-a-fixed.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 8,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 8,
+            "source": "sdlc-studio/stories/US0872-one-reviewer-at-most-two-rounds-a-fixed.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0873",
+            "source": "sdlc-studio/stories/US0873-a-verdict-is-written-by-one-set-of.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US0873-a-verdict-is-written-by-one-set-of.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0874",
+            "source": "sdlc-studio/stories/US0874-a-persona-seat-answers-the-run-s-questions.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/stories/US0874-a-persona-seat-answers-the-run-s-questions.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0875",
+            "source": "sdlc-studio/stories/US0875-the-sprint-report-is-one-page-answering-three.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 8,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 8,
+            "source": "sdlc-studio/stories/US0875-the-sprint-report-is-one-page-answering-three.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0876",
+            "source": "sdlc-studio/stories/US0876-sprint-close-runs-once-and-finishes-gaps-become.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 8,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 8,
+            "source": "sdlc-studio/stories/US0876-sprint-close-runs-once-and-finishes-gaps-become.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0877",
+            "source": "sdlc-studio/stories/US0877-the-retro-is-three-lines-and-a-re.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/stories/US0877-the-retro-is-three-lines-and-a-re.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0878",
+            "source": "sdlc-studio/stories/US0878-sign-checks-what-it-seals-and-records-what.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/stories/US0878-sign-checks-what-it-seals-and-records-what.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "known_issues",
+      "title": "Known issues handed over",
+      "figures": {
+        "findings_scan": {
+          "key": "findings_scan",
+          "value": "6 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0744",
+            "source": "sdlc-studio/bugs/BG0744-the-close-refuses-to-file-a-report-but.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "High",
+            "source": "sdlc-studio/bugs/BG0744-the-close-refuses-to-file-a-report-but.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "the close refuses to file a report but a direct build --write files one anyway, skipping the token stamp and the gate verdicts the refusal protects",
+            "source": "sdlc-studio/bugs/BG0744-the-close-refuses-to-file-a-report-but.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0745",
+            "source": "sdlc-studio/bugs/BG0745-sprint-report-check-reads-a-report-hand-edited.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "High",
+            "source": "sdlc-studio/bugs/BG0745-sprint-report-check-reads-a-report-hand-edited.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "sprint_report check reads a report hand-edited after signing as VALID",
+            "source": "sdlc-studio/bugs/BG0745-sprint-report-check-reads-a-report-hand-edited.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0746",
+            "source": "sdlc-studio/bugs/BG0746-the-spec-claims-timing-claim-deadlocks-every-fresh.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG0746-the-spec-claims-timing-claim-deadlocks-every-fresh.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The spec-claims timing claim deadlocks every fresh worktree under parallel load",
+            "source": "sdlc-studio/bugs/BG0746-the-spec-claims-timing-claim-deadlocks-every-fresh.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0747",
+            "source": "sdlc-studio/bugs/BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows",
+            "source": "sdlc-studio/bugs/BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0748",
+            "source": "sdlc-studio/bugs/BG0748-the-report-s-dora-window-is-second-resolution.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG0748-the-report-s-dora-window-is-second-resolution.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The report's DORA window is second-resolution, so a same-second commit reads the report INVALID",
+            "source": "sdlc-studio/bugs/BG0748-the-report-s-dora-window-is-second-resolution.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0749",
+            "source": "sdlc-studio/bugs/BG0749-thirty-stamped-criteria-on-older-units-point-at.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG0749-thirty-stamped-criteria-on-older-units-point-at.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Thirty stamped criteria on older units point at tests this sprint made skipped stubs",
+            "source": "sdlc-studio/bugs/BG0749-thirty-stamped-criteria-on-older-units-point-at.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "checklist",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "tick-verification: Ticked criteria the tree supports - no ticked criteria found",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "signoff",
+      "title": "Sign-off",
+      "figures": {
+        "principal": {
+          "key": "principal",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_at": {
+          "key": "signed_at",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_fingerprint": {
+          "key": "signed_fingerprint",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "cost",
+      "title": "Tokens by model",
+      "figures": {
+        "tokens_delegated": {
+          "key": "tokens_delegated",
+          "value": 4726525,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "tokens_total": {
+          "key": "tokens_total",
+          "value": 6411344,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_coverage": {
+          "key": "token_coverage",
+          "value": "1 session(s)",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_shape": {
+          "key": "token_shape",
+          "value": "read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [
+        {
+          "model_name": {
+            "key": "model_name",
+            "value": "mixed",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "model_tokens": {
+            "key": "model_tokens",
+            "value": 1684819,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "dora",
+      "title": "DORA",
+      "figures": {},
+      "rows": [
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Deployment frequency",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": 11,
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "on demand",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - 11 commit(s) on main inside the run window",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Lead time for changes",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "7h 22m",
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under a day",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - first to last of 11 commit(s)",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Change failure rate",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/ci-runs.json",
+            "reason": "no forge run data"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "0-15%",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "no push-triggered CI run is readable for this run window",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Time to restore",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/ci-runs.json",
+            "reason": "no forge run data"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under an hour",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "no push-triggered CI run is readable for this run window",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "calibration",
+      "title": "Calibration",
+      "figures": {
+        "cal_tokens_per_point": {
+          "key": "cal_tokens_per_point",
+          "value": "NOT MEASURED",
+          "source": "sdlc-studio/.local/run-state.json",
+          "reason": "the plan snapshot records no rate"
+        },
+        "cal_tokens_source": {
+          "key": "cal_tokens_source",
+          "value": "backfilled at close from the plan's own forecast log (planned 2026-09-23T09:08:54Z): the plan predates US0870, so it printed one run-level token forecast of 5,661,095 (a fixed per-sprint term plus 47,613 per point) and no per-unit or minute forecast",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_minutes_per_point": {
+          "key": "cal_minutes_per_point",
+          "value": "NOT MEASURED",
+          "source": "sdlc-studio/.local/run-state.json",
+          "reason": "the plan snapshot records no rate"
+        },
+        "cal_minutes_source": {
+          "key": "cal_minutes_source",
+          "value": "not measured: no minute forecast existed when this run was planned",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "rulings",
+      "title": "Rulings",
+      "figures": {
+        "persona_rulings": {
+          "key": "persona_rulings",
+          "value": 4,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cited_rulings": {
+          "key": "cited_rulings",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "operator_rulings": {
+          "key": "operator_rulings",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "waivers",
+      "title": "Waivers in force",
+      "figures": {
+        "waivers_note": {
+          "key": "waivers_note",
+          "value": "no gate stood down for this seal - the log was read and carries no accepted waiver dated inside this report's window",
+          "source": "sdlc-studio/decisions.md"
+        },
+        "waivers_count": {
+          "key": "waivers_count",
+          "value": 0,
+          "source": "sdlc-studio/decisions.md"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    }
+  ],
+  "fingerprint": "8ce8051d2635b26f"
+}

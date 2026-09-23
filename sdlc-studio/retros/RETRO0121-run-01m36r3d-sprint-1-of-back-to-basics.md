@@ -59,4 +59,4 @@ Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-for
 
 ## Handoff
 
-- [HO-0084](../handoffs/HO0084-a-sprint-runs-start-to-finish-on-its.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
+- [HO-0085](../handoffs/HO0085-a-sprint-runs-start-to-finish-on-its.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
